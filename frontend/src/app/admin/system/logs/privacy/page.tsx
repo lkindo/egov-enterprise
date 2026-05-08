@@ -32,7 +32,7 @@ const PrivacyLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: PrivacyLog) => (
-                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     {item.logId}
                 </div>
             ),
@@ -44,7 +44,7 @@ const PrivacyLogAdminPage = () => {
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
                     <span className="font-bold text-slate-700">{item.trgetNm}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">({item.trgetId})</span>
+                    <span className="text-xs text-slate-400 font-mono">({item.trgetId})</span>
                 </div>
             )
         },
@@ -53,7 +53,7 @@ const PrivacyLogAdminPage = () => {
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
-                    <code className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-black rounded border border-purple-100">
+                    <code className="px-2 py-0.5 bg-purple-50 text-purple-600 text-xs font-bold rounded border border-purple-100">
                         {item.trgetClCode}
                     </code>
                 </div>
@@ -63,7 +63,7 @@ const PrivacyLogAdminPage = () => {
         {
             header: '처리 구분',
             accessor: (item: PrivacyLog) => (
-                <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-black rounded-md border border-orange-100">
+                <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-md border border-orange-100">
                     {item.processSeCode}
                 </span>
             ),
@@ -72,7 +72,7 @@ const PrivacyLogAdminPage = () => {
         {
             header: '요청자ID',
             accessor: (item: PrivacyLog) => (
-                <div className="px-3 py-1 bg-white border rounded-full w-fit shadow-sm text-xs font-black text-slate-700">
+                <div className="px-3 py-1 bg-white border rounded-lg w-fit shadow-sm text-xs font-bold text-slate-700">
                     {item.rqesterId}
                 </div>
             ),

@@ -81,12 +81,12 @@ const ScrapListPage = () => {
                 </CardHeader>
                 <CardContent className="p-10 pt-8">
                     <div className="mb-6 flex items-center justify-between">
-                        <div className="bg-muted px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 border">
-                            전체 <span className="text-primary font-black">{totalCount}</span>건의 스크랩
+                        <div className="bg-muted px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border">
+                            전체 <span className="text-primary font-bold">{totalCount}</span>건의 스크랩
                         </div>
                     </div>
 
-                    <div className="rounded-xl border shadow-sm overflow-hidden bg-white">
+                    <div className="rounded-lg border shadow-sm overflow-hidden bg-white">
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
@@ -166,8 +166,8 @@ const ScrapListPage = () => {
                             >
                                 이전
                             </Button>
-                            <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-full">
-                                <span className="text-sm font-black text-primary">{pageNo}</span>
+                            <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-lg">
+                                <span className="text-sm font-bold text-primary">{pageNo}</span>
                                 <span className="text-sm font-bold text-muted-foreground">/</span>
                                 <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
                             </div>

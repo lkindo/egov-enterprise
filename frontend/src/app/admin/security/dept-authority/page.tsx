@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -97,8 +97,8 @@ export default function DeptAuthorityPage() {
  header: '정책 프로파일 ID',
  accessor: (item: AuthorInfo) => (
  <div className="flex flex-col gap-0.5">
- <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
- <span className="font-mono text-xs font-black text-primary tracking-widest uppercase">{item.authorCode}</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
+ <span className="font-mono text-xs font-bold text-primary tracking-widest uppercase">{item.authorCode}</span>
  </div>
  ),
  className: 'w-48'
@@ -107,8 +107,8 @@ export default function DeptAuthorityPage() {
  header: '권한 아키텍처 명칭',
  accessor: (item: AuthorInfo) => (
  <div className="flex flex-col gap-0.5 py-2">
- <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
- <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authorDc || '규정 명세 없음'}</span>
+ <span className="font-bold text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authorDc || '규정 명세 없음'}</span>
  </div>
  )
  },
@@ -126,7 +126,7 @@ export default function DeptAuthorityPage() {
  setSelectedAuthorCode(item.authorCode);
  }}
  className={cn(
- "relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-500 outline-none border-2",
+ "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
  isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
  )}
  >
@@ -170,13 +170,13 @@ export default function DeptAuthorityPage() {
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleSave}
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
  <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> 정책 마스터 배포
  </Button>
@@ -200,7 +200,7 @@ export default function DeptAuthorityPage() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
  <Input
  placeholder="부서명 검색..."
- className="pl-12 h-14 bg-slate-50/50 border-none rounded-xl text-sm font-black tracking-tight shadow-inner"
+ className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />
@@ -211,7 +211,7 @@ export default function DeptAuthorityPage() {
  {filteredDepts.length === 0 ? (
  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center space-y-4">
  <Users size={48} className="mx-auto opacity-10 scale-125" />
- <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Resource_Not_Found</p>
+ <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.4em]">Resource_Not_Found</p>
  </motion.div>
  ) : (
  filteredDepts.map((d, idx) => (
@@ -225,7 +225,7 @@ export default function DeptAuthorityPage() {
  setSelectedAuthorCode(null);
  }}
  className={cn(
- "group flex items-center justify-between p-6 w-full rounded-xl border-2 transition-all duration-300 relative overflow-hidden",
+ "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
  selectedDept === d.orgnztId
  ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
  : "bg-white border-slate-50 hover:border-slate-200"
@@ -233,18 +233,18 @@ export default function DeptAuthorityPage() {
  >
  <div className="flex items-center gap-4 relative z-10">
  <div className={cn(
- "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
+ "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
  selectedDept === d.orgnztId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
  )}>
  <Users size={20} />
  </div>
  <div className="flex flex-col text-left">
  <span className={cn(
- "text-xs font-black tracking-tighter leading-none mb-1",
+ "text-xs font-bold tracking-tighter leading-none mb-1",
  selectedDept === d.orgnztId ? "text-white" : "text-slate-900"
  )}>{d.orgnztNm}</span>
  <span className={cn(
- "text-[10px] font-mono font-bold tracking-widest",
+ "text-xs font-mono font-bold tracking-widest",
  selectedDept === d.orgnztId ? "text-white/30" : "text-slate-300"
  )}>{d.orgnztId}</span>
  </div>
@@ -280,12 +280,12 @@ export default function DeptAuthorityPage() {
  animate={{ opacity: 1 }} 
  className="h-full min-h-[600px] flex flex-col items-center justify-center text-center p-12 group select-none"
  >
- <div className="w-24 h-24 rounded-xl bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
+ <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
  <Key size={56} className="opacity-20" />
  </div>
  <div className="space-y-4">
- <h3 className="text-3xl font-black text-slate-200 uppercase tracking-tighter ">Selection_Required</h3>
- <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">식별된 부서의 보안 거버넌스 구성을 위해 좌측 리스트를 프로브하십시오</p>
+ <h3 className="text-3xl font-bold text-slate-200 uppercase tracking-tighter ">Selection_Required</h3>
+ <p className="text-xs font-bold text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">식별된 부서의 보안 거버넌스 구성을 위해 좌측 리스트를 프로브하십시오</p>
  </div>
  </motion.div>
  ) : (
@@ -294,24 +294,24 @@ export default function DeptAuthorityPage() {
  animate={{ opacity: 1, y: 0 }} 
  className="space-y-8"
  >
- <div className="p-10 bg-slate-900 rounded-xl text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
+ <div className="p-10 bg-slate-900 rounded-lg text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Database size={160} className="text-primary" />
  </div>
- <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner relative z-10">
+ <div className="w-20 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 shadow-inner relative z-10">
  <Building2 size={36} className="text-primary" />
  </div>
  <div className="relative z-10 space-y-2">
- <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
+ <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
  <div className="flex items-baseline gap-3">
- <h4 className="text-3xl font-black tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
- <span className="text-xs font-black text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
+ <h4 className="text-3xl font-bold tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
+ <span className="text-xs font-bold text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
  </div>
- <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 구성원에게 전역 정책 설정을 시작할 수 있는 상태입니다.</p>
+ <p className="text-xs font-bold text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 구성원에게 전역 정책 설정을 시작할 수 있는 상태입니다.</p>
  </div>
  </div>
 
- <div className="min-h-[500px] bg-white rounded-xl border-2 border-slate-50 p-4">
+ <div className="min-h-[500px] bg-white rounded-lg border-2 border-slate-50 p-4">
  <StandardDataTable
  columns={columns}
  data={roles}
@@ -323,15 +323,15 @@ export default function DeptAuthorityPage() {
  />
  </div>
 
- <div className="p-8 flex items-center gap-6 rounded-xl bg-slate-50 border-2 border-dashed border-slate-100">
- <div className="w-12 h-12 bg-white rounded-xl shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
+ <div className="p-8 flex items-center gap-6 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100">
+ <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
  <ShieldAlert size={24} className="text-rose-500" />
  </div>
  <div className="space-y-1">
- <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
- 전역 정책 강제 배포(Batch Deployment) 시 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black ">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
+ <p className="text-xs font-bold text-slate-800 tracking-tight leading-relaxed">
+ 전역 정책 강제 배포(Batch Deployment) 시 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-bold ">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
  </p>
- <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재설정 주의</span>
+ <span className="text-xs font-bold text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재설정 주의</span>
  </div>
  </div>
  </motion.div>

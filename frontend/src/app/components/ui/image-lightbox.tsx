@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import { X, ZoomIn, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
  <div className="absolute top-4 right-4 flex gap-4">
  <button
  onClick={onClose}
- className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+ className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
  >
  <X size={24} />
  </button>

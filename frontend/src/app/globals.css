@@ -222,7 +222,7 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-primary/20 rounded-full hover:bg-primary/40 transition-colors;
+    @apply bg-primary/20 rounded-lg hover:bg-primary/40 transition-colors;
   }
 
   .surface-sunken { background-color: hsl(var(--surface-sunken)); }
@@ -249,7 +249,7 @@
   }
 
   .hub-badge-status {
-    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-full text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-widest uppercase;
+    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-lg text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-widest uppercase;
   }
 
   .hub-bento-card {
@@ -275,15 +275,15 @@
   }
 
   .hub-table-container {
-    @apply rounded-xl border border-slate-200/60 overflow-hidden bg-white/80 dark:bg-slate-900/80 dark:border-border/40 shadow-sm transition-all duration-500;
+    @apply rounded-lg border border-slate-200/60 overflow-hidden bg-white/80 dark:bg-slate-900/80 dark:border-border/40 shadow-sm transition-all duration-500;
   }
 
   .hub-card-premium {
-    @apply rounded-xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
+    @apply rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
   }
 
   .hub-card-dark {
-    @apply rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
+    @apply rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
   }
 
   /* --- Premium Animations --- */
@@ -297,12 +297,12 @@
 
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
-     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
+     @apply text-[length:var(--font-size-hub-subtitle)] font-bold tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
      /* Italics removed, wide tracking preserved */
   }
 
   .hub-tech-label {
-    @apply font-mono font-black tracking-[0.3em] uppercase;
+    @apply font-mono font-bold tracking-[0.3em] uppercase;
     display: inline-flex;
     items-center: center;
     gap: 0.5em;

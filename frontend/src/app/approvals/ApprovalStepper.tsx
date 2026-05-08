@@ -25,11 +25,11 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
     <div className="w-full py-12 px-4">
       <div className="relative flex justify-between items-start max-w-5xl mx-auto">
         {/* Background Connection Line */}
-        <div className="absolute top-6 left-0 w-full h-[3px] bg-slate-100 dark:bg-slate-800 rounded-full -z-10" />
+        <div className="absolute top-6 left-0 w-full h-[3px] bg-slate-100 dark:bg-slate-800 rounded-lg -z-10" />
         
         {/* Active Progress Line */}
         <motion.div 
-          className="absolute top-6 left-0 h-[3px] bg-gradient-to-r from-primary to-hub-purple rounded-full -z-10"
+          className="absolute top-6 left-0 h-[3px] bg-gradient-to-r from-primary to-hub-purple rounded-lg -z-10"
           initial={{ width: 0 }}
           animate={{ width: `${progressPercentage}%` }}
           transition={{ duration: 0.8, ease: "circOut" }}
@@ -49,7 +49,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                   {isCurrent && (
                     <motion.div
                       layoutId="active-ring"
-                      className="absolute w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20"
+                      className="absolute w-16 h-11 rounded-lg bg-primary/10 border-2 border-primary/20"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1.1, opacity: 1 }}
                       exit={{ scale: 0.8, opacity: 0 }}
@@ -84,24 +84,24 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                 transition={{ delay: idx * 0.1 }}
               >
                 <p className={cn(
-                  "text-[10px] font-black tracking-[0.2em] uppercase",
+                  "text-xs font-bold tracking-[0.2em] uppercase",
                   isCurrent ? "text-primary" : "text-muted-foreground"
                 )}>
                   STEP {idx + 1}
                 </p>
                 <h4 className={cn(
-                  "text-sm font-black tracking-tight",
+                  "text-sm font-bold tracking-tight",
                   isCurrent ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"
                 )}>
                   {step.label}
                 </h4>
                 <div className="flex flex-col items-center">
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                     <User size={10} className="opacity-50" />
                     {step.user}
                   </span>
                   {step.date && (
-                    <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1">
                       {step.date}
                     </span>
                   )}
@@ -114,9 +114,9 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute -top-8 px-3 py-1 bg-primary rounded-full shadow-lg shadow-primary/20"
+                    className="absolute -top-8 px-3 py-1 bg-primary rounded-lg shadow-lg shadow-primary/20"
                   >
-                    <span className="text-[9px] font-black text-white tracking-widest uppercase">Active</span>
+                    <span className="text-xs font-bold text-white tracking-widest uppercase">Active</span>
                   </motion.div>
                 )}
               </AnimatePresence>

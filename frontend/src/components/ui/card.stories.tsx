@@ -1,4 +1,4 @@
-﻿import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
 
 /**
@@ -120,7 +120,7 @@ export const ProfileCard: Story = {
     <Card className="w-[350px]">
       <CardHeader>
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold">
+          <div className="w-16 h-11 rounded-lg bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold">
             JD
           </div>
           <div>

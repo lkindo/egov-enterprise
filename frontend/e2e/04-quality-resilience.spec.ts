@@ -101,7 +101,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
             expect(accessibilityScanResults.violations).toEqual([]);
         });
 
-        test.skip('Visual Regression Baseline', async ({ page }) => {
+        test('Visual Regression Baseline', async ({ page }) => {
             await page.goto('/admin');
             // Wait for charts to animate
             await page.waitForTimeout(3000);

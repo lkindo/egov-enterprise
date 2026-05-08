@@ -41,10 +41,10 @@ export function StandardAdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-3">
                <div className="flex -space-x-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 animate-pulse" />
+                    <div key={i} className="w-7 h-7 rounded-lg border-2 border-white dark:border-slate-950 bg-slate-200 animate-pulse" />
                   ))}
                </div>
-               <span className="text-[10px] font-black text-slate-400 tracking-tight uppercase">Current Session Active</span>
+               <span className="text-xs font-bold text-slate-400 tracking-tight uppercase">Current Session Active</span>
             </div>
           </div>
 
@@ -62,8 +62,8 @@ export function StandardAdminLayout({ children }: { children: React.ReactNode })
                 {/* Hub 2.0 Standard Container Wrapper */}
                 <div className="relative">
                    {/* Background Decorative Mesh (Subtle) */}
-                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-                   <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-lg blur-3xl pointer-events-none" />
+                   <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/5 rounded-lg blur-3xl pointer-events-none" />
                    
                    {/* Actual Page Content */}
                    {children}

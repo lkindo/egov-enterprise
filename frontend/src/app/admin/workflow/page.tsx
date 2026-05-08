@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import {
@@ -40,12 +40,12 @@ export default function WorkflowPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
                             <GitBranch size={18} />
                         </div>
-                        <span className="text-sm font-black text-primary tracking-tight">워크플로우 엔진</span>
+                        <span className="text-sm font-bold text-primary tracking-tight">워크플로우 엔진</span>
                     </div>
-                    <h1 className="text-3xl font-black tracking-tighter text-foreground ">
+                    <h1 className="text-3xl font-bold tracking-tighter text-foreground ">
                         Process <span className="text-primary ">Studio</span>
                     </h1>
                     <p className="text-muted-foreground font-bold text-sm max-w-lg">
@@ -54,10 +54,10 @@ export default function WorkflowPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-muted rounded-full font-black text-sm tracking-tight hover:bg-muted/80 transition-all">
+                    <button className="flex items-center gap-2 px-6 py-3 bg-muted rounded-lg font-bold text-sm tracking-tight hover:bg-muted/80 transition-all">
                         <History size={16} /> 히스토리
                     </button>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl hover:bg-primary/90 transition-all">
+                    <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-bold text-sm tracking-tight shadow-xl hover:bg-primary/90 transition-all">
                         <Plus size={16} /> 신규 워크플로우
                     </button>
                 </div>
@@ -69,18 +69,18 @@ export default function WorkflowPage() {
                     <div className="flex items-center justify-between px-6">
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-black text-foreground">워크플로우:</span>
+                                <span className="text-sm font-bold text-foreground">워크플로우:</span>
                                 <span className="text-sm font-bold text-muted-foreground ">연차/휴가 결재 프로세스_v1.2</span>
                             </div>
                             <div className="h-4 w-px bg-muted" />
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                <span className="text-[10px] font-black text-muted-foreground ">활성 상태</span>
+                                <div className="w-2 h-2 rounded-lg bg-emerald-500" />
+                                <span className="text-xs font-bold text-muted-foreground ">활성 상태</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button className="p-2 hover:bg-muted rounded-full transition-colors"><Settings size={14} /></button>
-                            <button className="p-2 hover:bg-muted rounded-full transition-colors"><Search size={14} /></button>
+                            <button className="p-2 hover:bg-muted rounded-lg transition-colors"><Settings size={14} /></button>
+                            <button className="p-2 hover:bg-muted rounded-lg transition-colors"><Search size={14} /></button>
                         </div>
                     </div>
 
@@ -93,56 +93,56 @@ export default function WorkflowPage() {
 
                 {/* 3. Detail Sidebar */}
                 <div className="space-y-6">
-                    <div className="p-8 border rounded-xl bg-card shadow-lg space-y-8">
+                    <div className="p-8 border rounded-lg bg-card shadow-lg space-y-8">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black text-foreground tracking-tight">단계 상세 정보</h3>
-                            <button className="p-2 hover:bg-muted rounded-full"><MoreHorizontal size={14} /></button>
+                            <h3 className="text-sm font-bold text-foreground tracking-tight">단계 상세 정보</h3>
+                            <button className="p-2 hover:bg-muted rounded-lg"><MoreHorizontal size={14} /></button>
                         </div>
 
                         {selectedNode ? (
                             <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
                                 <div className="space-y-4">
                                     <div className={cn(
-                                        "w-14 h-14 rounded-xl flex items-center justify-center",
+                                        "w-14 h-11 rounded-lg flex items-center justify-center",
                                         selectedNode.status === 'current' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                                     )}>
                                         {selectedNode.status === 'completed' ? <CheckCircle2 size={30} /> : <Clock size={30} />}
                                     </div>
                                     <div>
-                                        <h4 className="text-xl font-black tracking-tight">{selectedNode.label}</h4>
-                                        <p className="text-[10px] font-black text-muted-foreground mt-1 tracking-tight">{selectedNode.id} / {selectedNode.type}</p>
+                                        <h4 className="text-xl font-bold tracking-tight">{selectedNode.label}</h4>
+                                        <p className="text-xs font-bold text-muted-foreground mt-1 tracking-tight">{selectedNode.id} / {selectedNode.type}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">현재 담당자</span>
-                                        <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-white/5">
-                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm ">
+                                        <span className="text-xs font-bold text-muted-foreground tracking-[0.2em]">현재 담당자</span>
+                                        <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-white/5">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm ">
                                                 {selectedNode.assignee?.charAt(0)}
                                             </div>
-                                            <span className="text-sm font-black">{selectedNode.assignee || '미정'}</span>
+                                            <span className="text-sm font-bold">{selectedNode.assignee || '미정'}</span>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">처리 로그</span>
+                                        <span className="text-xs font-bold text-muted-foreground tracking-[0.2em]">처리 로그</span>
                                         <div className="space-y-4 border-l-2 border-muted ml-2 pl-6 pt-2">
                                             <div className="relative">
-                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-background" />
-                                                <p className="text-sm font-black">신청서 수신 완료</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold ">2026-02-22 14:20:01</p>
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-emerald-500 border-4 border-background" />
+                                                <p className="text-sm font-bold">신청서 수신 완료</p>
+                                                <p className="text-xs text-muted-foreground font-bold ">2026-02-22 14:20:01</p>
                                             </div>
                                             <div className="relative opacity-50">
-                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-muted border-4 border-background" />
-                                                <p className="text-sm font-black">대기 열 갱신</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold ">대기 중...</p>
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-muted border-4 border-background" />
+                                                <p className="text-sm font-bold">대기 열 갱신</p>
+                                                <p className="text-xs text-muted-foreground font-bold ">대기 중...</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <button className="w-full py-5 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                                <button className="w-full py-5 bg-primary text-white rounded-lg font-bold text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
                                     승인 처리하기
                                 </button>
                             </div>

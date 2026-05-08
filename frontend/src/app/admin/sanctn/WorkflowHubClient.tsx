@@ -54,19 +54,19 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   {/* --- Header --- */}
   <div className="flex items-center justify-between px-4">
   <div className="flex items-center gap-4">
-  <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center shadow-2xl rotate-3">
+  <div className="w-14 h-11 bg-slate-900 rounded-lg flex items-center justify-center shadow-2xl rotate-3">
   <CheckSquare size={28} className="text-white" />
   </div>
   <div>
-  <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
+  <h2 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none">
   전자결재 워크플로우 허브
   </h2>
-  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
+  <p className="text-xs font-bold text-slate-400 tracking-[0.3em] mt-2 ">
   통합 결재 및 감사 관리 센터
   </p>
   </div>
   </div>
-  <Button className="h-14 px-8 rounded-xl bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
+  <Button className="h-11 px-8 rounded-lg bg-primary text-white font-bold tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
   <Zap size={20} /> 워크플로우 배포
   </Button>
   </div>
@@ -75,9 +75,9 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   
   {/* --- Left Column: Navigation (20%) --- */}
   <div className="col-span-12 lg:col-span-3 space-y-6">
-  <Card className="rounded-xl border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
+  <Card className="rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
   <CardHeader className="bg-slate-50/50 p-8 border-b">
-  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2">
+  <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.3em] flex items-center gap-2">
   <Workflow size={14} className="text-primary" /> 코어 엔진 모듈 관리 </CardTitle>
   </CardHeader>
   <CardContent className="p-4 space-y-2">
@@ -88,17 +88,17 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   </Card>
 
   {/* Engine Status */}
-  <Card className="rounded-xl border-0 bg-slate-900 text-white shadow-2xl p-8 relative overflow-hidden">
+  <Card className="rounded-lg border-0 bg-slate-900 text-white shadow-2xl p-8 relative overflow-hidden">
   <div className="absolute top-0 right-0 p-4 opacity-10">
   <Workflow size={100} />
   </div>
   <div className="relative z-10 space-y-4">
-  <div className="flex items-center gap-2 text-[9px] font-black text-emerald-400 tracking-tight animate-pulse">
-  <div className="w-2 h-2 rounded-full bg-emerald-400" /> Engine Healthy
+  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-tight animate-pulse">
+  <div className="w-2 h-2 rounded-lg bg-emerald-400" /> Engine Healthy
   </div>
   <div className="space-y-1">
-  <h4 className="text-2xl font-black tracking-tighter ">99.9% Uptime</h4>
-  <p className="text-[10px] text-white/40 font-bold tracking-tight leading-relaxed">Cluster: SANCTN-NODE-01</p>
+  <h4 className="text-2xl font-bold tracking-tighter ">99.9% Uptime</h4>
+  <p className="text-xs text-white/40 font-bold tracking-tight leading-relaxed">Cluster: SANCTN-NODE-01</p>
   </div>
   </div>
   </Card>
@@ -117,17 +117,17 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
         >
           {/* Center Column: Resource List */}
           <div className="lg:col-span-4 h-full min-h-[700px]">
-            <Card className="h-full rounded-xl border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
+            <Card className="h-full rounded-lg border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50/50 border-b p-8 space-y-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] ">
+                  <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.3em] ">
                     결재 양식 인벤토리
                   </CardTitle>
-                  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-xl"><Plus size={20} /></Button>
+                  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-lg"><Plus size={20} /></Button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-                  <Input className="pl-9 h-11 bg-white border-slate-100 rounded-xl text-sm font-bold" placeholder="검색..." />
+                  <Input className="pl-9 h-11 bg-white border-slate-100 rounded-lg text-sm font-bold" placeholder="검색..." />
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -136,7 +136,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                     key={form.id}
                     onClick={() => setSelectedFormId(form.id)}
                     className={cn(
-                      "group p-6 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between",
+                      "group p-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between",
                       selectedFormId === form.id 
                       ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
                       : "bg-white border-transparent hover:border-slate-50 text-slate-600"
@@ -145,20 +145,20 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                     <div className="space-y-1 max-w-[70%]">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={cn(
-                          "w-1.5 h-1.5 rounded-full",
+                          "w-1.5 h-1.5 rounded-lg",
                           form.status === '활성' ? "bg-emerald-400 animate-pulse" : 
                           form.status === '초안' ? "bg-amber-400" : "bg-rose-400"
                         )} />
-                        <span className={cn("text-[8px] font-black tracking-tight opacity-40")}>{form.status}</span>
+                        <span className={cn("text-xs font-bold tracking-tight opacity-40")}>{form.status}</span>
                       </div>
-                      <h4 className={cn("text-sm font-black truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 ")}>
+                      <h4 className={cn("text-sm font-bold truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 ")}>
                         {form.title}
                       </h4>
-                      <p className={cn("text-[9px] font-bold opacity-40")}>ID: {form.id} ~ {form.version}</p>
+                      <p className={cn("text-xs font-bold opacity-40")}>ID: {form.id} ~ {form.version}</p>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-[10px] font-black opacity-40">사용량</span>
-                      <span className={cn("text-sm font-black", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
+                      <span className="text-xs font-bold opacity-40">사용량</span>
+                      <span className={cn("text-sm font-bold", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
                         {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'k' : form.usage}
                       </span>
                     </div>
@@ -171,15 +171,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
           {/* Right Column: Designer/Preview */}
           <div className="lg:col-span-5 h-full min-h-[700px]">
             {selectedFormId ? (
-              <Card className="h-full rounded-xl border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden relative">
+              <Card className="h-full rounded-lg border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden relative">
                 <CardHeader className="bg-slate-50/50 p-10 border-b flex flex-row items-center justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 ">
+                    <h3 className="text-xs font-bold text-slate-400 tracking-[0.3em] flex items-center gap-2 ">
                       <Layers size={14} className="text-primary" /> 시각화 로직 설계기
                     </h3>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter ">{forms.find(f => f.id === selectedFormId)?.title}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tighter ">{forms.find(f => f.id === selectedFormId)?.title}</h2>
                   </div>
-                  <Button variant="ghost" size="icon" className="rounded-xl border border-slate-100"><MoreHorizontal size={20} /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-lg border border-slate-100"><MoreHorizontal size={20} /></Button>
                 </CardHeader>
                 
                 <CardContent className="flex-1 p-10 relative overflow-hidden bg-slate-50/50 flex items-center justify-center">
@@ -196,15 +196,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                 </CardContent>
 
                 <div className="p-10 border-t bg-white flex gap-4">
-                  <Button variant="outline" className="h-14 flex-1 rounded-xl font-black tracking-tight text-[10px] border-2 opacity-50">로직 수정</Button>
-                  <Button className="h-14 flex-[2] bg-slate-900 text-white rounded-xl font-black tracking-[0.3em] text-[10px] shadow-2xl shadow-slate-900/40">인스턴스 실행</Button>
+                  <Button variant="outline" className="h-11 flex-1 rounded-lg font-bold tracking-tight text-xs border-2 opacity-50">로직 수정</Button>
+                  <Button className="h-11 flex-[2] bg-slate-900 text-white rounded-lg font-bold tracking-[0.3em] text-xs shadow-2xl shadow-slate-900/40">인스턴스 실행</Button>
                 </div>
               </Card>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-white rounded-xl border-2 border-dashed border-slate-200">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-white rounded-lg border-2 border-dashed border-slate-200">
                 <GitBranch size={64} className="mb-8 rotate-45" />
-                <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">활성화된 워크플로우 없음</h3>
-                <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">로직 확인을 위해 양식을 선택하세요</p>
+                <h3 className="text-2xl font-bold text-slate-900 tracking-tighter ">활성화된 워크플로우 없음</h3>
+                <p className="text-xs font-bold text-slate-400 tracking-[0.5em] mt-2">로직 확인을 위해 양식을 선택하세요</p>
               </div>
             )}
           </div>
@@ -217,14 +217,14 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="h-full bg-white rounded-xl border-0 shadow-2xl p-10 ring-1 ring-slate-100 flex flex-col items-center justify-center text-center space-y-6"
+          className="h-full bg-white rounded-lg border-0 shadow-2xl p-10 ring-1 ring-slate-100 flex flex-col items-center justify-center text-center space-y-6"
         >
-          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
+          <div className="w-20 h-11 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-4">
             <GitBranch size={40} />
           </div>
-          <h3 className="text-3xl font-black text-slate-900 tracking-tighter">워크플로우 배포 관리</h3>
+          <h3 className="text-3xl font-bold text-slate-900 tracking-tighter">워크플로우 배포 관리</h3>
           <p className="text-slate-500 font-bold max-w-md mx-auto">현재 활성화된 워크플로우 인스턴스를 관리하고 배포 정책을 설정합니다.</p>
-          <Button className="h-14 px-10 rounded-xl font-black tracking-tight shadow-xl shadow-primary/20">새 워크플로우 생성</Button>
+          <Button className="h-11 px-10 rounded-lg font-bold tracking-tight shadow-xl shadow-primary/20">새 워크플로우 생성</Button>
         </motion.div>
       )}
 
@@ -255,42 +255,42 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
  <button 
  onClick={onClick}
  className={cn(
- "w-full group p-5 rounded-xl border-2 transition-all flex items-center gap-4",
+ "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-4",
  active 
  ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
  : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
  )}
  >
  <div className={cn(
- "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+ "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
  active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
  )}>
  {icon}
  </div>
- <span className="text-sm font-black tracking-tight ">{label}</span>
+ <span className="text-sm font-bold tracking-tight ">{label}</span>
  </button>
  );
 }
 
 function MonitorCard({ title, value, icon, status, description }: { title: string, value: string, icon: React.ReactNode, status: string, description: string }) {
   return (
-    <Card className="rounded-2xl border-0 bg-white shadow-xl hover:shadow-2xl transition-all p-8 space-y-6 ring-1 ring-slate-100 group">
+    <Card className="rounded-lg border-0 bg-white shadow-xl hover:shadow-2xl transition-all p-8 space-y-6 ring-1 ring-slate-100 group">
       <div className="flex items-center justify-between">
-        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-all">
+        <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-all">
           {icon}
         </div>
         <div className={cn(
-          "px-3 py-1 rounded-full text-[10px] font-black tracking-tight",
+          "px-3 py-1 rounded-lg text-xs font-bold tracking-tight",
           status === 'Healthy' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
         )}>
           {status}
         </div>
       </div>
       <div className="space-y-1">
-        <h4 className="text-[10px] font-black text-slate-400 tracking-[0.2em]">{title}</h4>
-        <div className="text-4xl font-black text-slate-900 tracking-tighter">{value}</div>
+        <h4 className="text-xs font-bold text-slate-400 tracking-[0.2em]">{title}</h4>
+        <div className="text-4xl font-bold text-slate-900 tracking-tighter">{value}</div>
       </div>
-      <p className="text-[11px] font-bold text-slate-500 leading-relaxed">{description}</p>
+      <p className="text-xs font-bold text-slate-500 leading-relaxed">{description}</p>
     </Card>
   );
 }
@@ -298,20 +298,20 @@ function MonitorCard({ title, value, icon, status, description }: { title: strin
 function WorkflowNode({ type, label, date, active = false }: any) {
  return (
  <div className={cn(
- "p-5 rounded-xl border-2 flex items-center gap-5 mx-10 transition-all",
+ "p-5 rounded-lg border-2 flex items-center gap-5 mx-10 transition-all",
  active ? "bg-white border-primary shadow-xl scale-105" : "bg-white border-transparent shadow-sm opacity-60"
  )}>
  <div className={cn(
- "w-10 h-10 rounded-xl flex items-center justify-center text-white",
+ "w-10 h-10 rounded-lg flex items-center justify-center text-white",
  type === 'START' ? "bg-slate-900" : type === 'END' ? "bg-emerald-500" : "bg-primary"
  )}>
  {type === 'START' ? <UserCheck size={18} /> : type === 'END' ? <ShieldCheck size={18} /> : <Zap size={18} />}
  </div>
  <div className="flex-1">
- <p className="text-[8px] font-black text-slate-400 tracking-tight">{date}</p>
- <h5 className="text-sm font-black tracking-tight text-slate-900">{label}</h5>
+ <p className="text-xs font-bold text-slate-400 tracking-tight">{date}</p>
+ <h5 className="text-sm font-bold tracking-tight text-slate-900">{label}</h5>
  </div>
- {active && <div className="w-2 h-2 rounded-full bg-primary animate-ping" />}
+ {active && <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />}
  </div>
  );
 }

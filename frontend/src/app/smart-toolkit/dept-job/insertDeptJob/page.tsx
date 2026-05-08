@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -53,11 +53,11 @@ const InsertDeptJobPage = () => {
               <Briefcase className="w-10 h-10 text-primary-foreground" />
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 bg-white/10 w-fit rounded-full border border-white/10 mx-auto md:mx-0">
+              <div className="flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 bg-white/10 w-fit rounded-lg border border-white/10 mx-auto md:mx-0">
                 <Activity className="w-3.5 h-3.5 text-primary-foreground animate-pulse" />
-                <span className="text-[10px] font-black tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
+                <span className="text-xs font-bold tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
               </div>
-              <CardTitle className="text-3xl font-black tracking-tighter leading-none ">
+              <CardTitle className="text-3xl font-bold tracking-tighter leading-none ">
                 Dispatch New Task
               </CardTitle>
               <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed mx-auto md:mx-0">
@@ -70,13 +70,13 @@ const InsertDeptJobPage = () => {
           <CardContent className="pt-24 pb-20 px-12 md:px-20 space-y-20">
             {/* Task Title */}
             <div className="space-y-6 group">
-              <Label htmlFor="deptJobNm" className="text-[10px] font-black tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-primary" /> Core Task Designation
+              <Label htmlFor="deptJobNm" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
+                <span className="w-2 h-2 rounded-lg bg-primary" /> Core Task Designation
               </Label>
               <Input
                 id="deptJobNm"
                 placeholder="수행해야 할 핵심 업무 제목을 입력하세요"
-                className="h-20 text-3xl font-black border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[0.1rem] px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
+                className="h-11 text-3xl font-bold border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[0.1rem] px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
                 value={formData.deptJobNm}
                 onChange={(e) => setFormData({ ...formData, deptJobNm: e.target.value })}
                 required
@@ -85,7 +85,7 @@ const InsertDeptJobPage = () => {
 
             {/* Priority Selection */}
             <div className="space-y-6 group">
-              <Label htmlFor="priort" className="text-[10px] font-black tracking-[0.3em] text-slate-400 flex items-center gap-3">
+              <Label htmlFor="priort" className="text-xs font-bold tracking-[0.3em] text-slate-400 flex items-center gap-3">
                 <AlertCircle className="w-4 h-4 text-primary" /> Strategic Priority Ranking
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -103,7 +103,7 @@ const InsertDeptJobPage = () => {
                       : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200'
                       }`}
                   >
-                    <div className={`text-sm font-black tracking-[0.2em] mb-1 ${formData.priort === p.value ? 'text-primary' : ''}`}>{p.label}</div>
+                    <div className={`text-sm font-bold tracking-[0.2em] mb-1 ${formData.priort === p.value ? 'text-primary' : ''}`}>{p.label}</div>
                     <div className="text-sm font-bold opacity-60 ">{p.desc}</div>
                   </button>
                 ))}
@@ -112,7 +112,7 @@ const InsertDeptJobPage = () => {
 
             {/* Task Description */}
             <div className="space-y-6 group">
-              <Label htmlFor="deptJobCn" className="text-[10px] font-black tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
+              <Label htmlFor="deptJobCn" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
                 <FileText className="w-4 h-4" /> Detailed Specifications
               </Label>
               <Textarea
@@ -131,7 +131,7 @@ const InsertDeptJobPage = () => {
                 <CheckCircle className="w-10 h-10 text-primary-foreground" />
               </div>
               <div className="space-y-1">
-                <p className="font-black text-2xl text-slate-900 tracking-tight ">유효성 검증 필요</p>
+                <p className="font-bold text-2xl text-slate-900 tracking-tight ">유효성 검증 필요</p>
                 <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
                   등록된 업무는 부서 전체 대시보드에 즉시 노출됩니다. 기입된 내용이 가이드라인을 준수하는지 확인해 주세요.
                 </p>
@@ -140,14 +140,14 @@ const InsertDeptJobPage = () => {
           </CardContent>
           <CardFooter className="flex flex-col md:flex-row justify-center gap-8 py-20 border-t border-slate-50 bg-slate-50/30 px-12 rounded-b-[3.5rem]">
             <Link href="/smart-toolkit/dept-job/selectDeptJobList">
-              <Button type="button" variant="ghost" className="h-20 px-16 font-black tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-[0.1rem] border-2 border-transparent hover:border-rose-50">
+              <Button type="button" variant="ghost" className="h-11 px-16 font-bold tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-[0.1rem] border-2 border-transparent hover:border-rose-50">
                 <ArrowLeft className="w-6 h-6 mr-4" /> 취소 및 돌아가기
               </Button>
             </Link>
-            <Button type="submit" className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-[0.1rem]" disabled={loading}>
+            <Button type="submit" className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-[0.1rem]" disabled={loading}>
               {loading ? (
                 <span className="flex items-center gap-3 animate-pulse">
-                  <div className="w-3 h-3 bg-white rounded-full" /> 배포 중...
+                  <div className="w-3 h-3 bg-white rounded-lg" /> 배포 중...
                 </span>
               ) : (
                 <>

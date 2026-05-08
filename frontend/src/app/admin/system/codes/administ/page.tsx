@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
@@ -35,13 +35,13 @@ export default async function AdministCodePage() {
       />
       
       <Suspense fallback={
-        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200 animate-pulse">
-            <div className="w-20 h-20 rounded-xl bg-slate-200/50 flex items-center justify-center">
+        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-lg border-2 border-dashed border-slate-200 animate-pulse">
+            <div className="w-20 h-11 rounded-lg bg-slate-200/50 flex items-center justify-center">
                 <Milestone size={40} className="text-slate-300" />
             </div>
             <div className="space-y-3 text-center">
-                <div className="h-4 w-48 bg-slate-200 rounded-full mx-auto" />
-                <div className="h-3 w-32 bg-slate-200/60 rounded-full mx-auto" />
+                <div className="h-4 w-48 bg-slate-200 rounded-lg mx-auto" />
+                <div className="h-3 w-32 bg-slate-200/60 rounded-lg mx-auto" />
             </div>
         </div>
       }>

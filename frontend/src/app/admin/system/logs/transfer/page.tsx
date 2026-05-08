@@ -32,7 +32,7 @@ const TransferLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: TransferLog) => (
-                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     {item.logId}
                 </div>
             ),
@@ -53,7 +53,7 @@ const TransferLogAdminPage = () => {
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
-                    <span className="text-xs font-black text-slate-600">{item.provdSysCode}</span>
+                    <span className="text-xs font-bold text-slate-600">{item.provdSysCode}</span>
                 </div>
             ),
             className: 'w-32'
@@ -62,7 +62,7 @@ const TransferLogAdminPage = () => {
             header: '요청시스템',
             accessor: (item: TransferLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-[10px] font-black rounded border border-sky-100">
+                    <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-xs font-bold rounded border border-sky-100">
                         {item.requstSysCode}
                     </code>
                 </div>
@@ -73,7 +73,7 @@ const TransferLogAdminPage = () => {
             header: '결과',
             accessor: (item: TransferLog) => (
                 <div className="flex justify-center">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase ${
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase ${
                         item.result === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'
                     }`}>
                         {item.result}

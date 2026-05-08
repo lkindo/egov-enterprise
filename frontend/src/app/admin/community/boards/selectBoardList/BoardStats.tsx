@@ -39,13 +39,13 @@ export function BoardStats() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* 트래픽 추이 */}
-      <Card className="lg:col-span-2 border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
+      <Card className="lg:col-span-2 border-none shadow-lg rounded-lg overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-8">
-          <CardTitle className="text-lg font-black flex items-center gap-2">
+          <CardTitle className="text-lg font-bold flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
             최근 7일 트래픽 추이
           </CardTitle>
-          <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">실시간</span>
+          <span className="text-xs font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">실시간</span>
         </CardHeader>
         <CardContent className="px-6 pb-6">
           <div className="h-[200px] w-full">
@@ -69,9 +69,9 @@ export function BoardStats() {
       </Card>
 
       {/* 작성자 분포 */}
-      <Card className="border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
+      <Card className="border-none shadow-lg rounded-lg overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="pb-2 pt-6 px-8">
-          <CardTitle className="text-lg font-black flex items-center gap-2">
+          <CardTitle className="text-lg font-bold flex items-center gap-2">
             <Users size={18} className="text-primary" />
             작성자 분포
           </CardTitle>
@@ -100,8 +100,8 @@ export function BoardStats() {
           <div className="grid grid-cols-2 gap-3 w-full mt-2">
             {authorData.map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-[11px] font-bold text-muted-foreground">{entry.name}</span>
+                <div className="w-2 h-2 rounded-lg" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="text-xs font-bold text-muted-foreground">{entry.name}</span>
               </div>
             ))}
           </div>

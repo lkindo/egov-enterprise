@@ -32,7 +32,7 @@ const WebLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: WebLog) => (
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
                     {item.webLogId}
                 </div>
@@ -52,7 +52,7 @@ const WebLogAdminPage = () => {
             header: 'Method',
             accessor: (item: WebLog) => (
                 <div className="flex justify-start">
-                    <code className={`px-2 py-1 rounded border font-mono text-[10px] font-black ${
+                    <code className={`px-2 py-1 rounded border font-mono text-xs font-bold ${
                         item.method === 'GET' ? 'bg-sky-50 text-sky-600 border-sky-100' :
                         item.method === 'POST' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         item.method === 'PUT' ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -70,7 +70,7 @@ const WebLogAdminPage = () => {
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
                     <span className="text-xs tabular-nums">{item.processTime}</span>
-                    <span className="text-[10px] text-slate-400">ms</span>
+                    <span className="text-xs text-slate-400">ms</span>
                 </div>
             ),
             className: 'w-28'

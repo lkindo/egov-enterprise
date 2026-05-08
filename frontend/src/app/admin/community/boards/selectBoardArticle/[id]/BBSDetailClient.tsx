@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -73,16 +73,16 @@ const BBSDetailClient = () => {
         ]}
       />
 
-      <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-xl bg-card ring-1 ring-primary/5">
+      <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-lg bg-card ring-1 ring-primary/5">
         <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
           {/* Background Accents */}
-          <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-lg blur-[100px]" />
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
             <div className="space-y-6 text-center md:text-left">
               <div className={cn(
-                "flex items-center gap-3 px-5 py-2 w-fit rounded-full border backdrop-blur-xl mx-auto md:mx-0",
+                "flex items-center gap-3 px-5 py-2 w-fit rounded-lg border backdrop-blur-xl mx-auto md:mx-0",
                 tmplatId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : 
                 tmplatId === 'TMPLT_HUB' ? "bg-indigo-500/20 border-indigo-500/30" :
                 tmplatId === 'TMPLT_FAQ' ? "bg-purple-500/20 border-purple-500/30" :
@@ -101,7 +101,7 @@ const BBSDetailClient = () => {
                   tmplatId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
                   "text-primary"
                 )} />
-                <span className="text-[10px] font-black tracking-[0.3em] text-white">
+                <span className="text-xs font-bold tracking-[0.3em] text-white">
                   {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
                   {tmplatId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
                    tmplatId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
@@ -111,7 +111,7 @@ const BBSDetailClient = () => {
                    tmplatId === 'TMPLT_WIKI' ? 'WIKI_ARTICLE' : 'BOARD'}
                 </span>
               </div>
-              <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
+              <CardTitle className="text-3xl md:text-3xl font-bold tracking-tighter leading-tight ">
                 {pathname?.includes('insertBoardArticle') ? '새로운 통찰을' : '내용을 수정하여'} <br />
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
@@ -122,10 +122,10 @@ const BBSDetailClient = () => {
               </p>
             </div>
             <div className="hidden lg:block relative">
-              <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
+              <div className="w-32 h-32 rounded-lg bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
                 <MessageSquare className="w-12 h-12 text-white/40" />
               </div>
-              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
+              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-lg bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
                 <Send size={20} className="text-white ml-1" />
               </div>
             </div>
@@ -139,19 +139,19 @@ const BBSDetailClient = () => {
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nttSj" className={cn(
-                  "text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
+                  "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
                   tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
                   <Type className="w-4 h-4" /> 01. {tmplatId === 'TMPLT_QNA' ? 'QUESTION TITLE' : 'POST TITLE'}
                 </Label>
-                <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
+                <span className="text-xs font-bold text-primary/40 tracking-tight">필수</span>
               </div>
               <Input
                 id="nttSj"
                 name="nttSj"
                 placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
-                  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-xl px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
+                  "h-11 text-3xl font-bold border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
                   tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                   state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
                 )}
@@ -161,7 +161,7 @@ const BBSDetailClient = () => {
 
             {tmplatId === 'TMPLT_QNA' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <Label className="text-[11px] font-black tracking-[0.3em] text-amber-500 flex items-center gap-3">
+                <Label className="text-xs font-bold tracking-[0.3em] text-amber-500 flex items-center gap-3">
                   <ShieldCheck className="w-4 h-4" /> CATEGORY_SELECT
                 </Label>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -172,7 +172,7 @@ const BBSDetailClient = () => {
                       type="button" 
                       onClick={() => setSelectedCategory(cat)}
                       className={cn(
-                        "h-14 font-black text-[10px] tracking-widest border-2 transition-all rounded-xl",
+                        "h-11 font-bold text-xs tracking-widest border-2 transition-all rounded-lg",
                         selectedCategory === cat ? "bg-amber-500 border-amber-500 text-white" : "border-amber-100 hover:border-amber-500 hover:bg-amber-50 text-amber-500"
                       )}
                     >
@@ -184,13 +184,13 @@ const BBSDetailClient = () => {
             )}
 
             {tmplatId === 'TMPLT_CALENDAR' && (
-              <div className="p-10 bg-cyan-900/10 border-2 border-cyan-500/20 rounded-xl flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
-                 <div className="w-16 h-16 bg-cyan-500 rounded-lg flex items-center justify-center text-white shadow-xl shadow-cyan-500/20 shrink-0">
+              <div className="p-10 bg-cyan-900/10 border-2 border-cyan-500/20 rounded-lg flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
+                 <div className="w-16 h-11 bg-cyan-500 rounded-lg flex items-center justify-center text-white shadow-xl shadow-cyan-500/20 shrink-0">
                     <Calendar size={32} />
                  </div>
                  <div className="flex-1 space-y-4">
                     <div className="space-y-1">
-                        <p className="text-sm font-black text-cyan-700 uppercase tracking-tighter">Event Schedule</p>
+                        <p className="text-sm font-bold text-cyan-700 uppercase tracking-tighter">Event Schedule</p>
                         <p className="text-xs text-cyan-600/70 font-medium">행사가 진행될 정확한 일시를 지정해 주세요.</p>
                     </div>
                     <Input 
@@ -207,12 +207,12 @@ const BBSDetailClient = () => {
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nttCn" className={cn(
-                  "text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
+                  "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
                   tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
                   <FileText className="w-4 h-4" /> 02. {tmplatId === 'TMPLT_QNA' ? 'DETAIL QUESTION' : 'CONTENT BODY'}
                 </Label>
-                <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
+                <span className="text-xs font-bold text-primary/40 tracking-tight">필수</span>
               </div>
               <div className="relative">
                 <Textarea
@@ -224,24 +224,24 @@ const BBSDetailClient = () => {
                       : "전달하고자 하는 내용을 상세히 작성하세요..."
                   }
                   className={cn(
-                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-xl bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
+                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
                     tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                     state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
                   )}
                   required
                 />
-                <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-[10px] font-black text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-full border border-primary/5 backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {tmplatId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
+                <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-xs font-bold text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-lg border border-primary/5 backdrop-blur-sm">
+                  <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-pulse" /> {tmplatId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
                 </div>
               </div>
             </div>
 
             {/* 파일 첨부 영역 */}
             <div className="space-y-6 group">
-              <Label className="text-[11px] font-black tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+              <Label className="text-xs font-bold tracking-[0.3em] text-muted-foreground flex items-center gap-3">
                 <Paperclip className="w-4 h-4" /> 03. 첨부 파일
               </Label>
-              <div className="p-8 rounded-xl border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
+              <div className="p-8 rounded-lg border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
                 <StandardFileUploader
                   onFilesChange={setFiles}
                   maxFiles={5}
@@ -251,13 +251,13 @@ const BBSDetailClient = () => {
             </div>
 
             {/* 보안 공지 */}
-            <div className="p-10 bg-slate-900 rounded-xl flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
-              <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
-              <div className="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
+            <div className="p-10 bg-slate-900 rounded-lg flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
+              <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-lg blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
+              <div className="w-20 h-11 bg-slate-800 rounded-lg border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
               <div className="space-y-3 relative z-10 text-center md:text-left">
-                <p className="font-black text-2xl text-white tracking-tight ">보안 준수 사항</p>
+                <p className="font-bold text-2xl text-white tracking-tight ">보안 준수 사항</p>
                 <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
                   작성하신 정보는 프로젝트 자산으로 등록됩니다. <br />민감한 개인정보나 기밀 정보가 포함되지 않도록 주의해 주세요.
                 </p>
@@ -270,18 +270,18 @@ const BBSDetailClient = () => {
               type="button"
               variant="ghost"
               onClick={() => router.back()}
-              className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-xl active:scale-95 border-2 border-transparent"
+              className="h-11 px-16 font-bold tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-lg active:scale-95 border-2 border-transparent"
             >
               <ArrowLeft className="w-5 h-5 mr-4" /> 이전으로
             </Button>
             <Button
               type="submit"
-              className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-xl"
+              className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-lg"
               disabled={isPending}
             >
               {isPending ? (
                 <span className="flex items-center gap-3 animate-pulse">
-                  <div className="w-3 h-3 bg-white rounded-full" /> 처리 중...
+                  <div className="w-3 h-3 bg-white rounded-lg" /> 처리 중...
                 </span>
               ) : (
                 <>

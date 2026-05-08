@@ -35,7 +35,7 @@ export default function PolicyViewPage() {
   if (loading) {
     return (
       <div className="container mx-auto py-20 animate-in fade-in duration-700">
-        <Skeleton className="h-20 w-1/3 mb-10" />
+        <Skeleton className="h-11 w-1/3 mb-10" />
         <Skeleton className="h-[500px] w-full" />
       </div>
     );

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -33,7 +33,7 @@ const SystemLogAdminPage = () => {
         {
             header: '요청ID',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
                     {item.requstId}
                 </div>
@@ -62,7 +62,7 @@ const SystemLogAdminPage = () => {
             header: '메소드명',
             accessor: (item: SysLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
+                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-xs text-slate-600">
                         {item.methodNm}
                     </code>
                 </div>
@@ -74,7 +74,7 @@ const SystemLogAdminPage = () => {
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
                     <span className="text-xs">{item.processTime}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">ms</span>
+                    <span className="text-xs text-slate-400 font-medium">ms</span>
                 </div>
             ),
             className: 'w-24'
@@ -83,7 +83,7 @@ const SystemLogAdminPage = () => {
             header: '상태',
             accessor: (_item: SysLog) => (
                 <div className="flex items-center justify-center">
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
+                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
                 </div>
             ),
             className: 'w-24'
@@ -104,7 +104,7 @@ const SystemLogAdminPage = () => {
                 icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+                        <Button variant="outline" size="lg" className="h-12 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-2">
                             실시간 모니터링
                         </Button>
                     </div>

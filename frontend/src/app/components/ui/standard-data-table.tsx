@@ -117,7 +117,7 @@ const MobileCard = memo(function MobileCard({
       tabIndex={0}
       onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "text-left w-full p-6 rounded-xl border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "text-left w-full p-6 rounded-lg border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
       onClick={() => onRowClick?.(item)}
@@ -130,7 +130,7 @@ const MobileCard = memo(function MobileCard({
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="text-[10px] font-black text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
+            <span className="text-xs font-bold text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
               {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item?.[columns[0].accessor]}
             </div>
@@ -141,7 +141,7 @@ const MobileCard = memo(function MobileCard({
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
         {columns.slice(1, 5).map((column: any, idx: number) => (
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
-            <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
               {typeof column.accessor === 'function' ? column.accessor(item) : item?.[column.accessor]}
             </div>
@@ -208,7 +208,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
             placeholder={search.placeholder || "검색어 입력..."}
-            className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            className="h-12 pl-12 rounded-lg border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             aria-label="데이터 검색"
@@ -229,10 +229,10 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
             <div className="flex items-center gap-6 px-6 relative z-10">
               <div className="flex flex-col">
-                <span className="text-[9px] font-black opacity-40 tracking-[0.3em] uppercase">_ Selection_Active</span>
+                <span className="text-xs font-bold opacity-40 tracking-[0.3em] uppercase">_ Selection_Active</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-black text-primary">{selectedIds.size}</span>
-                  <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">items selected</span>
+                  <span className="text-xl font-bold text-primary">{selectedIds.size}</span>
+                  <span className="text-xs font-bold opacity-60 uppercase tracking-widest">items selected</span>
                 </div>
               </div>
               
@@ -243,7 +243,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   <Button
                     key={`bulk-action-${idx}`}
                     size="sm"
-                    className="h-12 px-6 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group"
+                    className="h-12 px-6 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group"
                     onClick={() => action.onClick(selectedItems)}
                   >
                     {action.icon && <span className="group-hover:scale-110 transition-transform">{action.icon}</span>}
@@ -258,7 +258,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                className="h-12 px-6 rounded-[var(--radius-hub-item)] text-[10px] font-black tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+                className="h-12 px-6 rounded-[var(--radius-hub-item)] text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
               >
                 Clear All
               </Button>
@@ -270,7 +270,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
         "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative",
-        isPremium ? "rounded-[var(--radius-hub-section)]" : "rounded-xl",
+        isPremium ? "rounded-[var(--radius-hub-section)]" : "rounded-lg",
         stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-hidden"
       )}>
         <div className="w-full">
@@ -291,12 +291,12 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-black text-slate-900 dark:text-slate-100 text-[10px] uppercase tracking-[0.25em] whitespace-nowrap",
+                    "px-6 py-5 font-bold text-slate-900 dark:text-slate-100 text-xs uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
                   )} scope="col">
                     <div className="flex items-center gap-2">
                       {column.header}
-                      <div className="w-1 h-1 bg-primary/30 rounded-full" />
+                      <div className="w-1 h-1 bg-primary/30 rounded-lg" />
                     </div>
                   </th>
                 ))}
@@ -309,7 +309,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     {enableSelection ? <td className="px-6 py-5 text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
                     {columns.map((_, j) => (
                       <td key={`loading-cell-${j}`} className="px-6 py-5">
-                        <div className="h-4 bg-muted/40 rounded-full w-3/4" />
+                        <div className="h-4 bg-muted/40 rounded-lg w-3/4" />
                       </td>
                     ))}
                   </tr>
@@ -352,14 +352,14 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       <div className="md:hidden space-y-5 px-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-xl" />
+            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-lg" />
           ))
         ) : error ? (
-          <div className="p-16 bg-card border-2 border-border/60 rounded-xl text-center shadow-inner">
+          <div className="p-16 bg-card border-2 border-border/60 rounded-lg text-center shadow-inner">
             <ErrorStateDisplay error={error} onRetry={onRetry} />
           </div>
         ) : (data || []).length === 0 ? (
-          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-xl text-center shadow-inner">
+          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-lg text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
           </div>
         ) : (
@@ -389,7 +389,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Button
             variant="outline"
             size="icon"
-            className="w-12 h-12 rounded-xl border-2"
+            className="w-12 h-12 rounded-lg border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
             aria-label="이전 페이지"
@@ -397,16 +397,16 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <ChevronLeft size={20} />
           </Button>
 
-          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
-            <span className="text-sm font-black">{pagination.currentPage}</span>
-            <span className="text-[10px] font-black text-slate-900 uppercase">of</span>
-            <span className="text-sm font-black text-slate-900">{pagination.totalPages}</span>
+          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-lg">
+            <span className="text-sm font-bold">{pagination.currentPage}</span>
+            <span className="text-xs font-bold text-slate-900 uppercase">of</span>
+            <span className="text-sm font-bold text-slate-900">{pagination.totalPages}</span>
           </div>
 
           <Button
             variant="outline"
             size="icon"
-            className="w-12 h-12 rounded-xl border-2"
+            className="w-12 h-12 rounded-lg border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
             aria-label="다음 페이지"
@@ -422,13 +422,13 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
-      <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 shadow-xl">
+      <div className="w-20 h-11 bg-rose-50 rounded-lg flex items-center justify-center mb-2 relative border-4 border-rose-100 shadow-xl">
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
-        <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
-          <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
+        <p className="text-xl font-bold text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
+        <div className="p-4 bg-rose-50/50 rounded-lg border border-rose-100 inline-block">
+          <p className="text-xs font-bold font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {(error as any)?.response?.data?.message || error.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
@@ -440,7 +440,7 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <Button
           variant="outline"
           size="lg"
-          className="rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
+          className="rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
           onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
@@ -454,14 +454,14 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
 function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
-      <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-2 relative">
+      <div className="w-20 h-11 bg-muted/30 rounded-lg flex items-center justify-center mb-2 relative">
         <Search size={40} className="text-muted-foreground/20" />
-        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-full flex items-center justify-center">
+        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-lg flex items-center justify-center">
           <List size={14} className="text-muted-foreground" />
         </div>
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
+        <p className="text-xl font-bold text-foreground tracking-tighter uppercase">{emptyMessage}</p>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
           시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
@@ -469,7 +469,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <Button
         variant="outline"
         size="lg"
-        className="mt-6 rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
+        className="mt-6 rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />

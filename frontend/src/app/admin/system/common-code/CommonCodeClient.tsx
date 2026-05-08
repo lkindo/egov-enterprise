@@ -1,4 +1,4 @@
-﻿import {
+import {
  DndContext,
  closestCenter,
  KeyboardSensor,
@@ -133,7 +133,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  {...listeners}
  onClick={onClick}
  className={cn(
- "w-full flex items-center justify-between p-3 rounded-xl transition-all relative overflow-hidden",
+ "w-full flex items-center justify-between p-3 rounded-lg transition-all relative overflow-hidden",
  isCluster 
  ? "bg-slate-50/50 hover:bg-slate-100/50 border border-transparent" 
  : "hover:bg-slate-50 border border-transparent",
@@ -153,13 +153,13 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  </div>
  <div className="flex flex-col truncate items-start">
  <span className={cn(
- "text-[11px] font-black truncate leading-tight uppercase tracking-tight",
+ "text-xs font-bold truncate leading-tight uppercase tracking-tight",
  isSelected ? "text-white" : "text-slate-900"
  )}>
  {node.name}
  </span>
  <span className={cn(
- "text-[9px] font-mono font-bold tracking-tighter opacity-60",
+ "text-xs font-mono font-bold tracking-tighter opacity-60",
  isSelected ? "text-white" : "text-slate-500"
  )}>
  {node.id}
@@ -168,7 +168,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  {isSelected && (
  <div className="ml-auto">
  <div className={cn(
- "w-1.5 h-1.5 rounded-full",
+ "w-1.5 h-1.5 rounded-lg",
  isCluster ? "bg-primary animate-pulse" : "bg-white animate-pulse"
  )} />
  </div>
@@ -452,15 +452,15 @@ export default function CommonCodeClient({
  const columns: Column<CmmnDetailCode>[] = [
  {
  header: '코드',
- accessor: (item: CmmnDetailCode) => <span className="font-mono font-black text-slate-700 tracking-tight">{item.code}</span>,
+ accessor: (item: CmmnDetailCode) => <span className="font-mono font-bold text-slate-700 tracking-tight">{item.code}</span>,
  className: 'w-24'
  },
  {
  header: '코드 명칭',
  accessor: (item: CmmnDetailCode) => (
  <div className="flex flex-col">
- <span className="font-black text-slate-900 tracking-tight">{item.codeNm}</span>
- <span className="text-[10px] font-bold text-slate-500 line-clamp-1 ">{item.codeDc || 'No description available'}</span>
+ <span className="font-bold text-slate-900 tracking-tight">{item.codeNm}</span>
+ <span className="text-xs font-bold text-slate-500 line-clamp-1 ">{item.codeDc || 'No description available'}</span>
  </div>
  )
  },
@@ -478,7 +478,7 @@ export default function CommonCodeClient({
  type="button"
  variant="ghost"
  size="icon"
- className="h-9 w-9 hover:bg-slate-100 rounded-xl"
+ className="h-9 w-9 hover:bg-slate-100 rounded-lg"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
  <Settings size={14} className="text-slate-600" />
@@ -487,7 +487,7 @@ export default function CommonCodeClient({
  type="button"
  variant="ghost"
  size="icon"
- className="h-9 w-9 text-rose-500 hover:bg-rose-50 rounded-xl"
+ className="h-9 w-9 text-rose-500 hover:bg-rose-50 rounded-lg"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
  >
  <Trash2 size={14} />
@@ -504,14 +504,14 @@ export default function CommonCodeClient({
  <div className="flex flex-col lg:flex-row gap-10 min-h-[750px]">
  {/* --- Left Sidebar: Code Tree --- */}
  <aside className="w-full lg:w-[400px] flex flex-col gap-6">
- <div className="bg-white/95 backdrop-blur-3xl rounded-3xl border border-slate-200/60 shadow-2xl overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
+ <div className="bg-white/95 backdrop-blur-3xl rounded-lg border border-slate-200/60 shadow-2xl overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
  <div className="p-7 border-b border-slate-100 bg-slate-50/50 space-y-5">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+ <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
  <Database size={18} />
  </div>
- <h3 className="text-[11px] font-black tracking-[0.2em] text-slate-900 uppercase">
+ <h3 className="text-xs font-bold tracking-[0.2em] text-slate-900 uppercase">
  Explorer
  </h3>
  </div>
@@ -519,12 +519,12 @@ export default function CommonCodeClient({
  {hasExplorerChanges && (
  <button 
  onClick={handleSaveExplorerChanges}
- className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors flex items-center gap-1.5"
+ className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-emerald-600 transition-colors flex items-center gap-1.5"
  >
  <Save size={12} /> Save
  </button>
  )}
- <span className="px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 text-[9px] font-black tracking-widest">
+ <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold tracking-widest">
  {clCodes.length} Domains
  </span>
  </div>
@@ -535,7 +535,7 @@ export default function CommonCodeClient({
  placeholder="도메인 또는 그룹 검색.."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-12 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-[11px] font-black tracking-tight shadow-inner focus:border-primary/30 transition-all placeholder:text-slate-300"
+ className="h-12 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-lg text-xs font-bold tracking-tight shadow-inner focus:border-primary/30 transition-all placeholder:text-slate-300"
  />
  </div>
  </div>
@@ -543,10 +543,10 @@ export default function CommonCodeClient({
  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar max-h-[650px]">
  {visibleNodes.length === 0 ? (
  <div className="py-20 text-center space-y-4">
- <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+ <div className="w-16 h-11 rounded-lg bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
  <SearchSlash size={32} />
  </div>
- <p className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">결과를 찾을 수 없음</p>
+ <p className="text-xs font-bold tracking-[0.3em] uppercase text-slate-400">결과를 찾을 수 없음</p>
  </div>
  ) : (
  <DndContext
@@ -600,17 +600,17 @@ export default function CommonCodeClient({
  <main className="flex-1 space-y-6">
  {selectedGroup ? (
  <div className="space-y-6">
- <div className="p-8 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
+ <div className="p-8 rounded-lg bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
  <div className="flex items-center gap-6">
- <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
+ <div className="w-16 h-11 rounded-lg bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
  <Fingerprint size={28} />
  </div>
  <div className="space-y-1">
  <div className="flex items-center gap-3">
- <h2 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">
+ <h2 className="text-2xl font-bold tracking-tighter text-slate-900 uppercase">
  {selectedGroup.codeIdNm}
  </h2>
- <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-[10px] font-mono font-black text-slate-600">
+ <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-mono font-bold text-slate-600">
  {selectedGroup.codeId}
  </div>
  </div>
@@ -620,34 +620,34 @@ export default function CommonCodeClient({
  </div>
  </div>
  <div className="flex items-center gap-3">
- <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-xl bg-primary text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
+ <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
  <Plus size={16} /> 신규 등록
  </Button>
  </div>
  </div>
 
  <div className={cn(
- "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
+ "bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
  detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
  )}>
  <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
+ <div className="w-10 h-10 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
  {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
  </div>
  <div className="text-left">
- <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase leading-none mb-1.5">시스템 구성 명세</h3>
- <p className="text-[10px] font-bold text-slate-700 leading-none">
+ <h3 className="text-sm font-bold tracking-tight text-slate-900 uppercase leading-none mb-1.5">시스템 구성 명세</h3>
+ <p className="text-xs font-bold text-slate-700 leading-none">
  {detailsLoading ? '서버로부터 명세를 읽어오는 중..' : `총 ${selectedGroup.details?.length || 0}개의 파라미터가 정의됨`}
  </p>
  </div>
  </div>
  <div>
  <div className="flex flex-col items-end pr-4 text-right">
- <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
+ <span className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
  <div className="flex items-center gap-1">
- <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
- <span className="text-[10px] font-black text-emerald-500 font-mono">99.9%</span>
+ <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
+ <span className="text-xs font-bold text-emerald-500 font-mono">99.9%</span>
  </div>
  </div>
  </div>
@@ -664,23 +664,23 @@ export default function CommonCodeClient({
  </div>
  </div>
  ) : (
- <div className="h-full flex flex-col items-center justify-center p-12 rounded-xl bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
- <div className="w-24 h-24 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
+ <div className="h-full flex flex-col items-center justify-center p-12 rounded-lg bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
+ <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
  <Database size={40} className="animate-pulse" />
  </div>
- <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
+ <h3 className="text-xl font-bold tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
  <p className="text-xs font-bold text-slate-700 text-center max-w-sm leading-relaxed mb-10">
  왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
  도메인 계층별 모든 마스터 데이터가 이곳에 노출됩니다.
  </p>
  <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
- <div className="p-6 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
- <span className="text-[10px] font-black text-slate-600 tracking-widest uppercase">도메인 클러스터</span>
- <span className="text-2xl font-black text-slate-900 font-mono ">{initialClusters.length}</span>
+ <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+ <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">도메인 클러스터</span>
+ <span className="text-2xl font-bold text-slate-900 font-mono ">{initialClusters.length}</span>
  </div>
- <div className="p-6 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
- <span className="text-[10px] font-black text-slate-600 tracking-widest uppercase">활성 그룹 수</span>
- <span className="text-2xl font-black text-slate-900 font-mono ">{groups.length}</span>
+ <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+ <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">활성 그룹 수</span>
+ <span className="text-2xl font-bold text-slate-900 font-mono ">{groups.length}</span>
  </div>
  </div>
  </div>
@@ -696,11 +696,11 @@ export default function CommonCodeClient({
  maxWidth="3xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
+ <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
  <Button
  onClick={form.handleSubmit(onSubmit)}
  disabled={form.formState.isSubmitting}
- className="flex-[2] h-14 rounded-xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
+ className="flex-[2] h-11 rounded-lg bg-primary border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
  >
  <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
  </Button>
@@ -712,10 +712,10 @@ export default function CommonCodeClient({
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
  <div className="space-y-8">
  <div className="space-y-1.5 p-0.5">
- <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  상위 그룹 식별자
  </label>
- <div className="h-14 flex items-center px-6 rounded-xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-600">
+ <div className="h-11 flex items-center px-6 rounded-lg bg-slate-100 border-none font-mono text-xs font-bold shadow-inner text-slate-600">
  {selectedGroup?.codeId}
  </div>
  </div>
@@ -725,18 +725,18 @@ export default function CommonCodeClient({
  name="code"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
- 코드 식별자 (Unique ID) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+ <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ 코드 식별자 (Unique ID) <span className="text-rose-500 font-bold text-xs">*</span>
  </FormLabel>
  <FormControl>
  <Input
  {...field}
  readOnly={!!editingDetail}
- className="h-14 rounded-xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
  placeholder="Unique code indicator"
  />
  </FormControl>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />
@@ -746,17 +746,17 @@ export default function CommonCodeClient({
  name="codeNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
- 표기 레이블 (Label) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+ <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ 표기 레이블 (Label) <span className="text-rose-500 font-bold text-xs">*</span>
  </FormLabel>
  <FormControl>
  <Input
  {...field}
- className="h-14 rounded-xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
  placeholder="레이블 명칭 입력"
  />
  </FormControl>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />
@@ -768,7 +768,7 @@ export default function CommonCodeClient({
  name="useAt"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  활성 상태 프로토콜
  </FormLabel>
  <Select
@@ -777,20 +777,20 @@ export default function CommonCodeClient({
  value={field.value}
  >
  <FormControl>
- <SelectTrigger className="h-14 rounded-xl border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
+ <SelectTrigger className="h-11 rounded-lg border-none bg-slate-50 font-bold text-xs tracking-widest uppercase shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
- <SelectContent className="rounded-xl shadow-xl z-[9999]">
- <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
+ <SelectContent className="rounded-lg shadow-xl z-[9999]">
+ <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase text-emerald-500">
  --- 사용 중 (ACTIVE) ---
  </SelectItem>
- <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
+ <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase text-rose-500">
  --- 미사용 (INACTIVE) ---
  </SelectItem>
  </SelectContent>
  </Select>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />
@@ -800,17 +800,17 @@ export default function CommonCodeClient({
  name="codeDc"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  메타데이터 컨텍스트 설명
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
- className="w-full min-h-[160px] p-6 rounded-xl border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
+ className="w-full min-h-[160px] p-6 rounded-lg border-none bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
  placeholder="코드 사용처 및 시스템 제약 조건 설명..."
  />
  </FormControl>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />

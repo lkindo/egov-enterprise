@@ -1,4 +1,4 @@
-﻿import React, { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
@@ -53,12 +53,12 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
 function BoardListSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-6">
-      <Skeleton className="h-10 w-48 rounded-full" />
+      <Skeleton className="h-10 w-48 rounded-lg" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Skeleton className="lg:col-span-2 h-64 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="lg:col-span-2 h-64 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
-      <Skeleton className="h-[600px] w-full rounded-xl" />
+      <Skeleton className="h-[600px] w-full rounded-lg" />
     </div>
   );
 }

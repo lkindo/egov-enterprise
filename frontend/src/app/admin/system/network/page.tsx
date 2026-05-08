@@ -37,15 +37,15 @@ export default function AdminNetworkPage() {
 function NetworkAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col text-left">
-      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
+      <div className="h-11 w-96 bg-slate-100 rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-xl" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-lg" />)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 shrink-0">
-        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-xl" />
-        <div className="h-64 bg-slate-50 rounded-xl" />
+        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-lg" />
+        <div className="h-64 bg-slate-50 rounded-lg" />
       </div>
-      <div className="flex-1 bg-slate-100/50 rounded-xl p-12 mt-8" />
+      <div className="flex-1 bg-slate-100/50 rounded-lg p-12 mt-8" />
     </div>
   );
 }

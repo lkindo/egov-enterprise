@@ -48,7 +48,7 @@ export function BannerSlider() {
   };
 
   if (loading) {
-    return <div className="w-full h-48 bg-muted animate-pulse rounded-xl" />;
+    return <div className="w-full h-48 bg-muted animate-pulse rounded-lg" />;
   }
 
   if (banners.length === 0) {
@@ -61,7 +61,7 @@ export function BannerSlider() {
     : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
 
   return (
-    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-xl bg-slate-900 shadow-lg">
+    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-lg bg-slate-900 shadow-lg">
       <Image
         src={imageUrl}
         alt={currentBanner.bannerNm}
@@ -72,7 +72,7 @@ export function BannerSlider() {
       />
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
-        <h2 className="text-2xl md:text-3xl font-black mb-2 animate-in slide-in-from-left duration-500">
+        <h2 className="text-2xl md:text-3xl font-bold mb-2 animate-in slide-in-from-left duration-500">
           {currentBanner.bannerNm}
         </h2>
         <p className="text-sm md:text-base text-slate-200 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
@@ -83,7 +83,7 @@ export function BannerSlider() {
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-xl font-bold hover:bg-primary hover:text-white transition-all text-sm"
+            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
             자세히 보기 <ExternalLink size={14} />
           </a>
@@ -94,13 +94,13 @@ export function BannerSlider() {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronLeft size={24} />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronRight size={24} />
           </button>
@@ -111,7 +111,7 @@ export function BannerSlider() {
                 key={`banner-dot-${banner.bannerId || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all",
+                  "w-2 h-2 rounded-lg transition-all",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"
                 )}
               />

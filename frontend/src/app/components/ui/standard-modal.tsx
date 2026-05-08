@@ -58,18 +58,18 @@ export function StandardModal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "bg-card border border-border rounded-xl shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
+          "bg-card border border-border rounded-lg shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
           maxWidthClasses[maxWidth]
         )}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border/50 px-6 shrink-0 bg-card">
+        <div className="flex h-11 items-center justify-between border-b border-border/50 px-6 shrink-0 bg-card">
           <h2 className="text-lg font-bold text-foreground tracking-tight">{title}</h2>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="rounded-lg h-9 w-9 text-muted-foreground hover:text-foreground"
           >
             <X size={18} />
           </Button>

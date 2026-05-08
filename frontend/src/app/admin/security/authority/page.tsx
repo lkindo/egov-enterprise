@@ -12,7 +12,7 @@ export default async function SecurityAuthorityHubPage() {
   const authoritiesPromise = authorAdminService.getAuthorList({ pageIndex: 1, searchKeyword: '' }, axiosConfig);
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-mono text-[10px] tracking-widest uppercase animate-pulse text-indigo-400">Loading Security Fabric Architecture...</div>}>
+    <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse text-indigo-400">Loading Security Fabric Architecture...</div>}>
       <SecurityHubClient authoritiesPromise={authoritiesPromise} />
     </Suspense>
   );

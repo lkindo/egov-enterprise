@@ -52,7 +52,7 @@ const UserLogAdminPage = () => {
             header: '메소드명',
             accessor: (item: UserLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
+                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-xs text-slate-600">
                         {item.methodNm}
                     </code>
                 </div>
@@ -61,8 +61,8 @@ const UserLogAdminPage = () => {
         {
             header: '요청자ID',
             accessor: (item: UserLog) => (
-                <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
-                    <span className="text-xs font-black text-slate-700">{item.rqesterId}</span>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-lg w-fit shadow-sm">
+                    <span className="text-xs font-bold text-slate-700">{item.rqesterId}</span>
                 </div>
             ),
             className: 'w-40'

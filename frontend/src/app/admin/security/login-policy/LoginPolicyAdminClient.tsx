@@ -109,12 +109,12 @@ export default function LoginPolicyAdminClient() {
       header: '사용자 정보',
       accessor: (item) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg">
             <User size={18} />
           </div>
           <div className="text-left">
-            <span className="font-black tracking-tight text-foreground block text-sm">{item.emplyrNm}</span>
-            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.emplyrId}</span>
+            <span className="font-bold tracking-tight text-foreground block text-sm">{item.emplyrNm}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.emplyrId}</span>
           </div>
         </div>
       )
@@ -153,7 +153,7 @@ export default function LoginPolicyAdminClient() {
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Fingerprint size={12} className={item.otpEnabledAt === 'Y' ? 'text-emerald-500' : 'text-slate-300'} />
-          <span className={`text-[10px] font-black tracking-widest ${item.otpEnabledAt === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
+          <span className={`text-xs font-bold tracking-widest ${item.otpEnabledAt === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
             {item.otpEnabledAt === 'Y' ? 'ACTIVE' : 'DISABLED'}
           </span>
         </div>
@@ -163,7 +163,7 @@ export default function LoginPolicyAdminClient() {
       header: '설정',
       className: 'text-right',
       accessor: (item) => (
-        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="hover:bg-slate-900 hover:text-white rounded-xl transition-all">
+        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="hover:bg-slate-900 hover:text-white rounded-lg transition-all">
           <Settings2 size={16} />
         </Button>
       )
@@ -198,10 +198,10 @@ export default function LoginPolicyAdminClient() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchData()}
-              className="h-16 pl-16 pr-8 rounded-2xl bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner" 
+              className="h-11 pl-16 pr-8 rounded-lg bg-slate-50 border-2 border-slate-100 font-bold text-md tracking-tight shadow-inner" 
             />
           </div>
-          <Button onClick={fetchData} variant="outline" className="h-16 w-16 rounded-2xl border-2 border-slate-100 bg-white hover:bg-slate-50 transition-all shadow-xl active:scale-95 group">
+          <Button onClick={fetchData} variant="outline" className="h-11 w-16 rounded-lg border-2 border-slate-100 bg-white hover:bg-slate-50 transition-all shadow-xl active:scale-95 group">
             <RefreshCcw size={24} className="text-slate-400 group-hover:rotate-180 transition-transform duration-700" />
           </Button>
         </div>
@@ -218,17 +218,17 @@ export default function LoginPolicyAdminClient() {
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl rounded-3xl overflow-hidden border-none shadow-2xl p-0">
+        <DialogContent className="max-w-2xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
           <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
             <div className="space-y-1">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                   <Settings2 className="text-primary" /> 정책 프로파일링
                 </DialogTitle>
               </DialogHeader>
-              <p className="text-[10px] font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.emplyrId}</p>
+              <p className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.emplyrId}</p>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/5">
+            <div className="w-14 h-11 rounded-lg bg-white/10 flex items-center justify-center border border-white/5">
               <User size={24} className="text-primary" />
             </div>
           </div>
@@ -241,14 +241,14 @@ export default function LoginPolicyAdminClient() {
                   name="ipInfo"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 제한 IP</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 제한 IP</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
-                      <FormDescription className="text-[10px] font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
+                      <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -259,11 +259,11 @@ export default function LoginPolicyAdminClient() {
                   name="startTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 허용 시작 시간</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 시작 시간</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Timer className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="09:00" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -276,11 +276,11 @@ export default function LoginPolicyAdminClient() {
                   name="endTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 허용 종료 시간</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 종료 시간</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="18:00" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -288,15 +288,15 @@ export default function LoginPolicyAdminClient() {
                   )}
                 />
 
-                <div className="col-span-2 p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-6">
+                <div className="col-span-2 p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-6">
                   <FormField
                     control={form.control}
                     name="lmttAt"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
-                          <FormLabel className="text-sm font-black tracking-tight">계정 접속 전면 제한</FormLabel>
-                          <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase">BLOCK_ACCOUNT_ACCESS</p>
+                          <FormLabel className="text-sm font-bold tracking-tight">계정 접속 전면 제한</FormLabel>
+                          <p className="text-xs font-bold text-muted-foreground opacity-60 uppercase">BLOCK_ACCOUNT_ACCESS</p>
                         </div>
                         <FormControl>
                           <Switch 
@@ -316,8 +316,8 @@ export default function LoginPolicyAdminClient() {
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
-                          <FormLabel className="text-sm font-black tracking-tight">2단계 인증 (OTP) 필수 적용</FormLabel>
-                          <p className="text-[10px] font-bold text-emerald-600 tracking-widest uppercase">ENFORCE_MFA_AUTHENTICATION</p>
+                          <FormLabel className="text-sm font-bold tracking-tight">2단계 인증 (OTP) 필수 적용</FormLabel>
+                          <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase">ENFORCE_MFA_AUTHENTICATION</p>
                         </div>
                         <FormControl>
                           <Switch 
@@ -333,8 +333,8 @@ export default function LoginPolicyAdminClient() {
               </div>
 
               <DialogFooter className="pt-6">
-                <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="h-14 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase">취소</Button>
-                <Button type="submit" className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
+                <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="h-11 px-8 rounded-lg font-bold text-xs tracking-widest uppercase">취소</Button>
+                <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
                   정책 동기화 적용
                 </Button>
               </DialogFooter>

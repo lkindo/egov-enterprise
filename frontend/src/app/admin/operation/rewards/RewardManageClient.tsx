@@ -39,14 +39,14 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  header: '포상 명칭',
  accessor: (item) => (
  <div className="flex items-center gap-6 py-2">
- <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
+ <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
  <Trophy size={20} />
  </div>
  <div className="flex flex-col gap-0.5 min-w-0">
- <span className="font-black text-slate-900 leading-tight tracking-tight group-hover:text-primary transition-colors">{item.rwardNm}</span>
+ <span className="font-bold text-slate-900 leading-tight tracking-tight group-hover:text-primary transition-colors">{item.rwardNm}</span>
  <div className="flex items-center gap-2">
- <span className="text-[8px] font-black text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md leading-none bg-amber-50/50 uppercase tracking-widest">{item.rwardCode}</span>
- <span className="text-[10px] text-slate-400 font-bold truncate leading-none">{item.rwardLevel || 'STANDARD'}</span>
+ <span className="text-xs font-bold text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md leading-none bg-amber-50/50 uppercase tracking-widest">{item.rwardCode}</span>
+ <span className="text-xs text-slate-400 font-bold truncate leading-none">{item.rwardLevel || 'STANDARD'}</span>
  </div>
  </div>
  </div>
@@ -55,12 +55,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  {
  header: '수상자 ID',
  accessor: 'rwardwnrId',
- className: 'w-32 font-mono text-xs font-black text-slate-400 tracking-tighter'
+ className: 'w-32 font-mono text-xs font-bold text-slate-400 tracking-tighter'
  },
  {
  header: '포상일자',
  accessor: (item) => (
- <div className="flex items-center gap-2.5 text-slate-500 font-bold text-[11px]">
+ <div className="flex items-center gap-2.5 text-slate-500 font-bold text-xs">
  <Calendar size={12} className="opacity-40" />
  <span className="tabular-nums">{item.rwardDe}</span>
  </div>
@@ -69,7 +69,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  {
  header: '승인상태',
  accessor: (item) => (
- <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all ${item.confmAt === 'Y'
+ <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-all ${item.confmAt === 'Y'
  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
  : 'bg-slate-50 text-slate-400 border border-slate-100'
  }`}>
@@ -91,7 +91,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  {
  header: '승인일시',
  accessor: 'sanctnDt',
- className: 'w-48 text-slate-300 text-[10px] tabular-nums font-mono pr-8 text-right'
+ className: 'w-48 text-slate-300 text-xs tabular-nums font-mono pr-8 text-right'
  }
  ];
 
@@ -117,11 +117,11 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  <Button
  variant="outline"
  onClick={() => queryClient.invalidateQueries()}
- className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-lg active:scale-95"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-lg active:scale-95"
  >
  <RefreshCcw size={22} className="hover:rotate-180 transition-transform duration-700" />
  </Button>
- <Button className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
+ <Button className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
  <Plus size={20} /> 포상 기록 신규 저장
  </Button>
  </div>
@@ -146,14 +146,14 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="포상 명칭 또는 대상자 식별자로 분석..."
- className="h-16 pl-16 rounded-xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
+ className="h-11 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />
- <Button type="submit" className="h-16 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
+ <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
  </form>
  <div>
- <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono tabular-nums">DATA_PROBE_UPDATING...</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono tabular-nums">DATA_PROBE_UPDATING...</span>
  </div>
  </div>
 

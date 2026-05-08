@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
@@ -60,10 +60,10 @@ function CommunityBoardContent() {
  <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
  <div className="space-y-3">
  <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
- <span className="text-[10px] font-black tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-full border border-primary/10">Board Intelligence</span>
+ <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+ <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Board Intelligence</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
  Knowledge <span className="text-primary">Stream</span>
  </h1>
  <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest ">
@@ -73,7 +73,7 @@ function CommunityBoardContent() {
  <div className="flex items-center gap-4">
  <Button 
  onClick={() => router.push('/admin/community/boards/write')}
- className="h-16 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Create New Node
  </Button>
@@ -82,7 +82,7 @@ function CommunityBoardContent() {
 
  {/* 2. Search & Filter Matrix */}
  <motion.div variants={hubItemVariants} className="px-2">
- <div className="hub-glass-premium p-8 rounded-xl border-2 border-slate-100/50 shadow-2xl flex flex-col md:flex-row gap-6 relative overflow-hidden group">
+ <div className="hub-glass-premium p-8 rounded-lg border-2 border-slate-100/50 shadow-2xl flex flex-col md:flex-row gap-6 relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-focus-within:opacity-10 transition-opacity">
  <Search size={120} className="rotate-12" />
  </div>
@@ -92,7 +92,7 @@ function CommunityBoardContent() {
  <Input 
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-14 pl-14 bg-white/50 border-2 border-slate-100 rounded-xl text-lg font-black placeholder:text-slate-200 focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
+ className="h-11 pl-14 bg-white/50 border-2 border-slate-100 rounded-lg text-lg font-bold placeholder:text-slate-200 focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
  placeholder="데이터셋 내 지식 검색..."
  aria-label="게시글 검색"
  />
@@ -101,14 +101,14 @@ function CommunityBoardContent() {
  <select 
  value={bbsId}
  onChange={(e) => setBbsId(e.target.value)}
- className="h-14 px-8 bg-white border-2 border-slate-100 rounded-xl font-black text-[10px] tracking-widest uppercase outline-none focus:border-primary/20 transition-all shadow-sm"
+ className="h-11 px-8 bg-white border-2 border-slate-100 rounded-lg font-bold text-xs tracking-widest uppercase outline-none focus:border-primary/20 transition-all shadow-sm"
  aria-label="게시판 선택"
  >
  <option value="BBSMSTR_AAAAAAAAAAAA">시스템 공지사항</option>
  <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
  <option value="BBSMSTR_CCCCCCCCCCCC">갤러리 게시판</option>
  </select>
- <Button variant="outline" className="h-14 w-14 rounded-xl border-2 border-slate-100 p-0 shadow-sm" aria-label="상세 필터">
+ <Button variant="outline" className="h-11 w-14 rounded-lg border-2 border-slate-100 p-0 shadow-sm" aria-label="상세 필터">
  <Filter size={20} />
  </Button>
  </div>
@@ -121,11 +121,11 @@ function CommunityBoardContent() {
  {isLoading ? (
  <HubListSkeleton />
  ) : posts.length === 0 ? (
- <div className="hub-glass-premium p-32 rounded-xl border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-center space-y-8 grayscale opacity-50">
+ <div className="hub-glass-premium p-32 rounded-lg border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-center space-y-8 grayscale opacity-50">
  <Layers size={64} className="text-slate-200" />
  <div className="space-y-4">
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase ">No Data Nodes Found</h3>
- <p className="text-[10px] font-bold text-slate-400 max-w-xs mx-auto tracking-widest leading-relaxed uppercase">
+ <h3 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase ">No Data Nodes Found</h3>
+ <p className="text-xs font-bold text-slate-400 max-w-xs mx-auto tracking-widest leading-relaxed uppercase">
  지정된 매트릭스 내에 활성화된 데이터 노드가 존재하지 않습니다.
  </p>
  </div>
@@ -139,7 +139,7 @@ function CommunityBoardContent() {
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}
  onClick={() => handleRowClick(item)}
- className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-slate-50 rounded-xl hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
+ className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-slate-50 rounded-lg hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
  role="button"
  aria-label={`${item.nttSj} 게시글 보기`}
  >
@@ -147,33 +147,33 @@ function CommunityBoardContent() {
  <MessageSquare size={120} className="text-primary" />
  </div>
  <div className="flex gap-8 items-start md:items-center relative z-10 flex-1">
- <div className="w-16 h-16 rounded-xl bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shrink-0">
+ <div className="w-16 h-11 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shrink-0">
  {item.noticeAt === 'Y' ? (
  <Megaphone size={24} className="text-primary animate-bounce" />
  ) : (
  <>
- <span className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Index</span>
- <span className="text-xl font-black text-slate-900 font-mono">{idx + 1 + page * 10}</span>
+ <span className="text-xs font-bold text-slate-400 uppercase leading-none mb-1">Index</span>
+ <span className="text-xl font-bold text-slate-900 font-mono">{idx + 1 + page * 10}</span>
  </>
  )}
  </div>
  <div className="space-y-3 flex-1">
  <div className="flex items-center gap-3">
- {item.noticeAt === 'Y' && <Badge className="bg-primary text-white font-black text-[9px] uppercase tracking-widest border-none">Emergency</Badge>}
- <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase ">{item.frstRegisterPnttm?.split(' ')[0]}</span>
+ {item.noticeAt === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
+ <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.frstRegisterPnttm?.split(' ')[0]}</span>
  </div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors ">
+ <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors ">
  {item.nttSj}
  </h3>
- <div className="flex flex-wrap items-center gap-6 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
- <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full"><User size={12} className="text-primary" /> {item.frstRegisterNm}</span>
+ <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-500 uppercase tracking-tight">
+ <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg"><User size={12} className="text-primary" /> {item.frstRegisterNm}</span>
  <span className="flex items-center gap-2"><Eye size={12} /> {item.inqireCo} Interactions</span>
  <span className="flex items-center gap-2"><Clock size={12} /> Access Granted</span>
  </div>
  </div>
  </div>
  <div className="flex items-center gap-4 mt-6 md:mt-0 relative z-10">
- <div className="w-12 h-12 rounded-full border-2 border-slate-50 flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all group-hover:rotate-45">
+ <div className="w-12 h-12 rounded-lg border-2 border-slate-50 flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all group-hover:rotate-45">
  <ChevronRight size={20} className="text-slate-300 group-hover:text-primary transition-colors" />
  </div>
  </div>
@@ -185,10 +185,10 @@ function CommunityBoardContent() {
 
  {/* 4. Footer Matrix */}
  <motion.div variants={hubItemVariants} className="flex justify-center pt-10">
- <div className="inline-flex items-center gap-8 px-10 py-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-xl group/footer">
+ <div className="inline-flex items-center gap-8 px-10 py-4 bg-slate-50 rounded-lg border border-slate-100 shadow-xl group/footer">
  <div className="flex items-center gap-3">
  <Sparkles size={16} className="text-primary animate-pulse" />
- <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ">Intelligence_Node_Total: <span className="text-slate-900 font-mono">{totalCount}</span></span>
+ <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] ">Intelligence_Node_Total: <span className="text-slate-900 font-mono">{totalCount}</span></span>
  </div>
  <div className="w-px h-6 bg-slate-200" />
  <div className="flex gap-2">
@@ -197,7 +197,7 @@ function CommunityBoardContent() {
  key={i}
  onClick={() => setPage(i)}
  className={cn(
- "w-10 h-10 rounded-lg font-black text-xs font-mono transition-all",
+ "w-10 h-10 rounded-lg font-bold text-xs font-mono transition-all",
  page === i 
  ? "bg-slate-900 text-white shadow-lg scale-110" 
  : "bg-white text-slate-400 border border-slate-100 hover:border-primary/20 hover:text-primary"
@@ -218,10 +218,10 @@ export default function CommunityBoardPage() {
  return (
  <Suspense fallback={
  <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
- <div className="w-16 h-16 rounded-xl bg-primary/5 flex items-center justify-center animate-bounce">
+ <div className="w-16 h-11 rounded-lg bg-primary/5 flex items-center justify-center animate-bounce">
  <Loader2 className="w-8 h-8 text-primary animate-spin" />
  </div>
- <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] animate-pulse">Syncing Matrix Stream...</p>
+ <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.5em] animate-pulse">Syncing Matrix Stream...</p>
  </div>
  }>
  <CommunityBoardContent />

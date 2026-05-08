@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
@@ -73,7 +73,7 @@ export default function GenericStatsClient({
  {
  header: '날짜',
  accessor: (item: StatsDto) => (
- <span className="font-mono font-black text-slate-900 tracking-tighter ">
+ <span className="font-mono font-bold text-slate-900 tracking-tighter ">
  {item.statsDate ? `${item.statsDate.substring(0, 4)}-${item.statsDate.substring(4, 6)}-${item.statsDate.substring(6, 8)}` : 'N/A'}
  </span>
  )
@@ -82,8 +82,8 @@ export default function GenericStatsClient({
  header: statsName,
  accessor: (item: StatsDto) => (
  <div className="flex items-center gap-3">
- <span className="font-mono font-black text-primary text-lg">{item.statsCo.toLocaleString()}</span>
- <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
+ <span className="font-mono font-bold text-primary text-lg">{item.statsCo.toLocaleString()}</span>
+ <div className="flex-1 h-1.5 bg-slate-100 rounded-lg overflow-hidden max-w-[100px]">
  <div 
  className="h-full bg-primary/40" 
  style={{ width: `${Math.min(100, (item.statsCo / Math.max(...initialData.map(d => d.statsCo || 1))) * 100)}%` }} 
@@ -104,7 +104,7 @@ export default function GenericStatsClient({
  <Button
  onClick={handleRefresh}
  variant="outline"
- className="h-10 md:h-14 w-10 md:w-14 rounded-xl md:rounded-xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
+ className="h-10 md:h-11 w-10 md:w-14 rounded-lg md:rounded-lg border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
  >
  <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
  </Button>
@@ -122,26 +122,26 @@ export default function GenericStatsClient({
  <div className="flex flex-col md:flex-row md:items-end gap-6 relative z-10">
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 시작</label>
+ <label className="text-xs font-bold text-slate-400 tracking-tight ml-1">분석 시작</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
  type="date"
  value={fromDate}
  onChange={(e) => setFromDate(e.target.value)}
- className="h-14 pl-12 rounded-xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-11 pl-12 rounded-lg border-2 border-slate-100 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 종료</label>
+ <label className="text-xs font-bold text-slate-400 tracking-tight ml-1">분석 종료</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
  type="date"
  value={toDate}
  onChange={(e) => setToDate(e.target.value)}
- className="h-14 pl-12 rounded-xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-11 pl-12 rounded-lg border-2 border-slate-100 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
@@ -149,7 +149,7 @@ export default function GenericStatsClient({
  <Button
  onClick={handleSearch}
  disabled={loading}
- className="h-14 px-10 bg-slate-900 text-white rounded-xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
+ className="h-11 px-10 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <Search size={16} />}
  동기화 </Button>
@@ -162,12 +162,12 @@ export default function GenericStatsClient({
  <div className="grid grid-cols-1 gap-10">
  <div className="responsive-card p-6 md:p-12 relative overflow-hidden group">
  <div className="flex items-center gap-4 mb-10">
- <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+ <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
  <BarChart3 size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">{subtitle}</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">시간추이 분석</p>
+ <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter ">{subtitle}</h3>
+ <p className="text-xs font-bold text-slate-400 tracking-[0.3em]">시간추이 분석</p>
  </div>
  </div>
  <StandardChartWrapper
@@ -183,12 +183,12 @@ export default function GenericStatsClient({
 
  <div className="responsive-card p-6 md:p-12">
  <div className="flex items-center gap-4 mb-10 px-2">
- <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+ <div className="w-12 h-12 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
  <Database size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">데이터무결성매트릭스</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">정형 데이터셋 뷰</p>
+ <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter ">데이터무결성매트릭스</h3>
+ <p className="text-xs font-bold text-slate-400 tracking-[0.3em]">정형 데이터셋 뷰</p>
  </div>
  </div>
  <div className="px-2 overflow-x-auto">
@@ -197,7 +197,7 @@ export default function GenericStatsClient({
  data={initialData}
  loading={loading}
  emptyMessage="통계 데이터를 분석 중입니다..."
- className="border-none bg-slate-50/50 rounded-xl md:rounded-xl p-4 md:p-8"
+ className="border-none bg-slate-50/50 rounded-lg md:rounded-lg p-4 md:p-8"
  />
  </div>
  </div>

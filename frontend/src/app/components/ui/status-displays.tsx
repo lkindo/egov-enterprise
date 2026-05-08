@@ -19,13 +19,13 @@ export function ErrorStateDisplay({
       animate={{ opacity: 1, scale: 1 }}
       className={cn("flex flex-col items-center justify-center gap-6 py-12 text-center", className)}
     >
-      <div className="w-20 h-20 bg-rose-50 dark:bg-rose-900/10 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 dark:border-rose-900/20 shadow-xl">
+      <div className="w-20 h-11 bg-rose-50 dark:bg-rose-900/10 rounded-lg flex items-center justify-center mb-2 relative border-4 border-rose-100 dark:border-rose-900/20 shadow-xl">
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 dark:text-rose-400 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
-        <div className="p-4 bg-rose-50/50 dark:bg-rose-900/5 rounded-xl border border-rose-100 dark:border-rose-900/20 inline-block">
-          <p className="text-[10px] font-black font-mono text-rose-800 dark:text-rose-300 tracking-tight opacity-70">
+        <p className="text-xl font-bold text-rose-900 dark:text-rose-400 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
+        <div className="p-4 bg-rose-50/50 dark:bg-rose-900/5 rounded-lg border border-rose-100 dark:border-rose-900/20 inline-block">
+          <p className="text-xs font-bold font-mono text-rose-800 dark:text-rose-300 tracking-tight opacity-70">
             ERROR_STREAM: {error?.response?.data?.message || error?.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
@@ -37,7 +37,7 @@ export function ErrorStateDisplay({
         <Button
           variant="outline"
           size="lg"
-          className="rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group shadow-lg"
+          className="rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group shadow-lg"
           onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
@@ -61,14 +61,14 @@ export function EmptyStateDisplay({
       animate={{ opacity: 1, scale: 1 }}
       className={cn("flex flex-col items-center justify-center gap-6 py-12 text-center", className)}
     >
-      <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-2 relative">
+      <div className="w-20 h-11 bg-muted/30 rounded-lg flex items-center justify-center mb-2 relative">
         <Search size={40} className="text-muted-foreground/20" />
-        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-full flex items-center justify-center">
+        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-lg flex items-center justify-center">
           <List size={14} className="text-muted-foreground" />
         </div>
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-foreground tracking-tighter uppercase">{message}</p>
+        <p className="text-xl font-bold text-foreground tracking-tighter uppercase">{message}</p>
         <p className="text-xs text-slate-700 dark:text-slate-400 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
           시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
@@ -76,7 +76,7 @@ export function EmptyStateDisplay({
       <Button
         variant="outline"
         size="lg"
-        className="mt-6 rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group"
+        className="mt-6 rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />

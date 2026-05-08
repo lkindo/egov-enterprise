@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +48,7 @@ export function HubSectionCard({
           </div>
         )}
       </div>
-      <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 blur-[120px] rounded-full" />
+      <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 blur-[120px] rounded-lg" />
       
       {children && (
         <div className="mt-10 relative z-10">

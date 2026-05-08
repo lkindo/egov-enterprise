@@ -35,7 +35,7 @@ const LoginLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
                     {item.logId}
                 </div>
@@ -55,9 +55,9 @@ const LoginLogAdminPage = () => {
         {
             header: '요청자',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
-                    <span className="text-xs font-black text-slate-700">{item.loginNm}</span>
-                    <span className="text-[10px] text-slate-400 font-bold opacity-50">({item.loginId})</span>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-lg w-fit shadow-sm">
+                    <span className="text-xs font-bold text-slate-700">{item.loginNm}</span>
+                    <span className="text-xs text-slate-400 font-bold opacity-50">({item.loginId})</span>
                 </div>
             ),
             className: 'w-48'
@@ -76,7 +76,7 @@ const LoginLogAdminPage = () => {
             header: '구분',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-tighter ${
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tighter ${
                         item.loginMthd === 'LOGIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'
                     }`}>
                         {item.loginMthd}

@@ -137,7 +137,7 @@ const SortableMenuNode = ({
     const content = (
         <div className={cn(
             "group select-none relative transition-all duration-300",
-            isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-xl",
+            isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-lg",
             isOverlay && "shadow-3xl z-[9999] pointer-events-none"
         )}>
             {/* 계층 연결 라인 */}
@@ -151,7 +151,7 @@ const SortableMenuNode = ({
             )}
 
             <div className={cn(
-                "flex items-center justify-between p-4 rounded-xl border transition-all relative overflow-hidden",
+                "flex items-center justify-between p-4 rounded-lg border transition-all relative overflow-hidden",
                 depth === 0 
                   ? "bg-slate-900 border-slate-800 shadow-xl min-h-[5rem]" 
                   : depth === 1 
@@ -189,7 +189,7 @@ const SortableMenuNode = ({
                             )}
                             {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
                             <div className={cn(
-                                "w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
+                                "w-11 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
                                 depth === 0 ? "bg-white text-slate-900" : depth === 1 ? "bg-primary text-white" : "bg-white text-muted-foreground border border-slate-200 shadow-sm"
                             )}>
                                 {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
@@ -204,14 +204,14 @@ const SortableMenuNode = ({
                             </span>
                             <div className="flex items-center gap-3 mt-1">
                                 <span className={cn(
-                                  "text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono",
+                                  "text-xs font-bold px-1.5 py-0.5 rounded-md font-mono",
                                    depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600 opacity-100"
                                 )}>
                                     NODE_{item.menuNo}
                                 </span>
                                 {item.progrmFileNm && (
                                     <span className={cn(
-                                      "text-[9px] flex items-center gap-1 font-bold",
+                                      "text-xs flex items-center gap-1 font-bold",
                                        depth === 0 ? "text-slate-300" : "text-primary opacity-100"
                                     )}>
                                         <LinkIcon size={10} /> {item.progrmFileNm}
@@ -227,7 +227,7 @@ const SortableMenuNode = ({
                                 variant="ghost" size="icon"
                                 onClick={() => onCreate(item.menuNo)}
                                 className={cn(
-                                  "h-9 w-9 rounded-xl",
+                                  "h-9 w-9 rounded-lg",
                                    depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-50 hover:bg-primary hover:text-white"
                                 )}
                             >
@@ -238,7 +238,7 @@ const SortableMenuNode = ({
                             variant="ghost" size="icon"
                             onClick={() => onEdit(item)}
                             className={cn(
-                              "h-9 w-9 rounded-xl",
+                              "h-9 w-9 rounded-lg",
                               depth === 0 ? "bg-slate-800 text-slate-400 hover:bg-white hover:text-slate-900" : "bg-slate-50 hover:bg-slate-900 hover:text-white"
                             )}
                         >
@@ -248,7 +248,7 @@ const SortableMenuNode = ({
                             variant="ghost" size="icon"
                             onClick={() => onDelete(item.menuNo)}
                             className={cn(
-                              "h-9 w-9 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white rounded-xl",
+                              "h-9 w-9 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white rounded-lg",
                               depth === 0 && "bg-rose-950/30 hover:bg-rose-500"
                             )}
                         >
@@ -459,7 +459,7 @@ export default function MenuAdminClient({
         subtitle="항목을 좌우로 움직여 계층(Depth)을 조정하고, 위아래로 끌어 순서를 실시간으로 설계하십시오."
         icon={FolderTree}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
+          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
             <Plus size={20} /> 신규 등록
           </Button>
         }
@@ -478,12 +478,12 @@ export default function MenuAdminClient({
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
-            <div className="flex bg-slate-100 p-1 rounded-xl">
-              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1" /> 펼치기</Button>
-              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1" /> 접기</Button>
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <Button variant="ghost" className="h-8 px-3 text-xs font-bold" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1" /> 펼치기</Button>
+              <Button variant="ghost" className="h-8 px-3 text-xs font-bold" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1" /> 접기</Button>
             </div>
             {hasChanges && (
-                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-xl font-bold text-xs gap-2 shadow-lg scale-in-center">
+                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-lg font-bold text-xs gap-2 shadow-lg scale-in-center">
                     {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={16} />} 레이아웃 적용
                 </Button>
             )}
@@ -544,8 +544,8 @@ export default function MenuAdminClient({
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4 pt-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-bold">취소</Button>
-            <Button onClick={form.handleSubmit(onFormSubmit)} disabled={form.formState.isSubmitting} className="flex-[2] h-14 rounded-2xl bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold">취소</Button>
+            <Button onClick={form.handleSubmit(onFormSubmit)} disabled={form.formState.isSubmitting} className="flex-[2] h-11 rounded-lg bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2">
               <Save size={18} /> {mode === 'create' ? '등록 완료' : '수정 완료'}
             </Button>
           </div>
@@ -558,15 +558,15 @@ export default function MenuAdminClient({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-slate-700 ml-1">메뉴 명칭 *</FormLabel>
-                  <FormControl><Input {...field} className="h-14 rounded-2xl font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
-                  <FormMessage className="text-[10px] font-bold text-rose-600 ml-1" />
+                  <FormControl><Input {...field} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
+                  <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}
             />
             <div className="grid grid-cols-2 gap-6">
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-slate-700 ml-1">상위 노드</FormLabel>
-                  <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-5 text-xs font-bold bg-slate-50/50 text-slate-400">
+                  <div className="h-11 rounded-lg border-2 border-slate-100 flex items-center px-5 text-xs font-bold bg-slate-50/50 text-slate-400">
                     {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT' : `NODE_${form.getValues('upperMenuId')}`}
                   </div>
                 </FormItem>
@@ -575,8 +575,8 @@ export default function MenuAdminClient({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold text-slate-700 ml-1">정렬 순서 *</FormLabel>
-                      <FormControl><Input {...field} type="number" onChange={e => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-bold px-5" /></FormControl>
-                      <FormMessage className="text-[10px] font-bold text-rose-600 ml-1" />
+                      <FormControl><Input {...field} type="number" onChange={e => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold px-5" /></FormControl>
+                      <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                     </FormItem>
                   )}
                 />

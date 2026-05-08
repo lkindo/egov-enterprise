@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,10 +97,10 @@ export const InsightBanner: React.FC = () => {
 
  return (
  <div className="relative group text-left">
- <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+ <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
  
  <div className={cn(
- "relative min-h-[140px] rounded-xl border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
+ "relative min-h-[140px] rounded-lg border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
  getSeverityStyles(activeInsight.severity)
  )} role="region" aria-label="시스템 인텔리전스 인사이트">
  {/* Animated Wave Background Area */}
@@ -111,21 +111,21 @@ export const InsightBanner: React.FC = () => {
 
  {/* AI Logo Area */}
  <div className="flex-shrink-0 relative">
- <div className="w-16 h-16 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
+ <div className="w-16 h-11 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
  <Sparkles size={32} className="animate-pulse" />
  </div>
- <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-spin-slow opacity-40" />
+ <div className="absolute -inset-4 bg-primary/20 rounded-lg blur-2xl animate-spin-slow opacity-40" />
  </div>
 
  {/* Message Stream */}
  <div className="flex-1 space-y-4 relative z-10 text-center lg:text-left">
  <div className="flex items-center justify-center lg:justify-start gap-3">
- <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/5 border border-black/5 text-[10px] font-black tracking-widest uppercase " aria-label="AI 인사이트 엔진">
+ <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-black/5 border border-black/5 text-xs font-bold tracking-widest uppercase " aria-label="AI 인사이트 엔진">
  {getIcon(activeInsight.type)}
  AI_INSIGHT_ENGINE
  </div>
- <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
- <span className="text-[10px] font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
+ <div className="w-1.5 h-1.5 rounded-lg bg-current animate-ping" />
+ <span className="text-xs font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
  </div>
  
  <AnimatePresence mode="wait">
@@ -137,7 +137,7 @@ export const InsightBanner: React.FC = () => {
  transition={{ duration: 0.6, ease: "circOut" }}
  className="space-y-4"
  >
- <p className="text-2xl font-black tracking-tighter text-slate-900 leading-tight line-clamp-2 text-left">
+ <p className="text-2xl font-bold tracking-tighter text-slate-900 leading-tight line-clamp-2 text-left">
  {activeInsight.message}
  </p>
  
@@ -145,7 +145,7 @@ export const InsightBanner: React.FC = () => {
  <div className="flex items-center justify-center lg:justify-start gap-4">
  <Button 
  variant="link" 
- className="p-0 h-auto text-[11px] font-black tracking-[0.3em] uppercase group/act flex items-center gap-2"
+ className="p-0 h-auto text-xs font-bold tracking-[0.3em] uppercase group/act flex items-center gap-2"
  >
  {activeInsight.action}
  <ChevronRight size={14} className="group-hover/act:translate-x-1 transition-transform" />
@@ -163,13 +163,13 @@ export const InsightBanner: React.FC = () => {
  <div 
  key={idx} 
  className={cn(
- "w-2 h-2 rounded-full transition-all duration-500",
+ "w-2 h-2 rounded-lg transition-all duration-500",
  idx === currentIndex ? "w-6 bg-slate-900" : "bg-slate-200"
  )} 
  />
  ))}
  </div>
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
+ <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
  <Maximize2 size={16} />
  </Button>
  </div>

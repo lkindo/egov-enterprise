@@ -77,13 +77,13 @@ function DashboardSkeleton() {
     <div className="space-y-8 pb-10 animate-pulse">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
         <div className="space-y-4">
-          <Skeleton className="h-6 w-32 rounded-full" />
+          <Skeleton className="h-6 w-32 rounded-lg" />
           <Skeleton className="h-12 w-64 rounded-[0.1rem]" />
           <Skeleton className="h-4 w-96 rounded-lg" />
         </div>
         <div className="flex gap-3 w-full lg:w-auto">
-          <Skeleton className="h-14 w-full lg:w-40 rounded-[0.1rem]" />
-          <Skeleton className="h-14 w-full lg:w-40 rounded-[0.1rem]" />
+          <Skeleton className="h-11 w-full lg:w-40 rounded-[0.1rem]" />
+          <Skeleton className="h-11 w-full lg:w-40 rounded-[0.1rem]" />
         </div>
       </div>
       <Skeleton className="h-[200px] w-full rounded-[0.1rem]" />

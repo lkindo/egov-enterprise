@@ -88,12 +88,12 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '인프라 노드 ID',
             accessor: (item: Network) => (
                 <div className="flex items-center gap-4 py-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                         <Cpu size={18} />
                     </div>
                     <div className="text-left">
-                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item?.ntwrkId}</span>
-                        <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">INFRA_NODE_UUID</span>
+                        <span className="font-bold tracking-tighter text-foreground block text-sm uppercase leading-none">{item?.ntwrkId}</span>
+                        <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">INFRA_NODE_UUID</span>
                     </div>
                 </div>
             )
@@ -102,10 +102,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '네트워크 자산 정보',
             accessor: (item: Network) => (
                 <div className="space-y-1 text-left">
-                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item?.manageIem}</span>
+                    <span className="text-sm font-bold text-foreground uppercase tracking-tight">{item?.manageIem}</span>
                     <div className="flex items-center gap-2">
                         <Globe size={10} className="text-primary opacity-40" />
-                        <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums lowercase">{item?.ntwrkIp}</span>
+                        <span className="text-xs font-bold text-muted-foreground/60 tabular-nums lowercase">{item?.ntwrkIp}</span>
                     </div>
                 </div>
             )
@@ -125,10 +125,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-200 transition-all font-bold" onClick={() => handleEdit(item)}>
                         <Settings size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all" onClick={() => handleDelete(item.ntwrkId)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.ntwrkId)}>
                         <Trash2 size={16} />
                     </Button>
                 </div>
@@ -149,7 +149,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
                 icon={NetworkIcon}
                 actions={
-                    <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
+                    <Button onClick={handleCreate} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
                         <Plus size={18} /> 신규 노드 등록
                     </Button>
                 }
@@ -175,7 +175,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                 placeholder="노드 명칭 또는 ID 기반 지형 검색.."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-16 pl-16 pr-8 rounded-xl bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                                className="h-11 pl-16 pr-8 rounded-lg bg-slate-50 border-2 border-slate-100 font-bold text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>
                     </div>

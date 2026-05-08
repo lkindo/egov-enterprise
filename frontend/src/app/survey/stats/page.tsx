@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { getSurveyStats } from '@/lib/api/survey';
@@ -94,7 +94,7 @@ function StatsContent() {
                 <CardHeader className="bg-muted/30 border-b">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-md flex items-center">
-                      <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-sm mr-3">
+                      <span className="bg-primary text-primary-foreground w-6 h-6 rounded-lg flex items-center justify-center text-sm mr-3">
                         {idx + 1}
                       </span>
                       {stat.qestnCn}
@@ -110,9 +110,9 @@ function StatsContent() {
                       <span className="font-medium">{stat.iemCn || '주관식 답변'}</span>
                       <span className="text-muted-foreground">{stat.respondCnt || 0} 명 ({stat.qustnrPercent || 0}%)</span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                    <div className="w-full bg-muted rounded-lg h-2.5 overflow-hidden">
                       <div
-                        className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                        className="bg-primary h-2.5 rounded-lg transition-all duration-500"
                         style={{ width: `${stat.qustnrPercent || 0}%` }}
                       ></div>
                     </div>

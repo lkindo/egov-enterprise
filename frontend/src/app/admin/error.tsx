@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
@@ -138,8 +138,8 @@ function ErrorLayout({
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="flex flex-col items-center text-center max-w-lg"
       >
-        <div className={`p-6 rounded-2xl ${iconBg} ${iconColor} mb-6`}>{icon}</div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">{title}</h2>
+        <div className={`p-6 rounded-lg ${iconBg} ${iconColor} mb-6`}>{icon}</div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">{title}</h2>
         <p className="text-slate-500 font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
         {digest && (
@@ -166,7 +166,7 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 ${
+      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 ${
         primary
           ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
           : 'border-2 border-slate-200 text-slate-600 hover:bg-slate-50'

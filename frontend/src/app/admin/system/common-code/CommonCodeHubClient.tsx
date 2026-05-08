@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -60,7 +60,7 @@ export default function CommonCodeHubClient({
         />
 
         {/* --- Multi-Level Hub Switcher --- */}
-        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-xl flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
+        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
             label="표준 코드" 
@@ -102,7 +102,7 @@ export default function CommonCodeHubClient({
           >
             {activeTab === 'STANDARD' && (
               <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
-                 <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
+                 <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
                  <CommonCodeClient 
                   clCodes={clCodes} 
                   groups={groups} 
@@ -113,13 +113,13 @@ export default function CommonCodeHubClient({
             )}
             {activeTab === 'ADMINIST' && (
               <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64 opacity-60 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-lg blur-[120px] -mr-64 -mt-64 opacity-60 pointer-events-none" />
                 <AdministCodeClient initialData={{ list: [], total: 0 }} />
               </div>
             )}
             {activeTab === 'INSTITUTION' && (
               <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
-                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
                 <InstitutionCodeClient initialData={{ list: [], total: 0 }} />
               </div>
             )}
@@ -141,7 +141,7 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         onClick();
       }}
       className={cn(
-        "relative flex items-center gap-3 px-10 py-4 rounded-xl text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
+        "relative flex items-center gap-3 px-10 py-4 rounded-lg text-xs font-bold tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 
           ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
           : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
@@ -157,7 +157,7 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
       {active && (
         <motion.div 
           layoutId="activeHubIndicator"
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full mb-1 opacity-80"
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-lg mb-1 opacity-80"
         />
       )}
     </button>

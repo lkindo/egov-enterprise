@@ -24,7 +24,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
     <div className="hub-glass-premium rounded-[var(--radius-hub-section)] overflow-hidden bg-card/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all shadow-2xl border-2 border-border/40">
       {/* Premium Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-4 border-b bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md">
-        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-xl border border-border/40">
+        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-lg border border-border/40">
             <EditorButton onClick={() => applyStyle('bold')} icon={<Bold size={16} />} label="Bold" />
             <EditorButton onClick={() => applyStyle('italic')} icon={<Italic size={16} />} label="Italic" />
             <EditorButton onClick={() => applyStyle('code')} icon={<Code size={16} />} label="Code" />
@@ -46,7 +46,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
         
         <div className="flex-1" />
         
-        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-xl border border-border/40">
+        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-lg border border-border/40">
             <EditorButton onClick={() => applyStyle('left')} icon={<AlignLeft size={16} />} />
             <EditorButton onClick={() => applyStyle('center')} icon={<AlignCenter size={16} />} />
             <EditorButton onClick={() => applyStyle('right')} icon={<AlignRight size={16} />} />
@@ -74,12 +74,12 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
       {/* Status Footer */}
       <div className="px-6 py-3 border-t bg-slate-50/30 dark:bg-slate-900/30 flex justify-between items-center">
           <div className="flex items-center gap-4">
-              <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
-              <span className="text-[9px] font-black text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
-                  <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" /> Live_Sync_Active
+              <span className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
+              <span className="text-xs font-bold text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
+                  <div className="w-1 h-1 bg-emerald-500 rounded-lg animate-pulse" /> Live_Sync_Active
               </span>
           </div>
-          <div className="text-[10px] font-black text-slate-500 tracking-widest uppercase">
+          <div className="text-xs font-bold text-slate-500 tracking-widest uppercase">
             {value.length} _ CHARACTERS_LOGGED
           </div>
       </div>

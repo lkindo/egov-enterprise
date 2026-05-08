@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -149,12 +149,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  header: '파일명',
  accessor: (item: Program) => (
  <div className="flex items-center gap-4 py-3">
- <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+ <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
  <Cpu size={20} />
  </div>
  <div className="text-left">
- <span className="font-black tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmKoreanNm}</span>
- <span className="text-[9px] font-black text-slate-600 tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
+ <span className="font-bold tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmKoreanNm}</span>
+ <span className="text-xs font-bold text-slate-600 tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
  </div>
  </div>
  )
@@ -164,7 +164,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  accessor: (item: Program) => (
  <div className="flex justify-start">
  <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
- <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
+ <span className="text-xs font-bold text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
  </div>
  </div>
  ),
@@ -187,22 +187,22 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
  <Settings size={16} />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+ <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
  프로그램 속성 및 엔드포인트 수정
  </TooltipContent>
  </Tooltip>
 
  <Tooltip>
  <TooltipTrigger asChild>
- <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-xl" onClick={() => handleDelete(item.progrmFileNm)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.progrmFileNm)}>
  <Trash2 size={16} />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase text-rose-300">
+ <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase text-rose-300">
  시스템 자산 영구 삭제
  </TooltipContent>
  </Tooltip>
@@ -229,12 +229,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Button
  onClick={handleOpenCreate}
  size="lg"
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
  >
  <Plus size={20} /> 신규 등록
  </Button>
  </TooltipTrigger>
- <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+ <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
  새로운 물리 프로그램 자산 정의
  </TooltipContent>
  </Tooltip>
@@ -262,11 +262,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  value={currentSearchWrd}
  onChange={(e) => setCurrentSearchWrd(e.target.value)}
  onKeyDown={(e) => e.key === 'Enter' && loadData()}
- className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-xl text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+ className="h-11 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
  />
  </div>
  </div>
- <Button onClick={() => loadData()} size="lg" className="h-16 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
+ <Button onClick={() => loadData()} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
  <Search size={18} /> 검색
  </Button>
  </div>

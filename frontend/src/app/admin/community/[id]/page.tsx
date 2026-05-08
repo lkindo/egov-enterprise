@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -68,7 +68,7 @@ function CommunityDetailContent() {
             accessor: (item: BoardPost) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
-                    {item.nttCn ? <span className="text-[11px] text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span> : null}
+                    {item.nttCn ? <span className="text-xs text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span> : null}
                 </div>
             ),
             className: 'min-w-[300px]'
@@ -100,7 +100,7 @@ function CommunityDetailContent() {
                 actions={
                     <button
                         onClick={() => router.push('/admin/community/boards/write')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all"
                     >
                         <Plus size={18} /> 새 글 쓰기
                     </button>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -123,7 +123,7 @@ export default function PolicyAdminClient() {
  variant="ghost" 
  size="sm" 
  onClick={() => handleEdit(item)}
- className="hover:bg-primary/10 hover:text-primary rounded-xl"
+ className="hover:bg-primary/10 hover:text-primary rounded-lg"
  >
  <Edit2 size={14} className="mr-2" /> 수정
  </Button>
@@ -144,10 +144,10 @@ export default function PolicyAdminClient() {
  <div className="hub-table-container">
  <div className="flex items-center justify-between mb-8 px-4 text-left">
  <div className="space-y-1 text-left">
- <h3 className="text-xl font-black tracking-tight text-left">서비스 정책 목록</h3>
+ <h3 className="text-xl font-bold tracking-tight text-left">서비스 정책 목록</h3>
  <p className="text-sm text-muted-foreground text-left">로그인, 개인정보 처리 방침 등 시스템 전반에서 통용되는 정책 기반 정보를 인덱싱합니다.</p>
  </div>
- <Button onClick={fetchPolicies} variant="outline" size="sm" className="rounded-xl border-2 font-black text-[10px] tracking-widest uppercase">
+ <Button onClick={fetchPolicies} variant="outline" size="sm" className="rounded-lg border-2 font-bold text-xs tracking-widest uppercase">
  새로고침
  </Button>
  </div>
@@ -163,14 +163,14 @@ export default function PolicyAdminClient() {
 
  {/* Edit Modal */}
  <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
- <DialogContent className="max-w-5xl rounded-xl overflow-hidden border-none shadow-2xl p-0">
+ <DialogContent className="max-w-5xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
  <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
  <DialogHeader>
- <DialogTitle className="text-2xl font-black flex items-center gap-3">
+ <DialogTitle className="text-2xl font-bold flex items-center gap-3">
  <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.id || selectedPolicy?.type}</span>
  </DialogTitle>
  </DialogHeader>
- <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase">
+ <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg text-xs font-bold tracking-widest uppercase">
  <CheckCircle2 size={14} className="text-primary" /> 실시간 편집 모드
  </div>
  </div>
@@ -183,15 +183,15 @@ export default function PolicyAdminClient() {
  name="title"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
+ <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
  <FormControl>
  <Input 
  {...field}
  placeholder="정책 제목을 입력하세요"
- className="h-14 rounded-xl border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-black text-lg"
+ className="h-11 rounded-lg border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-bold text-lg"
  />
  </FormControl>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />
@@ -201,7 +201,7 @@ export default function PolicyAdminClient() {
  name="content"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>
+ <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>
  <FormControl>
  <RichTextEditor 
  value={field.value} 
@@ -209,22 +209,22 @@ export default function PolicyAdminClient() {
  className="min-h-[400px]"
  />
  </FormControl>
- <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
  />
  </div>
 
  <DialogFooter className="p-8 bg-slate-50 border-t border-border/50 flex items-center justify-between">
- <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+ <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
  * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
  </div>
  <div className="flex gap-3">
- <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="rounded-xl h-12 px-8 font-black text-[10px] tracking-widest uppercase">취소</Button>
+ <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="rounded-lg h-12 px-8 font-bold text-xs tracking-widest uppercase">취소</Button>
  <Button 
  type="submit"
  disabled={form.formState.isSubmitting}
- className="rounded-xl h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-black text-[10px] tracking-widest uppercase"
+ className="rounded-lg h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-bold text-xs tracking-widest uppercase"
  >
  {form.formState.isSubmitting ? '저장 중...' : '변경 사항 반영하기'}
  </Button>

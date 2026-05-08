@@ -60,7 +60,7 @@ export default function SurveyListPage() {
             e.stopPropagation();
             router.push(`/survey/${item.qestnrId}`);
           }}
-          className="p-2 hover:bg-primary/10 text-primary rounded-full transition-all"
+          className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-all"
         >
           <ArrowRight size={18} />
         </button>

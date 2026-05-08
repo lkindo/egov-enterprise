@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -19,14 +19,14 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
  header: '콘텐츠 명세',
  accessor: (item) => (
  <div className="flex items-center gap-5 py-4">
- <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
+ <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
  <BookOpen size={18} />
  </div>
  <div className="flex flex-col gap-1 text-left">
- <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-[10px] font-black tracking-tight border border-slate-200 w-fit">
+ <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-xs font-bold tracking-tight border border-slate-200 w-fit">
  {item.hpcmSe || 'SYSTEM'}
  </span>
- <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hpcmNm}</span>
+ <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hpcmNm}</span>
  </div>
  </div>
  )
@@ -34,7 +34,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
  {
  header: 'ID / 레퍼런스',
  accessor: (item) => (
- <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.3em] font-mono ">
+ <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">
  ID: {item.hpcmId}
  </span>
  ),
@@ -63,7 +63,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
  subtitle="사용자 경험 최적화를 위해 모든 시스템 가이드와 도움말 콘텐츠를 중앙 집중식으로 관리합니다." 
  icon={HelpCircle} 
  actions={
- <Button className="h-12 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+ <Button className="h-12 px-8 bg-slate-900 text-white rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all">
  <Plus size={16} className="mr-2" /> 콘텐츠 등록
  </Button>
  }

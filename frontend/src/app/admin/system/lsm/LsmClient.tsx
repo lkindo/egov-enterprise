@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -28,7 +28,7 @@ export default function LsmClient({
  <Calendar size={18} />
  </div>
  <div className="flex flex-col">
- <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.scheduleSe}</span>
+ <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.scheduleSe}</span>
  <span className="font-bold text-slate-900">{item.scheduleNm}</span>
  </div>
  </div>
@@ -38,7 +38,7 @@ export default function LsmClient({
  header: '대상 간부',
  accessor: (item) => (
  <div className="flex items-center gap-2">
- <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">
+ <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
  {item.leaderNm?.charAt(0)}
  </div>
  <span className="font-semibold">{item.leaderNm || 'Unknown'}</span>
@@ -48,7 +48,7 @@ export default function LsmClient({
  {
  header: '기간',
  accessor: (item) => (
- <div className="flex flex-col text-[11px] font-mono text-slate-500">
+ <div className="flex flex-col text-xs font-mono text-slate-500">
  <span>{item.schdulBgnde}</span>
  <span className="opacity-40">~ {item.schdulEndde}</span>
  </div>
@@ -69,7 +69,7 @@ export default function LsmClient({
  subtitle="조직 핵심 의사결정권자의 일정을 실시간으로 조율하고 최적의 가용성을 확보합니다." 
  icon={UserCheck} 
  actions={
- <Button className="h-12 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+ <Button className="h-12 px-8 bg-slate-900 text-white rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all">
  <Plus size={16} className="mr-2" /> 일정 등록
  </Button>
  }
@@ -89,17 +89,17 @@ export default function LsmClient({
  <HubSectionCard title="간부 상태 모니터링" description="주요 리더의 현재 업무 가용성 및 위치 상태입니다." icon={Shield}>
  <div className="space-y-4">
  {initialStatuses.map(status => (
- <div key={status.leaderId} className="p-4 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
+ <div key={status.leaderId} className="p-4 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-400">
+ <div className="w-12 h-12 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400">
  <Star size={20} />
  </div>
  <div>
- <h5 className="font-black text-slate-900 leading-tight">{status.leaderNm}</h5>
- <p className="text-[10px] text-slate-400 font-bold uppercase">{status.positionNm} | {status.orgnztNm}</p>
+ <h5 className="font-bold text-slate-900 leading-tight">{status.leaderNm}</h5>
+ <p className="text-xs text-slate-400 font-bold uppercase">{status.positionNm} | {status.orgnztNm}</p>
  </div>
  </div>
- <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-tighter">
+ <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase tracking-tighter">
  {status.status}
  </div>
  </div>

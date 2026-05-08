@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -121,7 +121,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  layout
  onClick={() => setSelectedItemId(note.noteId)}
  className={cn(
- "group p-6 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
+ "group p-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
  selectedItemId === note.noteId
  ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02]"
  : "bg-white border-slate-50 hover:border-primary/20 text-slate-600 shadow-sm"
@@ -132,7 +132,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  >
  <div className="flex items-start gap-6 relative z-10">
  <div className={cn(
- "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-lg border transition-all",
+ "w-14 h-11 rounded-lg flex items-center justify-center shrink-0 shadow-lg border transition-all",
  selectedItemId === note.noteId 
  ? "bg-primary text-white border-primary/20 rotate-6" 
  : "bg-slate-50 text-slate-400 border-slate-100 group-hover:rotate-6"
@@ -142,24 +142,24 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className={cn(
- "text-[8px] font-black tracking-widest uppercase font-mono",
+ "text-xs font-bold tracking-widest uppercase font-mono",
  selectedItemId === note.noteId ? "text-primary" : "text-slate-400"
  )}>
  SECURE_CHANNEL
  </span>
- <span className="text-[10px] font-black opacity-30 tabular-nums">
+ <span className="text-xs font-bold opacity-30 tabular-nums">
  {note.sendDt?.substring(0, 10)}
  </span>
  </div>
- <h4 className={cn("text-lg font-black tracking-tighter leading-none", selectedItemId === note.noteId ? "text-white" : "text-slate-900")}>
+ <h4 className={cn("text-lg font-bold tracking-tighter leading-none", selectedItemId === note.noteId ? "text-white" : "text-slate-900")}>
  {note.noteSj}
  </h4>
- <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">From: {note.trnsmitterNm || note.trnsmitterId}</p>
+ <p className="text-xs font-bold opacity-40 uppercase tracking-widest">From: {note.trnsmitterNm || note.trnsmitterId}</p>
  </div>
  </div>
  <div className="relative z-10">
  {note.openYn === 'N' ? (
- <div className="w-3 h-3 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
+ <div className="w-3 h-3 rounded-lg bg-primary animate-pulse shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
  ) : (
  <CheckBadge />
  )}
@@ -177,7 +177,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  layout
  onClick={() => setSelectedItemId(address.adbkId)}
  className={cn(
- "group rounded-2xl border-2 transition-all cursor-pointer p-6 flex items-center justify-between relative overflow-hidden",
+ "group rounded-lg border-2 transition-all cursor-pointer p-6 flex items-center justify-between relative overflow-hidden",
  selectedItemId === address.adbkId
  ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02]"
  : "bg-white border-slate-50 hover:border-primary/20 shadow-sm"
@@ -185,7 +185,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  >
  <div className="flex items-center gap-6 relative z-10">
  <div className={cn(
- "w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl border-2 transition-all shadow-inner",
+ "w-16 h-11 rounded-lg flex items-center justify-center font-bold text-2xl border-2 transition-all shadow-inner",
  selectedItemId === address.adbkId 
  ? "bg-primary border-primary/20 text-white rotate-6" 
  : "bg-slate-50 border-slate-100 text-slate-300 group-hover:rotate-6 group-hover:text-primary"
@@ -195,14 +195,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-2">
  <span className={cn(
- "text-[8px] font-black tracking-widest uppercase px-2 py-0.5 rounded bg-primary/10",
+ "text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded bg-primary/10",
  selectedItemId === address.adbkId ? "text-white bg-white/10" : "text-primary"
  )}>
  IDENTITY_NODE
  </span>
  </div>
- <h4 className="text-xl font-black tracking-tighter leading-none">{address.adbkNm}</h4>
- <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{address.email || 'NO_EMAIL_RECORD'}</p>
+ <h4 className="text-xl font-bold tracking-tighter leading-none">{address.adbkNm}</h4>
+ <p className="text-xs font-bold opacity-40 uppercase tracking-widest">{address.email || 'NO_EMAIL_RECORD'}</p>
  </div>
  </div>
  <ArrowUpRight className={cn(
@@ -219,7 +219,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  {scraps.length === 0 ? (
  <div className="p-32 flex flex-col items-center justify-center text-center opacity-30 grayscale grayscale-100">
  <Bookmark size={64} className="mb-6" />
- <p className="text-[10px] font-black tracking-[0.5em] uppercase">No Scraps Located in Database</p>
+ <p className="text-xs font-bold tracking-[0.5em] uppercase">No Scraps Located in Database</p>
  </div>
  ) : (
  scraps.map((scrap: any) => (
@@ -228,7 +228,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  layout
  onClick={() => setSelectedItemId(scrap.scrapId)}
  className={cn(
- "group p-6 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
+ "group p-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
  selectedItemId === scrap.scrapId
  ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02]"
  : "bg-white border-slate-50 hover:border-primary/20 text-slate-600 shadow-sm"
@@ -236,7 +236,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  >
  <div className="flex items-start gap-6 relative z-10">
  <div className={cn(
- "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-lg border transition-all",
+ "w-14 h-11 rounded-lg flex items-center justify-center shrink-0 shadow-lg border transition-all",
  selectedItemId === scrap.scrapId 
  ? "bg-primary text-white border-primary/20 rotate-6" 
  : "bg-slate-50 text-slate-400 border-slate-100 group-hover:rotate-6"
@@ -246,16 +246,16 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className={cn(
- "text-[8px] font-black tracking-widest uppercase font-mono px-2 py-0.5 rounded",
+ "text-xs font-bold tracking-widest uppercase font-mono px-2 py-0.5 rounded",
  selectedItemId === scrap.scrapId ? "bg-white/10 text-white" : "bg-primary/10 text-primary"
  )}>
  KNOWLEDGE_SCRAP
  </span>
  </div>
- <h4 className={cn("text-lg font-black tracking-tighter leading-none", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900")}>
+ <h4 className={cn("text-lg font-bold tracking-tighter leading-none", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900")}>
  {scrap.scrapNm}
  </h4>
- <p className="text-[8px] font-black tracking-tight opacity-40 uppercase">Saved: {scrap.createdDate?.substring(0, 10) || 'N/A'}</p>
+ <p className="text-xs font-bold tracking-tight opacity-40 uppercase">Saved: {scrap.createdDate?.substring(0, 10) || 'N/A'}</p>
  </div>
  </div>
  </motion.div>
@@ -275,10 +275,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
  <div className="space-y-3">
  <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
- <span className="text-[10px] font-black tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-full border border-primary/10">Collaboration Hub</span>
+ <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+ <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Collaboration Hub</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
  Connect <span className="text-primary">Matrix</span>
  </h1>
  <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest ">
@@ -289,13 +289,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <Button 
  variant="outline" 
  onClick={() => router.push('/admin/collaboration/mail-send')}
- className="h-16 px-8 rounded-xl border-2 border-slate-200 bg-white text-slate-900 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-3 group"
+ className="h-11 px-8 rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-widest text-xs uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-3 group"
  >
  <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" /> Send Note
  </Button>
  <Button 
  onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')}
- className="h-16 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> New Identity
  </Button>
@@ -307,7 +307,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  
  {/* Sidebar Navigation */}
  <div className="col-span-12 lg:col-span-3 space-y-6">
- <div className="hub-glass-premium p-4 rounded-2xl border-2 border-slate-100/50 shadow-2xl space-y-2">
+ <div className="hub-glass-premium p-4 rounded-lg border-2 border-slate-100/50 shadow-2xl space-y-2">
  <NavButton dataTestId="tab-messages" icon={<MessageSquare size={20} />} label="Messenger Hub" active={activeTab === 'MESSAGES'} count={notes.length} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
  <NavButton dataTestId="tab-contacts" icon={<Users size={20} />} label="Network Index" active={activeTab === 'ADDRESS_BOOK'} count={addresses.length} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
  <NavButton dataTestId="tab-scraps" icon={<Bookmark size={20} />} label="Knowledge Scraps" active={activeTab === 'SCRAPS'} count={scraps.length} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
@@ -316,9 +316,9 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/20 to-transparent border-primary/20 relative overflow-hidden group">
  <Zap size={64} className="text-primary absolute -right-4 -bottom-4 rotate-12 opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all" />
  <div className="space-y-2 relative z-10">
- <h4 className="text-[10px] font-black tracking-[0.2em] text-primary uppercase opacity-60">Sync Score</h4>
- <p className="text-5xl font-black tracking-tighter text-slate-900">99.9%</p>
- <div className="w-full h-1 bg-white/30 rounded-full mt-4 overflow-hidden">
+ <h4 className="text-xs font-bold tracking-[0.2em] text-primary uppercase opacity-60">Sync Score</h4>
+ <p className="text-5xl font-bold tracking-tighter text-slate-900">99.9%</p>
+ <div className="w-full h-1 bg-white/30 rounded-lg mt-4 overflow-hidden">
  <motion.div initial={{ width: 0 }} animate={{ width: '99%' }} transition={{ duration: 2 }} className="h-full bg-primary" />
  </div>
  </div>
@@ -327,20 +327,20 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
 
  {/* Data Stream Column */}
  <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 h-full min-h-[600px]">
- <div className="hub-glass-premium flex-1 rounded-2xl border-2 border-slate-100/50 shadow-2xl overflow-hidden flex flex-col">
+ <div className="hub-glass-premium flex-1 rounded-lg border-2 border-slate-100/50 shadow-2xl overflow-hidden flex flex-col">
  <div className="p-8 border-b border-slate-100 space-y-6 bg-white/30 backdrop-blur-3xl">
  <div className="flex items-center justify-between">
- <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase ">
+ <h3 className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase ">
  {activeTab === 'MESSAGES' ? 'Secure Stream' : activeTab === 'ADDRESS_BOOK' ? 'Directory Nodes' : 'Scrap Inventory'}
  </h3>
- <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-[9px] font-black tracking-widest gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
+ <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-xs font-bold tracking-widest gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
  <RefreshCcw size={12} className="text-primary" /> RELOAD
  </Button>
  </div>
  <div className="relative group/search">
  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
- className="pl-14 h-14 bg-white border-2 border-slate-100 rounded-xl text-sm font-black shadow-inner placeholder:text-slate-200 focus:ring-0 focus:border-primary/20 transition-all"
+ className="pl-14 h-11 bg-white border-2 border-slate-100 rounded-lg text-sm font-bold shadow-inner placeholder:text-slate-200 focus:ring-0 focus:border-primary/20 transition-all"
  placeholder="데이터 노드 검색..."
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
@@ -383,18 +383,18 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  exit={{ opacity: 0, scale: 0.95 }}
  className="h-full"
  >
- <div className="hub-glass-premium h-full rounded-2xl border-2 border-primary/20 shadow-[0_50px_100px_-20px_rgba(var(--primary),0.1)] overflow-hidden flex flex-col bg-white">
+ <div className="hub-glass-premium h-full rounded-lg border-2 border-primary/20 shadow-[0_50px_100px_-20px_rgba(var(--primary),0.1)] overflow-hidden flex flex-col bg-white">
  <div className="p-10 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-transparent flex items-center justify-between">
  <div className="flex items-center gap-5">
- <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-2xl">
+ <div className="w-14 h-11 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-2xl">
  <Sparkles size={24} />
  </div>
  <div className="space-y-1">
- <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-none uppercase">Intelligence Detail</h2>
- <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase ">Node_ID: {selectedItemId}</p>
+ <h2 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none uppercase">Intelligence Detail</h2>
+ <p className="text-xs font-bold text-slate-400 tracking-widest uppercase ">Node_ID: {selectedItemId}</p>
  </div>
  </div>
- <Badge className="bg-primary/10 text-primary border-primary/20 font-black text-[9px] px-3 py-1.5 rounded-full uppercase tracking-widest ">Verified Node</Badge>
+ <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs px-3 py-1.5 rounded-lg uppercase tracking-widest ">Verified Node</Badge>
  </div>
  
  <div className="flex-1 overflow-y-auto p-12 space-y-10 scrollbar-hide">
@@ -404,7 +404,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  </div>
 
  <div className="p-8 border-t border-slate-100 bg-slate-50/50 backdrop-blur-xl flex gap-4">
- <Button className="flex-1 h-16 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase shadow-2xl hover:scale-[1.02] active:scale-95 transition-all gap-3">
+ <Button className="flex-1 h-11 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase shadow-2xl hover:scale-[1.02] active:scale-95 transition-all gap-3">
  <ArrowUpRight size={18} /> Execute Action
  </Button>
  <Button 
@@ -412,7 +412,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  onClick={() => handleDelete()}
  disabled={deleteNoteMutation.isPending}
  data-testid="delete-note-btn"
- className="h-16 w-16 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl"
+ className="h-11 w-16 rounded-lg border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl"
  >
  {deleteNoteMutation.isPending ? <Loader2 className="animate-spin" /> : <Trash2 size={24} />}
  </Button>
@@ -420,14 +420,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  </div>
  </motion.div>
  ) : (
- <div className="hub-glass-premium h-full rounded-2xl border-4 border-dashed border-slate-100 bg-white/30 flex flex-col items-center justify-center p-32 text-center group">
- <div className="w-32 h-32 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-200 group-hover:text-primary/20 transition-all duration-1000 rotate-12 group-hover:rotate-45 mb-10 border-2 border-slate-100 shadow-inner">
+ <div className="hub-glass-premium h-full rounded-lg border-4 border-dashed border-slate-100 bg-white/30 flex flex-col items-center justify-center p-32 text-center group">
+ <div className="w-32 h-32 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200 group-hover:text-primary/20 transition-all duration-1000 rotate-12 group-hover:rotate-45 mb-10 border-2 border-slate-100 shadow-inner">
  <Layers size={64} />
  </div>
- <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none uppercase opacity-30">
+ <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none uppercase opacity-30">
  Select Data Node
  </h3>
- <p className="text-[10px] mt-6 font-black tracking-[0.3em] uppercase opacity-20 max-w-xs mx-auto leading-relaxed">
+ <p className="text-xs mt-6 font-bold tracking-[0.3em] uppercase opacity-20 max-w-xs mx-auto leading-relaxed">
  데이터 스트림에서 인텔리전스 노드를 선택하여 상세 프로토콜을 확인하십시오.
  </p>
  </div>
@@ -447,7 +447,7 @@ function NavButton({ icon, label, active, count, onClick, dataTestId }: { icon: 
  onClick={onClick}
  data-testid={dataTestId}
  className={cn(
- "w-full group p-5 rounded-xl border-2 transition-all flex items-center justify-between",
+ "w-full group p-5 rounded-lg border-2 transition-all flex items-center justify-between",
  active
  ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-105"
  : "bg-white border-transparent hover:border-primary/20 text-slate-500 hover:text-slate-900 shadow-sm"
@@ -455,15 +455,15 @@ function NavButton({ icon, label, active, count, onClick, dataTestId }: { icon: 
  >
  <div className="flex items-center gap-5">
  <div className={cn(
- "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-inner border",
+ "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-inner border",
  active ? "bg-primary border-primary/20 text-white" : "bg-slate-50 border-slate-100 text-slate-400 group-hover:bg-slate-100 group-hover:text-primary"
  )}>
  {icon}
  </div>
- <span className="text-xs font-black tracking-tighter uppercase">{label}</span>
+ <span className="text-xs font-bold tracking-tighter uppercase">{label}</span>
  </div>
  <Badge className={cn(
- "font-black tabular-nums border-none",
+ "font-bold tabular-nums border-none",
  active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
  )}>
  {count}
@@ -477,19 +477,19 @@ function NoteDetail({ note }: { note: any }) {
  <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
  <div className="space-y-6">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 ">
+ <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-400 ">
  {note.trnsmitterNm?.charAt(0) || 'U'}
  </div>
  <div>
- <h4 className="text-lg font-black text-slate-900 leading-none">{note.trnsmitterNm || note.trnsmitterId}</h4>
- <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sender_Identity</p>
+ <h4 className="text-lg font-bold text-slate-900 leading-none">{note.trnsmitterNm || note.trnsmitterId}</h4>
+ <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sender_Identity</p>
  </div>
  </div>
  <div className="h-px w-full bg-slate-100" />
  </div>
  
  <div className="space-y-4">
- <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight underline decoration-primary/20 underline-offset-8">
+ <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-tight underline decoration-primary/20 underline-offset-8">
  {note.noteSj}
  </h3>
  <div className="flex items-center gap-6 py-2">
@@ -498,7 +498,7 @@ function NoteDetail({ note }: { note: any }) {
  </div>
  </div>
 
- <div className="p-10 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner relative group/content">
+ <div className="p-10 rounded-lg bg-slate-50 border border-slate-100 shadow-inner relative group/content">
  <div className="absolute top-6 right-8 opacity-[0.02] group-hover/content:opacity-5 transition-opacity pointer-events-none">
  <QuoteIcon className="w-24 h-24" />
  </div>
@@ -514,12 +514,12 @@ function AddressDetail({ address }: { address: any }) {
  return (
  <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
  <div className="flex flex-col items-center text-center space-y-6">
- <div className="w-32 h-32 rounded-3xl bg-slate-900 text-white flex items-center justify-center text-5xl font-black shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] rotate-6 border-4 border-white">
+ <div className="w-32 h-32 rounded-lg bg-slate-900 text-white flex items-center justify-center text-5xl font-bold shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] rotate-6 border-4 border-white">
  {address.adbkNm?.charAt(0)}
  </div>
  <div className="space-y-2">
- <h3 className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">{address.adbkNm}</h3>
- <p className="text-[11px] font-black text-primary uppercase tracking-[0.4em] ">{address.othbcScope === 'P' ? 'GLOBAL_PUBLIC' : 'INTERNAL_ONLY'}</p>
+ <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none uppercase">{address.adbkNm}</h3>
+ <p className="text-xs font-bold text-primary uppercase tracking-[0.4em] ">{address.othbcScope === 'P' ? 'GLOBAL_PUBLIC' : 'INTERNAL_ONLY'}</p>
  </div>
  </div>
 
@@ -531,15 +531,15 @@ function AddressDetail({ address }: { address: any }) {
 
  <div className="hub-card-premium p-8 bg-slate-50 border-slate-100 flex items-center justify-between">
  <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-xl bg-white shadow-xl flex items-center justify-center text-amber-500">
+ <div className="w-10 h-10 rounded-lg bg-white shadow-xl flex items-center justify-center text-amber-500">
  <Star size={20} />
  </div>
  <div>
- <p className="text-sm font-black text-slate-900 leading-none">VIP Network</p>
- <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status Protocol</p>
+ <p className="text-sm font-bold text-slate-900 leading-none">VIP Network</p>
+ <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Status Protocol</p>
  </div>
  </div>
- <Badge className="bg-emerald-500 text-white border-none font-black text-[9px] px-3 uppercase tracking-widest ">ACTIVE</Badge>
+ <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 uppercase tracking-widest ">ACTIVE</Badge>
  </div>
  </div>
  );
@@ -550,28 +550,28 @@ function ScrapDetail({ scrap }: { scrap: any }) {
  <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
  <div className="space-y-4">
  <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
- <span className="text-[10px] font-black text-primary uppercase tracking-widest ">Persistent Knowledge Node</span>
+ <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
+ <span className="text-xs font-bold text-primary uppercase tracking-widest ">Persistent Knowledge Node</span>
  </div>
- <h3 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight ">
+ <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-tight ">
  {scrap.scrapNm}
  </h3>
  </div>
 
  <div className="grid grid-cols-2 gap-6">
- <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner space-y-2">
- <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Capture_Date</span>
- <p className="text-xl font-black text-slate-900 tabular-nums">{scrap.createdDate?.substring(0, 10)}</p>
+ <div className="p-8 rounded-lg bg-slate-50 border border-slate-100 shadow-inner space-y-2">
+ <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Capture_Date</span>
+ <p className="text-xl font-bold text-slate-900 tabular-nums">{scrap.createdDate?.substring(0, 10)}</p>
  </div>
- <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner space-y-2">
- <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reference_ID</span>
- <p className="text-xl font-black text-slate-900 tabular-nums">SCR-{scrap.scrapId?.substring(0, 4)}</p>
+ <div className="p-8 rounded-lg bg-slate-50 border border-slate-100 shadow-inner space-y-2">
+ <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reference_ID</span>
+ <p className="text-xl font-bold text-slate-900 tabular-nums">SCR-{scrap.scrapId?.substring(0, 4)}</p>
  </div>
  </div>
 
  <div className="space-y-4">
- <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-2">Data_Protocol_View</h4>
- <div className="p-8 rounded-2xl bg-slate-900 text-white/90 font-mono text-[11px] leading-relaxed shadow-2xl relative overflow-hidden group/code">
+ <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.4em] px-2">Data_Protocol_View</h4>
+ <div className="p-8 rounded-lg bg-slate-900 text-white/90 font-mono text-xs leading-relaxed shadow-2xl relative overflow-hidden group/code">
  <div className="absolute top-4 right-4 opacity-10 group-hover/code:opacity-30 transition-opacity">
  <Layers size={48} />
  </div>
@@ -600,8 +600,8 @@ function QuoteIcon({ className }: { className?: string }) {
 function CheckBadge() {
  return (
  <div className="flex flex-col items-end">
- <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Status</span>
- <div className="h-6 px-3 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-black text-[9px] flex items-center gap-1.5 uppercase ">
+ <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest leading-none mb-1">Status</span>
+ <div className="h-6 px-3 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold text-xs flex items-center gap-1.5 uppercase ">
  <ShieldCheck size={10} /> Read
  </div>
  </div>
@@ -610,23 +610,23 @@ function CheckBadge() {
 
 function DetailBadge({ icon: Icon, label }: { icon: any, label: string }) {
  return (
- <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
+ <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-50 border border-slate-100">
  <Icon size={14} className="text-primary" />
- <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight tabular-nums">{label}</span>
+ <span className="text-xs font-bold text-slate-900 uppercase tracking-tight tabular-nums">{label}</span>
  </div>
  );
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
  return (
- <div className="p-6 rounded-2xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-between group/row hover:border-primary/20 transition-all">
+ <div className="p-6 rounded-lg bg-white border-2 border-slate-50 shadow-sm flex items-center justify-between group/row hover:border-primary/20 transition-all">
  <div className="flex items-center gap-5">
- <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/row:text-primary transition-colors">
+ <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover/row:text-primary transition-colors">
  <Icon size={20} />
  </div>
  <div className="space-y-0.5">
- <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
- <p className="text-sm font-black text-slate-900 tracking-tight">{value}</p>
+ <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+ <p className="text-sm font-bold text-slate-900 tracking-tight">{value}</p>
  </div>
  </div>
  </div>

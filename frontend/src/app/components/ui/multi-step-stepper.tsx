@@ -23,7 +23,7 @@ export function MultiStepStepper({ steps, currentStep, className }: MultiStepSte
  {/* Step Circle */}
  <div className="flex flex-col items-center gap-2 relative">
  <div className={cn(
- "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
+ "w-10 h-10 rounded-lg flex items-center justify-center border-2 transition-all duration-300",
  currentStep === step.id ? "bg-primary border-primary text-primary-foreground shadow-md scale-110" :
  currentStep > step.id ? "bg-green-500 border-green-500 text-white" :
  "bg-background border-muted text-muted-foreground"

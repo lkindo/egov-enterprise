@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
@@ -28,10 +28,10 @@ export default async function MenuAdminPage() {
         <div className="p-8 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <Suspense fallback={
                 <div className="animate-pulse space-y-12">
-                    <div className="h-20 bg-slate-100 rounded-xl w-1/3" />
+                    <div className="h-11 bg-slate-100 rounded-lg w-1/3" />
                     <div className="grid grid-cols-12 gap-8">
-                        <div className="col-span-12 lg:col-span-5 h-[800px] bg-slate-100 rounded-xl" />
-                        <div className="col-span-12 lg:col-span-7 h-[800px] bg-slate-100 rounded-xl" />
+                        <div className="col-span-12 lg:col-span-5 h-[800px] bg-slate-100 rounded-lg" />
+                        <div className="col-span-12 lg:col-span-7 h-[800px] bg-slate-100 rounded-lg" />
                     </div>
                 </div>
             }>

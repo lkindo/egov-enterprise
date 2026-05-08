@@ -13,7 +13,7 @@ export default async function LogDashboardPage() {
     .catch(() => ({ list: [], total: 0, totalPage: 0 }));
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-mono text-[10px] tracking-widest uppercase animate-pulse">Establishing Log Architecture Streams...</div>}>
+    <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse">Establishing Log Architecture Streams...</div>}>
       <LogDashboardClient systemLogsPromise={systemLogsPromise} />
     </Suspense>
   );
