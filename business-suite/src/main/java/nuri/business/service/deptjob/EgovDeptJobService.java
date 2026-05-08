@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 뾽????퉬???명꽣??씠??
+ * 부서업무 서비스 인터페이스
  */
 public interface EgovDeptJobService {
 

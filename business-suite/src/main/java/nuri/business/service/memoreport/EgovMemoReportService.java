@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 硫붾蹂퉬???명꽣??씠??
+ * 메모보고 서비스 인터페이스
  */
 public interface EgovMemoReportService {
 

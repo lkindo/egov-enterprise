@@ -63,14 +63,14 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            if ("0".equals(searchCondition)) { // 뾽??? builder.and(deptJob.deptJobNm.contains(keyword));
-            } else if ("1".equals(searchCondition)) { // 뾽????
+            if ("0".equals(searchCondition)) { // 부서업무명
+                builder.and(deptJob.deptJobNm.contains(keyword));
+            } else if ("1".equals(searchCondition)) { // 부서업무내용
                 builder.and(deptJob.deptJobCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // ?????
+            } else if ("2".equals(searchCondition)) { // 담당자ID
                 builder.and(deptJob.chargerId.contains(keyword));
             }
         }
-
         return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
     }
 

@@ -59,12 +59,10 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         await page.waitForTimeout(3000);
         await boardMasterPage.search(updatedName);
         
-        const rowCount = await page.locator('tr').filter({ hasText: updatedName }).count();
-        if (rowCount > 0) {
-            console.log('>>> WARNING: Row still visible, final refresh...');
-            await boardMasterPage.search(updatedName);
-        }
-        await expect(page.locator('tr').filter({ hasText: updatedName })).toHaveCount(0, { timeout: 15000 });
+        // Use not.toContainText on the table container for more reliable verification
+        // as StandardDataTable may render a placeholder <tr> even when empty.
+        const tableContainer = page.locator('.hub-table-container');
+        await expect(tableContainer).not.toContainText(updatedName, { timeout: 15000 });
 
         await errorDetector.verify();
     });
@@ -82,8 +80,8 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         
         if (!isNextDisabled) {
             await nextBtn.click();
-            // Expect validation message or toast
-            await expect(page.locator('text=필수, text=입력, .text-red-500').first()).toBeVisible({ timeout: 5000 });
+            // Expect validation message or toast (Zod message: 게시판 명칭은 최소 2글자 이상이어야 합니다)
+            await expect(page.locator('.text-red-500').filter({ hasText: '최소 2글자' }).first()).toBeVisible({ timeout: 15000 });
         } else {
             console.log('>>> Next button correctly disabled for empty name');
         }
@@ -101,19 +99,29 @@ test.describe('Tier 3: Board Master Security (Unauthorized Access)', () => {
         // Should be redirected or show access denied
         const url = page.url();
         if (url.includes('admin/community/boards/master')) {
-            // If still on the page, verify "Access Denied" UI or absence of admin buttons
-            const accessDeniedText = page.locator('text=권한, text=Forbidden, text=Denied').first();
-            const wizardBtn = page.locator('button').filter({ hasText: /Wizard|마법사/i });
+            // [EXPECT] Verify Access Denied at network level
+            // Wait for the specific API to return 403 Forbidden
+            const responsePromise = page.waitForResponse(
+                response => response.url().includes('/admin/system/board-masters') && response.status() === 403,
+                { timeout: 30000 }
+            );
+
+            // [EXPECT] Verify Access Denied error UI
+            // In the new Premium UI, unauthorized data results in an error state
+            const errorDisplay = page.getByTestId('error-state-display').first();
+            await expect(errorDisplay).toBeVisible({ timeout: 30000 });
+            await expect(errorDisplay).toContainText('Access Denied');
             
-            const isDeniedVisible = await accessDeniedText.isVisible();
-            const isWizardHidden = await wizardBtn.isHidden();
+            // Finalize network check
+            await responsePromise;
             
-            // Note: Currently there is a UI Leak (wizard button visible), but admin data should be hidden
-            const adminTable = page.locator('table');
-            const isAdminDataHidden = await adminTable.isHidden();
+            // Additional check: Ensure sensitive action buttons are hidden
+            const wizardBtn = page.getByRole('button', { name: /생성 마법사|Wizard/i });
+            if (await wizardBtn.count() > 0) {
+                await expect(wizardBtn.first()).toBeHidden();
+            }
             
-            expect(isDeniedVisible || isWizardHidden || isAdminDataHidden).toBeTruthy();
-            console.log('>>> Access correctly restricted (UI or Data blocked)');
+            console.log('>>> Access correctly restricted (Security confirmed)');
         } else {
             console.log(`>>> Redirected to: ${url} (Expected behavior)`);
             expect(url).not.toContain('admin');

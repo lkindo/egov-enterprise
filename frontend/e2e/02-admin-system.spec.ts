@@ -127,7 +127,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await deptTab.click({ force: true });
             // Wait for Framer Motion animation + data load
             await page.waitForTimeout(1000);
-            await expect(page.locator('text=TOPOLOGY_NODE').first()).toBeVisible({ timeout: 20000 });
+            await expect(page.locator('text=조직 노드 토폴로지 스트림').first()).toBeVisible({ timeout: 20000 });
             console.log('>>> Section_02 (DEPTS): PASS');
 
             // Section_03: ABSENCES tab

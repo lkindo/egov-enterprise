@@ -22,7 +22,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * 濡쒖??붿뒪湲곕???? μы쁽?
+ * 로컬 파일 저장 서비스
  */
 @Slf4j
 @Service

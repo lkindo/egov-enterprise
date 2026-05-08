@@ -5,34 +5,37 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * FAQ ??퉬???명꽣??씠??
+ * FAQ 서비스 인터페이스
  */
 public interface EgovFaqService {
 
     /**
-     * FAQ 명⑸議고??     */
+     * FAQ 목록 조회
+     */
     Page<FaqDto> getFaqList(String keyword, Pageable pageable);
 
     /**
-     * FAQ ?곸꽭 議고??     */
+     * FAQ 상세 조회
+     */
     FaqDto getFaq(String faqId);
 
     /**
-     * FAQ ?깅줉
+     * FAQ 등록
      */
     String createFaq(String userId, FaqDto dto);
 
     /**
-     * FAQ ??젙
+     * FAQ 수정
      */
     void updateFaq(String faqId, String userId, FaqDto dto);
 
     /**
-     * FAQ ????     */
+     * FAQ 삭제
+     */
     void deleteFaq(String faqId, String userId);
 
     /**
-     * 議고利앷?
+     * 조회수 증가
      */
     void increaseViewCount(String faqId);
 }

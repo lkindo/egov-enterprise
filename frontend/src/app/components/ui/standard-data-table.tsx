@@ -421,7 +421,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 
 function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
+    <div data-testid="error-state-display" className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
       <div className="w-20 h-11 bg-rose-50 rounded-lg flex items-center justify-center mb-2 relative border-4 border-rose-100 shadow-xl">
         <AlertCircle size={40} className="text-rose-500" />
       </div>
