@@ -35,7 +35,7 @@ const LoginLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
                     {item.logId}
                 </div>
@@ -43,7 +43,7 @@ const LoginLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '발생시점',
+            header: '발생?�점',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -53,17 +53,17 @@ const LoginLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '요청자',
+            header: '?�청??,
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
-                    <span className="text-xs font-black text-slate-700">{item.loginNm}</span>
-                    <span className="text-[10px] text-slate-400 font-bold opacity-50">({item.loginId})</span>
+                    <span className="text-xs font-bold text-slate-700">{item.loginNm}</span>
+                    <span className="text-xs text-slate-400 font-bold opacity-50">({item.loginId})</span>
                 </div>
             ),
             className: 'w-48'
         },
         {
-            header: '접속IP',
+            header: '?�속IP',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Globe size={12} className="opacity-30" />
@@ -76,7 +76,7 @@ const LoginLogAdminPage = () => {
             header: '구분',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-tighter ${
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tight ${
                         item.loginMthd === 'LOGIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'
                     }`}>
                         {item.loginMthd}
@@ -90,14 +90,14 @@ const LoginLogAdminPage = () => {
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
             <PageHeader 
-                title="로그인 로그" 
-                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]} 
+                title="로그??로그" 
+                breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '로그??로그' }]} 
             />
 
             <HubHeader 
-                title="계정 가용성" 
-                highlight="로그인 로그" 
-                subtitle="시스템 접속 및 로그인/로그아웃 이력을 투명하게 관리하여 보안 사고를 미연에 방지합니다." 
+                title="계정 가?�성" 
+                highlight="로그??로그" 
+                subtitle="?�스???�속 �?로그??로그?�웃 ?�력???�명?�게 관리하??보안 ?�고�?미연??방�??�니??" 
                 icon={KeyRound} 
             />
 
@@ -111,7 +111,7 @@ const LoginLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '요청자명, ID 검색..',
+                    placeholder: '?�청?�명, ID 검??.',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />

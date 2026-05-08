@@ -40,12 +40,12 @@ const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodePro
           <motion.div
             animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="absolute inset-0 rounded-2xl"
+            className="absolute inset-0 rounded-lg"
             style={{ backgroundColor: glowColor, filter: 'blur(12px)' }}
           />
         )}
         
-        <div className="w-16 h-16 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl relative z-10">
+        <div className="w-16 h-12 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-lg flex items-center justify-center shadow-2xl relative z-10">
           <div className={`${statusColor}`}>
             {React.cloneElement(icon as React.ReactElement<{ size: number }>, { size: 28 })}
           </div>
@@ -53,11 +53,11 @@ const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodePro
       </div>
 
       <div className="text-center">
-        <p className="text-[11px] font-bold text-white uppercase tracking-tighter opacity-90">{label}</p>
+        <p className="text-xs font-bold text-white uppercase tracking-tight opacity-90">{label}</p>
         {latency && (
           <div className="flex items-center justify-center gap-1 mt-0.5">
             <Activity size={10} className="text-emerald-400" />
-            <span className="text-[10px] text-emerald-400/80 font-medium">{latency}</span>
+            <span className="text-xs text-emerald-400/80 font-medium">{latency}</span>
           </div>
         )}
       </div>
@@ -155,18 +155,18 @@ export default function ServiceTopology() {
       <div className="absolute bottom-6 left-8 flex gap-6">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Health: 100%</span>
+          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Health: 100%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
+          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
         </div>
       </div>
 
       <div className="absolute top-6 right-8">
         <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 backdrop-blur-md flex items-center gap-2">
           <Activity size={12} className="text-emerald-400" />
-          <span className="text-[10px] text-white/60 font-bold tracking-tight">System Map v2.1</span>
+          <span className="text-xs text-white/60 font-bold tracking-tight">System Map v2.1</span>
         </div>
       </div>
     </div>

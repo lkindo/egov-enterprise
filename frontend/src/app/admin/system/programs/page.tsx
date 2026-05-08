@@ -1,4 +1,4 @@
-ï»¿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
@@ -7,8 +7,8 @@ import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 
 export const metadata = {
-  title: 'ì‹œìŠ¤í…œ í”„ë¡œê·¸ëž¨ ë¯¸ë“¤ì›¨ì–´ | ì „ìžì •ë¶€ í‘œì¤€í”„ë ˆìž„ì›Œí¬',
-  description: 'ì‹œìŠ¤í…œ ì•„í‚¤í…ì²˜ ë‚´ì˜ ê° í”„ë¡œê·¸ëž¨ê³¼ ì—”ë“œí¬ì¸íŠ¸ë¥¼ ì •ì˜í•˜ê³  í†µí•© ê´€ë¦¬í•©ë‹ˆë‹¤.',
+  title: '½Ã½ºÅÛ ÇÁ·Î±×·¥ ¹Ìµé¿þ¾î | ÀüÀÚÁ¤ºÎ Ç¥ÁØÇÁ·¹ÀÓ¿öÅ©',
+  description: '½Ã½ºÅÛ ¾ÆÅ°ÅØÃ³ ³»ÀÇ °¢ ÇÁ·Î±×·¥°ú ¿£µåÆ÷ÀÎÆ®¸¦ Á¤ÀÇÇÏ°í ÅëÇÕ °ü¸®ÇÕ´Ï´Ù.',
 };
 
 export default async function ProgramAdminPage({
@@ -23,7 +23,7 @@ export default async function ProgramAdminPage({
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // totalPageCount -> totalPage (PageResponse ì¸í„°íŽ˜ì´ìŠ¤ì™€ ì¼ì¹˜ì‹œì¼œ íƒ€ìž… ì˜¤ë¥˜ í•´ê²°)
+  // totalPageCount -> totalPage (PageResponse ÀÎÅÍÆäÀÌ½º¿Í ÀÏÄ¡½ÃÄÑ Å¸ÀÔ ¿À·ù ÇØ°á)
   let initialData: PageResponse<Program> = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
   
   try {
@@ -43,11 +43,11 @@ export default async function ProgramAdminPage({
     <div className="p-8 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
       <Suspense fallback={
         <div className="animate-pulse space-y-12">
-          <div className="h-20 bg-slate-100 rounded-xl w-1/3" />
-          <div className="h-[600px] bg-slate-100 rounded-xl" />
+          <div className="h-20 bg-slate-100 rounded-lg w-1/3" />
+          <div className="h-[600px] bg-slate-100 rounded-lg" />
         </div>
       }>
-        {/* searchWrd prop ì¶”ê°€í•˜ì—¬ íƒ€ìž… ì˜¤ë¥˜ í•´ê²° */}
+        {/* searchWrd prop Ãß°¡ÇÏ¿© Å¸ÀÔ ¿À·ù ÇØ°á */}
         <ProgramAdminClient initialData={initialData} searchWrd={searchWrd} />
       </Suspense>
     </div>

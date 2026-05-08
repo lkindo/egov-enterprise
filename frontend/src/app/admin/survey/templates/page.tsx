@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -8,16 +8,16 @@ export default function SurveyTemplatesPage() {
   return (
     <div className="space-y-6 p-8 animate-in fade-in duration-700">
       <PageHeader
-        title="ì„¤ë¬¸ í…œí”Œë¦¿ ê´€ë¦¬"
-        breadcrumbs={[{ label: 'ì„¤ë¬¸ì¡°ì‚¬' }, { label: 'í…œí”Œë¦¿ ê´€ë¦¬' }]}
+        title="¼³¹® ÅÛÇÃ¸´ °ü¸®"
+        breadcrumbs={[{ label: '¼³¹®Á¶»ç' }, { label: 'ÅÛÇÃ¸´ °ü¸®' }]}
       />
-      <div className="p-20 text-center bg-white rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
-        <div className="w-20 h-20 bg-sky-50 rounded-xl flex items-center justify-center text-sky-300">
+      <div className="p-20 text-center bg-white rounded-lg border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+        <div className="w-20 h-20 bg-sky-50 rounded-lg flex items-center justify-center text-sky-300">
             <Layout size={40} />
         </div>
         <div className="space-y-2">
-            <h3 className="text-xl font-black tracking-tight text-slate-900">ì„¤ë¬¸ ë””ìì¸ ë¼ì´ë¸ŒëŸ¬ë¦¬ ì¤€ë¹„ ì¤‘</h3>
-            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">í‘œì¤€ ì—…ë¬´ ì„¤ë¬¸ì„ ì‹ ì†í•˜ê²Œ ìƒì„±í•  ìˆ˜ ìˆëŠ” ì¬ì‚¬ìš© í…œí”Œë¦¿ì„ êµ¬ì¶•í•˜ê³  ìˆìŠµë‹ˆë‹¤.</p>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900">¼³¹® µğÀÚÀÎ ¶óÀÌºê·¯¸® ÁØºñ Áß</h3>
+            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">Ç¥ÁØ ¾÷¹« ¼³¹®À» ½Å¼ÓÇÏ°Ô »ı¼ºÇÒ ¼ö ÀÖ´Â Àç»ç¿ë ÅÛÇÃ¸´À» ±¸ÃàÇÏ°í ÀÖ½À´Ï´Ù.</p>
         </div>
       </div>
     </div>

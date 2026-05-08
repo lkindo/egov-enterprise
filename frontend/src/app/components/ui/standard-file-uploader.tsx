@@ -116,16 +116,16 @@ export function StandardFileUploader({
             animate={isDragging ? { y: [0, -10, 0] } : {}}
             transition={{ repeat: Infinity, duration: 1.5 }}
             className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors",
+              "w-16 h-12 rounded-lg flex items-center justify-center mb-4 transition-colors",
               isDragging ? "bg-primary text-white" : "bg-white dark:bg-slate-800 text-slate-400 shadow-sm"
             )}
           >
             <Upload size={32} />
           </motion.div>
-          <p className="mb-2 text-sm text-slate-900 dark:text-slate-100 font-black tracking-tight">
+          <p className="mb-2 text-sm text-slate-900 dark:text-slate-100 font-bold tracking-tight">
             {isDragging ? "여기에 파일을 놓으세요" : "클릭하거나 파일을 이곳에 드래그하세요"}
           </p>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             최대 {maxFiles}개 파일 / {maxSizeMB}MB 제한
           </p>
         </div>
@@ -155,20 +155,20 @@ export function StandardFileUploader({
               exit={{ opacity: 0, x: 20, height: 0 }}
               className="group relative overflow-hidden"
             >
-              <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
                     fs.status === 'completed' ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-400"
                   )}>
                     {fs.status === 'uploading' ? <Loader2 size={20} className="animate-spin" /> : <FileIcon size={20} />}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate tracking-tight">
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight">
                         {fs.file.name}
                       </p>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
                         {(fs.file.size / 1024 / 1024).toFixed(2)} MB
                       </span>
                     </div>
@@ -194,7 +194,7 @@ export function StandardFileUploader({
                   ) : null}
                   <button
                     onClick={() => removeFile(fs.id)}
-                    className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                    className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                   >
                     <X size={18} />
                   </button>

@@ -82,8 +82,8 @@ function DashboardSkeleton() {
           <Skeleton className="h-4 w-96 rounded-lg" />
         </div>
         <div className="flex gap-3 w-full lg:w-auto">
-          <Skeleton className="h-14 w-full lg:w-40 rounded-[0.1rem]" />
-          <Skeleton className="h-14 w-full lg:w-40 rounded-[0.1rem]" />
+          <Skeleton className="h-11 w-full lg:w-40 rounded-[0.1rem]" />
+          <Skeleton className="h-11 w-full lg:w-40 rounded-[0.1rem]" />
         </div>
       </div>
       <Skeleton className="h-[200px] w-full rounded-[0.1rem]" />

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -48,7 +48,7 @@ export default function OnlinePollParticipateClient() {
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
  } catch (error) {
- toast.error('설문 목록을 불러오지 못했습니다.');
+ toast.error('���� ����� �ҷ����� ���߽��ϴ�.');
  } finally {
  setLoading(false);
  }
@@ -73,7 +73,7 @@ export default function OnlinePollParticipateClient() {
  }
  } catch (error) {
  console.error('>>> [ERROR] handleSelectPoll failed:', error);
- toast.error('설문 상세 정보를 불러오지 못했습니다.');
+ toast.error('���� �� ������ �ҷ����� ���߽��ϴ�.');
  } finally {
  setLoading(false);
  }
@@ -90,15 +90,15 @@ export default function OnlinePollParticipateClient() {
  pollId: selectedPoll.pollId!,
  pollIemId: selectedItemId
  });
- toast.success('투표가 성공적으로 반영되었습니다.');
+ toast.success('��ǥ�� ���������� �ݿ��Ǿ����ϴ�.');
  // Refresh items to show new counts
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollId!);
  setPollItems(updatedItems);
  setViewMode('result');
  } catch (error: any) {
- const msg = error.response?.data?.message || '투표 처리 중 오류가 발생했습니다.';
+ const msg = error.response?.data?.message || '��ǥ ó�� �� ������ �߻��߽��ϴ�.';
  toast.error(msg);
- if (msg.includes('이미 참여')) {
+ if (msg.includes('�̹� ����')) {
  setViewMode('result');
  }
  } finally {
@@ -110,7 +110,7 @@ export default function OnlinePollParticipateClient() {
  return (
  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="text-slate-400 font-black tracking-widest uppercase text-[10px]">Syncing Matrix Data...</p>
+ <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Syncing Matrix Data...</p>
  </div>
  );
  }
@@ -118,21 +118,21 @@ export default function OnlinePollParticipateClient() {
  return (
  <div className="space-y-12 pb-24">
  <PageHeader
- title="여론조사 센터"
- breadcrumbs={[{ label: '커뮤니티' }, { label: '여론조사 참여' }]}
+ title="�������� ����"
+ breadcrumbs={[{ label: 'Ŀ�´�Ƽ' }, { label: '�������� ����' }]}
  />
 
  <div className="space-y-8">
  {viewMode === 'list' && (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
  {(polls || []).length === 0 ? (
- <div className="col-span-full p-20 text-center bg-white rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
- <div className="w-20 h-20 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300">
+ <div className="col-span-full p-20 text-center bg-white rounded-lg border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+ <div className="w-20 h-20 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300">
  <Target size={40} />
  </div>
  <div className="space-y-2">
- <h3 className="text-xl font-black tracking-tight text-slate-900">활성 설문이 없습니다</h3>
- <p className="text-slate-400 font-medium">새로운 설문이 등록되면 여기에 표시됩니다.</p>
+ <h3 className="text-xl font-bold tracking-tight text-slate-900">Ȱ�� ������ �����ϴ�</h3>
+ <p className="text-slate-400 font-medium">���ο� ������ ��ϵǸ� ���⿡ ǥ�õ˴ϴ�.</p>
  </div>
  </div>
  ) : (
@@ -145,7 +145,7 @@ export default function OnlinePollParticipateClient() {
 
  {(viewMode === 'vote' || viewMode === 'result') && selectedPoll && (
  <div className="max-w-3xl mx-auto">
- <div className="bg-white rounded-3xl overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100">
+ <div className="bg-white rounded-lg overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100">
  <div className="bg-slate-900 p-12 text-white relative overflow-hidden">
  <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
  <Vote size={160} />
@@ -154,21 +154,21 @@ export default function OnlinePollParticipateClient() {
  <div className="flex items-center gap-3">
  <div className="px-4 py-1 bg-white/10 rounded-full border border-white/10 flex items-center gap-2">
  <Zap size={14} className="text-primary" />
- <span className="text-[10px] font-black tracking-[0.2em] uppercase">Protocol Online</span>
+ <span className="text-xs font-bold tracking-[0.2em] uppercase">Protocol Online</span>
  </div>
  <div className="px-4 py-1 bg-primary/20 rounded-full border border-primary/20 flex items-center gap-2">
  <Calendar size={14} className="text-primary" />
- <span className="text-[10px] font-black tracking-tighter uppercase font-mono ">{selectedPoll.pollBeginDe} - {selectedPoll.pollEndDe}</span>
+ <span className="text-xs font-bold tracking-tight uppercase font-mono ">{selectedPoll.pollBeginDe} - {selectedPoll.pollEndDe}</span>
  </div>
  </div>
- <h2 className="text-4xl font-black tracking-tighter leading-none">{selectedPoll.pollNm}</h2>
- <p className="text-slate-400 font-medium text-lg leading-relaxed">전사 의견 수렴을 위한 실시간 투표 세션입니다.</p>
+ <h2 className="text-4xl font-bold tracking-tight leading-none">{selectedPoll.pollNm}</h2>
+ <p className="text-slate-400 font-medium text-lg leading-relaxed">���� �ǰ� ������ ���� �ǽð� ��ǥ �����Դϴ�.</p>
  </div>
  </div>
 
  <div className="p-12 space-y-10">
  <div className="space-y-4">
- <label className="text-[11px] font-black text-slate-400 tracking-[0.3em] uppercase ml-1 block mb-6">
+ <label className="text-xs font-bold text-slate-400 tracking-[0.3em] uppercase ml-1 block mb-6">
  {viewMode === 'vote' ? 'SELECT YOUR OPTION' : 'AGGREGATED METRICS'}
  </label>
  
@@ -192,18 +192,18 @@ export default function OnlinePollParticipateClient() {
  <Button 
  variant="ghost" 
  onClick={() => setViewMode('list')}
- className="h-16 px-10 rounded-2xl font-black text-[11px] tracking-widest uppercase hover:bg-slate-50 border-2 border-slate-50"
+ className="h-12 px-10 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-slate-50 border-2 border-slate-50"
  >
- 뒤로가기
+ �ڷΰ���
  </Button>
  {viewMode === 'vote' && (
  <Button 
  disabled={!selectedItemId || isVoting}
  onClick={handleVote}
- className="h-16 flex-1 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
+ className="h-12 flex-1 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
  >
  {isVoting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserCheck size={20} />}
- 투표 제출하기
+ ��ǥ �����ϱ�
  </Button>
  )}
  </div>
@@ -223,14 +223,14 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  return (
  <div 
  onClick={onSelect}
- className="group cursor-pointer bg-white rounded-3xl p-10 border border-slate-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
+ className="group cursor-pointer bg-white rounded-lg p-10 border border-slate-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
  >
  <div className="flex justify-between items-start mb-10">
- <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl transition-transform group-hover:rotate-6">
+ <div className="w-16 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl transition-transform group-hover:rotate-6">
  <Vote size={28} />
  </div>
  <div className={cn(
- "px-4 py-1.5 rounded-full border text-[10px] font-black tracking-widest uppercase shadow-sm",
+ "px-4 py-1.5 rounded-full border text-xs font-bold tracking-widest uppercase shadow-sm",
  isClosed ? "bg-slate-50 text-slate-400 border-slate-100" : "bg-emerald-50 text-emerald-500 border-emerald-100"
  )}>
  {isClosed ? 'Closed' : 'Live Now'}
@@ -238,8 +238,8 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  </div>
 
  <div className="space-y-4">
- <h3 className="text-2xl font-black tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
- <div className="flex items-center gap-3 font-mono text-[11px] font-black text-slate-400 tracking-tighter ">
+ <h3 className="text-2xl font-bold tracking-tight leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
+ <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-400 tracking-tight ">
  <Calendar size={14} className="opacity-40" />
  {poll.pollBeginDe} <span className="opacity-20">/</span> {poll.pollEndDe}
  </div>
@@ -248,7 +248,7 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
- <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase opacity-60">Ready for Interaction</span>
+ <span className="text-xs font-bold text-slate-500 tracking-widest uppercase opacity-60">Ready for Interaction</span>
  </div>
  <ChevronRight size={18} className="text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
  </div>
@@ -268,7 +268,7 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  onClick={onSelect}
  data-testid={testId}
  className={cn(
- "relative p-8 rounded-2xl border-2 transition-all group overflow-hidden cursor-pointer",
+ "relative p-8 rounded-lg border-2 transition-all group overflow-hidden cursor-pointer",
  isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-slate-50 bg-slate-50/50 hover:border-slate-200",
  mode === 'result' && "cursor-default border-slate-50 bg-white"
  )}
@@ -276,20 +276,20 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  <div className="flex items-center justify-between relative z-10">
  <div className="flex items-center gap-6">
  <div className={cn(
- "w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm shadow-sm transition-all",
+ "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-all",
  isSelected ? "bg-primary text-white" : "bg-white text-slate-400 group-hover:text-primary"
  )}>
  {isSelected ? <CheckCircle2 size={20} /> : String(index + 1).padStart(2, '0')}
  </div>
  <span className={cn(
- "text-lg font-black tracking-tight uppercase",
+ "text-lg font-bold tracking-tight uppercase",
  isSelected ? "text-primary" : "text-slate-900"
  )}>{item.pollIemNm}</span>
  </div>
  {mode === 'result' && (
  <div className="text-right">
- <span className="text-2xl font-black tracking-tighter text-slate-900 tabular-nums leading-none block">{percentage}%</span>
- <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{item.pollIemCo || 0} Votes</span>
+ <span className="text-2xl font-bold tracking-tight text-slate-900 tabular-nums leading-none block">{percentage}%</span>
+ <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{item.pollIemCo || 0} Votes</span>
  </div>
  )}
  </div>

@@ -1,4 +1,4 @@
-ï»¿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import InstitutionCodeClient from './InstitutionCodeClient';
 import { cookies } from 'next/headers';
@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
 
 export const metadata = {
-  title: 'ê¸°ê´€ì½”ë“œ ê´€ë¦¬ | ì „ìì •ë¶€ í‘œì¤€í”„ë ˆì„ì›Œí¬',
-  description: 'í–‰ì •ê¸°ê´€ ì½”ë“œë¥¼ ìˆ˜ì‹ í•˜ê³  ê´€ë¦¬í•©ë‹ˆë‹¤.',
+  title: '±â°üÄÚµå °ü¸® | ÀüÀÚÁ¤ºÎ Ç¥ÁØÇÁ·¹ÀÓ¿öÅ©',
+  description: 'ÇàÁ¤±â°ü ÄÚµå¸¦ ¼ö½ÅÇÏ°í °ü¸®ÇÕ´Ï´Ù.',
 };
 
 export default async function InstitutionCodePage() {
@@ -18,7 +18,7 @@ export default async function InstitutionCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-    // ë³€ìˆ˜ëª… pageNoë¡œ ì •ê·œí™”
+    // º¯¼ö¸í pageNo·Î Á¤±ÔÈ­
     initialData = await codeAdminService.getInstitutionCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
     if (error.response?.status === 401) {
@@ -30,13 +30,13 @@ export default async function InstitutionCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="ê³µê³µê¸°ê´€ ì½”ë“œ ê´€ë¦¬"
-        breadcrumbs={[{ label: 'ì‹œìŠ¤í…œ ê´€ë¦¬' }, { label: 'ì½”ë“œ ê´€ë¦¬' }, { label: 'ê¸°ê´€ ì½”ë“œ' }]}
+        title="°ø°ø±â°ü ÄÚµå °ü¸®"
+        breadcrumbs={[{ label: '½Ã½ºÅÛ °ü¸®' }, { label: 'ÄÚµå °ü¸®' }, { label: '±â°ü ÄÚµå' }]}
       />
       
       <Suspense fallback={
-        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200 animate-pulse">
-            <div className="w-20 h-20 rounded-xl bg-slate-200/50 flex items-center justify-center">
+        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-lg border-2 border-dashed border-slate-200 animate-pulse">
+            <div className="w-20 h-20 rounded-lg bg-slate-200/50 flex items-center justify-center">
                 <Building2 size={40} className="text-slate-300" />
             </div>
             <div className="space-y-3 text-center">

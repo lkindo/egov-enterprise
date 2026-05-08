@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 // P2: Dynamic Import for the heavy Topology visualization
 const ServiceTopology = dynamic(() => import('./components/ServiceTopology'), {
   ssr: false,
-  loading: () => <div className="w-full h-[450px] bg-slate-900/40 rounded-[2.5rem] animate-pulse flex items-center justify-center text-slate-500 font-bold uppercase tracking-widest">Initializing Map...</div>
+  loading: () => <div className="w-full h-[450px] bg-slate-900/40 rounded-lg animate-pulse flex items-center justify-center text-slate-500 font-bold uppercase tracking-widest">Initializing Map...</div>
 });
 
 const MetricCard = ({ title, value, unit, icon: Icon, color, trend }: any) => (
@@ -28,24 +28,24 @@ const MetricCard = ({ title, value, unit, icon: Icon, color, trend }: any) => (
     whileHover={{ y: -5, scale: 1.02 }}
     className="relative group"
   >
-    <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rounded-3xl`} />
-    <Card className="bg-slate-900/40 backdrop-blur-xl border-white/5 rounded-3xl overflow-hidden">
+    <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rounded-lg`} />
+    <Card className="bg-slate-900/40 backdrop-blur-xl border-white/5 rounded-lg overflow-hidden">
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <div className={`p-3 rounded-2xl bg-white/5 ${color.split(' ')[1]} shadow-xl`}>
+          <div className={`p-3 rounded-lg bg-white/5 ${color.split(' ')[1]} shadow-xl`}>
             <Icon size={20} />
           </div>
           {trend && (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`}>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`}>
               {trend}
             </span>
           )}
         </div>
         <div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{title}</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{title}</p>
           <div className="flex items-baseline gap-1">
-            <h3 className="text-3xl font-black text-white tracking-tighter">{value}</h3>
-            <span className="text-[11px] font-bold text-slate-500 uppercase">{unit}</span>
+            <h3 className="text-2xl font-bold text-white tracking-tight">{value}</h3>
+            <span className="text-xs font-bold text-slate-500 uppercase">{unit}</span>
           </div>
         </div>
       </CardContent>
@@ -78,25 +78,24 @@ export default function ObservabilityPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Real-time Intelligence</span>
+            <span className="text-xs font-bold text-primary uppercase tracking-widest">Real-time Intelligence</span>
           </div>
-          <h1 className="text-5xl font-black tracking-tighter text-slate-800 dark:text-white flex items-center gap-4">
-            시스템 통합 관제
-            <Zap className="text-primary fill-primary" size={32} />
+          <h1 className="text-4xl font-bold tracking-tight text-slate-800 dark:text-white flex items-center gap-4">
+            ?�스???�합 관??            <Zap className="text-primary fill-primary" size={28} />
           </h1>
           <p className="text-slate-500 max-w-lg font-medium">
-            전체 분산 아키텍처의 흐름과 인프라 상태를 실시간으로 모니터링합니다. 
-            AI 기반 예측 모델이 잠재적 병목 지점을 사전에 감지합니다.
+            ?�체 분산 ?�키?�처???�름�??�프???�태�??�시간으�?모니?�링?�니?? 
+            AI 기반 ?�측 모델???�재??병목 지?�을 ?�전??감�??�니??
           </p>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" className="bg-white/5 border-white/10 rounded-2xl h-12 px-6 font-bold hover:bg-white/10">
+          <Button variant="outline" className="bg-white/5 border-white/10 rounded-lg h-11 px-6 font-bold hover:bg-white/10">
             <RefreshCcw size={16} className="mr-2 opacity-60" />
             Live Sync
           </Button>
-          <Button className="bg-slate-900 hover:bg-black rounded-2xl h-12 px-8 font-extrabold shadow-xl shadow-primary/20">
-            데이터 익스포트
+          <Button className="bg-slate-900 hover:bg-black rounded-lg h-11 px-8 font-bold shadow-xl shadow-primary/20">
+            ?�이???�스?�트
             <ExternalLink size={16} className="ml-2 opacity-60" />
           </Button>
         </div>
@@ -111,7 +110,7 @@ export default function ObservabilityPage() {
         {/* Main Topology Section */}
         <motion.div variants={itemVariants}>
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-[2.6rem] blur-xl opacity-50 group-hover:opacity-75 transition duration-1000" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-lg blur-xl opacity-50 group-hover:opacity-75 transition duration-1000" />
             <ServiceTopology />
           </div>
         </motion.div>
@@ -166,7 +165,7 @@ export default function ObservabilityPage() {
         animate={{ opacity: 0.4 }}
         className="text-center pt-8"
       >
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
           eGov Enterprise Observability Engine v5.0.0
         </p>
       </motion.div>

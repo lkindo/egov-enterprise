@@ -44,7 +44,7 @@ export function StandardAdminLayout({ children }: { children: React.ReactNode })
                     <div key={i} className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 animate-pulse" />
                   ))}
                </div>
-               <span className="text-[10px] font-black text-slate-400 tracking-tight uppercase">Current Session Active</span>
+               <span className="text-xs font-bold text-slate-400 tracking-tight uppercase">Current Session Active</span>
             </div>
           </div>
 

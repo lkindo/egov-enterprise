@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -31,8 +31,8 @@ export function PremiumSearchInput({
       <Input
         placeholder={placeholder}
         className={cn(
-          "h-14 pl-14 pr-6 w-full rounded-[0.1rem] border-2 border-border font-[number:var(--font-weight-hub-title)] text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background shadow-sm hover:border-primary/50",
-          "placeholder:font-black placeholder:text-muted-foreground/40",
+          "h-11 pl-14 pr-6 w-full rounded-[0.1rem] border-2 border-border font-[number:var(--font-weight-hub-title)] text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background shadow-sm hover:border-primary/50",
+          "placeholder:font-bold placeholder:text-muted-foreground/40",
           className
         )}
         onKeyDown={handleKeyDown}

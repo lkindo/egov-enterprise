@@ -115,7 +115,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
       className={cn(
-        "group p-6 rounded-[var(--radius-hub-item)] border transition-all cursor-pointer relative overflow-hidden",
+        "group p-6 rounded-lg border transition-all cursor-pointer relative overflow-hidden",
         selected
           ? "bg-slate-900 text-white border-slate-900 shadow-2xl z-10"
           : "bg-white border-slate-100 hover:border-primary/30 text-foreground shadow-sm hover:shadow-md"
@@ -123,22 +123,22 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     >
       <div className="flex items-center justify-between mb-4 relative z-10">
         <div className={cn(
-          "w-12 h-12 rounded-[var(--radius-hub-item)] flex items-center justify-center transition-transform group-hover:rotate-6 shadow-lg",
+          "w-12 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:rotate-6 shadow-lg",
           selected ? "bg-white/10 text-white" : "bg-primary/10 text-primary"
         )}>
           {icon}
         </div>
         <HubStatusBadge
-          label="실시간 동기화"
+          label="?�시�??�기??
           variant={selected ? 'default' : 'success'}
-          className={selected ? 'border-white/20' : 'text-[8px] font-black tracking-widest'}
+          className={selected ? 'border-white/20' : 'text-xs font-bold tracking-widest'}
         />
       </div>
 
       <div className="space-y-1 relative z-10">
-        <h4 className={cn("text-xl font-black tracking-tighter truncate leading-none", selected ? "text-white" : "text-foreground")}>{title}</h4>
+        <h4 className={cn("text-xl font-bold tracking-tight truncate leading-none", selected ? "text-white" : "text-foreground")}>{title}</h4>
         <p className={cn(
-          "text-[10px] font-bold tracking-tight opacity-40 uppercase mt-2",
+          "text-xs font-bold tracking-tight opacity-40 uppercase mt-2",
           selected ? "text-white/60" : "text-muted-foreground"
         )}>{subtitle}</p>
       </div>
@@ -155,7 +155,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderJobList = () => (
     <div className="space-y-4">
       {!(jobs || []).length ? (
-        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_DATA_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-lg uppercase font-mono">_ NO_DATA_STREAM</div>
       ) : (jobs || []).map((item: any, idx: number) => (
         <motion.div
           key={item.deptJobbxId}
@@ -165,7 +165,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         >
           <WorkListItem
             title={item.deptJobbxNm}
-            subtitle={`부서: ${item.deptId || '글로벌'} • ID: ${item.deptJobbxId}`}
+            subtitle={`부?? ${item.deptId || '글로벌'} ??ID: ${item.deptJobbxId}`}
             icon={<ClipboardList size={22} />}
             selected={selectedItemId === item.deptJobbxId}
             onClick={() => setSelectedItemId(item.deptJobbxId)}
@@ -178,7 +178,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderReportList = () => (
     <div className="space-y-4">
       {!(reports || []).length ? (
-        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_ASSET_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-lg uppercase font-mono">_ NO_ASSET_STREAM</div>
       ) : (reports || []).map((item: any, idx: number) => (
         <motion.div
           key={item.reprtId}
@@ -188,7 +188,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         >
           <WorkListItem
             title={item.reprtSj}
-            subtitle={`작성자: ${item.wrterNm} • ${item.reprtDe}`}
+            subtitle={`?�성?? ${item.wrterNm} ??${item.reprtDe}`}
             icon={<FileText size={22} />}
             selected={selectedItemId === item.reprtId}
             onClick={() => setSelectedItemId(item.reprtId)}
@@ -230,16 +230,16 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="hub-glass-premium p-8 rounded-[var(--radius-hub-section)] border-2 border-slate-100/50 shadow-2xl space-y-8 relative overflow-hidden group">
+        <div className="hub-glass-premium p-8 rounded-lg border-2 border-slate-100/50 shadow-2xl space-y-8 relative overflow-hidden group">
           {/* Header */}
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1">
-                <h3 className="text-3xl font-black tracking-tighter uppercase font-mono">
+                <h3 className="text-3xl font-bold tracking-tight uppercase font-mono">
                   {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
               </h3>
-              <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">_ Intelligence_Calendar_Hub</p>
+              <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase opacity-40">_ Intelligence_Calendar_Hub</p>
             </div>
-            <div className="flex gap-3 bg-slate-50 p-1.5 rounded-[var(--radius-hub-item)] border border-slate-100">
+            <div className="flex gap-3 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -262,7 +262,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Grid */}
           <div className="grid grid-cols-7 gap-3 relative z-10">
             {weekDays.map(day => (
-              <div key={day} className="text-center py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono">_ {day}</div>
+              <div key={day} className="text-center py-2 text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">_ {day}</div>
             ))}
             
             {prevMonthDays.map(i => (
@@ -280,7 +280,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
                   className={cn(
-                    "aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden",
+                    "aspect-square rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden",
                     isSelected(day) 
                       ? "bg-slate-900 border-slate-900 text-white shadow-xl z-20" 
                       : isToday(day)
@@ -289,7 +289,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   )}
                 >
                   <span className={cn(
-                    "text-lg font-black tracking-tighter tabular-nums font-mono",
+                    "text-lg font-bold tracking-tight tabular-nums font-mono",
                     isSelected(day) ? "text-white" : isToday(day) ? "text-primary" : "text-slate-900/60"
                   )}>{day}</span>
                   
@@ -315,14 +315,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                    <div className="w-3 h-3 rounded-full bg-primary/20 border border-primary/40" />
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">_ Today</span>
+                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">_ Today</span>
                 </div>
                 <div className="flex items-center gap-2">
                    <div className="w-3 h-3 rounded-full bg-primary" />
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">_ Event</span>
+                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">_ Event</span>
                 </div>
              </div>
-             <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black text-primary tracking-widest uppercase font-mono hover:bg-primary/5">
+             <Button variant="ghost" className="h-10 px-4 rounded-lg text-xs font-bold text-primary tracking-widest uppercase font-mono hover:bg-primary/5">
                 <RefreshCcw size={12} className={cn("mr-2", isCalendarLoading && "animate-spin")} /> Sync_Stream
              </Button>
           </div>
@@ -334,22 +334,22 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="워크플로우 허브"
-        breadcrumbs={[{ label: '업무관리' }, { label: '메인 워크스테이션' }]}
+        title="?�크?�로???�브"
+        breadcrumbs={[{ label: '?�무관�? }, { label: '메인 ?�크?�테?�션' }]}
       />
 
       <HubHeader
         title="Works & Intelligence"
         highlight="Hub"
-        subtitle="전사 부서별 업무 처리 및 비즈니스 데이터 자산 통합 관리 센터"
+        subtitle="?�사 부?�별 ?�무 처리 �?비즈?�스 ?�이???�산 ?�합 관�??�터"
         icon={Briefcase}
         actions={
           <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-12 rounded-[var(--radius-hub-item)] border-2 font-black text-[10px] tracking-widest uppercase gap-2">
-              <Filter size={16} /> 뷰포트 필터
+            <Button variant="outline" size="lg" className="h-10 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-2">
+              <Filter size={16} /> 뷰포???�터
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
-              <Plus size={18} /> 새 업무 생성
+            <Button size="lg" className="h-10 px-8 rounded-lg font-bold text-xs tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
+              <Plus size={18} /> ???�무 ?�성
             </Button>
           </div>
         }
@@ -359,11 +359,11 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         {/* --- List Column --- */}
         <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
           <div className="hub-table-container flex-1 flex flex-col p-10 space-y-8">
-            <div className="bg-slate-50 p-2 rounded-[var(--radius-hub-item)] flex gap-1 shadow-inner border border-slate-100">
+            <div className="bg-slate-50 p-2 rounded-lg flex gap-1 shadow-inner border border-slate-100">
               <button
                 onClick={() => setTab('job')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-lg font-bold text-xs tracking-widest uppercase transition-all duration-300",
                   activeTab === 'job'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -374,7 +374,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               <button
                 onClick={() => setTab('report')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-lg font-bold text-xs tracking-widest uppercase transition-all duration-300",
                   activeTab === 'report'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -385,7 +385,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               <button
                 onClick={() => setTab('calendar')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-lg font-bold text-xs tracking-widest uppercase transition-all duration-300",
                   activeTab === 'calendar'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -398,7 +398,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             <div className="relative group/search">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={16} />
               <Input
-                className="pl-12 h-14 bg-muted/30 border-none rounded-[var(--radius-hub-item)] text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-[10px] placeholder:font-black placeholder:tracking-widest uppercase"
+                className="pl-12 h-11 bg-muted/30 border-none rounded-lg text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-xs placeholder:font-bold placeholder:tracking-widest uppercase"
                 placeholder="PROCURING DATABASE ASSETS..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
@@ -434,14 +434,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           <HubSectionCard
           title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
             description={selectedItemId
-              ? `자산 엔티티 #${selectedItemId}에 대한 실시간 연동 및 비즈니스 로직 분석이 활성화되었습니다.`
-              : activeTab === 'calendar' ? "전사 및 개인 일정을 통합하여 비즈니스 가용성을 한눈에 파악합니다."
-                : "오른쪽 리스트에서 분석할 업무 객체 또는 보고 자료를 선택하여 데이터 요약을 시작하십시오."}
+              ? `?�산 ?�티??#${selectedItemId}???�???�시�??�동 �?비즈?�스 로직 분석???�성?�되?�습?�다.`
+              : activeTab === 'calendar' ? "?�사 �?개인 ?�정???�합?�여 비즈?�스 가?�성???�눈???�악?�니??"
+                : "?�른�?리스?�에??분석???�무 객체 ?�는 보고 ?�료�??�택?�여 ?�이???�약???�작?�십?�오."}
             icon={selectedItemId ? Sparkles : activeTab === 'calendar' ? Calendar : Activity}
             statusBadges={
               <>
-                <HubStatusBadge label="시스템 정상" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
-                <HubStatusBadge label="스트림 활성" icon={Clock} variant="default" className="text-[9px] font-black tracking-widest" />
+                <HubStatusBadge label="?�스???�상" icon={CheckCircle2} variant="success" className="text-xs font-bold tracking-widest" />
+                <HubStatusBadge label="?�트�??�성" icon={Clock} variant="default" className="text-xs font-bold tracking-widest" />
               </>
             }
           >
@@ -458,13 +458,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h4 className="text-2xl font-black tracking-tighter uppercase font-mono">
+                      <h4 className="text-2xl font-bold tracking-tight uppercase font-mono">
                         {selectedDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
                       </h4>
-                      <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase opacity-60">_ Selected_Node_Insight</p>
+                      <p className="text-xs font-bold text-primary tracking-[0.4em] uppercase opacity-60">_ Selected_Node_Insight</p>
                     </div>
-                      <Button size="sm" className="h-10 px-6 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-black text-[9px] tracking-widest uppercase gap-2 hover:bg-primary transition-all">
-                        <Plus size={14} /> 일정 추가
+                      <Button size="sm" className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest uppercase gap-2 hover:bg-primary transition-all">
+                        <Plus size={14} /> ?�정 추�?
                       </Button>
                   </div>
 
@@ -474,14 +474,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     
                     if (dayEvents.length === 0) {
                       return (
-                        <div className="p-20 border-4 border-dashed border-border/20 rounded-xl flex flex-col items-center justify-center text-center space-y-8 bg-slate-50/50 dark:bg-muted/5 grayscale">
-                          <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-muted-foreground/20 shadow-inner border border-border/10">
+                        <div className="p-20 border-4 border-dashed border-border/20 rounded-lg flex flex-col items-center justify-center text-center space-y-8 bg-slate-50/50 dark:bg-muted/5 grayscale">
+                          <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center text-muted-foreground/20 shadow-inner border border-border/10">
                             <Clock size={32} />
                           </div>
                           <div className="space-y-4">
-                            <h3 className="text-xl font-black text-foreground tracking-tighter uppercase opacity-40">Empty Timeline</h3>
-                            <p className="text-[10px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
-                              해당 날짜에 예정된 비즈니스 프로세스가 없습니다.
+                            <h3 className="text-xl font-bold text-foreground tracking-tight uppercase opacity-40">Empty Timeline</h3>
+                            <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
+                              ?�당 ?�짜???�정??비즈?�스 ?�로?�스가 ?�습?�다.
                             </p>
                           </div>
                         </div>
@@ -496,29 +496,29 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="group p-8 rounded-xl border-2 border-slate-100 bg-white hover:border-primary/20 hover:shadow-2xl transition-all relative overflow-hidden"
+                            className="group p-8 rounded-lg border-2 border-slate-100 bg-white hover:border-primary/20 hover:shadow-2xl transition-all relative overflow-hidden"
                           >
                             <div className="flex items-start justify-between relative z-10">
                               <div className="space-y-3">
                                 <div className="flex items-center gap-3">
                                   <span className={cn(
-                                    "px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase font-mono",
+                                    "px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase font-mono",
                                     event.schdulSe === '1' ? "bg-indigo-500/10 text-indigo-500" : "bg-emerald-500/10 text-emerald-500"
                                   )}>
                                     {event.schdulSe === '1' ? 'DEPT_OPS' : 'PERSONAL'}
                                   </span>
-                                  <span className="text-[10px] font-black text-slate-300 tabular-nums font-mono">
+                                  <span className="text-xs font-bold text-slate-300 tabular-nums font-mono">
                                     {event.schdulBgnde.substring(8, 10)}:{event.schdulBgnde.substring(10, 12)}
                                   </span>
                                 </div>
-                                <h5 className="text-xl font-black tracking-tighter text-slate-900 group-hover:text-primary transition-colors">
+                                <h5 className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-primary transition-colors">
                                   {event.schdulNm}
                                 </h5>
                                 <p className="text-sm text-slate-500 font-medium line-clamp-2">
                                   "{event.schdulCn}"
                                 </p>
                               </div>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all">
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all">
                                 <ArrowUpRight size={18} />
                               </Button>
                             </div>
@@ -539,29 +539,29 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   exit={{ opacity: 0, y: -20 }}
                   className="space-y-8"
                 >
-                  <div className="h-96 rounded-[var(--radius-hub-item)] bg-slate-50 border-2 border-dashed border-slate-100 shadow-inner flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group">
+                  <div className="h-64 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100 shadow-inner flex flex-col items-center justify-center p-12 text-center relative overflow-hidden group">
                     <div className="absolute inset-0 pointer-events-none opacity-[0.03] grayscale transition-transform group-hover:scale-110 duration-1000" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-                    <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
+                    <div className="w-16 h-12 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
                       <Database size={32} className="text-primary" />
                     </div>
-                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">인텔리전스 엔진 시각화</p>
-                    <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">데이터 구조 분석 및 워크플로우 시각화 컴포넌트 준비됨</p>
-                    <pre className="text-[10px] font-mono mt-6 p-4 bg-white/50 rounded-[var(--radius-hub-item)] overflow-hidden max-w-full truncate">
+                    <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase relative z-10">?�텔리전???�진 ?�각??/p>
+                    <p className="text-xl font-bold text-foreground tracking-tight mt-4 max-w-sm relative z-10">?�이??구조 분석 �??�크?�로???�각??컴포?�트 준비됨</p>
+                    <pre className="text-xs font-mono mt-6 p-4 bg-white/50 rounded-lg overflow-hidden max-w-full truncate">
                       {JSON.stringify(selectedItem, null, 1)}
                     </pre>
                   </div>
-                  <Button className="w-full h-18 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">
+                  <Button className="w-full h-10 text-base rounded-lg bg-slate-900 border-none text-white font-bold tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">
                     Launch Full Analytics
                   </Button>
                 </motion.div>
               ) : (
-                <div className="p-20 border-4 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] flex flex-col items-center justify-center text-center space-y-8 bg-slate-50/50 grayscale">
-                  <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground/20 shadow-inner border border-border/10">
+                <div className="p-20 border-4 border-dashed border-slate-100 rounded-lg flex flex-col items-center justify-center text-center space-y-8 bg-slate-50/50 grayscale">
+                  <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center text-muted-foreground/20 shadow-inner border border-border/10">
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">시스템 대기</h3>
-                    <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
+                    <h3 className="text-3xl font-bold text-foreground tracking-tight uppercase opacity-40">?�스???��?/h3>
+                    <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
                       Select Object to Capture Stream
                     </p>
                   </div>
@@ -575,7 +575,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               title="ACTIVE WORKFLOWS"
               value="12"
               icon={<Activity size={24} />}
-              status="안정"
+              status="?�정"
               color="text-emerald-500"
             />
             <SummaryBlock
@@ -594,16 +594,16 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
 function SummaryBlock({ title, value, icon, status, color }: any) {
   return (
-    <div className="hub-table-container p-10 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white rounded-[var(--radius-hub-section)]">
+    <div className="hub-table-container p-10 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white rounded-lg">
       <div className="flex justify-between items-start mb-10">
-        <div className={cn("w-14 h-14 rounded-[var(--radius-hub-item)] bg-slate-50 flex items-center justify-center shadow-inner border border-slate-100 group-hover:rotate-12 transition-transform", color)}>
+        <div className={cn("w-14 h-11 rounded-lg bg-slate-50 flex items-center justify-center shadow-inner border border-slate-100 group-hover:rotate-12 transition-transform", color)}>
           {icon}
         </div>
-        <HubStatusBadge label={`HUB STATUS: ${status}`} variant="default" className="text-[8px] font-black tracking-widest" />
+        <HubStatusBadge label={`HUB STATUS: ${status}`} variant="default" className="text-xs font-bold tracking-widest" />
       </div>
       <div>
-        <h3 className="text-4xl font-black tracking-tighter text-foreground leading-none">{value}</h3>
-        <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4">{title}</p>
+        <h3 className="text-4xl font-bold tracking-tight text-foreground leading-none">{value}</h3>
+        <p className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase mt-4">{title}</p>
       </div>
       <div className="absolute bottom-[-10%] right-[-10%] opacity-[0.02] group-hover:scale-125 transition-transform duration-1000">
         {React.cloneElement(icon as React.ReactElement<any>, { size: 100 })}

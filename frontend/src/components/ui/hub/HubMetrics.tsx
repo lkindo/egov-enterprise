@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -49,16 +49,16 @@ export function HubMetricCard({
     )}>
       <div className="flex justify-between items-start mb-10 relative z-10">
         <div className={cn(
-          "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-border/10 group-hover:rotate-12 transition-transform", 
+          "w-14 h-11 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-border/10 group-hover:rotate-12 transition-transform", 
           iconBgMap[color]
         )}>
           <Icon size={24} />
         </div>
         <div className="flex flex-col items-end gap-2">
-            <HubStatusBadge label={status} variant="default" className="text-[8px] font-black tracking-widest shadow-sm" />
+            <HubStatusBadge label={status} variant="default" className="text-xs font-bold tracking-widest shadow-sm" />
             {trend && (
                 <span className={cn(
-                    "text-[9px] font-black px-2 py-0.5 rounded-full border tracking-tighter uppercase",
+                    "text-xs font-bold px-2 py-0.5 rounded-full border tracking-tight uppercase",
                     color === 'rose' ? "bg-rose-50 text-rose-500 border-rose-100" : "bg-emerald-50 text-emerald-500 border-emerald-100"
                 )}>
                     {trend}
@@ -67,10 +67,10 @@ export function HubMetricCard({
         </div>
       </div>
       <div className="relative z-10">
-        <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none tabular-nums">
+        <h3 className="text-3xl font-bold tracking-tight text-foreground leading-none tabular-nums">
           {typeof value === 'number' ? value.toLocaleString() : value}
         </h3>
-        <p className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none flex items-center gap-3">
+        <p className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none flex items-center gap-3">
           <span className="w-6 h-0.5 bg-current opacity-40" />
           {title}
         </p>

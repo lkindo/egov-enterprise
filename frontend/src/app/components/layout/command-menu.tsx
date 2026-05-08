@@ -65,10 +65,10 @@ export function CommandMenu() {
       <div className="relative">
         <CommandInput 
           placeholder="실행할 명령어나 메뉴를 입력하십시오..." 
-          className="h-16 border-none bg-transparent font-bold text-base placeholder:text-slate-400 focus:ring-0"
+          className="h-12 border-none bg-transparent font-bold text-base placeholder:text-slate-400 focus:ring-0"
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1">
-          <kbd className="pointer-events-none hidden h-6 select-none items-center gap-1 rounded border bg-slate-50 px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <kbd className="pointer-events-none hidden h-6 select-none items-center gap-1 rounded border bg-slate-50 px-1.5 font-mono text-xs font-medium opacity-100 sm:flex">
             <span className="text-xs">⌘</span>K
           </kbd>
         </div>
@@ -79,10 +79,10 @@ export function CommandMenu() {
           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
             <Search size={20} className="opacity-20" />
           </div>
-          <p className="text-[10px] font-black tracking-widest uppercase">_ NO_MATCHING_INTEL</p>
+          <p className="text-xs font-bold tracking-widest uppercase">_ NO_MATCHING_INTEL</p>
         </CommandEmpty>
 
-        <CommandGroup heading={<span className="text-[9px] font-black tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">Enterprise_Navigation</span>}>
+        <CommandGroup heading={<span className="text-xs font-bold tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">Enterprise_Navigation</span>}>
           <CommandItem onSelect={() => runCommand(() => router.push('/admin'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <LayoutDashboard size={18} className="mr-3 text-primary" />
             <span className="font-bold">통합 대시보드</span>
@@ -107,7 +107,7 @@ export function CommandMenu() {
 
         <CommandSeparator className="my-2 opacity-10" />
 
-        <CommandGroup heading={<span className="text-[9px] font-black tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">Intelligence_Assets</span>}>
+        <CommandGroup heading={<span className="text-xs font-bold tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">Intelligence_Assets</span>}>
           <CommandItem onSelect={() => runCommand(() => router.push('/admin/system/logs/system'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <Database size={18} className="mr-3 text-emerald-500" />
             <span className="font-bold">로그 분석 마스터</span>
@@ -120,7 +120,7 @@ export function CommandMenu() {
 
         <CommandSeparator className="my-2 opacity-10" />
 
-        <CommandGroup heading={<span className="text-[9px] font-black tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">System_Control</span>}>
+        <CommandGroup heading={<span className="text-xs font-bold tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">System_Control</span>}>
           <CommandItem onSelect={() => runCommand(() => setTheme('light'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <Sun size={18} className="mr-3 text-amber-500" />
             <span className="font-bold">라이트 모드로 전환</span>
@@ -146,19 +146,19 @@ export function CommandMenu() {
       <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100/50 flex items-center justify-between">
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
-            <kbd className="h-5 px-1.5 rounded border bg-white text-[9px] font-black shadow-sm">↑↓</kbd>
-            <span className="text-[9px] font-black text-muted-foreground tracking-tighter">NAVIGATE</span>
+            <kbd className="h-5 px-1.5 rounded border bg-white text-xs font-bold shadow-sm">↑↓</kbd>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight">NAVIGATE</span>
           </div>
           <div className="flex items-center gap-2">
-            <kbd className="h-5 px-1.5 rounded border bg-white text-[9px] font-black shadow-sm">ENTER</kbd>
-            <span className="text-[9px] font-black text-muted-foreground tracking-tighter">SELECT</span>
+            <kbd className="h-5 px-1.5 rounded border bg-white text-xs font-bold shadow-sm">ENTER</kbd>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight">SELECT</span>
           </div>
           <div className="flex items-center gap-2">
-            <kbd className="h-5 px-1.5 rounded border bg-white text-[9px] font-black shadow-sm">ESC</kbd>
-            <span className="text-[9px] font-black text-muted-foreground tracking-tighter">CLOSE</span>
+            <kbd className="h-5 px-1.5 rounded border bg-white text-xs font-bold shadow-sm">ESC</kbd>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight">CLOSE</span>
           </div>
         </div>
-        <p className="text-[8px] font-black text-primary tracking-widest uppercase opacity-50">_ Enterprise_Command_v1.2</p>
+        <p className="text-xs font-bold text-primary tracking-widest uppercase opacity-50">_ Enterprise_Command_v1.2</p>
       </div>
     </CommandDialog>
   );

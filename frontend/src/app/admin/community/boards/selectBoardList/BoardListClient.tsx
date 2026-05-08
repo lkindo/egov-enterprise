@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -39,12 +39,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
  ssr: false,
- loading: () => <Skeleton className="h-[280px] w-full rounded-xl" />
+ loading: () => <Skeleton className="h-[280px] w-full rounded-lg" />
 });
 
 import { BoardPost } from '@/types/business/board';
 
-// 검색어 하이라이팅 컴포넌트
+// 검?�어 ?�이?�이??컴포?�트
 const HighlightText = ({ text, highlight }: { text: string | undefined; highlight: string }) => {
  if (!text) return null;
  if (!highlight.trim()) return <>{text}</>;
@@ -68,7 +68,7 @@ function FAQItem({ item }: { item: BoardPost }) {
  return (
  <Card 
  className={cn(
- "overflow-hidden transition-all duration-300 rounded-xl border-2",
+ "overflow-hidden transition-all duration-300 rounded-lg border-2",
  isOpen ? "border-purple-500 bg-purple-50/10 shadow-xl" : "border-slate-100 hover:border-purple-200"
  )}
  >
@@ -78,13 +78,13 @@ function FAQItem({ item }: { item: BoardPost }) {
  >
  <div className="flex items-center gap-6">
  <div className={cn(
- "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition-all",
+ "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg transition-all",
  isOpen ? "bg-purple-500 text-white shadow-lg" : "bg-slate-100 text-slate-400 group-hover:bg-purple-100 group-hover:text-purple-500"
  )}>
  Q
  </div>
  <h4 className={cn(
- "text-xl font-black tracking-tighter transition-colors",
+ "text-xl font-bold tracking-tight transition-colors",
  isOpen ? "text-purple-600" : "text-slate-800"
  )}>
  {item.nttSj}
@@ -108,12 +108,12 @@ function FAQItem({ item }: { item: BoardPost }) {
  >
  <div className="px-6 pb-8 ml-[72px] border-t border-purple-100/50 pt-6">
  <div className="flex items-start gap-4">
- <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-lg shadow-emerald-500/20">A</div>
+ <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg shadow-emerald-500/20">A</div>
  <div className="space-y-4">
  <p className="text-slate-600 font-medium leading-relaxed text-lg whitespace-pre-wrap">
  {item.nttCn}
  </p>
- <div className="flex items-center gap-4 text-[10px] font-black text-slate-300 uppercase tracking-widest pt-4">
+ <div className="flex items-center gap-4 text-xs font-bold text-slate-300 uppercase tracking-widest pt-4">
  <span>Last Updated: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
  <span className="w-1 h-1 bg-slate-200 rounded-full" />
  <span>Views: {item.inqireCo}</span>
@@ -137,7 +137,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
- const router = useRouter(); // router 추가
+ const router = useRouter(); // router 추�?
  const [page, setPage] = useState(initialParams.page || 1);
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || "");
  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || "0");
@@ -159,10 +159,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  return () => window.removeEventListener('keydown', handleKeyDown);
  }, []);
  
- // URL 파라미터가 변경될 때마다 로컬 상태 동기화 (새로고침/뒤로가기 대응)
+ // URL ?�라미터가 변경될 ?�마??로컬 ?�태 ?�기??(?�로고침/?�로가�??�??
  useEffect(() => {
- // 검색어는 사용자가 입력 중일 수 있으므로 URL에 값이 있을 때만 명시적으로 동기화
- const urlSearchWrd = searchParams.get('searchWrd');
+ // 검?�어???�용?��? ?�력 중일 ???�으므�?URL??값이 ?�을 ?�만 명시?�으�??�기?? const urlSearchWrd = searchParams.get('searchWrd');
  if (urlSearchWrd !== null) {
  setSearchWrd(urlSearchWrd);
  }
@@ -176,13 +175,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  setEndDate(ed ? new Date(ed) : undefined);
  }, [searchParams]);
 
- // 마스터 정보 및 템플릿 확인
+ // 마스???�보 �??�플�??�인
  const masterInfo = initialData.masterInfo || null;
  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
- // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
+ // 관리자 ?�?�보?�용???�닌 ?�제 ?�비?�용 ?�치 ?�인
  const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
- // 실제 API 요청에 사용할 파라미터들 (URL 파라미터를 최우선으로 함)
+ // ?�제 API ?�청???�용???�라미터??(URL ?�라미터�?최우?�으�???
  const querySearchWrd = searchParams.get('searchWrd') || "";
  const querySearchCnd = searchParams.get('searchCnd') || "0";
  const queryOrderBy = searchParams.get('orderBy') || "date";
@@ -190,10 +189,10 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const queryStartDate = searchParams.get('startDate');
  const queryEndDate = searchParams.get('endDate');
 
- // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
+ // ?�터가 ?�용???�태?��? ?�인 (SSR 캐시 무효???�단??
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
  
- // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
+ // useQuery??URL ?�라미터가 변경될 ?�만 ?�행??(조회 버튼 ?�릭 ??router.push�??�리�?
  const { data, isLoading: loading } = useBoardList({
  bbsId,
  page: queryPage,
@@ -205,7 +204,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  endDate: queryEndDate || undefined
  }, hasFilter ? undefined : initialData);
 
- // 낙관적 업데이트를 적용한 좋아요 뮤테이션
+ // ?��????�데?�트�??�용??좋아??뮤테?�션
  const likeMutation = useMutation({
  mutationFn: (nttId: string) => likeBoardArticle(bbsId, nttId),
  onMutate: async (nttId: string) => {
@@ -224,10 +223,10 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  // 진행 중인 쿼리 취소
  await queryClient.cancelQueries({ queryKey });
  
- // 이전 상태 저장 (롤백용)
+ // ?�전 ?�태 ?�??(롤백??
  const previousData = queryClient.getQueryData(queryKey);
  
- // 캐시 데이터 즉시 업데이트
+ // 캐시 ?�이??즉시 ?�데?�트
  queryClient.setQueryData(queryKey, (old: any) => {
  if (!old || !old.list) return old;
  return {
@@ -241,12 +240,11 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  return { previousData };
  },
  onError: (err, nttId, context) => {
- // 실패 시 롤백
+ // ?�패 ??롤백
  queryClient.setQueryData(['boardList', bbsId, queryPage, querySearchWrd, queryOrderBy], context?.previousData);
  },
  onSettled: () => {
- // 최종적으로 서버 데이터와 동기화
- queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+ // 최종?�으�??�버 ?�이?��? ?�기?? queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
  }
  });
 
@@ -256,14 +254,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  likeMutation.mutate(nttId);
  };
 
- // 프리미엄 스켈레톤 컴포넌트
+ // ?�리미엄 ?�켈?�톤 컴포?�트
  const BoardSkeleton = () => {
  if (tmplatId === 'hub') {
  return (
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-10">
  {[1, 2, 3, 4, 5, 6].map((i) => (
  <div key={i} className="space-y-4">
- <Skeleton className="aspect-video w-full rounded-xl" />
+ <Skeleton className="aspect-video w-full rounded-lg" />
  <div className="space-y-2">
  <Skeleton className="h-6 w-3/4" />
  <Skeleton className="h-4 w-full" />
@@ -279,7 +277,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <div className="p-10 space-y-6">
  {[1, 2, 3, 4].map((i) => (
  <div key={i} className="flex gap-6 p-6 border-2 border-slate-50">
- <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
+ <Skeleton className="w-16 h-12 rounded-lg shrink-0" />
  <div className="space-y-3 flex-1">
  <Skeleton className="h-6 w-1/2" />
  <Skeleton className="h-4 w-full" />
@@ -296,7 +294,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  return (
  <div className="p-10 space-y-4">
  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
- <Skeleton key={i} className="h-20 w-full rounded-xl" />
+ <Skeleton key={i} className="h-20 w-full rounded-lg" />
  ))}
  </div>
  );
@@ -306,7 +304,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const totalCount = data?.total || 0;
  const totalPages = data?.totalPage || 0;
 
- // 캘린더 데이터 가공 로직
+ // 캘린???�이??가�?로직
  const currentViewDate = startDate || new Date();
  const year = currentViewDate.getFullYear();
  const month = currentViewDate.getMonth();
@@ -314,8 +312,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const daysInMonth = new Date(year, month + 1, 0).getDate();
  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0: Sun, 6: Sat
  
- // 게시글을 날짜별로 그룹화
- const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
+ // 게시글???�짜별로 그룹?? const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
  const targetDate = post.eventDate || post.createdDate;
  if (targetDate) {
  const d = new Date(targetDate);
@@ -331,7 +328,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
  
- // 기존 파라미터 보존하며 검색어/조건만 갱신
+ // 기존 ?�라미터 보존?�며 검?�어/조건�?갱신
  const params = new URLSearchParams(searchParams.toString());
  
  if (searchWrd.trim()) {
@@ -341,62 +338,61 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  }
  
  params.set('searchCnd', searchCnd);
- params.set('page', '1'); // 검색 시 1페이지로 강제 이동
+ params.set('page', '1'); // 검????1?�이지�?강제 ?�동
  
- // URL 이동 (이동 시 searchParams가 변경되므로 useEffect에서 useBoardList를 트리거함)
+ // URL ?�동 (?�동 ??searchParams가 변경되므�?useEffect?�서 useBoardList�??�리거함)
  router.push(`${pathname}?${params.toString()}`);
  };
 
  return (
  <div className="flex flex-col gap-6 p-6 pb-20">
- {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
+ {/* Breadcrumb - ?�적 메뉴 ?�스???�동 */}
  <DynamicBreadcrumb 
  customItems={[
- { name: pathname?.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
- { name: masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판') }
+ { name: pathname?.includes('/admin/system') ? '?�스??관�? : '커�??�티 �?콘텐�? },
+ { name: masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공�??�항' : '게시??) }
  ]}
  />
 
- {/* 템플릿에 따른 차별화된 상단 헤더 */}
+ {/* ?�플릿에 ?�른 차별?�된 ?�단 ?�더 */}
  <div className="flex flex-col gap-4 mb-4">
  <div className="flex items-center gap-3">
  <div className={cn("w-1.5 h-8 rounded-full", tmplatId === 'TMPLT_HUB' ? "bg-indigo-500" : "bg-primary")} />
- <h2 className="text-3xl font-black tracking-tight">
- {masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
+ <h2 className="text-2xl font-bold tracking-tight">
+ {masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공�??�항' : '게시??)}
  </h2>
- {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지식 허브</Badge>}
+ {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지???�브</Badge>}
  </div>
  <p className="text-muted-foreground font-medium ml-4">
- {masterInfo?.bbsIntrcn || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
+ {masterInfo?.bbsIntrcn || '??게시?�의 ?�동?�역�?최신 ?�식???�인?�세??'}
  </p>
  </div>
 
- {/* 관리자 뷰에서만 통계 리포트 호출 */}
+ {/* 관리자 뷰에?�만 ?�계 리포???�출 */}
  {isAdmin && isManagementView && <BoardStats />}
 
- <Card className="border-none shadow-2xl overflow-hidden rounded-xl ring-1 ring-slate-200 bg-white">
+ <Card className="border-none shadow-2xl overflow-hidden rounded-lg ring-1 ring-slate-200 bg-white">
  <CardHeader className="bg-white py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-slate-50">
  <div className="flex-1 space-y-4">
- <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
+ <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-3">
  {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
- <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}</span>
+ <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공�??�항' : '게시??)}</span>
  </CardTitle>
- <p className="text-slate-600 font-bold text-sm">총 <span className="text-primary">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+ <p className="text-slate-600 font-bold text-sm">�?<span className="text-primary">{totalCount}�?/span>???�중???�야기�? ?�겨?�습?�다.</p>
  </div>
  <CardAction className="flex items-center gap-3">
  {mounted && (
  <>
  {isAdmin && (
  <Link href="/admin/community/boards/master">
- <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-xl">
- <Settings2 className="w-6 h-6" /> 게시판 관리
- </Button>
+ <Button variant="outline" size="lg" className="h-12 px-6 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-bold shadow-xl transition-all rounded-lg">
+ <Settings2 className="w-6 h-6" /> 게시??관�? </Button>
  </Link>
  )}
  <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
- <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-xl">
+ <Button size="lg" className="h-12 px-6 gap-2 bg-primary text-white hover:scale-105 font-bold shadow-xl transition-all rounded-lg">
  <div className="flex items-center gap-2">
- <Plus className="w-6 h-6" /> 글쓰기
+ <Plus className="w-6 h-6" /> 글?�기
  </div>
  </Button>
  </Link>
@@ -405,37 +401,37 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </CardAction>
  </CardHeader>
  <CardContent className="pt-10 px-10">
- <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-xl border border-slate-200 shadow-inner">
+ <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-lg border border-slate-200 shadow-inner">
  <form onSubmit={handleSearch} className="flex flex-col gap-3 w-full">
  <div className="flex flex-col md:flex-row items-center gap-3 w-full">
  {mounted ? (
  <Select value={searchCnd} onValueChange={setSearchCnd}>
- <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-xl border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
- <SelectValue placeholder="검색 조건" />
+ <SelectTrigger className="w-full md:w-[220px] !h-10 rounded-lg border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
+ <SelectValue placeholder="검??조건" />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="0">제목</SelectItem>
- <SelectItem value="1">내용</SelectItem>
- <SelectItem value="2">작성자</SelectItem>
+ <SelectItem value="0">?�목</SelectItem>
+ <SelectItem value="1">?�용</SelectItem>
+ <SelectItem value="2">?�성??/SelectItem>
  </SelectContent>
  </Select>
  ) : (
- <div className="w-full md:w-[220px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
+ <div className="w-full md:w-[220px] h-10 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
  )}
- <div className="relative flex-1 group !h-12">
+ <div className="relative flex-1 group !h-10">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
  <Input
  id="board-search-input"
  data-testid="board-search-input"
  type="text"
- className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-xl focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
- placeholder="어떤 정보를 찾으시나요?"
+ className="pl-12 pr-10 !h-10 text-sm border border-slate-200 bg-white shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+ placeholder="?�떤 ?�보�?찾으?�나??"
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
  />
  {!searchWrd && (
- <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[10px] font-black text-slate-400 pointer-events-none select-none">
- <span className="text-[8px] opacity-100">⌘</span>K
+ <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-xs font-bold text-slate-400 pointer-events-none select-none">
+ <span className="text-xs opacity-100">??/span>K
  </div>
  )}
  {searchWrd && (
@@ -443,7 +439,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  type="button"
  onClick={() => {
  setSearchWrd("");
- // 즉시 전체 조회 실행
+ // 즉시 ?�체 조회 ?�행
  const params = new URLSearchParams(searchParams.toString());
  params.delete('searchWrd');
  params.set('page', '1');
@@ -465,7 +461,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <Button
  variant="outline"
  className={cn(
- "!h-12 px-5 justify-start text-left font-bold rounded-xl border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
+ "!h-10 px-5 justify-start text-left font-bold rounded-lg border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
  !startDate && "text-muted-foreground"
  )}
  >
@@ -478,22 +474,21 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  format(startDate, "yyyy.MM.dd")
  )
  ) : (
- "기간 선택"
+ "기간 ?�택"
  )}
  </span>
  </Button>
  </PopoverTrigger>
- <PopoverContent className="w-auto p-0 rounded-xl overflow-hidden border-none shadow-2xl" align="start">
+ <PopoverContent className="w-auto p-0 rounded-lg overflow-hidden border-none shadow-2xl" align="start">
  <div className="p-3 bg-white border-b flex items-center justify-between">
- <span className="font-black text-slate-800 text-sm">기간 설정</span>
+ <span className="font-bold text-slate-800 text-sm">기간 ?�정</span>
  <Button
  variant="ghost"
  size="sm"
  onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
  className="!h-7 px-2 text-xs font-bold text-slate-400 hover:text-red-500"
  >
- <X size={12} className="mr-1" /> 초기화
- </Button>
+ <X size={12} className="mr-1" /> 초기?? </Button>
  </div>
  <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x">
  <Calendar
@@ -516,13 +511,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </PopoverContent>
  </Popover>
  ) : (
- <div className="w-full md:w-[220px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
+ <div className="w-full md:w-[220px] h-10 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
  )}
 
  {mounted ? (
  <Select value={orderBy} onValueChange={(value) => {
  setOrderBy(value);
- // 정렬 변경 시 즉시 조회 실행 (검색어 및 조건 유지)
+ // ?�렬 변�???즉시 조회 ?�행 (검?�어 �?조건 ?��?)
  const params = new URLSearchParams(searchParams.toString());
  params.set('orderBy', value);
  if (searchWrd) params.set('searchWrd', searchWrd);
@@ -530,39 +525,39 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  params.set('page', '1');
  router.push(`${pathname}?${params.toString()}`);
  }}>
- <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-xl border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
+ <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-10 rounded-lg border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
  <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
- <SelectValue placeholder="정렬 방식" />
+ <SelectValue placeholder="?�렬 방식" />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="date">최신순</SelectItem>
- <SelectItem value="views">조회수순</SelectItem>
- <SelectItem value="comments">댓글순</SelectItem>
+ <SelectItem value="date">최신??/SelectItem>
+ <SelectItem value="views">조회?�순</SelectItem>
+ <SelectItem value="comments">?��???/SelectItem>
  </SelectContent>
  </Select>
  ) : (
- <div className="w-full md:w-[140px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
+ <div className="w-full md:w-[140px] h-10 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
  )}
  </div>
 
- <Button type="submit" size="lg" className="!h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-xl flex items-center leading-none">
+ <Button type="submit" size="lg" className="!h-10 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-white rounded-lg flex items-center leading-none">
  <Search className="w-4 h-4 shrink-0" /> 조회
  </Button>
  </div>
  </form>
  </div>
 
- <div className="rounded-xl border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
+ <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
  {loading ? (
  <Table>
  <TableBody>
  {Array.from({ length: 5 }).map((_, i) => (
  <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+ <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-lg" /></TableCell>
+ <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-lg" /></TableCell>
+ <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-lg" /></TableCell>
+ <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-lg" /></TableCell>
+ <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-lg" /></TableCell>
  </TableRow>
  ))}
  </TableBody>
@@ -572,19 +567,19 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  {/* Hub Featured Section */}
  {page === 1 && (
  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
- <Card className="lg:col-span-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-xl text-slate-900 dark:text-white relative overflow-hidden group border-none shadow-xl">
+ <Card className="lg:col-span-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-lg text-slate-900 dark:text-white relative overflow-hidden group border-none shadow-xl">
  <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/10 dark:bg-primary/20 blur-[100px] rounded-full" />
  <div className="relative z-10 space-y-6">
- <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4 text-[10px]">FEATURED_KNOWLEDGE</Badge>
+ <Badge className="bg-primary hover:bg-primary text-white border-none font-bold tracking-widest uppercase py-1 px-4 text-xs">FEATURED_KNOWLEDGE</Badge>
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${list[0].nttId}`}>
- <h3 className="text-4xl font-black tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
+ <h3 className="text-2xl font-bold tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
  </Link>
  <div className="flex items-center gap-8 mt-8">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20 dark:border-white/10">OP</div>
+ <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20 dark:border-white/10">OP</div>
  <div className="flex flex-col">
- <span className="text-[11px] font-black text-slate-600 dark:text-white/80 uppercase tracking-widest leading-none mb-1">Author</span>
- <span className="text-sm font-black">{list[0].frstRegisterNm}</span>
+ <span className="text-xs font-bold text-slate-600 dark:text-white/80 uppercase tracking-widest leading-none mb-1">Author</span>
+ <span className="text-sm font-bold">{list[0].frstRegisterNm}</span>
  </div>
  </div>
  <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
@@ -606,19 +601,19 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  {/* Grid for minor posts */}
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
  {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
- <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-xl border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
+ <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-lg border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-125 transition-all text-primary">
  <BookOpen size={60} />
  </div>
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
- <h4 className="font-black text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
+ <h4 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
  </Link>
  <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
  <div className="flex gap-4">
  <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><Eye size={14} /> {item.inqireCo}</div>
  <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><MessageSquare size={14} /> 0</div>
  </div>
- <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+ <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
  <ChevronRight size={18} />
  </div>
  </div>
@@ -629,7 +624,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  ) : tmplatId === 'TMPLT_GALLERY' && list.length > 0 ? (
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 p-10">
  {list.map((item: BoardPost) => (
- <Card key={item.nttId} className="group overflow-hidden rounded-xl bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+ <Card key={item.nttId} className="group overflow-hidden rounded-lg bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-64 overflow-hidden relative bg-slate-100">
  {/* Using a consistent visual pattern for empty images, could be replaced with real images from storage */}
  <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
@@ -637,22 +632,22 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <BookOpen size={120} className="text-slate-400 opacity-20 relative z-10" />
  <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
  </div>
- <div className="absolute top-6 right-6 px-4 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-full text-white text-[10px] font-black tracking-widest uppercase">INSIGHT</div>
+ <div className="absolute top-6 right-6 px-4 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-full text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
  </div>
  <CardContent className="p-8 space-y-6">
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">
+ <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">
  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
  </h3>
  </Link>
  <div className="flex items-center justify-between pt-6 border-t border-slate-50">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-white font-black text-[10px] border border-slate-200 dark:border-slate-800">OP</div>
+ <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-white font-bold text-xs border border-slate-200 dark:border-slate-800">OP</div>
  <div className="flex flex-col">
- <span className="text-sm font-black text-slate-700 dark:text-slate-200 leading-none mb-1">
+ <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-none mb-1">
  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
  </span>
- <span className="text-[10px] font-bold text-slate-600">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+ <span className="text-xs font-bold text-slate-600">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
  </div>
  </div>
  <div className="flex gap-6">
@@ -662,7 +657,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  className="flex items-center gap-1.5 text-slate-300 hover:text-primary transition-all active:scale-125"
  >
  <ThumbsUp size={16} className={cn(likeMutation.isPending && "animate-bounce")} />
- <span data-testid="like-count" className="text-xs font-black text-slate-900">{item.likeCo || 0}</span>
+ <span data-testid="like-count" className="text-xs font-bold text-slate-900">{item.likeCo || 0}</span>
  </button>
  <div className="flex items-center gap-1.5 text-slate-300"><Share2 size={16} /></div>
  </div>
@@ -674,40 +669,40 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  ) : tmplatId === 'TMPLT_QNA' && list.length > 0 ? (
  <div className="space-y-6 p-10">
  {list.map((item: BoardPost, idx: number) => (
- <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-xl flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
+ <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-lg flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
  <div className="flex flex-col items-center gap-2 min-w-[80px]">
  <div className={cn(
- "w-16 h-16 rounded-xl flex items-center justify-center font-black text-2xl shadow-inner transition-all group-hover:scale-110",
+ "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-inner transition-all group-hover:scale-110",
  item.qnaStatus === 'SOLVED' ? "bg-emerald-100 text-emerald-600 border-2 border-emerald-200" : "bg-amber-100 text-amber-600 border-2 border-amber-200"
  )}>
- {item.qnaStatus === 'SOLVED' ? <CheckCircle2 size={32} /> : <HelpCircle size={32} /> }
+ {item.qnaStatus === 'SOLVED' ? <CheckCircle2 size={24} /> : <HelpCircle size={24} /> }
  </div>
  <span className={cn(
- "text-[10px] font-black uppercase tracking-widest",
+ "text-xs font-bold uppercase tracking-widest",
  item.qnaStatus === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
  )}>{item.qnaStatus === 'SOLVED' ? 'Solved' : 'Open'}</span>
  </div>
  <div className="flex-1 space-y-3">
  <div className="flex items-center gap-4">
- <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-3 py-1">
+ <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-xs font-bold px-3 py-1">
  {item.qnaCategory || 'GENERAL_QNA'}
  </Badge>
- <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+ <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
  </div>
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
- <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase ">
+ <h4 className="text-xl font-bold text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tight uppercase ">
  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
  </h4>
  </Link>
  <div className="flex flex-wrap items-center gap-6 pt-2">
  <div className="flex items-center gap-2">
- <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">AD</div>
+ <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">AD</div>
  <span className="text-xs font-bold text-slate-600">
  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
  </span>
  </div>
  <div className="h-4 w-px bg-slate-200" />
- <div className="flex items-center gap-2 text-slate-600 font-black text-xs">
+ <div className="flex items-center gap-2 text-slate-600 font-bold text-xs">
  <MessageSquare size={14} className="text-amber-400" />
  <span>{item.commentCo || 0} Answers</span>
  </div>
@@ -715,7 +710,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <button 
  data-testid="like-button"
  onClick={(e) => handleLike(e, String(item.nttId))}
- className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-black text-xs transition-all active:scale-110"
+ className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-bold text-xs transition-all active:scale-110"
  >
  <ThumbsUp size={14} className={cn(likeMutation.isPending && "animate-bounce")} />
  <span data-testid="like-count">{item.likeCo || 0} Likes</span>
@@ -730,10 +725,10 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </div>
  ) : tmplatId === 'TMPLT_CALENDAR' ? (
  <div className="p-10 space-y-8">
- <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-8 rounded-xl text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 transition-colors">
+ <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-8 rounded-lg text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 transition-colors">
  <div className="space-y-1">
- <p className="text-primary font-black tracking-[0.2em] text-[10px] uppercase">Event schedule</p>
- <h3 className="text-3xl font-black tracking-tighter uppercase">
+ <p className="text-primary font-bold tracking-widest text-xs uppercase">Event schedule</p>
+ <h3 className="text-2xl font-bold tracking-tight uppercase">
  {format(currentViewDate, "MMMM yyyy", { locale: ko })}
  </h3>
  </div>
@@ -744,7 +739,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const prev = new Date(year, month - 1, 1);
  setStartDate(prev);
  }}
- className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-xl transition-all text-slate-900 dark:text-white"
+ className="h-10 w-10 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-lg transition-all text-slate-900 dark:text-white"
  >
  <ChevronRight className="rotate-180" size={20} />
  </Button>
@@ -754,7 +749,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const next = new Date(year, month + 1, 1);
  setStartDate(next);
  }}
- className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-xl transition-all text-slate-900 dark:text-white"
+ className="h-10 w-10 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-lg transition-all text-slate-900 dark:text-white"
  >
  <ChevronRight size={20} />
  </Button>
@@ -762,7 +757,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </div>
  <div className="grid grid-cols-7 gap-4">
  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
- <div key={d} className="text-center font-black text-slate-400 text-xs tracking-widest pb-4 border-b-2 border-slate-50">{d}</div>
+ <div key={d} className="text-center font-bold text-slate-400 text-xs tracking-widest pb-4 border-b-2 border-slate-50">{d}</div>
  ))}
  {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
  const isCurrentMonth = day > 0 && day <= daysInMonth;
@@ -771,13 +766,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
  return (
  <div key={i} className={cn(
- "min-h-[160px] p-4 border-2 transition-all relative group rounded-xl",
+ "min-h-[160px] p-4 border-2 transition-all relative group rounded-lg",
  isToday ? "bg-primary/5 border-primary/20 shadow-inner" : "bg-white border-slate-50 hover:border-slate-300",
  !isCurrentMonth ? "opacity-10 pointer-events-none bg-slate-50/50" : ""
  )}>
  <div className="flex justify-between items-start mb-4">
  <span className={cn(
- "text-xl font-black", 
+ "text-xl font-bold", 
  isToday ? "text-primary" : "text-slate-300 group-hover:text-slate-900",
  (i % 7 === 0) && isCurrentMonth ? "text-red-400" : "", // Sunday
  (i % 7 === 6) && isCurrentMonth ? "text-blue-400" : "" // Saturday
@@ -785,7 +780,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  {isCurrentMonth ? day : ''}
  </span>
  {dayPosts.length > 0 && (
- <Badge className="bg-primary hover:bg-primary text-[9px] font-black h-5 w-5 rounded-full p-0 flex items-center justify-center border-none">
+ <Badge className="bg-primary hover:bg-primary text-xs font-bold h-5 w-5 rounded-full p-0 flex items-center justify-center border-none">
  {dayPosts.length}
  </Badge>
  )}
@@ -797,7 +792,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  key={post.nttId}
  href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${post.nttId}`}
  className={cn(
- "block p-2 text-[10px] font-black leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
+ "block p-2 text-xs font-bold leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
  post.noticeAt === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
  )}
  title={post.nttSj}
@@ -808,7 +803,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </div>
 
  {isCurrentMonth && (
- <div className="absolute bottom-4 right-4 text-[8px] font-black text-slate-100 group-hover:text-slate-200 transition-all uppercase">
+ <div className="absolute bottom-4 right-4 text-xs font-bold text-slate-100 group-hover:text-slate-200 transition-all uppercase">
  {`${year}_${month + 1}_${day}`}
  </div>
  )}
@@ -826,32 +821,32 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  ) : tmplatId === 'TMPLT_WIKI' && list.length > 0 ? (
  <div className="p-10 space-y-8">
  {list.map((item: BoardPost) => (
- <Card key={item.nttId} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-xl">
+ <Card key={item.nttId} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-lg">
  <div className="flex flex-col md:flex-row">
  <div className="w-full md:w-16 bg-slate-100 flex md:flex-col items-center justify-center p-4 gap-2 shrink-0">
  <Book className="text-slate-400 group-hover:text-slate-900 transition-colors" size={24} />
  </div>
  <div className="flex-1 p-8 space-y-4">
  <div className="flex items-center gap-3">
- <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-none border-slate-200">Doc v1.0</Badge>
- <span className="text-[11px] font-bold text-slate-300 ">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+ <Badge variant="outline" className="text-xs font-bold uppercase tracking-widest text-slate-400 rounded-none border-slate-200">Doc v1.0</Badge>
+ <span className="text-xs font-bold text-slate-300 ">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
  </div>
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
- <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">
+ <h4 className="text-xl font-bold text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">
  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
  </h4>
  </Link>
  <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.nttCn}</p>
- <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
+ <div className="flex items-center gap-6 pt-4 border-t border-slate-50 text-xs font-bold text-slate-400 uppercase tracking-widest">
  <div className="flex items-center gap-2">
- <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</span>
- <span className="text-xs font-black text-slate-600">
+ <span>Author</span>
+ <span className="text-slate-600">
  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
  </span>
  </div>
  <div className="flex items-center gap-2">
- <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Views</span>
- <span className="text-xs font-black text-slate-600">{item.inqireCo}</span>
+ <span>Views</span>
+ <span className="text-slate-600">{item.inqireCo}</span>
  </div>
  </div>
  </div>
@@ -861,13 +856,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </div>
  ) : list.length === 0 ? (
  <div className="flex flex-col items-center justify-center h-80 gap-4 text-slate-300">
- <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-16 opacity-10" /></div>
+ <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-12 opacity-10" /></div>
  {querySearchWrd ? (
  <>
- <p className="text-xl font-black text-slate-400">
- &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.
+ <p className="text-xl font-bold text-slate-400">
+ &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;???�??검??결과가 ?�습?�다.
  </p>
- <p className="text-sm font-medium text-slate-400">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
+ <p className="text-sm font-medium text-slate-400">?�른 검?�어�??�도?�거?? ?�터 조건??변경해 보세??</p>
  <button
  onClick={() => {
  setSearchWrd('');
@@ -877,24 +872,23 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  setEndDate(undefined);
  router.push(`${pathname}?bbsId=${bbsId}`);
  }}
- className="mt-2 px-6 py-2.5 bg-slate-900 text-white font-black text-sm rounded-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+ className="mt-2 px-6 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-lg hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
  >
- <X size={14} /> 필터 초기화
- </button>
+ <X size={14} /> ?�터 초기?? </button>
  </>
  ) : (
- <p className="text-xl font-black">게시글이 아직 없습니다.</p>
+ <p className="text-xl font-bold">게시글???�직 ?�습?�다.</p>
  )}
  </div>
  ) : (
  <Table>
  <TableHeader className="bg-slate-50/80">
  <TableRow className="hover:bg-transparent border-b-2">
- <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-tight text-[11px] py-8">번호</TableHead>
- <TableHead className="font-black text-slate-900 tracking-tight text-[11px] py-8 px-6">제목</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">작성자</TableHead>
- <TableHead className="w-[140px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">등록일</TableHead>
- <TableHead className="w-[180px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">참여도</TableHead>
+ <TableHead className="w-[80px] text-center font-bold text-slate-400 tracking-tight text-xs py-8">번호</TableHead>
+ <TableHead className="font-bold text-slate-900 tracking-tight text-xs py-8 px-6">?�목</TableHead>
+ <TableHead className="w-[150px] font-bold text-slate-400 tracking-tight text-xs py-8 text-center">?�성??/TableHead>
+ <TableHead className="w-[140px] font-bold text-slate-400 tracking-tight text-xs py-8 text-center">?�록??/TableHead>
+ <TableHead className="w-[180px] font-bold text-slate-400 tracking-tight text-xs py-8 text-center">참여??/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -905,13 +899,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </TableCell>
  <TableCell className="px-6 py-8">
  <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`} className="group/link flex flex-col gap-1">
- <div className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
+ <div className="text-xl font-bold text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
  </div>
  </Link>
  </TableCell>
  <TableCell className="text-center py-8">
- <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-xl border border-slate-100 flex items-center gap-2">
+ <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-lg border border-slate-100 flex items-center gap-2">
  <User size={14} className="opacity-30" />
  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
  </div>
@@ -924,19 +918,19 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </TableCell>
  <TableCell className="text-center py-8">
  <div className="flex flex-col items-center gap-2">
- <div className="font-black text-primary/60 bg-primary/5 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-primary/10 w-24 justify-center">
+ <div className="font-bold text-primary/60 bg-primary/5 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-primary/10 w-24 justify-center">
  <Eye size={14} className="opacity-40" />
  {item.inqireCo}
  </div>
  <button
  data-testid="like-button"
  onClick={(e) => handleLike(e, String(item.nttId))}
- className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all active:scale-95 group-hover:bg-white"
+ className="font-bold text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all active:scale-95 group-hover:bg-white"
  >
  <ThumbsUp size={14} className={cn("opacity-30", likeMutation.isPending && "animate-bounce")} />
  <span data-testid="like-count">{item.likeCo || 0}</span>
  </button>
- <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
+ <div className="font-bold text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
  <MessageSquare size={14} className="opacity-30" />
  {0}
  </div>
@@ -959,14 +953,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  router.push(`${pathname}?${params.toString()}`);
  }}
  disabled={queryPage === 1}
- className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
+ className="h-10 px-6 font-bold rounded-lg border-2 hover:bg-slate-50"
  >
- 이전
+ ?�전
  </Button>
- <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800">
- <span className="text-lg font-black text-slate-900 dark:text-white">{queryPage}</span>
+ <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-6 py-2 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800">
+ <span className="text-base font-bold text-slate-900 dark:text-white">{queryPage}</span>
  <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
- <span className="text-sm font-bold text-slate-400 dark:text-white/50">{totalPages}</span>
+ <span className="text-xs font-bold text-slate-400 dark:text-white/50">{totalPages}</span>
  </div>
  <Button
  variant="outline"
@@ -976,9 +970,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  router.push(`${pathname}?${params.toString()}`);
  }}
  disabled={queryPage === totalPages}
- className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
+ className="h-10 px-6 font-bold rounded-lg border-2 hover:bg-slate-50"
  >
- 다음
+ ?�음
  </Button>
  </div>
  ) : null}

@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -19,7 +19,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             const res = await operationAdminService.getExternalHrList({ name });
             setData(res.list || []);
         } catch (error) {
-            toast('ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error');
+            toast('µ¥ÀÌÅÍ¸¦ ºÒ·¯¿À´Â Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error');
         } finally {
             setLoading(false);
         }
@@ -27,7 +27,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
 
     const columns = [
         { 
-            header: 'ì„±ëª…', 
+            header: '¼º¸í', 
             accessor: (item: any) => (
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
@@ -38,7 +38,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             )
         },
         { 
-            header: 'ì†Œì†ê¸°ê´€', 
+            header: '¼Ò¼Ó±â°ü', 
             accessor: (item: any) => (
                 <div className="flex items-center gap-2 text-slate-600">
                     <Building2 size={14} className="opacity-40" />
@@ -47,7 +47,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             )
         },
         { 
-            header: 'ì—°ë½ì²˜', 
+            header: '¿¬¶ôÃ³', 
             accessor: (item: any) => (
                 <div className="flex items-center gap-2 text-slate-500 font-mono text-sm">
                     <Phone size={14} className="opacity-40" />
@@ -56,7 +56,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             )
         },
         { 
-            header: 'ì´ë©”ì¼', 
+            header: 'ÀÌ¸ŞÀÏ', 
             accessor: (item: any) => (
                 <div className="flex items-center gap-2 text-slate-500">
                     <Mail size={14} className="opacity-40" />
@@ -65,7 +65,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             )
         },
         { 
-            header: 'ìƒë…„ì›”ì¼', 
+            header: '»ı³â¿ùÀÏ', 
             accessor: 'brthdy',
             className: 'w-32 text-slate-400 text-sm'
         }
@@ -74,30 +74,30 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
     return (
         <div className="space-y-6 max-w-6xl mx-auto pb-20">
             <PageHeader
-                title="ì™¸ë¶€ì¸ì‚¬ì •ë³´ ê´€ë¦¬"
-                breadcrumbs={[{ label: 'ìš´ì˜ì§€ì›' }, { label: 'í–‰ì‚¬ê´€ë¦¬' }, { label: 'ì™¸ë¶€ì¸ì‚¬ì •ë³´' }]}
+                title="¿ÜºÎÀÎ»çÁ¤º¸ °ü¸®"
+                breadcrumbs={[{ label: '¿î¿µÁö¿ø' }, { label: 'Çà»ç°ü¸®' }, { label: '¿ÜºÎÀÎ»çÁ¤º¸' }]}
                 actions={
-                    <button className="h-11 px-6 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
-                        <Plus size={18} /> ì¸ì‚¬ ì •ë³´ ë“±ë¡
+                    <button className="h-11 px-6 bg-slate-900 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
+                        <Plus size={18} /> ÀÎ»ç Á¤º¸ µî·Ï
                     </button>
                 }
             />
 
-            <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+            <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm">
                 <StandardSearchFilter
                     fields={[
-                        { name: 'name', label: 'ì¸ì‚¬ ì„±ëª…', type: 'text', placeholder: 'ì„±ëª…ì„ ì…ë ¥í•˜ì„¸ìš”...' }
+                        { name: 'name', label: 'ÀÎ»ç ¼º¸í', type: 'text', placeholder: '¼º¸íÀ» ÀÔ·ÂÇÏ¼¼¿ä...' }
                     ]}
                     onSearch={(v) => loadData(v.name)}
                 />
             </div>
 
-            <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-xl">
+            <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-xl">
                 <StandardDataTable
                     columns={columns}
                     data={data}
                     loading={loading}
-                    emptyMessage="ë“±ë¡ëœ ì™¸ë¶€ì¸ì‚¬ ì •ë³´ê°€ ì—†ìŠµë‹ˆë‹¤."
+                    emptyMessage="µî·ÏµÈ ¿ÜºÎÀÎ»ç Á¤º¸°¡ ¾ø½À´Ï´Ù."
                 />
             </div>
         </div>

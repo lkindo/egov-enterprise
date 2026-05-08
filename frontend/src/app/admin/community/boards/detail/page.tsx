@@ -11,8 +11,8 @@ const BoardDetailClient = dynamic(() => import('./BoardDetailClient').then(mod =
 function BoardDetailSkeleton() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase animate-pulse">Initializing Knowledge Node...</p>
+      <div className="w-16 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">Initializing Knowledge Node...</p>
     </div>
   );
 }

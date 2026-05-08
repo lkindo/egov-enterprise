@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -85,7 +85,7 @@ export default function NotePage() {
     },
     {
       header: '제목',
-      accessor: (item: Note) => <span className="font-black text-slate-800 tracking-tight">{item.noteSj}</span>,
+      accessor: (item: Note) => <span className="font-bold text-slate-800 tracking-tight">{item.noteSj}</span>,
     },
     {
       header: tab === 'received' ? '발신자' : '수신자',
@@ -100,7 +100,7 @@ export default function NotePage() {
     },
     {
       header: '일시',
-      accessor: (item: Note) => <span className="text-[11px] font-bold text-slate-400 font-mono tracking-tighter">{item.sendDt}</span>,
+      accessor: (item: Note) => <span className="text-xs font-bold text-slate-400 font-mono tracking-tight">{item.sendDt}</span>,
     },
     {
       header: '관리',
@@ -123,7 +123,7 @@ export default function NotePage() {
         actions={
           <Button
             onClick={() => setWriteOpen(true)}
-            className="h-16 px-10 rounded-[0.1rem] bg-slate-950 border-none text-white font-black text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
+            className="h-12 px-10 rounded-[0.1rem] bg-slate-950 border-none text-white font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
           >
             <SendHorizonal size={20} className="group-hover:translate-x-1 transition-transform" /> 쪽지 상세 기안
           </Button>
@@ -136,8 +136,8 @@ export default function NotePage() {
                     <Sparkles size={120} className="text-primary" />
                 </div>
                 <div className="relative z-10 space-y-4">
-                    <h4 className="text-xs font-black text-primary uppercase tracking-[0.4em]">Personal Messaging</h4>
-                    <h3 className="text-3xl font-black tracking-tighter leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
+                    <h4 className="text-xs font-bold text-primary uppercase tracking-[0.4em]">Personal Messaging</h4>
+                    <h3 className="text-3xl font-bold tracking-tight leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
                 </div>
           </div>
           <div className="col-span-2 flex p-2 bg-slate-100 rounded-[0.1rem] w-full items-center justify-center">
@@ -175,8 +175,8 @@ export default function NotePage() {
         title="새 쪽지 기안"
         footer={
           <div className="flex gap-4 w-full">
-            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-14 flex-1 rounded-[0.1rem] font-black text-slate-400">취소</Button>
-            <Button onClick={handleSend} className="h-14 flex-[2] bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
+            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-[0.1rem] font-bold text-slate-400">취소</Button>
+            <Button onClick={handleSend} className="h-11 flex-[2] bg-slate-900 text-white rounded-[0.1rem] font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
           </div>
         }
       >
@@ -190,12 +190,12 @@ export default function NotePage() {
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="대상자를 식별하십시오..."
                   readOnly
-                  className="w-full h-16 pl-16 pr-6 rounded-[0.1rem] bg-slate-50 border-none text-sm font-black tracking-tight outline-none cursor-not-allowed group-hover:bg-slate-100 transition-all font-mono"
+                  className="w-full h-12 pl-16 pr-6 rounded-[0.1rem] bg-slate-50 border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-slate-100 transition-all font-mono"
                 />
               </div>
               <Button
                 onClick={() => setPickerOpen(true)}
-                className="h-16 px-8 bg-white border-2 border-slate-100 text-slate-900 rounded-[0.1rem] font-black text-[11px] tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
+                className="h-12 px-8 bg-white border-2 border-slate-100 text-slate-900 rounded-[0.1rem] font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
@@ -207,7 +207,7 @@ export default function NotePage() {
               value={formData.noteSj}
               onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
               placeholder="쪽지 아키텍처 제목을 입력하세요."
-              className="w-full h-16 px-8 rounded-[0.1rem] bg-slate-50 border-none text-sm font-black tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+              className="w-full h-12 px-8 rounded-[0.1rem] bg-slate-50 border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </FormField>
           <FormField label="데이터 바디 (내용)">
@@ -239,14 +239,14 @@ export default function NotePage() {
               <div className="space-y-4">
                     <div className="flex items-center gap-3">
                          <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                         <span className="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase font-mono">Message_Body_Node</span>
+                         <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">Message_Body_Node</span>
                     </div>
-                    <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>
+                    <h3 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>
                     <div className="flex items-center gap-4 pt-2">
-                         <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                         <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
                              {tab === 'received' ? `FR: ${selectedNote.trnsmitterId}` : `TO: ${selectedNote.rcverId}`}
                          </div>
-                         <div className="text-[10px] font-black text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.sendDt}</div>
+                         <div className="text-xs font-bold text-slate-300 font-mono tracking-tight uppercase">{selectedNote.sendDt}</div>
                     </div>
               </div>
               <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
@@ -255,7 +255,7 @@ export default function NotePage() {
               {selectedNote.noteCn}
             </div>
             <div className="flex gap-4 justify-end pt-4">
-              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-16 px-10 rounded-[0.1rem] font-black text-slate-400">데이터 닫기</Button>
+              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-12 px-10 rounded-[0.1rem] font-bold text-slate-400">데이터 닫기</Button>
               {tab === 'received' && (
                 <Button
                   onClick={() => {
@@ -263,7 +263,7 @@ export default function NotePage() {
                     setFormData({ ...formData, rcverId: selectedNote.trnsmitterId, noteSj: `Re: ${selectedNote.noteSj}` });
                     setWriteOpen(true);
                   }}
-                  className="h-16 px-10 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
+                  className="h-12 px-10 bg-slate-900 text-white rounded-[0.1rem] font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
                 >
                   <SendHorizonal size={18} /> 실시간 답장 전송
                 </Button>
@@ -281,7 +281,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-black text-[11px] transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
+        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
         active
           ? "bg-white text-slate-950 shadow-2xl shadow-slate-200 scale-[1.03] z-10"
           : "text-slate-400 hover:text-slate-600"
@@ -291,8 +291,8 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       {label}
       {count !== undefined && (
         <span className={cn(
-          "ml-3 text-[10px] px-2.5 py-1 rounded-lg font-black shadow-inner",
-          active ? "bg-slate-950 text-white" : "bg-slate-200 text-slate-400 text-[9px]"
+          "ml-3 text-xs px-2.5 py-1 rounded-lg font-bold shadow-inner",
+          active ? "bg-slate-950 text-white" : "bg-slate-200 text-slate-400 text-xs"
         )}>
           {count}
         </span>

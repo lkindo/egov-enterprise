@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -129,7 +129,7 @@ const SortableDeptNode = ({
  const content = (
  <div className={cn(
  "group select-none relative transition-all duration-300",
- isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-xl",
+ isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-lg",
  isOverlay && "shadow-3xl z-[9999] pointer-events-none"
  )}>
  {/* Hierarchy Connection Lines */}
@@ -143,7 +143,7 @@ const SortableDeptNode = ({
  )}
 
  <div className={cn(
- "flex items-center justify-between p-4 rounded-xl border transition-all relative overflow-hidden mb-2",
+ "flex items-center justify-between p-4 rounded-lg border transition-all relative overflow-hidden mb-2",
  depth === 0
  ? "bg-slate-900 border-slate-800 shadow-xl min-h-[5.5rem]"
  : depth === 1
@@ -180,7 +180,7 @@ const SortableDeptNode = ({
  )}
  {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
  <div className={cn(
- "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
+ "w-12 h-12 rounded-lg flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
  depth === 0 ? "bg-white text-slate-900" : depth === 1 ? "bg-primary text-white" : "bg-white text-slate-400 border border-slate-200"
  )}>
  <Building2 size={depth === 0 ? 22 : 18} />
@@ -188,21 +188,21 @@ const SortableDeptNode = ({
  </div>
  <div className="flex flex-col">
  <span className={cn(
- "font-black tracking-tight transition-colors",
+ "font-bold tracking-tight transition-colors",
  depth === 0 ? "text-white text-lg" : "text-slate-900 text-sm"
  )}>
  {item.orgnztNm}
  </span>
  <div className="flex items-center gap-3 mt-1">
  <span className={cn(
- "text-[9px] font-black px-2 py-0.5 rounded-md font-mono uppercase tracking-widest",
+ "text-xs font-bold px-2 py-0.5 rounded-md font-mono uppercase tracking-widest",
  depth === 0 ? "bg-white/10 text-slate-400" : "bg-slate-100 text-slate-500"
  )}>
  ID: {item.orgnztId}
  </span>
  {item.orgnztDc && (
  <span className={cn(
- "text-[10px] font-bold truncate max-w-[200px] ",
+ "text-xs font-bold truncate max-w-[200px] ",
  depth === 0 ? "text-slate-500" : "text-slate-400"
  )}>
  {item.orgnztDc}
@@ -218,7 +218,7 @@ const SortableDeptNode = ({
  variant="ghost" size="icon"
  onClick={() => onAddSub(item.orgnztId || '')}
  className={cn(
- "h-10 w-10 rounded-xl",
+ "h-10 w-10 rounded-lg",
  depth === 0 ? "bg-white/10 text-slate-400 hover:bg-primary hover:text-white" : "bg-slate-100 hover:bg-primary hover:text-white"
  )}
  >
@@ -229,7 +229,7 @@ const SortableDeptNode = ({
  variant="ghost" size="icon"
  onClick={() => onEdit(item)}
  className={cn(
- "h-10 w-10 rounded-xl",
+ "h-10 w-10 rounded-lg",
  depth === 0 ? "bg-white/10 text-slate-400 hover:bg-white hover:text-slate-900" : "bg-slate-100 hover:bg-slate-900 hover:text-white"
  )}
  >
@@ -239,7 +239,7 @@ const SortableDeptNode = ({
  variant="ghost" size="icon"
  onClick={() => onDelete(item.orgnztId || '')}
  className={cn(
- "h-10 w-10 text-rose-500 bg-rose-50/10 hover:bg-rose-500 hover:text-white rounded-xl transition-colors",
+ "h-10 w-10 text-rose-500 bg-rose-50/10 hover:bg-rose-500 hover:text-white rounded-lg transition-colors",
  depth === 0 && "bg-rose-950/20 hover:bg-rose-500"
  )}
  >
@@ -342,7 +342,7 @@ export default function DeptAdminClient({
  const tree = listToDeptTree(res.list);
  setFlattenedDepts(flattenDeptTree(tree));
  } catch {
- toast.error('조직 체계 데이터를 로드하는 중 오류가 발생했습니다.');
+ toast.error('���� ü�� �����͸� �ε��ϴ� �� ������ �߻��߽��ϴ�.');
  } finally {
  setLoading(false);
  }
@@ -381,7 +381,7 @@ export default function DeptAdminClient({
  return newItems;
  });
  setHasChanges(true);
- toast.info('조직 구조가 성공적으로 재구성되었습니다.');
+ toast.info('���� ������ ���������� �籸���Ǿ����ϴ�.');
  }
 
  setActiveId(null);
@@ -414,7 +414,7 @@ export default function DeptAdminClient({
 
  const handleSubmit = async () => {
  if (!form.orgnztNm) {
- toast.error('부서 명을 입력해주세요.');
+ toast.error('�μ� ���� �Է����ּ���.');
  return;
  }
 
@@ -437,14 +437,14 @@ export default function DeptAdminClient({
  toast.error(res.message);
  }
  } catch {
- toast.error('데이터 처리 중 오류가 발생했습니다.');
+ toast.error('������ ó�� �� ������ �߻��߽��ϴ�.');
  } finally {
  setLoading(false);
  }
  };
 
  const handleDelete = async (deptId: string) => {
- if (!confirm('정말 삭제하시겠습니까?')) return;
+ if (!confirm('���� �����Ͻðڽ��ϱ�?')) return;
 
  setLoading(true);
  try {
@@ -456,7 +456,7 @@ export default function DeptAdminClient({
  toast.error(res.message);
  }
  } catch {
- toast.error('삭제 처리 중 오류가 발생했습니다.');
+ toast.error('���� ó�� �� ������ �߻��߽��ϴ�.');
  } finally {
  setLoading(false);
  }
@@ -475,7 +475,7 @@ export default function DeptAdminClient({
  }
  } catch (err) {
  console.error(err);
- toast.error('계층 구조 저장 중 오류 발생');
+ toast.error('���� ���� ���� �� ���� �߻�');
  } finally {
  setIsSaving(false);
  }
@@ -486,7 +486,7 @@ export default function DeptAdminClient({
  setTimeout(() => {
  setIsSaving(false);
  setHasChanges(false);
- toast.success('모든 조직 계층 변경 사항이 영구 저장되었습니다.');
+ toast.success('��� ���� ���� ���� ������ ���� ����Ǿ����ϴ�.');
  }, 1000);
  };
 
@@ -495,28 +495,28 @@ export default function DeptAdminClient({
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <PageHeader
- title="조직 체계 토폴로지"
- breadcrumbs={[{ label: '시스템관리' }, { label: '사용자관리' }, { label: '부서관리' }]}
+ title="���� ü�� ��������"
+ breadcrumbs={[{ label: '�ý��۰���' }, { label: '����ڰ���' }, { label: '�μ�����' }]}
  />
 
  <HubHeader
  title="Organization"
  highlight="Hierarchy"
- subtitle="조직 항목을 드래그하여 계층을 조정하고 전사 토폴로지를 실시간으로 재구성하십시오."
+ subtitle="���� �׸��� �巡���Ͽ� ������ �����ϰ� ���� ���������� �ǽð����� �籸���Ͻʽÿ�."
  icon={Network}
  actions={
  <div className="flex gap-4 p-2 items-center">
  {hasChanges && (
- <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-14 px-8 rounded-xl font-black text-[11px] tracking-widest gap-2 shadow-2xl scale-in-center">
- {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={20} />} 아키텍처 저장
+ <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-11 px-8 rounded-lg font-bold text-xs tracking-widest gap-2 shadow-2xl scale-in-center">
+ {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={20} />} ��Ű��ó ����
  </Button>
  )}
  <Button
  onClick={() => handleOpenAdd(null)}
  size="lg"
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
  >
- <Plus size={20} /> 신규 노드 추가
+ <Plus size={20} /> �ű� ��� �߰�
  </Button>
  </div>
  }
@@ -531,43 +531,43 @@ export default function DeptAdminClient({
 
  <div className="grid grid-cols-12 gap-12">
  <div className="col-span-12 lg:col-span-4 h-full">
- <div className="rounded-xl p-10 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+ <div className="rounded-lg p-10 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
  <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Database size={240} className="text-primary" />
  </div>
  <div className="relative z-10 space-y-10">
  <div className="space-y-3">
- <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+ <div className="w-16 h-12 rounded-lg bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
  <Building2 size={32} className="text-primary" />
  </div>
- <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-left">조직 체계<br />인스펙터</h4>
+ <h4 className="text-2xl font-bold tracking-tight leading-tight uppercase text-left">���� ü��<br />�ν�����</h4>
  </div>
 
  <div className="space-y-6">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block">Search_Filter</label>
+ <label className="text-xs font-bold text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block">Search_Filter</label>
  <div className="relative group/search text-left">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/search:text-primary transition-colors" size={18} />
  <input
  onChange={(e) => setSearchKeyword(e.target.value)}
  value={searchKeyword}
- className="w-full h-14 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
- placeholder="부서 명칭 및 코드"
+ className="w-full h-11 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-lg focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-bold tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
+ placeholder="�μ� ��Ī �� �ڵ�"
  />
  </div>
  </div>
  </div>
 
  <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
- <div className="flex bg-white/5 p-1 rounded-xl">
- <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-[10px] font-black tracking-widest uppercase" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.orgnztId || '')))}><ChevronsUpDown size={14} className="mr-2" /> All_Expand</Button>
- <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-[10px] font-black tracking-widest uppercase" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-2" /> All_Collapse</Button>
+ <div className="flex bg-white/5 p-1 rounded-lg">
+ <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.orgnztId || '')))}><ChevronsUpDown size={14} className="mr-2" /> All_Expand</Button>
+ <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-2" /> All_Collapse</Button>
  </div>
  {hasChanges && (
  <Button
  onClick={handleSaveHierarchy}
  disabled={isSaving}
- className="w-full h-14 rounded-xl bg-emerald-500 text-white border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-emerald-600 transition-all animate-in fade-in zoom-in duration-300"
+ className="w-full h-11 rounded-lg bg-emerald-500 text-white border-none font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-emerald-600 transition-all animate-in fade-in zoom-in duration-300"
  >
  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save size={16} className="mr-2" />} 
  SAVE_CHANGES
@@ -575,7 +575,7 @@ export default function DeptAdminClient({
  )}
  <Button
  onClick={handleRefresh}
- className="w-full h-14 rounded-xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all"
+ className="w-full h-11 rounded-lg bg-white text-slate-900 border-none font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all"
  >
  <RefreshCcw size={16} className="mr-2" /> REFRESH_SYSTEM
  </Button>
@@ -586,8 +586,8 @@ export default function DeptAdminClient({
 
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
  <HubSectionCard
- title="조직 아키텍처 트리"
- description="좌우 드래그로 계층을, 상하 드래그로 순서를 조정할 수 있는 고성능 토폴로지 디자이너입니다."
+ title="���� ��Ű��ó Ʈ��"
+ description="�¿� �巡�׷� ������, ���� �巡�׷� ������ ������ �� �ִ� ����� �������� �����̳��Դϴ�."
  icon={SearchCode}
  >
  <div className="px-2 min-h-[500px]">
@@ -618,7 +618,7 @@ export default function DeptAdminClient({
  {visibleDepts.length === 0 && (
  <div className="py-20 text-center opacity-40">
  <SearchCode size={48} className="mx-auto mb-4" />
- <p className="font-black text-[10px] tracking-widest uppercase">No_Topology_Detected</p>
+ <p className="font-bold text-xs tracking-widest uppercase">No_Topology_Detected</p>
  </div>
  )}
  </div>
@@ -647,57 +647,57 @@ export default function DeptAdminClient({
  <StandardModal
  isOpen={isFormOpen}
  onClose={() => setIsAddOpen(false)}
- title={selectedDept ? '조직 노드 구성 수정' : '신규 조직 자산 배포'}
+ title={selectedDept ? '���� ��� ���� ����' : '�ű� ���� �ڻ� ����'}
  maxWidth="xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[10px] tracking-widest border-2">취소</Button>
- <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
- <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '업데이트 완료' : '시스템 배포'}
+ <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">���</Button>
+ <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '������Ʈ �Ϸ�' : '�ý��� ����'}
  </Button>
  </div>
  }
  >
  <div className="space-y-10 pt-4 text-left">
- <FormField label="부서/조직 아이덴티티" required description="시스템 내에서 고유하게 식별되는 조직의 명칭">
+ <FormField label="�μ�/���� ���̵�ƼƼ" required description="�ý��� ������ �����ϰ� �ĺ��Ǵ� ������ ��Ī">
  <div className="relative group/name">
  <Building2 size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
  <Input
- placeholder="조직 명칭 입력"
+ placeholder="���� ��Ī �Է�"
  value={form.orgnztNm}
  onChange={(e) => setForm(prev => ({ ...prev, orgnztNm: e.target.value }))}
- className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-tight shadow-inner"
+ className="h-12 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  />
  </div>
  </FormField>
 
  {parentOrgnztId && (
- <FormField label="상위 조직 식별자" description="신규 노드가 소속될 상위 부서의 코드">
- <div className="h-16 flex items-center px-6 rounded-xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500 uppercase tracking-widest">
+ <FormField label="���� ���� �ĺ���" description="�ű� ��尡 �Ҽӵ� ���� �μ��� �ڵ�">
+ <div className="h-12 flex items-center px-6 rounded-lg bg-slate-100 border-none font-mono text-xs font-bold shadow-inner text-slate-500 uppercase tracking-widest">
  Parent_UID: {parentOrgnztId}
  </div>
  </FormField>
  )}
 
- <FormField label="아키텍처 상세 명세" description="해당 조직 노드의 역할 및 관리 메타데이터">
+ <FormField label="��Ű��ó �� ���" description="�ش� ���� ����� ���� �� ���� ��Ÿ������">
  <div className="relative group/dc">
  <Pencil size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
- placeholder="조직 상세 설명 입력"
+ placeholder="���� �� ���� �Է�"
  value={form.orgnztDc}
  onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
- className="min-h-[160px] pl-16 p-6 rounded-xl border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
+ className="min-h-[160px] pl-16 p-6 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
  />
  </div>
  </FormField>
 
- <div className="p-8 rounded-xl bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
- <div className="w-10 h-10 rounded-xl bg-white border border-indigo-100 flex items-center justify-center shadow-sm">
+ <div className="p-8 rounded-lg bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
+ <div className="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center shadow-sm">
  <MapPin className="text-indigo-500" size={18} />
  </div>
  <div className="space-y-1">
- <h6 className="text-[10px] font-black text-indigo-900 tracking-widest uppercase text-left">Topology_Validation_Ready</h6>
- <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed uppercase text-left">구성된 노드는 시스템 아키텍처에 따라 자동 배치됩니다.</p>
+ <h6 className="text-xs font-bold text-indigo-900 tracking-widest uppercase text-left">Topology_Validation_Ready</h6>
+ <p className="text-xs font-bold text-indigo-700/60 leading-relaxed uppercase text-left">������ ���� �ý��� ��Ű��ó�� ���� �ڵ� ��ġ�˴ϴ�.</p>
  </div>
  </div>
  </div>

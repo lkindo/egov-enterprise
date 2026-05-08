@@ -180,11 +180,11 @@ export default function DeptSchedulePage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-md rounded-[0.1rem] border-none shadow-2xl p-8">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black tracking-tight">{editingSchedule ? '일정 수정' : '일정 등록'}</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold tracking-tight">{editingSchedule ? '일정 수정' : '일정 등록'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="schdulNm" className="text-xs font-black text-slate-400 uppercase tracking-widest">일정명</Label>
+                            <Label htmlFor="schdulNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">일정명</Label>
                             <Input
                                 id="schdulNm"
                                 className="rounded-[0.1rem] h-12"
@@ -193,7 +193,7 @@ export default function DeptSchedulePage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdulCn" className="text-xs font-black text-slate-400 uppercase tracking-widest">내용</Label>
+                            <Label htmlFor="schdulCn" className="text-xs font-bold text-slate-400 uppercase tracking-widest">내용</Label>
                             <Textarea
                                 id="schdulCn"
                                 className="rounded-[0.1rem] min-h-[100px]"
@@ -202,7 +202,7 @@ export default function DeptSchedulePage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdulPlace" className="text-xs font-black text-slate-400 uppercase tracking-widest">장소</Label>
+                            <Label htmlFor="schdulPlace" className="text-xs font-bold text-slate-400 uppercase tracking-widest">장소</Label>
                             <Input
                                 id="schdulPlace"
                                 className="rounded-[0.1rem] h-12"
@@ -213,7 +213,7 @@ export default function DeptSchedulePage() {
                     </div>
                     <DialogFooter className="gap-2">
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-[0.1rem] px-10 h-12 font-bold shadow-sm">취소</Button>
-                        <Button onClick={handleSubmit} className="rounded-[0.1rem] px-10 h-12 font-black shadow-lg shadow-primary/20">저장</Button>
+                        <Button onClick={handleSubmit} className="rounded-[0.1rem] px-10 h-12 font-bold shadow-lg shadow-primary/20">저장</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

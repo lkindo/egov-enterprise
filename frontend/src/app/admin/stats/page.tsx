@@ -1,12 +1,12 @@
-ï»¿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 
 export const metadata = {
-  title: 'ì¸í…”ë¦¬ì „ìŠ¤ í†µê³„ ëŒ€ì‹œë³´ë“œ | ì „ìì •ë¶€ í”„ë ˆì„ì›Œí¬',
-  description: 'ì‹œìŠ¤í…œ ì „ë°˜ì˜ í™œë™ ë°ì´í„°ì™€ ë©”íŠ¸ë¦­ìŠ¤ë¥¼ ì‹¤ì‹œê°„ìœ¼ë¡œ ë¶„ì„í•©ë‹ˆë‹¤',
+  title: 'ÀÎÅÚ¸®Àü½º Åë°è ´ë½Ãº¸µå | ÀüÀÚÁ¤ºÎ ÇÁ·¹ÀÓ¿öÅ©',
+  description: '½Ã½ºÅÛ Àü¹İÀÇ È°µ¿ µ¥ÀÌÅÍ¿Í ¸ŞÆ®¸¯½º¸¦ ½Ç½Ã°£À¸·Î ºĞ¼®ÇÕ´Ï´Ù',
 };
 
 export default async function AdminStatsPage() {
@@ -14,7 +14,7 @@ export default async function AdminStatsPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // [Eliminating Waterfalls] ë³‘ë ¬ ë°ì´í„° í˜¸ì¶œ
+  // [Eliminating Waterfalls] º´·Ä µ¥ÀÌÅÍ È£Ãâ
   let initialSummary: SummaryStats | null = null;
   let initialConnectData: any[] = [];
   let initialMenuData: MenuStats[] = [];
@@ -53,15 +53,15 @@ export default async function AdminStatsPage() {
 function AdminStatsLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 p-6">
-      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
+      <div className="h-11 w-96 bg-slate-100 rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-slate-50 rounded-xl" />)}
+        {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-slate-50 rounded-lg" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 h-[450px] bg-slate-50 rounded-xl" />
-        <div className="h-[450px] bg-slate-900/5 rounded-xl" />
+        <div className="lg:col-span-2 h-[450px] bg-slate-50 rounded-lg" />
+        <div className="h-[450px] bg-slate-900/5 rounded-lg" />
       </div>
-      <div className="h-96 w-full bg-slate-100 rounded-xl" />
+      <div className="h-96 w-full bg-slate-100 rounded-lg" />
     </div>
   );
 }

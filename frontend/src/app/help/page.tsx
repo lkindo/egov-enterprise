@@ -84,7 +84,7 @@ export default function HelpCenterPage() {
                 placeholder="키워드로 신속하게 검색하세요..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="w-full h-16 pl-16 pr-6 rounded-[0.1rem] bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
+                className="w-full h-12 pl-16 pr-6 rounded-[0.1rem] bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
             />
             </div>
         </div>
@@ -124,10 +124,10 @@ export default function HelpCenterPage() {
                       onClick={() => setExpandedFaq(expandedFaq === faq.faqId ? null : faq.faqId)}
                       className="w-full px-12 py-10 flex items-center justify-between group text-left"
                     >
-                      <span className="font-black text-2xl text-foreground group-hover:text-primary transition-colors flex items-start gap-4 tracking-tighter">
+                      <span className="font-bold text-2xl text-foreground group-hover:text-primary transition-colors flex items-start gap-4 tracking-tight">
                         <span className="text-primary opacity-30 text-3xl">Q.</span> {faq.qestnSj}
                       </span>
-                      <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-black text-muted-foreground group-hover:bg-accent")}>
+                      <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-bold text-muted-foreground group-hover:bg-accent")}>
                         <ChevronDown size={24} />
                       </div>
                     </button>
@@ -138,7 +138,7 @@ export default function HelpCenterPage() {
                           animate={{ opacity: 1, y: 0 }}
                           className="p-10 bg-accent/30 rounded-[0.1rem] border-2 border-accent/50 text-foreground/80 font-bold leading-[1.8] text-lg flex items-start gap-4 shadow-inner"
                         >
-                          <span className="text-primary/20 text-3xl font-black shrink-0 pt-1">A.</span>
+                          <span className="text-primary/20 text-3xl font-bold shrink-0 pt-1">A.</span>
                           {faq.answerCn}
                         </motion.div>
                       </div>
@@ -157,10 +157,10 @@ export default function HelpCenterPage() {
             >
               <div className="flex justify-between items-center pb-8 border-b border-border/40">
                   <div className="space-y-1">
-                      <h3 className="text-2xl font-black tracking-tight uppercase">_ 나의 문의 내역</h3>
-                      <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
+                      <h3 className="text-2xl font-bold tracking-tight uppercase">_ 나의 문의 내역</h3>
+                      <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
                   </div>
-                  <Button className="h-14 px-8 rounded-[0.1rem] bg-foreground text-background border-none font-black text-[11px] tracking-widest gap-3 shadow-2xl hover:bg-primary hover:text-white transition-all uppercase">
+                  <Button className="h-11 px-8 rounded-[0.1rem] bg-foreground text-background border-none font-bold text-xs tracking-widest gap-3 shadow-2xl hover:bg-primary hover:text-white transition-all uppercase">
                       <PlusCircle size={20} /> 새로운 문의 작성
                   </Button>
               </div>
@@ -184,7 +184,7 @@ function TabButton({ active, onClick, icon, label }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-black text-[11px] transition-all duration-500 uppercase tracking-widest",
+        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-bold text-xs transition-all duration-500 uppercase tracking-widest",
         active
           ? "bg-background text-foreground shadow-2xl scale-105 z-10"
           : "text-muted-foreground/60 hover:text-foreground"

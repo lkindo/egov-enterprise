@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,8 +12,8 @@ export default function RedirectToUnifiedCode() {
 
  return (
  <div className="flex items-center justify-center min-h-[400px]">
- <div className="p-8 rounded-xl bg-slate-50 border border-slate-100 animate-pulse">
- <p className="text-sm font-medium text-slate-500">í†µí•© ê´€ë¦¬ë‹˜ë¶¾ãˆƒì‡°ì¤ˆ ?ëŒ€ë£ ì¤‘..</p>
+ <div className="p-8 rounded-lg bg-slate-50 border border-slate-100 animate-pulse">
+ <p className="text-sm font-medium text-slate-500">ÅëÇÕ °ü¸®´Ô”ë©´¼ë¡œ ?´ë™ Áß..</p>
  </div>
  </div>
  );

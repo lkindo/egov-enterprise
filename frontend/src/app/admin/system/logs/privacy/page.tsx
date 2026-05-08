@@ -32,28 +32,28 @@ const PrivacyLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: PrivacyLog) => (
-                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     {item.logId}
                 </div>
             ),
             className: 'w-40'
         },
         {
-            header: '대상명',
+            header: '?�?�명',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
                     <span className="font-bold text-slate-700">{item.trgetNm}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">({item.trgetId})</span>
+                    <span className="text-xs text-slate-400 font-mono">({item.trgetId})</span>
                 </div>
             )
         },
         {
-            header: '대상 구분',
+            header: '?�??구분',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
-                    <code className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-black rounded border border-purple-100">
+                    <code className="px-2 py-0.5 bg-purple-50 text-purple-600 text-xs font-bold rounded border border-purple-100">
                         {item.trgetClCode}
                     </code>
                 </div>
@@ -63,23 +63,23 @@ const PrivacyLogAdminPage = () => {
         {
             header: '처리 구분',
             accessor: (item: PrivacyLog) => (
-                <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-black rounded-md border border-orange-100">
+                <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-md border border-orange-100">
                     {item.processSeCode}
                 </span>
             ),
             className: 'w-24'
         },
         {
-            header: '요청자ID',
+            header: '?�청?�ID',
             accessor: (item: PrivacyLog) => (
-                <div className="px-3 py-1 bg-white border rounded-full w-fit shadow-sm text-xs font-black text-slate-700">
+                <div className="px-3 py-1 bg-white border rounded-full w-fit shadow-sm text-xs font-bold text-slate-700">
                     {item.rqesterId}
                 </div>
             ),
             className: 'w-36'
         },
         {
-            header: '등록일시',
+            header: '?�록?�시',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -93,14 +93,14 @@ const PrivacyLogAdminPage = () => {
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
             <PageHeader 
-                title="개인정보 접근 로그" 
-                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]} 
+                title="개인?�보 ?�근 로그" 
+                breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '개인?�보 ?�근 로그' }]} 
             />
 
             <HubHeader 
-                title="프라이버시 가드" 
-                highlight="개인정보 접근 로그" 
-                subtitle="개인정보 접근 및 처리 이력을 추적하여 데이터 보호 컴플라이언스를 보장합니다." 
+                title="?�라?�버??가?? 
+                highlight="개인?�보 ?�근 로그" 
+                subtitle="개인?�보 ?�근 �?처리 ?�력??추적?�여 ?�이??보호 컴플?�이?�스�?보장?�니??" 
                 icon={ShieldAlert} 
             />
 
@@ -114,7 +114,7 @@ const PrivacyLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '대상명, 요청자 검색..',
+                    placeholder: '?�?�명, ?�청??검??.',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />

@@ -24,14 +24,14 @@ export function StandardChartWrapper({
     title, type, data, dataKeys, loading, className, height = 300
 }: StandardChartWrapperProps) {
     return (
-        <div className={cn("p-6 border rounded-xl bg-card shadow-sm transition-all hover:shadow-md", className)}>
+        <div className={cn("p-6 border rounded-lg bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[11px] font-black text-slate-700 tracking-tight">{title}</h3>
+                <h3 className="text-xs font-bold text-slate-700 tracking-tight">{title}</h3>
             </div>
 
             <div style={{ width: '100%', height }}>
                 {loading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-xl animate-pulse">
+                    <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-lg animate-pulse">
                         <div className="h-4 w-24 bg-muted rounded" />
                     </div>
                 ) : (
@@ -131,7 +131,7 @@ export function StandardChartWrapper({
                                     verticalAlign="bottom"
                                     align="center"
                                     iconType="circle"
-                                    formatter={(value) => <span className="text-[10px] font-black text-slate-600 ml-1">{value}</span>}
+                                    formatter={(value) => <span className="text-xs font-bold text-slate-600 ml-1">{value}</span>}
                                 />
                             </PieChart>
                         ) : type === 'line' ? (
@@ -167,8 +167,8 @@ export function StandardChartWrapper({
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) {
     if (active && payload && (payload as unknown[]).length) {
         return (
-            <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-xl p-3 min-w-[120px]">
-                <p className="text-[10px] font-black text-muted-foreground mb-1 tracking-tighter">{label}</p>
+            <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-lg p-3 min-w-[120px]">
+                <p className="text-xs font-bold text-muted-foreground mb-1 tracking-tight">{label}</p>
                 <div className="space-y-1">
                     {(payload as any[] || []).map((p, idx) => (
                         <div key={`tooltip-item-${idx}`} className="flex items-center justify-between gap-4">
@@ -176,7 +176,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
                                 <span className="text-sm font-bold text-foreground">{p.name}</span>
                             </div>
-                            <span className="text-sm font-black text-primary">{p.value?.toLocaleString() || 0}</span>
+                            <span className="text-sm font-bold text-primary">{p.value?.toLocaleString() || 0}</span>
                         </div>
                     ))}
                 </div>

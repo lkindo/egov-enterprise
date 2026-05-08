@@ -85,14 +85,14 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                 <div className="relative z-10 space-y-8 text-center md:text-left">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-2">
-                            <h1 className="text-3xl md:text-3xl font-black text-white tracking-tighter ">
+                            <h1 className="text-3xl md:text-3xl font-bold text-white tracking-tight ">
                                 Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
                             </h1>
                             <p className="text-slate-400 font-medium text-lg">시스템 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                         </div>
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-[0.1rem] border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-black text-white tracking-tight">실시간 인덱싱 활성화</span>
+                            <span className="text-sm font-bold text-white tracking-tight">실시간 인덱싱 활성화</span>
                         </div>
                     </div>
 
@@ -103,11 +103,11 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder="검색어를 입력하고 지식을 발견하세요..."
-                                className="h-20 pl-16 pr-40 rounded-[0.1rem] border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-black text-xl placeholder:text-slate-300 placeholder:font-bold"
+                                className="h-20 pl-16 pr-40 rounded-[0.1rem] border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
                                 type="submit"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-14 px-8 rounded-[0.1rem] font-black text-lg shadow-xl"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 h-11 px-8 rounded-[0.1rem] font-bold text-lg shadow-xl"
                             >
                                 검색 실행
                             </Button>
@@ -120,7 +120,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                 {/* Sidebar Filters */}
                 <div className="w-full md:w-64 space-y-8 shrink-0">
                     <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl">
-                        <h3 className="text-sm font-black tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                        <h3 className="text-sm font-bold tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
                             <Filter size={14} className="text-primary" /> 필터 옵션
                         </h3>
                         <div className="space-y-4">
@@ -133,7 +133,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     <div className="p-8 bg-slate-900 rounded-[0.1rem] text-white shadow-2xl relative overflow-hidden group">
                         <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-full blur-[60px]" />
                         <div className="relative z-10 space-y-4">
-                            <h4 className="text-sm font-black tracking-tight text-primary">프로 팁</h4>
+                            <h4 className="text-sm font-bold tracking-tight text-primary">프로 팁</h4>
                             <p className="text-sm text-slate-400 font-bold leading-relaxed">
                                 단축키 <kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10 mx-1">Ctrl + K</kbd>를 누르면 어디서든 커맨드 센터를 열 수 있습니다.
                             </p>
@@ -163,7 +163,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                     <Search size={48} className="text-muted-foreground/30" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-foreground/60">일치하는 결과가 없습니다.</h3>
+                                    <h3 className="text-2xl font-bold text-foreground/60">일치하는 결과가 없습니다.</h3>
                                     <p className="text-sm text-muted-foreground font-medium">검색어를 다시 확인하거나 다른 키워드로 시도해보세요.</p>
                                 </div>
                             </div>
@@ -224,8 +224,8 @@ function ResultSection({ title, count, children }: any) {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4 px-2">
-                <h3 className="text-xl font-black tracking-tight ">{title}</h3>
-                <Badge variant="outline" className="rounded-lg border-primary/20 text-primary font-black">{count}</Badge>
+                <h3 className="text-xl font-bold tracking-tight ">{title}</h3>
+                <Badge variant="outline" className="rounded-lg border-primary/20 text-primary font-bold">{count}</Badge>
                 <div className="h-px bg-primary/10 flex-1" />
             </div>
             <div className="space-y-4">
@@ -240,10 +240,10 @@ function ArticleResultItem({ item, query }: any) {
         <Link href={`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`} className="block group">
             <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
-                    <h4 className="text-xl font-black group-hover:text-primary transition-colors line-clamp-1">
+                    <h4 className="text-xl font-bold group-hover:text-primary transition-colors line-clamp-1">
                         {item.nttSj}
                     </h4>
-                    <span className="text-[10px] font-bold text-muted-foreground/40 bg-muted px-2 py-1 rounded-md shrink-0">
+                    <span className="text-xs font-bold text-muted-foreground/40 bg-muted px-2 py-1 rounded-md shrink-0">
                         {item.frstRegisterPnttm?.substring(0, 10)}
                     </span>
                 </div>
@@ -267,14 +267,14 @@ function ArticleResultItem({ item, query }: any) {
 function UserResultItem({ item }: any) {
     return (
         <div className="p-6 bg-card border-2 border-primary/5 rounded-[0.1rem] flex items-center gap-5 hover:border-primary/20 transition-all shadow-sm">
-            <div className="w-14 h-14 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+            <div className="w-14 h-11 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                 <UserIcon size={24} />
             </div>
             <div className="flex-1 min-w-0">
-                <h4 className="font-black text-lg tracking-tight truncate">{item.userNm}</h4>
+                <h4 className="font-bold text-lg tracking-tight truncate">{item.userNm}</h4>
                 <p className="text-sm text-muted-foreground font-bold">{item.userId}</p>
             </div>
-            <Badge variant="secondary" className="rounded-lg font-black text-[10px] ">직원</Badge>
+            <Badge variant="secondary" className="rounded-lg font-bold text-xs ">직원</Badge>
         </div>
     );
 }
@@ -287,8 +287,8 @@ function MenuResultItem({ item }: any) {
                     <Layout size={18} />
                 </div>
                 <div>
-                    <h4 className="font-black text-base">{item.name}</h4>
-                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.category} 모듈</span>
+                    <h4 className="font-bold text-base">{item.name}</h4>
+                    <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.category} 모듈</span>
                 </div>
             </div>
             <ChevronRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />

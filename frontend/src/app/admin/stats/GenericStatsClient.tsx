@@ -1,4 +1,4 @@
-ï»¿
+
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
@@ -26,7 +26,7 @@ interface GenericStatsClientProps {
  subtitle: string;
  breadcrumbs: { label: string }[];
  initialData: StatsDto[];
- statsName: string; // e.g., "ê²Œì‹œë¬¼?, "ì´ìš© ê±´ìˆ˜", "ë³´ê³ ê±´ìˆ˜"
+ statsName: string; // e.g., "°Ô½Ã¹°?, "ÀÌ¿ë °Ç¼ö", "º¸°í°Ç¼ö"
  exportFilename: string;
 }
 
@@ -71,9 +71,9 @@ export default function GenericStatsClient({
 
  const columns = [
  {
- header: 'ë‚ ì§œ',
+ header: '³¯Â¥',
  accessor: (item: StatsDto) => (
- <span className="font-mono font-black text-slate-900 tracking-tighter ">
+ <span className="font-mono font-bold text-slate-900 tracking-tight ">
  {item.statsDate ? `${item.statsDate.substring(0, 4)}-${item.statsDate.substring(4, 6)}-${item.statsDate.substring(6, 8)}` : 'N/A'}
  </span>
  )
@@ -82,7 +82,7 @@ export default function GenericStatsClient({
  header: statsName,
  accessor: (item: StatsDto) => (
  <div className="flex items-center gap-3">
- <span className="font-mono font-black text-primary text-lg">{item.statsCo.toLocaleString()}</span>
+ <span className="font-mono font-bold text-primary text-lg">{item.statsCo.toLocaleString()}</span>
  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
  <div 
  className="h-full bg-primary/40" 
@@ -104,13 +104,13 @@ export default function GenericStatsClient({
  <Button
  onClick={handleRefresh}
  variant="outline"
- className="h-10 md:h-14 w-10 md:w-14 rounded-xl md:rounded-xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
+ className="h-10 md:h-11 w-10 md:w-14 rounded-lg md:rounded-lg border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
  >
  <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
  </Button>
  <DataExportExcel
  data={initialData}
- headers={[{ label: 'ë‚ ì§œ', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
+ headers={[{ label: '³¯Â¥', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
  filename={exportFilename}
  />
  </div>
@@ -122,26 +122,26 @@ export default function GenericStatsClient({
  <div className="flex flex-col md:flex-row md:items-end gap-6 relative z-10">
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">ë¶„ì„ ì‹œì‘</label>
+ <label className="text-xs font-bold text-slate-400 tracking-tight ml-1">ºĞ¼® ½ÃÀÛ</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
  type="date"
  value={fromDate}
  onChange={(e) => setFromDate(e.target.value)}
- className="h-14 pl-12 rounded-xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-11 pl-12 rounded-lg border-2 border-slate-100 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">ë¶„ì„ ì¢…ë£Œ</label>
+ <label className="text-xs font-bold text-slate-400 tracking-tight ml-1">ºĞ¼® Á¾·á</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
  type="date"
  value={toDate}
  onChange={(e) => setToDate(e.target.value)}
- className="h-14 pl-12 rounded-xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-11 pl-12 rounded-lg border-2 border-slate-100 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
@@ -149,10 +149,10 @@ export default function GenericStatsClient({
  <Button
  onClick={handleSearch}
  disabled={loading}
- className="h-14 px-10 bg-slate-900 text-white rounded-xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
+ className="h-11 px-10 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <Search size={16} />}
- ë™ê¸°í™” </Button>
+ µ¿±âÈ­ </Button>
  </div>
  <div className="absolute right-[-2%] bottom-[-10%] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000">
  <TrendingUp size={180} />
@@ -162,16 +162,16 @@ export default function GenericStatsClient({
  <div className="grid grid-cols-1 gap-10">
  <div className="responsive-card p-6 md:p-12 relative overflow-hidden group">
  <div className="flex items-center gap-4 mb-10">
- <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+ <div className="w-12 h-12 bg-primary text-white rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
  <BarChart3 size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">{subtitle}</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">ì‹œê°„ì¶”ì´ ë¶„ì„</p>
+ <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight ">{subtitle}</h3>
+ <p className="text-xs font-bold text-slate-400 tracking-[0.3em]">½Ã°£ÃßÀÌ ºĞ¼®</p>
  </div>
  </div>
  <StandardChartWrapper
- title={`${statsName} ì‹œê³„ì—´ì¶”ì´`}
+ title={`${statsName} ½Ã°è¿­ÃßÀÌ`}
  type="area"
  data={chartData}
  dataKeys={['count']}
@@ -183,12 +183,12 @@ export default function GenericStatsClient({
 
  <div className="responsive-card p-6 md:p-12">
  <div className="flex items-center gap-4 mb-10 px-2">
- <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+ <div className="w-12 h-12 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
  <Database size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">ë°ì´í„°ë¬´ê²°ì„±ë§¤íŠ¸ë¦­ìŠ¤</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">ì •í˜• ë°ì´í„°ì…‹ ë·°</p>
+ <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight ">µ¥ÀÌÅÍ¹«°á¼º¸ÅÆ®¸¯½º</h3>
+ <p className="text-xs font-bold text-slate-400 tracking-[0.3em]">Á¤Çü µ¥ÀÌÅÍ¼Â ºä</p>
  </div>
  </div>
  <div className="px-2 overflow-x-auto">
@@ -196,8 +196,8 @@ export default function GenericStatsClient({
  columns={columns}
  data={initialData}
  loading={loading}
- emptyMessage="í†µê³„ ë°ì´í„°ë¥¼ ë¶„ì„ ì¤‘ì…ë‹ˆë‹¤..."
- className="border-none bg-slate-50/50 rounded-xl md:rounded-xl p-4 md:p-8"
+ emptyMessage="Åë°è µ¥ÀÌÅÍ¸¦ ºĞ¼® ÁßÀÔ´Ï´Ù..."
+ className="border-none bg-slate-50/50 rounded-lg md:rounded-lg p-4 md:p-8"
  />
  </div>
  </div>

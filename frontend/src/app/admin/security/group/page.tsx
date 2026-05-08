@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -84,9 +84,9 @@ export default function GroupManagePage() {
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
  setIsDialogOpen(false);
- toast('ì‹ ê·œ ë³´ì•ˆ ê·¸ë£¹ ì•„í‚¤í…ì²˜ê°€ ì„¤ì •ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+ toast('½Å±Ô º¸¾È ±×·ì ¾ÆÅ°ÅØÃ³°¡ ¼³Á¤µÇ¾ú½À´Ï´Ù.', 'success');
  },
- onError: () => toast('ê·¸ë£¹ ìƒì„± ì¤‘ ì‹œìŠ¤í…œ ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
+ onError: () => toast('±×·ì »ı¼º Áß ½Ã½ºÅÛ ¿¹¿Ü°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
  });
 
  const updateMutation = useMutation({
@@ -94,18 +94,18 @@ export default function GroupManagePage() {
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
  setIsDialogOpen(false);
- toast('ë³´ì•ˆ ê·¸ë£¹ ëª…ì„¸ê°€ ì„±ê³µì ìœ¼ë¡œ ìˆ˜ì •ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+ toast('º¸¾È ±×·ì ¸í¼¼°¡ ¼º°øÀûÀ¸·Î ¼öÁ¤µÇ¾ú½À´Ï´Ù.', 'success');
  },
- onError: () => toast('ì •ë³´ ìˆ˜ì • ì¤‘ ì‹œìŠ¤í…œ ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
+ onError: () => toast('Á¤º¸ ¼öÁ¤ Áß ½Ã½ºÅÛ ¿¹¿Ü°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
  });
 
  const deleteMutation = useMutation({
  mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
- toast('ë³´ì•ˆ ê·¸ë£¹ í”„ë¡œí•„ì´ ì˜êµ¬ì ìœ¼ë¡œ íŒŒê¸°ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+ toast('º¸¾È ±×·ì ÇÁ·ÎÇÊÀÌ ¿µ±¸ÀûÀ¸·Î ÆÄ±âµÇ¾ú½À´Ï´Ù.', 'success');
  },
- onError: () => toast('ì‚­ì œ ì²˜ë¦¬ ì¤‘ ì‹œìŠ¤í…œ ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
+ onError: () => toast('»èÁ¦ Ã³¸® Áß ½Ã½ºÅÛ ¿¹¿Ü°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
  });
 
  const handleSearch = (e: React.FormEvent) => {
@@ -126,7 +126,7 @@ export default function GroupManagePage() {
  };
 
  const handleDelete = async (groupId: string) => {
- if (!confirm('ì •ë§ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?')) return;
+ if (!confirm('Á¤¸» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?')) return;
  deleteMutation.mutate(groupId);
  };
 
@@ -140,33 +140,33 @@ export default function GroupManagePage() {
 
  const columns: Column<GroupManage>[] = [
  {
- header: 'ë„ë©”ì¸ ê·¸ë£¹ ID',
+ header: 'µµ¸ŞÀÎ ±×·ì ID',
  accessor: (item: GroupManage) => (
  <div className="flex items-center gap-4 py-3">
- <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
+ <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
  <Fingerprint size={18} className="text-primary" />
  </div>
  <div className="flex flex-col">
- <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">GROUP_UID</span>
- <span className="font-mono text-xs font-black text-foreground tracking-widest uppercase">{item.groupId}</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">GROUP_UID</span>
+ <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.groupId}</span>
  </div>
  </div>
  ),
  className: 'w-64'
  },
  {
- header: 'ê·¸ë£¹ ì•„í‚¤í…ì²˜ ëª…ì¹­',
+ header: '±×·ì ¾ÆÅ°ÅØÃ³ ¸íÄª',
  accessor: (item: GroupManage) => (
  <div className="flex flex-col gap-0.5">
- <span className="font-black text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
- <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.groupDc || 'ê·œì • ì„¤ëª…ì´ ì œê³µë˜ì§€ ì•ŠìŒ'}</span>
+ <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.groupDc || '±ÔÁ¤ ¼³¸íÀÌ Á¦°øµÇÁö ¾ÊÀ½'}</span>
  </div>
  )
  },
  {
  header: 'PROVISION_DATE',
  accessor: (item: GroupManage) => (
- <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 font-mono tracking-tighter">
+ <div className="flex items-center gap-2 text-xs font-bold text-slate-400 font-mono tracking-tight">
  <Calendar size={12} className="opacity-40" />
  {item.groupCreatDe || 'N/A'}
  </div>
@@ -178,10 +178,10 @@ export default function GroupManagePage() {
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-100 transition-all font-black shadow-sm group">
+ <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-100 transition-all font-bold shadow-sm group">
  <Settings size={16} className="group-hover:rotate-45 transition-transform" />
  </Button>
- <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all shadow-sm">
+ <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
  <Trash2 size={16} />
  </Button>
  </div>
@@ -192,29 +192,29 @@ export default function GroupManagePage() {
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <PageHeader
- title="ë³´ì•ˆ ê·¸ë£¹ ì•„í‚¤í…ì²˜ ê±°ë²„ë„ŒìŠ¤"
- breadcrumbs={[{ label: 'ë³´ì•ˆ ê´€ë¦¬' }, { label: 'ê·¸ë£¹ ê´€ë¦¬' }]}
+ title="º¸¾È ±×·ì ¾ÆÅ°ÅØÃ³ °Å¹ö³Í½º"
+ breadcrumbs={[{ label: 'º¸¾È °ü¸®' }, { label: '±×·ì °ü¸®' }]}
  />
 
  <HubHeader
  title="Security"
  highlight="Group"
- subtitle="ì‹œìŠ¤í…œ ì ‘ê·¼ ìˆ˜ì¤€ì„ ì •ì˜í•˜ëŠ” ê²©ë¦¬ ë³´ì•ˆ ê·¸ë£¹ ì—”í„°í‹° ë° ì •ì±… ì•„ì¹´ì´ë¸Œ í†µí•© ì œì–´"
+ subtitle="½Ã½ºÅÛ Á¢±Ù ¼öÁØÀ» Á¤ÀÇÇÏ´Â °İ¸® º¸¾È ±×·ì ¿£ÅÍÆ¼ ¹× Á¤Ã¥ ¾ÆÄ«ÀÌºê ÅëÇÕ Á¦¾î"
  icon={Users}
  actions={
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleCreate}
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
- <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ì‹ ê·œ ë³´ì•ˆ ê·¸ë£¹ ì„¤ì •
+ <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ½Å±Ô º¸¾È ±×·ì ¼³Á¤
  </Button>
  </div>
  }
@@ -223,13 +223,13 @@ export default function GroupManagePage() {
  <HubMetricGrid>
  <HubMetricCard title="ACTIVE_GROUPS" value={groups.length} icon={Database} color="indigo" />
  <HubMetricCard title="ENTITY_NODES" value={pagination?.totalRecordCount || 0} icon={LayoutGrid} color="primary" />
- <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="ë™ê¸°í™”ë¨" />
+ <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="µ¿±âÈ­µÊ" />
  <HubMetricCard title="SECURITY_TIER" value="TIER_1" icon={Lock} color="amber" />
  </HubMetricGrid>
 
  <HubSectionCard
- title="ë³´ì•ˆ ë„ë©”ì¸ ê·¸ë£¹ ë§¤íŠ¸ë¦­ìŠ¤"
- description="ì‹œìŠ¤í…œì˜ ê²©ë¦¬ ë³´ì•ˆ ê³„ì¸µì„ êµ¬ì„±í•˜ëŠ” ê·¸ë£¹ ì¸ë²¤í† ë¦¬ ë° ì‹¤ì‹œê°„ í”„ë¡œë¹„ì €ë‹ ìƒíƒœì…ë‹ˆë‹¤."
+ title="º¸¾È µµ¸ŞÀÎ ±×·ì ¸ÅÆ®¸¯½º"
+ description="½Ã½ºÅÛÀÇ °İ¸® º¸¾È °èÃşÀ» ±¸¼ºÇÏ´Â ±×·ì ÀÎº¥Åä¸® ¹× ½Ç½Ã°£ ÇÁ·ÎºñÀú´× »óÅÂÀÔ´Ï´Ù."
  icon={Network}
  >
  <div className="space-y-8">
@@ -238,16 +238,16 @@ export default function GroupManagePage() {
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
- placeholder="ê·¸ë£¹ID ë˜ëŠ” ê·¸ë£¹ëª…ìœ¼ë¡œ ê²€ìƒ‰"
- className="w-[450px] h-16 pl-16 rounded-xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
+ placeholder="±×·ìID ¶Ç´Â ±×·ì¸íÀ¸·Î °Ë»ö"
+ className="w-[450px] h-12 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
  />
- <Button type="submit" className="h-16 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE_RESOURCES</Button>
+ <Button type="submit" className="h-12 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE_RESOURCES</Button>
  </form>
  </div>
  <div>
- <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">ê¸°ëŠ¥ ê·¸ë£¹ í…Œì´ë¸” í”„ë¡œë¸Œ</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">±â´É ±×·ì Å×ÀÌºí ÇÁ·Îºê</span>
  </div>
  </div>
 
@@ -256,7 +256,7 @@ export default function GroupManagePage() {
  columns={columns}
  data={groups}
  loading={isLoading}
- emptyMessage="ì‹ë³„ëœ ë³´ì•ˆ ê·¸ë£¹ ë¦¬ì†ŒìŠ¤ê°€ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤."
+ emptyMessage="½Äº°µÈ º¸¾È ±×·ì ¸®¼Ò½º°¡ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù."
  className="border-none bg-transparent"
  />
  </div>
@@ -276,12 +276,12 @@ export default function GroupManagePage() {
  <StandardModal
  isOpen={isDialogOpen}
  onClose={() => setIsDialogOpen(false)}
- title={editingGroup ? 'ë³´ì•ˆ ê·¸ë£¹ ì•„í‚¤í…ì²˜ ìˆ˜ì •' : 'ì‹ ê·œ ë³´ì•ˆ ë„ë©”ì¸ ê·¸ë£¹ ì„¤ì •'}
+ title={editingGroup ? 'º¸¾È ±×·ì ¾ÆÅ°ÅØÃ³ ¼öÁ¤' : '½Å±Ô º¸¾È µµ¸ŞÀÎ ±×·ì ¼³Á¤'}
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
  <div className="grid grid-cols-2 gap-10">
- <FormField label="ë„ë©”ì¸ ê·¸ë£¹ ì‹ë³„ì(Group ID)" required description="ë³´ì•ˆ ë ˆì´ì–´ ë‚´ì˜ ìœ ì¼í•œ ë…¼ë¦¬ ì‹ë³„ì">
+ <FormField label="µµ¸ŞÀÎ ±×·ì ½Äº°ÀÚ(Group ID)" required description="º¸¾È ·¹ÀÌ¾î ³»ÀÇ À¯ÀÏÇÑ ³í¸® ½Äº°ÀÚ">
  <div className="relative group/id">
  <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
  <Input
@@ -289,43 +289,43 @@ export default function GroupManagePage() {
  value={formData.groupId || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
  disabled={!!editingGroup}
- className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-widest uppercase shadow-inner"
- placeholder="ê·¸ë£¹ ì‹ë³„ì"
+ className="h-12 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
+ placeholder="±×·ì ½Äº°ÀÚ"
  />
  </div>
  </FormField>
- <FormField label="ê·¸ë£¹ ë ˆì´ë¸” ëª…ì¹­" required description="UI ìƒì— ë…¸ì¶œë  ê·¸ë£¹ ë¦¬í„°ëŸ´ ì´ë¦„">
+ <FormField label="±×·ì ·¹ÀÌºí ¸íÄª" required description="UI »ó¿¡ ³ëÃâµÉ ±×·ì ¸®ÅÍ·² ÀÌ¸§">
  <div className="relative group/nm">
  <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
  id="groupNm"
  value={formData.groupNm || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, groupNm: e.target.value }))}
- className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-tight shadow-inner"
- placeholder="ê·¸ë£¹ ëª…ì¹­ ì…ë ¥"
+ className="h-12 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
+ placeholder="±×·ì ¸íÄª ÀÔ·Â"
  />
  </div>
  </FormField>
  </div>
 
- <FormField label="ê·¸ë£¹ ì •ì±… ìƒì„¸ ëª…ì„¸" description="í•´ë‹¹ ë³´ì•ˆ ê·¸ë£¹ì˜ ë¹„ì¦ˆë‹ˆìŠ¤ ëª©ì  ë° ë°ì´í„° ì ‘ê·¼ ë²”ìœ„ ëª…ì„¸">
+ <FormField label="±×·ì Á¤Ã¥ »ó¼¼ ¸í¼¼" description="ÇØ´ç º¸¾È ±×·ìÀÇ ºñÁî´Ï½º ¸ñÀû ¹× µ¥ÀÌÅÍ Á¢±Ù ¹üÀ§ ¸í¼¼">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
  id="groupDc"
  value={formData.groupDc || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
- className="min-h-[160px] pl-16 p-8 rounded-xl border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
- placeholder="ìƒì„¸ ëª…ì„¸ ì…ë ¥..."
+ className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+ placeholder="»ó¼¼ ¸í¼¼ ÀÔ·Â..."
  />
  </div>
  </FormField>
 
  <div className="flex gap-6 pt-4">
- <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[10px] tracking-widest border-2">ì·¨ì†Œ</Button>
- <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-14 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">Ãë¼Ò</Button>
+ <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
  {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
- <span className="ml-2">{editingGroup ? 'ê·¸ë£¹ ìˆ˜ì •' : 'ì‹ ê·œ ê·¸ë£¹ ë°°í¬'}</span>
+ <span className="ml-2">{editingGroup ? '±×·ì ¼öÁ¤' : '½Å±Ô ±×·ì ¹èÆ÷'}</span>
  </Button>
  </div>
  </div>

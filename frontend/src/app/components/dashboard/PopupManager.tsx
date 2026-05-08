@@ -55,7 +55,7 @@ export function PopupManager() {
                 return (
                     <div
                         key={`popup-${popup.popupId}-${idx}`}
-                        className="fixed z-[9999] bg-white shadow-2xl rounded-xl overflow-hidden border animate-in zoom-in duration-300"
+                        className="fixed z-[9999] bg-white shadow-2xl rounded-lg overflow-hidden border animate-in zoom-in duration-300"
                         style={{
                             top: `${popup.popupHeightLocation}px`,
                             left: `${popup.popupWidthLocation}px`,
@@ -92,13 +92,13 @@ export function PopupManager() {
                         <div className="absolute bottom-0 left-0 right-0 h-10 bg-slate-100 flex items-center justify-between px-4 border-t">
                             <button
                                 onClick={() => closePopupForDay(popup.popupId)}
-                                className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
+                                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
                             >
                                 오늘 하루 보지 않기
                             </button>
                             <button
                                 onClick={() => closePopup(popup.popupId)}
-                                className="text-[11px] font-bold text-slate-700 hover:text-black"
+                                className="text-xs font-bold text-slate-700 hover:text-black"
                             >
                                 닫기
                             </button>

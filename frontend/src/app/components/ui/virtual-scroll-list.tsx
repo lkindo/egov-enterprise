@@ -52,7 +52,7 @@ export function VirtualScrollList<T>({
     <div
       ref={containerRef}
       onScroll={onScroll}
-      className={cn("overflow-y-auto border rounded-xl relative", className)}
+      className={cn("overflow-y-auto border rounded-lg relative", className)}
       style={{ height: containerHeight }}
     >
       <div style={{ height: items.length * itemHeight, width: '100%' }}>

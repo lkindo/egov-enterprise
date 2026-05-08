@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -8,16 +8,16 @@ export default function SurveyQuestionsPage() {
   return (
     <div className="space-y-6 p-8 animate-in fade-in duration-700">
       <PageHeader
-        title="ì„¤ë¬¸ ë¬¸í•­ ê´€ë¦¬"
-        breadcrumbs={[{ label: 'ì„¤ë¬¸ì¡°ì‚¬' }, { label: 'ë¬¸í•­ ê´€ë¦¬' }]}
+        title="¼³¹® ¹®Ç× °ü¸®"
+        breadcrumbs={[{ label: '¼³¹®Á¶»ç' }, { label: '¹®Ç× °ü¸®' }]}
       />
-      <div className="p-20 text-center bg-white rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
-        <div className="w-20 h-20 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-300">
+      <div className="p-20 text-center bg-white rounded-lg border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+        <div className="w-20 h-20 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-300">
             <HelpCircle size={40} />
         </div>
         <div className="space-y-2">
-            <h3 className="text-xl font-black tracking-tight text-slate-900">ì„¤ë¬¸ ë¬¸í•­ ê´€ë¦¬ì ì¤€ë¹„ ì¤‘</h3>
-            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">ë‹¤ì–‘í•œ ì§ˆë¬¸ ìœ í˜•(ê°ê´€ì‹, ì£¼ê´€ì‹, ì²™ë„í˜• ë“±)ì„ ë™ì ìœ¼ë¡œ ìƒì„±í•˜ëŠ” ë„êµ¬ë¥¼ ì¤€ë¹„ ì¤‘ì…ë‹ˆë‹¤.</p>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900">¼³¹® ¹®Ç× °ü¸®ÀÚ ÁØºñ Áß</h3>
+            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">´Ù¾çÇÑ Áú¹® À¯Çü(°´°ü½Ä, ÁÖ°ü½Ä, Ã´µµÇü µî)À» µ¿ÀûÀ¸·Î »ı¼ºÇÏ´Â µµ±¸¸¦ ÁØºñ ÁßÀÔ´Ï´Ù.</p>
         </div>
       </div>
     </div>

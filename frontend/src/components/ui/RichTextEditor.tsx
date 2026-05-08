@@ -63,7 +63,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       attributes: {
         class: cn(
           'prose dark:prose-invert prose-slate max-w-none min-h-[400px] outline-none p-10 font-sans text-lg focus:ring-0',
-          'prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase',
+          'prose-headings:font-bold prose-headings:tracking-tight prose-headings:uppercase',
           'prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:px-8 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl'
         ),
       },
@@ -170,10 +170,10 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       {/* --- Footer Status --- */}
       <div className="px-8 py-4 bg-slate-50/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">모드: 지능형 리치 텍스트 에디터 v1.0</span>
-          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">실시간 문서 동기화 활성화</span>
+          <span className="text-xs font-bold tracking-widest text-muted-foreground/40 uppercase">모드: 지능형 리치 텍스트 에디터 v1.0</span>
+          <span className="text-xs font-bold tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">실시간 문서 동기화 활성화</span>
         </div>
-        <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest whitespace-nowrap">
+        <div className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest whitespace-nowrap">
           {editor.storage.characterCount?.words?.() || 0} 단어 작성 중
         </div>
       </div>

@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -105,15 +105,15 @@ export default function AdminDashboardPage() {
  
  results.push({
  id: String(log.histId || log.requstId || `log-${i}`),
- action: (safeContent.includes('ìƒì„±') || safeContent.includes('ë“±ë¡') || safeContent.includes('create')) ? 'CREATE' :
- (safeContent.includes('ì‚­ì œ') || safeContent.includes('delete')) ? 'DELETE' :
- (safeContent.includes('ë³µì›') || safeContent.includes('restore')) ? 'RESTORE' : 'UPDATE',
+ action: (safeContent.includes('»ı¼º') || safeContent.includes('µî·Ï') || safeContent.includes('create')) ? 'CREATE' :
+ (safeContent.includes('»èÁ¦') || safeContent.includes('delete')) ? 'DELETE' :
+ (safeContent.includes('º¹¿ø') || safeContent.includes('restore')) ? 'RESTORE' : 'UPDATE',
  entityName: histCn,
  performedBy: String(log.frstRegisterId || log.rqesterId || 'System'),
  timestamp: String(log.frstRegisterPnttm || log.occrrncDe || new Date().toISOString()),
  ipAddress: String(log.sysNm || log.rqesterIp || 'Unknown'),
- severity: (safeContent.includes('ì˜¤ë¥˜') || safeContent.includes('ì‹¤íŒ¨') || safeContent.includes('ì‚­ì œ') || safeContent.includes('error')) ? 'high' :
- (safeContent.includes('ë³´ì•ˆ') || safeContent.includes('ê¶Œí•œ') || safeContent.includes('security')) ? 'medium' : ('low' as 'low')
+ severity: (safeContent.includes('¿À·ù') || safeContent.includes('½ÇÆĞ') || safeContent.includes('»èÁ¦') || safeContent.includes('error')) ? 'high' :
+ (safeContent.includes('º¸¾È') || safeContent.includes('±ÇÇÑ') || safeContent.includes('security')) ? 'medium' : ('low' as 'low')
  });
  }
  return results;
@@ -128,31 +128,31 @@ export default function AdminDashboardPage() {
  <HubHeader
  title="Admin"
  highlight="Intelligence Center"
- subtitle="ì‹œìŠ¤í…œ ì „ë°˜ì˜ ì˜¤í¼ë ˆì´ì…˜ ìƒíƒœ, ì§€ëŠ¥í˜• ë°ì´í„° ë¶„ì„ ë° ë³´ì•ˆ ê±°ë²„ë„ŒìŠ¤ í†µí•© ê´€ì œ íŒ¨ë„"
+ subtitle="½Ã½ºÅÛ Àü¹İÀÇ ¿ÀÆÛ·¹ÀÌ¼Ç »óÅÂ, Áö´ÉÇü µ¥ÀÌÅÍ ºĞ¼® ¹× º¸¾È °Å¹ö³Í½º ÅëÇÕ °üÁ¦ ÆĞ³Î"
  icon={LayoutDashboard}
  actions={
  <div className="flex gap-4 p-2 items-center">
  <motion.div 
  whileHover={{ scale: 1.05 }} 
  whileTap={{ scale: 0.95 }}
- className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 font-black text-[9px] tracking-widest shadow-sm cursor-default"
+ className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-lg border border-emerald-200 font-bold text-xs tracking-widest shadow-sm cursor-default"
  >
- <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
- ì‹œìŠ¤í…œ ìƒíƒœ: ì •ìƒ
+ <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
+ ½Ã½ºÅÛ »óÅÂ: Á¤»ó
  </motion.div>
  <Button 
  size="lg" 
- onClick={() => toast.success("ì‹œìŠ¤í…œ ë™ê¸°í™”ê°€ ì„±ê³µì ìœ¼ë¡œ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤.", {
- description: "ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì§€ëŠ¥í˜• ì—”ì§„ì´ ìµœì í™”ë¥¼ ì§„í–‰ ì¤‘ì…ë‹ˆë‹¤."
+ onClick={() => toast.success("½Ã½ºÅÛ µ¿±âÈ­°¡ ¼º°øÀûÀ¸·Î ½ÃÀÛµÇ¾ú½À´Ï´Ù.", {
+ description: "¹é±×¶ó¿îµå¿¡¼­ Áö´ÉÇü ¿£ÁøÀÌ ÃÖÀûÈ­¸¦ ÁøÇà ÁßÀÔ´Ï´Ù."
  })}
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
  >
  <motion.div
  className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"
  initial={false}
  />
  <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
- ë™ê¸°í™” ì¡°ì •
+ µ¿±âÈ­ Á¶Á¤
  </Button>
  </div>
  }
@@ -162,97 +162,97 @@ export default function AdminDashboardPage() {
 
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
  <DashboardStatCard
- title="ID ë ˆì§€ìŠ¤íŠ¸ë¦¬"
+ title="ID ·¹Áö½ºÆ®¸®"
  value={usersData?.total?.toLocaleString() || "IDLE"}
  icon={<Users className="w-5 h-5" />}
- trend="+12 í™œì„±"
+ trend="+12 È°¼º"
  color="blue"
  link="/admin/user/manage"
- description="í†µí•© ì‚¬ìš©ì ë° ì¡°ì§ ê´€ë¦¬"
+ description="ÅëÇÕ »ç¿ëÀÚ ¹× Á¶Á÷ °ü¸®"
  />
  <DashboardStatCard
- title="ë³´ì•ˆ ê±°ë²„ë„ŒìŠ¤"
+ title="º¸¾È °Å¹ö³Í½º"
  value={`${authorsData?.total || 0} ROLES`}
  icon={<ShieldCheck className="w-5 h-5" />}
- trend="ë³´í˜¸ë¨"
+ trend="º¸È£µÊ"
  color="emerald"
  link="/admin/security/authority"
- description="RBAC ë° ê³ ê¸‰ ê¶Œí•œ í—ˆë¸Œ"
+ description="RBAC ¹× °í±Ş ±ÇÇÑ Çãºê"
  />
  <DashboardStatCard
- title="ìš´ì˜ ì¸í…”ë¦¬ì „ìŠ¤"
+ title="¿î¿µ ÀÎÅÚ¸®Àü½º"
  value="OPERATIONAL"
  icon={<Box className="w-5 h-5" />}
  trend="HEALTHY"
  color="amber"
  link="/admin/system/programs"
- description="ëª¨ë“ˆ ë° ë¦¬ì†ŒìŠ¤ ì˜¤ì¼€ìŠ¤íŠ¸ë ˆì´ì…˜"
+ description="¸ğµâ ¹× ¸®¼Ò½º ¿ÀÄÉ½ºÆ®·¹ÀÌ¼Ç"
  />
  <DashboardStatCard
- title="ì—…ë¬´ ì¸í…”ë¦¬ì „ìŠ¤"
+ title="¾÷¹« ÀÎÅÚ¸®Àü½º"
  value={auditData?.total || "LIVE"}
  icon={<Activity className="w-5 h-5" />}
  trend="REALTIME"
  color="rose"
  link="/admin/system/audit"
- description="ì‹¤ì‹œê°„ ë³´ì•ˆ ê°ì‚¬ íˆìŠ¤í† ë¦¬ ë¶„ì„"
+ description="½Ç½Ã°£ º¸¾È °¨»ç È÷½ºÅä¸® ºĞ¼®"
  />
  </div>
 
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
- <div className="lg:col-span-2 p-8 rounded-xl bg-card border border-border shadow-sm flex flex-col gap-8">
+ <div className="lg:col-span-2 p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col gap-8">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+ <div className="w-12 h-12 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
  <TrendingUp size={24} />
  </div>
  <div>
- <h2 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h2>
- <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mt-1">ì‹œìŠ¤í…œ íŠ¸ë˜í”½ ë° ìœ ì € í™œë™ ë¶„ì„</p>
+ <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h2>
+ <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">½Ã½ºÅÛ Æ®·¡ÇÈ ¹× À¯Àú È°µ¿ ºĞ¼®</p>
  </div>
  </div>
  </div>
- <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="ìµœê·¼ 7ì¼ê°„ ì‹œìŠ¤í…œ ì ‘ì† í”„ë¡œí•„" color="#6366F1" />
+ <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="ÃÖ±Ù 7ÀÏ°£ ½Ã½ºÅÛ Á¢¼Ó ÇÁ·ÎÇÊ" color="#6366F1" />
  </div>
 
- <div className="p-8 rounded-xl bg-card border border-border shadow-sm flex flex-col gap-8">
+ <div className="p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col gap-8">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+ <div className="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
  <Users size={24} />
  </div>
  <div>
- <h2 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h2>
- <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mt-1">ì‚¬ìš©ì ê¶Œí•œ ê·¸ë£¹ ë¶„í¬</p>
+ <h2 className="text-lg font-bold text-foreground tracking-tight">Identity Cluster</h2>
+ <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">»ç¿ëÀÚ ±ÇÇÑ ±×·ì ºĞÆ÷</p>
  </div>
  </div>
  </div>
  <div className="flex-1 min-h-[300px]">
- <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ìˆ˜ìš©ëŸ‰ ë¶„ì„" />
+ <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ¼ö¿ë·® ºĞ¼®" />
  </div>
  </div>
  </div>
 
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
  <div className="lg:col-span-2 space-y-8">
- <div className="p-8 rounded-xl bg-card border border-border shadow-sm overflow-hidden relative group">
+ <div className="p-8 rounded-lg bg-card border border-border shadow-sm overflow-hidden relative group">
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-3">
- <div className="p-2 bg-primary/10 rounded-xl text-primary">
+ <div className="p-2 bg-primary/10 rounded-lg text-primary">
  <Cpu size={20} />
  </div>
  <div>
- <h2 className="text-sm font-bold text-foreground">ì»´í“¨íŒ… ë…¸ë“œ í—¬ìŠ¤ì²´í¬</h2>
- <p className="text-[10px] font-medium text-slate-700 mt-0.5">ì‹¤ì‹œê°„ ë¦¬ì†ŒìŠ¤ ì†Œë¹„ ëª¨ë‹ˆí„°ë§</p>
+ <h2 className="text-sm font-bold text-foreground">ÄÄÇ»ÆÃ ³ëµå Çï½ºÃ¼Å©</h2>
+ <p className="text-xs font-medium text-slate-700 mt-0.5">½Ç½Ã°£ ¸®¼Ò½º ¼Òºñ ¸ğ´ÏÅÍ¸µ</p>
  </div>
  </div>
  <div className="flex items-center gap-4">
  <div className="text-right">
- <p className="text-[10px] font-bold text-slate-600 uppercase">í‰ê·  ë¶€í•˜</p>
+ <p className="text-xs font-bold text-slate-600 uppercase">Æò±Õ ºÎÇÏ</p>
  <p className="text-lg font-bold tabular-nums">18.4%</p>
  </div>
  <div className="w-px h-8 bg-border/50" />
- <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="ì‹œìŠ¤í…œ ë…¸ë“œ ìƒì„¸ ë³´ê¸°">
+ <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" aria-label="½Ã½ºÅÛ ³ëµå »ó¼¼ º¸±â">
  <ArrowUpRight size={18} />
  </Button>
  </div>
@@ -264,63 +264,63 @@ export default function AdminDashboardPage() {
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
- <div className="p-8 rounded-xl bg-card border border-border shadow-sm flex flex-col gap-6">
+ <div className="p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col gap-6">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-3">
- <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+ <div className="p-2 bg-muted rounded-lg text-muted-foreground">
  <Database size={18} />
  </div>
- <span className="text-sm font-bold text-foreground">ë°ì´í„°ë² ì´ìŠ¤</span>
+ <span className="text-sm font-bold text-foreground">µ¥ÀÌÅÍº£ÀÌ½º</span>
  </div>
- <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-black px-3 py-1">HEALTHY</Badge>
+ <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold px-3 py-1">HEALTHY</Badge>
  </div>
 
  <div className="flex items-end justify-between">
  <div className="space-y-1">
- <p className="text-3xl font-black tracking-tighter">2.4 TB</p>
- <p className="text-[10px] font-black text-muted-foreground uppercase">Storage occupied: 64%</p>
+ <p className="text-3xl font-bold tracking-tight">2.4 TB</p>
+ <p className="text-xs font-bold text-muted-foreground uppercase">Storage occupied: 64%</p>
  </div>
  <div className="w-20 h-20">
- <GaugeChart value={64} color="#3B82F6" title="ê±°ë²„ë„ŒìŠ¤ ê°ì‚¬ ì¶”ì " />
+ <GaugeChart value={64} color="#3B82F6" title="°Å¹ö³Í½º °¨»ç ÃßÀû" />
  </div>
  </div>
  </div>
 
- <div className="p-8 rounded-xl bg-card border border-border shadow-sm flex flex-col gap-6">
+ <div className="p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col gap-6">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-3">
- <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+ <div className="p-2 bg-muted rounded-lg text-muted-foreground">
  <Globe size={18} />
  </div>
- <span className="text-sm font-bold text-foreground">ê¸€ë¡œë²Œ ì§€ì—°ì‹œê°„</span>
+ <span className="text-sm font-bold text-foreground">±Û·Î¹ú Áö¿¬½Ã°£</span>
  </div>
  <div className="flex items-center gap-1 text-emerald-800">
  <TrendingUp size={12} />
- <span className="text-[10px] font-black uppercase">-4MS OPTIMIZED</span>
+ <span className="text-xs font-bold uppercase">-4MS OPTIMIZED</span>
  </div>
  </div>
 
  <div className="flex items-end justify-between">
  <div className="space-y-1">
- <p className="text-3xl font-black tracking-tighter uppercase">12 ms</p>
- <p className="text-[10px] font-black text-slate-600 uppercase">Response time (Seoul Hub)</p>
+ <p className="text-3xl font-bold tracking-tight uppercase">12 ms</p>
+ <p className="text-xs font-bold text-slate-600 uppercase">Response time (Seoul Hub)</p>
  </div>
- <div className="w-24 h-1 font-black bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+ <div className="w-24 h-1 font-bold bg-emerald-500 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
  </div>
  </div>
  </div>
  </div>
 
  <div className="space-y-8">
- <div className="p-8 rounded-xl bg-card border border-border shadow-sm flex flex-col h-[600px]">
+ <div className="p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col h-[600px]">
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-3">
- <div className="p-2 bg-slate-900 rounded-xl text-white shadow-xl">
+ <div className="p-2 bg-slate-900 rounded-lg text-white shadow-xl">
  <Clock size={18} />
  </div>
- <h2 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h2>
+ <h2 className="text-sm font-bold text-foreground uppercase tracking-widest leading-none">Audit History</h2>
  </div>
- <Link href="/admin/system/audit" className="text-[10px] font-black text-primary hover:underline uppercase tracking-tighter underline-offset-4 decoration-primary/30">Explore All</Link>
+ <Link href="/admin/system/audit" className="text-xs font-bold text-primary hover:underline uppercase tracking-tight underline-offset-4 decoration-primary/30">Explore All</Link>
  </div>
 
  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -328,13 +328,13 @@ export default function AdminDashboardPage() {
  </div>
 
  <div className="mt-8 pt-8 border-t border-border/50">
- <div className="flex items-center gap-4 p-5 rounded-xl bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
- <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
+ <div className="flex items-center gap-4 p-5 rounded-lg bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
+ <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
  <AlertCircle size={20} />
  </div>
  <div>
- <p className="text-xs font-black text-slate-900 group-hover:text-white uppercase tracking-tight">Integrity Probe</p>
- <p className="text-[10px] font-bold text-slate-600">Last check: 2 hours ago</p>
+ <p className="text-xs font-bold text-slate-900 group-hover:text-white uppercase tracking-tight">Integrity Probe</p>
+ <p className="text-xs font-bold text-slate-600">Last check: 2 hours ago</p>
  </div>
  </div>
  </div>
@@ -343,26 +343,26 @@ export default function AdminDashboardPage() {
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
- <div className="p-8 rounded-xl bg-indigo-900 text-white shadow-2xl relative overflow-hidden group">
+ <div className="p-8 rounded-lg bg-indigo-900 text-white shadow-2xl relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
  <Zap size={120} />
  </div>
- <h3 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-4">Strategic Bulletin</h3>
- <p className="text-2xl font-black tracking-tighter mb-6 ">Global Strategy Notice</p>
+ <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">Strategic Bulletin</h3>
+ <p className="text-2xl font-bold tracking-tight mb-6 ">Global Strategy Notice</p>
  <p className="text-xs font-medium text-indigo-200 leading-relaxed uppercase">
- ì‹œìŠ¤í…œ ì „ë°˜ì˜ ê¸€ë¡œë²Œ ë³´ì•ˆ ì „ëµ ë° ì •ì±… ì—…ë°ì´íŠ¸ê°€ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤. <br />
- ë°ì´í„° ì˜¤ì¼€ìŠ¤íŠ¸ë ˆì´ì…˜ ì—”ì§„ì˜ ìµœì í™” ìƒíƒœë¥¼ í™•ì¸í•˜ì„¸ìš”.
+ ½Ã½ºÅÛ Àü¹İÀÇ ±Û·Î¹ú º¸¾È Àü·« ¹× Á¤Ã¥ ¾÷µ¥ÀÌÆ®°¡ ¿Ï·áµÇ¾ú½À´Ï´Ù. <br />
+ µ¥ÀÌÅÍ ¿ÀÄÉ½ºÆ®·¹ÀÌ¼Ç ¿£ÁøÀÇ ÃÖÀûÈ­ »óÅÂ¸¦ È®ÀÎÇÏ¼¼¿ä.
  </p>
  </div>
- <div className="p-8 rounded-xl bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-l-4 border-primary">
+ <div className="p-8 rounded-lg bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-l-4 border-primary">
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
  <Cpu size={120} />
  </div>
- <h3 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-4">Resource Allocation</h3>
- <p className="text-2xl font-black tracking-tighter mb-6 ">Resource Provisioning</p>
+ <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">Resource Allocation</h3>
+ <p className="text-2xl font-bold tracking-tight mb-6 ">Resource Provisioning</p>
  <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
- ì»´í“¨íŒ… ë…¸ë“œ ë° ìŠ¤í† ë¦¬ì§€ ë¦¬ì†ŒìŠ¤ì˜ ë™ì  í”„ë¡œë¹„ì €ë‹ì´ ì§„í–‰ ì¤‘ì…ë‹ˆë‹¤. <br />
- í˜„ì¬ ì‹œìŠ¤í…œ ë¶€í•˜ ë¶„ì‚°ì„ ìœ„í•œ ì§€ëŠ¥í˜• ìƒ¤ë”© ì‘ì—…ì´ ìˆ˜í–‰ë˜ê³  ìˆìŠµë‹ˆë‹¤.
+ ÄÄÇ»ÆÃ ³ëµå ¹× ½ºÅä¸®Áö ¸®¼Ò½ºÀÇ µ¿Àû ÇÁ·ÎºñÀú´×ÀÌ ÁøÇà ÁßÀÔ´Ï´Ù. <br />
+ ÇöÀç ½Ã½ºÅÛ ºÎÇÏ ºĞ»êÀ» À§ÇÑ Áö´ÉÇü »şµù ÀÛ¾÷ÀÌ ¼öÇàµÇ°í ÀÖ½À´Ï´Ù.
  </p>
  </div>
  </div>
@@ -386,30 +386,30 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
  whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
  whileTap={{ scale: 0.98 }}
  transition={{ type: "spring", stiffness: 400, damping: 17 }}
- className="p-8 h-full rounded-xl bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
+ className="p-8 h-full rounded-lg bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
  >
  <div className="flex items-center justify-between mb-8">
- <div className={cn("p-3.5 rounded-xl border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
+ <div className={cn("p-3.5 rounded-lg border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
  {icon}
  </div>
- <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
- <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{trend}</span>
+ <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+ <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">{trend}</span>
  <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
  </div>
  </div>
 
  <div className="space-y-4">
- <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono flex items-center gap-2">
+ <p className="text-xs font-bold text-slate-700 tracking-[0.4em] uppercase font-mono flex items-center gap-2">
  {title}
  <span className="e2e-label">
- {title === 'ID ë ˆì§€ìŠ¤íŠ¸ë¦¬' ? 'IDENTITY_RESOURCES' : 
- title === 'ë³´ì•ˆ ê±°ë²„ë„ŒìŠ¤' ? 'CLUSTER_POLICY' : 
- title === 'ìš´ì˜ ì¸í…”ë¦¬ì „ìŠ¤' ? 'OPERATIONAL_INTELLIGENCE' : 
- title === 'ì—…ë¬´ ì¸í…”ë¦¬ì „ìŠ¤' ? 'BUSINESS_INTELLIGENCE' : ''}
+ {title === 'ID ·¹Áö½ºÆ®¸®' ? 'IDENTITY_RESOURCES' : 
+ title === 'º¸¾È °Å¹ö³Í½º' ? 'CLUSTER_POLICY' : 
+ title === '¿î¿µ ÀÎÅÚ¸®Àü½º' ? 'OPERATIONAL_INTELLIGENCE' : 
+ title === '¾÷¹« ÀÎÅÚ¸®Àü½º' ? 'BUSINESS_INTELLIGENCE' : ''}
  </span>
  </p>
- <h3 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
- <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
+ <h3 className="text-4xl font-bold text-slate-900 tracking-tight tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
+ <p className="text-xs font-bold text-slate-700 leading-tight uppercase">
  {description}
  </p>
  </div>
@@ -420,8 +420,8 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
  </motion.div>
  </Link>
  </TooltipTrigger>
- <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
- {title} ìƒì„¸ í˜ì´ì§€ë¡œ ì´ë™
+ <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+ {title} »ó¼¼ ÆäÀÌÁö·Î ÀÌµ¿
  </TooltipContent>
  </Tooltip>
  );

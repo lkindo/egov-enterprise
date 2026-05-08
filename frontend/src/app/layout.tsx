@@ -51,7 +51,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
           <Sidebar menusPromise={menusPromise} />
         </Suspense>
         <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden">
-          <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)]">
+          <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
                 <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px]">Loading page content...</div>}>
                   {children}

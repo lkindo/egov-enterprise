@@ -1,4 +1,4 @@
-﻿
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  {children}
  {isOpen && options && (
  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#020617]/90 animate-in fade-in duration-200">
- <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+ <div className="bg-card border rounded-lg shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
  <div className="flex items-start gap-4">
  <div className={cn(
  "p-2 rounded-full",

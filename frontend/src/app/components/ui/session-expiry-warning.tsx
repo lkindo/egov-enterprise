@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Shield, Clock, X } from 'lucide-react';
@@ -137,14 +137,14 @@ export function SessionExpiryWarning() {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-full max-w-md"
           >
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden">
               {/* 헤더 */}
               <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-amber-100 rounded-lg">
                     <Shield className="w-5 h-5 text-amber-600" />
                   </div>
-                  <span className="font-black text-amber-800 text-sm">세션 만료 예정</span>
+                  <span className="font-bold text-amber-800 text-sm">세션 만료 예정</span>
                 </div>
                 <button
                   onClick={() => setShowWarning(false)}
@@ -158,9 +158,9 @@ export function SessionExpiryWarning() {
               <div className="p-8 text-center">
                 <div className="inline-flex items-center gap-2 bg-rose-50 text-rose-600 px-4 py-2 rounded-full mb-6">
                   <Clock size={16} />
-                  <span className="font-black text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
+                  <span className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mb-2">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
                   세션이 곧 만료됩니다
                 </h3>
                 <p className="text-slate-500 font-medium text-sm leading-relaxed">
@@ -173,13 +173,13 @@ export function SessionExpiryWarning() {
               <div className="px-6 pb-6 flex gap-3">
                 <button
                   onClick={handleLogout}
-                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-black text-sm rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-bold text-sm rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   로그아웃
                 </button>
                 <button
                   onClick={handleExtendSession}
-                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-black text-sm rounded-xl hover:bg-slate-800 shadow-xl transition-all active:scale-95"
+                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-bold text-sm rounded-lg hover:bg-slate-800 shadow-xl transition-all active:scale-95"
                 >
                   세션 연장
                 </button>

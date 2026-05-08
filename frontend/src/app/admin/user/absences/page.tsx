@@ -14,7 +14,7 @@ export default async function AbsenceManagePage() {
   const deptsPromise = deptAdminService.getDeptList({ pageNo: 1, searchKeyword: '' }, axiosConfig).catch(() => ({ list: [], total: 0, totalPage: 0 }));
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-mono text-[10px] tracking-widest uppercase animate-pulse">Synchronizing Identity Fabric...</div>}>
+    <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse">Synchronizing Identity Fabric...</div>}>
       <UserOrgHubClient 
         defaultTab="ABSENCES" 
         usersPromise={usersPromise} 

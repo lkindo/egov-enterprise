@@ -40,8 +40,8 @@ import {
 const loginPolicySchema = z.object({
   ipInfo: z.string().optional(),
   lmttAt: z.enum(['Y', 'N']),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm ?�식???�니거나 ?�못???�간?�니??').optional().or(z.literal('')),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm ?�식???�니거나 ?�못???�간?�니??').optional().or(z.literal('')),
   otpEnabledAt: z.enum(['Y', 'N']),
 });
 
@@ -70,7 +70,7 @@ export default function LoginPolicyAdminClient() {
       const response = await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: searchTerm });
       setData(response.list);
     } catch (error) {
-      toast.error('로그인 정책 목록을 불러오는 데 실패했습니다.');
+      toast.error('로그???�책 목록??불러?�는 ???�패?�습?�다.');
     } finally {
       setLoading(false);
     }
@@ -96,54 +96,54 @@ export default function LoginPolicyAdminClient() {
     if (!selectedPolicy) return;
     try {
       await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.emplyrId, values as Partial<LoginPolicy>);
-      toast.success('로그인 정책이 성공적으로 업데이트되었습니다.');
+      toast.success('로그???�책???�공?�으�??�데?�트?�었?�니??');
       setIsEditModalOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('정책 저장 중 오류가 발생했습니다.');
+      toast.error('?�책 ?�??�??�류가 발생?�습?�다.');
     }
   };
 
   const columns: Column<LoginPolicy>[] = [
     {
-      header: '사용자 정보',
+      header: '?�용???�보',
       accessor: (item) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg">
             <User size={18} />
           </div>
           <div className="text-left">
-            <span className="font-black tracking-tight text-foreground block text-sm">{item.emplyrNm}</span>
-            <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.emplyrId}</span>
+            <span className="font-bold tracking-tight text-foreground block text-sm">{item.emplyrNm}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.emplyrId}</span>
           </div>
         </div>
       )
     },
     {
-      header: '제한 IP',
+      header: '?�한 IP',
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Globe size={12} className="text-primary/40" />
-          <span className="text-xs font-mono font-bold">{item.ipInfo || '제한 없음'}</span>
+          <span className="text-xs font-mono font-bold">{item.ipInfo || '?�한 ?�음'}</span>
         </div>
       )
     },
     {
-      header: '허용 시간',
+      header: '?�용 ?�간',
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Clock size={12} className="text-amber-500/40" />
           <span className="text-xs font-bold">
-            {item.startTime && item.endTime ? `${item.startTime} ~ ${item.endTime}` : '24시간'}
+            {item.startTime && item.endTime ? `${item.startTime} ~ ${item.endTime}` : '24?�간'}
           </span>
         </div>
       )
     },
     {
-      header: '계정 제한',
+      header: '계정 ?�한',
       accessor: (item) => (
         <HubStatusBadge 
-          label={item.lmttAt === 'Y' ? '제한됨' : '정상'} 
+          label={item.lmttAt === 'Y' ? '?�한?? : '?�상'} 
           variant={item.lmttAt === 'Y' ? 'error' : 'success'} 
         />
       )
@@ -153,17 +153,17 @@ export default function LoginPolicyAdminClient() {
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Fingerprint size={12} className={item.otpEnabledAt === 'Y' ? 'text-emerald-500' : 'text-slate-300'} />
-          <span className={`text-[10px] font-black tracking-widest ${item.otpEnabledAt === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
+          <span className={`text-xs font-bold tracking-widest ${item.otpEnabledAt === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
             {item.otpEnabledAt === 'Y' ? 'ACTIVE' : 'DISABLED'}
           </span>
         </div>
       )
     },
     {
-      header: '설정',
+      header: '?�정',
       className: 'text-right',
       accessor: (item) => (
-        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="hover:bg-slate-900 hover:text-white rounded-xl transition-all">
+        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="hover:bg-slate-900 hover:text-white rounded-lg transition-all">
           <Settings2 size={16} />
         </Button>
       )
@@ -176,32 +176,32 @@ export default function LoginPolicyAdminClient() {
   return (
     <div className="p-10 space-y-12 animate-in fade-in duration-1000 text-left">
       <HubHeader 
-        title="로그인 보안 정책" 
-        highlight="관리" 
-        subtitle="개별 사용자의 접속 IP, 시간대 제한 및 2단계 인증(OTP) 활성화 여부를 정밀 제어합니다." 
+        title="로그??보안 ?�책" 
+        highlight="관�? 
+        subtitle="개별 ?�용?�의 ?�속 IP, ?�간?� ?�한 �?2?�계 ?�증(OTP) ?�성???��?�??��? ?�어?�니??" 
         icon={ShieldAlert} 
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="전체 정책 수" value={data.length} icon={ShieldAlert} color="primary" />
-        <HubMetricCard title="OTP 활성 계정" value={otpEnabledCount} icon={Fingerprint} color="emerald" status="SECURE" />
-        <HubMetricCard title="접속 제한 계정" value={restrictedCount} icon={ShieldAlert} color="rose" />
-        <HubMetricCard title="평균 보안 레벨" value="HIGH" icon={Key} color="amber" />
+        <HubMetricCard title="?�체 ?�책 ?? value={data.length} icon={ShieldAlert} color="primary" />
+        <HubMetricCard title="OTP ?�성 계정" value={otpEnabledCount} icon={Fingerprint} color="emerald" status="SECURE" />
+        <HubMetricCard title="?�속 ?�한 계정" value={restrictedCount} icon={ShieldAlert} color="rose" />
+        <HubMetricCard title="?�균 보안 ?�벨" value="HIGH" icon={Key} color="amber" />
       </HubMetricGrid>
 
-      <HubSectionCard title="보안 정책 인벤토리" description="전사 사용자별 로그인 거버넌스 설정 현황을 조회하고 수정합니다." icon={Settings2}>
+      <HubSectionCard title="보안 ?�책 ?�벤?�리" description="?�사 ?�용?�별 로그??거버?�스 ?�정 ?�황??조회?�고 ?�정?�니??" icon={Settings2}>
         <div className="flex items-center justify-between mb-10 gap-6">
           <div className="relative group/search flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
             <Input 
-              placeholder="사용자 ID 또는 성명 검색..." 
+              placeholder="?�용??ID ?�는 ?�명 검??.." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchData()}
-              className="h-16 pl-16 pr-8 rounded-2xl bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner" 
+              className="h-12 pl-16 pr-8 rounded-lg bg-slate-50 border-2 border-slate-100 font-bold text-md tracking-tight shadow-inner" 
             />
           </div>
-          <Button onClick={fetchData} variant="outline" className="h-16 w-16 rounded-2xl border-2 border-slate-100 bg-white hover:bg-slate-50 transition-all shadow-xl active:scale-95 group">
+          <Button onClick={fetchData} variant="outline" className="h-12 w-16 rounded-lg border-2 border-slate-100 bg-white hover:bg-slate-50 transition-all shadow-xl active:scale-95 group">
             <RefreshCcw size={24} className="text-slate-400 group-hover:rotate-180 transition-transform duration-700" />
           </Button>
         </div>
@@ -211,24 +211,23 @@ export default function LoginPolicyAdminClient() {
           data={data} 
           loading={loading}
           keyField="emplyrId"
-          emptyMessage="등록된 로그인 정책이 없습니다."
+          emptyMessage="?�록??로그???�책???�습?�다."
           className="border-none bg-transparent"
         />
       </HubSectionCard>
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl rounded-3xl overflow-hidden border-none shadow-2xl p-0">
+        <DialogContent className="max-w-2xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
           <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
             <div className="space-y-1">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                  <Settings2 className="text-primary" /> 정책 프로파일링
-                </DialogTitle>
+                <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                  <Settings2 className="text-primary" /> ?�책 ?�로?�일�?                </DialogTitle>
               </DialogHeader>
-              <p className="text-[10px] font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.emplyrId}</p>
+              <p className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.emplyrId}</p>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/5">
+            <div className="w-14 h-11 rounded-lg bg-white/10 flex items-center justify-center border border-white/5">
               <User size={24} className="text-primary" />
             </div>
           </div>
@@ -241,14 +240,14 @@ export default function LoginPolicyAdminClient() {
                   name="ipInfo"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 제한 IP</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">?�속 ?�한 IP</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="?? 192.168.0.1 (미입?????�한 ?�음)" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
-                      <FormDescription className="text-[10px] font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
+                      <FormDescription className="text-xs font-medium opacity-60">?�정 IP?�서�??�근???�용?�려�??�력?�십?�오.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -259,11 +258,11 @@ export default function LoginPolicyAdminClient() {
                   name="startTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 허용 시작 시간</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">?�속 ?�용 ?�작 ?�간</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Timer className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="09:00" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -276,11 +275,11 @@ export default function LoginPolicyAdminClient() {
                   name="endTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-black tracking-widest uppercase opacity-40">접속 허용 종료 시간</FormLabel>
+                      <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">?�속 ?�용 종료 ?�간</FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="18:00" className="h-14 pl-12 rounded-xl border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -288,15 +287,15 @@ export default function LoginPolicyAdminClient() {
                   )}
                 />
 
-                <div className="col-span-2 p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-6">
+                <div className="col-span-2 p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-6">
                   <FormField
                     control={form.control}
                     name="lmttAt"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
-                          <FormLabel className="text-sm font-black tracking-tight">계정 접속 전면 제한</FormLabel>
-                          <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase">BLOCK_ACCOUNT_ACCESS</p>
+                          <FormLabel className="text-sm font-bold tracking-tight">계정 ?�속 ?�면 ?�한</FormLabel>
+                          <p className="text-xs font-bold text-muted-foreground opacity-60 uppercase">BLOCK_ACCOUNT_ACCESS</p>
                         </div>
                         <FormControl>
                           <Switch 
@@ -316,8 +315,8 @@ export default function LoginPolicyAdminClient() {
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
-                          <FormLabel className="text-sm font-black tracking-tight">2단계 인증 (OTP) 필수 적용</FormLabel>
-                          <p className="text-[10px] font-bold text-emerald-600 tracking-widest uppercase">ENFORCE_MFA_AUTHENTICATION</p>
+                          <FormLabel className="text-sm font-bold tracking-tight">2?�계 ?�증 (OTP) ?�수 ?�용</FormLabel>
+                          <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase">ENFORCE_MFA_AUTHENTICATION</p>
                         </div>
                         <FormControl>
                           <Switch 
@@ -333,9 +332,9 @@ export default function LoginPolicyAdminClient() {
               </div>
 
               <DialogFooter className="pt-6">
-                <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="h-14 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase">취소</Button>
-                <Button type="submit" className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
-                  정책 동기화 적용
+                <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="h-11 px-8 rounded-lg font-bold text-xs tracking-widest uppercase">취소</Button>
+                <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
+                  ?�책 ?�기???�용
                 </Button>
               </DialogFooter>
             </form>

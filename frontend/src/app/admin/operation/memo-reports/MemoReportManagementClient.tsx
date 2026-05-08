@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -53,17 +53,17 @@ export default function MemoReportManagementClient() {
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000 font-sans">
  <HubHeader 
- title="메모 보고 매트릭스" 
+ title="메모 보고 매트�?��" 
  highlight="Report Node" 
- subtitle="사내 엔터프라이즈 비전 보고 및 지시사항 전달을 위한 통합 커뮤니케이션 센터입니다" 
+ subtitle="?�내 ?�터?�라?�즈 비전 보고 �?지?�사???�달???�한 ?�합 커�??��??�션 ?�터?�니?? 
  icon={Mail} 
  actions={
  <div className="flex gap-4">
- <Button className="h-14 px-8 rounded-xl bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
- <History size={18} /> 이전 리포트
+ <Button className="h-10 px-8 rounded-lg bg-slate-100 text-slate-900 font-bold tracking-widest text-xs uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+ <History size={18} /> ?�전 리포??
  </Button>
- <Button className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
- <Plus size={18} /> 신규 보고 작성
+ <Button className="h-10 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+ <Plus size={18} /> ?�규 보고 ?�성
  </Button>
  </div>
  }
@@ -74,7 +74,7 @@ export default function MemoReportManagementClient() {
  {/* Left: Tabbed Stream (50%) */}
  <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
  <div className="flex items-center justify-between px-6">
- <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl border ring-1 ring-slate-100">
+ <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg border ring-1 ring-slate-100">
  <NavTab active={activeTab === 'RECEIVED'} icon={<Inbox size={16} />} label="RECEIVED" onClick={() => handleTabChange('RECEIVED')} />
  <NavTab active={activeTab === 'MY'} icon={<Send size={16} />} label="MY OPS" onClick={() => handleTabChange('MY')} />
  <NavTab active={activeTab === 'ALL'} icon={<Globe size={16} />} label="GLOBAL" onClick={() => handleTabChange('ALL')} />
@@ -84,20 +84,20 @@ export default function MemoReportManagementClient() {
  <Input 
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
- className="h-11 bg-white border-2 border-slate-50 rounded-xl pl-11 font-black text-xs focus:border-primary/20 transition-all" 
- placeholder="리포트 검색.." 
+ className="h-11 bg-white border-2 border-slate-50 rounded-lg pl-11 font-bold text-xs focus:border-primary/20 transition-all" 
+ placeholder="리포??검??." 
  />
  </div>
  </div>
 
- <Card className="flex-1 rounded-xl border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col min-h-[500px]">
+ <Card className="flex-1 rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col min-h-[500px]">
  <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-elegant">
  {isLoading ? (
- <div className="h-full flex items-center justify-center animate-pulse text-slate-300 text-[10px] font-black tracking-[0.5em]">SYNCHRONIZING REPORT DATA...</div>
+ <div className="h-full flex items-center justify-center animate-pulse text-slate-300 text-xs font-bold tracking-[0.5em]">SYNCHRONIZING REPORT DATA...</div>
  ) : displayItems.length === 0 ? (
  <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-10">
  <FileText size={64} />
- <span className="font-black text-xl tracking-tighter uppercase ">NO DATA UNITS</span>
+ <span className="font-bold text-xl tracking-tight uppercase ">NO DATA UNITS</span>
  </div>
  ) : (
  <>
@@ -107,7 +107,7 @@ export default function MemoReportManagementClient() {
  key={report.reprtId} 
  onClick={() => setSelectedReportId(report.reprtId)}
  className={cn(
- "p-6 rounded-xl border-2 transition-all cursor-pointer group flex items-start justify-between",
+ "p-6 rounded-lg border-2 transition-all cursor-pointer group flex items-start justify-between",
  selectedReportId === report.reprtId 
  ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03]" 
  : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -115,11 +115,11 @@ export default function MemoReportManagementClient() {
  >
  <div className="flex items-start gap-5">
  <div className={cn(
- "w-14 h-14 rounded-xl flex flex-col items-center justify-center border transition-colors",
+ "w-14 h-11 rounded-lg flex flex-col items-center justify-center border transition-colors",
  selectedReportId === report.reprtId ? "bg-white/10 border-white/20" : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
  )}>
- <span className={cn("text-[8px] font-black", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>REPORT</span>
- <span className={cn("text-xl font-black leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{(report.reprtDe || '').slice(-2)}</span>
+ <span className={cn("text-xs font-bold", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>REPORT</span>
+ <span className={cn("text-xl font-bold leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{(report.reprtDe || '').slice(-2)}</span>
  </div>
  <div className="space-y-1 pr-4 min-w-0">
  <div className="flex items-center gap-2">
@@ -127,14 +127,14 @@ export default function MemoReportManagementClient() {
  "w-1.5 h-1.5 rounded-full",
  report.readAt === 'Y' ? "bg-emerald-400" : "bg-primary animate-pulse"
  )} />
- <span className={cn("text-[8px] font-black tracking-[0.2em] uppercase", selectedReportId === report.reprtId ? "opacity-60" : "opacity-40")}>
+ <span className={cn("text-xs font-bold tracking-[0.2em] uppercase", selectedReportId === report.reprtId ? "opacity-60" : "opacity-40")}>
  {report.readAt === 'Y' ? 'Synced' : 'New Entry'}
  </span>
  </div>
- <h4 className="text-base font-black tracking-tighter truncate leading-none mb-1 text-ellipsis overflow-hidden">{report.reprtSj}</h4>
+ <h4 className="text-base font-bold tracking-tight truncate leading-none mb-1 text-ellipsis overflow-hidden">{report.reprtSj}</h4>
  <div className="flex items-center gap-3 opacity-40">
- <div className="flex items-center gap-1.5"><User size={12} /><span className="text-[10px] font-bold">{report.wrterNm}</span></div>
- <div className="flex items-center gap-1.5"><Clock size={12} /><span className="text-[10px] font-bold">{report.reprtDe}</span></div>
+ <div className="flex items-center gap-1.5"><User size={12} /><span className="text-xs font-bold">{report.wrterNm}</span></div>
+ <div className="flex items-center gap-1.5"><Clock size={12} /><span className="text-xs font-bold">{report.reprtDe}</span></div>
  </div>
  </div>
  </div>
@@ -172,17 +172,17 @@ export default function MemoReportManagementClient() {
  exit={{ opacity: 0, x: -20 }}
  className="h-full"
  >
- <Card className="h-full rounded-xl border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative group">
+ <Card className="h-full rounded-lg border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative group">
  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-rose-500/5 opacity-40 pointer-events-none" />
  
  <CardHeader className="p-12 border-b border-white/5 flex flex-row items-center justify-between relative z-10 bg-white/5 backdrop-blur-3xl">
  <div className="space-y-1">
- <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] leading-none">리포트 분석 뷰 (Analytical View)</span>
- <h3 className="text-2xl font-black tracking-tighter ">{selectedReport.reprtSj}</h3>
+ <span className="text-xs font-bold text-primary uppercase tracking-[0.4em] leading-none">리포??분석 �?(Analytical View)</span>
+ <h3 className="text-2xl font-bold tracking-tight ">{selectedReport.reprtSj}</h3>
  </div>
  <div className="flex items-center gap-3">
- <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><Trash2 size={20} className="text-rose-500" /></Button>
- <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><MoreVertical size={20} /></Button>
+ <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all"><Trash2 size={20} className="text-rose-500" /></Button>
+ <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all"><MoreVertical size={20} /></Button>
  </div>
  </CardHeader>
 
@@ -190,40 +190,40 @@ export default function MemoReportManagementClient() {
  <div className="flex items-center justify-between pb-8 border-b border-white/5">
  <div className="flex items-center gap-8">
  <div className="space-y-1">
- <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">작성 노드</p>
- <div className="flex items-center gap-3 font-black text-lg tracking-tighter">
+ <p className="text-xs font-bold text-white/30 uppercase tracking-widest">?�성 ?�드</p>
+ <div className="flex items-center gap-3 font-bold text-lg tracking-tight">
  <div className="w-6 h-6 rounded-full bg-primary" /> {selectedReport.wrterNm}
  </div>
  </div>
  <div className="w-[1px] h-10 bg-white/5" />
  <div className="space-y-1">
- <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">수신 대상</p>
- <div className="flex items-center gap-3 font-black text-lg tracking-tighter">
+ <p className="text-xs font-bold text-white/30 uppercase tracking-widest">?�신 ?�??/p>
+ <div className="flex items-center gap-3 font-bold text-lg tracking-tight">
  <User size={20} className="text-primary" /> {selectedReport.recptnNm}
  </div>
  </div>
  </div>
  <div className="text-right">
- <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">운영 날짜</p>
- <p className="text-lg font-black tabular-nums tracking-tighter">{selectedReport.reprtDe}</p>
+ <p className="text-xs font-bold text-white/30 uppercase tracking-widest">?�영 ?�짜</p>
+ <p className="text-lg font-bold tabular-nums tracking-tight">{selectedReport.reprtDe}</p>
  </div>
  </div>
 
  <div className="space-y-4">
- <div className="flex items-center gap-3 text-[10px] font-black text-primary tracking-[0.3em] uppercase">
- <Layers size={14} /> 보고 핵심 데이터 유닛 (Report Core)
+ <div className="flex items-center gap-3 text-xs font-bold text-primary tracking-[0.3em] uppercase">
+ <Layers size={14} /> 보고 ?�심 ?�이???�닛 (Report Core)
  </div>
- <div className="p-8 bg-white/5 border border-white/5 rounded-xl text-sm font-bold text-white/70 leading-relaxed tracking-tight ">
+ <div className="p-8 bg-white/5 border border-white/5 rounded-lg text-sm font-bold text-white/70 leading-relaxed tracking-tight ">
  {selectedReport.reprtCn}
  </div>
  </div>
 
  {selectedReport.drctMatter && (
  <div className="space-y-4 pt-4">
- <div className="flex items-center gap-3 text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">
- <Zap size={14} /> 시스템 지시사항 (Direct Matter)
+ <div className="flex items-center gap-3 text-xs font-bold text-emerald-400 tracking-[0.3em] uppercase">
+ <Zap size={14} /> ?�스??지?�사??(Direct Matter)
  </div>
- <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm font-black text-emerald-400 tracking-tight flex items-start gap-4">
+ <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-sm font-bold text-emerald-400 tracking-tight flex items-start gap-4">
  <MessageSquare size={20} className="shrink-0 animate-pulse mt-1" />
  <p>{selectedReport.drctMatter}</p>
  </div>
@@ -232,16 +232,16 @@ export default function MemoReportManagementClient() {
  </CardContent>
 
  <div className="p-12 border-t border-white/5 bg-white/5 backdrop-blur-3xl flex gap-6 relative z-10">
- <Button className="h-16 flex-1 rounded-xl bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">상세 수정</Button>
- <Button className="h-16 flex-[2] rounded-xl bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase ">지시사항 등록</Button>
+ <Button className="h-11 flex-1 rounded-lg bg-white text-slate-900 font-bold tracking-widest text-xs hover:scale-105 transition-all shadow-2xl">?�세 ?�정</Button>
+ <Button className="h-11 flex-[2] rounded-lg bg-primary text-white font-bold tracking-widest text-xs hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase ">지?�사???�록</Button>
  </div>
  </Card>
  </motion.div>
  ) : (
- <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-xl border-2 border-dashed border-slate-200">
+ <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-lg border-2 border-dashed border-slate-200">
  <History size={64} className="mb-8" />
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase ">SELECT REPORT NODE</h3>
- <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">데이터 흐름 확인하려면 <br /> 좌측 스트림에서 리포트를 선택하세요</p>
+ <h3 className="text-2xl font-bold text-slate-900 tracking-tight uppercase ">SELECT REPORT NODE</h3>
+ <p className="text-xs font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">?�이???�름 ?�인?�려�?<br /> 좌측 ?�트림에??리포?��? ?�택?�세??/p>
  </div>
  )}
  </AnimatePresence>
@@ -258,7 +258,7 @@ function NavTab({ active, icon, label, onClick }: any) {
  <button 
  onClick={onClick}
  className={cn(
- "flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-black text-[10px] tracking-widest",
+ "flex items-center gap-2 px-6 py-3 rounded-lg transition-all font-bold text-xs tracking-widest",
  active ? "bg-white text-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600"
  )}
  >

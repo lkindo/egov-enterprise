@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import {
@@ -51,7 +51,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
   };
 
   return (
-    <div className={cn("relative w-full h-[600px] bg-white dark:bg-slate-900 border rounded-xl overflow-hidden group/canvas", className)}>
+    <div className={cn("relative w-full h-[600px] bg-white dark:bg-slate-900 border rounded-lg overflow-hidden group/canvas", className)}>
       {/* Background Grid */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
@@ -94,7 +94,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
                 <text
                   x={(fromNode.position.x + toNode.position.x + 100) / 2}
                   y={((fromNode.position.y + toNode.position.y) / 2) + 35}
-                  className="text-[9px] font-black fill-muted-foreground/60 tracking-tight text-center"
+                  className="text-xs font-bold fill-muted-foreground/60 tracking-tight text-center"
                 >
                   {edge.label}
                 </text>
@@ -110,7 +110,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
           <div
             key={node.id}
             className={cn(
-              "absolute w-56 p-5 rounded-xl border-2 transition-all duration-500 cursor-pointer flex flex-col gap-3 group/node",
+              "absolute w-56 p-5 rounded-lg border-2 transition-all duration-500 cursor-pointer flex flex-col gap-3 group/node",
               node.status === 'current' ? "bg-card border-primary shadow-[0_20px_40px_rgba(59,130,246,0.15)] scale-105" :
               node.status === 'completed' ? "bg-emerald-50 border-emerald-500/20 shadow-sm" :
               "bg-card border-muted opacity-100 hover:scale-105 transition-all"
@@ -122,7 +122,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
           >
             <div className="flex items-center justify-between">
               <span className={cn(
-                "px-3 py-1 rounded-full text-[9px] font-black tracking-tight",
+                "px-3 py-1 rounded-full text-xs font-bold tracking-tight",
                 node.status === 'current' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
               )}>
                 {node.type}
@@ -130,7 +130,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
               {getStatusIcon(node.status)}
             </div>
 
-            <p className="text-sm font-black text-foreground tracking-tight leading-tight">
+            <p className="text-sm font-bold text-foreground tracking-tight leading-tight">
               {node.label}
             </p>
 
@@ -139,7 +139,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
                 <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <User size={10} />
                 </div>
-                <span className="text-[10px] font-bold text-muted-foreground">{node.assignee}</span>
+                <span className="text-xs font-bold text-muted-foreground">{node.assignee}</span>
               </div>
             )}
 
@@ -158,15 +158,15 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
 
       {/* Canvas UI Overlays */}
       <div className="absolute bottom-8 left-8 p-6 bg-card border shadow-2xl space-y-4">
-        <h4 className="text-sm font-black tracking-tight text-foreground">워크플로우 인텔리전스</h4>
+        <h4 className="text-sm font-bold tracking-tight text-foreground">워크플로우 인텔리전스</h4>
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-emerald-500" /> Completed
           </div>
-          <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> In Progress
           </div>
-          <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-muted" /> Scheduled
           </div>
         </div>

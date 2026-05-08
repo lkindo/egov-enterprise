@@ -27,9 +27,9 @@ interface TimelineItemProps {
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
   const content = String(log.methodNm || log.srvcNm || '');
-  const isSecurity = content.includes('로그인') || content.includes('보안') || content.includes('login') || content.includes('security') || log.processSeCode === 'AUTH';
-  const isSystem = content.includes('시스템') || content.includes('배포') || content.includes('system') || content.includes('deploy') || log.processSeCode === 'SYS';
-  const isError = content.includes('오류') || content.includes('실패') || content.includes('error') || content.includes('fail');
+  const isSecurity = content.includes('로그??) || content.includes('보안') || content.includes('login') || content.includes('security') || log.processSeCode === 'AUTH';
+  const isSystem = content.includes('?�스??) || content.includes('배포') || content.includes('system') || content.includes('deploy') || log.processSeCode === 'SYS';
+  const isError = content.includes('?�류') || content.includes('?�패') || content.includes('error') || content.includes('fail');
   
   const getIcon = () => {
     if (isError) return <AlertCircle size={20} />;
@@ -69,7 +69,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
       {/* Time & Icon Capsule */}
       <div className="relative flex-shrink-0">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 shadow-xl z-10 relative",
+          "w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 shadow-xl z-10 relative",
           getColor(),
           isSelected ? "scale-110 rotate-12" : "group-hover:rotate-6"
         )}>
@@ -82,7 +82,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
       {/* Content Fabric */}
       <div className={cn(
-        "flex-1 p-8 rounded-xl border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
+        "flex-1 p-8 rounded-lg border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
         getBorderColor(),
         isSelected ? "shadow-2xl translate-x-3 bg-slate-50/50" : "hover:shadow-lg"
       )}>
@@ -92,26 +92,26 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10 text-left">
           <div className="space-y-1 text-left">
-             <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none block text-left">
+             <span className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase leading-none block text-left">
                 [TIME] {log.occrrncDe?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || 'N/A'}
              </span>
-             <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase text-left">
+             <h4 className="text-lg font-bold tracking-tight text-slate-800 uppercase text-left">
                 {log.methodNm || log.srvcNm || 'System Action'}
              </h4>
           </div>
           <div className="flex items-center gap-2">
-             <div className="px-5 py-1.5 rounded-full bg-slate-900 text-white text-[9px] font-black tracking-widest uppercase">
+             <div className="px-5 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold tracking-widest uppercase">
                 {log.rqesterId}
              </div>
              {isError && (
-                <div className="px-5 py-1.5 rounded-full bg-rose-500 text-white text-[9px] font-black tracking-widest uppercase animate-pulse">
+                <div className="px-5 py-1.5 rounded-full bg-rose-500 text-white text-xs font-bold tracking-widest uppercase animate-pulse">
                    SYSTEM_FAIL
                 </div>
              )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 border-t border-slate-50 pt-4 relative z-10">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-t border-slate-50 pt-4 relative z-10">
            <div className="flex items-center gap-3">
               <Database size={12} className="opacity-40" />
               <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.srvcNm}</span>

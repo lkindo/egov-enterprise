@@ -21,21 +21,21 @@
 *   모든 상태 컬러는 Hub Blue와 어우러지도록 채도가 조정된 프리미엄 팔레트를 사용합니다.
 
 ## 3. Typography Rules (Unified)
-*   **Font Family**: Pretendard (KR), Inter (EN/Num)
+*   **Font Family**: Pretendard (KR, Primary), Inter (EN/Num, Secondary)
 *   **Scale**:
-    *   **Hub Title**: 900 Black / -0.05em Tracking. 대규모 요약 수치 및 섹션 제목.
-    *   **Standard Title**: 700 Bold / Normal Tracking. 일반 카드 및 폼 제목.
-    *   **Label**: 900 Black / 0.3em ~ 0.4em Tracking / Uppercase. 메타데이터 및 태그.
+    *   **Hub Title**: 800 ExtraBold / -0.03em Tracking. 대규모 요약 수치 및 섹션 제목 (크기 하향 조정).
+    *   **Standard Title**: 600 SemiBold / Normal Tracking. 일반 메뉴, 카드 및 폼 제목 (과도한 크기 지양).
+    *   **Label**: 700 Bold / 0.1em Tracking / Uppercase. 메타데이터 및 태그 (가독성 개선).
     *   *Note: 시스템 라벨이나 기술적 지표에서는 이탤릭체 대신 넓은 자간과 '_' 접두사를 사용하여 전문적이고 안정적인 느낌을 강조합니다.*
 
 ## 4. Design Tokens & Variants
 
 ### Geometry (Dynamic & Static Radius)
 *   **Base UI Radius (`--radius`)**: `0.5rem` (8px) - 기본 버튼, 폼 입력창, 일반 카드에 적용되어 안정감 있는 밀도를 유지합니다.
-*   **Premium Hub Radius (Dynamic Scale)**: 어드민 페이지(`LayoutManagerClient`)의 **System Design Engine**을 통해 전역으로 제어되는 동적 곡률 시스템입니다. (기본 Base Factor `1.2rem` 기준)
-    *   `--radius-hub-section` (Base × 3.5): 대시보드의 메인 섹션 컨테이너.
-    *   `--radius-hub-widget` (Base × 2.0): 벤트 카드 등 중간 크기 위젯.
-    *   `--radius-hub-item` (Base × 1.5): 핵심 강조 버튼 및 목록 아이템.
+*   **Premium Hub Radius (Unified Standard)**: 과도한 곡률을 지양하고 통일감 있는 표준 곡률 체계를 적용합니다.
+    *   `--radius-hub-section` (1.5rem / 24px): 대시보드의 메인 섹션 컨테이너.
+    *   `--radius-hub-widget` (1rem / 16px): 벤토 카드 등 중간 크기 위젯.
+    *   `--radius-hub-item` (0.75rem / 12px): 핵심 강조 버튼 및 목록 아이템.
     *   Note: Hub 관련 컴포넌트 개발 시 하드코딩된 Tailwind 클래스 `rounded-xl` 등 대신, 가급적 이 동적 CSS 변수를 사용하여 시스템 제어와 동기화되도록 구성해야 합니다. (이탤릭체 대신 정자체와 자간 사용 권장)
 
 ### Component Variants

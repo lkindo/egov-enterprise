@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -47,35 +47,35 @@ export default function CommonCodeHubClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader 
-        title="ë§ˆìŠ¤í„° ë°ì´í„° ê±°ë²„ë„ŒìŠ¤" 
-        breadcrumbs={[{ label: 'ì‹œìŠ¤í…œê´€ë¦¬' }, { label: 'ì½”ë“œê´€ë¦¬' }, { label: 'í†µí•© ì½”ë“œ í—ˆë¸Œ' }]} 
+        title="¸¶½ºÅÍ µ¥ÀÌÅÍ °Å¹ö³Í½º" 
+        breadcrumbs={[{ label: '½Ã½ºÅÛ°ü¸®' }, { label: 'ÄÚµå°ü¸®' }, { label: 'ÅëÇÕ ÄÚµå Çãºê' }]} 
       />
 
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
         <HubHeader 
-          title="ì½”ë“œ" 
-          highlight="í†µí•© í—ˆë¸Œ" 
-          subtitle="ì‹œìŠ¤í…œ ì „ë°˜ì˜ í‘œì¤€ ì½”ë“œ, í–‰ì • í‘œì¤€ ë° ê¸°ê´€ ë…¸ë“œ ì‹ë³„ ì²´ê³„ì˜ í†µí•© ê±°ë²„ë„ŒìŠ¤ ê´€ë¦¬ ì„¼í„°ìž…ë‹ˆë‹¤." 
+          title="ÄÚµå" 
+          highlight="ÅëÇÕ Çãºê" 
+          subtitle="½Ã½ºÅÛ Àü¹ÝÀÇ Ç¥ÁØ ÄÚµå, ÇàÁ¤ Ç¥ÁØ ¹× ±â°ü ³ëµå ½Äº° Ã¼°èÀÇ ÅëÇÕ °Å¹ö³Í½º °ü¸® ¼¾ÅÍÀÔ´Ï´Ù." 
           icon={Database} 
         />
 
         {/* --- Multi-Level Hub Switcher --- */}
-        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-xl flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
+        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
-            label="í‘œì¤€ ì½”ë“œ" 
+            label="Ç¥ÁØ ÄÚµå" 
             active={activeTab === 'STANDARD'} 
             onClick={() => setActiveTab('STANDARD')} 
           />
           <HubTabButton 
             icon={MapPin} 
-            label="í–‰ì • í‘œì¤€" 
+            label="ÇàÁ¤ Ç¥ÁØ" 
             active={activeTab === 'ADMINIST'} 
             onClick={() => setActiveTab('ADMINIST')} 
           />
           <HubTabButton 
             icon={Building2} 
-            label="ê¸°ê´€ ë…¸ë“œ" 
+            label="±â°ü ³ëµå" 
             active={activeTab === 'INSTITUTION'} 
             onClick={() => setActiveTab('INSTITUTION')} 
           />
@@ -84,10 +84,10 @@ export default function CommonCodeHubClient({
 
       {/* Code Metrics Section */}
       <HubMetricGrid>
-        <HubMetricCard title="í˜„ìž¬ ë“±ë¡ ì½”ë“œ" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="í‘œì¤€ ìƒíƒœ ê°€ìš©ì„±" value="í™œì„±" icon={ShieldCheck} color="emerald" status="ë™ê¸°í™”ë¨" />
-        <HubMetricCard title="ë©”íƒ€ë°ì´í„° ê±´ì „ì„±" value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="ë…¸ë“œ ì—°ë™ ì†ë„" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="ÇöÀç µî·Ï ÄÚµå" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="Ç¥ÁØ »óÅÂ °¡¿ë¼º" value="È°¼º" icon={ShieldCheck} color="emerald" status="µ¿±âÈ­µÊ" />
+        <HubMetricCard title="¸ÞÅ¸µ¥ÀÌÅÍ °ÇÀü¼º" value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="³ëµå ¿¬µ¿ ¼Óµµ" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}
@@ -141,7 +141,7 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         onClick();
       }}
       className={cn(
-        "relative flex items-center gap-3 px-10 py-4 rounded-xl text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
+        "relative flex items-center gap-3 px-10 py-4 rounded-lg text-xs font-bold tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 
           ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
           : "text-slate-500 hover:text-slate-700 hover:bg-white/50"

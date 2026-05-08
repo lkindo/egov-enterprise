@@ -108,7 +108,7 @@ export default function UnifiedDashboardClient({
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
           <HubInsightBadge label={t('dashboard.badge')} />
-          <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-tight">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight">
             안녕하세요, <span className="text-primary ">{user.name}</span>님
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
@@ -122,7 +122,7 @@ export default function UnifiedDashboardClient({
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/admin/community/boards')}
             aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-border/10 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-[0.1rem] font-black hover:bg-muted transition-all shadow-lg"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-border/10 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-[0.1rem] font-bold hover:bg-muted transition-all shadow-lg"
           >
             <Plus size={20} /> 새 포스팅
           </motion.button>
@@ -219,7 +219,7 @@ export default function UnifiedDashboardClient({
             className="hub-card-dark min-h-[500px] group"
           >
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px]" />
-            <h3 className="text-2xl font-black mb-12 flex items-center gap-4 relative z-10 tracking-tight">
+            <h3 className="text-2xl font-bold mb-12 flex items-center gap-4 relative z-10 tracking-tight">
               <div className="w-10 h-10 rounded-[0.1rem] bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
@@ -242,7 +242,7 @@ export default function UnifiedDashboardClient({
             </div>
             <div className="space-y-8">
                <div className="space-y-2">
-                 <div className="flex justify-between text-sm font-black">
+                 <div className="flex justify-between text-sm font-bold">
                    <span className="opacity-80">CPU 사용률</span>
                    <span className="text-primary">24%</span>
                  </div>
@@ -255,7 +255,7 @@ export default function UnifiedDashboardClient({
                  </div>
                </div>
                <div className="space-y-2">
-                 <div className="flex justify-between text-sm font-black">
+                 <div className="flex justify-between text-sm font-bold">
                    <span className="opacity-80">메모리</span>
                    <span className="text-emerald-500">42%</span>
                  </div>
@@ -285,8 +285,8 @@ function DashboardSkeleton() {
           <Skeleton className="h-6 w-[500px] rounded-lg opacity-30" />
         </div>
         <div className="flex gap-4">
-          <Skeleton className="h-16 w-48 rounded-[0.1rem] opacity-30" />
-          <Skeleton className="h-16 w-48 rounded-[0.1rem] opacity-40" />
+          <Skeleton className="h-12 w-48 rounded-[0.1rem] opacity-30" />
+          <Skeleton className="h-12 w-48 rounded-[0.1rem] opacity-40" />
         </div>
       </div>
       <Skeleton className="h-[250px] w-full rounded-[0.1rem] opacity-20" />

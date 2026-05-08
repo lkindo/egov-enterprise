@@ -1,12 +1,12 @@
-ï»¿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
 export const metadata = {
-  title: 'ì•½ì‹ê²°ì¬ ë° ìŠ¹ì¸ ê´€ë¦¬ | ì „ìì •ë¶€ í‘œì¤€í”„ë ˆì„ì›Œí¬',
-  description: 'ì‹œìŠ¤í…œì—ì„œ ë°œìƒí•˜ëŠ” ì•½ì‹ ê²°ì¬ ìš”ì²­ì„ ìŠ¹ì¸ ë˜ëŠ” ë°˜ë ¤ ì²˜ë¦¬í•©ë‹ˆë‹¤',
+  title: '¾à½Ä°áÀç ¹× ½ÂÀÎ °ü¸® | ÀüÀÚÁ¤ºÎ Ç¥ÁØÇÁ·¹ÀÓ¿öÅ©',
+  description: '½Ã½ºÅÛ¿¡¼­ ¹ß»ıÇÏ´Â ¾à½Ä °áÀç ¿äÃ»À» ½ÂÀÎ ¶Ç´Â ¹İ·Á Ã³¸®ÇÕ´Ï´Ù',
 };
 
 export default async function InformalSanctionPage() {
@@ -37,11 +37,11 @@ export default async function InformalSanctionPage() {
 function IsmLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
-      <div className="h-20 w-1/3 bg-slate-100 rounded-xl" />
+      <div className="h-20 w-1/3 bg-slate-100 rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-xl" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-lg" />)}
       </div>
-      <div className="h-[600px] bg-slate-50 rounded-xl" />
+      <div className="h-[600px] bg-slate-50 rounded-lg" />
     </div>
   );
 }

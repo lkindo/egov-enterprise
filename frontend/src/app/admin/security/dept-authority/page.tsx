@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -86,29 +86,29 @@ export default function DeptAuthorityPage() {
  allMembers: true
  }),
  onSuccess: () => {
- toast('ë¶€ì„œ ì „ì²´ ì‚¬ìš©ìì—ê²Œ ë³´ì•ˆ ì •ì±…ì´ ì¼ê´„ ì ìš©ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+ toast('ºÎ¼­ ÀüÃ¼ »ç¿ëÀÚ¿¡°Ô º¸¾È Á¤Ã¥ÀÌ ÀÏ°ı Àû¿ëµÇ¾ú½À´Ï´Ù.', 'success');
  setSelectedAuthorCode(null);
  },
- onError: () => toast('ê¶Œí•œ ì €ì¥ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
+ onError: () => toast('±ÇÇÑ ÀúÀå Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
  });
 
  const columns: Column<AuthorInfo>[] = [
  {
- header: 'ì •ì±… í”„ë¡œíŒŒì¼ ID',
+ header: 'Á¤Ã¥ ÇÁ·ÎÆÄÀÏ ID',
  accessor: (item: AuthorInfo) => (
  <div className="flex flex-col gap-0.5">
- <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
- <span className="font-mono text-xs font-black text-primary tracking-widest uppercase">{item.authorCode}</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
+ <span className="font-mono text-xs font-bold text-primary tracking-widest uppercase">{item.authorCode}</span>
  </div>
  ),
  className: 'w-48'
  },
  {
- header: 'ê¶Œí•œ ì•„í‚¤í…ì²˜ ëª…ì¹­',
+ header: '±ÇÇÑ ¾ÆÅ°ÅØÃ³ ¸íÄª',
  accessor: (item: AuthorInfo) => (
  <div className="flex flex-col gap-0.5 py-2">
- <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
- <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authorDc || 'ê·œì • ëª…ì„¸ ì—†ìŒ'}</span>
+ <span className="font-bold text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authorDc || '±ÔÁ¤ ¸í¼¼ ¾øÀ½'}</span>
  </div>
  )
  },
@@ -126,7 +126,7 @@ export default function DeptAuthorityPage() {
  setSelectedAuthorCode(item.authorCode);
  }}
  className={cn(
- "relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-500 outline-none border-2",
+ "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
  isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
  )}
  >
@@ -140,13 +140,13 @@ export default function DeptAuthorityPage() {
 
  const handleSave = () => {
  if (!selectedDept) {
- return toast('ì„¤ì •í•  ë¶€ì„œë¥¼ ë¨¼ì € ì„ íƒí•´ ì£¼ì„¸ìš”.', 'info');
+ return toast('¼³Á¤ÇÒ ºÎ¼­¸¦ ¸ÕÀú ¼±ÅÃÇØ ÁÖ¼¼¿ä.', 'info');
  }
  if (!selectedAuthorCode) {
- return toast('ë¶€ì—¬í•  ê¶Œí•œì„ ì„ íƒí•´ ì£¼ì„¸ìš”.', 'info');
+ return toast('ºÎ¿©ÇÒ ±ÇÇÑÀ» ¼±ÅÃÇØ ÁÖ¼¼¿ä.', 'info');
  }
 
- if (confirm(`ì„ íƒí•œ ì¡°ì§ì˜ ëª¨ë“  êµ¬ì„±ì›ì—ê²Œ '${selectedAuthorCode}' ë³´ì•ˆ ì •ì±…ì„ ì „ì—­ì ìœ¼ë¡œ ê°•ì œ ì ìš©í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`)) {
+ if (confirm(`¼±ÅÃÇÑ Á¶Á÷ÀÇ ¸ğµç ±¸¼º¿ø¿¡°Ô '${selectedAuthorCode}' º¸¾È Á¤Ã¥À» Àü¿ªÀûÀ¸·Î °­Á¦ Àû¿ëÇÏ½Ã°Ú½À´Ï±î?`)) {
  saveMutation.mutate(selectedAuthorCode);
  }
  };
@@ -156,29 +156,29 @@ export default function DeptAuthorityPage() {
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <PageHeader
- title="ì¡°ì§ ê¸°ë°˜ ê¶Œí•œ ì¼ê´„ í”„ë¡œë¹„ì €ë‹"
- breadcrumbs={[{ label: 'ë³´ì•ˆ ê´€ë¦¬' }, { label: 'ì¡°ì§ ê¶Œí•œ' }, { label: 'ì¼ê´„ ê´€ë¦¬' }]}
+ title="Á¶Á÷ ±â¹İ ±ÇÇÑ ÀÏ°ı ÇÁ·ÎºñÀú´×"
+ breadcrumbs={[{ label: 'º¸¾È °ü¸®' }, { label: 'Á¶Á÷ ±ÇÇÑ' }, { label: 'ÀÏ°ı °ü¸®' }]}
  />
 
  <HubHeader 
  title="Department" 
  highlight="Batch" 
- subtitle="ì¡°ì§ ë‹¨ìœ„ì˜ ë³´ì•ˆ ì—­í•  ê°•ì œ ë°°í¬ ë° ê³„ì • ê¶Œí•œ ì§‘í•© í† í´ë¡œì§€ í†µí•© ê´€ë¦¬" 
+ subtitle="Á¶Á÷ ´ÜÀ§ÀÇ º¸¾È ¿ªÇÒ °­Á¦ ¹èÆ÷ ¹× °èÁ¤ ±ÇÇÑ ÁıÇÕ ÅäÆú·ÎÁö ÅëÇÕ °ü¸®" 
  icon={Building2} 
  actions={
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleSave}
- className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
- <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> ì •ì±… ë§ˆìŠ¤í„° ë°°í¬
+ <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> Á¤Ã¥ ¸¶½ºÅÍ ¹èÆ÷
  </Button>
  </div>
  }
@@ -194,13 +194,13 @@ export default function DeptAuthorityPage() {
  <div className="grid grid-cols-12 gap-12 min-h-[850px]">
  {/* Left: Department Explorer */}
  <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
- <HubSectionCard title="ì¡°ì§ ì•„í‚¤í…ì²˜ ì‹ë³„" description="ê¶Œí•œ ì •ì±… ì¼ê´„ ë°°í¬ ì‹œìŠ¤í…œ ë‚´ í•˜ìœ„ ì¡°ì§ì„ ì‹ë³„í•˜ì„¸ìš”" icon={Building2}>
+ <HubSectionCard title="Á¶Á÷ ¾ÆÅ°ÅØÃ³ ½Äº°" description="±ÇÇÑ Á¤Ã¥ ÀÏ°ı ¹èÆ÷ ½Ã½ºÅÛ ³» ÇÏÀ§ Á¶Á÷À» ½Äº°ÇÏ¼¼¿ä" icon={Building2}>
  <div className="space-y-8 pt-4">
  <div className="relative group/search">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
  <Input
- placeholder="ë¶€ì„œëª… ê²€ìƒ‰..."
- className="pl-12 h-14 bg-slate-50/50 border-none rounded-xl text-sm font-black tracking-tight shadow-inner"
+ placeholder="ºÎ¼­¸í °Ë»ö..."
+ className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />
@@ -211,7 +211,7 @@ export default function DeptAuthorityPage() {
  {filteredDepts.length === 0 ? (
  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center space-y-4">
  <Users size={48} className="mx-auto opacity-10 scale-125" />
- <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Resource_Not_Found</p>
+ <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.4em]">Resource_Not_Found</p>
  </motion.div>
  ) : (
  filteredDepts.map((d, idx) => (
@@ -225,7 +225,7 @@ export default function DeptAuthorityPage() {
  setSelectedAuthorCode(null);
  }}
  className={cn(
- "group flex items-center justify-between p-6 w-full rounded-xl border-2 transition-all duration-300 relative overflow-hidden",
+ "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
  selectedDept === d.orgnztId
  ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
  : "bg-white border-slate-50 hover:border-slate-200"
@@ -233,18 +233,18 @@ export default function DeptAuthorityPage() {
  >
  <div className="flex items-center gap-4 relative z-10">
  <div className={cn(
- "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
+ "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
  selectedDept === d.orgnztId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
  )}>
  <Users size={20} />
  </div>
  <div className="flex flex-col text-left">
  <span className={cn(
- "text-xs font-black tracking-tighter leading-none mb-1",
+ "text-xs font-bold tracking-tight leading-none mb-1",
  selectedDept === d.orgnztId ? "text-white" : "text-slate-900"
  )}>{d.orgnztNm}</span>
  <span className={cn(
- "text-[10px] font-mono font-bold tracking-widest",
+ "text-xs font-mono font-bold tracking-widest",
  selectedDept === d.orgnztId ? "text-white/30" : "text-slate-300"
  )}>{d.orgnztId}</span>
  </div>
@@ -268,8 +268,8 @@ export default function DeptAuthorityPage() {
  {/* Right: Policy Matrix Selection */}
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
  <HubSectionCard 
- title={currentDept ? `[${currentDept.orgnztNm}] ë³´ì•ˆ ë§ˆìŠ¤í„° ì •ì±… ë°°í¬` : "ë³´ì•ˆ ë©”íŠ¸ë¦­ìŠ¤ ì„ íƒ"} 
- description="ì„ íƒí•œ ì¡°ì§ì˜ ëª¨ë“  ê³„ì •ì— ë™ê¸°í™”í•  ë§ˆìŠ¤í„° ê¶Œí•œ ì•„í‚¤í…ì²˜ë¥¼ ì„ íƒí•˜ì‹­ì‹œì˜¤." 
+ title={currentDept ? `[${currentDept.orgnztNm}] º¸¾È ¸¶½ºÅÍ Á¤Ã¥ ¹èÆ÷` : "º¸¾È ¸ŞÆ®¸¯½º ¼±ÅÃ"} 
+ description="¼±ÅÃÇÑ Á¶Á÷ÀÇ ¸ğµç °èÁ¤¿¡ µ¿±âÈ­ÇÒ ¸¶½ºÅÍ ±ÇÇÑ ¾ÆÅ°ÅØÃ³¸¦ ¼±ÅÃÇÏ½Ê½Ã¿À." 
  icon={ShieldCheck}
  >
  <div className="relative h-full flex flex-col pt-4">
@@ -280,12 +280,12 @@ export default function DeptAuthorityPage() {
  animate={{ opacity: 1 }} 
  className="h-full min-h-[600px] flex flex-col items-center justify-center text-center p-12 group select-none"
  >
- <div className="w-24 h-24 rounded-xl bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
+ <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
  <Key size={56} className="opacity-20" />
  </div>
  <div className="space-y-4">
- <h3 className="text-3xl font-black text-slate-200 uppercase tracking-tighter ">Selection_Required</h3>
- <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">ì‹ë³„ëœ ë¶€ì„œì˜ ë³´ì•ˆ ê±°ë²„ë„ŒìŠ¤ êµ¬ì„±ì„ ìœ„í•´ ì¢Œì¸¡ ë¦¬ìŠ¤íŠ¸ë¥¼ í”„ë¡œë¸Œí•˜ì‹­ì‹œì˜¤</p>
+ <h3 className="text-3xl font-bold text-slate-200 uppercase tracking-tight ">Selection_Required</h3>
+ <p className="text-xs font-bold text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">½Äº°µÈ ºÎ¼­ÀÇ º¸¾È °Å¹ö³Í½º ±¸¼ºÀ» À§ÇØ ÁÂÃø ¸®½ºÆ®¸¦ ÇÁ·ÎºêÇÏ½Ê½Ã¿À</p>
  </div>
  </motion.div>
  ) : (
@@ -294,44 +294,44 @@ export default function DeptAuthorityPage() {
  animate={{ opacity: 1, y: 0 }} 
  className="space-y-8"
  >
- <div className="p-10 bg-slate-900 rounded-xl text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
+ <div className="p-10 bg-slate-900 rounded-lg text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Database size={160} className="text-primary" />
  </div>
- <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner relative z-10">
+ <div className="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 shadow-inner relative z-10">
  <Building2 size={36} className="text-primary" />
  </div>
  <div className="relative z-10 space-y-2">
- <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
+ <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
  <div className="flex items-baseline gap-3">
- <h4 className="text-3xl font-black tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
- <span className="text-xs font-black text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
+ <h4 className="text-3xl font-bold tracking-tight leading-none">{currentDept?.orgnztNm}</h4>
+ <span className="text-xs font-bold text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
  </div>
- <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">ì´ ë¶€ì„œì˜ ëª¨ë“  êµ¬ì„±ì›ì—ê²Œ ì „ì—­ ì •ì±… ì„¤ì •ì„ ì‹œì‘í•  ìˆ˜ ìˆëŠ” ìƒíƒœì…ë‹ˆë‹¤.</p>
+ <p className="text-xs font-bold text-primary/80 tracking-widest uppercase mt-2">ÀÌ ºÎ¼­ÀÇ ¸ğµç ±¸¼º¿ø¿¡°Ô Àü¿ª Á¤Ã¥ ¼³Á¤À» ½ÃÀÛÇÒ ¼ö ÀÖ´Â »óÅÂÀÔ´Ï´Ù.</p>
  </div>
  </div>
 
- <div className="min-h-[500px] bg-white rounded-xl border-2 border-slate-50 p-4">
+ <div className="min-h-[500px] bg-white rounded-lg border-2 border-slate-50 p-4">
  <StandardDataTable
  columns={columns}
  data={roles}
  loading={loading}
  keyField="authorCode"
- emptyMessage="ì‹œìŠ¤í…œì— ë“±ë¡ëœ ê¶Œí•œ ê·¸ë£¹ ì •ë³´ê°€ ì—†ìŠµë‹ˆë‹¤."
+ emptyMessage="½Ã½ºÅÛ¿¡ µî·ÏµÈ ±ÇÇÑ ±×·ì Á¤º¸°¡ ¾ø½À´Ï´Ù."
  onRowClick={(item) => setSelectedAuthorCode(item.authorCode)}
  className="border-none bg-transparent"
  />
  </div>
 
- <div className="p-8 flex items-center gap-6 rounded-xl bg-slate-50 border-2 border-dashed border-slate-100">
- <div className="w-12 h-12 bg-white rounded-xl shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
+ <div className="p-8 flex items-center gap-6 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100">
+ <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
  <ShieldAlert size={24} className="text-rose-500" />
  </div>
  <div className="space-y-1">
- <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
- ì „ì—­ ì •ì±… ê°•ì œ ë°°í¬(Batch Deployment) ì‹œ í•´ë‹¹ ì¡°ì§ êµ¬ì„±ì›ì´ ë³´ìœ í•œ ê¸°ì¡´ì˜ ëª¨ë“  ê°œë³„ ê¶Œí•œì€ <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black ">ì˜êµ¬ì ìœ¼ë¡œ íŒŒê¸°</span>ë˜ê³  ë§ˆìŠ¤í„° ì •ì±…ìœ¼ë¡œ ì „ë©´ êµì²´ë©ë‹ˆë‹¤.
+ <p className="text-xs font-bold text-slate-800 tracking-tight leading-relaxed">
+ Àü¿ª Á¤Ã¥ °­Á¦ ¹èÆ÷(Batch Deployment) ½Ã ÇØ´ç Á¶Á÷ ±¸¼º¿øÀÌ º¸À¯ÇÑ ±âÁ¸ÀÇ ¸ğµç °³º° ±ÇÇÑÀº <span className="text-rose-500 underline decoration-2 underline-offset-4 font-bold ">¿µ±¸ÀûÀ¸·Î ÆÄ±â</span>µÇ°í ¸¶½ºÅÍ Á¤Ã¥À¸·Î Àü¸é ±³Ã¼µË´Ï´Ù.
  </p>
- <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">ì•„í‚¤í…ì²˜ ì¬ì„¤ì • ì£¼ì˜</span>
+ <span className="text-xs font-bold text-slate-400 tracking-[0.3em] uppercase opacity-60">¾ÆÅ°ÅØÃ³ Àç¼³Á¤ ÁÖÀÇ</span>
  </div>
  </div>
  </motion.div>

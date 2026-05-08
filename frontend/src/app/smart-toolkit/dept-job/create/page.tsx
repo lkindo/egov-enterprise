@@ -59,32 +59,32 @@ export default function CreateDeptJobPage() {
             <div className="relative z-10 space-y-2">
                 <div className="flex items-center gap-2 px-3 py-1 bg-white/10 w-fit rounded-full border border-white/10 mb-4">
                     <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-                    <span className="text-[10px] font-black tracking-widest uppercase">Dept Job System</span>
+                    <span className="text-xs font-bold tracking-widest uppercase">Dept Job System</span>
                 </div>
-                <CardTitle className="text-3xl font-black tracking-tighter">부서 업무 등록</CardTitle>
+                <CardTitle className="text-3xl font-bold tracking-tight">부서 업무 등록</CardTitle>
                 <p className="text-slate-400 font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label htmlFor="deptJobNm" className="text-sm font-black text-slate-500 ml-1">업무명 (필수)</Label>
+              <Label htmlFor="deptJobNm" className="text-sm font-bold text-slate-500 ml-1">업무명 (필수)</Label>
               <Input
                 id="deptJobNm"
                 value={formData.deptJobNm}
                 onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptJobNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
-                className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+                className="h-11 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
               />
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="priort" className="text-sm font-black text-slate-500 ml-1">우선 순위</Label>
+              <Label htmlFor="priort" className="text-sm font-bold text-slate-500 ml-1">우선 순위</Label>
               <Select
                 value={formData.priort}
                 onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, priort: value }))}
               >
-                <SelectTrigger className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 font-bold px-6">
+                <SelectTrigger className="h-11 rounded-[0.1rem] border-2 bg-slate-50/50 font-bold px-6">
                   <SelectValue placeholder="순위 선택" />
                 </SelectTrigger>
                 <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
@@ -97,18 +97,18 @@ export default function CreateDeptJobPage() {
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="chargerNm" className="text-sm font-black text-slate-500 ml-1">담당자 (선택)</Label>
+            <Label htmlFor="chargerNm" className="text-sm font-bold text-slate-500 ml-1">담당자 (선택)</Label>
             <Input
               id="chargerNm"
               value={formData.chargerNm}
               onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, chargerNm: e.target.value }))}
               placeholder="담당자 성함을 입력하세요"
-              className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+              className="h-11 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
             />
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="deptJobCn" className="text-sm font-black text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
+            <Label htmlFor="deptJobCn" className="text-sm font-bold text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
             <Textarea
               id="deptJobCn"
               value={formData.deptJobCn}
@@ -119,7 +119,7 @@ export default function CreateDeptJobPage() {
           </div>
 
           <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-16 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+            <Button onClick={handleSave} className="w-full h-12 rounded-[0.1rem] bg-slate-900 border-none text-white font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
               <Send className="w-5 h-5" /> 업무 등록 완료
             </Button>
           </div>
