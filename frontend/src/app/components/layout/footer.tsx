@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { SystemIntegrityBadge } from "@/app/components/ui/system-integrity-badge";
 
 interface FooterProps {
   className?: string;
@@ -8,7 +9,7 @@ export function Footer({ className }: FooterProps) {
   return (
     <footer className={cn("border-t py-8 px-4 md:px-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
       <div className={cn(
-        "flex flex-col items-center justify-between gap-6 md:flex-row max-w-7xl mx-auto",
+        "flex flex-col items-center justify-between gap-6 md:flex-row max-w-7xl mx-auto mb-8",
       )}>
         <div className="flex flex-col gap-1 text-center md:text-left">
           <p className="text-balance text-xs font-bold leading-relaxed text-slate-600 uppercase tracking-[0.1em]">
@@ -23,6 +24,10 @@ export function Footer({ className }: FooterProps) {
           <a href="#" className="hover:text-primary hover:opacity-100 transition-all font-bold">개인정보처리방침</a>
           <a href="#" className="hover:text-primary hover:opacity-100 transition-all font-bold text-left">고객지원</a>
         </div>
+      </div>
+
+      <div className="flex justify-center border-t border-slate-200/50 dark:border-slate-800/50 pt-8">
+        <SystemIntegrityBadge />
       </div>
     </footer>
   );
