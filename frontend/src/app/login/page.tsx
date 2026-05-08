@@ -125,7 +125,7 @@ function LoginContent() {
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                             엔터프라이즈
                         </CardTitle>
-                        <CardDescription className="text-slate-600 font-bold text-xs uppercase tracking-wider">
+                        <CardDescription className="text-slate-600 font-bold text-xs tracking-tight">
                             글로벌 통합 관리 콘솔
                         </CardDescription>
                     </CardHeader>
@@ -138,13 +138,13 @@ function LoginContent() {
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="id" className="text-xs font-bold text-slate-400 tracking-widest uppercase font-mono ml-1">_ Identity_Protocol</Label>
+                                <Label htmlFor="id" className="text-xs font-bold text-slate-400 tracking-tight ml-1">아이디</Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
                                         name="id"
-                                        placeholder="Enter Node ID..."
+                                        placeholder="아이디를 입력하세요..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
                                         className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
@@ -159,14 +159,14 @@ function LoginContent() {
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="password" className="text-xs font-bold text-slate-400 tracking-widest uppercase font-mono ml-1">_ Access_Sequence</Label>
+                                <Label htmlFor="password" className="text-xs font-bold text-slate-400 tracking-tight ml-1">비밀번호</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌"
+                                        placeholder="비밀번호를 입력하세요"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
@@ -192,11 +192,11 @@ function LoginContent() {
                             >
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-500 tracking-widest uppercase font-mono cursor-pointer select-none">
-                                        Keep_Session
+                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-500 tracking-normal uppercase font-mono cursor-pointer select-none">
+                                        로그인 상태 유지
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-xs font-bold text-primary tracking-widest uppercase font-mono p-0 h-auto">_ Forgot_Key?</Button>
+                                <Button variant="link" className="text-xs font-bold text-primary tracking-tight p-0 h-auto">비밀번호를 잊으셨나요?</Button>
                             </motion.div>
 
                             {error && (
@@ -206,7 +206,7 @@ function LoginContent() {
                                     data-testid="login-error"
                                     className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
                                 >
-                                    Error: {error}
+                                    오류: {error}
                                 </motion.div>
                             )}
                         </CardContent>
@@ -219,12 +219,12 @@ function LoginContent() {
                                 className="w-full"
                             >
                                 <Button 
-                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-bold text-xs tracking-[0.2em] uppercase shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group" 
+                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group" 
                                     type="submit" 
                                     disabled={isSubmitting}
                                 >
                                     <LogIn className="h-4 w-4 group-hover:translate-x-1 transition-transform" /> 
-                                    Initialize_System_Link
+                                    로그인
                                 </Button>
                             </motion.div>
                         </CardFooter>

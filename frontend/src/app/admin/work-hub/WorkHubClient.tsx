@@ -131,14 +131,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         <HubStatusBadge
           label="실시간 동기화"
           variant={selected ? 'default' : 'success'}
-          className={selected ? 'border-white/20' : 'text-xs font-bold tracking-widest'}
+          className={selected ? 'border-white/20' : 'text-xs font-bold tracking-tight'}
         />
       </div>
 
       <div className="space-y-1 relative z-10">
         <h4 className={cn("text-xl font-bold tracking-tighter truncate leading-none", selected ? "text-white" : "text-foreground")}>{title}</h4>
         <p className={cn(
-          "text-xs font-bold tracking-tight opacity-40 uppercase mt-2",
+          "text-xs font-bold tracking-tight opacity-40 mt-2",
           selected ? "text-white/60" : "text-muted-foreground"
         )}>{subtitle}</p>
       </div>
@@ -155,7 +155,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderJobList = () => (
     <div className="space-y-4">
       {!(jobs || []).length ? (
-        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ 등록된 업무가 없습니다.</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-tight border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)]">_ 등록된 업무가 없습니다.</div>
       ) : (jobs || []).map((item: any, idx: number) => (
         <motion.div
           key={item.deptJobbxId}
@@ -178,7 +178,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderReportList = () => (
     <div className="space-y-4">
       {!(reports || []).length ? (
-        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ 등록된 보고서가 없습니다.</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-tight border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)]">_ 등록된 보고서가 없습니다.</div>
       ) : (reports || []).map((item: any, idx: number) => (
         <motion.div
           key={item.reprtId}
@@ -234,10 +234,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Header */}
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1">
-                <h3 className="text-3xl font-bold tracking-tighter uppercase font-mono">
+                <h3 className="text-3xl font-bold tracking-tighter">
                   {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
               </h3>
-              <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase opacity-40">_ Intelligence_Calendar_Hub</p>
+              <p className="text-xs font-bold text-muted-foreground tracking-tight opacity-40">_ 인텔리전스 캘린더 허브</p>
             </div>
             <div className="flex gap-3 bg-slate-50 p-1.5 rounded-[var(--radius-hub-item)] border border-slate-100">
               <Button 
@@ -262,7 +262,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Grid */}
           <div className="grid grid-cols-7 gap-3 relative z-10">
             {weekDays.map(day => (
-              <div key={day} className="text-center py-2 text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">_ {day}</div>
+              <div key={day} className="text-center py-2 text-xs font-bold tracking-tight text-slate-400">_ {day}</div>
             ))}
             
             {prevMonthDays.map(i => (
@@ -289,7 +289,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   )}
                 >
                   <span className={cn(
-                    "text-lg font-bold tracking-tighter tabular-nums font-mono",
+                    "text-lg font-bold tracking-tighter tabular-nums ",
                     isSelected(day) ? "text-white" : isToday(day) ? "text-primary" : "text-slate-900/60"
                   )}>{day}</span>
                   
@@ -313,18 +313,18 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
           <div className="flex items-center justify-between pt-6 border-t border-slate-100 relative z-10">
              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                   <div className="w-3 h-3 rounded-lg bg-primary/20 border border-primary/40" />
-                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">_ Today</span>
-                </div>
-                <div className="flex items-center gap-2">
-                   <div className="w-3 h-3 rounded-lg bg-primary" />
-                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">_ Event</span>
-                </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-lg bg-primary/20 border border-primary/40" />
+                    <span className="text-xs font-bold text-slate-400 tracking-tight">_ 오늘</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-lg bg-primary" />
+                    <span className="text-xs font-bold text-slate-400 tracking-tight">_ 일정</span>
+                 </div>
              </div>
-             <Button variant="ghost" className="h-10 px-4 rounded-lg text-xs font-bold text-primary tracking-widest uppercase font-mono hover:bg-primary/5">
-                <RefreshCcw size={12} className={cn("mr-2", isCalendarLoading && "animate-spin")} /> Sync_Stream
-             </Button>
+              <Button variant="ghost" className="h-10 px-4 rounded-lg text-xs font-bold text-primary tracking-tight hover:bg-primary/5">
+                 <RefreshCcw size={12} className={cn("mr-2", isCalendarLoading && "animate-spin")} /> 데이터 동기화
+              </Button>
           </div>
         </div>
       </div>
@@ -345,10 +345,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         icon={Briefcase}
         actions={
           <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-12 rounded-[var(--radius-hub-item)] border-2 font-bold text-xs tracking-widest uppercase gap-2">
+            <Button variant="outline" size="lg" className="h-12 rounded-[var(--radius-hub-item)] border-2 font-bold text-xs tracking-tight gap-2">
               <Filter size={16} /> 뷰포트 필터
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
+            <Button size="lg" className="h-12 px-8 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
               <Plus size={18} /> 새 업무 생성
             </Button>
           </div>
@@ -363,7 +363,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               <button
                 onClick={() => setTab('job')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight transition-all duration-300",
                   activeTab === 'job'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -374,7 +374,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               <button
                 onClick={() => setTab('report')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight transition-all duration-300",
                   activeTab === 'report'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -385,7 +385,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
               <button
                 onClick={() => setTab('calendar')}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight transition-all duration-300",
                   activeTab === 'calendar'
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -397,12 +397,12 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
             <div className="relative group/search">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={16} />
-              <Input
-                className="pl-12 h-11 bg-muted/30 border-none rounded-[var(--radius-hub-item)] text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-xs placeholder:font-bold placeholder:tracking-widest uppercase"
-                placeholder="PROCURING DATABASE ASSETS..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
+                <Input
+                  className="pl-12 h-11 bg-muted/30 border-none rounded-[var(--radius-hub-item)] text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-xs placeholder:font-bold placeholder:tracking-tight"
+                  placeholder="데이터베이스 자산 검색 중..."
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                />
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -440,8 +440,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             icon={selectedItemId ? Sparkles : activeTab === 'calendar' ? Calendar : Activity}
             statusBadges={
               <>
-                <HubStatusBadge label="시스템 정상" icon={CheckCircle2} variant="success" className="text-xs font-bold tracking-widest" />
-                <HubStatusBadge label="스트림 활성" icon={Clock} variant="default" className="text-xs font-bold tracking-widest" />
+                <HubStatusBadge label="시스템 정상" icon={CheckCircle2} variant="success" className="text-xs font-bold tracking-tight" />
+                <HubStatusBadge label="스트림 활성" icon={Clock} variant="default" className="text-xs font-bold tracking-tight" />
               </>
             }
           >
@@ -458,12 +458,12 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h4 className="text-2xl font-bold tracking-tighter uppercase font-mono">
+                      <h4 className="text-2xl font-bold tracking-tighter">
                         {selectedDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
                       </h4>
-                      <p className="text-xs font-bold text-primary tracking-[0.4em] uppercase opacity-60">_ Selected_Node_Insight</p>
+                      <p className="text-xs font-bold text-primary tracking-tight opacity-60">_ 선택된 노드 인사이트</p>
                     </div>
-                      <Button size="sm" className="h-10 px-6 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-widest uppercase gap-2 hover:bg-primary transition-all">
+                      <Button size="sm" className="h-10 px-6 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-tight gap-2 hover:bg-primary transition-all">
                         <Plus size={14} /> 일정 추가
                       </Button>
                   </div>
@@ -479,8 +479,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                             <Clock size={32} />
                           </div>
                           <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-foreground tracking-tighter uppercase opacity-40">Empty Timeline</h3>
-                            <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
+                            <h3 className="text-xl font-bold text-foreground tracking-tighter opacity-40">타임라인 비어있음</h3>
+                            <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-tight leading-relaxed">
                               해당 날짜에 예정된 비즈니스 프로세스가 없습니다.
                             </p>
                           </div>
@@ -502,12 +502,12 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                               <div className="space-y-3">
                                 <div className="flex items-center gap-3">
                                   <span className={cn(
-                                    "px-3 py-1 rounded-lg text-xs font-bold tracking-widest uppercase font-mono",
+                                    "px-3 py-1 rounded-lg text-xs font-bold tracking-tight",
                                     event.schdulSe === '1' ? "bg-indigo-500/10 text-indigo-500" : "bg-emerald-500/10 text-emerald-500"
                                   )}>
-                                    {event.schdulSe === '1' ? 'DEPT_OPS' : 'PERSONAL'}
+                                    {event.schdulSe === '1' ? '부서 업무' : '개인 일정'}
                                   </span>
-                                  <span className="text-xs font-bold text-slate-300 tabular-nums font-mono">
+                                  <span className="text-xs font-bold text-slate-300 tabular-nums">
                                     {event.schdulBgnde.substring(8, 10)}:{event.schdulBgnde.substring(10, 12)}
                                   </span>
                                 </div>
@@ -544,13 +544,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     <div className="w-16 h-11 bg-white dark:bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
                       <Database size={32} className="text-primary" />
                     </div>
-                    <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase relative z-10">인텔리전스 엔진 시각화</p>
+                    <p className="text-xs font-bold text-muted-foreground tracking-tight relative z-10">인텔리전스 엔진 시각화</p>
                     <p className="text-xl font-bold text-foreground tracking-tighter mt-4 max-w-sm relative z-10">데이터 구조 분석 및 워크플로우 시각화 컴포넌트 준비됨</p>
-                    <pre className="text-xs font-mono mt-6 p-4 bg-white/50 rounded-[var(--radius-hub-item)] overflow-hidden max-w-full truncate">
+                    <pre className="text-xs mt-6 p-4 bg-white/50 rounded-[var(--radius-hub-item)] overflow-hidden max-w-full truncate">
                       {JSON.stringify(selectedItem, null, 1)}
                     </pre>
                   </div>
-                  <Button className="w-full h-11 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">
+                  <Button className="w-full h-11 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold tracking-tight shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all">
                     Launch Full Analytics
                   </Button>
                 </motion.div>
@@ -560,9 +560,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-bold text-foreground tracking-tighter uppercase opacity-40">시스템 대기</h3>
-                    <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
-                      Select Object to Capture Stream
+                    <h3 className="text-3xl font-bold text-foreground tracking-tighter opacity-40">시스템 대기</h3>
+                    <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-tight leading-relaxed">
+                      트래픽 캡처를 위한 객체를 선택하십시오.
                     </p>
                   </div>
                 </div>
@@ -599,11 +599,11 @@ function SummaryBlock({ title, value, icon, status, color }: any) {
         <div className={cn("w-14 h-11 rounded-[var(--radius-hub-item)] bg-slate-50 flex items-center justify-center shadow-inner border border-slate-100 group-hover:rotate-12 transition-transform", color)}>
           {icon}
         </div>
-        <HubStatusBadge label={`HUB STATUS: ${status}`} variant="default" className="text-xs font-bold tracking-widest" />
+        <HubStatusBadge label={`HUB STATUS: ${status}`} variant="default" className="text-xs font-bold tracking-tight" />
       </div>
       <div>
         <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none">{value}</h3>
-        <p className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase mt-4">{title}</p>
+        <p className="text-xs font-bold text-muted-foreground/40 tracking-tight mt-4">{title}</p>
       </div>
       <div className="absolute bottom-[-10%] right-[-10%] opacity-[0.02] group-hover:scale-125 transition-transform duration-1000">
         {React.cloneElement(icon as React.ReactElement<any>, { size: 100 })}

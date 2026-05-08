@@ -84,10 +84,10 @@ export default function SurveyHubClient() {
         icon={ClipboardCheck}
         actions={
           <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-12 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-2">
+            <Button variant="outline" size="lg" className="h-12 rounded-lg border-2 font-bold text-xs tracking-tight gap-2">
               <Database size={16} /> 분석 아카이브
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-lg font-bold text-xs tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
+            <Button size="lg" className="h-12 px-8 rounded-lg font-bold text-xs tracking-tight shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
               <Plus size={18} /> 신규 설문 생성
             </Button>
           </div>
@@ -113,10 +113,10 @@ export default function SurveyHubClient() {
                 <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-primary shadow-2xl border border-white/5">
                   <TrendingUp size={24} />
                 </div>
-                <HubStatusBadge label="동기화됨" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase" />
+                <HubStatusBadge label="동기화됨" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-tight" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase leading-none">총 참여</p>
+                <p className="text-xs font-bold text-white/30 tracking-tight leading-none">총 참여</p>
                 <h4 className="text-4xl font-bold tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">명</span></h4>
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 mt-4 bg-emerald-400/10 w-fit px-3 py-1 rounded-lg border border-emerald-400/20">
                   <Activity size={10} /> +12.4% INCREMENTAL
@@ -136,7 +136,7 @@ export default function SurveyHubClient() {
             <div className="relative group mb-8">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within:opacity-100 transition-opacity" size={16} />
               <Input
-                className="h-11 pl-12 pr-6 bg-muted/30 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
+                className="h-11 pl-12 pr-6 bg-muted/30 border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
                 placeholder="검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -164,20 +164,20 @@ export default function SurveyHubClient() {
                         {survey.status === '활성' ? (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 rounded-lg border border-emerald-500/20">
                             <span className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
-                            <span className="text-xs font-bold text-emerald-500 tracking-widest uppercase">활성</span>
+                            <span className="text-xs font-bold text-emerald-500 tracking-tight">활성</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-lg border border-border/50">
                             <span className="w-1.5 h-1.5 rounded-lg bg-slate-300" />
-                            <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{survey.status}</span>
+                            <span className="text-xs font-bold text-slate-400 tracking-tight">{survey.status}</span>
                           </div>
                         )}
-                        <span className="text-xs font-bold text-muted-foreground/30 tracking-widest uppercase opacity-60">ID: #{survey.id}</span>
+                        <span className="text-xs font-bold text-muted-foreground/30 tracking-tight opacity-60">ID: #{survey.id}</span>
                       </div>
-                      <h4 className={cn("text-lg font-bold tracking-tighter leading-none truncate uppercase", selectedSurveyId === survey.id ? "text-white" : "text-foreground")}>
+                      <h4 className={cn("text-lg font-bold tracking-tighter leading-none truncate ", selectedSurveyId === survey.id ? "text-white" : "text-foreground")}>
                         {survey.title}
                       </h4>
-                      <div className={cn("flex items-center gap-2 text-xs font-bold opacity-40 uppercase tracking-tight", selectedSurveyId === survey.id ? "text-white/60" : "text-muted-foreground")}>
+                      <div className={cn("flex items-center gap-2 text-xs font-bold opacity-40 tracking-tight", selectedSurveyId === survey.id ? "text-white/60" : "text-muted-foreground")}>
                         <Calendar size={12} /> {survey.startDate} ~ {survey.endDate}
                       </div>
                     </div>
@@ -185,7 +185,7 @@ export default function SurveyHubClient() {
                       <span className={cn("text-xl font-bold tracking-tighter tabular-nums leading-none", selectedSurveyId === survey.id ? "text-white" : "text-primary")}>
                         {survey.participants.toLocaleString()}
                       </span>
-                      <span className="text-xs font-bold tracking-[0.2em] opacity-40 uppercase">명</span>
+                      <span className="text-xs font-bold tracking-tight opacity-40">명</span>
                     </div>
 
                     <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] grayscale transition-all duration-700">
@@ -215,19 +215,19 @@ export default function SurveyHubClient() {
                   icon={BarChart3}
                   statusBadges={
                     <div className="flex gap-2">
-                      <HubStatusBadge label="스트림" icon={Activity} variant="default" className="text-xs font-bold tracking-widest" />
-                      <HubStatusBadge label="확인됨" icon={CheckCircle} variant="success" className="text-xs font-bold tracking-widest" />
+                      <HubStatusBadge label="스트림" icon={Activity} variant="default" className="text-xs font-bold tracking-tight" />
+                      <HubStatusBadge label="확인됨" icon={CheckCircle} variant="success" className="text-xs font-bold tracking-tight" />
                     </div>
                   }
                 >
                   <div className="space-y-12">
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase flex items-center gap-3">
+                        <h4 className="text-xs font-bold text-muted-foreground/40 tracking-tight flex items-center gap-3">
                           <div className="w-1.5 h-1.5 bg-primary rounded-lg shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                           Temporal Flow Analysis
                         </h4>
-                        <span className="text-xs font-bold text-primary tracking-widest uppercase">라이브 게이지</span>
+                        <span className="text-xs font-bold text-primary tracking-tight">라이브 게이지</span>
                       </div>
                       <div className="h-56 rounded-lg bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/10 blur-[40px] pointer-events-none" />
@@ -248,10 +248,10 @@ export default function SurveyHubClient() {
                     </div>
 
                     <div className="flex gap-4 p-2">
-                      <Button variant="outline" className="h-11 flex-1 rounded-lg border-2 border-border font-bold tracking-[0.2em] shadow-sm uppercase gap-3">
+                      <Button variant="outline" className="h-11 flex-1 rounded-lg border-2 border-border font-bold tracking-tight shadow-sm gap-3">
                         <Share2 size={18} /> Protocol Link
                       </Button>
-                      <Button className="h-11 flex-[2] bg-slate-900 border-none text-white rounded-lg font-bold tracking-[0.3em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase gap-3">
+                      <Button className="h-11 flex-[2] bg-slate-900 border-none text-white rounded-lg font-bold tracking-tight shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all gap-3">
                         Export Data <Download size={20} />
                       </Button>
                     </div>
@@ -264,8 +264,8 @@ export default function SurveyHubClient() {
                   <PieChart size={48} />
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-3xl font-bold text-foreground tracking-tighter uppercase opacity-50">시스템 대기</h3>
-                  <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.4em] uppercase leading-relaxed">
+                  <h3 className="text-3xl font-bold text-foreground tracking-tighter opacity-50">시스템 대기</h3>
+                  <p className="text-xs font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-tight leading-relaxed">
                     Select Identity to Initiate Analytics
                   </p>
                 </div>
@@ -297,7 +297,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       )}>
         {icon}
       </div>
-      <span className="text-xs font-bold tracking-widest uppercase ">{label}</span>
+      <span className="text-xs font-bold tracking-tight">{label}</span>
     </button>
   );
 }
@@ -331,7 +331,7 @@ function DetailStat({ icon, label, value, color }: { icon: React.ReactNode, labe
     <div className={cn("p-8 rounded-lg border-2 space-y-4 shadow-sm group hover:scale-105 transition-transform", colorMap[color])}>
       <div className="flex items-center gap-3">
         {icon}
-        <span className="text-xs font-bold tracking-[0.2em] uppercase opacity-40 leading-none">{label}</span>
+        <span className="text-xs font-bold tracking-tight opacity-40 leading-none">{label}</span>
       </div>
       <p className="text-2xl font-bold tracking-tighter text-foreground leading-none tabular-nums">{value}</p>
     </div>

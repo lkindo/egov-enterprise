@@ -308,7 +308,7 @@ export default function SecurityHubClient({
             <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authorCode ? "text-white" : "text-slate-900")}>
               {auth.authorNm}
             </span>
-            <span className={cn("text-xs font-bold tracking-[0.3em] font-mono", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
+            <span className={cn("text-xs font-bold tracking-tight ", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
               {auth.authorCode}
             </span>
           </div>
@@ -335,7 +335,7 @@ export default function SecurityHubClient({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight">{user.userNm}</span>
-              <span className={cn("text-xs font-bold tracking-widest font-mono opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
+              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
             </div>
           </div>
           {tempUserMappings.has(user.uniqId) ? (
@@ -387,7 +387,7 @@ export default function SecurityHubClient({
               {node.menuNm}
             </span>
             <span className={cn(
-              "text-xs font-bold tracking-widest font-mono opacity-40 uppercase truncate",
+              "text-xs font-bold tracking-tight opacity-40 truncate",
               tempMenuMappings.has(node.menuNo) ? "text-white/40" : "text-slate-400"
             )}>
               NODE_{node.menuNo}
@@ -430,14 +430,14 @@ export default function SecurityHubClient({
                     variant="ghost"
                     onClick={() => startTransition(() => setViewMode('TOPOLOGY'))}
                     className={cn(
-                      "h-10 px-6 rounded-lg text-xs font-bold tracking-widest uppercase transition-all",
+                      "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
                       viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
                     )}
                   >
                     TOPOLOGY_VIEW
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                   보안 객체 간의 계층적 관계 시각화
                 </TooltipContent>
               </Tooltip>
@@ -448,14 +448,14 @@ export default function SecurityHubClient({
                     variant="ghost"
                     onClick={() => startTransition(() => { setViewMode('MATRIX'); loadGlobalMappings(); })}
                     className={cn(
-                      "h-10 px-6 rounded-lg text-xs font-bold tracking-widest uppercase transition-all",
+                      "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
                       viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
                     )}
                   >
                     MATRIX_PLANE
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                   전사적 권한 할당 현황 일괄 검토 및 수정
                 </TooltipContent>
               </Tooltip>
@@ -471,7 +471,7 @@ export default function SecurityHubClient({
                   <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 서버로부터 최신 정책 정보 로드
               </TooltipContent>
             </Tooltip>
@@ -480,12 +480,12 @@ export default function SecurityHubClient({
               <TooltipTrigger asChild>
                 <Button
                   onClick={handleOpenAuthorCreate}
-                  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                 >
                   <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 새로운 역할 또는 보안 그룹 정의
               </TooltipContent>
             </Tooltip>
@@ -576,12 +576,12 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={() => saveUserMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <Save size={14} /> COMMIT_ENTITY
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                       수정된 사용자 매핑 정보를 DB에 최종 반영
                     </TooltipContent>
                   </Tooltip>
@@ -606,8 +606,8 @@ export default function SecurityHubClient({
                             <Users size={40} className="관리자 권한" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-bold text-slate-300 uppercase tracking-tighter">Identity_Idle</h4>
-                            <p className="text-xs font-bold text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
+                            <h4 className="text-xl font-bold text-slate-300 tracking-tighter">Identity_Idle</h4>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
                           </div>
                         </motion.div>
                       ) : (
@@ -646,12 +646,12 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={() => saveMenuMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <RefreshCcw size={14} /> SYNC_POLICY
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                       현재 노드 구조를 보안 정책에 동기화
                     </TooltipContent>
                   </Tooltip>
@@ -666,7 +666,7 @@ export default function SecurityHubClient({
                       <ShieldCheck size={28} className="text-primary" />
                     </div>
                     <div className="relative z-10 space-y-1">
-                      <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase font-mono">Policy_Manifest</span>
+                      <span className="text-xs font-bold text-white/30 tracking-tight">Policy_Manifest</span>
                       <div className="text-white text-lg font-bold tracking-tighter leading-none">
                         {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
                       </div>
@@ -681,14 +681,14 @@ export default function SecurityHubClient({
                             <Layers size={40} className="opacity-20" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-bold text-slate-300 uppercase tracking-tighter">Topology_Idle</h4>
-                            <p className="text-xs font-bold text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 로드하십시오</p>
+                            <h4 className="text-xl font-bold text-slate-300 tracking-tighter">Topology_Idle</h4>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 로드하십시오</p>
                           </div>
                         </motion.div>
                       ) : isMenusLoading ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-6">
                           <RotateCcw className="animate-spin text-primary opacity-40 shadow-inner" size={48} />
-                          <p className="text-xs font-bold tracking-[0.4em] text-muted-foreground/40 uppercase">Mapping_Topology_Stream...</p>
+                          <p className="text-xs font-bold tracking-tight text-muted-foreground/40">Mapping_Topology_Stream...</p>
                         </motion.div>
                       ) : (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-lg bg-slate-50/50">

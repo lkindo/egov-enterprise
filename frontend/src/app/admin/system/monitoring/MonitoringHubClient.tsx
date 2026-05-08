@@ -56,7 +56,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-slate-950 rounded-lg space-y-6">
       <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-lg animate-spin" />
-      <p className="text-xs font-bold tracking-[0.5em] text-white/30 uppercase animate-pulse">Initializing Topology Stream...</p>
+      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">Initializing Topology Stream...</p>
     </div>
   )
 });
@@ -176,7 +176,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
                 <span className="text-xs font-bold opacity-20">{log.frstRegisterPnttm}</span>
             </div>
             <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
@@ -199,7 +199,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
                 <span className="text-xs font-bold opacity-20">{log.occcrrncDe}</span>
             </div>
             <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
@@ -222,7 +222,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-widest uppercase opacity-40", selectedItemId === log.logId ? "text-white" : "text-amber-700")}>{log.loginId}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.logId ? "text-white" : "text-amber-700")}>{log.loginId}</span>
                 <span className="text-xs font-bold opacity-20">{log.creatDt}</span>
             </div>
             <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.logId ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
@@ -245,7 +245,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
           <div className="flex-1 space-y-0.5 min-w-0">
             <h4 className={cn("text-sm font-bold tracking-tighter truncate", selectedItemId === c.commentNo ? "text-white" : "text-foreground")}>{c.commentCn}</h4>
-            <p className={cn("text-xs font-bold opacity-40 uppercase tracking-[0.2em]")}>USER_ID: {c.wrterId}</p>
+            <p className={cn("text-xs font-bold opacity-40 tracking-tight")}>USER_ID: {c.wrterId}</p>
           </div>
           {selectedItemId === c.commentNo && (
             <Button 
@@ -305,7 +305,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               "w-5 h-5 rounded-lg animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]",
               healthData?.status === 'UP' ? "bg-emerald-500" : "bg-rose-500"
             )} />
-            <h3 className="text-3xl font-bold tracking-tighter uppercase leading-none">
+            <h3 className="text-3xl font-bold tracking-tighter leading-none">
               코어 엔진: {healthData?.status === 'UP' ? '최적 상태' : '점검 필요'}
             </h3>
           </div>
@@ -337,11 +337,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="outline" 
                 size="lg" 
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-11 px-8 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+                className="h-11 px-8 rounded-lg border-2 font-bold text-xs tracking-tight gap-3 hover:bg-slate-50 transition-all shadow-sm group"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 스냅샷
             </Button>
-            <Button size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
+            <Button size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
               <Bell size={20} /> 알림 정책
             </Button>
           </div>
@@ -365,8 +365,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <ShieldCheck size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
-                <h3 className="text-xl font-bold tracking-tighter uppercase">감사 프로토콜</h3>
-                <p className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">보안 수준: 최상</p>
+                <h3 className="text-xl font-bold tracking-tighter">감사 프로토콜</h3>
+                <p className="text-xs font-bold text-white/30 tracking-tight">보안 수준: 최상</p>
             </div>
             <div className="flex justify-center gap-2 opacity-20 mt-2">
               {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="w-1.5 h-6 bg-white rounded-lg animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
@@ -379,8 +379,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="rounded-lg bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase">데이터 스트림</h3>
-                <p className="text-2xl font-bold tracking-tighter text-foreground uppercase">인베스티게이션</p>
+                <h3 className="text-xs font-bold text-slate-600 tracking-tight">데이터 스트림</h3>
+                <p className="text-2xl font-bold tracking-tighter text-foreground">인베스티게이션</p>
               </div>
               <Button 
                 variant="ghost" 
@@ -397,7 +397,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div className="relative group/search relative z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
-                  className="pl-16 h-11 bg-slate-50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-600" 
+                  className="pl-16 h-11 bg-slate-50 border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-600" 
                   placeholder="로그 객체 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -454,15 +454,15 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-lg bg-primary shadow-lg shadow-primary/40" />
-                        <h3 className="text-xs font-bold text-slate-600 tracking-[0.5em] uppercase">인스턴스 메타데이터</h3>
+                        <h3 className="text-xs font-bold text-slate-600 tracking-tight">인스턴스 메타데이터</h3>
                     </div>
-                    <h2 className="text-4xl font-bold text-foreground tracking-tighter leading-none mb-4 uppercase">객체 상세 분석</h2>
-                    <p className="text-xs font-mono font-bold text-primary/60 tracking-widest uppercase">로그 고유 식별자 {selectedItemId}</p>
+                    <h2 className="text-4xl font-bold text-foreground tracking-tighter leading-none mb-4">객체 상세 분석</h2>
+                    <p className="text-xs font-bold text-primary/60 tracking-tight">로그 고유 식별자 {selectedItemId}</p>
                   </div>
                   
                   <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
                     <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-lg shadow-inner relative overflow-hidden group">
-                      <pre className="text-xs font-mono whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-bold relative z-10">
+                      <pre className="text-xs whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-bold relative z-10">
                         {JSON.stringify(selectedItem, null, 2)}
                       </pre>
                     </div>
@@ -470,10 +470,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
                   <div className="pt-12 mt-auto border-t border-slate-100 space-y-8 relative z-10">
                     <div className="flex items-center justify-between px-6">
-                       <span className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase">결정 매트릭스</span>
+                       <span className="text-xs font-bold text-slate-600 tracking-tight">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
-                    <Button className="w-full h-11 bg-slate-900 text-white rounded-lg font-bold tracking-[0.4em] text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
+                    <Button className="w-full h-11 bg-slate-900 text-white rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       유지보수 파이프라인 실행
                     </Button>
@@ -487,8 +487,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <div className="w-24 h-24 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
                     <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
-                <h3 className="text-4xl font-bold text-foreground tracking-tighter uppercase mb-4">인텔리전스 대기 중</h3>
-                <p className="text-xs font-bold text-slate-600 tracking-[0.6em] uppercase leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
+                <h3 className="text-4xl font-bold text-foreground tracking-tighter mb-4">인텔리전스 대기 중</h3>
+                <p className="text-xs font-bold text-slate-600 tracking-tight leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
               </div>
             )}
           </AnimatePresence>
@@ -503,7 +503,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       >
          <div className="p-10 space-y-10 font-sans">
             <div className="space-y-4">
-               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.4em] px-2">_ SELECT_REPORT_PROTOCOL</h4>
+               <h4 className="text-xs font-bold text-slate-400 tracking-tight px-2">_ SELECT_REPORT_PROTOCOL</h4>
                <div className="grid grid-cols-1 gap-4">
                   <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 가동 및 보안 지표 통합 요약 (PDF)" />
                   <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
@@ -512,7 +512,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
             <div className="p-8 bg-slate-50 rounded-lg border-2 border-slate-100 space-y-4">
                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 uppercase">_ Reconciliation Range</span>
+                  <span className="text-xs font-bold text-slate-800">_ Reconciliation Range</span>
                   <span className="text-xs font-bold text-primary px-3 py-1 bg-primary/10 rounded-lg">LAST_24_HOURS</span>
                </div>
                <div className="h-2 bg-slate-200 rounded-lg overflow-hidden">
@@ -522,7 +522,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             </div>
 
             <div className="flex gap-4">
-               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all">
+               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight hover:bg-primary transition-all">
                   INITIALIZE_GENERATION
                </Button>
             </div>
@@ -564,7 +564,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       )}>
         {icon}
       </div>
-      <span className="text-xs font-bold tracking-widest uppercase text-left leading-tight ">{label}</span>
+      <span className="text-xs font-bold tracking-tight text-left leading-tight">{label}</span>
     </button>
   );
 }
@@ -573,12 +573,12 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
   return (
     <div className="p-8 rounded-lg bg-white/5 border border-white/5 space-y-6 group hover:bg-white/10 transition-colors">
       <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-white/20 tracking-[0.3em] uppercase">{label}</p>
+          <p className="text-xs font-bold text-white/20 tracking-tight">{label}</p>
           <Icon size={16} className="text-white/20 group-hover:text-primary transition-colors" />
       </div>
       <div className="flex items-center gap-4">
         <div className="w-2.5 h-2.5 rounded-lg bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)] animate-pulse" />
-        <span className="text-2xl font-bold tracking-tighter text-white uppercase">{status}</span>
+        <span className="text-2xl font-bold tracking-tighter text-white">{status}</span>
       </div>
     </div>
   );

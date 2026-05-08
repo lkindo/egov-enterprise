@@ -110,7 +110,7 @@ export default function ApprovalHubClient() {
       {list.length === 0 ? (
         <div className="h-64 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-50 rounded-lg">
           <FileText size={40} className="mb-4 opacity-20" />
-          <p className="text-xs font-bold tracking-widest uppercase">No requests found</p>
+          <p className="text-xs font-bold tracking-tight">요청 내역이 없습니다.</p>
         </div>
       ) : (
         list.map((item: Approval) => (
@@ -138,7 +138,7 @@ export default function ApprovalHubClient() {
                     onClick={(e) => handleQuickAction(e, item, 'Y')}
                     className="h-9 px-4 rounded-lg bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 border-none"
                   >
-                    <Check size={14} className="mr-1" /> APPROVE
+                    <Check size={14} className="mr-1" /> 승인
                   </Button>
                   <Button 
                     size="sm"
@@ -146,7 +146,7 @@ export default function ApprovalHubClient() {
                     onClick={(e) => handleQuickAction(e, item, 'N')}
                     className="h-9 px-4 rounded-lg font-bold text-xs shadow-lg shadow-rose-500/20 border-none"
                   >
-                    <X size={14} className="mr-1" /> REJECT
+                    <X size={14} className="mr-1" /> 반려
                   </Button>
                 </motion.div>
               )}
@@ -171,7 +171,7 @@ export default function ApprovalHubClient() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    "text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded",
+                    "text-xs font-bold tracking-tight px-2 py-0.5 rounded",
                     (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) 
                         ? "bg-white/10 text-white" 
                         : "bg-slate-100 text-slate-400"
@@ -194,7 +194,7 @@ export default function ApprovalHubClient() {
                 <Badge variant={item.status === 'Y' ? 'success' : item.status === 'N' ? 'destructive' : 'secondary'} className="text-xs font-bold px-2 py-0">
                     {item.status === 'Y' ? 'APPROVED' : item.status === 'N' ? 'REJECTED' : 'PENDING'}
                 </Badge>
-                <p className="text-xs font-bold opacity-30 uppercase tracking-tighter">By: {item.applicantId}</p>
+                <p className="text-xs font-bold opacity-30 tracking-tight">작성자: {item.applicantId}</p>
             </div>
           </motion.div>
         ))
@@ -215,13 +215,13 @@ export default function ApprovalHubClient() {
             </div>
             <div className="space-y-1">
               <h1 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none flex items-center gap-3">
-                Approval Hub
-                <Badge className="bg-primary/10 text-primary border-none text-xs font-bold tracking-widest px-3 py-1">V5.0_SECURE</Badge>
+                결재 허브
+                <Badge className="bg-primary/10 text-primary border-none text-xs font-bold tracking-tight px-3 py-1">V5.0_보안</Badge>
               </h1>
-              <div className="flex items-center gap-3 text-xs font-bold text-slate-400 tracking-[0.3em] uppercase">
-                <span className="flex items-center gap-1"><Zap size={12} className="text-primary" /> Autonomous Logic</span>
+              <div className="flex items-center gap-3 text-xs font-bold text-slate-400 tracking-tight">
+                <span className="flex items-center gap-1"><Zap size={12} className="text-primary" /> 자율 결재 로직</span>
                 <span className="w-1 h-1 rounded-lg bg-slate-200" />
-                <span>Enterprise Grade Cryptography</span>
+                <span>기업용 보안 암호화</span>
               </div>
             </div>
           </div>
@@ -244,8 +244,8 @@ export default function ApprovalHubClient() {
           <div className="col-span-12 lg:col-span-3 xl:col-span-2 space-y-6">
             <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-white/50">
               <CardHeader className="p-8 pb-4">
-                <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase flex items-center gap-2">
-                  <Layers size={14} className="text-primary" /> Core Queues
+                <CardTitle className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-2">
+                  <Layers size={14} className="text-primary" /> 핵심 대기열
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-2">
@@ -275,13 +275,13 @@ export default function ApprovalHubClient() {
                 <ShieldCheck size={120} />
               </div>
               <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-widest uppercase">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-tight">
                   <div className="w-2 h-2 rounded-lg bg-emerald-400 animate-pulse" />
-                  Chain Integrity Verified
+                  체인 무결성 검증됨
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-2xl font-bold tracking-tighter">99.9% Compliance</h4>
-                  <p className="text-xs text-white/40 font-bold tracking-widest uppercase">Audit Node: KR-SEOUL-01</p>
+                  <p className="text-xs text-white/40 font-bold tracking-tight">감사 노드: KR-SEOUL-01</p>
                 </div>
               </div>
             </Card>
@@ -292,8 +292,8 @@ export default function ApprovalHubClient() {
             <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden flex flex-col h-[750px] ring-1 ring-white/50">
               <CardHeader className="p-8 space-y-6 border-b border-white/50">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase">
-                    Approval Stream
+                  <CardTitle className="text-xs font-bold text-slate-400 tracking-tight">
+                    결재 스트림
                   </CardTitle>
                   <Button variant="ghost" size="icon" className="rounded-lg hover:bg-slate-100">
                     <RefreshCcw size={18} className="text-slate-400" />
@@ -333,10 +333,10 @@ export default function ApprovalHubClient() {
                       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                         <div className="space-y-4">
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-slate-900 text-white text-xs font-bold rounded-lg tracking-[0.2em] px-3 py-1 uppercase">
-                              Intelligence View
+                            <Badge className="bg-slate-900 text-white text-xs font-bold rounded-lg tracking-tight px-3 py-1">
+                              인텔리전스 뷰
                             </Badge>
-                            <span className="text-xs font-bold text-slate-300 font-mono tracking-widest">#{selectedItem.approvalId}</span>
+                            <span className="text-xs font-bold text-slate-300 tracking-tight">#{selectedItem.approvalId}</span>
                           </div>
                           <h2 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none">
                             {selectedItem.jobTypeNm || 'General Approval Request'}
@@ -364,10 +364,10 @@ export default function ApprovalHubClient() {
 
                       <div className="bg-white rounded-lg p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-8">
-                          <h4 className="text-xs font-bold text-slate-400 tracking-[0.3em] flex items-center gap-2 uppercase">
-                            <Zap size={14} className="text-primary" /> Approval Chain Analysis
+                          <h4 className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-2">
+                            <Zap size={14} className="text-primary" /> 결재 체인 분석
                           </h4>
-                          <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg uppercase tracking-widest">Verified Path</span>
+                          <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg tracking-tight">검증된 경로</span>
                         </div>
                         <ApprovalStepper steps={workflowSteps} />
                       </div>
@@ -390,8 +390,8 @@ export default function ApprovalHubClient() {
                       </div>
 
                       <div className="space-y-6">
-                        <h4 className="text-xs font-bold text-slate-300 tracking-[0.4em] flex items-center gap-2 uppercase">
-                          <Info size={14} className="text-primary" /> Encrypted Payload
+                        <h4 className="text-xs font-bold text-slate-300 tracking-tight flex items-center gap-2">
+                          <Info size={14} className="text-primary" /> 암호화된 페이로드
                         </h4>
                         <div className="p-10 bg-slate-50/50 rounded-lg border-2 border-slate-50/50 min-h-[200px] shadow-[inset_0_2px_20px_rgba(0,0,0,0.02)] relative overflow-hidden group">
                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
@@ -405,7 +405,7 @@ export default function ApprovalHubClient() {
                     </CardContent>
 
                     <div className="p-8 bg-slate-50/20 border-t border-slate-50 flex items-center justify-center">
-                      <p className="text-xs font-bold text-slate-200 tracking-[1em] uppercase font-mono animate-pulse">
+                      <p className="text-xs font-bold text-slate-200 tracking-tight animate-pulse">
                         ENTERPRISE_SECURE_KERNEL_V5.1_SYNC
                       </p>
                     </div>
@@ -416,8 +416,8 @@ export default function ApprovalHubClient() {
                   <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
                     <ShieldCheck size={56} className="text-slate-100 group-hover:text-primary transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-300 tracking-tighter uppercase mb-4">_ Select Transaction</h3>
-                  <p className="text-xs font-bold text-slate-200 tracking-[0.5em] uppercase">Awaiting cryptographic selection</p>
+                  <h3 className="text-3xl font-bold text-slate-300 tracking-tighter mb-4">_ 트랜잭션 선택</h3>
+                  <p className="text-xs font-bold text-slate-200 tracking-tight">암호화 선택 대기 중</p>
                 </div>
               )}
             </AnimatePresence>
@@ -463,7 +463,7 @@ function DetailSection({ icon, title, value, desc }: any) {
         <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-primary shadow-sm border border-slate-100 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
           {icon}
         </div>
-        <span className="text-xs font-bold tracking-[0.3em] uppercase">{title}</span>
+        <span className="text-xs font-bold tracking-tight">{title}</span>
       </div>
       <div className="space-y-1 pl-1">
         <p className="text-2xl font-bold text-slate-900 tracking-tighter">{value}</p>

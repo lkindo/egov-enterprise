@@ -111,7 +111,7 @@ export default function ApprovalDraftHubClient() {
               <h1 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none">
                 {step === 'CATALOG' ? 'Draft Center' : 'Document Entry'}
               </h1>
-              <p className="text-xs font-bold text-slate-400 tracking-[0.4em] mt-2 uppercase">
+              <p className="text-xs font-bold text-slate-400 tracking-tight mt-2">
                 {step === 'CATALOG' ? 'Select Template Node' : `Dispatch: ${selectedForm?.title}`}
               </p>
             </div>
@@ -119,7 +119,7 @@ export default function ApprovalDraftHubClient() {
           
           <div className="hidden md:flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-xl border border-slate-100">
             <ShieldCheck size={16} className="text-emerald-500" />
-            <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">Encryption Active</span>
+            <span className="text-xs font-bold text-slate-600 tracking-tight">Encryption Active</span>
           </div>
         </div>
 
@@ -153,10 +153,10 @@ export default function ApprovalDraftHubClient() {
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded uppercase">
+                          <span className="text-xs font-bold tracking-tight text-primary bg-primary/5 px-2 py-0.5 rounded">
                             {form.category}
                           </span>
-                          <span className="text-xs font-bold text-slate-300 font-mono">_ #{form.id}</span>
+                          <span className="text-xs font-bold text-slate-300">_ #{form.id}</span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none group-hover:text-primary transition-colors">
                           {form.title}
@@ -180,7 +180,7 @@ export default function ApprovalDraftHubClient() {
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
                 <div className="relative z-10 space-y-4">
                   <h4 className="text-xl font-bold text-white tracking-tighter">_ "Precision in every dispatch."</h4>
-                  <p className="text-xs text-white/40 font-bold tracking-[0.5em] uppercase">Enterprise Autonomous Governance Core</p>
+                  <p className="text-xs text-white/40 font-bold tracking-tight">Enterprise Autonomous Governance Core</p>
                 </div>
               </div>
             </motion.div>
@@ -206,12 +206,12 @@ export default function ApprovalDraftHubClient() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-slate-900 tracking-tight">{selectedForm?.title}</h4>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedForm?.category} MODULE</p>
+                          <p className="text-xs font-bold text-slate-400 tracking-tight">{selectedForm?.category} MODULE</p>
                         </div>
                       </div>
                       
                       <div className="p-6 bg-slate-50 rounded-lg border border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-400 tracking-widest uppercase">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-400 tracking-tight">
                            <span>Originating Node</span>
                            <span className="text-primary">SECURE</span>
                         </div>
@@ -227,7 +227,7 @@ export default function ApprovalDraftHubClient() {
                       </div>
                       
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-300 tracking-[0.3em] uppercase">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-300 tracking-tight">
                            <Info size={14} className="text-primary" /> Logic Path
                         </div>
                         <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export default function ApprovalDraftHubClient() {
                 </Card>
                 
                 <Card className="rounded-[2.5rem] border-none bg-slate-900 text-white shadow-2xl p-10 space-y-4">
-                   <h4 className="text-xs font-bold text-primary tracking-[0.4em] uppercase">Audit Protocol</h4>
+                   <h4 className="text-xs font-bold text-primary tracking-tight">Audit Protocol</h4>
                    <p className="text-sm font-bold text-white/60 leading-relaxed">
                     "All submissions are subject to real-time integrity checks and permanent ledger logging."
                    </p>
@@ -257,7 +257,7 @@ export default function ApprovalDraftHubClient() {
                 <Card className="rounded-[2.5rem] border-none bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col h-full min-h-[600px]">
                   <div className="p-10 lg:p-14 space-y-12 flex-1">
                     <div className="space-y-6">
-                       <label className="text-xs font-bold text-slate-400 tracking-[0.5em] uppercase flex items-center gap-3">
+                       <label className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-3">
                           <Plus size={16} className="text-primary" /> Core Subject Header
                        </label>
                        <Input 
@@ -269,14 +269,14 @@ export default function ApprovalDraftHubClient() {
                     </div>
 
                     <div className="space-y-6">
-                       <label className="text-xs font-bold text-slate-400 tracking-[0.5em] uppercase flex items-center gap-3">
+                       <label className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-3">
                           <FileText size={16} className="text-primary" /> Intelligent Payload
                        </label>
                        <textarea 
                           value={content}
                           onChange={(e) => setContent(e.target.value)}
                           placeholder="결재 상세 사유 및 전달 사항을 기술하십시오..." 
-                          className="w-full min-h-[300px] bg-slate-50/50 border-none rounded-[2rem] p-10 text-lg font-bold leading-relaxed focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-inner resize-none custom-scrollbar"
+                          className="w-full min-h-[300px] bg-slate-50/50 border-none rounded-2xl p-10 text-lg font-bold leading-relaxed focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-inner resize-none custom-scrollbar"
                        />
                     </div>
                   </div>
@@ -285,13 +285,13 @@ export default function ApprovalDraftHubClient() {
                     <Button 
                         variant="ghost" 
                         onClick={() => setStep('CATALOG')}
-                        className="h-11 px-8 rounded-lg font-bold text-slate-400 hover:text-slate-900 transition-all uppercase tracking-widest text-xs"
+                        className="h-11 px-8 rounded-lg font-bold text-slate-400 hover:text-slate-900 transition-all tracking-tight text-xs"
                     >
                       Abort Dispatch
                     </Button>
                     <Button 
                         onClick={handleSubmit}
-                        className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none uppercase tracking-widest text-xs"
+                        className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none tracking-tight text-xs"
                     >
                       <Send size={20} /> Commit to Ledger
                     </Button>

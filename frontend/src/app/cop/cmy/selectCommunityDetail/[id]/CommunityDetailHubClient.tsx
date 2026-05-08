@@ -55,7 +55,7 @@ export default function CommunityDetailHubClient({
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
           actions={
             <Link href="/cop/cmy/selectCommunityList">
-              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-[var(--radius-hub-item)] hover:bg-slate-900 hover:text-white transition-all uppercase tracking-widest text-xs">
+              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-[var(--radius-hub-item)] hover:bg-slate-900 hover:text-white transition-all tracking-tight text-xs">
                 <ChevronLeft size={16} /> 목록으로 돌아가기
               </Button>
             </Link>
@@ -75,14 +75,14 @@ export default function CommunityDetailHubClient({
                     <Share2 size={22} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-widest uppercase">
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
                   커뮤니티 공유하기
                 </TooltipContent>
               </Tooltip>
 
               <Button 
                 size="lg" 
-                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <UserPlus size={20} />
                 커뮤니티 가입 신청
@@ -102,7 +102,7 @@ export default function CommunityDetailHubClient({
             >
               <div className="space-y-[var(--gap-hub-section)] py-6">
                 <div className="space-y-6">
-                   <h3 className="text-xs font-bold text-primary tracking-[0.4em] uppercase font-mono">_ Introduction_cn</h3>
+                   <h3 className="text-xs font-bold text-primary tracking-tight">_ Introduction_cn</h3>
                    <div className="p-10 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
                         <BookOpen size={120} />
@@ -131,8 +131,8 @@ export default function CommunityDetailHubClient({
                 <div className="w-20 h-11 bg-white border-2 border-slate-100 rounded-[var(--radius-hub-item)] flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
-                <h4 className="text-xl font-bold text-slate-400 tracking-tighter uppercase font-mono">_ No_Posts_Detected</h4>
-                <p className="text-xs font-bold text-slate-300 tracking-[0.4em] mt-4 uppercase font-mono">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+                <h4 className="text-xl font-bold text-slate-400 tracking-tighter">_ No_Posts_Detected</h4>
+                <p className="text-xs font-bold text-slate-300 tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
               </div>
             </HubSectionCard>
           </div>
@@ -148,10 +148,10 @@ export default function CommunityDetailHubClient({
                   <ShieldCheck size={40} className="text-primary" />
                 </div>
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase font-mono">_ SECURITY<br />POLICY</h4>
-                  <p className="text-xs text-white/60 font-bold tracking-[0.4em] uppercase leading-relaxed font-mono">가입 승인 필요<br />내부 임직원 전용</p>
+                  <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
+                  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
                 </div>
-                <Button className="w-full h-11 bg-white text-slate-900 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest uppercase hover:bg-primary hover:text-white transition-all shadow-xl group">
+                <Button className="w-full h-11 bg-white text-slate-900 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
                   ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
@@ -159,8 +159,8 @@ export default function CommunityDetailHubClient({
 
             <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-slate-100 shadow-2xl relative overflow-hidden group">
                <div className="flex items-center justify-between border-b border-slate-200/50 pb-6">
-                  <h4 className="text-sm font-bold text-slate-900 tracking-tighter uppercase font-mono">_ Member_Pulse</h4>
-                  <span className="text-xs font-bold text-primary tracking-widest uppercase font-mono">Live</span>
+                  <h4 className="text-sm font-bold text-slate-900 tracking-tighter">_ Member_Pulse</h4>
+                  <span className="text-xs font-bold text-primary tracking-tight">Live</span>
                </div>
                <div className="space-y-6">
                   {[1, 2, 3, 4, 5].map(i => (
@@ -170,15 +170,15 @@ export default function CommunityDetailHubClient({
                           ID
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-800 tracking-tight uppercase font-mono">_ Active_Entity_{i}</p>
-                          <p className="text-xs text-slate-400 font-bold tracking-widest uppercase font-mono">Connected</p>
+                          <p className="text-xs font-bold text-slate-800 tracking-tight">_ Active_Entity_{i}</p>
+                          <p className="text-xs text-slate-400 font-bold tracking-tight">Connected</p>
                         </div>
                       </div>
                       <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     </div>
                   ))}
                </div>
-               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-slate-400 tracking-widest uppercase hover:text-primary transition-colors font-mono">
+               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-slate-400 tracking-tight hover:text-primary transition-colors">
                   VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
                </Button>
             </div>
@@ -195,10 +195,10 @@ function DetailBlock({ icon, label, value }: { icon: React.ReactNode, label: str
       <div className="absolute top-0 right-0 p-6 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
         {icon}
       </div>
-      <h5 className="text-xs font-bold text-slate-400 tracking-[0.3em] flex items-center gap-3 uppercase mb-4 font-mono relative z-10">
+      <h5 className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-3 mb-4 relative z-10">
         {icon} {label}
       </h5>
-      <p className="text-xl font-bold tracking-tighter text-slate-900 truncate font-mono relative z-10">
+      <p className="text-xl font-bold tracking-tighter text-slate-900 truncate relative z-10">
         {value}
       </p>
     </div>

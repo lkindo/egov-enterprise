@@ -7,7 +7,7 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  --font-sans: var(--font-inter), "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-sans: "Pretendard", var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-outfit: var(--font-outfit), sans-serif;
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -115,11 +115,11 @@
     --font-size-hub-subtitle: 0.625rem; /* 10px */
     --font-weight-hub-title: 900;       /* black */
     --letter-spacing-hub: -0.05em;      /* tracking-tighter */
-    --letter-spacing-label: 0.3em;      /* wide label tracking */
+    --letter-spacing-label: -0.025em;   /* wide label tracking (normalized to tight) */
     
-    --radius-hub-section: 3.5rem;       /* Hub main section cards */
-    --radius-hub-widget: 2rem;          /* Hub mini widgets */
-    --radius-hub-item: 1.5rem;          /* Hub list items / Summaries */
+    --radius-hub-section: 1rem;         /* Hub main section cards (Normalized) */
+    --radius-hub-widget: 0.75rem;       /* Hub mini widgets (Normalized) */
+    --radius-hub-item: 0.5rem;          /* Hub list items / Summaries (Normalized) */
 
     --gap-base: 1rem;
     --gap-hub-section: 3rem;            /* Spacing between major sections (48px) */
@@ -237,7 +237,7 @@
   }
   
   .hub-subtitle-label {
-    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase text-muted-foreground;
+    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-tight text-muted-foreground;
   }
 
   .hub-card-section {
@@ -249,7 +249,7 @@
   }
 
   .hub-badge-status {
-    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-lg text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-widest uppercase;
+    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-lg text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-tight;
   }
 
   .hub-bento-card {
@@ -297,12 +297,12 @@
 
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
-     @apply text-[length:var(--font-size-hub-subtitle)] font-bold tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
+     @apply text-[length:var(--font-size-hub-subtitle)] font-bold tracking-tight opacity-90 group-focus-within:opacity-100 transition-opacity;
      /* Italics removed, wide tracking preserved */
   }
 
   .hub-tech-label {
-    @apply font-mono font-bold tracking-[0.3em] uppercase;
+    @apply font-mono font-bold tracking-wider uppercase;
     display: inline-flex;
     items-center: center;
     gap: 0.5em;

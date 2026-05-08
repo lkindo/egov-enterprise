@@ -270,7 +270,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
         "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative",
-        isPremium ? "rounded-[var(--radius-hub-section)]" : "rounded-lg",
+        isPremium ? "rounded-2xl" : "rounded-lg",
         stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-hidden"
       )}>
         <div className="w-full">

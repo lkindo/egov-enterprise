@@ -112,29 +112,29 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div className="space-y-1.5 md:space-y-2">
  <div className="flex items-center gap-2 md:gap-3">
  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-lg bg-primary animate-pulse" />
- <span className="text-xs md:text-xs font-bold tracking-[0.3em] md:tracking-[0.5em] text-primary uppercase leading-none">인텔리전스 허브 콘솔</span>
+ <span className="text-xs md:text-xs font-bold tracking-tight md:tracking-tight text-primary leading-none">인텔리전스 허브 콘솔</span>
  </div>
- <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tighter uppercase leading-none">엔터프라이즈 지식 매트릭스</h2>
+ <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tighter leading-none">엔터프라이즈 지식 매트릭스</h2>
  </div>
  <div className="flex items-center gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
  {isAdmin && (
  <Button 
  onClick={() => router.push('/admin/community/boards/master')}
  variant="outline"
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-widest text-xs md:text-xs uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-tight text-xs md:text-xs hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> Master Console
  </Button>
  )}
  <Button 
  onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${currentBbsId}`)}
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs md:text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs md:text-xs hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록
  </Button>
  <div className="h-10 md:h-11 w-[1px] md:w-[2px] bg-border/40 mx-1 md:mx-2 hidden sm:block" />
  <div className="hidden sm:flex flex-col items-end">
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">외부 접근 전용</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">외부 접근 전용</span>
  <span className="text-xs font-bold text-slate-800 tracking-tight mt-1 underline decoration-primary/30 decoration-2">관리자 루트</span>
  </div>
  </div>
@@ -155,7 +155,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  <div className="relative z-20 text-center w-full max-w-4xl space-y-8 md:space-y-12 px-2 font-sans">
  <div className="space-y-3 md:space-y-4">
- <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tighter leading-none uppercase ">지식 베이스</h1>
+ <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tighter leading-none">지식 베이스</h1>
  <div className="flex items-center justify-center gap-3 md:gap-4">
  <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
  <HubInsightBadge label="Enterprise Collective Intelligence Matrix" className="text-white/40 !opacity-40 text-xs md:text-xs" />
@@ -184,7 +184,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="IMPACT" />
  </div>
  <div className="h-6 w-[1px] bg-white/10 hidden sm:block" />
- <div className="text-xs md:text-xs font-bold text-white/20 tracking-widest uppercase">
+ <div className="text-xs md:text-xs font-bold text-white/20 tracking-tight">
  {displayItems.length} Units Located
  </div>
  </div>
@@ -244,13 +244,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <ShieldAlert size={48} />
  </div>
  <div className="text-center space-y-4 max-w-sm">
- <h3 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase leading-none">액세스 매트릭스 거부</h3>
- <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-tighter">귀하의 현재 노드 권한으로는 Wiki 및 FAQ 데이터셋에 접근할 수 없습니다. 시스템 관리자에게 상위 보안 티어 승인을 요청하십시오.</p>
+ <h3 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none">액세스 매트릭스 거부</h3>
+ <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed tracking-tighter">귀하의 현재 노드 권한으로는 Wiki 및 FAQ 데이터셋에 접근할 수 없습니다. 시스템 관리자에게 상위 보안 티어 승인을 요청하십시오.</p>
  </div>
  <Button 
  onClick={() => setActiveCategory('COMMUNITY')}
  variant="outline"
- className="h-11 px-8 rounded-lg border-2 font-bold tracking-widest text-xs uppercase gap-3 shadow-xl hover:bg-slate-900 hover:text-white transition-all"
+ className="h-11 px-8 rounded-lg border-2 font-bold tracking-tight text-xs gap-3 shadow-xl hover:bg-slate-900 hover:text-white transition-all"
  >
  <ArrowRight size={16} /> Open Public Community
  </Button>
@@ -262,7 +262,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  ) : displayItems.length === 0 ? (
  <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-lg border-border/50">
  <Hash size={40} className="text-muted-foreground/20" />
- <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest text-center">지식 기록을 찾을 수 없음</p>
+ <p className="text-muted-foreground font-bold text-sm tracking-tight text-center">지식 기록을 찾을 수 없음</p>
  </div>
  ) : displayItems.map((item: any) => (
  <motion.button 
@@ -281,8 +281,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  <div className="space-y-1 md:space-y-2 min-w-0">
  <div className="flex items-center gap-2 md:gap-3">
- <span className="text-xs md:text-xs font-bold text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">핵심 단위</span>
- <span className="text-xs md:text-xs font-bold text-muted-foreground/40 uppercase tracking-[0.1em] md:tracking-[0.2em]">{item.frstRegisterPnttmStr}</span>
+ <span className="text-xs md:text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">핵심 단위</span>
+ <span className="text-xs md:text-xs font-bold text-muted-foreground/40 tracking-tight md:tracking-tight">{item.frstRegisterPnttmStr}</span>
  </div>
  <h4 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.nttSj}</h4>
  <div className="flex items-center gap-3 md:gap-4 opacity-40">
@@ -293,7 +293,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
  <div className="hidden sm:flex flex-col items-end">
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">상태</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">상태</span>
  <StatusBadge status={item.statusCd} type={activeCategory as KnowledgeCategory} />
  </div>
  <ArrowRight className="text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
@@ -312,12 +312,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div className="space-y-4">
  {hotItems.map((item: any, idx: number) => (
  <button type="button" key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-slate-50 transition-all cursor-pointer group text-left">
- <span className="text-3xl font-bold text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8 ">{idx + 1}</span>
+ <span className="text-3xl font-bold text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8">{idx + 1}</span>
  <div className="flex-1 min-w-0">
- <p className="text-sm font-bold text-slate-800 tracking-tight truncate leading-none uppercase">{item.nttSj}</p>
+ <p className="text-sm font-bold text-slate-800 tracking-tight truncate leading-none">{item.nttSj}</p>
  <div className="flex items-center gap-2 mt-2">
  <TrendingUp size={10} className="text-rose-500" />
- <span className="text-xs font-bold text-rose-500 uppercase">영향 수치 높음</span>
+ <span className="text-xs font-bold text-rose-500">영향 수치 높음</span>
  </div>
  </div>
  <ChevronRight size={16} className="text-muted-foreground/20" />
@@ -337,11 +337,11 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Zap size={18} />
  </div>
  <div className="flex-1 min-w-0">
- <p className="text-xs font-bold text-white/90 tracking-tight truncate leading-none mb-1.5 uppercase ">{activity.title}</p>
+ <p className="text-xs font-bold text-white/90 tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
  <div className="flex items-center gap-3 opacity-40">
- <span className="text-xs font-bold uppercase tracking-widest underline decoration-primary/50 underline-offset-2">{activity.user}</span>
+ <span className="text-xs font-bold tracking-tight underline decoration-primary/50 underline-offset-2">{activity.user}</span>
  <div className="w-1 h-1 rounded-lg bg-white animate-pulse" />
- <span className="text-xs font-bold uppercase tracking-widest tabular-nums">{activity.time}</span>
+ <span className="text-xs font-bold tracking-tight tabular-nums">{activity.time}</span>
  </div>
  </div>
  </div>
@@ -354,8 +354,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Sparkles size={32} />
  </div>
  <div>
- <h4 className="text-xl font-bold text-slate-900 tracking-tighter uppercase leading-none">인텔리전스 엔진</h4>
- <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">활성 데이터 매트릭스 스캔 중</p>
+ <h4 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">인텔리전스 엔진</h4>
+ <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">활성 데이터 매트릭스 스캔 중</p>
  </div>
  <div className="w-full h-1 bg-slate-100 rounded-lg overflow-hidden">
  <motion.div initial={{ width: 0 }} animate={{ width: '84%' }} transition={{ duration: 2 }} className="h-full bg-primary" />
@@ -371,7 +371,7 @@ function HubInsightBadge({ label, className }: { label: string, className?: stri
  return (
  <div className={cn("px-4 py-1.5 rounded-lg border border-primary/20 bg-primary/5 flex items-center gap-2", className)}>
  <div className="w-1 h-1 rounded-lg bg-primary" />
- <span className="text-xs font-bold tracking-widest uppercase ">{label}</span>
+ <span className="text-xs font-bold tracking-tight">{label}</span>
  </div>
  );
 }
@@ -382,7 +382,7 @@ function FilterButton({ active, onClick, label }: any) {
  type="button"
  onClick={onClick}
  className={cn(
- "px-6 py-2 rounded-lg text-xs font-bold tracking-widest uppercase transition-all",
+ "px-6 py-2 rounded-lg text-xs font-bold tracking-tight transition-all",
  active 
  ? "bg-primary text-white shadow-lg shadow-primary/20" 
  : "text-white/40 hover:text-white hover:bg-white/5"
@@ -397,15 +397,15 @@ function StatsCard({ label, value, desc, trend }: { label: string, value: string
  return (
  <div className="hub-card-premium p-8 flex flex-col gap-4 group hover:ring-[20px] hover:ring-primary/5 transition-all">
  <div className="flex items-center justify-between">
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{label}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{label}</span>
  <TrendingUp size={14} className="text-primary opacity-30 group-hover:opacity-100 transition-opacity" />
  </div>
  <div className="space-y-1">
  <h4 className="text-4xl font-bold tracking-tighter text-slate-900 tabular-nums group-hover:text-primary transition-colors">{value}</h4>
- <p className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest">{desc}</p>
+ <p className="text-xs font-bold text-muted-foreground/40 tracking-tight">{desc}</p>
  </div>
  <div className="pt-4 border-t border-border/40 flex items-center justify-between">
- <span className="text-xs font-bold text-rose-500 uppercase">{trend}</span>
+ <span className="text-xs font-bold text-rose-500">{trend}</span>
  <div className="h-1 w-12 bg-slate-100 rounded-lg overflow-hidden">
  <div className="h-full bg-primary w-2/3" />
  </div>
@@ -419,7 +419,7 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  const isSolved = status === 'SOLVED';
  return (
  <span className={cn(
- "text-xs font-bold mt-1 uppercase",
+ "text-xs font-bold mt-1 ",
  isSolved ? "text-emerald-500" : "text-rose-500 animate-pulse"
  )}>
  {isSolved ? 'Solved' : 'Open'}
@@ -431,7 +431,7 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  const isPublished = status === 'PUBLISHED';
  return (
  <span className={cn(
- "text-xs font-bold mt-1 uppercase",
+ "text-xs font-bold mt-1 ",
  isPublished ? "text-primary" : "text-slate-400"
  )}>
  {isPublished ? 'Published' : 'Draft'}
@@ -440,7 +440,7 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  }
 
  return (
- <span className="text-xs font-bold text-emerald-500 mt-1 uppercase">
+ <span className="text-xs font-bold text-emerald-500 mt-1">
  Active
  </span>
  );
@@ -470,10 +470,10 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
  </div>
  <div className="space-y-1">
  <div className="flex items-center justify-between">
- <h3 className="font-bold text-2xl tracking-tighter text-slate-900 uppercase leading-none">{title}</h3>
+ <h3 className="font-bold text-2xl tracking-tighter text-slate-900 leading-none">{title}</h3>
  <span className="text-xs font-bold opacity-30 group-hover:opacity-100 transition-opacity">{count} UNTS</span>
  </div>
- <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{desc}</p>
+ <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
  </div>
  <div className={cn("absolute bottom-8 right-8 w-1 h-8 rounded-lg transition-transform", active ? "bg-primary scale-y-100" : "bg-border scale-y-0 group-hover:scale-y-50")} />
  </button>
@@ -483,20 +483,20 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
 function HubSectionCard({ title, description, icon: Icon, children, className }: any) {
  return (
  <div className={cn("hub-card-premium p-10 space-y-8", className)}>
- <div className="flex items-center justify-between border-b border-border/40 pb-6 uppercase">
+ <div className="flex items-center justify-between border-b border-border/40 pb-6">
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-primary shadow-inner border border-border/50">
  <Icon size={20} />
  </div>
  <div className="space-y-0.5">
  <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{title}</h3>
- <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">{description}</p>
+ <p className="text-xs font-bold text-muted-foreground tracking-tight">{description}</p>
  </div>
  </div>
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-2">
  <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
- <span className="text-xs font-bold opacity-20 tracking-widest">라이브 데이터 피드</span>
+ <span className="text-xs font-bold opacity-20 tracking-tight">라이브 데이터 피드</span>
  </div>
  </div>
  </div>

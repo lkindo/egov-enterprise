@@ -41,22 +41,22 @@ export function SurveyHubClient() {
  <div className="space-y-3">
  <div className="flex items-center gap-3">
  <div className="w-2 h-2 rounded-lg bg-rose-500 animate-pulse" />
- <span className="text-xs font-bold tracking-[0.5em] text-rose-500 uppercase leading-none px-3 py-1 bg-rose-500/5 rounded-lg border border-rose-500/10">Survey Matrix</span>
+ <span className="text-xs font-bold tracking-tight text-rose-500 leading-none px-3 py-1 bg-rose-500/5 rounded-lg border border-rose-500/10">Survey Matrix</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none">
+ <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none">
  Insight <span className="text-rose-500">Analytics</span>
  </h1>
- <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest ">
+ <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed tracking-tight">
  Enterprise feedback acquisition and sentiment analysis engine.
  </p>
  </div>
  <div className="flex items-center gap-4">
  <div className="hidden sm:flex flex-col items-end mr-4">
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">활성 설문 노드</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">활성 설문 노드</span>
  <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-1">12 / 48</span>
  </div>
  <Button 
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Launch New Survey
  </Button>
@@ -130,7 +130,7 @@ function TabTrigger({ value, icon: Icon, label }: { value: string, icon: any, la
  return (
  <TabsTrigger 
  value={value} 
- className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-2xl rounded-lg h-11 px-8 font-bold text-xs tracking-widest uppercase gap-3 transition-all border border-transparent data-[state=active]:border-slate-800 hover:bg-slate-50"
+ className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-2xl rounded-lg h-11 px-8 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-slate-800 hover:bg-slate-50"
  >
  <Icon size={16} /> {label}
  </TabsTrigger>
@@ -148,7 +148,7 @@ function MetricCard({ label, value, trend, icon: Icon, color }: any) {
  return (
  <div className="hub-glass-premium p-8 rounded-lg border-2 border-slate-100/50 flex flex-col gap-4 group hover:ring-[20px] hover:ring-slate-100/30 transition-all shadow-sm">
  <div className="flex items-center justify-between">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+ <span className="text-xs font-bold text-slate-400 tracking-tight">{label}</span>
  <div className={cn("p-2 rounded-lg border", colorMap[color])}>
  <Icon size={14} />
  </div>
@@ -156,7 +156,7 @@ function MetricCard({ label, value, trend, icon: Icon, color }: any) {
  <div className="space-y-1">
  <h4 className="text-3xl font-bold tracking-tighter text-slate-900 tabular-nums">{value}</h4>
  <div className="flex items-center gap-2">
- <span className={cn("text-xs font-bold uppercase", color === 'emerald' ? 'text-emerald-500' : color === 'rose' ? 'text-rose-500' : 'text-slate-400')}>
+ <span className={cn("text-xs font-bold ", color === 'emerald' ? 'text-emerald-500' : color === 'rose' ? 'text-rose-500' : 'text-slate-400')}>
  {trend}
  </span>
  <div className="h-[1px] flex-1 bg-slate-100" />
@@ -176,8 +176,8 @@ function PlaceholderCard({ title, description, icon: Icon }: any) {
  <Icon size={40} />
  </div>
  <div className="space-y-4 relative z-10">
- <h3 className="text-3xl font-bold tracking-tighter text-slate-900 uppercase leading-none">{title}</h3>
- <p className="text-sm font-bold text-slate-400 max-w-sm mx-auto uppercase tracking-widest ">{description}</p>
+ <h3 className="text-3xl font-bold tracking-tighter text-slate-900 leading-none">{title}</h3>
+ <p className="text-sm font-bold text-slate-400 max-w-sm mx-auto tracking-tight">{description}</p>
  </div>
  <div className="flex gap-4 relative z-10 pt-4">
  <div className="h-1.5 w-8 rounded-lg bg-rose-500/20" />

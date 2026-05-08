@@ -110,9 +110,9 @@ export default function NoteSendHubClient() {
  </Button>
  <div className="space-y-2">
  <div className="flex items-center gap-3">
- <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Secure Communications</span>
+ <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Secure Communications</span>
  </div>
- <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none transition-colors">
  Dispatch <span className="text-primary">Note</span>
  </h1>
  </div>
@@ -131,10 +131,10 @@ export default function NoteSendHubClient() {
  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
  <Search size={20} />
  </div>
- <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Target_Recipient_Node</span>
+ <span className="text-xs font-bold tracking-tight text-slate-400">Target_Recipient_Node</span>
  </div>
  {selectedRecipient && (
- <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 py-1.5 rounded-lg uppercase tracking-widest animate-in zoom-in duration-300">Target Locked</Badge>
+ <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight animate-in zoom-in duration-300">Target Locked</Badge>
  )}
  </div>
 
@@ -151,7 +151,7 @@ export default function NoteSendHubClient() {
  </div>
  <div className="space-y-0.5">
  <p className="text-lg font-bold tracking-tight leading-none">{selectedRecipient.name}</p>
- <p className="text-xs font-bold opacity-40 uppercase tracking-widest">{selectedRecipient.id}</p>
+ <p className="text-xs font-bold opacity-40 tracking-tight">{selectedRecipient.id}</p>
  </div>
  </div>
  <Button 
@@ -227,12 +227,12 @@ export default function NoteSendHubClient() {
  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
  <MessageSquare size={20} />
  </div>
- <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Core_Subject_Header</span>
+ <span className="text-xs font-bold tracking-tight text-slate-400">Core_Subject_Header</span>
  </div>
  <Input
  value={form.noteSj}
  onChange={(e) => setForm({ ...form, noteSj: e.target.value })}
- className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight "
+ className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight"
  placeholder="제목을 입력하십시오..."
  required
  />
@@ -245,11 +245,11 @@ export default function NoteSendHubClient() {
  <div className="flex items-center justify-between px-2">
  <div className="flex items-center gap-3">
  <Layers size={18} className="text-primary" />
- <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest transition-colors">Intelligence Payload</h3>
+ <h3 className="text-sm font-bold text-slate-900 tracking-tight transition-colors">Intelligence Payload</h3>
  </div>
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Encrypted Stream Ready</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">Encrypted Stream Ready</span>
  </div>
  </div>
  <Textarea
@@ -265,15 +265,15 @@ export default function NoteSendHubClient() {
  <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-100">
  <div className="flex items-center gap-8">
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Security_Level</span>
- <span className="text-xs font-bold text-emerald-500 mt-1 uppercase flex items-center gap-1.5">
+ <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">Security_Level</span>
+ <span className="text-xs font-bold text-emerald-500 mt-1 flex items-center gap-1.5">
  <ShieldCheck size={12} /> Authenticated
  </span>
  </div>
  <div className="w-[1px] h-8 bg-slate-100" />
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Dispatch_Clock</span>
- <span className="text-xs font-bold text-slate-800 mt-1 uppercase flex items-center gap-1.5">
+ <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">Dispatch_Clock</span>
+ <span className="text-xs font-bold text-slate-800 mt-1 flex items-center gap-1.5">
  <Clock size={12} /> {currentTime || '--:--:--'}
  </span>
  </div>
@@ -284,14 +284,14 @@ export default function NoteSendHubClient() {
  type="button"
  variant="outline"
  onClick={() => router.back()}
- className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-widest text-xs uppercase hover:bg-slate-50 transition-all bg-white"
+ className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-slate-50 transition-all bg-white"
  >
  Abort
  </Button>
  <Button
  type="submit"
  disabled={isSubmitting}
- className="h-11 flex-1 sm:flex-none px-12 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 flex-1 sm:flex-none px-12 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  {isSubmitting ? (
  <span className="animate-pulse">Dispatching...</span>
@@ -309,7 +309,7 @@ export default function NoteSendHubClient() {
  <div className="text-center">
  <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-lg border border-slate-100">
  <Sparkles size={14} className="text-primary/40" />
- <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Enterprise Neural Link - V4.5.1</span>
+ <span className="text-xs font-bold text-slate-300 tracking-tight">Enterprise Neural Link - V4.5.1</span>
  </div>
  </div>
  </div>

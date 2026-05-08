@@ -42,7 +42,7 @@ export function HubHeader({
              {title} {highlight && <span className="text-primary">{highlight}</span>} HUB
           </h1>
           {subtitle && (
-            <p className="hub-subtitle-label mt-2 uppercase tracking-widest">
+            <p className="hub-subtitle-label mt-2 tracking-tight">
                {subtitle}
             </p>
           )}

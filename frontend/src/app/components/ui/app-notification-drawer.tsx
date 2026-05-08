@@ -88,7 +88,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-lg">
                        <Bell size={20} className="animate-pulse" />
                     </div>
-                    _ Alert Sentinel
+                    알림 센터
                   </h2>
                   <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
                 </div>
@@ -100,7 +100,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       onClick={onMarkAllRead}
                       className="text-xs font-bold tracking-widest uppercase hover:text-primary h-8 px-2"
                     >
-                      READ_ALL
+                      모두 읽음
                     </Button>
                   )}
                   <button 
@@ -126,7 +126,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                              : "bg-white text-slate-400 hover:bg-slate-100 border-2 border-slate-100"
                        )}
                     >
-                       {f}
+                       {f === 'ALL' ? '전체' : f === 'SECURITY' ? '보안' : f === 'SYSTEM' ? '시스템' : '활동'}
                     </button>
                  ))}
                  <button className="ml-auto w-10 h-10 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
@@ -144,7 +144,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                        className="flex flex-col items-center justify-center h-full text-slate-200"
                     >
                       <Zap size={100} className="mb-8 opacity-20" />
-                      <span className="text-sm font-bold tracking-widest uppercase text-slate-400">No active alerts</span>
+                      <span className="text-sm font-bold tracking-widest uppercase text-slate-400">활성화된 알림이 없습니다</span>
                     </motion.div>
                   ) : (
                     filteredNotifications.map((notif, idx) => (
@@ -187,7 +187,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                         <div className="flex items-center justify-between mt-6 relative z-10 px-1">
                           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{notif.time}</span>
                           <button className="flex items-center gap-2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase">
-                            _ RESOLVE_NODE <ArrowRight size={14} />
+                            상세 보기 <ArrowRight size={14} />
                           </button>
                         </div>
 
@@ -210,7 +210,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                    onClick={onMarkAllRead}
                    className="w-full h-11 rounded-lg bg-slate-900 text-white font-bold tracking-[0.3em] uppercase text-xs shadow-2xl hover:bg-primary transition-all"
                  >
-                    READ_ALL_BROADCASTS
+                    모든 알림 읽음 처리
                  </Button>
               </div>
             </motion.div>

@@ -93,7 +93,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <h2 className="text-2xl font-bold text-slate-900 tracking-tighter">
               Intelligence <span className="text-primary">_ Hub</span>
             </h2>
-            <p className="text-xs font-bold text-slate-600 tracking-[0.3em] mt-2">
+            <p className="text-xs font-bold text-slate-600 tracking-tight mt-2">
               거버넌스 인사이트 및 데이터 분석
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           <Card className="rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
             <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-slate-600 tracking-[0.4em]">_ 심층 분석 뷰포트</h3>
+                <h3 className="text-xs font-bold text-slate-600 tracking-tight">_ 심층 분석 뷰포트</h3>
                 <CardTitle className="text-2xl font-bold text-slate-900 tracking-tighter">
                   {activeTab === 'DASHBOARD' ? '글로벌 개요' :
                     activeTab === 'USER_STATS' ? '사용자 통계 분석' :
@@ -185,7 +185,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                               <Vote className="text-primary" />
                             </div>
                             <div className="space-y-1">
-                              <h4 className="text-base font-bold text-slate-900 tracking-tighter ">
+                              <h4 className="text-base font-bold text-slate-900 tracking-tighter">
                                 {s.qestnrSj}
                               </h4>
                               <p className="text-xs font-bold text-slate-600 tracking-tight">

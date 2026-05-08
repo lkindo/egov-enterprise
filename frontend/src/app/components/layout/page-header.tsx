@@ -22,7 +22,7 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
     <div className={cn("flex flex-col gap-6 mb-12 animate-in fade-in slide-in-from-left-4 duration-700", className)}>
       {/* Breadcrumb - Premium Styling */}
       {breadcrumbs && (
-        <nav className="flex items-center text-xs md:text-xs font-bold text-muted-foreground/40 gap-1.5 ml-0.5 uppercase tracking-[0.2em]">
+        <nav className="flex items-center text-xs md:text-xs font-bold text-muted-foreground/40 gap-1.5 ml-0.5 tracking-tight">
           <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
             <Home size={12} className="group-hover:scale-110 transition-transform" />
             <span>HOME</span>
@@ -47,7 +47,7 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
       {/* Title and Actions - Hub Style Scaling */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div className="space-y-4 min-w-0">
-           <h1 className="text-3xl md:text-5xl font-[number:var(--font-weight-hub-title)] tracking-[var(--letter-spacing-hub)] text-foreground truncate leading-[1.1]">
+           <h1 className="text-3xl md:text-5xl font-[number:var(--font-weight-hub-title)] tracking-tighter text-foreground truncate leading-[1.1]">
             {title}
           </h1>
           {/* Hub-style premium accent bar */}

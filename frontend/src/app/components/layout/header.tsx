@@ -176,7 +176,7 @@ export function Header({
                     setActiveMenuNo(menu.menuNo);
                   }}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-widest uppercase font-mono transition-all rounded-[var(--radius-hub-item)] gap-2.5",
+                    "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                     isActive
                       ? "bg-slate-900 text-white shadow-xl"
                       : "text-slate-500 hover:text-slate-900 hover:bg-white"
@@ -216,7 +216,7 @@ export function Header({
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
-            aria-label="알림 관리"
+            aria-label="알림"
             className={cn(
               "relative text-muted-foreground transition-all group",
               unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
@@ -241,7 +241,7 @@ export function Header({
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-xs text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                        <span className="text-xs text-slate-600 font-semibold mt-0.5 tracking-tight">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
                       </div>
                       <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
                     </Button>
@@ -253,7 +253,7 @@ export function Header({
                     </div>
                     <div className="space-y-0.5">
                       <Link href="/admin/workspace/my-page" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                        <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
+                        <span className="flex items-center gap-2"><User size={14} /> 마이페이지</span>
                       </Link>
                       <Link href="/admin/system/menus" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
@@ -270,8 +270,8 @@ export function Header({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-widest uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
-                  _ INITIALIZE_AUTH
+                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
+                  로그인
                 </Link>
               )
             )}

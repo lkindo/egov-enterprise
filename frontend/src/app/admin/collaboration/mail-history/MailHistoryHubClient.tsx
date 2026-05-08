@@ -81,19 +81,19 @@ export default function MailHistoryHubClient() {
  <div className="space-y-3">
  <div className="flex items-center gap-3">
  <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
- <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Mail Archive</span>
+ <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Mail Archive</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none transition-colors">
  Dispatch <span className="text-primary">History</span>
  </h1>
- <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest ">
+ <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed tracking-tight ">
  Enterprise mail dispatch logs and transmission status.
  </p>
  </div>
  <div className="flex items-center gap-4">
  <Button 
  onClick={() => router.push('/admin/collaboration/mail-send')}
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> New Dispatch
  </Button>
@@ -108,10 +108,10 @@ export default function MailHistoryHubClient() {
  <div className="hub-glass-premium flex-1 rounded-lg border-2 border-slate-100/50 shadow-2xl overflow-hidden flex flex-col bg-white">
  <div className="p-8 border-b border-slate-100 space-y-6 bg-white/30 backdrop-blur-3xl">
  <div className="flex items-center justify-between">
- <h3 className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase ">
+ <h3 className="text-xs font-bold text-slate-400 tracking-tight ">
  Dispatch Stream
  </h3>
- <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-xs font-bold tracking-widest gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
+ <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-xs font-bold tracking-tight gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
  <RefreshCcw size={12} className="text-primary" /> RELOAD
  </Button>
  </div>
@@ -154,7 +154,7 @@ export default function MailHistoryHubClient() {
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className={cn(
- "text-xs font-bold tracking-widest uppercase font-mono",
+ "text-xs font-bold tracking-tight",
  selectedItemId === mail.mssageId ? "text-primary" : "text-slate-400"
  )}>
  MAIL_PROTOCOL
@@ -166,7 +166,7 @@ export default function MailHistoryHubClient() {
  <h4 className={cn("text-lg font-bold tracking-tighter leading-none truncate max-w-[200px]", selectedItemId === mail.mssageId ? "text-white" : "text-slate-900")}>
  {mail.sj}
  </h4>
- <p className="text-xs font-bold opacity-40 uppercase tracking-widest">To: {mail.recptnPerson}</p>
+ <p className="text-xs font-bold opacity-40 tracking-tight">To: {mail.recptnPerson}</p>
  </div>
  </div>
  <div className="relative z-10">
@@ -183,7 +183,7 @@ export default function MailHistoryHubClient() {
  {mails.length === 0 && (
  <div className="p-20 text-center opacity-20">
  <Mail size={48} className="mx-auto mb-4" />
- <p className="text-xs font-bold uppercase tracking-widest">No Records Found</p>
+ <p className="text-xs font-bold tracking-tight">No Records Found</p>
  </div>
  )}
  </div>
@@ -210,25 +210,25 @@ export default function MailHistoryHubClient() {
  <Sparkles size={24} />
  </div>
  <div className="space-y-1">
- <h2 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none uppercase">Mail Intelligence</h2>
- <p className="text-xs font-bold text-slate-400 tracking-widest uppercase ">ID: {selectedItemId}</p>
+ <h2 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none">Mail Intelligence</h2>
+ <p className="text-xs font-bold text-slate-400 tracking-tight ">ID: {selectedItemId}</p>
  </div>
  </div>
- <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs px-3 py-1.5 rounded-lg uppercase tracking-widest ">Verified Logs</Badge>
+ <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight ">Verified Logs</Badge>
  </div>
  
  <div className="flex-1 overflow-y-auto p-12 space-y-10 scrollbar-hide">
  <div className="space-y-8">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  <div className="space-y-2">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recipient_Node</span>
+ <span className="text-xs font-bold text-slate-400 tracking-tight">Recipient_Node</span>
  <div className="p-4 bg-slate-50 rounded-lg flex items-center gap-3">
  <User size={16} className="text-primary" />
  <span className="text-sm font-bold text-slate-900">{selectedItem?.recptnPerson}</span>
  </div>
  </div>
  <div className="space-y-2">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dispatch_Timestamp</span>
+ <span className="text-xs font-bold text-slate-400 tracking-tight">Dispatch_Timestamp</span>
  <div className="p-4 bg-slate-50 rounded-lg flex items-center gap-3">
  <Clock size={16} className="text-primary" />
  <span className="text-sm font-bold text-slate-900">{selectedItem?.createdDate}</span>
@@ -255,7 +255,7 @@ export default function MailHistoryHubClient() {
  disabled={deleteMailMutation.isPending}
  data-testid="delete-mail-btn"
  variant="outline"
- className="h-11 w-full rounded-lg border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl font-bold tracking-widest text-xs uppercase gap-3"
+ className="h-11 w-full rounded-lg border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl font-bold tracking-tight text-xs gap-3"
  >
  {deleteMailMutation.isPending ? <Loader2 className="animate-spin" /> : (
  <>
@@ -271,10 +271,10 @@ export default function MailHistoryHubClient() {
  <div className="w-32 h-32 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200 group-hover:text-primary/20 transition-all duration-1000 rotate-12 group-hover:rotate-45 mb-10 border-2 border-slate-100 shadow-inner">
  <Layers size={64} />
  </div>
- <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none uppercase opacity-30">
+ <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none opacity-30">
  Select Dispatch Node
  </h3>
- <p className="text-xs mt-6 font-bold tracking-[0.3em] uppercase opacity-20 max-w-xs mx-auto leading-relaxed">
+ <p className="text-xs mt-6 font-bold tracking-tight opacity-20 max-w-xs mx-auto leading-relaxed">
  발신 이력 스트림에서 데이터를 선택하여 상세 전송 프로토콜을 확인하십시오.
  </p>
  </div>
@@ -285,4 +285,3 @@ export default function MailHistoryHubClient() {
  </motion.div>
  );
 }
-

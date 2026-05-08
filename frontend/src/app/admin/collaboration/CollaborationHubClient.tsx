@@ -142,7 +142,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className={cn(
- "text-xs font-bold tracking-widest uppercase font-mono",
+ "text-xs font-bold tracking-tight",
  selectedItemId === note.noteId ? "text-primary" : "text-slate-400"
  )}>
  SECURE_CHANNEL
@@ -154,7 +154,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <h4 className={cn("text-lg font-bold tracking-tighter leading-none", selectedItemId === note.noteId ? "text-white" : "text-slate-900")}>
  {note.noteSj}
  </h4>
- <p className="text-xs font-bold opacity-40 uppercase tracking-widest">From: {note.trnsmitterNm || note.trnsmitterId}</p>
+ <p className="text-xs font-bold opacity-40 tracking-tight">From: {note.trnsmitterNm || note.trnsmitterId}</p>
  </div>
  </div>
  <div className="relative z-10">
@@ -195,14 +195,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-2">
  <span className={cn(
- "text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded bg-primary/10",
+ "text-xs font-bold tracking-tight px-2 py-0.5 rounded bg-primary/10",
  selectedItemId === address.adbkId ? "text-white bg-white/10" : "text-primary"
  )}>
  IDENTITY_NODE
  </span>
  </div>
  <h4 className="text-xl font-bold tracking-tighter leading-none">{address.adbkNm}</h4>
- <p className="text-xs font-bold opacity-40 uppercase tracking-widest">{address.email || 'NO_EMAIL_RECORD'}</p>
+ <p className="text-xs font-bold opacity-40 tracking-tight">{address.email || 'NO_EMAIL_RECORD'}</p>
  </div>
  </div>
  <ArrowUpRight className={cn(
@@ -219,7 +219,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  {scraps.length === 0 ? (
  <div className="p-32 flex flex-col items-center justify-center text-center opacity-30 grayscale grayscale-100">
  <Bookmark size={64} className="mb-6" />
- <p className="text-xs font-bold tracking-[0.5em] uppercase">No Scraps Located in Database</p>
+ <p className="text-xs font-bold tracking-tight">No Scraps Located in Database</p>
  </div>
  ) : (
  scraps.map((scrap: any) => (
@@ -246,7 +246,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className={cn(
- "text-xs font-bold tracking-widest uppercase font-mono px-2 py-0.5 rounded",
+ "text-xs font-bold tracking-tight px-2 py-0.5 rounded",
  selectedItemId === scrap.scrapId ? "bg-white/10 text-white" : "bg-primary/10 text-primary"
  )}>
  KNOWLEDGE_SCRAP
@@ -255,7 +255,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <h4 className={cn("text-lg font-bold tracking-tighter leading-none", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900")}>
  {scrap.scrapNm}
  </h4>
- <p className="text-xs font-bold tracking-tight opacity-40 uppercase">Saved: {scrap.createdDate?.substring(0, 10) || 'N/A'}</p>
+ <p className="text-xs font-bold tracking-tight opacity-40">Saved: {scrap.createdDate?.substring(0, 10) || 'N/A'}</p>
  </div>
  </div>
  </motion.div>
@@ -276,12 +276,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="space-y-3">
  <div className="flex items-center gap-3">
  <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
- <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Collaboration Hub</span>
+ <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Collaboration Hub</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none transition-colors">
  Connect <span className="text-primary">Matrix</span>
  </h1>
- <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest ">
+ <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed tracking-tight">
  Unified communication terminal and organizational network index.
  </p>
  </div>
@@ -289,13 +289,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <Button 
  variant="outline" 
  onClick={() => router.push('/admin/collaboration/mail-send')}
- className="h-11 px-8 rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-widest text-xs uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-3 group"
+ className="h-11 px-8 rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-tight text-xs hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-3 group"
  >
  <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" /> Send Note
  </Button>
  <Button 
  onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')}
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> New Identity
  </Button>
@@ -316,7 +316,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/20 to-transparent border-primary/20 relative overflow-hidden group">
  <Zap size={64} className="text-primary absolute -right-4 -bottom-4 rotate-12 opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all" />
  <div className="space-y-2 relative z-10">
- <h4 className="text-xs font-bold tracking-[0.2em] text-primary uppercase opacity-60">Sync Score</h4>
+ <h4 className="text-xs font-bold tracking-tight text-primary opacity-60">Sync Score</h4>
  <p className="text-5xl font-bold tracking-tighter text-slate-900">99.9%</p>
  <div className="w-full h-1 bg-white/30 rounded-lg mt-4 overflow-hidden">
  <motion.div initial={{ width: 0 }} animate={{ width: '99%' }} transition={{ duration: 2 }} className="h-full bg-primary" />
@@ -330,10 +330,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="hub-glass-premium flex-1 rounded-lg border-2 border-slate-100/50 shadow-2xl overflow-hidden flex flex-col">
  <div className="p-8 border-b border-slate-100 space-y-6 bg-white/30 backdrop-blur-3xl">
  <div className="flex items-center justify-between">
- <h3 className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase ">
+ <h3 className="text-xs font-bold text-slate-400 tracking-tight">
  {activeTab === 'MESSAGES' ? 'Secure Stream' : activeTab === 'ADDRESS_BOOK' ? 'Directory Nodes' : 'Scrap Inventory'}
  </h3>
- <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-xs font-bold tracking-widest gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
+ <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-10 px-4 text-xs font-bold tracking-tight gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg">
  <RefreshCcw size={12} className="text-primary" /> RELOAD
  </Button>
  </div>
@@ -390,11 +390,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <Sparkles size={24} />
  </div>
  <div className="space-y-1">
- <h2 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none uppercase">Intelligence Detail</h2>
- <p className="text-xs font-bold text-slate-400 tracking-widest uppercase ">Node_ID: {selectedItemId}</p>
+ <h2 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none">Intelligence Detail</h2>
+ <p className="text-xs font-bold text-slate-400 tracking-tight">Node_ID: {selectedItemId}</p>
  </div>
  </div>
- <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs px-3 py-1.5 rounded-lg uppercase tracking-widest ">Verified Node</Badge>
+ <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight">Verified Node</Badge>
  </div>
  
  <div className="flex-1 overflow-y-auto p-12 space-y-10 scrollbar-hide">
@@ -404,7 +404,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  </div>
 
  <div className="p-8 border-t border-slate-100 bg-slate-50/50 backdrop-blur-xl flex gap-4">
- <Button className="flex-1 h-11 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase shadow-2xl hover:scale-[1.02] active:scale-95 transition-all gap-3">
+ <Button className="flex-1 h-11 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs shadow-2xl hover:scale-[1.02] active:scale-95 transition-all gap-3">
  <ArrowUpRight size={18} /> Execute Action
  </Button>
  <Button 
@@ -424,10 +424,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
  <div className="w-32 h-32 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200 group-hover:text-primary/20 transition-all duration-1000 rotate-12 group-hover:rotate-45 mb-10 border-2 border-slate-100 shadow-inner">
  <Layers size={64} />
  </div>
- <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none uppercase opacity-30">
+ <h3 className="text-3xl font-bold text-slate-900 tracking-tighter leading-none opacity-30">
  Select Data Node
  </h3>
- <p className="text-xs mt-6 font-bold tracking-[0.3em] uppercase opacity-20 max-w-xs mx-auto leading-relaxed">
+ <p className="text-xs mt-6 font-bold tracking-tight opacity-20 max-w-xs mx-auto leading-relaxed">
  데이터 스트림에서 인텔리전스 노드를 선택하여 상세 프로토콜을 확인하십시오.
  </p>
  </div>
@@ -460,7 +460,7 @@ function NavButton({ icon, label, active, count, onClick, dataTestId }: { icon: 
  )}>
  {icon}
  </div>
- <span className="text-xs font-bold tracking-tighter uppercase">{label}</span>
+ <span className="text-xs font-bold tracking-tighter">{label}</span>
  </div>
  <Badge className={cn(
  "font-bold tabular-nums border-none",
@@ -477,12 +477,12 @@ function NoteDetail({ note }: { note: any }) {
  <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
  <div className="space-y-6">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-400 ">
+ <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-400">
  {note.trnsmitterNm?.charAt(0) || 'U'}
  </div>
  <div>
  <h4 className="text-lg font-bold text-slate-900 leading-none">{note.trnsmitterNm || note.trnsmitterId}</h4>
- <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sender_Identity</p>
+ <p className="text-xs font-bold text-slate-400 tracking-tight mt-1">Sender_Identity</p>
  </div>
  </div>
  <div className="h-px w-full bg-slate-100" />
@@ -518,8 +518,8 @@ function AddressDetail({ address }: { address: any }) {
  {address.adbkNm?.charAt(0)}
  </div>
  <div className="space-y-2">
- <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none uppercase">{address.adbkNm}</h3>
- <p className="text-xs font-bold text-primary uppercase tracking-[0.4em] ">{address.othbcScope === 'P' ? 'GLOBAL_PUBLIC' : 'INTERNAL_ONLY'}</p>
+ <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none">{address.adbkNm}</h3>
+ <p className="text-xs font-bold text-primary tracking-tight">{address.othbcScope === 'P' ? 'GLOBAL_PUBLIC' : 'INTERNAL_ONLY'}</p>
  </div>
  </div>
 
@@ -536,10 +536,10 @@ function AddressDetail({ address }: { address: any }) {
  </div>
  <div>
  <p className="text-sm font-bold text-slate-900 leading-none">VIP Network</p>
- <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Status Protocol</p>
+ <p className="text-xs font-bold text-slate-400 tracking-tight mt-1">Status Protocol</p>
  </div>
  </div>
- <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 uppercase tracking-widest ">ACTIVE</Badge>
+ <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 tracking-tight">ACTIVE</Badge>
  </div>
  </div>
  );
@@ -551,27 +551,27 @@ function ScrapDetail({ scrap }: { scrap: any }) {
  <div className="space-y-4">
  <div className="flex items-center gap-3">
  <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
- <span className="text-xs font-bold text-primary uppercase tracking-widest ">Persistent Knowledge Node</span>
+ <span className="text-xs font-bold text-primary tracking-tight">Persistent Knowledge Node</span>
  </div>
- <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-tight ">
+ <h3 className="text-4xl font-bold text-slate-900 tracking-tighter leading-tight">
  {scrap.scrapNm}
  </h3>
  </div>
 
  <div className="grid grid-cols-2 gap-6">
  <div className="p-8 rounded-lg bg-slate-50 border border-slate-100 shadow-inner space-y-2">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Capture_Date</span>
+ <span className="text-xs font-bold text-slate-400 tracking-tight">Capture_Date</span>
  <p className="text-xl font-bold text-slate-900 tabular-nums">{scrap.createdDate?.substring(0, 10)}</p>
  </div>
  <div className="p-8 rounded-lg bg-slate-50 border border-slate-100 shadow-inner space-y-2">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reference_ID</span>
+ <span className="text-xs font-bold text-slate-400 tracking-tight">Reference_ID</span>
  <p className="text-xl font-bold text-slate-900 tabular-nums">SCR-{scrap.scrapId?.substring(0, 4)}</p>
  </div>
  </div>
 
  <div className="space-y-4">
- <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.4em] px-2">Data_Protocol_View</h4>
- <div className="p-8 rounded-lg bg-slate-900 text-white/90 font-mono text-xs leading-relaxed shadow-2xl relative overflow-hidden group/code">
+ <h4 className="text-xs font-bold text-slate-400 tracking-tight px-2">Data_Protocol_View</h4>
+ <div className="p-8 rounded-lg bg-slate-900 text-white/90 text-xs leading-relaxed shadow-2xl relative overflow-hidden group/code">
  <div className="absolute top-4 right-4 opacity-10 group-hover/code:opacity-30 transition-opacity">
  <Layers size={48} />
  </div>
@@ -600,8 +600,8 @@ function QuoteIcon({ className }: { className?: string }) {
 function CheckBadge() {
  return (
  <div className="flex flex-col items-end">
- <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest leading-none mb-1">Status</span>
- <div className="h-6 px-3 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold text-xs flex items-center gap-1.5 uppercase ">
+ <span className="text-xs font-bold text-emerald-500 tracking-tight leading-none mb-1">Status</span>
+ <div className="h-6 px-3 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold text-xs flex items-center gap-1.5">
  <ShieldCheck size={10} /> Read
  </div>
  </div>
@@ -612,7 +612,7 @@ function DetailBadge({ icon: Icon, label }: { icon: any, label: string }) {
  return (
  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-50 border border-slate-100">
  <Icon size={14} className="text-primary" />
- <span className="text-xs font-bold text-slate-900 uppercase tracking-tight tabular-nums">{label}</span>
+ <span className="text-xs font-bold text-slate-900 tracking-tight tabular-nums">{label}</span>
  </div>
  );
 }
@@ -625,11 +625,10 @@ function InfoRow({ icon: Icon, label, value }: { icon: any, label: string, value
  <Icon size={20} />
  </div>
  <div className="space-y-0.5">
- <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+ <p className="text-xs font-bold text-slate-400 tracking-tight">{label}</p>
  <p className="text-sm font-bold text-slate-900 tracking-tight">{value}</p>
  </div>
  </div>
  </div>
  );
 }
-
