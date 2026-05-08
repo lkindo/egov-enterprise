@@ -68,7 +68,7 @@ export function HubListCard({
       )}
     >
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
-        <h3 className="font-bold text-2xl flex items-center gap-4 tracking-tight">
+        <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
           <div className={cn("w-10 h-10 rounded-[0.1rem] flex items-center justify-center", colorMap[color])}>
             {renderIcon()}
           </div>
@@ -99,12 +99,12 @@ export function HubListCard({
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
+                <span className="text-[10px] font-black text-muted-foreground/40 tracking-tight tabular-nums">
                   {item.date || item.frstRegisterPnttmStr?.split(' ')[0] || '-'}
                 </span>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
               </div>
-              <span className="text-[15px] font-bold text-foreground line-clamp-1 tracking-tight">
+              <span className="text-[15px] font-black text-foreground line-clamp-1 tracking-tight">
                 {item.title || item.nttSj}
               </span>
             </motion.div>
@@ -112,7 +112,7 @@ export function HubListCard({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-bold tracking-tight">데이터가 없습니다.</p>
+            <p className="text-sm font-black tracking-tight">데이터가 없습니다.</p>
           </div>
         )}
       </div>

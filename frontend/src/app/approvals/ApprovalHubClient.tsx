@@ -108,9 +108,9 @@ export default function ApprovalHubClient() {
   const renderApprovalList = () => (
     <div className="space-y-3">
       {list.length === 0 ? (
-        <div className="h-64 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-50 rounded-lg">
+        <div className="h-64 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-50 rounded-2xl">
           <FileText size={40} className="mb-4 opacity-20" />
-          <p className="text-xs font-bold tracking-widest uppercase">No requests found</p>
+          <p className="text-[10px] font-black tracking-widest uppercase">No requests found</p>
         </div>
       ) : (
         list.map((item: Approval) => (
@@ -119,7 +119,7 @@ export default function ApprovalHubClient() {
             layout
             onClick={() => setSelectedItemId(item.approvalId)}
             className={cn(
-              "group p-5 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
+              "group p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
               selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)
                 ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                 : "bg-white border-slate-50 hover:border-primary/20 shadow-sm"
@@ -136,7 +136,7 @@ export default function ApprovalHubClient() {
                   <Button 
                     size="sm"
                     onClick={(e) => handleQuickAction(e, item, 'Y')}
-                    className="h-9 px-4 rounded-lg bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 border-none"
+                    className="h-9 px-4 rounded-xl bg-emerald-500 text-white font-black text-[10px] shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 border-none"
                   >
                     <Check size={14} className="mr-1" /> APPROVE
                   </Button>
@@ -144,7 +144,7 @@ export default function ApprovalHubClient() {
                     size="sm"
                     variant="destructive"
                     onClick={(e) => handleQuickAction(e, item, 'N')}
-                    className="h-9 px-4 rounded-lg font-bold text-xs shadow-lg shadow-rose-500/20 border-none"
+                    className="h-9 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-rose-500/20 border-none"
                   >
                     <X size={14} className="mr-1" /> REJECT
                   </Button>
@@ -161,7 +161,7 @@ export default function ApprovalHubClient() {
 
             <div className="flex items-center gap-5 relative z-10">
               <div className={cn(
-                "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border transition-all",
+                "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all",
                 (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId))
                   ? "bg-primary border-primary/20 text-white rotate-6" 
                   : "bg-slate-50 border-slate-100 text-slate-400 group-hover:rotate-6"
@@ -171,19 +171,19 @@ export default function ApprovalHubClient() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    "text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded",
+                    "text-[8px] font-black tracking-widest uppercase px-2 py-0.5 rounded",
                     (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) 
                         ? "bg-white/10 text-white" 
                         : "bg-slate-100 text-slate-400"
                   )}>
                     {item.jobTypeNm || 'GENERAL_APPROVAL'}
                   </span>
-                  <span className="text-xs font-bold opacity-30 tabular-nums">
+                  <span className="text-[10px] font-black opacity-30 tabular-nums">
                     {item.requestDate?.substring(0, 10)}
                   </span>
                 </div>
                 <h4 className={cn(
-                    "text-sm font-bold tracking-tight leading-none", 
+                    "text-sm font-black tracking-tight leading-none", 
                     (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) ? "text-white" : "text-slate-900"
                 )}>
                   #{item.approvalId}
@@ -191,10 +191,10 @@ export default function ApprovalHubClient() {
               </div>
             </div>
             <div className="relative z-10 flex flex-col items-end gap-1">
-                <Badge variant={item.status === 'Y' ? 'success' : item.status === 'N' ? 'destructive' : 'secondary'} className="text-xs font-bold px-2 py-0">
+                <Badge variant={item.status === 'Y' ? 'success' : item.status === 'N' ? 'destructive' : 'secondary'} className="text-[9px] font-black px-2 py-0">
                     {item.status === 'Y' ? 'APPROVED' : item.status === 'N' ? 'REJECTED' : 'PENDING'}
                 </Badge>
-                <p className="text-xs font-bold opacity-30 uppercase tracking-tight">By: {item.applicantId}</p>
+                <p className="text-[10px] font-bold opacity-30 uppercase tracking-tighter">By: {item.applicantId}</p>
             </div>
           </motion.div>
         ))
@@ -209,16 +209,16 @@ export default function ApprovalHubClient() {
         {/* --- Premium Hub Header --- */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-4">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-12 bg-slate-900 rounded-lg flex items-center justify-center shadow-2xl rotate-3 relative overflow-hidden group">
+            <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center shadow-2xl rotate-3 relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <ShieldCheck size={32} className="text-white relative z-10" />
             </div>
             <div className="space-y-1">
-              <h1 className="text-4xl font-bold text-slate-900 tracking-tight leading-none flex items-center gap-3">
+              <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none flex items-center gap-3">
                 Approval Hub
-                <Badge className="bg-primary/10 text-primary border-none text-xs font-bold tracking-widest px-3 py-1">V5.0_SECURE</Badge>
+                <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black tracking-widest px-3 py-1">V5.0_SECURE</Badge>
               </h1>
-              <div className="flex items-center gap-3 text-xs font-bold text-slate-400 tracking-[0.3em] uppercase">
+              <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase">
                 <span className="flex items-center gap-1"><Zap size={12} className="text-primary" /> Autonomous Logic</span>
                 <span className="w-1 h-1 rounded-full bg-slate-200" />
                 <span>Enterprise Grade Cryptography</span>
@@ -229,7 +229,7 @@ export default function ApprovalHubClient() {
           <div className="flex items-center gap-4">
             <Button 
                 onClick={() => router.push('/approvals/draft')}
-                className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
+                className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
             >
               <Plus size={20} className="group-hover:rotate-90 transition-transform" />
               새 결재 기안
@@ -244,7 +244,7 @@ export default function ApprovalHubClient() {
           <div className="col-span-12 lg:col-span-3 xl:col-span-2 space-y-6">
             <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-white/50">
               <CardHeader className="p-8 pb-4">
-                <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase flex items-center gap-2">
+                <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase flex items-center gap-2">
                   <Layers size={14} className="text-primary" /> Core Queues
                 </CardTitle>
               </CardHeader>
@@ -275,13 +275,13 @@ export default function ApprovalHubClient() {
                 <ShieldCheck size={120} />
               </div>
               <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-widest uppercase">
+                <div className="flex items-center gap-2 text-[9px] font-black text-emerald-400 tracking-widest uppercase">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   Chain Integrity Verified
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-2xl font-bold tracking-tight">99.9% Compliance</h4>
-                  <p className="text-xs text-white/40 font-bold tracking-widest uppercase">Audit Node: KR-SEOUL-01</p>
+                  <h4 className="text-2xl font-black tracking-tighter">99.9% Compliance</h4>
+                  <p className="text-[10px] text-white/40 font-bold tracking-widest uppercase">Audit Node: KR-SEOUL-01</p>
                 </div>
               </div>
             </Card>
@@ -292,17 +292,17 @@ export default function ApprovalHubClient() {
             <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden flex flex-col h-[750px] ring-1 ring-white/50">
               <CardHeader className="p-8 space-y-6 border-b border-white/50">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase">
+                  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">
                     Approval Stream
                   </CardTitle>
-                  <Button variant="ghost" size="icon" className="rounded-lg hover:bg-slate-100">
+                  <Button variant="ghost" size="icon" className="rounded-xl hover:bg-slate-100">
                     <RefreshCcw size={18} className="text-slate-400" />
                   </Button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input 
-                    className="pl-12 h-11 bg-white/50 border-white/20 rounded-lg text-sm font-bold shadow-inner" 
+                    className="pl-12 h-14 bg-white/50 border-white/20 rounded-2xl text-sm font-bold shadow-inner" 
                     placeholder="Search requests..."
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
@@ -333,12 +333,12 @@ export default function ApprovalHubClient() {
                       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                         <div className="space-y-4">
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-slate-900 text-white text-xs font-bold rounded-lg tracking-[0.2em] px-3 py-1 uppercase">
+                            <Badge className="bg-slate-900 text-white text-[9px] font-black rounded-lg tracking-[0.2em] px-3 py-1 uppercase">
                               Intelligence View
                             </Badge>
-                            <span className="text-xs font-bold text-slate-300 font-mono tracking-widest">#{selectedItem.approvalId}</span>
+                            <span className="text-xs font-black text-slate-300 font-mono tracking-widest">#{selectedItem.approvalId}</span>
                           </div>
-                          <h2 className="text-4xl font-bold text-slate-900 tracking-tight leading-none">
+                          <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">
                             {selectedItem.jobTypeNm || 'General Approval Request'}
                           </h2>
                         </div>
@@ -347,14 +347,14 @@ export default function ApprovalHubClient() {
                           <div className="flex gap-4">
                             <Button 
                               onClick={() => handleAction(selectedItem, 'Y')}
-                              className="h-12 px-10 rounded-lg bg-emerald-500 text-white font-bold shadow-2xl shadow-emerald-500/30 hover:bg-emerald-600 hover:-translate-y-1 transition-all gap-2 border-none"
+                              className="h-16 px-10 rounded-2xl bg-emerald-500 text-white font-black shadow-2xl shadow-emerald-500/30 hover:bg-emerald-600 hover:-translate-y-1 transition-all gap-2 border-none"
                             >
                               <Check size={20} /> APPROVE
                             </Button>
                             <Button 
                               variant="destructive"
                               onClick={() => handleAction(selectedItem, 'N')}
-                              className="h-12 px-10 rounded-lg font-bold shadow-2xl shadow-rose-500/30 hover:-translate-y-1 transition-all gap-2 border-none"
+                              className="h-16 px-10 rounded-2xl font-black shadow-2xl shadow-rose-500/30 hover:-translate-y-1 transition-all gap-2 border-none"
                             >
                               <X size={20} /> REJECT
                             </Button>
@@ -362,12 +362,12 @@ export default function ApprovalHubClient() {
                         )}
                       </div>
 
-                      <div className="bg-white rounded-lg p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                      <div className="bg-white rounded-3xl p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-8">
-                          <h4 className="text-xs font-bold text-slate-400 tracking-[0.3em] flex items-center gap-2 uppercase">
+                          <h4 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 uppercase">
                             <Zap size={14} className="text-primary" /> Approval Chain Analysis
                           </h4>
-                          <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-widest">Verified Path</span>
+                          <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-widest">Verified Path</span>
                         </div>
                         <ApprovalStepper steps={workflowSteps} />
                       </div>
@@ -390,10 +390,10 @@ export default function ApprovalHubClient() {
                       </div>
 
                       <div className="space-y-6">
-                        <h4 className="text-xs font-bold text-slate-300 tracking-[0.4em] flex items-center gap-2 uppercase">
+                        <h4 className="text-[10px] font-black text-slate-300 tracking-[0.4em] flex items-center gap-2 uppercase">
                           <Info size={14} className="text-primary" /> Encrypted Payload
                         </h4>
-                        <div className="p-10 bg-slate-50/50 rounded-lg border-2 border-slate-50/50 min-h-[200px] shadow-[inset_0_2px_20px_rgba(0,0,0,0.02)] relative overflow-hidden group">
+                        <div className="p-10 bg-slate-50/50 rounded-3xl border-2 border-slate-50/50 min-h-[200px] shadow-[inset_0_2px_20px_rgba(0,0,0,0.02)] relative overflow-hidden group">
                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
                               <FileText size={100} />
                            </div>
@@ -405,7 +405,7 @@ export default function ApprovalHubClient() {
                     </CardContent>
 
                     <div className="p-8 bg-slate-50/20 border-t border-slate-50 flex items-center justify-center">
-                      <p className="text-xs font-bold text-slate-200 tracking-[1em] uppercase font-mono animate-pulse">
+                      <p className="text-[9px] font-black text-slate-200 tracking-[1em] uppercase font-mono animate-pulse">
                         ENTERPRISE_SECURE_KERNEL_V5.1_SYNC
                       </p>
                     </div>
@@ -413,11 +413,11 @@ export default function ApprovalHubClient() {
                 </motion.div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center p-20 text-center bg-white/40 rounded-[2.5rem] border-4 border-dashed border-slate-100 animate-in fade-in duration-1000">
-                  <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
+                  <div className="w-32 h-32 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
                     <ShieldCheck size={56} className="text-slate-100 group-hover:text-primary transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-300 tracking-tight uppercase mb-4">_ Select Transaction</h3>
-                  <p className="text-xs font-bold text-slate-200 tracking-[0.5em] uppercase">Awaiting cryptographic selection</p>
+                  <h3 className="text-3xl font-black text-slate-300 tracking-tighter uppercase mb-4">_ Select Transaction</h3>
+                  <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase">Awaiting cryptographic selection</p>
                 </div>
               )}
             </AnimatePresence>
@@ -433,19 +433,19 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-5 rounded-lg transition-all flex items-center gap-4 relative overflow-hidden",
+        "w-full group p-5 rounded-2xl transition-all flex items-center gap-4 relative overflow-hidden",
         active
           ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20 scale-[1.02] z-10"
           : "text-slate-500 hover:text-slate-900 hover:bg-white/80"
       )}
     >
       <div className={cn(
-        "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+        "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
         active ? "bg-primary text-white rotate-6" : "bg-slate-50 text-slate-400 group-hover:rotate-6 group-hover:text-primary"
       )}>
         {icon}
       </div>
-      <span className="text-sm font-bold tracking-tight">{label}</span>
+      <span className="text-sm font-black tracking-tight">{label}</span>
       {active && (
         <motion.div 
             layoutId="nav-active"
@@ -460,14 +460,14 @@ function DetailSection({ icon, title, value, desc }: any) {
   return (
     <div className="space-y-4 group">
       <div className="flex items-center gap-3 text-slate-400">
-        <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-primary shadow-sm border border-slate-100 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
+        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-primary shadow-sm border border-slate-100 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
           {icon}
         </div>
-        <span className="text-xs font-bold tracking-[0.3em] uppercase">{title}</span>
+        <span className="text-[10px] font-black tracking-[0.3em] uppercase">{title}</span>
       </div>
       <div className="space-y-1 pl-1">
-        <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
-        <p className="text-xs text-slate-400 font-bold tracking-tight">{desc}</p>
+        <p className="text-2xl font-black text-slate-900 tracking-tighter">{value}</p>
+        <p className="text-[11px] text-slate-400 font-bold tracking-tight">{desc}</p>
       </div>
     </div>
   );

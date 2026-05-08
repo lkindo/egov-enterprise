@@ -78,10 +78,10 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
     { value: 100 - value }
   ];
 
-  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-lg animate-pulse", className)} />;
+  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-xl animate-pulse", className)} />;
 
   return (
-    <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-lg shadow-sm overflow-hidden group", className)}>
+    <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-xl shadow-sm overflow-hidden group", className)}>
       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
       </div>
@@ -106,12 +106,12 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
           </PieChart>
         </SafeResponsiveContainer>
         <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold tracking-tight text-foreground">{Math.round(value)}{unit}</span>
-          <span className="text-xs font-bold text-slate-600 tracking-tight">{title}</span>
+          <span className="text-3xl font-black tracking-tighter text-foreground">{Math.round(value)}{unit}</span>
+          <span className="text-[10px] font-bold text-slate-600 tracking-tight">{title}</span>
         </div>
       </div>
       {value > 90 && (
-        <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive text-xs font-bold rounded-full animate-pulse">
+        <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive text-[10px] font-black rounded-full animate-pulse">
           CRITICAL THRESHOLD
         </div>
       )}
@@ -133,13 +133,13 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="h-20 w-full bg-slate-50 border border-slate-100 rounded-lg animate-pulse" />;
+  if (!mounted) return <div className="h-20 w-full bg-slate-50 border border-slate-100 rounded-xl animate-pulse" />;
 
   return (
-    <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-lg">
+    <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-xl">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-bold text-slate-600 tracking-tight">{label}</span>
-        <span className="text-sm font-bold text-foreground">
+        <span className="text-[10px] font-black text-slate-600 tracking-tight">{label}</span>
+        <span className="text-sm font-black text-foreground">
           {(data || [])[(data || []).length - 1]?.value?.toFixed(1) || '0.0'}%
         </span>
       </div>
@@ -173,8 +173,8 @@ interface RadarProps {
 
 export function SystemStatusRadar({ data, title }: RadarProps) {
  return (
- <div className="p-8 border rounded-lg bg-card shadow-lg flex flex-col items-center">
- <h3 className="text-sm font-bold text-foreground tracking-[0.2em] mb-8">{title}</h3>
+ <div className="p-8 border rounded-xl bg-card shadow-lg flex flex-col items-center">
+ <h3 className="text-sm font-black text-foreground tracking-[0.2em] mb-8">{title}</h3>
  <div className="w-full h-[300px]">
         <SafeResponsiveContainer>
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
@@ -194,8 +194,8 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <div className="mt-4 grid grid-cols-2 gap-4 w-full">
  {(data || []).map((item, idx) => (
  <div key={`radar-item-${idx}`} className="flex flex-col">
- <span className="text-xs font-bold text-slate-600 ">{item.subject}</span>
- <span className="text-sm font-bold">{item?.A || 0}%</span>
+ <span className="text-[9px] font-black text-slate-600 ">{item.subject}</span>
+ <span className="text-sm font-black">{item?.A || 0}%</span>
  </div>
  ))}
  </div>
@@ -223,10 +223,10 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between mb-2 px-2">
-        <h3 className="text-xs font-bold text-slate-600 tracking-[0.3em] uppercase">{title}</h3>
+        <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase">{title}</h3>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-xs font-bold text-slate-700">통계 프로파일</span>
+          <span className="text-[10px] font-bold text-slate-700">통계 프로파일</span>
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
@@ -300,7 +300,7 @@ const DEFAULT_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: DistributionPieChartProps) {
   return (
     <div className="flex flex-col items-center h-full">
-      <h3 className="text-xs font-bold text-slate-600 tracking-[0.3em] uppercase mb-6">{title}</h3>
+      <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase mb-6">{title}</h3>
       <div className="w-full h-full min-h-[220px]">
         <SafeResponsiveContainer>
           <PieChart>
@@ -337,8 +337,8 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
         {(data || []).map((item, index) => (
           <div key={`legend-${index}`} className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: colors[index % colors.length] }} />
-            <span className="text-xs font-bold text-foreground/60 truncate uppercase">{item?.name || 'Unknown'}</span>
-            <span className="text-xs font-bold text-foreground ml-auto">{item?.value || 0}%</span>
+            <span className="text-[10px] font-black text-foreground/60 truncate uppercase">{item?.name || 'Unknown'}</span>
+            <span className="text-[10px] font-black text-foreground ml-auto">{item?.value || 0}%</span>
           </div>
         ))}
       </div>

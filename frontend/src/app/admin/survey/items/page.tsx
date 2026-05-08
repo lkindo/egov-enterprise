@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import React from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -8,16 +8,16 @@ export default function SurveyItemsPage() {
   return (
     <div className="space-y-6 p-8 animate-in fade-in duration-700">
       <PageHeader
-        title="¼³¹® Ç×¸ñ °ü¸®"
-        breadcrumbs={[{ label: '¼³¹®Á¶»ç' }, { label: 'Ç×¸ñ °ü¸®' }]}
+        title="ì„¤ë¬¸ í•­ëª© ê´€ë¦¬"
+        breadcrumbs={[{ label: 'ì„¤ë¬¸ì¡°ì‚¬' }, { label: 'í•­ëª© ê´€ë¦¬' }]}
       />
-      <div className="p-20 text-center bg-white rounded-lg border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
-        <div className="w-20 h-20 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300">
+      <div className="p-20 text-center bg-white rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+        <div className="w-20 h-20 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300">
             <ClipboardList size={40} />
         </div>
         <div className="space-y-2">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900">¼³¹® Ç×¸ñ °ü¸® ÁØºñ Áß</h3>
-            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">º¸´Ù Á÷°üÀûÀÎ ¼³¹® Ç×¸ñ ¼³Á¤À» À§ÇÑ ÀÎÅÍÆäÀÌ½º¸¦ ÁØºñÇÏ°í ÀÖ½À´Ï´Ù.</p>
+            <h3 className="text-xl font-black tracking-tight text-slate-900">ì„¤ë¬¸ í•­ëª© ê´€ë¦¬ ì¤€ë¹„ ì¤‘</h3>
+            <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">ë³´ë‹¤ ì§ê´€ì ì¸ ì„¤ë¬¸ í•­ëª© ì„¤ì •ì„ ìœ„í•œ ì¸í„°í˜ì´ìŠ¤ë¥¼ ì¤€ë¹„í•˜ê³  ìˆìŠµë‹ˆë‹¤.</p>
         </div>
       </div>
     </div>

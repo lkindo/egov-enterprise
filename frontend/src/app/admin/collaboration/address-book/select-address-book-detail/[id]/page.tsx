@@ -42,20 +42,20 @@ const AddressBookDetailPage = () => {
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit border border-slate-100">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-xl w-fit border border-slate-100">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
                     <Home className="w-4 h-4" /> 홈
                 </Link>
                 <ChevronRight className="w-4 h-4" />
                 <Link href="/admin/collaboration/address-book/select-address-book-list" className="hover:text-foreground transition-colors font-medium">주소록 관리</Link>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-bold">신규 등록</span>
+                <span className="text-foreground font-black">신규 등록</span>
             </div>
 
-            <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
+            <Card className="shadow-2xl border-none overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
                 <CardHeader className="border-b bg-slate-50/50 pb-10 pt-10 px-12">
-                    <CardTitle className="text-3xl font-bold tracking-tight flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-lg text-primary">
+                    <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-xl text-primary">
                             <User className="w-8 h-8" />
                         </div>
                         주소록 신규 등록
@@ -67,26 +67,26 @@ const AddressBookDetailPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="adbkNm" className="text-sm font-black flex items-center gap-2 text-slate-500">
                                         <span className="text-destructive">*</span> 성명
                                     </Label>
                                     <Input
                                         id="adbkNm"
                                         placeholder="성명을 입력하세요"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-xl transition-all"
                                         value={formData.adbkNm}
                                         onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <Label htmlFor="telNo" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="telNo" className="text-sm font-black flex items-center gap-2 text-slate-500">
                                         <Phone className="w-4 h-4 opacity-40" /> 전화번호
                                     </Label>
                                     <Input
                                         id="telNo"
                                         placeholder="010-0000-0000"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all font-mono tracking-tight"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-xl transition-all font-mono tracking-tight"
                                         value={formData.telNo}
                                         onChange={(e) => setFormData({ ...formData, telNo: e.target.value })}
                                     />
@@ -95,26 +95,26 @@ const AddressBookDetailPage = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <Label htmlFor="email" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="email" className="text-sm font-black flex items-center gap-2 text-slate-500">
                                         <Mail className="w-4 h-4 opacity-40" /> 이메일 주소
                                     </Label>
                                     <Input
                                         id="email"
                                         type="email"
                                         placeholder="example@egov.go.kr"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-xl transition-all"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <Label htmlFor="adres" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="adres" className="text-sm font-black flex items-center gap-2 text-slate-500">
                                         <MapPin className="w-4 h-4 opacity-40" /> 거주 주소
                                     </Label>
                                     <Input
                                         id="adres"
                                         placeholder="상세 주소를 입력하세요"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-xl transition-all"
                                         value={formData.adres}
                                         onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
                                     />
@@ -122,12 +122,12 @@ const AddressBookDetailPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 bg-slate-900 rounded-lg flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
-                            <div className="p-2 bg-primary/20 rounded-lg text-primary mt-1">
+                        <div className="p-6 bg-slate-900 rounded-xl flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
+                            <div className="p-2 bg-primary/20 rounded-xl text-primary mt-1">
                                 <Info className="w-5 h-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-white font-bold text-sm">정보 보호 안내</p>
+                                <p className="text-white font-black text-sm">정보 보호 안내</p>
                                 <p className="text-slate-400 text-xs font-bold leading-relaxed">
                                     등록된 주소록 연락처는 부서/협업 시스템 내에서 공유 및 관리됩니다. 개인정보 보호 가이드라인을 준수하여 정확한 정보를 기입해 주세요.
                                 </p>
@@ -136,11 +136,11 @@ const AddressBookDetailPage = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-slate-50/30 rounded-b-[2.5rem] mt-10">
                         <Link href="/admin/collaboration/address-book/select-address-book-list">
-                            <Button type="button" variant="ghost" className="h-12 px-10 gap-2 font-bold text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-lg border border-transparent hover:border-rose-50">
+                            <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-xl border border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
                         </Link>
-                        <Button type="submit" className="h-12 px-16 gap-3 font-bold bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-lg" disabled={loading}>
+                        <Button type="submit" className="h-16 px-16 gap-3 font-black bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-xl" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-2 animate-pulse">처리 중...</span>
                             ) : (

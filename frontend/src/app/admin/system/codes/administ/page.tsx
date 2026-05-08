@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+ï»¿import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 
 export const metadata = {
-  title: 'ÇàÁ¤ÄÚµå °ü¸® | ÀüÀÚÁ¤ºÎ Ç¥ÁØÇÁ·¹ÀÓ¿öÅ©',
-  description: '¹ıÁ¤µ¿ ¹× ÇàÁ¤µ¿ ÄÚµå¸¦ °ü¸®ÇÕ´Ï´Ù.',
+  title: 'í–‰ì •ì½”ë“œ ê´€ë¦¬ | ì „ìì •ë¶€ í‘œì¤€í”„ë ˆì„ì›Œí¬',
+  description: 'ë²•ì •ë™ ë° í–‰ì •ë™ ì½”ë“œë¥¼ ê´€ë¦¬í•©ë‹ˆë‹¤.',
 };
 
 export default async function AdministCodePage() {
@@ -18,7 +18,7 @@ export default async function AdministCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-    // º¯¼ö¸í pageNo·Î Á¤±ÔÈ­
+    // ë³€ìˆ˜ëª… pageNoë¡œ ì •ê·œí™”
     initialData = await codeAdminService.getAdministCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
     if (error.response?.status === 401) {
@@ -30,13 +30,13 @@ export default async function AdministCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="ÇàÁ¤ Ç¥ÁØÄÚµå °ü¸®"
-        breadcrumbs={[{ label: '½Ã½ºÅÛ °ü¸®' }, { label: 'ÄÚµå °ü¸®' }, { label: 'ÇàÁ¤ ÄÚµå' }]}
+        title="í–‰ì • í‘œì¤€ì½”ë“œ ê´€ë¦¬"
+        breadcrumbs={[{ label: 'ì‹œìŠ¤í…œ ê´€ë¦¬' }, { label: 'ì½”ë“œ ê´€ë¦¬' }, { label: 'í–‰ì • ì½”ë“œ' }]}
       />
       
       <Suspense fallback={
-        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-lg border-2 border-dashed border-slate-200 animate-pulse">
-            <div className="w-20 h-20 rounded-lg bg-slate-200/50 flex items-center justify-center">
+        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200 animate-pulse">
+            <div className="w-20 h-20 rounded-xl bg-slate-200/50 flex items-center justify-center">
                 <Milestone size={40} className="text-slate-300" />
             </div>
             <div className="space-y-3 text-center">

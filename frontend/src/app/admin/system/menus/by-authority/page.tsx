@@ -16,7 +16,7 @@ export default async function MenuByAuthorityPage() {
   } as any, axiosConfig).catch(() => ({ list: [], total: 0 }));
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse text-slate-400">Loading Authorization Inventory...</div>}>
+    <Suspense fallback={<div className="p-24 text-center font-mono text-[10px] tracking-widest uppercase animate-pulse text-slate-400">Loading Authorization Inventory...</div>}>
       <MenuByAuthorityClient authorsPromise={authorsPromise} />
     </Suspense>
   );

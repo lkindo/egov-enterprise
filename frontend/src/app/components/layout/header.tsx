@@ -141,7 +141,7 @@ export function Header({
       <React.Suspense fallback={null}>
         <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
       </React.Suspense>
-      <div className="flex h-12 items-center px-4 md:px-6 gap-4">
+      <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
         <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 메뉴 열기/닫기">
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
@@ -149,11 +149,11 @@ export function Header({
 
         <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
           <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
-            <span className="text-primary font-bold text-lg">EG</span>
+            <span className="text-primary font-black text-lg">EG</span>
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-xs text-slate-600 font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-[10px] text-slate-600 font-semibold tracking-tight">전자정부 포털</span>
           </div>
         </Link>
 
@@ -176,7 +176,7 @@ export function Header({
                     setActiveMenuNo(menu.menuNo);
                   }}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-widest uppercase font-mono transition-all rounded-[var(--radius-hub-item)] gap-2.5",
+                    "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-black text-[11px] tracking-widest uppercase font-mono transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                     isActive
                       ? "bg-slate-900 text-white shadow-xl"
                       : "text-slate-500 hover:text-slate-900 hover:bg-white"
@@ -224,7 +224,7 @@ export function Header({
           >
             <Bell size={20} className={cn(unreadCount > 0 && "animate-bounce-subtle")} />
             {unreadCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-black text-[9px] shadow-lg">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </Badge>
             )}
@@ -241,7 +241,7 @@ export function Header({
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-xs text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                        <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
                       </div>
                       <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
                     </Button>
@@ -270,7 +270,7 @@ export function Header({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-widest uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
+                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-black text-[11px] tracking-widest uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
                   _ INITIALIZE_AUTH
                 </Link>
               )

@@ -1,17 +1,17 @@
-'use client';
+ï»¿'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 /**
- * Next.js App Router ¿¡·¯ ¹Ù¿î´õ¸® (admin ·¹ÀÌ¾Æ¿ô Àü¿ë)
+ * Next.js App Router ì—ëŸ¬ ë°”ìš´ë”ë¦¬ (admin ë ˆì´ì•„ì›ƒ ì „ìš©)
  * 
- * SSR/CSR ¸ðµÎ¿¡¼­ ¹ß»ýÇÏ´Â ¹ÌÃ³¸® ¿¡·¯¸¦ »ç¿ëÀÚ Ä£È­ÀûÀ¸·Î Ã³¸®ÇÕ´Ï´Ù.
- * - 401: ¼¼¼Ç ¸¸·á ¡æ ·Î±×ÀÎ ¸®´ÙÀÌ·ºÆ® ¾È³»
- * - 403: ±ÇÇÑ ºÎÁ· ¡æ Á¢±Ù Á¦ÇÑ ¾È³»
- * - 404: ¸®¼Ò½º ¾øÀ½ ¡æ ÀÌÀü ÆäÀÌÁö À¯µµ
- * - 500+: ½Ã½ºÅÛ ¿À·ù ¡æ Àç½Ãµµ ¹× ¹®ÀÇ ¾È³»
+ * SSR/CSR ëª¨ë‘ì—ì„œ ë°œìƒí•˜ëŠ” ë¯¸ì²˜ë¦¬ ì—ëŸ¬ë¥¼ ì‚¬ìš©ìž ì¹œí™”ì ìœ¼ë¡œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
+ * - 401: ì„¸ì…˜ ë§Œë£Œ â†’ ë¡œê·¸ì¸ ë¦¬ë‹¤ì´ë ‰íŠ¸ ì•ˆë‚´
+ * - 403: ê¶Œí•œ ë¶€ì¡± â†’ ì ‘ê·¼ ì œí•œ ì•ˆë‚´
+ * - 404: ë¦¬ì†ŒìŠ¤ ì—†ìŒ â†’ ì´ì „ íŽ˜ì´ì§€ ìœ ë„
+ * - 500+: ì‹œìŠ¤í…œ ì˜¤ë¥˜ â†’ ìž¬ì‹œë„ ë° ë¬¸ì˜ ì•ˆë‚´
  */
 export default function AdminError({
   error,
@@ -21,35 +21,35 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // ÇÁ·Î´ö¼Ç È¯°æ¿¡¼­´Â ¿¡·¯ ¸®Æ÷ÆÃ ¼­ºñ½º·Î Àü¼Û
+    // í”„ë¡œë•ì…˜ í™˜ê²½ì—ì„œëŠ” ì—ëŸ¬ ë¦¬í¬íŒ… ì„œë¹„ìŠ¤ë¡œ ì „ì†¡
     console.error('[AdminErrorBoundary]', error);
   }, [error]);
 
-  // ¿¡·¯ ¸Þ½ÃÁö¿¡¼­ HTTP »óÅÂ ÄÚµå ÃßÃâ
+  // ì—ëŸ¬ ë©”ì‹œì§€ì—ì„œ HTTP ìƒíƒœ ì½”ë“œ ì¶”ì¶œ
   const is401 = error.message?.includes('401');
   const is403 = error.message?.includes('403') || error.message?.includes('Forbidden');
   const is404 = error.message?.includes('404') || error.message?.includes('Not Found');
 
-  // ¿¡·¯ À¯Çüº° UI ºÐ±â
+  // ì—ëŸ¬ ìœ í˜•ë³„ UI ë¶„ê¸°
   if (is401) {
     return (
       <ErrorLayout
         icon={<Shield className="w-12 h-12" />}
         iconColor="text-amber-500"
         iconBg="bg-amber-500/10"
-        title="¼¼¼ÇÀÌ ¸¸·áµÇ¾ú½À´Ï´Ù"
-        description="º¸¾ÈÀ» À§ÇØ ÀÏÁ¤ ½Ã°£ µ¿¾È È°µ¿ÀÌ ¾øÀ¸¸é ÀÚµ¿À¸·Î ·Î±×¾Æ¿ôµË´Ï´Ù. ´Ù½Ã ·Î±×ÀÎÇÏ¿© ÀÌ¾î¼­ ÀÛ¾÷ÇÏ¼¼¿ä."
+        title="ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤"
+        description="ë³´ì•ˆì„ ìœ„í•´ ì¼ì • ì‹œê°„ ë™ì•ˆ í™œë™ì´ ì—†ìœ¼ë©´ ìžë™ìœ¼ë¡œ ë¡œê·¸ì•„ì›ƒë©ë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•˜ì—¬ ì´ì–´ì„œ ìž‘ì—…í•˜ì„¸ìš”."
         actions={
           <>
             <ActionButton
               primary
               icon={<Shield size={18} />}
-              label="·Î±×ÀÎ"
+              label="ë¡œê·¸ì¸"
               onClick={() => {
                 window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
               }}
             />
-            <ActionButton icon={<Home size={18} />} label="¸ÞÀÎÀ¸·Î" onClick={() => (window.location.href = '/')} />
+            <ActionButton icon={<Home size={18} />} label="ë©”ì¸ìœ¼ë¡œ" onClick={() => (window.location.href = '/')} />
           </>
         }
       />
@@ -62,12 +62,12 @@ export default function AdminError({
         icon={<Shield className="w-12 h-12" />}
         iconColor="text-red-500"
         iconBg="bg-red-500/10"
-        title="Á¢±Ù ±ÇÇÑÀÌ ¾ø½À´Ï´Ù"
-        description="ÀÌ ÆäÀÌÁö¿¡ Á¢±ÙÇÒ ¼ö ÀÖ´Â ±ÇÇÑÀÌ ºÎ¿©µÇÁö ¾Ê¾Ò½À´Ï´Ù. °ü¸®ÀÚ¿¡°Ô ±ÇÇÑ ¿äÃ»À» ÇÏ½Ã°Å³ª, ´Ù¸¥ ¸Þ´º¸¦ ÀÌ¿ëÇØ ÁÖ¼¼¿ä."
+        title="ì ‘ê·¼ ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤"
+        description="ì´ íŽ˜ì´ì§€ì— ì ‘ê·¼í•  ìˆ˜ ìžˆëŠ” ê¶Œí•œì´ ë¶€ì—¬ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤. ê´€ë¦¬ìžì—ê²Œ ê¶Œí•œ ìš”ì²­ì„ í•˜ì‹œê±°ë‚˜, ë‹¤ë¥¸ ë©”ë‰´ë¥¼ ì´ìš©í•´ ì£¼ì„¸ìš”."
         actions={
           <>
-            <ActionButton primary icon={<ArrowLeft size={18} />} label="ÀÌÀüÀ¸·Î" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="¸ÞÀÎÀ¸·Î" onClick={() => (window.location.href = '/admin')} />
+            <ActionButton primary icon={<ArrowLeft size={18} />} label="ì´ì „ìœ¼ë¡œ" onClick={() => window.history.back()} />
+            <ActionButton icon={<Home size={18} />} label="ë©”ì¸ìœ¼ë¡œ" onClick={() => (window.location.href = '/admin')} />
           </>
         }
       />
@@ -80,30 +80,30 @@ export default function AdminError({
         icon={<Bug className="w-12 h-12" />}
         iconColor="text-slate-400"
         iconBg="bg-slate-100"
-        title="ÆäÀÌÁö¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù"
-        description="¿äÃ»ÇÏ½Å ÆäÀÌÁö°¡ Á¸ÀçÇÏÁö ¾Ê°Å³ª, ÁÖ¼Ò°¡ º¯°æµÇ¾úÀ» ¼ö ÀÖ½À´Ï´Ù. URLÀ» ´Ù½Ã È®ÀÎÇÏ½Ã°Å³ª ÀÌÀü ÆäÀÌÁö·Î µ¹¾Æ°¡ ÁÖ¼¼¿ä."
+        title="íŽ˜ì´ì§€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤"
+        description="ìš”ì²­í•˜ì‹  íŽ˜ì´ì§€ê°€ ì¡´ìž¬í•˜ì§€ ì•Šê±°ë‚˜, ì£¼ì†Œê°€ ë³€ê²½ë˜ì—ˆì„ ìˆ˜ ìžˆìŠµë‹ˆë‹¤. URLì„ ë‹¤ì‹œ í™•ì¸í•˜ì‹œê±°ë‚˜ ì´ì „ íŽ˜ì´ì§€ë¡œ ëŒì•„ê°€ ì£¼ì„¸ìš”."
         actions={
           <>
-            <ActionButton primary icon={<ArrowLeft size={18} />} label="ÀÌÀüÀ¸·Î" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="¸ÞÀÎÀ¸·Î" onClick={() => (window.location.href = '/admin')} />
+            <ActionButton primary icon={<ArrowLeft size={18} />} label="ì´ì „ìœ¼ë¡œ" onClick={() => window.history.back()} />
+            <ActionButton icon={<Home size={18} />} label="ë©”ì¸ìœ¼ë¡œ" onClick={() => (window.location.href = '/admin')} />
           </>
         }
       />
     );
   }
 
-  // ±âº»: ½Ã½ºÅÛ ¿À·ù (500 µî)
+  // ê¸°ë³¸: ì‹œìŠ¤í…œ ì˜¤ë¥˜ (500 ë“±)
   return (
     <ErrorLayout
       icon={<AlertTriangle className="w-12 h-12" />}
       iconColor="text-rose-500"
       iconBg="bg-rose-500/10"
-      title="ÀÏ½ÃÀûÀÎ ¿À·ù°¡ ¹ß»ýÇß½À´Ï´Ù"
-      description="¼­¹ö¿ÍÀÇ Åë½Å Áß ¹®Á¦°¡ ¹ß»ýÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇÏ½Ã°Å³ª, ¹®Á¦°¡ Áö¼ÓµÇ¸é °ü¸®ÀÚ¿¡°Ô ¹®ÀÇÇØ ÁÖ¼¼¿ä."
+      title="ì¼ì‹œì ì¸ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤"
+      description="ì„œë²„ì™€ì˜ í†µì‹  ì¤‘ ë¬¸ì œê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ìž ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•˜ì‹œê±°ë‚˜, ë¬¸ì œê°€ ì§€ì†ë˜ë©´ ê´€ë¦¬ìžì—ê²Œ ë¬¸ì˜í•´ ì£¼ì„¸ìš”."
       actions={
         <>
-          <ActionButton primary icon={<RefreshCcw size={18} />} label="´Ù½Ã ½Ãµµ" onClick={reset} />
-          <ActionButton icon={<Home size={18} />} label="¸ÞÀÎÀ¸·Î" onClick={() => (window.location.href = '/admin')} />
+          <ActionButton primary icon={<RefreshCcw size={18} />} label="ë‹¤ì‹œ ì‹œë„" onClick={reset} />
+          <ActionButton icon={<Home size={18} />} label="ë©”ì¸ìœ¼ë¡œ" onClick={() => (window.location.href = '/admin')} />
         </>
       }
       digest={error.digest}
@@ -111,7 +111,7 @@ export default function AdminError({
   );
 }
 
-/* ¦¡¦¡ °øÅë ·¹ÀÌ¾Æ¿ô ¦¡¦¡ */
+/* â”€â”€ ê³µí†µ ë ˆì´ì•„ì›ƒ â”€â”€ */
 
 function ErrorLayout({
   icon,
@@ -138,13 +138,13 @@ function ErrorLayout({
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="flex flex-col items-center text-center max-w-lg"
       >
-        <div className={`p-6 rounded-lg ${iconBg} ${iconColor} mb-6`}>{icon}</div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">{title}</h2>
+        <div className={`p-6 rounded-2xl ${iconBg} ${iconColor} mb-6`}>{icon}</div>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">{title}</h2>
         <p className="text-slate-500 font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
         {digest && (
           <p className="mt-8 text-xs text-slate-300 font-mono">
-            ÂüÁ¶ ÄÚµå: {digest}
+            ì°¸ì¡° ì½”ë“œ: {digest}
           </p>
         )}
       </motion.div>
@@ -166,7 +166,7 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 ${
+      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 ${
         primary
           ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
           : 'border-2 border-slate-200 text-slate-600 hover:bg-slate-50'

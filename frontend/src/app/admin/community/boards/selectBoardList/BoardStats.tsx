@@ -28,9 +28,9 @@ const trafficData = [
 
 const authorData = [
   { name: '관리자', value: 400 },
-  { name: '?�용?�A', value: 300 },
-  { name: '?�용?�B', value: 200 },
-  { name: '기�?', value: 100 },
+  { name: '사용자A', value: 300 },
+  { name: '사용자B', value: 200 },
+  { name: '기타', value: 100 },
 ];
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
@@ -38,14 +38,14 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
 export function BoardStats() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      {/* ?�래??추이 */}
-      <Card className="lg:col-span-2 border-none shadow-lg rounded-lg overflow-hidden ring-1 ring-slate-100">
+      {/* 트래픽 추이 */}
+      <Card className="lg:col-span-2 border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-8">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
+          <CardTitle className="text-lg font-black flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
-            최근 7???�래??추이
+            최근 7일 트래픽 추이
           </CardTitle>
-          <span className="text-xs font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">?�시�?/span>
+          <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">실시간</span>
         </CardHeader>
         <CardContent className="px-6 pb-6">
           <div className="h-[200px] w-full">
@@ -68,12 +68,12 @@ export function BoardStats() {
         </CardContent>
       </Card>
 
-      {/* ?�성??분포 */}
-      <Card className="border-none shadow-lg rounded-lg overflow-hidden ring-1 ring-slate-100">
+      {/* 작성자 분포 */}
+      <Card className="border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="pb-2 pt-6 px-8">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
+          <CardTitle className="text-lg font-black flex items-center gap-2">
             <Users size={18} className="text-primary" />
-            ?�성??분포
+            작성자 분포
           </CardTitle>
         </CardHeader>
         <CardContent className="px-6 pb-6 flex flex-col items-center">
@@ -101,7 +101,7 @@ export function BoardStats() {
             {authorData.map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-xs font-bold text-muted-foreground">{entry.name}</span>
+                <span className="text-[11px] font-bold text-muted-foreground">{entry.name}</span>
               </div>
             ))}
           </div>

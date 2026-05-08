@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
@@ -53,7 +53,7 @@ export function HubChartCard({
           <div className="flex items-center gap-4">
             {icon && (
               <div className={cn(
-                "w-14 h-11 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-white/10",
+                "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-white/10",
                 color === 'blue' ? "bg-hub-blue/10 text-hub-blue" :
                 color === 'emerald' ? "bg-hub-emerald/10 text-hub-emerald" :
                 color === 'purple' ? "bg-hub-purple/10 text-hub-purple" : "bg-hub-orange/10 text-hub-orange"
@@ -62,7 +62,7 @@ export function HubChartCard({
               </div>
             )}
             <div>
-              <h3 className="text-3xl font-bold tracking-tight text-foreground leading-none uppercase">
+              <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none uppercase">
                 {title}
               </h3>
               {subtitle && (

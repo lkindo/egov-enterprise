@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -31,9 +31,9 @@ const SystemLogAdminPage = () => {
 
     const columns: Column<SysLog>[] = [
         {
-            header: '��ûID',
+            header: '요청ID',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
                     {item.requstId}
                 </div>
@@ -41,7 +41,7 @@ const SystemLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '�߻�����',
+            header: '발생일자',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     {(item as any).occcrrncDe || '-'}
@@ -50,7 +50,7 @@ const SystemLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '���񽺼���',
+            header: '서비스설명',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -59,31 +59,31 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '�޼ҵ��',
+            header: '메소드명',
             accessor: (item: SysLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-xs text-slate-600">
+                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
                         {item.methodNm}
                     </code>
                 </div>
             )
         },
         {
-            header: '����ð�',
+            header: '응답시간',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
                     <span className="text-xs">{item.processTime}</span>
-                    <span className="text-xs text-slate-400 font-medium">ms</span>
+                    <span className="text-[10px] text-slate-400 font-medium">ms</span>
                 </div>
             ),
             className: 'w-24'
         },
         {
-            header: '����',
+            header: '상태',
             accessor: (_item: SysLog) => (
                 <div className="flex items-center justify-center">
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-md border border-emerald-100 uppercase tracking-tight">SUCCESS</span>
+                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
                 </div>
             ),
             className: 'w-24'
@@ -93,19 +93,19 @@ const SystemLogAdminPage = () => {
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
             <PageHeader 
-                title="�ý��� �α�" 
-                breadcrumbs={[{ label: '�ý��۰���' }, { label: '�αװ���' }, { label: '�ý��� �α�' }]} 
+                title="시스템 로그" 
+                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]} 
             />
 
             <HubHeader 
-                title="�ý��� �λ���Ʈ" 
-                highlight="�ý��� �α�" 
-                subtitle="������ �ǽð� ���� ���¿� ��⺰ ���� �̷��� ��Ȯ�ϰ� �����մϴ�." 
+                title="시스템 인사이트" 
+                highlight="시스템 로그" 
+                subtitle="서버의 실시간 동작 상태와 모듈별 수행 이력을 명확하게 추적합니다." 
                 icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-2">
-                            �ǽð� ����͸�
+                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+                            실시간 모니터링
                         </Button>
                     </div>
                 }
@@ -121,7 +121,7 @@ const SystemLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '���񽺼���, ��ûID �˻�..',
+                    placeholder: '서비스설명, 요청ID 검색..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />

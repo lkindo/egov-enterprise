@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -39,28 +39,28 @@ const MOCK_POSTS = [
 
 export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
  return (
- <div className="w-full h-full bg-slate-50 border-2 border-slate-900 rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
+ <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-xl overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
  {/* Browser Bar */}
- <div className="h-10 bg-slate-900 flex items-center px-6 gap-2">
+ <div className="h-12 bg-slate-900 flex items-center px-6 gap-2">
  <div className="w-3 h-3 rounded-full bg-rose-500" />
  <div className="w-3 h-3 rounded-full bg-amber-500" />
  <div className="w-3 h-3 rounded-full bg-emerald-500" />
- <div className="flex-1 ml-4 bg-white/10 h-7 rounded-md flex items-center px-4">
- <span className="text-xs font-bold text-white/40 tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsNm || 'UNNAMED'}</span>
+ <div className="flex-1 ml-4 bg-white/10 h-7 rounded-lg flex items-center px-4">
+ <span className="text-[10px] font-black text-white/40 tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsNm || 'UNNAMED'}</span>
  </div>
  </div>
 
  <div className="flex-1 overflow-auto p-8 space-y-8 bg-white not-">
  {/* Board Header */}
- <div className="space-y-4 border-b-2 border-slate-900 pb-10">
+ <div className="space-y-4 border-b-4 border-slate-900 pb-10">
  <div className="flex justify-between items-end">
  <div className="space-y-2">
- <h1 className="text-2xl font-bold tracking-tight text-slate-900 uppercase leading-none">{bbsNm || 'PREVIEW_BOARD'}</h1>
+ <h1 className="text-4xl font-black tracking-tighter text-slate-900 uppercase leading-none">{bbsNm || 'PREVIEW_BOARD'}</h1>
  <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsIntrcn || 'Board description placeholder...'}</p>
  </div>
  <div className="flex gap-2">
- <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={2} /></div>
- <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xs tracking-tight">WRITE</div>
+ <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
+ <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-black text-[10px] tracking-tighter">WRITE</div>
  </div>
  </div>
  </div>
@@ -76,7 +76,7 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
  </div>
 
  <div className="h-10 bg-slate-100 flex items-center justify-center border-t border-slate-200">
- <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">SYSTEM_PREVIEW_GENERATOR_V1.1_STABLE</span>
+ <span className="text-[8px] font-black text-slate-300 tracking-[0.4em] uppercase">SYSTEM_PREVIEW_GENERATOR_V1.1_STABLE</span>
  </div>
  </div>
  );
@@ -86,19 +86,19 @@ function HubLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-8">
  <div className="grid grid-cols-2 gap-6">
- <div className="col-span-2 p-8 bg-slate-900 rounded-lg text-white relative overflow-hidden group">
+ <div className="col-span-2 p-8 bg-slate-900 rounded-xl text-white relative overflow-hidden group">
  <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-full" />
  <div className="relative z-10 space-y-4">
- <span className="text-xs font-bold tracking-widest text-primary uppercase">FEATURED_KNOWLEDGE</span>
- <h3 className="text-xl font-bold tracking-tight leading-tight">{posts[0].title}</h3>
+ <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">FEATURED_KNOWLEDGE</span>
+ <h3 className="text-2xl font-black tracking-tight leading-tight">{posts[0].title}</h3>
  <div className="flex items-center gap-6 mt-6">
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-white/40 ">BY</span>
- <span className="text-xs font-bold">{posts[0].author}</span>
+ <span className="text-[11px] font-black text-white/40 ">BY</span>
+ <span className="text-[11px] font-black">{posts[0].author}</span>
  </div>
  <div className="flex items-center gap-2 text-white/40">
  <Clock size={12} />
- <span className="text-xs font-bold">1 hour ago</span>
+ <span className="text-[10px] font-bold">1 hour ago</span>
  </div>
  </div>
  </div>
@@ -106,12 +106,12 @@ function HubLayout({ posts }: { posts: any[] }) {
  </div>
  <div className="grid grid-cols-2 gap-6">
  {posts.slice(1).map(post => (
- <div key={post.id} className="p-6 bg-slate-50 rounded-lg border-2 border-slate-100 space-y-4 hover:border-slate-900 transition-all">
- <h4 className="font-bold text-slate-800 text-sm leading-snug truncate-2">{post.title}</h4>
+ <div key={post.id} className="p-6 bg-slate-50 rounded-xl border-2 border-slate-100 space-y-4 hover:border-slate-900 transition-all">
+ <h4 className="font-black text-slate-800 text-sm leading-snug truncate-2">{post.title}</h4>
  <div className="flex justify-between items-center pt-2">
  <div className="flex gap-4">
- <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={12} /> {post.views}</div>
- <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><MessageSquare size={12} /> {post.comments}</div>
+ <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px]"><Eye size={12} /> {post.views}</div>
+ <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px]"><MessageSquare size={12} /> {post.comments}</div>
  </div>
  <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-300">
  <ChevronRight size={14} />
@@ -130,19 +130,19 @@ function ListLayout({ posts }: { posts: any[] }) {
  {posts.map(post => (
  <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-slate-50 hover:bg-slate-50 transition-all group">
  <div className="flex-1 flex items-center gap-8">
- <span className="text-xs font-bold text-slate-300 w-10">0{post.id}</span>
+ <span className="text-[10px] font-black text-slate-300 w-10">0{post.id}</span>
  <div className="flex-1">
- <h4 className="text-sm font-bold text-slate-800 tracking-tight group-hover:text-primary transition-colors">{post.title}</h4>
+ <h4 className="text-sm font-black text-slate-800 tracking-tight group-hover:text-primary transition-colors">{post.title}</h4>
  <div className="flex items-center gap-4 mt-1">
- <span className="text-xs font-bold text-slate-400">{post.author}</span>
- <span className="text-xs font-medium text-slate-400 opacity-50 underline decoration-slate-200">#Enterprise</span>
+ <span className="text-[10px] font-bold text-slate-400">{post.author}</span>
+ <span className="text-[10px] font-medium text-slate-400 opacity-50 underline decoration-slate-200">#Enterprise</span>
  </div>
  </div>
  </div>
  <div className="flex items-center gap-8">
  <div className="text-right">
- <p className="text-xs font-bold text-slate-400">{post.date}</p>
- <p className="text-xs font-bold text-slate-300">PUBLIC_CONTENT</p>
+ <p className="text-[10px] font-black text-slate-400">{post.date}</p>
+ <p className="text-[9px] font-bold text-slate-300">PUBLIC_CONTENT</p>
  </div>
  <MoreHorizontal size={16} className="text-slate-200" />
  </div>
@@ -156,17 +156,17 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  return (
  <div className="grid grid-cols-1 gap-8">
  {posts.map(post => (
- <div key={post.id} className="group overflow-hidden rounded-lg bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+ <div key={post.id} className="group overflow-hidden rounded-xl bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-48 overflow-hidden relative">
  <img src={post.image} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" />
- <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-full text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
+ <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-full text-white text-[8px] font-black tracking-widest uppercase">INSIGHT</div>
  </div>
  <div className="p-8 space-y-6">
- <h4 className="text-lg font-bold text-slate-900 tracking-tight leading-snug">{post.title}</h4>
+ <h4 className="text-xl font-black text-slate-900 tracking-tighter leading-snug">{post.title}</h4>
  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-xs ">OP</div>
- <span className="text-xs font-bold text-slate-700">{post.author}</span>
+ <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white font-black text-[9px] ">OP</div>
+ <span className="text-xs font-black text-slate-700">{post.author}</span>
  </div>
  <div className="flex gap-4">
  <Share2 size={14} className="text-slate-300" />
@@ -184,23 +184,23 @@ function QnaLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-4">
  {posts.map((post, idx) => (
- <div key={post.id} className="p-6 bg-white border-2 border-slate-100 rounded-lg flex gap-6 hover:border-amber-500 transition-all group">
+ <div key={post.id} className="p-6 bg-white border-2 border-slate-100 rounded-xl flex gap-6 hover:border-amber-500 transition-all group">
  <div className="flex flex-col items-center gap-1 min-w-[60px]">
  <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shadow-inner",
+ "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl shadow-inner",
  idx === 0 ? "bg-amber-100 text-amber-600 border-2 border-amber-200" : "bg-slate-50 text-slate-300 border border-slate-100"
  )}>
- {idx === 0 ? <CheckCircle2 size={20} /> : '?' }
+ {idx === 0 ? <CheckCircle2 size={24} /> : '?' }
  </div>
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{idx === 0 ? 'Solved' : 'Open'}</span>
+ <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx === 0 ? 'Solved' : 'Open'}</span>
  </div>
  <div className="flex-1 space-y-2">
  <div className="flex items-center gap-3">
- <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none text-xs font-bold">TECH_SUPPORT</Badge>
- <span className="text-xs font-bold text-slate-300 ">{post.date}</span>
+ <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none text-[9px] font-black">TECH_SUPPORT</Badge>
+ <span className="text-[10px] font-bold text-slate-300 ">{post.date}</span>
  </div>
- <h4 className="text-base font-bold text-slate-800 leading-tight group-hover:text-amber-600 transition-colors uppercase tracking-tight">{post.title}</h4>
- <div className="flex items-center gap-4 text-slate-400 font-bold text-xs">
+ <h4 className="text-lg font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors uppercase tracking-tighter">{post.title}</h4>
+ <div className="flex items-center gap-4 text-slate-400 font-bold text-[10px]">
  <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
  <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments} Answers</span>
  </div>
@@ -215,22 +215,22 @@ function FaqLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-4">
  {posts.slice(0, 3).map((post, idx) => (
- <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-lg hover:border-purple-500 transition-all group">
+ <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-xl hover:border-purple-500 transition-all group">
  <div className="p-6 flex items-center justify-between">
  <div className="flex items-center gap-6">
  <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg transition-all",
+ "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition-all",
  idx === 0 ? "bg-purple-500 text-white shadow-lg" : "bg-slate-100 text-slate-400"
  )}>
  Q
  </div>
- <h4 className="font-bold text-slate-800 text-base uppercase tracking-tight ">{post.title}</h4>
+ <h4 className="font-black text-slate-800 text-lg uppercase tracking-tight ">{post.title}</h4>
  </div>
- <ChevronDown className="w-5 h-5 text-slate-300" />
+ <ChevronDown className="w-6 h-6 text-slate-300" />
  </div>
  {idx === 0 && (
  <div className="px-24 pb-10">
- <div className="p-8 bg-slate-50 rounded-lg border-l-8 border-purple-500 text-slate-600 font-medium leading-relaxed">
+ <div className="p-8 bg-slate-50 rounded-xl border-l-8 border-purple-500 text-slate-600 font-medium leading-relaxed">
  {post.content}
  </div>
  </div>
@@ -245,14 +245,14 @@ function WikiLayout({ posts }: { posts: any[] }) {
  return (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {posts.map((post, idx) => (
- <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-lg">
+ <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-xl">
  <div className="flex">
  <div className="w-16 bg-slate-50 flex items-center justify-center shrink-0 border-r border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
  <Book size={24} className="opacity-40" />
  </div>
  <div className="p-8 space-y-4">
- <h4 className="text-lg font-bold text-slate-800 uppercase tracking-tight group-hover:text-primary transition-colors">{post.title}</h4>
- <p className="text-xs text-slate-400 font-bold tracking-widest uppercase">Last modified by {post.author}</p>
+ <h4 className="text-xl font-black text-slate-800 uppercase tracking-tighter group-hover:text-primary transition-colors">{post.title}</h4>
+ <p className="text-sm text-slate-400 font-black tracking-widest uppercase">Last modified by {post.author}</p>
  </div>
  </div>
  </Card>
@@ -265,33 +265,33 @@ function CalendarLayout({ posts }: { posts: any[] }) {
  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // Simple offset for preview
  return (
  <div className="space-y-6">
- <div className="flex justify-between items-center bg-slate-50 p-6 rounded-lg border-2 border-slate-100">
- <h4 className="text-lg font-bold tracking-tight text-slate-900 uppercase">May 2024</h4>
+ <div className="flex justify-between items-center bg-slate-50 p-6 rounded-xl border-2 border-slate-100">
+ <h4 className="text-xl font-black tracking-tighter text-slate-900 uppercase">May 2024</h4>
  <div className="flex gap-2">
- <div className="w-8 h-8 rounded-md border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight className="rotate-180" size={16} /></div>
- <div className="w-8 h-8 rounded-md border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight size={16} /></div>
+ <div className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight className="rotate-180" size={16} /></div>
+ <div className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight size={16} /></div>
  </div>
  </div>
  <div className="grid grid-cols-7 gap-2">
  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
- <div key={d} className="text-xs font-bold text-slate-300 text-center pb-2 tracking-widest">{d}</div>
+ <div key={d} className="text-[10px] font-black text-slate-300 text-center pb-2 tracking-widest">{d}</div>
  ))}
  {days.map((day, i) => (
  <div key={i} className={cn(
- "h-24 p-2 border-2 border-slate-50 rounded-lg transition-all relative group overflow-hidden",
+ "h-24 p-2 border-2 border-slate-50 rounded-xl transition-all relative group overflow-hidden",
  day === 20 ? "bg-primary/5 border-primary/20" : "bg-white",
  day <= 0 || day > 31 ? "opacity-10" : "hover:border-slate-900"
  )}>
- <span className={cn("text-xs font-bold", day === 20 ? "text-primary" : "text-slate-300")}>
+ <span className={cn("text-xs font-black", day === 20 ? "text-primary" : "text-slate-300")}>
  {day > 0 && day <= 31 ? day : ''}
  </span>
  {day === 20 && (
- <div className="mt-2 p-1.5 bg-primary text-white text-xs font-bold leading-tight rounded-sm shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-2">
+ <div className="mt-2 p-1.5 bg-primary text-white text-[8px] font-black leading-tight rounded-sm shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-2">
  EGOV_TECH_SEMINAR_4.0
  </div>
  )}
  {day === 21 && (
- <div className="mt-1 p-1.5 bg-slate-900 text-white text-xs font-bold leading-tight rounded-sm opacity-40">
+ <div className="mt-1 p-1.5 bg-slate-900 text-white text-[8px] font-black leading-tight rounded-sm opacity-40">
  MAINTENANCE_LOG
  </div>
  )}

@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -54,7 +54,7 @@ export default function EventManagementClient() {
  const createMutation = useMutation({
  mutationFn: (data: Partial<EventInfo>) => eventService.createEvent(data),
  onSuccess: () => {
- toast('Çà»ç°¡ ¼º°øÀûÀ¸·Î »ı¼ºµÇ¾ú½À´Ï´Ù.', 'success');
+ toast('í–‰ì‚¬ê°€ ì„±ê³µì ìœ¼ë¡œ ìƒì„±ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
  queryClient.invalidateQueries({ queryKey: ['events-list'] });
  setIsCreateModalOpen(false);
  setForm({
@@ -68,18 +68,18 @@ export default function EventManagementClient() {
  });
  },
  onError: () => {
- toast('Çà»ç »ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.', 'error');
+ toast('í–‰ì‚¬ ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.', 'error');
  }
  });
 
  const deleteMutation = useMutation({
  mutationFn: (eventId: string) => eventService.deleteEvent(eventId),
  onSuccess: () => {
- toast('Çà»ç°¡ ¼º°øÀûÀ¸·Î »èÁ¦µÇ¾ú½À´Ï´Ù.', 'success');
+ toast('í–‰ì‚¬ê°€ ì„±ê³µì ìœ¼ë¡œ ì‚­ì œë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
  queryClient.invalidateQueries({ queryKey: ['events-list'] });
  },
  onError: () => {
- toast('Çà»ç »èÁ¦¿¡ ½ÇÆĞÇß½À´Ï´Ù.', 'error');
+ toast('í–‰ì‚¬ ì‚­ì œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.', 'error');
  }
  });
 
@@ -89,7 +89,7 @@ export default function EventManagementClient() {
  };
 
  const handleDelete = (eventId: string) => {
- if (confirm('Á¤¸» ÀÌ Çà»ç¸¦ »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?')) {
+ if (confirm('ì •ë§ ì´ í–‰ì‚¬ë¥¼ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?')) {
  deleteMutation.mutate(eventId);
  }
  };
@@ -100,19 +100,19 @@ export default function EventManagementClient() {
  header: 'EVENT_UNIT',
  accessor: (event) => (
  <div className="flex items-center gap-8 py-2">
- <div className="w-14 h-11 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
- <span className="text-xs font-bold text-slate-400 leading-none">Çà»ç</span>
- <span className="text-xl font-bold text-slate-800 leading-none mt-1 group-hover:text-primary tracking-tight transition-colors tabular-nums">{event.psncpa}</span>
+ <div className="w-14 h-14 rounded-xl bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
+ <span className="text-[10px] font-black text-slate-400 leading-none">í–‰ì‚¬</span>
+ <span className="text-xl font-black text-slate-800 leading-none mt-1 group-hover:text-primary tracking-tighter transition-colors tabular-nums">{event.psncpa}</span>
  </div>
  <div className="space-y-1 min-w-0">
  <div className="flex items-center gap-3">
- <span className="text-xs font-bold text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">½ÅÃ» ÁøÇà Áß</span>
- <span className="text-xs font-bold text-slate-300 tracking-tight">{event.rceptBeginDe} ~ {event.rceptEndDe}</span>
+ <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">ì‹ ì²­ ì§„í–‰ ì¤‘</span>
+ <span className="text-[9px] font-bold text-slate-300 tracking-tighter">{event.rceptBeginDe} ~ {event.rceptEndDe}</span>
  </div>
- <h3 className="text-lg font-bold text-slate-900 tracking-tight truncate leading-tight group-hover:text-primary transition-colors">{event.eventNm}</h3>
+ <h3 className="text-lg font-black text-slate-900 tracking-tighter truncate leading-tight group-hover:text-primary transition-colors">{event.eventNm}</h3>
  <div className="flex items-center gap-4 opacity-40">
- <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-xs font-bold">Âü¿©Á¤¿ø: {event.psncpa}¸í</span></div>
- <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-xs font-bold">¿ÀÇÁ¶óÀÎ ÄÁÆÛ·±½º</span></div>
+ <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-[10px] font-bold">ì°¸ì—¬ì •ì›: {event.psncpa}ëª…</span></div>
+ <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-[10px] font-bold">ì˜¤í”„ë¼ì¸ ì»¨í¼ëŸ°ìŠ¤</span></div>
  </div>
  </div>
  </div>
@@ -128,7 +128,7 @@ export default function EventManagementClient() {
  size="icon" 
  data-testid="delete-event-btn"
  onClick={() => handleDelete(event.eventId)}
- className="w-10 h-10 rounded-lg group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors"
+ className="w-10 h-10 rounded-xl group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors"
  >
  <Trash2 size={16} />
  </Button>
@@ -140,20 +140,20 @@ export default function EventManagementClient() {
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <HubHeader 
- title="Çà»ç ¿î¿µ ¼¾ÅÍ" 
+ title="í–‰ì‚¬ ìš´ì˜ ì„¼í„°" 
  highlight="Event Ops" 
- subtitle="»ç³» ¿£ÅÍÇÁ¶óÀÌÁî ÅëÇÕ Çà»ç ¹× Ä·ÆäÀÎ °ü¸® ¸ÅÆ®¸¯½ºÀÔ´Ï´Ù. ¸ğµç ÀÌº¥Æ® È°µ¿À» ¸ğ´ÏÅÍ¸µÇÏ°í Á¦¾îÇÏ½Ê½Ã¿À." 
+ subtitle="ì‚¬ë‚´ ì—”í„°í”„ë¼ì´ì¦ˆ í†µí•© í–‰ì‚¬ ë° ìº í˜ì¸ ê´€ë¦¬ ë§¤íŠ¸ë¦­ìŠ¤ì…ë‹ˆë‹¤. ëª¨ë“  ì´ë²¤íŠ¸ í™œë™ì„ ëª¨ë‹ˆí„°ë§í•˜ê³  ì œì–´í•˜ì‹­ì‹œì˜¤." 
  icon={Calendar} 
  actions={
  <div className="flex gap-4">
- <Button className="h-11 px-8 rounded-lg bg-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
- <History size={18} /> ¾ÆÄ«ÀÌºê º¸±â
+ <Button className="h-14 px-8 rounded-xl bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+ <History size={18} /> ì•„ì¹´ì´ë¸Œ ë³´ê¸°
  </Button>
  <Button 
  onClick={() => setIsCreateModalOpen(true)}
- className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20"
+ className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20"
  >
- <Plus size={18} /> Çà»ç ½Å±Ô »ı¼º
+ <Plus size={18} /> í–‰ì‚¬ ì‹ ê·œ ìƒì„±
  </Button>
  </div>
  }
@@ -165,7 +165,7 @@ export default function EventManagementClient() {
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 h-full">
  <HubSectionCard 
  title="Global Event Matrix" 
- description="Àü¿ªÀûÀ¸·Î ¼³Á¤µÈ Çà»ç È°µ¿ ¹× Ä·ÆäÀÎ ÅÂ±× ½ºÆ®¸²ÀÔ´Ï´Ù." 
+ description="ì „ì—­ì ìœ¼ë¡œ ì„¤ì •ëœ í–‰ì‚¬ í™œë™ ë° ìº í˜ì¸ íƒœê·¸ ìŠ¤íŠ¸ë¦¼ì…ë‹ˆë‹¤." 
  icon={LayoutGrid}
  >
  <div className="space-y-8">
@@ -175,8 +175,8 @@ export default function EventManagementClient() {
  <Input 
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 bg-slate-50 border-none rounded-lg pl-14 font-bold tracking-tight text-sm shadow-inner" 
- placeholder="Çà»ç ÅÂ±× °Ë»ö.." 
+ className="h-14 bg-slate-50 border-none rounded-xl pl-14 font-black tracking-tight text-sm shadow-inner" 
+ placeholder="í–‰ì‚¬ íƒœê·¸ ê²€ìƒ‰.." 
  />
  </div>
  </div>
@@ -185,7 +185,7 @@ export default function EventManagementClient() {
  columns={eventColumns as any}
  data={displayItems as any}
  loading={isLoading}
- emptyMessage="½Äº°µÈ µ¥ÀÌÅÍ À¯´ÖÀÌ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù."
+ emptyMessage="ì‹ë³„ëœ ë°ì´í„° ìœ ë‹›ì´ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤."
  keyField="eventId"
  isPremium={false}
  className="bg-transparent border-none shadow-none"
@@ -201,21 +201,21 @@ export default function EventManagementClient() {
 
  {/* Radar Map (Visual Stats) */}
  <div className="col-span-12 lg:col-span-4 relative group lg:sticky lg:top-8 h-fit">
- <Card className="rounded-lg border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
+ <Card className="rounded-xl border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-rose-500/5 pointer-events-none opacity-40 animate-pulse" />
  <div className="relative z-10 space-y-8">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-400" />
- <span className="text-xs font-bold tracking-widest text-emerald-400/80 uppercase">Live Operations</span>
+ <span className="text-[10px] font-black tracking-widest text-emerald-400/80 uppercase">Live Operations</span>
  </div>
  <Settings2 size={20} className="text-white/20 group-hover:text-primary transition-colors cursor-pointer" />
  </div>
  <div className="space-y-2">
- <h1 className="text-6xl font-bold tracking-tight tabular-nums text-white group-hover:text-primary transition-colors">
+ <h1 className="text-6xl font-black tracking-tighter tabular-nums text-white group-hover:text-primary transition-colors">
  {totalItems}
  </h1>
- <p className="text-xs font-bold text-white/40 tracking-[0.5em] uppercase">µî·ÏµÈ Àü¿ª Çà»ç À¯´Ö (Active Units)</p>
+ <p className="text-[10px] font-black text-white/40 tracking-[0.5em] uppercase">ë“±ë¡ëœ ì „ì—­ í–‰ì‚¬ ìœ ë‹› (Active Units)</p>
  </div>
  </div>
  
@@ -226,10 +226,10 @@ export default function EventManagementClient() {
  <Calendar size={48} className="text-white group-hover:rotate-12 transition-transform" />
  </div>
 
- <div className="relative z-10 p-6 bg-white/5 rounded-lg backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
+ <div className="relative z-10 p-6 bg-white/5 rounded-xl backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
  <div className="text-left space-y-1">
- <span className="text-xs font-bold opacity-40">Âü¿© Áö¼ö</span>
- <p className="text-xl font-bold tracking-tight">ELITE GRADE</p>
+ <span className="text-[10px] font-black opacity-40">ì°¸ì—¬ ì§€ìˆ˜</span>
+ <p className="text-xl font-black tracking-tighter">ELITE GRADE</p>
  </div>
  <div className="h-12 w-1 bg-primary rounded-full group-hover:scale-y-150 transition-transform" />
  </div>
@@ -239,97 +239,97 @@ export default function EventManagementClient() {
 
  {/* 3. Detailed Stats Matrix (Insights) */}
  <div className="grid grid-cols-1 md:grid-cols-4 gap-10 px-2 lg:mt-10">
- <InsightCard label="Total Attendance" value="1.2M+" desc="Àü°í ´ëºñ 15% »ó½Â" trend="+4.5%" type="primary" />
- <InsightCard label="System Heatmap" value="CRITICAL" desc="Âü¿© ¹ĞÁıµµ ³ôÀº ±¸¿ª" trend="HIGH" type="rose" />
- <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="ºĞ±âº° °èÈ¹ Á¤»ó µ¿ÀÛ" trend="OK" type="emerald" />
- <InsightCard label="Network Assets" value="2.4k" desc="¿¬µ¿µÈ ³»ºÎ Á¤º¸ À¯´Ö" trend="+20" type="amber" />
+ <InsightCard label="Total Attendance" value="1.2M+" desc="ì „ê³  ëŒ€ë¹„ 15% ìƒìŠ¹" trend="+4.5%" type="primary" />
+ <InsightCard label="System Heatmap" value="CRITICAL" desc="ì°¸ì—¬ ë°€ì§‘ë„ ë†’ì€ êµ¬ì—­" trend="HIGH" type="rose" />
+ <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="ë¶„ê¸°ë³„ ê³„íš ì •ìƒ ë™ì‘" trend="OK" type="emerald" />
+ <InsightCard label="Network Assets" value="2.4k" desc="ì—°ë™ëœ ë‚´ë¶€ ì •ë³´ ìœ ë‹›" trend="+20" type="amber" />
  </div>
  
  {/* Creation Modal */}
  <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
- <DialogContent className="max-w-2xl bg-white rounded-lg border-none shadow-2xl p-0 overflow-hidden">
+ <DialogContent className="max-w-2xl bg-white rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
  <div className="bg-slate-900 p-8 text-white">
  <DialogHeader>
- <DialogTitle className="text-2xl font-bold tracking-tight uppercase">Dispatch New Event</DialogTitle>
- <DialogDescription className="text-white/40 text-xs font-bold tracking-[0.2em] uppercase">Enterprise Event Protocol v1.0</DialogDescription>
+ <DialogTitle className="text-2xl font-black tracking-tighter uppercase">Dispatch New Event</DialogTitle>
+ <DialogDescription className="text-white/40 text-[10px] font-bold tracking-[0.2em] uppercase">Enterprise Event Protocol v1.0</DialogDescription>
  </DialogHeader>
  </div>
  <form onSubmit={handleSubmit} className="p-8 space-y-8">
  <div className="grid grid-cols-2 gap-8">
  <div className="col-span-2 space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Event_Name</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Event_Name</Label>
  <Input 
  value={form.eventNm}
  onChange={(e) => setForm({...form, eventNm: e.target.value})}
- placeholder="Çà»ç ¸íÄªÀ» ÀÔ·ÂÇÏ½Ê½Ã¿À"
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ placeholder="í–‰ì‚¬ ëª…ì¹­ì„ ì…ë ¥í•˜ì‹­ì‹œì˜¤"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="col-span-2 space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Detailed_Description</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detailed_Description</Label>
  <Input 
  value={form.eventCn}
  onChange={(e) => setForm({...form, eventCn: e.target.value})}
- placeholder="»ó¼¼ ³»¿ëÀ» ÀÔ·ÂÇÏ½Ê½Ã¿À"
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ placeholder="ìƒì„¸ ë‚´ìš©ì„ ì…ë ¥í•˜ì‹­ì‹œì˜¤"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Start_Date</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start_Date</Label>
  <Input 
  type="date"
  value={form.eventBeginDe}
  onChange={(e) => setForm({...form, eventBeginDe: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">End_Date</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End_Date</Label>
  <Input 
  type="date"
  value={form.eventEndDe}
  onChange={(e) => setForm({...form, eventEndDe: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Capacity (PSNCPA)</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity (PSNCPA)</Label>
  <Input 
  type="number"
  value={form.psncpa}
  onChange={(e) => setForm({...form, psncpa: parseInt(e.target.value)})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
  <Input 
  type="date"
  value={form.rceptBeginDe}
  onChange={(e) => setForm({...form, rceptBeginDe: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
+ <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
  <Input 
  type="date"
  value={form.rceptEndDe}
  onChange={(e) => setForm({...form, rceptEndDe: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
  required
  />
  </div>
  </div>
  <DialogFooter className="pt-8 border-t border-slate-50">
- <Button type="button" variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="h-11 px-8 font-bold text-xs uppercase tracking-widest">Abort</Button>
- <Button type="submit" disabled={createMutation.isPending} className="h-11 px-10 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
+ <Button type="button" variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="h-14 px-8 font-black text-[10px] uppercase tracking-widest">Abort</Button>
+ <Button type="submit" disabled={createMutation.isPending} className="h-14 px-10 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
  {createMutation.isPending ? 'Syncing...' : <><Zap size={16} /> Deploy Protocol</>}
  </Button>
  </DialogFooter>
@@ -352,17 +352,17 @@ function InsightCard({ label, value, desc, trend, type }: any) {
 
  return (
  <Card className={cn(
- "rounded-lg border-2 bg-white p-10 space-y-6 transition-all hover:ring-[25px] flex flex-col justify-between shadow-xl", 
+ "rounded-xl border-2 bg-white p-10 space-y-6 transition-all hover:ring-[25px] flex flex-col justify-between shadow-xl", 
  colorMap[type]
  )}>
  <div className="space-y-1">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</span>
- <h4 className={cn("text-3xl font-bold tracking-tight leading-none", colorMap[type])}>{value}</h4>
+ <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+ <h4 className={cn("text-3xl font-black tracking-tighter leading-none", colorMap[type])}>{value}</h4>
  </div>
  <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
  <div className="space-y-0.5">
- <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">{desc}</p>
- <span className={cn("text-xs font-bold tracking-widest uppercase", colorMap[type])}>{trend} SIGNALS</span>
+ <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{desc}</p>
+ <span className={cn("text-[10px] font-black tracking-widest uppercase", colorMap[type])}>{trend} SIGNALS</span>
  </div>
  <Activity size={24} className="opacity-20" />
  </div>

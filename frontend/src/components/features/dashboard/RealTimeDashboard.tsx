@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
@@ -169,7 +169,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
                           <span className="font-bold">{notification.title}</span>
                         </div>
                         <p className="text-muted-foreground">{notification.message}</p>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground">
                           {new Date(notification.timestamp).toLocaleString()}
                         </span>
                       </div>
@@ -236,13 +236,13 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }
             {icon}
           </div>
           {trend && (
-            <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-1 rounded">
+            <span className="text-[10px] font-black text-muted-foreground bg-muted px-2 py-1 rounded">
               {trend}
             </span>
           )}
         </div>
-        <h4 className="text-2xl font-bold text-foreground">{value?.toLocaleString() ?? 0}</h4>
-        <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1">
+        <h4 className="text-2xl font-black text-foreground">{value?.toLocaleString() ?? 0}</h4>
+        <p className="text-[10px] font-black text-muted-foreground tracking-tight mt-1">
           {title}
         </p>
       </CardContent>

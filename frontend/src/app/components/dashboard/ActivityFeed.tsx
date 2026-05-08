@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MessageSquare, UserPlus, FileText, CheckCircle2, Clock } from 'lucide-react';
@@ -50,7 +50,7 @@ export function ActivityFeed() {
             <p className="text-sm font-medium text-primary hover:underline cursor-pointer">
               {activity.target}
             </p>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
               <Clock size={10} />
               {activity.time}
             </div>

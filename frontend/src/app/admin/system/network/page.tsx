@@ -4,8 +4,8 @@ import { networkAdminService, Network } from '@/services/foundation/system/Netwo
 import NetworkAdminClient from './NetworkAdminClient';
 
 export const metadata = {
-  title: '?�트?�크 ?�프??지??관�?�?최적??| ?�자?��? ?��??�레?�워??,
-  description: '?�스???�반???�트?�크 ?�폴로�? ?�보�?관리하�?최적???�결?�을 보장?�니??,
+  title: '네트워크 인프라 지형 관리 및 최적화 | 전자정부 표준프레임워크',
+  description: '시스템 전반의 네트워크 토폴로지 정보를 관리하고 최적의 연결성을 보장합니다',
 };
 
 async function NetworkDataContainer() {
@@ -13,7 +13,7 @@ async function NetworkDataContainer() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // [Eliminating Waterfalls] ?�버 ?�이??초기 ?�이???�칭
+  // [Eliminating Waterfalls] 서버 사이드 초기 데이터 페칭
   let initialNetworks: Network[] = [];
 
   try {
@@ -37,15 +37,15 @@ export default function AdminNetworkPage() {
 function NetworkAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col text-left">
-      <div className="h-11 w-96 bg-slate-100 rounded-lg" />
+      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-lg" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-xl" />)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 shrink-0">
-        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-lg" />
-        <div className="h-64 bg-slate-50 rounded-lg" />
+        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-xl" />
+        <div className="h-64 bg-slate-50 rounded-xl" />
       </div>
-      <div className="flex-1 bg-slate-100/50 rounded-lg p-12 mt-8" />
+      <div className="flex-1 bg-slate-100/50 rounded-xl p-12 mt-8" />
     </div>
   );
 }

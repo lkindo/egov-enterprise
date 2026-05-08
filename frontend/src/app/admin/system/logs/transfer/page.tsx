@@ -32,14 +32,14 @@ const TransferLogAdminPage = () => {
         {
             header: '로그ID',
             accessor: (item: TransferLog) => (
-                <div className="font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
+                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
                     {item.logId}
                 </div>
             ),
             className: 'w-40'
         },
         {
-            header: '?�공기�?코드',
+            header: '제공기관코드',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Box size={14} className="text-primary/40" />
@@ -49,20 +49,20 @@ const TransferLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '?�공?�스??,
+            header: '제공시스템',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
-                    <span className="text-xs font-bold text-slate-600">{item.provdSysCode}</span>
+                    <span className="text-xs font-black text-slate-600">{item.provdSysCode}</span>
                 </div>
             ),
             className: 'w-32'
         },
         {
-            header: '?�청?�스??,
+            header: '요청시스템',
             accessor: (item: TransferLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-xs font-bold rounded border border-sky-100">
+                    <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-[10px] font-black rounded border border-sky-100">
                         {item.requstSysCode}
                     </code>
                 </div>
@@ -73,7 +73,7 @@ const TransferLogAdminPage = () => {
             header: '결과',
             accessor: (item: TransferLog) => (
                 <div className="flex justify-center">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase ${
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase ${
                         item.result === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'
                     }`}>
                         {item.result}
@@ -83,7 +83,7 @@ const TransferLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '?�록?�시',
+            header: '등록일시',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -97,14 +97,14 @@ const TransferLogAdminPage = () => {
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
             <PageHeader 
-                title="?�송 로그" 
-                breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�송 로그' }]} 
+                title="전송 로그" 
+                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '전송 로그' }]} 
             />
 
             <HubHeader 
-                title="?�계 마스?? 
-                highlight="?�송 로그" 
-                subtitle="?��? ?�스??�??��? 모듈 간의 ?�이???�송 ?�력???�시간으�?모니?�링?�니??" 
+                title="연계 마스터" 
+                highlight="전송 로그" 
+                subtitle="외부 시스템 및 내부 모듈 간의 데이터 전송 이력을 실시간으로 모니터링합니다." 
                 icon={Share2} 
             />
 
@@ -118,7 +118,7 @@ const TransferLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '기�?코드, ?�스??검??.',
+                    placeholder: '기관코드, 시스템 검색..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />

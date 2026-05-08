@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -21,23 +21,23 @@ const MOCK_MAP_DATA: MapData[] = [
 
 export function NationalDistributionMap({ className }: { className?: string }) {
   return (
-    <div className={cn("p-8 border rounded-lg bg-card shadow-sm overflow-hidden relative", className)}>
+    <div className={cn("p-8 border rounded-xl bg-card shadow-sm overflow-hidden relative", className)}>
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
+          <h3 className="text-sm font-black text-foreground tracking-tight flex items-center gap-2">
             <MapPin size={18} className="text-primary" />
             전국 업무 활성 지표
           </h3>
-          <p className="text-xs font-bold text-slate-600">실시간 지리적 접속 및 업무 분포 (분석 엔진 기반)</p>
+          <p className="text-[10px] font-bold text-slate-600">실시간 지리적 접속 및 업무 분포 (분석 엔진 기반)</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-blue-600" />
-            <span className="text-xs font-bold text-slate-700">높음</span>
+            <span className="text-[10px] font-black text-slate-700">높음</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-xs font-bold text-slate-700">보통</span>
+            <span className="text-[10px] font-black text-slate-700">보통</span>
           </div>
         </div>
       </div>
@@ -68,11 +68,11 @@ export function NationalDistributionMap({ className }: { className?: string }) {
             )} />
 
             {/* Tooltip on Point */}
-            <div className="absolute top-0 left-full ml-3 opacity-0 group-hover/point:opacity-100 transition-opacity bg-background/95 backdrop-blur-md border shadow-2xl p-3 rounded-lg min-w-[140px] pointer-events-none z-50">
-              <p className="text-xs font-bold text-muted-foreground mb-1">{item.region}</p>
+            <div className="absolute top-0 left-full ml-3 opacity-0 group-hover/point:opacity-100 transition-opacity bg-background/95 backdrop-blur-md border shadow-2xl p-3 rounded-xl min-w-[140px] pointer-events-none z-50">
+              <p className="text-[9px] font-black text-muted-foreground mb-1">{item.region}</p>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-bold text-foreground">접속/업무</span>
-                <span className="text-xs font-bold text-primary">{item.count.toLocaleString()}</span>
+                <span className="text-xs font-black text-primary">{item.count.toLocaleString()}</span>
               </div>
               <div className="h-1 w-full bg-muted mt-2 rounded-full overflow-hidden">
                 <div
@@ -85,15 +85,15 @@ export function NationalDistributionMap({ className }: { className?: string }) {
         ))}
       </div>
 
-      <div className="absolute bottom-4 right-4 left-4 p-4 rounded-lg bg-muted/30 backdrop-blur-sm border border-white/10 flex items-center justify-between">
+      <div className="absolute bottom-4 right-4 left-4 p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-white/10 flex items-center justify-between">
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-slate-600 tracking-tight">분석 핵심 지점</span>
-          <span className="text-xs font-bold text-foreground ">서울 본사 / 영남 허브</span>
+          <span className="text-[9px] font-black text-slate-600 tracking-tight">분석 핵심 지점</span>
+          <span className="text-xs font-black text-foreground ">서울 본사 / 영남 허브</span>
         </div>
         <div className="h-8 w-px bg-slate-200 mx-2" />
         <div className="flex flex-col items-end">
-          <span className="text-xs font-bold text-slate-600 tracking-tight">전체 분포도</span>
-          <span className="text-xs font-bold text-blue-600 ">98.4% COVERAGE</span>
+          <span className="text-[9px] font-black text-slate-600 tracking-tight">전체 분포도</span>
+          <span className="text-xs font-black text-blue-600 ">98.4% COVERAGE</span>
         </div>
       </div>
     </div>

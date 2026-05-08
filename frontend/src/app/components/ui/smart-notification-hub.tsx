@@ -95,10 +95,10 @@ export function SmartNotificationHub() {
 
   const getPriorityBadge = (priority: Notification['priority']) => {
     switch (priority) {
-      case 'critical': return <Badge className="bg-rose-500/10 text-rose-600 border-none rounded-lg text-xs font-bold tracking-widest px-2">CRITICAL</Badge>;
-      case 'high': return <Badge className="bg-rose-500/10 text-rose-500 border-none rounded-lg text-xs font-bold tracking-widest px-2">HIGH</Badge>;
-      case 'medium': return <Badge className="bg-indigo-500/10 text-indigo-500 border-none rounded-lg text-xs font-bold tracking-widest px-2">MEDIUM</Badge>;
-      case 'low': return <Badge className="bg-slate-100 text-slate-500 border-none rounded-lg text-xs font-bold tracking-widest px-2">LOW</Badge>;
+      case 'critical': return <Badge className="bg-rose-500/10 text-rose-600 border-none rounded-lg text-[9px] font-black tracking-widest px-2">CRITICAL</Badge>;
+      case 'high': return <Badge className="bg-rose-500/10 text-rose-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">HIGH</Badge>;
+      case 'medium': return <Badge className="bg-indigo-500/10 text-indigo-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">MEDIUM</Badge>;
+      case 'low': return <Badge className="bg-slate-100 text-slate-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">LOW</Badge>;
     }
   };
 
@@ -108,23 +108,23 @@ export function SmartNotificationHub() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-200 dark:shadow-none">
+             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-200 dark:shadow-none">
                 <Bell size={20} className="animate-bounce" />
              </div>
-             <h2 className="text-3xl font-bold tracking-tight uppercase text-slate-900 dark:text-white">Smart Notification Hub</h2>
+             <h2 className="text-3xl font-black tracking-tighter uppercase text-slate-900 dark:text-white">Smart Notification Hub</h2>
           </div>
           <p className="text-sm font-bold text-slate-500 tracking-tight pl-1">실시간 인텔리전스 및 보안 프로토콜 통합 알림</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200/50">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50">
              {['all', 'unread', 'critical'].map((tab) => (
                <Button
                  key={tab}
                  variant="ghost"
                  size="sm"
                  className={cn(
-                   "h-8 rounded-lg px-4 text-xs font-bold uppercase transition-all",
+                   "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
                    activeTab === tab ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-slate-500"
                  )}
                  onClick={() => setActiveTab(tab as any)}
@@ -133,7 +133,7 @@ export function SmartNotificationHub() {
                </Button>
              ))}
           </div>
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm">
              <RefreshCw size={16} />
           </Button>
         </div>
@@ -148,11 +148,11 @@ export function SmartNotificationHub() {
              <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                 <div className="flex items-center gap-3">
                    <Activity size={18} className="text-primary animate-pulse" />
-                   <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">Live Intelligence Stream</span>
+                   <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Live Intelligence Stream</span>
                 </div>
                 <div className="flex items-center gap-4">
                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-400">NEXT_SYNC</span>
+                      <span className="text-[9px] font-black text-slate-400">NEXT_SYNC</span>
                       <Progress value={progress} className="w-20 h-1 bg-slate-200 dark:bg-slate-800" />
                    </div>
                 </div>
@@ -167,23 +167,23 @@ export function SmartNotificationHub() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         className={cn(
-                          "group p-6 rounded-lg transition-all duration-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/50 relative overflow-hidden",
+                          "group p-6 rounded-xl transition-all duration-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/50 relative overflow-hidden",
                           notif.status === 'new' && "bg-primary/5 border-primary/10"
                         )}
                       >
                          <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                                {getTypeIcon(notif.type)}
                             </div>
                             <div className="flex-1 space-y-2">
                                <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                     <h3 className="font-bold text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary transition-colors">
+                                     <h3 className="font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary transition-colors">
                                         {notif.title}
                                      </h3>
                                      {getPriorityBadge(notif.priority)}
                                   </div>
-                                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-tight">
+                                  <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-tighter">
                                      <Clock size={10} />
                                      {notif.time}
                                   </span>
@@ -192,10 +192,10 @@ export function SmartNotificationHub() {
                                   {notif.content}
                                 </p>
                                 <div className="pt-2 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-xs font-bold px-3 hover:bg-primary hover:text-white uppercase tracking-widest">
+                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-[9px] font-black px-3 hover:bg-primary hover:text-white uppercase tracking-widest">
                                       View Protocol
                                    </Button>
-                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-xs font-bold px-3 hover:bg-slate-200 dark:hover:bg-slate-700 uppercase tracking-widest">
+                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-[9px] font-black px-3 hover:bg-slate-200 dark:hover:bg-slate-700 uppercase tracking-widest">
                                       Acknowledge
                                    </Button>
                                 </div>
@@ -215,7 +215,7 @@ export function SmartNotificationHub() {
              </div>
 
              <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 flex justify-center bg-slate-50/50 dark:bg-slate-800/30">
-                <Button variant="ghost" className="text-xs font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] group">
+                <Button variant="ghost" className="text-[11px] font-black text-slate-400 hover:text-primary uppercase tracking-[0.2em] group">
                    Load Archived Intelligence
                    <ChevronRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -232,19 +232,19 @@ export function SmartNotificationHub() {
               </div>
               <div className="relative z-10 space-y-6">
                  <div className="space-y-1">
-                    <Badge className="bg-emerald-500/20 text-emerald-400 border-none rounded-lg text-xs font-bold px-3 mb-2 tracking-widest uppercase">Operational</Badge>
-                    <h3 className="text-xl font-bold tracking-tight uppercase">Intelligence Health</h3>
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-none rounded-lg text-[9px] font-black px-3 mb-2 tracking-widest uppercase">Operational</Badge>
+                    <h3 className="text-xl font-black tracking-tight uppercase">Intelligence Health</h3>
                  </div>
                  <div className="space-y-4">
                     <div className="space-y-2">
-                       <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
                           <span className="text-slate-400">Neural Sync</span>
                           <span>98.2%</span>
                        </div>
                        <Progress value={98.2} className="h-1.5 bg-white/10" />
                     </div>
                     <div className="space-y-2">
-                       <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
                           <span className="text-slate-400">Security Shield</span>
                           <span className="text-emerald-400">Active</span>
                        </div>
@@ -260,7 +260,7 @@ export function SmartNotificationHub() {
 
            {/* Quick Actions Bento */}
            <div className="hub-bento-card p-8 bg-white dark:bg-slate-900 border-slate-200/50 shadow-xl group">
-              <h3 className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase mb-6 flex items-center gap-3">
+              <h3 className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase mb-6 flex items-center gap-3">
                  <Sparkles size={14} className="text-primary" />
                  Global Commands
               </h3>
@@ -274,14 +274,14 @@ export function SmartNotificationHub() {
                    <Button
                      key={cmd.label}
                      variant="outline"
-                     className="flex flex-col items-center justify-center h-24 gap-2 rounded-lg border-slate-100 dark:border-slate-800 hover:border-primary/50 hover:bg-primary/5 transition-all group/cmd"
+                     className="flex flex-col items-center justify-center h-24 gap-2 rounded-xl border-slate-100 dark:border-slate-800 hover:border-primary/50 hover:bg-primary/5 transition-all group/cmd"
                    >
                      <cmd.icon size={20} className="text-slate-400 group-hover/cmd:text-primary transition-colors" />
-                     <span className="text-xs font-bold uppercase text-slate-500 tracking-tight">{cmd.label}</span>
+                     <span className="text-[9px] font-black uppercase text-slate-500 tracking-tighter">{cmd.label}</span>
                    </Button>
                  ))}
               </div>
-              <Button className="w-full mt-6 h-12 rounded-lg bg-slate-900 dark:bg-primary hover:scale-[1.02] transition-transform font-bold text-xs tracking-widest uppercase text-white shadow-xl">
+              <Button className="w-full mt-6 h-12 rounded-xl bg-slate-900 dark:bg-primary hover:scale-[1.02] transition-transform font-black text-[10px] tracking-widest uppercase text-white shadow-xl">
                  Execute Global Protocol
               </Button>
            </div>

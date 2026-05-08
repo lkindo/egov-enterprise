@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -89,18 +89,18 @@ export default function RoleManagePage() {
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
  setIsDialogOpen(false);
- toast('½Å±Ô ¼¼ºĞÈ­ º¸¾È ·Ñ(Role)ÀÌ ¼º°øÀûÀ¸·Î ¼³Á¤µÇ¾ú½À´Ï´Ù.', 'success');
+ toast('ì‹ ê·œ ì„¸ë¶„í™” ë³´ì•ˆ ë¡¤(Role)ì´ ì„±ê³µì ìœ¼ë¡œ ì„¤ì •ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
  },
- onError: () => toast('·Ñ »ı¼º Áß ½Ã½ºÅÛ ¿¹¿Ü°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
+ onError: () => toast('ë¡¤ ìƒì„± ì¤‘ ì‹œìŠ¤í…œ ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
  });
 
  const deleteMutation = useMutation({
  mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
- toast('º¸¾È ·Ñ ÇÁ·ÎÇÊÀÌ ¿µ±¸ÀûÀ¸·Î ÆÄ±âµÇ¾ú½À´Ï´Ù.', 'success');
+ toast('ë³´ì•ˆ ë¡¤ í”„ë¡œí•„ì´ ì˜êµ¬ì ìœ¼ë¡œ íŒŒê¸°ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
  },
- onError: () => toast('»èÁ¦ Ã³¸® Áß ½Ã½ºÅÛ ¿¹¿Ü°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error')
+ onError: () => toast('ì‚­ì œ ì²˜ë¦¬ ì¤‘ ì‹œìŠ¤í…œ ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error')
  });
 
  const handleSearch = (e: React.FormEvent) => {
@@ -121,7 +121,7 @@ export default function RoleManagePage() {
  };
 
  const handleDelete = async (roleCode: string) => {
- if (!confirm('Á¤¸» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?')) return;
+ if (!confirm('ì •ë§ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?')) return;
  deleteMutation.mutate(roleCode);
  };
 
@@ -131,28 +131,28 @@ export default function RoleManagePage() {
 
  const columns: Column<RoleManage>[] = [
  {
- header: 'º¸¾È ·Ñ ÇÁ·ÎÆÄÀÏ',
+ header: 'ë³´ì•ˆ ë¡¤ í”„ë¡œíŒŒì¼',
  accessor: (item: RoleManage) => (
  <div className="flex items-center gap-4 py-3">
- <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
+ <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
  <Lock size={18} className="text-primary" />
  </div>
  <div className="flex flex-col">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">ROLE_UID</span>
- <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.roleCode}</span>
+ <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">ROLE_UID</span>
+ <span className="font-mono text-xs font-black text-foreground tracking-widest uppercase">{item.roleCode}</span>
  </div>
  </div>
  ),
  className: 'w-64'
  },
  {
- header: '·Ñ ¸í¼¼ (Architecture)',
+ header: 'ë¡¤ ëª…ì„¸ (Architecture)',
  accessor: (item: RoleManage) => (
  <div className="flex flex-col gap-0.5">
- <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.roleNm}</span>
+ <span className="font-black text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.roleNm}</span>
  <div className="flex items-center gap-2">
- <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-widest">{item.roleTyp}</span>
- <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[200px] leading-none">{item.rolePtn}</span>
+ <span className="bg-slate-100 text-slate-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest">{item.roleTyp}</span>
+ <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[200px] leading-none">{item.rolePtn}</span>
  </div>
  </div>
  )
@@ -160,7 +160,7 @@ export default function RoleManagePage() {
  {
  header: 'RANK',
  accessor: (item: RoleManage) => (
- <div className="flex items-center gap-2 text-xs font-bold text-slate-400 font-mono tracking-tight">
+ <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 font-mono tracking-tighter">
  <ListOrdered size={12} className="opacity-40" />
  {item.roleSort || '0'}
  </div>
@@ -172,7 +172,7 @@ export default function RoleManagePage() {
  className: 'text-right w-32',
  accessor: (item: RoleManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.roleCode)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
+ <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.roleCode)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all shadow-sm">
  <Trash2 size={16} />
  </Button>
  </div>
@@ -183,44 +183,44 @@ export default function RoleManagePage() {
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <PageHeader
- title="¼¼ºĞÈ­ º¸¾È ·Ñ(Role) ¾ÆÅ°ÅØÃ³"
- breadcrumbs={[{ label: 'º¸¾È °ü¸®' }, { label: '·Ñ °ü¸®' }]}
+ title="ì„¸ë¶„í™” ë³´ì•ˆ ë¡¤(Role) ì•„í‚¤í…ì²˜"
+ breadcrumbs={[{ label: 'ë³´ì•ˆ ê´€ë¦¬' }, { label: 'ë¡¤ ê´€ë¦¬' }]}
  />
 
  <HubHeader
  title="Access"
  highlight="Control"
- subtitle="¸®¼Ò½º ¼öÁØÀÇ Á¦¾î¿Í Á¢±Ù Á¦¾î¸¦ À§ÇÑ º¸¾È ·Ñ ÆĞÅÏ ¹× °¡µåÆ÷ÀÎÆ® °Å¹ö³Í½º"
+ subtitle="ë¦¬ì†ŒìŠ¤ ìˆ˜ì¤€ì˜ ì œì–´ì™€ ì ‘ê·¼ ì œì–´ë¥¼ ìœ„í•œ ë³´ì•ˆ ë¡¤ íŒ¨í„´ ë° ê°€ë“œí¬ì¸íŠ¸ ê±°ë²„ë„ŒìŠ¤"
  icon={ShieldCheck}
  actions={
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleCreate}
- className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
- <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ½Å±Ô º¸¾È ·Ñ ¼³Á¤
+ <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ì‹ ê·œ ë³´ì•ˆ ë¡¤ ì„¤ì •
  </Button>
  </div>
  }
  />
 
  <HubMetricGrid>
- <HubMetricCard title="·Ñ Á¤ÀÇ" value={roles.length} icon={Database} color="indigo" />
- <HubMetricCard title="ÆĞÅÏ ³ëµå" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
- <HubMetricCard title="ÇÁ·Îºê »óÅÂ" value="Á¤»ó" icon={Activity} color="emerald" status="µ¿±âÈ­µÊ" />
- <HubMetricCard title="±ÇÇÑ Èå¸§" value="È®ÀÎµÊ" icon={Workflow} color="amber" />
+ <HubMetricCard title="ë¡¤ ì •ì˜" value={roles.length} icon={Database} color="indigo" />
+ <HubMetricCard title="íŒ¨í„´ ë…¸ë“œ" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
+ <HubMetricCard title="í”„ë¡œë¸Œ ìƒíƒœ" value="ì •ìƒ" icon={Activity} color="emerald" status="ë™ê¸°í™”ë¨" />
+ <HubMetricCard title="ê¶Œí•œ íë¦„" value="í™•ì¸ë¨" icon={Workflow} color="amber" />
  </HubMetricGrid>
 
  <HubSectionCard
- title="º¸¾È ·Ñ ÆĞÅÏ ¸ÅÆ®¸¯½º"
- description="½Ã½ºÅÛ °¡µåÆ÷ÀÎÆ® ¹× URL ÆĞÅÏ ±â¹İÀÇ ¼¼ºÎ º¸¾È Á¦¾î ¸í¼¼ ¹× ÀÎº¥Åä¸®ÀÔ´Ï´Ù."
+ title="ë³´ì•ˆ ë¡¤ íŒ¨í„´ ë§¤íŠ¸ë¦­ìŠ¤"
+ description="ì‹œìŠ¤í…œ ê°€ë“œí¬ì¸íŠ¸ ë° URL íŒ¨í„´ ê¸°ë°˜ì˜ ì„¸ë¶€ ë³´ì•ˆ ì œì–´ ëª…ì„¸ ë° ì¸ë²¤í† ë¦¬ì…ë‹ˆë‹¤."
  icon={SearchCode}
  >
  <div className="space-y-8">
@@ -229,16 +229,16 @@ export default function RoleManagePage() {
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
- placeholder="·ÑÄÚµå ¶Ç´Â ·Ñ¸íÀ¸·Î °Ë»ö"
- className="w-[450px] h-12 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
+ placeholder="ë¡¤ì½”ë“œ ë˜ëŠ” ë¡¤ëª…ìœ¼ë¡œ ê²€ìƒ‰"
+ className="w-[450px] h-16 pl-16 rounded-xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
  />
- <Button type="submit" className="h-12 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ÆĞÅÏ ºĞ¼®</Button>
+ <Button type="submit" className="h-16 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">íŒ¨í„´ ë¶„ì„</Button>
  </form>
  </div>
  <div>
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">±â´É ¿ªÇÒ Å×ÀÌºí ÇÁ·Îºê</span>
+ <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">ê¸°ëŠ¥ ì—­í•  í…Œì´ë¸” í”„ë¡œë¸Œ</span>
  </div>
  </div>
 
@@ -247,7 +247,7 @@ export default function RoleManagePage() {
  columns={columns}
  data={roles}
  loading={isLoading}
- emptyMessage="½Äº°µÈ º¸¾È ·Ñ ÆĞÅÏ ¸®¼Ò½º°¡ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù."
+ emptyMessage="ì‹ë³„ëœ ë³´ì•ˆ ë¡¤ íŒ¨í„´ ë¦¬ì†ŒìŠ¤ê°€ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤."
  className="border-none bg-transparent"
  />
  </div>
@@ -267,64 +267,64 @@ export default function RoleManagePage() {
  <StandardModal
  isOpen={isDialogOpen}
  onClose={() => setIsDialogOpen(false)}
- title="½Å±Ô ¼¼ºĞÈ­ º¸¾È ·Ñ ¼³Á¤"
+ title="ì‹ ê·œ ì„¸ë¶„í™” ë³´ì•ˆ ë¡¤ ì„¤ì •"
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
  <div className="grid grid-cols-2 gap-10">
- <FormField label="º¸¾È ·Ñ ½Äº°°ª(Role Code)" required description="º¸¾È ·¹ÀÌ¾î ³»ÀÇ À¯ÀÏÇÑ ±ÔÄ¢ ½Äº°ÀÚ">
+ <FormField label="ë³´ì•ˆ ë¡¤ ì‹ë³„ê°’(Role Code)" required description="ë³´ì•ˆ ë ˆì´ì–´ ë‚´ì˜ ìœ ì¼í•œ ê·œì¹™ ì‹ë³„ì">
  <div className="relative group/id">
  <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
  <Input
  id="roleCode"
  value={formData.roleCode || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, roleCode: e.target.value }))}
- className="h-12 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
- placeholder="·Ñ ½Äº°°ª"
+ className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-widest uppercase shadow-inner"
+ placeholder="ë¡¤ ì‹ë³„ê°’"
  />
  </div>
  </FormField>
- <FormField label="·Ñ ·¹ÀÌºí ¸íÄª" required description="º¸¾È ¾ÆÄ«ÀÌºê¿¡¼­ ½Äº°µÉ ±ÔÄ¢ ¸íÄª">
+ <FormField label="ë¡¤ ë ˆì´ë¸” ëª…ì¹­" required description="ë³´ì•ˆ ì•„ì¹´ì´ë¸Œì—ì„œ ì‹ë³„ë  ê·œì¹™ ëª…ì¹­">
  <div className="relative group/nm">
  <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
  id="roleNm"
  value={formData.roleNm || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, roleNm: e.target.value }))}
- className="h-12 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
- placeholder="·Ñ ¸íÄª ÀÔ·Â"
+ className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-tight shadow-inner"
+ placeholder="ë¡¤ ëª…ì¹­ ì…ë ¥"
  />
  </div>
  </FormField>
  </div>
 
- <FormField label="Á¢±Ù ÆĞÅÏ (URL/Resource Pattern)" required description="º¸¾È ÇÊÅÍ°¡ ÀÎÅÍ¼ÁÆ®ÇÒ ¸®¼Ò½º °æ·Î ±ÔÄ¢">
+ <FormField label="ì ‘ê·¼ íŒ¨í„´ (URL/Resource Pattern)" required description="ë³´ì•ˆ í•„í„°ê°€ ì¸í„°ì…‰íŠ¸í•  ë¦¬ì†ŒìŠ¤ ê²½ë¡œ ê·œì¹™">
  <div className="relative group/ptn">
  <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
  <Input
  id="rolePtn"
  value={formData.rolePtn || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, rolePtn: e.target.value }))}
- className="h-12 pl-16 rounded-lg border-2 text-md font-mono font-bold shadow-inner"
+ className="h-16 pl-16 rounded-xl border-2 text-md font-mono font-black shadow-inner"
  placeholder="/api/v1/resource/**"
  />
  </div>
  </FormField>
 
  <div className="grid grid-cols-2 gap-10">
- <FormField label="·Ñ ¾ÆÅ°ÅØÃ³ Å¸ÀÔ" description="º¸¾È ±ÔÄ¢ÀÌ Àû¿ëµÉ ±â¼ú ·¹ÀÌ¾î">
+ <FormField label="ë¡¤ ì•„í‚¤í…ì²˜ íƒ€ì…" description="ë³´ì•ˆ ê·œì¹™ì´ ì ìš©ë  ê¸°ìˆ  ë ˆì´ì–´">
  <select
  id="roleTyp"
  value={formData.roleTyp || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, roleTyp: e.target.value }))}
- className="w-full h-12 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
+ className="w-full h-16 px-8 rounded-xl border-2 border-slate-100 bg-slate-50/50 text-[11px] font-black tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
  >
  <option value="url">URL_RESOURCE</option>
  <option value="method">METHOD_INVOCATION</option>
  <option value="api">REST_ENDPOINT</option>
  </select>
  </FormField>
- <FormField label="¿ì¼±¼øÀ§ (Sort Order)" description="º¸¾È ÇÊÅÍ Ã¼ÀÎ¿¡¼­ÀÇ Àû¿ë ¿ì¼±¼øÀ§">
+ <FormField label="ìš°ì„ ìˆœìœ„ (Sort Order)" description="ë³´ì•ˆ í•„í„° ì²´ì¸ì—ì„œì˜ ì ìš© ìš°ì„ ìˆœìœ„">
  <div className="relative group/sort">
  <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
  <Input
@@ -332,31 +332,31 @@ export default function RoleManagePage() {
  type="number"
  value={formData.roleSort || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, roleSort: e.target.value }))}
- className="h-12 pl-16 rounded-lg border-2 text-md font-bold shadow-inner"
+ className="h-16 pl-16 rounded-xl border-2 text-md font-black shadow-inner"
  placeholder="1"
  />
  </div>
  </FormField>
  </div>
 
- <FormField label="·Ñ Á¤Ã¥ »ó¼¼ ¸í¼¼" description="ÇØ´ç º¸¾È ·ÑÀÇ ±¸Ã¼ÀûÀÎ Á¤Ã¥ ¹üÀ§ ¹× ºñÁî´Ï½º ¿ä°Ç">
+ <FormField label="ë¡¤ ì •ì±… ìƒì„¸ ëª…ì„¸" description="í•´ë‹¹ ë³´ì•ˆ ë¡¤ì˜ êµ¬ì²´ì ì¸ ì •ì±… ë²”ìœ„ ë° ë¹„ì¦ˆë‹ˆìŠ¤ ìš”ê±´">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
  id="roleDc"
  value={formData.roleDc || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, roleDc: e.target.value }))}
- className="min-h-[140px] pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
- placeholder="»ó¼¼ ¸í¼¼ ÀÔ·Â..."
+ className="min-h-[140px] pl-16 p-8 rounded-xl border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+ placeholder="ìƒì„¸ ëª…ì„¸ ì…ë ¥..."
  />
  </div>
  </FormField>
 
  <div className="flex gap-6 pt-4">
- <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">Ãë¼Ò</Button>
- <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[10px] tracking-widest border-2">ì·¨ì†Œ</Button>
+ <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-14 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
  {createMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
- <span className="ml-2">·Ñ ¾ÆÅ°ÅØÃ³ ¹èÆ÷</span>
+ <span className="ml-2">ë¡¤ ì•„í‚¤í…ì²˜ ë°°í¬</span>
  </Button>
  </div>
  </div>

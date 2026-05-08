@@ -54,20 +54,20 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  부서 명칭 <span className="text-rose-500 font-bold text-xs">*</span>
+                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  부서 명칭 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     className={cn(
-                        "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
+                        "h-14 rounded-xl text-sm font-black tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                     )}
                     placeholder="DEPT_NAME"
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
               </motion.div>
             </FormItem>
           )}
@@ -82,31 +82,31 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   부서 설명명세
                 </FormLabel>
                 <FormControl>
                   <textarea
                     {...field}
                     className={cn(
-                        "w-full min-h-[120px] p-6 rounded-lg border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
+                        "w-full min-h-[120px] p-6 rounded-xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                     )}
                     placeholder="부서의 역할 및 책임 정의..."
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
               </motion.div>
             </FormItem>
           )}
         />
 
         <div className="flex w-full gap-4 pt-4 border-t border-slate-100">
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-14 rounded-xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all group"
+            className="flex-[2] h-14 rounded-xl font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
             {mode === 'create' ? '부서 등록' : '정보 수정'}

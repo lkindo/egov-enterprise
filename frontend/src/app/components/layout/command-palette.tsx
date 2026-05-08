@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -106,7 +106,7 @@ export function CommandPalette() {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/80 animate-in fade-in duration-300">
-            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* 검색 입력 영역 */}
                 <div className="flex items-center p-6 border-b gap-4">
                     <Search className="text-muted-foreground" size={20} />
@@ -131,7 +131,7 @@ export function CommandPalette() {
                         <div className="text-xs text-muted-foreground animate-pulse">로딩 중...</div>
                     )}
                     <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                        <span className="text-xs font-bold text-muted-foreground">ESC</span>
+                        <span className="text-[10px] font-black text-muted-foreground">ESC</span>
                     </div>
                     <button onClick={handleClose} className="p-1 hover:bg-muted rounded-full text-muted-foreground">
                         <X size={18} />
@@ -146,7 +146,7 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-bold text-foreground">메뉴를 불러오는 중..</p>
+                                <p className="text-lg font-black text-foreground">메뉴를 불러오는 중..</p>
                                 <p className="text-sm text-muted-foreground font-bold">잠시만 기다려 주세요.</p>
                             </div>
                         </div>
@@ -157,7 +157,7 @@ export function CommandPalette() {
                                 if (catResults.length === 0) return null;
                                 return (
                                     <div key={cat} className="mb-4">
-                                        <h3 className="text-xs font-bold text-muted-foreground tracking-tight px-4 mb-2">{cat}</h3>
+                                        <h3 className="text-[10px] font-black text-muted-foreground tracking-tight px-4 mb-2">{cat}</h3>
                                         <div className="space-y-1">
                                             {catResults.map((result) => {
                                                 const globalIdx = filteredResults.indexOf(result);
@@ -165,7 +165,7 @@ export function CommandPalette() {
                                                     <button
                                                         key={result.id}
                                                         className={cn(
-                                                            "w-full group p-4 rounded-lg flex items-center justify-between transition-all outline-none border-2 border-transparent",
+                                                            "w-full group p-4 rounded-xl flex items-center justify-between transition-all outline-none border-2 border-transparent",
                                                             globalIdx === selectedIndex ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]" : "hover:bg-muted text-foreground"
                                                         )}
                                                         onClick={() => onSelect(result.url)}
@@ -173,16 +173,16 @@ export function CommandPalette() {
                                                     >
                                                         <div className="flex items-center gap-4 text-left">
                                                             <div className={cn(
-                                                                "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                                                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
                                                                 globalIdx === selectedIndex ? "bg-white/20 border-white/10 shadow-inner" : "bg-primary/5 text-primary border border-primary/10"
                                                             )}>
                                                                 {result.icon}
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-bold tracking-tight">{result.title}</p>
+                                                                <p className="text-sm font-black tracking-tight">{result.title}</p>
                                                                 {result.description && (
                                                                     <p className={cn(
-                                                                        "text-xs font-bold line-clamp-1",
+                                                                        "text-[10px] font-bold line-clamp-1",
                                                                         globalIdx === selectedIndex ? "text-primary-foreground/70" : "text-muted-foreground/60"
                                                                     )}>
                                                                         {result.description}
@@ -208,7 +208,7 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-bold text-foreground">결과가 없습니다.</p>
+                                <p className="text-lg font-black text-foreground">결과가 없습니다.</p>
                                 <p className="text-sm text-muted-foreground font-bold">다른 키워드로 검색해 보세요.</p>
                             </div>
                         </div>
@@ -218,16 +218,16 @@ export function CommandPalette() {
                 {/* 푸터 힌트 */}
                 <div className="p-4 bg-muted/30 border-t flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
-                        <kbd className="px-2 py-1 bg-background border rounded text-xs font-bold">Enter</kbd>
-                        <span className="text-xs font-bold text-muted-foreground">선택</span>
+                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">Enter</kbd>
+                        <span className="text-[10px] font-bold text-muted-foreground">선택</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <kbd className="px-2 py-1 bg-background border rounded text-xs font-bold">↑↓</kbd>
-                        <span className="text-xs font-bold text-muted-foreground">이동</span>
+                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">↑↓</kbd>
+                        <span className="text-[10px] font-bold text-muted-foreground">이동</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Command size={12} className="text-muted-foreground" />
-                        <span className="text-xs font-bold text-muted-foreground">EGov Enterprise Intelligence</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">EGov Enterprise Intelligence</span>
                     </div>
                 </div>
             </div>

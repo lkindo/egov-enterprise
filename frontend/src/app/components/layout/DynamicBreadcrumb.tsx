@@ -80,7 +80,7 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
               {item.name}
             </Link>
           ) : (
-            <span className={cn("font-bold", index === finalItems.length - 1 ? "text-foreground" : "")}>
+            <span className={cn("font-black", index === finalItems.length - 1 ? "text-foreground" : "")}>
               {item.name}
             </span>
           )}

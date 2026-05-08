@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+ï»¿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
 import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
@@ -6,8 +6,8 @@ import BannerAdminClient from './BannerAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
-  title: '¹è³Ê ¹× ÆË¾÷ °ü¸® | ½Ã½ºÅÛ ¼³Á¤',
-  description: '½Ã½ºÅÛ Àü¹İ¿¡ ³ëÃâµÇ´Â ¹è³Ê¿Í ÆË¾÷ ÀÚ»êÀ» °ü¸®ÇÕ´Ï´Ù.',
+  title: 'ë°°ë„ˆ ë° íŒì—… ê´€ë¦¬ | ì‹œìŠ¤í…œ ì„¤ì •',
+  description: 'ì‹œìŠ¤í…œ ì „ë°˜ì— ë…¸ì¶œë˜ëŠ” ë°°ë„ˆì™€ íŒì—… ìì‚°ì„ ê´€ë¦¬í•©ë‹ˆë‹¤.',
 };
 
 export default async function BannerAdminPage() {
@@ -15,7 +15,7 @@ export default async function BannerAdminPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // [Eliminating Waterfalls] º´·Ä µ¥ÀÌÅÍ È£Ãâ
+  // [Eliminating Waterfalls] ë³‘ë ¬ ë°ì´í„° í˜¸ì¶œ
   let initialBanners: any[] = [];
   let initialPopups: any[] = [];
 
@@ -30,7 +30,7 @@ export default async function BannerAdminPage() {
   } catch (error: any) {
     console.error('Server-side fetch banners/popups failed:', error);
     
-    // ¸¸¾à 401 ¿¡·¯(ÀÎÁõ ¸¸·á)¶ó¸é ·Î±×ÀÎ ÆäÀÌÁö·Î ¸®´ÙÀÌ·ºÆ®
+    // ë§Œì•½ 401 ì—ëŸ¬(ì¸ì¦ ë§Œë£Œ)ë¼ë©´ ë¡œê·¸ì¸ í˜ì´ì§€ë¡œ ë¦¬ë‹¤ì´ë ‰íŠ¸
     if (error.response?.status === 401) {
       const { redirect } = await import('next/navigation');
       redirect('/login?expired=true&redirect=/admin/system/banner');
@@ -50,15 +50,15 @@ export default async function BannerAdminPage() {
 function BannerAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse p-6">
-      <div className="h-11 w-96 bg-slate-100 rounded-lg" />
+      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
       <div className="flex justify-center">
-        <div className="h-20 w-[400px] bg-slate-50 rounded-lg" />
+        <div className="h-20 w-[400px] bg-slate-50 rounded-xl" />
       </div>
-      <div className="h-40 w-full bg-slate-100 rounded-lg" />
+      <div className="h-40 w-full bg-slate-100 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-slate-50 rounded-lg" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-slate-50 rounded-xl" />)}
       </div>
-      <div className="h-96 w-full bg-slate-100/50 rounded-lg" />
+      <div className="h-96 w-full bg-slate-100/50 rounded-xl" />
     </div>
   );
 }

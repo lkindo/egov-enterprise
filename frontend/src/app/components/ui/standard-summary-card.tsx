@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -61,17 +61,17 @@ export function StandardSummaryCard({
     // Legacy / Minimalist fallback
     return (
       <div className={cn(
-        "p-6 rounded-lg border shadow-sm bg-card transition-all hover:shadow-md flex flex-col justify-between",
+        "p-6 rounded-xl border shadow-sm bg-card transition-all hover:shadow-md flex flex-col justify-between",
         isAlert && value && Number(value) > 0 ? "border-red-200 bg-red-50/30 animate-pulse" : "",
         className
       )}>
         <div className="flex justify-between items-start mb-4">
-          <div className={cn("p-3 rounded-lg", variantStyles[variant])}>
+          <div className={cn("p-3 rounded-xl", variantStyles[variant])}>
             {icon}
           </div>
           {trend && (
             <span className={cn(
-              "text-xs font-bold px-2 py-1 rounded",
+              "text-[10px] font-black px-2 py-1 rounded",
               trend.isUp ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
             )}>
               {trend.value}
@@ -79,11 +79,11 @@ export function StandardSummaryCard({
           )}
         </div>
         <div>
-          <h4 className="text-2xl font-bold text-foreground">
+          <h4 className="text-2xl font-black text-foreground">
             {typeof value === 'number' ? value.toLocaleString() : (value || '0')}
             {unit ? <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span> : null}
           </h4>
-          <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1 uppercase">
+          <p className="text-[10px] font-black text-muted-foreground tracking-tight mt-1 uppercase">
             {title}
           </p>
         </div>
@@ -94,26 +94,26 @@ export function StandardSummaryCard({
   // Premium Hub-style variant
   return (
     <div className={cn(
-      "p-8 rounded-lg border transition-all hover:scale-[1.05] group overflow-hidden relative shadow-lg",
+      "p-8 rounded-xl border transition-all hover:scale-[1.05] group overflow-hidden relative shadow-lg",
       variantStyles[variant],
       className
     )}>
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div className={cn(
-          "w-12 h-12 rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", 
+          "w-12 h-12 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", 
           iconBgMap[variant] || "bg-white/20 text-current"
         )}>
           {icon}
         </div>
         {trend && (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold tracking-widest uppercase backdrop-blur-md border border-white/10">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-[10px] font-black tracking-widest uppercase backdrop-blur-md border border-white/10">
              {trend.value}
           </div>
         )}
       </div>
       <div className="relative z-10 ">
         <p className="hub-subtitle-label opacity-60 mb-2">{title}</p>
-        <h4 className="text-3xl font-bold tracking-tight tabular-nums">
+        <h4 className="text-3xl font-black tracking-tighter tabular-nums">
           {typeof value === 'number' ? value.toLocaleString() : (value || '0')}
           {unit && <span className="text-sm font-bold opacity-60 ml-2">{unit}</span>}
         </h4>

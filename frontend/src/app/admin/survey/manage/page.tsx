@@ -45,7 +45,7 @@ export default function PollManagePage() {
     const today = new Date();
     const end = new Date(endDate);
     if (end < today) return <Badge variant="secondary" className="rounded-md font-bold px-3">종료</Badge>;
-    return <Badge variant="default" className="rounded-md font-bold px-3 bg-emerald-500 hover:bg-emerald-600">진행�?/Badge>;
+    return <Badge variant="default" className="rounded-md font-bold px-3 bg-emerald-500 hover:bg-emerald-600">진행중</Badge>;
   };
 
   return (
@@ -53,44 +53,44 @@ export default function PollManagePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+            <div className="p-2 bg-primary/10 rounded-xl text-primary">
               <LayoutGrid size={18} />
             </div>
-            <span className="text-sm font-bold text-primary tracking-tight uppercase">Survey Governance</span>
+            <span className="text-sm font-black text-primary tracking-tight uppercase">Survey Governance</span>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground ">?�라???�문 <span className="text-primary">관�?/span></h1>
-          <p className="text-muted-foreground font-bold text-sm max-w-lg">조직 ???�견 ?�렴 �??�표 ?�로?�스�??�합 관리하�?분석?�니??</p>
+          <h1 className="text-4xl font-black tracking-tighter text-foreground ">온라인 설문 <span className="text-primary">관리</span></h1>
+          <p className="text-muted-foreground font-bold text-sm max-w-lg">조직 내 의견 수렴 및 투표 프로세스를 통합 관리하고 분석합니다.</p>
         </div>
-        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-11 px-8 rounded-lg bg-slate-900 border-none text-white font-bold text-sm tracking-tight shadow-xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
-          <Plus className="w-5 h-5" /> ?�문 ?�규 ?�록
+        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-14 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-sm tracking-tight shadow-xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+          <Plus className="w-5 h-5" /> 설문 신규 등록
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
         <CardHeader className="bg-slate-50/50 border-b p-8">
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="?�문명을 ?�력?�여 검?�하?�요"
-                className="h-11 pl-14 rounded-lg border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition-all font-bold"
+                placeholder="설문명을 입력하여 검색하세요"
+                className="h-14 pl-14 rounded-xl border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition-all font-bold"
                 value={params.searchKeyword || ''}
                 onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
               />
             </div>
-            <Button type="submit" className="h-11 px-10 rounded-lg bg-white border-2 border-slate-200 text-slate-900 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95">조회?�기</Button>
+            <Button type="submit" className="h-14 px-10 rounded-xl bg-white border-2 border-slate-200 text-slate-900 font-black text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95">조회하기</Button>
           </form>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[100px] text-center font-bold text-slate-400 text-xs py-6">ID</TableHead>
-                <TableHead className="font-bold text-slate-900 text-xs py-6 px-4">?�문 ?�보 (Survey Name)</TableHead>
-                <TableHead className="w-[250px] font-bold text-slate-400 text-xs py-6 text-center">기간 (Period)</TableHead>
-                <TableHead className="w-[120px] font-bold text-slate-400 text-xs py-6 text-center">?�태</TableHead>
-                <TableHead className="w-[150px] font-bold text-slate-400 text-xs py-6 text-center">?�록??/TableHead>
-                <TableHead className="w-[150px] font-bold text-slate-400 text-xs py-6 text-center">?�록??/TableHead>
+                <TableHead className="w-[100px] text-center font-black text-slate-400 text-xs py-6">ID</TableHead>
+                <TableHead className="font-black text-slate-900 text-xs py-6 px-4">설문 정보 (Survey Name)</TableHead>
+                <TableHead className="w-[250px] font-black text-slate-400 text-xs py-6 text-center">기간 (Period)</TableHead>
+                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">상태</TableHead>
+                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">등록자</TableHead>
+                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">등록일</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,7 +99,7 @@ export default function PollManagePage() {
               ) : polls.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-40">
-                    검??결과가 존재?��? ?�습?�다.
+                    검색 결과가 존재하지 않습니다.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -115,7 +115,7 @@ export default function PollManagePage() {
                     <TableCell className="px-4 py-6">
                       <div className="flex items-center gap-3">
                         <FileText className="w-5 h-5 text-primary opacity-20 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-[17px] font-bold text-slate-800 group-hover:text-primary transition-colors">{poll.pollNm}</span>
+                        <span className="text-[17px] font-black text-slate-800 group-hover:text-primary transition-colors">{poll.pollNm}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center py-6">

@@ -47,7 +47,7 @@ export default function SurveyResponseDetailPage() {
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="text-3xl font-bold tracking-tight">설문 응답 상세</h1>
+                <h1 className="text-3xl font-black tracking-tight">설문 응답 상세</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -56,11 +56,11 @@ export default function SurveyResponseDetailPage() {
                         <User size={120} />
                     </div>
                     <CardHeader>
-                        <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] opacity-50">응답자 정보</CardTitle>
+                        <CardTitle className="text-xs font-black uppercase tracking-[0.2em] opacity-50">응답자 정보</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6 relative z-10">
                         <div className="space-y-1">
-                            <p className="text-3xl font-bold tracking-tight">{response?.respondNm}</p>
+                            <p className="text-3xl font-black tracking-tighter">{response?.respondNm}</p>
                             <p className="text-xs font-bold text-slate-400">Respondent Profile</p>
                         </div>
                         <div className="space-y-4 pt-4 border-t border-white/10">
@@ -70,7 +70,7 @@ export default function SurveyResponseDetailPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-sm font-bold underline underline-offset-4 decoration-emerald-500/30">_ 검증된 수신</span>
+                                <span className="text-sm font-black underline underline-offset-4 decoration-emerald-500/30">_ 검증된 수신</span>
                             </div>
                         </div>
                     </CardContent>
@@ -84,7 +84,7 @@ export default function SurveyResponseDetailPage() {
                     </CardHeader>
                     <CardContent className="pt-8 space-y-8">
                         <div className="space-y-3">
-                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
+                            <Label className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
                             <div className="p-6 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
                                 {response?.respondAnswerCn || '응답 내용이 등록되지 않았습니다.'}
                             </div>

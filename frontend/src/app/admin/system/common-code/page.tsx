@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+ï»¿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
@@ -6,8 +6,8 @@ import { CmmnClCode, CmmnCode, CmmnDetailCode, PageResponse } from '@/types/foun
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
-  title: 'ÅëÇÕ ÄÚµå Çãºê | ÀüÀÚÁ¤ºÎ ÇÁ·¹ÀÓ¿öÅ©',
-  description: '°øÅëÄÚµå, ÇàÁ¤ÄÚµå, ±â¾÷ÄÚµå µî ½Ã½ºÅÛ Àü¹İÀÇ ¸ŞÅ¸µ¥ÀÌÅÍ¸¦ ÅëÇÕ °ü¸®ÇÕ´Ï´Ù.',
+  title: 'í†µí•© ì½”ë“œ í—ˆë¸Œ | ì „ìì •ë¶€ í”„ë ˆì„ì›Œí¬',
+  description: 'ê³µí†µì½”ë“œ, í–‰ì •ì½”ë“œ, ê¸°ì—…ì½”ë“œ ë“± ì‹œìŠ¤í…œ ì „ë°˜ì˜ ë©”íƒ€ë°ì´í„°ë¥¼ í†µí•© ê´€ë¦¬í•©ë‹ˆë‹¤.',
 };
 
 export default async function CommonCodePage({
@@ -62,17 +62,17 @@ function CommonCodeLoading() {
   return (
     <div className="space-y-12 animate-pulse p-8">
       <div className="flex items-center gap-6 mb-12">
-        <div className="h-12 w-16 bg-slate-100 rounded-lg" />
+        <div className="h-16 w-16 bg-slate-100 rounded-xl" />
         <div className="space-y-4">
-          <div className="h-10 w-64 bg-slate-100 rounded-lg" />
+          <div className="h-10 w-64 bg-slate-100 rounded-xl" />
           <div className="h-4 w-48 bg-slate-100 rounded-lg opacity-40" />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
         <div className="lg:col-span-1 space-y-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-lg" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-xl" />)}
         </div>
-        <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-lg" />
+        <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-xl" />
       </div>
     </div>
   );

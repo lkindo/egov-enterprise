@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -92,7 +92,7 @@ function LoginContent() {
                                 <motion.div
                                     initial={{ scale: 0.8 }}
                                     animate={{ scale: 1 }}
-                                    className="w-20 h-20 bg-white rounded-lg shadow-2xl flex items-center justify-center mb-6"
+                                    className="w-20 h-20 bg-white rounded-2xl shadow-2xl flex items-center justify-center mb-6"
                                 >
                                     {authStep === 1 ? (
                                         <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -138,7 +138,7 @@ function LoginContent() {
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="id" className="text-xs font-bold text-slate-400 tracking-widest uppercase font-mono ml-1">_ Identity_Protocol</Label>
+                                <Label htmlFor="id" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono ml-1">_ Identity_Protocol</Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -147,7 +147,7 @@ function LoginContent() {
                                         placeholder="Enter Node ID..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
+                                        className="h-14 pl-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
@@ -159,7 +159,7 @@ function LoginContent() {
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="password" className="text-xs font-bold text-slate-400 tracking-widest uppercase font-mono ml-1">_ Access_Sequence</Label>
+                                <Label htmlFor="password" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono ml-1">_ Access_Sequence</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -169,7 +169,7 @@ function LoginContent() {
                                         placeholder="쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
+                                        className="h-14 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -192,11 +192,11 @@ function LoginContent() {
                             >
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-500 tracking-widest uppercase font-mono cursor-pointer select-none">
+                                    <Label htmlFor="remember" className="text-[10px] font-black text-slate-500 tracking-widest uppercase font-mono cursor-pointer select-none">
                                         Keep_Session
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-xs font-bold text-primary tracking-widest uppercase font-mono p-0 h-auto">_ Forgot_Key?</Button>
+                                <Button variant="link" className="text-[10px] font-black text-primary tracking-widest uppercase font-mono p-0 h-auto">_ Forgot_Key?</Button>
                             </motion.div>
 
                             {error && (
@@ -204,7 +204,7 @@ function LoginContent() {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     data-testid="login-error"
-                                    className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
+                                    className="text-[10px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
                                 >
                                     Error: {error}
                                 </motion.div>
@@ -219,7 +219,7 @@ function LoginContent() {
                                 className="w-full"
                             >
                                 <Button 
-                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-bold text-xs tracking-[0.2em] uppercase shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group" 
+                                    className="w-full h-14 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-black text-[11px] tracking-[0.2em] uppercase shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group" 
                                     type="submit" 
                                     disabled={isSubmitting}
                                 >
@@ -230,7 +230,7 @@ function LoginContent() {
                         </CardFooter>
                     </form>
                 </Card>
-                <p className="mt-8 text-center text-xs font-bold text-slate-700 tracking-tight">
+                <p className="mt-8 text-center text-[11px] font-bold text-slate-700 tracking-tight">
                     &copy; 2026 관리 통합 시스템. 보안 노드 01.
                 </p>
             </motion.div>

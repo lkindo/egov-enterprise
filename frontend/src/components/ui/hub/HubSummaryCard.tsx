@@ -58,7 +58,7 @@ export function HubSummaryCard({
       variants={cardVariants}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-lg transition-all duration-500 flex flex-col justify-between h-[320px] relative overflow-hidden group hub-glass-2",
+        "p-10 rounded-xl transition-all duration-500 flex flex-col justify-between h-[320px] relative overflow-hidden group hub-glass-2",
         colorMap[color],
         className
       )}
@@ -69,7 +69,7 @@ export function HubSummaryCard({
         </div>
         {trend !== undefined && trend !== 0 && (
           <div className={cn(
-            "flex items-center gap-1 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-md border tabular-nums",
+            "flex items-center gap-1 text-[11px] font-black px-4 py-1.5 rounded-full backdrop-blur-md border tabular-nums",
             trend > 0 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-red-500/10 border-red-500/20 text-red-600"
           )}>
             {trend > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
@@ -79,14 +79,14 @@ export function HubSummaryCard({
       </div>
 
       <div className="space-y-2 relative z-10">
-        <p className="text-xs font-bold tracking-[0.3em] opacity-80 mb-2 uppercase flex items-center gap-2">
+        <p className="text-[11px] font-black tracking-[0.3em] opacity-80 mb-2 uppercase flex items-center gap-2">
           {title}
           {e2eLabel && <span className="e2e-label sr-only">{e2eLabel}</span>}
         </p>
-        <h4 className="text-3xl font-bold tracking-tight leading-none tabular-nums">{value}</h4>
+        <h4 className="text-3xl font-black tracking-tighter leading-none tabular-nums">{value}</h4>
         {description && (
           <div className="pt-6">
-            <div className="text-xs opacity-80 font-bold leading-relaxed max-w-[180px]">
+            <div className="text-[11px] opacity-80 font-bold leading-relaxed max-w-[180px]">
               {description}
             </div>
           </div>

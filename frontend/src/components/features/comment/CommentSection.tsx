@@ -109,7 +109,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
             <MessageSquare className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">댓글</h3>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">댓글</h3>
             <p className="text-sm font-bold text-slate-400 tracking-tight">{comments.length} 개의 생각</p>
           </div>
         </div>
@@ -132,8 +132,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
                         <User className="w-5 h-5 text-slate-400" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-900 leading-tight">{comment.wrterNm}</h4>
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-tight mt-1">
+                        <h4 className="font-black text-slate-900 leading-tight">{comment.wrterNm}</h4>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 tracking-tight mt-1">
                           <Clock className="w-3 h-3" />
                           {comment.createdDate ? format(new Date(comment.createdDate), 'yyyy-MM-dd HH:mm') : '-'}
                         </div>
@@ -178,7 +178,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
         <Card className="relative border-none shadow-2xl rounded-[0.1rem] bg-white ring-1 ring-slate-100 overflow-hidden">
           <CardContent className="p-8 space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-bold hover:bg-slate-900">댓글</Badge>
+              <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">댓글</Badge>
             </div>
             <Textarea
               placeholder="메시지를 입력하세요..."
@@ -190,7 +190,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
               <Button
                 type="submit"
                 disabled={submitting || !commentCn.trim()}
-                className="h-11 px-8 rounded-[0.1rem] bg-slate-900 hover:bg-black text-white font-bold shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition-all"
+                className="h-14 px-8 rounded-[0.1rem] bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition-all"
               >
                 <Send className="w-4 h-4" /> 게시하기
               </Button>

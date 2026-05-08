@@ -143,7 +143,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
 
   const navContent = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-bold tracking-widest uppercase font-mono rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
+      "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-black tracking-widest uppercase font-mono rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
       isActive
         ? "bg-slate-900 text-white shadow-xl"
         : "text-slate-500 hover:bg-slate-900 hover:text-white",
@@ -151,7 +151,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",
-      depth > 0 && "font-bold"
+      depth > 0 && "font-black"
     )}>
       <div className="flex items-center gap-3">
         {Icon && depth === 0 && (
@@ -248,7 +248,7 @@ const MobileDomainNode = ({
       <button
         onClick={onSelect}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-xs font-bold tracking-[0.2em] uppercase font-mono",
+          "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-[11px] font-black tracking-[0.2em] uppercase font-mono",
           isActive
             ? "bg-slate-900 text-white border-slate-900 shadow-xl"
             : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900"
@@ -283,7 +283,7 @@ const MobileDomainNode = ({
                 ))}
               </div>
             ) : menus.length === 0 ? (
-              <div className="p-4 text-center text-xs font-medium text-muted-foreground/40">
+              <div className="p-4 text-center text-[10px] font-medium text-muted-foreground/40">
                 하위 메뉴가 없습니다.
               </div>
             ) : (
@@ -369,11 +369,11 @@ export function Sidebar({
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
             <Link href="/" className="flex items-center gap-3.5" onClick={() => setSidebarOpen(false)}>
               <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
-                <span className="text-primary font-bold text-lg">EG</span>
+                <span className="text-primary font-black text-lg">EG</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-bold tracking-tight leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-xs text-slate-600 font-semibold tracking-wider">포털 5.0</span>
+                <span className="text-[10px] text-slate-600 font-semibold tracking-wider">포털 5.0</span>
               </div>
             </Link>
             <Button
@@ -390,7 +390,7 @@ export function Sidebar({
             {/* Mobile View */}
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
-                <div className="text-xs font-bold text-slate-600 tracking-wider">
+                <div className="text-[11px] font-black text-slate-600 tracking-wider">
                   서비스 모듈
                 </div>
               </div>
@@ -409,11 +409,11 @@ export function Sidebar({
             {/* Desktop View */}
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-600 tracking-wider">
+                <div className="text-[11px] font-black text-slate-600 tracking-wider">
                   전체 메뉴
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
-                  <Badge variant="secondary" className="text-xs px-2 py-0 border-none">
+                  <Badge variant="secondary" className="text-[9px] px-2 py-0 border-none">
                     {topMenus.find(m => m.menuNo === activeMenuNo)?.menuNm}
                   </Badge>
                 )}
@@ -448,9 +448,9 @@ export function Sidebar({
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={14} className="text-primary" />
-                <span className="text-xs font-bold text-primary tracking-[0.3em] uppercase font-mono">_ HUB_NODE_v5.0</span>
+                <span className="text-[10px] font-black text-primary tracking-[0.3em] uppercase font-mono">_ HUB_NODE_v5.0</span>
               </div>
-              <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase font-mono">
+              <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase font-mono">
                 Advanced_Enterprise_Core
                 <br />
                 Build_Ref: 1.0.2_STABLE

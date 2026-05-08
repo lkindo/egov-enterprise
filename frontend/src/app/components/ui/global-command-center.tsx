@@ -191,18 +191,18 @@ export function GlobalCommandCenter() {
       />
 
       <div
-        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
+        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
         {/* Search Header */}
         <div className="flex items-center px-10 py-8 border-b border-primary/10 gap-6">
-          <div className="p-3 bg-primary/10 rounded-lg text-primary animate-pulse">
+          <div className="p-3 bg-primary/10 rounded-xl text-primary animate-pulse">
             <Search size={28} />
           </div>
           <input
             ref={inputRef}
             placeholder="검색..."
-            className="flex-1 bg-transparent border-none outline-none text-2xl font-bold placeholder:text-muted-foreground/30 tracking-tight"
+            className="flex-1 bg-transparent border-none outline-none text-2xl font-black placeholder:text-muted-foreground/30 tracking-tight"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -210,7 +210,7 @@ export function GlobalCommandCenter() {
             }}
           />
           <div className="hidden sm:flex items-center gap-3">
-            <div className="px-3 py-1.5 bg-muted rounded-lg border text-xs font-bold text-muted-foreground tracking-tight">ESC로 닫기</div>
+            <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC로 닫기</div>
           </div>
         </div>
 
@@ -224,7 +224,7 @@ export function GlobalCommandCenter() {
 
                 return (
                   <div key={cat} className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] px-4 mb-3 flex items-center gap-3">
+                    <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] px-4 mb-3 flex items-center gap-3">
                       <span className="w-4 h-px bg-muted-foreground/30" />
                       {cat}
                     </p>
@@ -237,7 +237,7 @@ export function GlobalCommandCenter() {
                           <button
                             key={item.id}
                             className={cn(
-                              "w-full flex items-center justify-between p-5 rounded-lg transition-all duration-300 group text-left",
+                              "w-full flex items-center justify-between p-5 rounded-xl transition-all duration-300 group text-left",
                               isFocused
                                 ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/30 scale-[1.01] z-10"
                                 : "hover:bg-primary/5 text-foreground"
@@ -247,13 +247,13 @@ export function GlobalCommandCenter() {
                           >
                             <div className="flex items-center gap-5">
                               <div className={cn(
-                                "w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500",
+                                "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500",
                                 isFocused ? "bg-white/20 rotate-12 scale-110" : "bg-muted group-hover:bg-primary/10 group-hover:rotate-6 shadow-inner"
                               )}>
                                 {item.icon || <ShieldCheck size={20} />}
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-bold text-lg tracking-tight leading-none mb-1">{item.name}</span>
+                                <span className="font-black text-lg tracking-tight leading-none mb-1">{item.name}</span>
                                 {item.description && (
                                   <span className={cn(
                                     "text-sm font-bold opacity-60",
@@ -280,11 +280,11 @@ export function GlobalCommandCenter() {
             </div>
           ) : (
             <div className="py-24 text-center space-y-6">
-              <div className="w-24 h-24 bg-muted/30 rounded-lg flex items-center justify-center mx-auto animate-bounce">
+              <div className="w-24 h-24 bg-muted/30 rounded-xl flex items-center justify-center mx-auto animate-bounce">
                 <Zap size={32} className="text-muted-foreground/20" />
               </div>
               <div>
-                <p className="text-xl font-bold text-foreground">결과를 찾을 수 없습니다.</p>
+                <p className="text-xl font-black text-foreground">결과를 찾을 수 없습니다.</p>
                 <p className="text-sm text-muted-foreground font-bold mt-1">도움이 필요하시면 시스템 관리자에게 문의하세요.</p>
               </div>
             </div>
@@ -295,12 +295,12 @@ export function GlobalCommandCenter() {
         <div className="bg-muted px-10 py-6 border-t border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
-              <kbd className="px-2 py-1 bg-background border rounded-lg text-xs font-bold">이동</kbd>
-              <span className="text-xs font-bold text-muted-foreground opacity-60">이동</span>
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">이동</kbd>
+              <span className="text-[10px] font-black text-muted-foreground opacity-60">이동</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-2 py-1 bg-background border rounded-lg text-xs font-bold">입력</kbd>
-              <span className="text-xs font-bold text-muted-foreground opacity-60">선택</span>
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">입력</kbd>
+              <span className="text-[10px] font-black text-muted-foreground opacity-60">선택</span>
             </div>
           </div>
 
@@ -308,7 +308,7 @@ export function GlobalCommandCenter() {
             <div className="h-6 w-px bg-muted-foreground/20" />
             <div className="flex items-center gap-3">
               <Globe size={14} className="text-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-muted-foreground tracking-tight tracking-tight">
+              <span className="text-[10px] font-black text-muted-foreground tracking-tight tracking-tighter">
                 시스템 상태: <span className="text-emerald-500">최적화됨</span>
               </span>
             </div>

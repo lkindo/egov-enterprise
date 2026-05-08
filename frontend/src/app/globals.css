@@ -7,7 +7,7 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  --font-sans: "Pretendard", var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-sans: var(--font-inter), "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-outfit: var(--font-outfit), sans-serif;
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -111,15 +111,15 @@
     --surface-raised: 0 0% 100%;
 
     /* --- Core Design Tokens (Project-wide) --- */
-    --font-size-hub-title: 1.5rem;      /* 2xl (reduced from 3xl) */
-    --font-size-hub-subtitle: 0.75rem;  /* 12px (increased slightly for readability) */
-    --font-weight-hub-title: 800;       /* extrabold (softened from black) */
-    --letter-spacing-hub: -0.03em;      /* less tight */
-    --letter-spacing-label: 0.1em;      /* softer label tracking */
+    --font-size-hub-title: 1.875rem;    /* 3xl */
+    --font-size-hub-subtitle: 0.625rem; /* 10px */
+    --font-weight-hub-title: 900;       /* black */
+    --letter-spacing-hub: -0.05em;      /* tracking-tighter */
+    --letter-spacing-label: 0.3em;      /* wide label tracking */
     
-    --radius-hub-section: 1.5rem;       /* Hub main section cards (reduced from 3.5rem) */
-    --radius-hub-widget: 1rem;          /* Hub mini widgets (reduced from 2rem) */
-    --radius-hub-item: 0.75rem;         /* Hub list items (reduced from 1.5rem) */
+    --radius-hub-section: 3.5rem;       /* Hub main section cards */
+    --radius-hub-widget: 2rem;          /* Hub mini widgets */
+    --radius-hub-item: 1.5rem;          /* Hub list items / Summaries */
 
     --gap-base: 1rem;
     --gap-hub-section: 3rem;            /* Spacing between major sections (48px) */
@@ -275,15 +275,15 @@
   }
 
   .hub-table-container {
-    @apply rounded-lg border border-slate-200/60 overflow-hidden bg-white/80 dark:bg-slate-900/80 dark:border-border/40 shadow-sm transition-all duration-500;
+    @apply rounded-xl border border-slate-200/60 overflow-hidden bg-white/80 dark:bg-slate-900/80 dark:border-border/40 shadow-sm transition-all duration-500;
   }
 
   .hub-card-premium {
-    @apply rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
+    @apply rounded-xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
   }
 
   .hub-card-dark {
-    @apply rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
+    @apply rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
   }
 
   /* --- Premium Animations --- */
@@ -297,12 +297,12 @@
 
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
-     @apply text-[length:var(--font-size-hub-subtitle)] font-bold tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
+     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
      /* Italics removed, wide tracking preserved */
   }
 
   .hub-tech-label {
-    @apply font-mono font-bold tracking-[0.3em] uppercase;
+    @apply font-mono font-black tracking-[0.3em] uppercase;
     display: inline-flex;
     items-center: center;
     gap: 0.5em;

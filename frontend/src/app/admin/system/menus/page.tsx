@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+ï»¿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
@@ -6,8 +6,8 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
-    title: '½Ã½ºÅÛ ¸Ş´º ¾ÆÅ°ÅØÃ³ | ÀüÀÚÁ¤ºÎ Ç¥ÁØÇÁ·¹ÀÓ¿öÅ©',
-    description: '½Ã½ºÅÛ Æ®¸® ±¸Á¶¿Í ÇÁ·Î±×·¥ ¿¬°á Ã¼°è¸¦ ÅëÇÕ °ü¸®ÇÕ´Ï´Ù.',
+    title: 'ì‹œìŠ¤í…œ ë©”ë‰´ ì•„í‚¤í…ì²˜ | ì „ìì •ë¶€ í‘œì¤€í”„ë ˆì„ì›Œí¬',
+    description: 'ì‹œìŠ¤í…œ íŠ¸ë¦¬ êµ¬ì¡°ì™€ í”„ë¡œê·¸ë¨ ì—°ê²° ì²´ê³„ë¥¼ í†µí•© ê´€ë¦¬í•©ë‹ˆë‹¤.',
 };
 
 export default async function MenuAdminPage() {
@@ -28,10 +28,10 @@ export default async function MenuAdminPage() {
         <div className="p-8 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <Suspense fallback={
                 <div className="animate-pulse space-y-12">
-                    <div className="h-20 bg-slate-100 rounded-lg w-1/3" />
+                    <div className="h-20 bg-slate-100 rounded-xl w-1/3" />
                     <div className="grid grid-cols-12 gap-8">
-                        <div className="col-span-12 lg:col-span-5 h-[800px] bg-slate-100 rounded-lg" />
-                        <div className="col-span-12 lg:col-span-7 h-[800px] bg-slate-100 rounded-lg" />
+                        <div className="col-span-12 lg:col-span-5 h-[800px] bg-slate-100 rounded-xl" />
+                        <div className="col-span-12 lg:col-span-7 h-[800px] bg-slate-100 rounded-xl" />
                     </div>
                 </div>
             }>
