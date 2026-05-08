@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {"id": "concept:hub_and_spoke", "label": "Hub & Spoke Architecture", "type": "pattern", "description": "Unified UI pattern for complex enterprise modules"},
+    {"id": "concept:unified_premium", "label": "Unified Premium Design", "type": "design_system", "description": "Cohesive visual strategy using Hub Blue and Pretendard"},
+    {"id": "concept:event_driven_decoupling", "label": "Event-Driven Decoupling", "type": "architecture", "description": "Spring Events used to sync state between Board, Comment, and Sanction modules"},
+    {"id": "module:board", "label": "Board Module", "type": "module"},
+    {"id": "module:sanction", "label": "Informal Sanction Module", "type": "module"},
+    {"id": "module:notification", "label": "Notification Module", "type": "module"},
+    {"id": "module:dashboard", "label": "Unified Dashboard", "type": "module"}
+  ],
+  "edges": [
+    {"source": "module:comment", "target": "module:board", "label": "updates_count_via", "relation": "event:CommentCreatedEvent"},
+    {"source": "module:sanction", "target": "module:notification", "label": "triggers_notify_via", "relation": "event:SanctionStatusChangedEvent"},
+    {"source": "module:dashboard", "target": "module:board", "label": "aggregates", "relation": "ui:HubListCard"},
+    {"source": "module:dashboard", "target": "module:sanction", "label": "aggregates", "relation": "ui:HubSummaryCard"},
+    {"source": "concept:hub_and_spoke", "target": "module:dashboard", "label": "implemented_in", "relation": "architecture"},
+    {"source": "concept:unified_premium", "target": "module:dashboard", "label": "styles", "relation": "design"}
+  ],
+  "hyperedges": [],
+  "input_tokens": 5000,
+  "output_tokens": 1000
+}
