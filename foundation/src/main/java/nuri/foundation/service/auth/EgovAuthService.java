@@ -4,11 +4,13 @@ import nuri.foundation.service.auth.dto.LoginRequest;
 import nuri.foundation.service.auth.dto.TokenResponse;
 
 /**
- * ?몄쬆 ??퉬???명꽣??씠??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
+ * 인증 서비스 인터페이스
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건을 충족하기 위한 인터페이스 정의
+ */
 public interface EgovAuthService {
 
     /**
-     * 濡쒓泥섎????좏겙 諛쒓??     */
+     * 로그인 처리 및 토큰 발급
+     */
     TokenResponse login(LoginRequest request);
 }

@@ -6,9 +6,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 /**
- * ?봔뽯씜?얜똾釉酉
+ * 부서업무함
  *
- * @see NDEPTJOBBX ???뵠筌띲끋釉
+ * @see NDEPTJOBBX 데이터베이스
  */
 @Entity
 @Table(name = "ndeptjobbx")

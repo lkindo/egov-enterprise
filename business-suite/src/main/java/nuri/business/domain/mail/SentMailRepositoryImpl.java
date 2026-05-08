@@ -40,11 +40,11 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
             return null;
         }
 
-        if ("1".equals(searchCondition)) { // ??뺛걠 (sj)
+        if ("1".equals(searchCondition)) { // 제목 (sj)
             return sentMail.sj.contains(searchKeyword);
-        } else if ("2".equals(searchCondition)) { // 筌롫뗄???곸뒠 (emailCn)
+        } else if ("2".equals(searchCondition)) { // 메일내용 (emailCn)
             return sentMail.emailCn.contains(searchKeyword);
-        } else if ("3".equals(searchCondition)) { // 獄쏆뮇???(dsptchPerson)
+        } else if ("3".equals(searchCondition)) { // 발신자 (dsptchPerson)
             return sentMail.dsptchPerson.contains(searchKeyword);
         }
 

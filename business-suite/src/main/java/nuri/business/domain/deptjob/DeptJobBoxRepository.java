@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
- * ?봔뽯씜?얜똾釉귐뗫７筌왖醫듼봺
+ * 부서업무함 저장소
  */
 @Repository
 public interface DeptJobBoxRepository extends JpaRepository<DeptJobBox, String> {

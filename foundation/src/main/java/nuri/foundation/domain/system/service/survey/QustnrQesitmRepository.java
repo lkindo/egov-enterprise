@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * ??뿅??얜챸鍮Repository
+ * 설문조사 문항 Repository
  */
 public interface QustnrQesitmRepository extends JpaRepository<QustnrQesitm, String> {
     Page<QustnrQesitm> findByQestnrId(String qestnrId, Pageable pageable);

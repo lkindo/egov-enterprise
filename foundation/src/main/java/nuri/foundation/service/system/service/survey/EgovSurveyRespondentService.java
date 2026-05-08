@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * ???묐떟????퉬???명꽣??씠??
+ * 설문응답자 서비스 인터페이스
  */
 public interface EgovSurveyRespondentService {
 

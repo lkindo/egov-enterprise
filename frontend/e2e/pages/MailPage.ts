@@ -54,13 +54,30 @@ export class MailPage {
         
         // 1. Force search to isolate the item (prevents clicking wrong item or race conditions)
         const searchInput = this.page.getByRole('textbox', { name: '메일 검색' });
-        await searchInput.clear();
-        await searchInput.fill(subject);
-        await this.page.keyboard.press('Enter');
-        
-        // Wait for list to refresh
-        await this.page.waitForTimeout(2000); 
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
+        
+        // Retry loop for eventual consistency (DB sync delay)
+        let found = false;
+        for (let i = 0; i < 3; i++) {
+            console.log(`>>> [Mail] Searching for subject: ${subject} (attempt ${i + 1})`);
+            await searchInput.clear();
+            await searchInput.fill(subject);
+            await this.page.keyboard.press('Enter');
+            
+            // Wait for list to refresh and check visibility
+            await this.page.waitForTimeout(2000); 
+            if (await mailItem.isVisible().catch(() => false)) {
+                found = true;
+                break;
+            }
+            console.log(`>>> [Mail] Subject not found in attempt ${i + 1}, retrying...`);
+            await this.page.reload();
+            await this.page.waitForLoadState('networkidle');
+        }
+
+        if (!found) {
+            console.error(`>>> [Mail] Failed to find mail with subject: ${subject} after retries.`);
+        }
         await mailItem.waitFor({ state: 'visible', timeout: 15000 });
 
         // 2. Click without force: true to ensure React event handler catches it

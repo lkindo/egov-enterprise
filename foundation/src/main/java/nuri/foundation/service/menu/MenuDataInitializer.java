@@ -23,7 +23,7 @@ public class MenuDataInitializer implements CommandLineRunner {
     private final MenuRepository menuRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    // ??뱶?붾????? 寃쎈??????꾨줈??듃 ???????뵆??SQL 李몄???룄???젙
+    // 레거시 데이터 초기화 경로 설정 - 프로젝트 표준 템플릿 SQL 파일 참조
     private File scriptFile = new File(
             "egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
 

@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
- * 癰귣沅쭫?? Repository
+ * 발신쪽지 Repository
  */
 @Repository("noteTrnsmitDomainRepository")
 public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {

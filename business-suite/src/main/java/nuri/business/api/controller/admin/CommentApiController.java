@@ -14,9 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 愿由ъ옄??댓글 愿由API 而⑦듃濡ㅻ윭
+ * 관리자용 댓글 관리 API 컨트롤러
  */
-@Tag(name = "Comment", description = "댓글 愿由API (Admin)")
+@Tag(name = "Comment", description = "댓글 관리 API (Admin)")
 @RestController("systemCommentApiController")
 @RequestMapping("/api/v1/admin/system/comments")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class CommentApiController {
 
     private final CommentService commentService;
 
-    @Operation(summary = "전체 댓글 목록 조회", description = "?시스템??댁쓽 모든 댓글 목록조회⑸땲??")
+    @Operation(summary = "전체 댓글 목록 조회", description = "시스템 내의 모든 댓글 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
             @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
@@ -43,10 +43,10 @@ public class CommentApiController {
                 PageResponse.of(page.getContent(), pageIndex, 10, (int) page.getTotalElements())));
     }
 
-    @Operation(summary = "댓글 삭제", description = "특정 댓글??삭제(비활성화) 처리합니다")
+    @Operation(summary = "댓글 삭제", description = "특정 댓글을 삭제(비활성화) 처리합니다")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable("id") Long id) {
-        // 愿由ъ옄 권한?쇰줈 삭제?섎濡userId瑜蹂꾨룄濡寃利앺븯吏 ?딆쓬 (?쒖뒪怨꾩젙 ?깆쑝濡吏 媛
+        // 관리자 권한으로 삭제하므로 userId를 별도로 검증하지 않음 (시스템 계정 등...)
         commentService.deleteComment(id, "SYSTEM");
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -46,9 +46,9 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
             return null;
         }
 
-        if ("0".equals(searchCondition)) { // ??뤿뻿甕곕뜇??(RECPTN_TELNO)
+        if ("0".equals(searchCondition)) { // 수신전화번호 (RECPTN_TELNO)
             return QSmsRecptn.smsRecptn.id.recptnTelno.contains(searchKeyword);
-        } else if ("1".equals(searchCondition)) { // ??곸뒠 (TRNSMIS_CN)
+        } else if ("1".equals(searchCondition)) { // 전송내용 (TRNSMIS_CN)
             return QSms.sms.trnsmitCn.contains(searchKeyword);
         }
 

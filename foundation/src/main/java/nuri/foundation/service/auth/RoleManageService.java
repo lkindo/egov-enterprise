@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 퉬??
+ * 권한 관리 서비스 구현체
  */
 @Service("projectRoleManageService")
 @RequiredArgsConstructor

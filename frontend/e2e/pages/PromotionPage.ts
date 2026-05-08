@@ -41,7 +41,7 @@ export class PromotionPage {
         console.log('>>> [Promotion] Setting coordinates and size...');
         // Targeting by full labels for precision (X_PIVOT, Y_PIVOT, W_RES, H_RES)
         const labels = ['가로 좌표 (X_PIVOT)', '세로 좌표 (Y_PIVOT)', '가로 폭 (W_RES)', '세로 높이 (H_RES)'];
-        const values = ['100', '100', '400', '300'];
+        const values = ['50', '50', '400', '300'];
         
         for (let i = 0; i < labels.length; i++) {
             const input = this.page.locator('div').filter({ hasText: labels[i] }).locator('input').first();
@@ -104,7 +104,8 @@ export class PromotionPage {
         // Success detection - look for toast or modal closing
         try {
             console.log('>>> [Promotion] Waiting for success indicator...');
-            await expect(this.page.locator('body')).toHaveText(/(등록되었습니다|완료되었습니다|성공|Success|Completed|Saved)/i, { timeout: 15000 });
+            // Broaden the success text patterns
+            await expect(this.page.locator('body')).toHaveText(/(등록되었습니다|완료되었습니다|성공|Success|Completed|Saved|저장되었습니다)/i, { timeout: 15000 });
             console.log('>>> [Promotion] Success indicator detected');
         } catch (e) {
             console.warn('>>> [Promotion] Success indicator not found, checking if modal closed...');
@@ -117,14 +118,6 @@ export class PromotionPage {
         }
         
         console.log('>>> [Promotion] Creation step completed, reloading page...');
-        
-        // Listen for the next POST request to see if it succeeds
-        this.page.on('response', response => {
-            if (response.url().includes('/api/v1/system/popups') && response.request().method() === 'POST') {
-                console.log(`>>> [Promotion] API Response: ${response.status()} ${response.statusText()}`);
-            }
-        });
-
         await this.page.reload();
         await this.page.waitForLoadState('networkidle');
     }

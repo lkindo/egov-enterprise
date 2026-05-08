@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * ??뿅類ｋ궖 Repository
+ * 설문조사 정보 Repository
  */
 public interface QestnrInfoRepository extends JpaRepository<QestnrInfo, String> {
     Page<QestnrInfo> findByQestnrSjContaining(String qestnrSj, Pageable pageable);

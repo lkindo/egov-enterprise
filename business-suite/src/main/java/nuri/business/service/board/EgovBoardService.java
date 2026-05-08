@@ -11,8 +11,9 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 寃뚯€퉬???명꽣??씠??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
+ * 게시판 서비스 인터페이스
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건을 충족하기 위한 인터페이스 정의
+ */
 public interface EgovBoardService {
 
         Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable);

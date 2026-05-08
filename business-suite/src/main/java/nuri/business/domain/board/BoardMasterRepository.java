@@ -8,7 +8,7 @@ import java.util.Optional;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 野껊슣筌띾뜆???JPA Repository
+ * 게시판 마스터 JPA Repository
  */
 
 @Repository

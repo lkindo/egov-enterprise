@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
- * ???뵬 怨멸쉭 癰귣벏鍮(NFILEDETAIL 癰귣벏鍮 PK)
+ * 파일 상세 식별자 (NFILEDETAIL 식별자 PK)
  */
 @NoArgsConstructor
 @AllArgsConstructor

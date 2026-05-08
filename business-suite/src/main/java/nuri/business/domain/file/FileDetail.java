@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ???뵬 怨멸쉭 酉(NFILEDETAIL ???뵠筌띲끋釉
+ * 파일 상세 엔티티 (NFILEDETAIL 테이블)
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,22 +34,22 @@ public class FileDetail extends BaseEntity {
     private Integer fileSn;
 
     @Column(name = "FILE_STRE_COURS", length = 6000)
-    private String fileStreCours; // 野껋럥以
+    private String fileStreCours; // 파일저장경로
 
     @Column(name = "STRE_FILE_NM", length = 765)
-    private String streFileNm; // ???????뵬筌
+    private String streFileNm; // 저장파일명
 
     @Column(name = "ORIGNL_FILE_NM", length = 765)
-    private String orignlFileNm; // 癒궚 ???뵬筌
+    private String orignlFileNm; // 원본파일명
 
     @Column(name = "FILE_EXTSN", length = 60)
-    private String fileExtsn; // 類ㅼ삢??
+    private String fileExtsn; // 확장자
 
     @Column(name = "FILE_SIZE")
-    private Long fileMg; // ???뵬 由
+    private Long fileMg; // 파일크기
 
     @Column(name = "FILE_CN")
-    private String fileCn; // ???뵬 ??살구
+    private String fileCn; // 파일내용
 
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,
             String orignlFileNm, String fileExtsn, Long fileMg, String fileCn) {

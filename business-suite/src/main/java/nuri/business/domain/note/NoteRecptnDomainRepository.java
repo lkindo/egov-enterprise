@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * 獄쏆룇筌잛럩? Repository
+ * 수신쪽지 Repository
  */
 @Repository("noteRecptnDomainRepository")
 public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {

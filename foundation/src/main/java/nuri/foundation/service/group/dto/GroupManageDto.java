@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 洹몃DTO
+ * 그룹관리 DTO
  */
 @Getter
 @Setter
@@ -15,12 +15,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupManageDto {
-    /** 洹몃?ID */
+    /** 그룹ID */
     private String groupId;
-    /** 洹몃??*/
+    /** 그룹명 */
     private String groupNm;
-    /** 洹몃???챸 */
+    /** 그룹설명 */
     private String groupDc;
-    /** 洹몃???꽦??*/
+    /** 그룹생성일 */
     private String groupCreatDe;
 }

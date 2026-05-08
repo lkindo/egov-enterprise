@@ -41,9 +41,9 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
             return null;
         }
 
-        if ("1".equals(searchCondition)) { // ??곸뵬??깆쁽
+        if ("1".equals(searchCondition)) { // 휴일일자
             return restde.restdeDe.eq(searchKeyword);
-        } else if ("2".equals(searchCondition)) { // ??곸뵬筌
+        } else if ("2".equals(searchCondition)) { // 휴일명
             return restde.restdeNm.contains(searchKeyword);
         }
 

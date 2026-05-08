@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * JPA 湲곕??듯???붾퉬ы쁽?
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹ * - EgovAbstractServiceImpl ?곸냽
- * ?EgovCodeService ?명꽣??씠ы쁽
+ * JPA 기반 공통코드 서비스 구현체
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
+ * - EgovCodeService 인터페이스 구현
  */
 @Service("egovCodeService")
 @Transactional(readOnly = true)
@@ -26,7 +26,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
     }
 
     /**
-     * ?뱀洹몃??붾?CODE_ID)????븳 ?곸꽭 ?붾紐⑸議고??
+     * 특정 코드그룹 ID(CODE_ID)에 대한 상세 코드 목록 조회
      */
     @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
@@ -37,7 +37,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
     }
 
     /**
-     * ?꾩껜 ??꽦 ?붾紐⑸議고??
+     * 전체 활성 코드 목록 조회
      */
     @Override
     public List<CodeDto> getAllActiveCodes() {

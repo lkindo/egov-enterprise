@@ -26,20 +26,20 @@ public class FileItem extends BaseTimeEntity {
     @JoinColumn(name = "file_group_id", nullable = false)
     private FileGroup fileGroup;
 
-    private Integer fileSn; // ???뵬 ??뺤쓰
+    private Integer fileSn; // 파일 일련번호
 
     @Column(nullable = false)
-    private String fileStreCours; // ???뵬 野껋럥以
+    private String fileStreCours; // 파일 저장경로
 
     @Column(nullable = false)
-    private String streFileNm; // 貫留뵬筌
+    private String streFileNm; // 저장파일명
 
     @Column(nullable = false)
-    private String orignlFileNm; // 癒궚 ???뵬筌
+    private String orignlFileNm; // 원본파일명
 
-    private String fileExtsn; // ???뵬 類ㅼ삢??
+    private String fileExtsn; // 파일 확장자
 
-    private Long fileSize; // ???뵬 由
+    private Long fileSize; // 파일 크기
 
     public FileItem(FileGroup fileGroup, Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,
             String fileExtsn, Long fileSize) {

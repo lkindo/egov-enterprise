@@ -15,15 +15,15 @@ import java.time.LocalDateTime;
 @Builder
 public class SatisfactionDto {
     private Long satisfactionId;
-    @NotNull(message = "寃뚯臾ID???꾩닔??땲??")
+    @NotNull(message = "게시물ID는 필수입니다.")
     private Long articleId;
-    @NotBlank(message = "寃뚯???ID???꾩닔??땲??")
+    @NotBlank(message = "게시판ID는 필수입니다.")
     private String boardId;
     private String writerId;
     private String writerNm;
-    @NotNull(message = "留뚯????????꾩닔??땲??")
-    @Min(value = 1, message = "留뚯???????1????긽??뼱????땲??")
-    @Max(value = 5, message = "留뚯???????5????븯??뼱????땲??")
+    @NotNull(message = "만족도는 필수입니다.")
+    @Min(value = 1, message = "만족도는 1 이상이어야 합니다.")
+    @Max(value = 5, message = "만족도는 5 이하여야 합니다.")
     private Integer satisfactionLevel;
     @Size(max = 2000, message = "??껄?? 2000?????????땲??")
     private String satisfactionOpinion;

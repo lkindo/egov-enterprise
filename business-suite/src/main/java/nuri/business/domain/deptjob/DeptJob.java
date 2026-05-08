@@ -30,7 +30,7 @@ public class DeptJob extends BaseEntity {
     private String chargerId;
 
     @Column(name = "PRIORT", length = 1)
-    private String priort; // 1: 誘れ벉, 2: 癰귣똾?? 3: ????
+    private String priort; // 1: 높음, 2: 보통, 3: 낮음
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;

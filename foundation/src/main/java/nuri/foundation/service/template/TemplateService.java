@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ??뵆????퉬ы쁽?
+ * 템플릿 서비스 구현체
  */
 @Service
 @Transactional(readOnly = true)
