@@ -52,52 +52,68 @@ export class MailPage {
         console.log(`[E2E] Verifying mail in history: ${subject}`);
         await expect(this.page).toHaveURL(/\/mail-history/);
         
-        // Wait for list to load
-        const listItems = this.page.getByTestId('mail-item');
-        await listItems.first().waitFor({ state: 'visible', timeout: 15000 });
-
-        // Search specifically for this subject to isolate
+        // 1. Force search to isolate the item (prevents clicking wrong item or race conditions)
         const searchInput = this.page.getByRole('textbox', { name: '메일 검색' });
-        if (await searchInput.isVisible()) {
-            await searchInput.clear();
-            await searchInput.fill(subject);
-            await this.page.keyboard.press('Enter');
-            
-            // Wait for filtered result to be visible
-            await this.page.getByTestId('mail-item').filter({ hasText: subject }).first().waitFor({ state: 'visible', timeout: 15000 });
+        await searchInput.clear();
+        await searchInput.fill(subject);
+        await this.page.keyboard.press('Enter');
+        
+        // Wait for list to refresh
+        await this.page.waitForTimeout(2000); 
+        const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
+        await mailItem.waitFor({ state: 'visible', timeout: 15000 });
+
+        // 2. Click without force: true to ensure React event handler catches it
+        console.log('[E2E] Clicking mail item...');
+        await mailItem.click();
+        
+        // 3. Verify detail panel with retry if it stays in empty state
+        const detailPanel = this.page.locator('.lg\\:col-span-7');
+        const emptyStateText = detailPanel.locator('h3').filter({ hasText: 'Select Dispatch Node' });
+        
+        try {
+            // Wait for empty state to disappear
+            await expect(emptyStateText).not.toBeVisible({ timeout: 5000 });
+        } catch (e) {
+            console.log('[E2E] Detail panel not updating, clicking again...');
+            await mailItem.click();
+            await expect(emptyStateText).not.toBeVisible({ timeout: 10000 });
         }
 
-        const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
-        await expect(mailItem).toBeVisible({ timeout: 15000 });
+        // 4. Final verification of content
+        await expect(detailPanel.locator('h2')).toHaveText('Mail Intelligence', { timeout: 15000 });
+        const detailSubject = detailPanel.locator('h3');
+        await expect(detailSubject).toContainText(subject, { timeout: 20000 });
         
-        console.log('[E2E] Clicking mail item...');
-        await mailItem.click({ force: true });
-        
-        // Wait for the detail panel to be visible and stable (it has a specific header)
-        const detailPanelHeader = this.page.locator('h2').filter({ hasText: 'Mail Intelligence' });
-        await detailPanelHeader.waitFor({ state: 'visible', timeout: 15000 });
-        
-        // Verify detail
-        const detailSubject = this.page.locator('h3').filter({ hasText: subject }).first();
-        await expect(detailSubject).toBeVisible({ timeout: 15000 });
+        console.log(`[E2E] Success: Mail "${subject}" verified in detail panel.`);
     }
 
     async deleteMail(subject: string) {
         console.log(`[E2E] Deleting mail: ${subject}`);
+        
+        const searchInput = this.page.getByRole('textbox', { name: '메일 검색' });
+        await searchInput.clear();
+        await searchInput.fill(subject);
+        await this.page.keyboard.press('Enter');
+        await this.page.waitForTimeout(2000);
+
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
         await mailItem.waitFor({ state: 'visible', timeout: 10000 });
-        await mailItem.click({ force: true });
+        await mailItem.click();
         
-        // Register dialog handler
+        const detailPanel = this.page.locator('.lg\\:col-span-7');
+        await expect(detailPanel.locator('h2')).toHaveText('Mail Intelligence', { timeout: 10000 });
+
         this.page.once('dialog', async dialog => {
+            console.log(`[E2E] Confirming delete dialog: ${dialog.message()}`);
             await dialog.accept();
         });
 
         const deleteBtn = this.page.getByTestId('delete-mail-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
-        await deleteBtn.click({ force: true });
+        await deleteBtn.click();
         
-        // Verify deletion
         await expect(mailItem).not.toBeVisible({ timeout: 15000 });
+        console.log('[E2E] Mail deleted successfully.');
     }
 }
