@@ -3,19 +3,14 @@
 import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
-import {
- Table,
- TableBody,
- TableCell,
- TableHead,
- TableHeader,
- TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Trash2, Home, ChevronRight, UserCircle, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Plus, Trash2, Home, ChevronRight, UserCircle, Phone, Mail, MapPin, Layers, Zap, RefreshCcw, Activity } from "lucide-react";
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { PageHeader } from '@/app/components/layout/page-header';
 
 interface AddressBookListClientProps {
  dataPromise: Promise<{
@@ -70,190 +65,140 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  }
  };
 
- // Subsequent page changes
- useEffect(() => {
- if (pageNo !== initialParams.pageNo) {
- fetchList(pageNo, searchWrd);
- }
- }, [pageNo]);
-
- return (
- <div className="flex flex-col gap-8 p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-700">
- {/* Breadcrumb & Header Title */}
- <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
- <div className="space-y-4">
- <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-[0.2em] bg-primary/5 px-4 py-1.5 rounded-lg w-fit">
- <Home className="w-3 h-3" /> HOME <ChevronRight className="w-3 h-3 opacity-30" /> 협업 <ChevronRight className="w-3 h-3 opacity-30" /> 주소록
- </div>
- <div className="space-y-1">
- <h1 className="text-4xl font-bold tracking-tighter text-slate-900 ">
- Contact <span className="text-primary ">Directory</span>
- </h1>
- <p className="text-muted-foreground font-medium text-sm max-w-lg leading-relaxed">
- 부서 및 외부 협업을 위한 통합 주소록 센터입니다. 성명, 조직, 직책 기반의 빠른 연락처 조회가 가능합니다.
- </p>
- </div>
- </div>
-
- <div className="flex items-center gap-3">
- <div className="bg-slate-900 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 ring-8 ring-slate-50 border border-white/10 shrink-0">
- <UserCircle className="w-5 h-5 text-primary" />
- <span className="text-sm font-bold opacity-60 tracking-tight">전체 등록 연락처</span>
- <div className="h-4 w-px bg-white/20 mx-1" />
- <span className="text-2xl font-bold">{totalCount}건</span>
- </div>
- <Link href="/admin/collaboration/address-book/insert-address-book">
- <Button size="lg" className="h-11 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-lg font-bold transition-all active:scale-95 shrink-0">
- <Plus className="w-5 h-5" /> 신규 연락처
- </Button>
- </Link>
- </div>
- </div>
-
- <Card className="border-none shadow-2xl overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
- <CardHeader className="bg-slate-50/50 pb-8 pt-10 px-10 border-b">
- <form onSubmit={handleSearch} className="flex-1 flex gap-3 max-w-2xl">
- <div className="relative flex-1 group">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
- <Input
- type="text"
- className="pl-12 h-11 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition-all shadow-inner rounded-lg"
- placeholder="성명, 전화번호, 소속 등으로 정밀 검색..."
- value={searchWrd}
- onChange={(e) => setSearchWrd(e.target.value)}
- />
- </div>
- <Button type="submit" className="h-11 px-10 font-bold bg-slate-900 hover:bg-black text-white rounded-lg shadow-xl transition-all active:scale-95">
- 검색하기
- </Button>
- </form>
- </CardHeader>
- <CardContent className="pt-8 px-10">
- <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100/50">
- <Table>
- <TableHeader className="bg-slate-50/80">
- <TableRow className="hover:bg-transparent">
- <TableHead className="w-[100px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">SEQ</TableHead>
- <TableHead className="font-bold text-slate-900 text-xs py-6 tracking-[0.2em] px-8">사용자 프로필</TableHead>
- <TableHead className="w-[250px] font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">연락처 정보</TableHead>
- <TableHead className="font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">위치 정보</TableHead>
- <TableHead className="w-[150px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">등록 일자</TableHead>
- <TableHead className="w-[100px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">ACTION</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {loading ? (
- Array.from({ length: 5 }).map((_, i) => (
- <TableRow key={i}>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
- </TableRow>
- ))
- ) : list.length === 0 ? (
- <TableRow>
- <TableCell colSpan={6} className="h-64 text-center text-slate-300 font-bold tracking-tighter opacity-40 text-xl">
- 매칭되는 연락처 정보를 찾을 수 없습니다.
- </TableCell>
- </TableRow>
- ) : (
- list.map((item, idx) => (
- <TableRow key={item.adbkId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
- <TableCell className="text-center font-mono text-xs text-slate-400 py-8">
- {(pageNo - 1) * 10 + idx + 1}
- </TableCell>
- <TableCell className="px-8 py-8">
- <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`} className="flex items-center gap-5 group/item">
- <div className="w-14 h-11 bg-slate-900 rounded-lg flex items-center justify-center text-primary font-bold text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
- {item.adbkNm?.charAt(0)}
- </div>
- <div className="space-y-1">
- <span className="text-xl font-bold text-slate-800 group-hover/item:text-primary transition-colors tracking-tight">
+ const columns: Column<AddressBook>[] = [
+ {
+ header: '번호',
+ accessor: (_, index) => (
+ <span className="font-mono text-xs font-bold text-slate-400">
+ {index !== undefined ? (index + 1 + (pageNo - 1) * 10).toString().padStart(2, '0') : '-'}
+ </span>
+ ),
+ className: 'w-20 text-center'
+ },
+ {
+ header: '성명',
+ accessor: (item) => (
+ <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`} className="group/item">
+ <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
  {item.adbkNm}
  </span>
- <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
- <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500 uppercase tracking-widest leading-none">Internal</span>
- <span className="opacity-30">|</span>
- <span className="tracking-tight">{item.adbkId}</span>
- </div>
- </div>
  </Link>
- </TableCell>
- <TableCell className="py-8">
- <div className="space-y-2">
- <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
- <Phone className="w-4 h-4 text-primary opacity-40" />
- <span className="font-mono tracking-tighter">{item.telNo || '정보 없음'}</span>
- </div>
- <div className="flex items-center gap-3 text-sm font-bold text-slate-400">
- <Mail className="w-4 h-4 opacity-30" />
- <span className="truncate max-w-[200px]">{item.email}</span>
- </div>
- </div>
- </TableCell>
- <TableCell className="py-8">
- <div className="flex items-start gap-3">
- <MapPin className="w-4 h-4 text-primary opacity-40 mt-1 shrink-0" />
- <p className="text-sm font-bold text-slate-500 leading-relaxed max-w-[300px]">
- {item.adres || '등록된 주소 정보가 없습니다.'}
- </p>
- </div>
- </TableCell>
- <TableCell className="text-center py-8">
- <div className="inline-flex items-center px-4 py-1.5 bg-slate-50 border-2 border-white rounded-lg text-slate-400 font-bold font-mono text-xs shadow-sm tracking-tight text-center">
+ )
+ },
+ {
+ header: '연락처',
+ accessor: (item) => (
+ <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">{item.telNo || '-'}</span>
+ ),
+ className: 'w-40'
+ },
+ {
+ header: '이메일',
+ accessor: (item) => (
+ <span className="text-xs font-bold text-slate-400 tracking-tight">{item.email}</span>
+ )
+ },
+ {
+ header: '등록일자',
+ accessor: (item) => (
+ <span className="text-xs font-bold text-slate-300 tabular-nums tracking-widest uppercase">
  {(item.createdDate || '').substring(0, 10).replace(/-/g, '.')}
- </div>
- </TableCell>
- <TableCell className="text-center">
+ </span>
+ ),
+ className: 'w-32 text-center'
+ },
+ {
+ header: '관리',
+ accessor: (item) => (
+ <div className="flex items-center justify-end pr-4">
  <Button
  variant="ghost"
  size="icon"
  onClick={() => handleDelete(item.adbkId)}
- className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition-all opacity-0 group-hover:opacity-100 rounded-lg border border-transparent hover:border-rose-100 shadow-sm"
+ className="h-10 w-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-all"
  >
- <Trash2 className="w-5 h-5" />
+ <Trash2 size={16} />
  </Button>
- </TableCell>
- </TableRow>
- ))
- )}
- </TableBody>
- </Table>
+ </div>
+ ),
+ className: 'w-24 text-right'
+ }
+ ];
+
+ return (
+ <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+ <PageHeader
+ title="통합 주소록 관리"
+ breadcrumbs={[{ label: '협업관리' }, { label: '주소록' }]}
+ />
+
+ <HubHeader 
+ title="Contact" 
+ highlight="Directory" 
+ subtitle="부서 및 외부 협업을 위한 통합 주소록 센터입니다." 
+ icon={UserCircle} 
+ actions={
+ <div className="flex gap-4">
+ <Button
+ variant="outline"
+ onClick={() => fetchList(pageNo, searchWrd)}
+ className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+ >
+ <RefreshCcw size={20} />
+ </Button>
+ <Link href="/admin/collaboration/address-book/insert-address-book">
+ <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+ <Plus size={20} /> 연락처 등록
+ </Button>
+ </Link>
+ </div>
+ }
+ />
+
+ <HubMetricGrid>
+ <HubMetricCard title="전체 연락처" value={totalCount} icon={Layers} color="primary" />
+ <HubMetricCard title="활성 노드" value={list.length} icon={Zap} color="amber" />
+ <HubMetricCard title="데이터 무결성" value="정상" icon={Activity} color="emerald" />
+ <HubMetricCard title="보안 등급" value="SECURED" icon={RefreshCcw} color="indigo" />
+ </HubMetricGrid>
+
+ <HubSectionCard 
+ title="주소록 매트릭스" 
+ description="조직 내외의 통합 연락처 핵심 데이터 스트림입니다." 
+ icon={UserCircle}
+ className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+ >
+ <div className="space-y-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+ <Input 
+ value={searchWrd}
+ onChange={(e) => setSearchWrd(e.target.value)}
+ className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ placeholder="성명, 전화번호, 소속 등으로 검색.." 
+ />
+ <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
+ </form>
  </div>
 
- {totalPages > 1 && (
- <div className="flex items-center justify-center gap-8 mt-20 pb-10">
- <Button
- variant="ghost"
- size="lg"
- onClick={() => setPageNo(p => Math.max(1, p - 1))}
- disabled={pageNo === 1}
- className="px-14 h-11 rounded-lg font-bold text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-xs"
- >
- PREV
- </Button>
- <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-4 rounded-lg shadow-xl flex items-center gap-5 ring-8 ring-slate-100/50">
- <span className="text-2xl font-bold">{pageNo}</span>
- <div className="h-6 w-px bg-slate-200" />
- <span className="text-sm font-bold text-slate-400 opacity-60">{totalPages}</span>
+ <div className="min-h-[500px]">
+ <StandardDataTable
+ columns={columns}
+ data={list}
+ loading={loading}
+ emptyMessage="등록된 연락처 정보가 없습니다."
+ isPremium={true}
+ className="border-none bg-transparent shadow-none"
+ pagination={{
+ currentPage: pageNo,
+ totalPages: totalPages,
+ onPageChange: (p) => setPageNo(p)
+ }}
+ />
  </div>
- <Button
- variant="ghost"
- size="lg"
- onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
- disabled={pageNo === totalPages}
- className="px-14 h-11 rounded-lg font-bold text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-xs"
- >
- NEXT
- </Button>
  </div>
- )}
- </CardContent>
- </Card>
+ </HubSectionCard>
  </div>
  );
 }
-

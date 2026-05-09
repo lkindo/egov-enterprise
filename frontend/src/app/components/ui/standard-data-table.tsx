@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export interface Column<T> {
   header: string;
-  accessor: keyof T | ((item: T) => React.ReactNode);
+  accessor: keyof T | ((item: T, index?: number) => React.ReactNode);
   className?: string;
 }
 
@@ -48,6 +48,7 @@ const DataRow = memo(function DataRow({
   item,
   columns,
   isSelected,
+  index,
   enableSelection,
   onToggle,
   onRowClick
@@ -55,6 +56,7 @@ const DataRow = memo(function DataRow({
   item: any;
   columns: Column<any>[];
   isSelected: boolean;
+  index: number;
   enableSelection: boolean;
   onToggle: () => void;
   onRowClick?: (item: any) => void;
@@ -92,7 +94,7 @@ const DataRow = memo(function DataRow({
         >
           <div className="outline-none">
             {typeof column.accessor === 'function'
-              ? (column.accessor as any)(item)
+              ? (column.accessor as any)(item, index)
               : item?.[column.accessor as any]}
           </div>
         </td>
@@ -105,6 +107,7 @@ const MobileCard = memo(function MobileCard({
   item,
   columns,
   isSelected,
+  index,
   enableSelection,
   onToggle,
   onRowClick
@@ -132,7 +135,7 @@ const MobileCard = memo(function MobileCard({
           <div className="flex flex-col gap-1 overflow-hidden">
             <span className="text-xs font-bold text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
-              {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item?.[columns[0].accessor]}
+              {typeof columns[0].accessor === 'function' ? (columns[0].accessor as any)(item, index) : item?.[columns[0].accessor]}
             </div>
           </div>
         </div>
@@ -143,7 +146,7 @@ const MobileCard = memo(function MobileCard({
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
             <p className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
-              {typeof column.accessor === 'function' ? column.accessor(item) : item?.[column.accessor]}
+              {typeof column.accessor === 'function' ? (column.accessor as any)(item, index) : item?.[column.accessor]}
             </div>
           </div>
         ))}
@@ -335,6 +338,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                       key={`row-${itemId}`}
                       item={item}
                       columns={columns}
+                      index={rowIdx}
                       isSelected={selectedIds.has(item?.[keyField])}
                       enableSelection={enableSelection}
                       onToggle={() => toggleOne(item?.[keyField])}
@@ -372,6 +376,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   key={`card-${itemId}`}
                   item={item}
                   columns={columns}
+                  index={idx}
                   isSelected={selectedIds.has(item?.[keyField])}
                   enableSelection={enableSelection}
                   onToggle={() => toggleOne(item?.[keyField])}

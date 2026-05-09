@@ -120,20 +120,12 @@ export function Header({
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [menus, setMenus] = useState<MenuInfo[]>(resolvedMenus);
+  const menus = resolvedMenus;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (menus.length === 0) {
-      menuService.getHeadMenus()
-        .then(res => setMenus(res || []))
-        .catch(() => setMenus([]));
-    }
-  }, [menus.length]);
 
   return (
     <header className="sticky top-0 z-[100] w-full border-b border-slate-100 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 relative overflow-hidden">
@@ -252,15 +244,16 @@ export function Header({
                       <p className="text-sm text-muted-foreground truncate">{user.id}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <Link href="/admin/workspace/my-page" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                      <Link href="/admin/workspace/my-page" aria-label="마이페이지 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><User size={14} /> 마이페이지</span>
                       </Link>
-                      <Link href="/admin/system/menus" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                      <Link href="/admin/system/menus" aria-label="환경설정 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
                       </Link>
                       <div className="h-px bg-muted my-1" />
                       <Button
                         variant="ghost"
+                        aria-label="로그아웃"
                         className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
                         onClick={() => logout().then(() => router.push('/login'))}
                       >
@@ -270,7 +263,7 @@ export function Header({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
+                <Link href="/login" aria-label="로그인 이동" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
                   로그인
                 </Link>
               )

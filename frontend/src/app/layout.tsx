@@ -7,8 +7,12 @@ import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
-import dynamic from 'next/dynamic';
 import { PageTransition } from './components/layout/page-transition';
+import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
+import { cookies } from 'next/headers';
+import { getInitialMenus } from '@/lib/api/menu-loader';
+import { Suspense } from 'react';
+import { authService, UserInfo } from '@/services/foundation/auth/authService';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,15 +26,6 @@ const outfit = Outfit({
   variable: '--font-outfit',
 });
 
-
-import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
-import { cookies } from 'next/headers';
-import { menuService } from '@/services/business/user/MenuService';
-import { MenuInfo } from '@/types/foundation/menu';
-import { getInitialMenus } from '@/lib/api/menu-loader';
-import { Suspense } from 'react';
-
-
 export const metadata: Metadata = {
   title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
   description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
@@ -40,22 +35,22 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   const menusPromise = getInitialMenus(accessToken);
-
+  
   return (
     <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
-      <Suspense>
+      <Suspense fallback={<div className="h-11 border-b border-slate-100 bg-white/80" />}>
         <Header menusPromise={menusPromise} />
       </Suspense>
       <div className="flex flex-1">
-        <Suspense>
+        <Suspense fallback={<aside className="hidden lg:block w-72 border-r bg-card h-full" />}>
           <Sidebar menusPromise={menusPromise} />
         </Suspense>
         <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden">
           <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
-                <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px]">Loading page content...</div>}>
-                  {children}
-                </Suspense>
+              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-slate-500 font-medium">Loading page content...</div>}>
+                {children}
+              </Suspense>
             </PageTransition>
           </div>
           <Footer className="border-t border-border/20 py-8 mb-4 px-6" />
@@ -65,6 +60,33 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+
+  // 인증 정보를 서버 사이드에서 미리 조회 (성능 최적화 및 플리커 방지)
+  let initialUser: UserInfo | null = null;
+  if (accessToken) {
+    try {
+      initialUser = await authService.getCurrentUser();
+    } catch (e) {
+      initialUser = null;
+    }
+  }
+
+  return (
+    <Providers initialUser={initialUser}>
+      <Suspense fallback={null}>
+        <GlobalUIComponents />
+      </Suspense>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">Loading Application...</div>}>
+        <AppShell>
+          {children}
+        </AppShell>
+      </Suspense>
+    </Providers>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -81,19 +103,10 @@ export default function RootLayout({
           disableTransitionOnChange
           enableColorScheme
         >
-          <Suspense fallback={null}>
-            <Providers>
-              <Suspense fallback={null}>
-                <GlobalUIComponents />
-              </Suspense>
-              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Application...</div>}>
-                <AppShell>
-                  <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px]">Loading page content...</div>}>
-                    {children}
-                  </Suspense>
-                </AppShell>
-              </Suspense>
-            </Providers>
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">Initializing Session...</div>}>
+            <ProvidersWithAuth>
+              {children}
+            </ProvidersWithAuth>
           </Suspense>
         </ThemeProvider>
       </body>

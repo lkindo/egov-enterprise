@@ -59,49 +59,49 @@ export default function UserManageClient() {
 
  const users = data?.list || [];
 
- return (
- <div className="space-y-10">
- {/* 🔮 Top Command Bar */}
- <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
- <div className="space-y-2">
- <div className="flex items-center gap-3 mb-1">
- <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
- <Users size={20} />
- </div>
- <h1 className="text-4xl font-bold tracking-tighter text-slate-900 dark:text-white uppercase">Identity Stream</h1>
- </div>
- <p className="text-slate-500 font-bold text-sm tracking-tight pl-1">
- 엔터프라이즈 계정 거버넌스 및 실시간 권한 매트릭스 관리
- </p>
- </div>
+  return (
+    <div className="space-y-8">
+      {/* 🔮 Top Command Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+              <Users size={18} />
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">사용자 관리</h1>
+          </div>
+          <p className="text-slate-500 font-bold text-sm tracking-tight pl-1">
+            조직의 계정 권한 및 사용자 인벤토리를 관리합니다.
+          </p>
+        </div>
 
- <div className="flex items-center gap-3">
- <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg border border-slate-200/50">
- <Button 
- variant="ghost" 
- size="sm" 
- className={cn("h-8 rounded-lg px-3", viewMode === 'table' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
- onClick={() => setViewMode('table')}
- >
- <List size={14} className="mr-2" />
- <span className="text-xs font-bold uppercase">테이블</span>
- </Button>
- <Button 
- variant="ghost" 
- size="sm" 
- className={cn("h-8 rounded-lg px-3", viewMode === 'grid' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
- onClick={() => setViewMode('grid')}
- >
- <LayoutGrid size={14} className="mr-2" />
- <span className="text-xs font-bold uppercase">그리드</span>
- </Button>
- </div>
- <Button className="h-12 rounded-lg px-6 bg-slate-900 hover:bg-black dark:bg-primary dark:hover:bg-primary/90 text-white font-bold text-xs tracking-widest uppercase shadow-xl transition-all hover:scale-105 active:scale-95 group">
- <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
- 신규 계정 생성
- </Button>
- </div>
- </div>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200/50">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'table' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              onClick={() => setViewMode('table')}
+            >
+              <List size={14} className="mr-2" />
+              리스트
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'grid' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid size={14} className="mr-2" />
+              그리드
+            </Button>
+          </div>
+          <Button className="h-10 rounded-xl px-5 bg-slate-900 hover:bg-black text-white font-bold text-xs tracking-tight shadow-lg transition-all hover:scale-105 active:scale-95 group">
+            <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
+            사용자 추가
+          </Button>
+        </div>
+      </div>
 
  {/* 🧩 Bento Grid Layout */}
  <div className="grid grid-cols-12 gap-6">

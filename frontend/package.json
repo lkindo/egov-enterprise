@@ -7,7 +7,7 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
     "start": "next start",
     "start:3001": "next start -p 3001",
-    "lint": "next lint",
+    "lint": "eslint src --config eslint.config.mjs",
     "type-check": "tsc --noEmit",
     "codegen:ts": "openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated-api.d.ts",
     "codegen:file": "openapi-typescript ../api-docs.json -o src/types/generated-api.d.ts",

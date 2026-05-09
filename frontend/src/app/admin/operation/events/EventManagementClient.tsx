@@ -97,29 +97,50 @@ export default function EventManagementClient() {
  // --- DataTable Configuration ---
  const eventColumns: Column<EventInfo>[] = [
  {
- header: 'EVENT_UNIT',
+ header: '번호',
+ accessor: (_, index) => (
+ <span className="font-mono text-xs font-bold text-slate-400">
+ {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
+ </span>
+ ),
+ className: 'w-20 text-center'
+ },
+ {
+ header: '행사 명칭',
  accessor: (event) => (
- <div className="flex items-center gap-8 py-2">
- <div className="w-14 h-11 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
- <span className="text-xs font-bold text-slate-400 leading-none">행사</span>
- <span className="text-xl font-bold text-slate-800 leading-none mt-1 group-hover:text-primary tracking-tighter transition-colors tabular-nums">{event.psncpa}</span>
- </div>
- <div className="space-y-1 min-w-0">
- <div className="flex items-center gap-3">
- <span className="text-xs font-bold text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">신청 진행 중</span>
- <span className="text-xs font-bold text-slate-300 tracking-tighter">{event.rceptBeginDe} ~ {event.rceptEndDe}</span>
- </div>
- <h3 className="text-lg font-bold text-slate-900 tracking-tighter truncate leading-tight group-hover:text-primary transition-colors">{event.eventNm}</h3>
- <div className="flex items-center gap-4 opacity-40">
- <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-xs font-bold">참여정원: {event.psncpa}명</span></div>
- <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-xs font-bold">오프라인 컨퍼런스</span></div>
- </div>
- </div>
+ <div className="flex flex-col gap-1 py-1">
+ <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ {event.eventNm}
+ </span>
+ <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+ {event.eventBeginDe} ~ {event.eventEndDe}
+ </span>
  </div>
  )
  },
  {
- header: 'CONTROLS',
+ header: '참여 정원',
+ accessor: (event) => (
+ <div className="flex items-center gap-2">
+ <span className="text-xs font-bold text-slate-600 tabular-nums">{event.psncpa}</span>
+ <span className="text-[10px] font-bold text-slate-300 tracking-tighter uppercase">명</span>
+ </div>
+ ),
+ className: 'w-32'
+ },
+ {
+ header: '접수 기간',
+ accessor: (event) => (
+ <div className="flex flex-col">
+ <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
+ {event.rceptBeginDe} ~ {event.rceptEndDe}
+ </span>
+ </div>
+ ),
+ className: 'w-48'
+ },
+ {
+ header: '관리',
  className: 'text-right w-24',
  accessor: (event) => (
  <div className="flex items-center justify-end pr-4">
@@ -128,7 +149,7 @@ export default function EventManagementClient() {
  size="icon" 
  data-testid="delete-event-btn"
  onClick={() => handleDelete(event.eventId)}
- className="w-10 h-10 rounded-lg group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors"
+ className="w-10 h-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors"
  >
  <Trash2 size={16} />
  </Button>
@@ -142,18 +163,18 @@ export default function EventManagementClient() {
  <HubHeader 
  title="행사 운영 센터" 
  highlight="Event Ops" 
- subtitle="사내 엔터프라이즈 통합 행사 및 캠페인 관리 매트릭스입니다. 모든 이벤트 활동을 모니터링하고 제어하십시오." 
+ subtitle="사내 엔터프라이즈 통합 행사 및 캠페인 관리 매트릭스입니다." 
  icon={Calendar} 
  actions={
  <div className="flex gap-4">
- <Button className="h-11 px-8 rounded-lg bg-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
- <History size={18} /> 아카이브 보기
+ <Button className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
+ <History size={18} /> 아카이브
  </Button>
  <Button 
  onClick={() => setIsCreateModalOpen(true)}
- className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20"
+ className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3"
  >
- <Plus size={18} /> 행사 신규 생성
+ <Plus size={18} /> 행사 등록
  </Button>
  </div>
  }
@@ -164,19 +185,20 @@ export default function EventManagementClient() {
  {/* Global Stream Grid */}
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 h-full">
  <HubSectionCard 
- title="Global Event Matrix" 
+ title="행사 관리 매트릭스" 
  description="전역적으로 설정된 행사 활동 및 캠페인 태그 스트림입니다." 
  icon={LayoutGrid}
+ className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-end px-2 border-b border-slate-100 pb-8 mb-4">
+ <div className="flex items-center justify-end px-2 border-b border-slate-100/50 pb-8 mb-4">
  <div className="relative group max-w-[320px] w-full">
  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
  <Input 
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 bg-slate-50 border-none rounded-lg pl-14 font-bold tracking-tight text-sm shadow-inner" 
- placeholder="행사 태그 검색.." 
+ className="h-11 bg-slate-50/50 border-none rounded-xl pl-14 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ placeholder="행사 검색.." 
  />
  </div>
  </div>
@@ -187,7 +209,7 @@ export default function EventManagementClient() {
  loading={isLoading}
  emptyMessage="식별된 데이터 유닛이 존재하지 않습니다."
  keyField="eventId"
- isPremium={false}
+ isPremium={true}
  className="bg-transparent border-none shadow-none"
  pagination={{
  currentPage: page,
@@ -198,7 +220,6 @@ export default function EventManagementClient() {
  </div>
  </HubSectionCard>
  </div>
-
  {/* Radar Map (Visual Stats) */}
  <div className="col-span-12 lg:col-span-4 relative group lg:sticky lg:top-8 h-fit">
  <Card className="rounded-lg border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">

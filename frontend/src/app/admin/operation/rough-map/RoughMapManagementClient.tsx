@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
  Map, Search, Plus, MapPin, Navigation, Edit3, Trash2, 
  Layers, Settings2, Sparkles, Activity, Clock, Globe,
- ArrowRight, MoreHorizontal, Zap
+ ArrowRight, MoreHorizontal, Zap, RefreshCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
@@ -14,6 +14,11 @@ import { roughMapService, RoughMapInfo } from '@/services/business/roughmap/roug
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { PageHeader } from '@/app/components/layout/page-header';
 
 export default function RoughMapManagementClient() {
  const { toast } = useToast();
@@ -26,144 +31,122 @@ export default function RoughMapManagementClient() {
 
  const displayItems = roughMapsData?.list || [];
 
- return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000 font-sans">
- {/* 1. Header Matrix */}
- <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 px-2">
- <div className="space-y-3">
- <div className="flex items-center gap-3">
- <div className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />
- <span className="text-xs font-bold tracking-[0.4em] text-primary uppercase leading-none">위치 공간 매트릭스 (Rough Map Engine)</span>
+ const columns: Column<RoughMapInfo>[] = [
+ {
+ header: '번호',
+ accessor: (_, index) => (
+ <span className="font-mono text-xs font-bold text-slate-400">
+ {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
+ </span>
+ ),
+ className: 'w-20 text-center'
+ },
+ {
+ header: '거점 명칭',
+ accessor: (map) => (
+ <div className="flex flex-col gap-1 py-1">
+ <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ {map.roughMapSj}
+ </span>
+ <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+ ID: {map.roughMapId}
+ </span>
  </div>
- <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tighter uppercase leading-none flex items-center gap-3">
- 약도 지리 관리 <Navigation className="text-primary" />
- </h2>
- <p className="text-xs font-bold text-slate-400 tracking-tight mt-2 max-w-lg">eGov 엔터프라이즈 시설 및 거점 정보를 지능적으로 관리하는 공간 인텔리전스 센터입니다.</p>
- </div>
- <div className="flex flex-wrap items-center gap-4">
- <Button className="h-11 px-8 rounded-lg bg-white text-slate-900 font-bold tracking-widest text-xs uppercase border-2 border-slate-900 hover:bg-slate-900 hover:text-white transition-all gap-3 shadow-xl shadow-slate-900/10">
- <Globe size={18} /> 지도 서비스 연동
+ )
+ },
+ {
+ header: '주소',
+ accessor: (map) => (
+ <span className="text-xs font-bold text-slate-500 tracking-tight">{map.roughMapAddress}</span>
+ )
+ },
+ {
+ header: '좌표 (LAT/LNG)',
+ accessor: (map) => (
+ <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">
+ {map.lat} / {map.lng}
+ </span>
+ ),
+ className: 'w-48'
+ },
+ {
+ header: '관리',
+ accessor: () => (
+ <div className="flex items-center justify-end pr-4">
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
+ <Edit3 size={16} className="text-slate-400" />
  </Button>
- <Button className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
- <Plus size={18} /> 거점 신규 등록
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors">
+ <Trash2 size={16} />
  </Button>
  </div>
- </div>
+ ),
+ className: 'w-32 text-right'
+ }
+ ];
 
- {/* 2. Map & List Matrix */}
- <div className="grid grid-cols-12 gap-10 px-2 h-auto lg:h-[600px]">
- {/* Left: Interactive List (40%) */}
- <div className="col-span-12 lg:col-span-5 flex flex-col gap-8 h-full">
- <div className="flex items-center justify-between px-6">
- <div className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-[0.5em] uppercase">
- <MapPin size={14} className="text-primary" /> Geo Asset Registry
+ return (
+ <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+ <PageHeader
+ title="약도 및 거점 관리"
+ breadcrumbs={[{ label: '운영지원' }, { label: '공간관리' }]}
+ />
+
+ <HubHeader 
+ title="Rough Map" 
+ highlight="Intelligence" 
+ subtitle="사내 주요 거점 및 시설의 지리 정보와 약도를 체계적으로 관리합니다." 
+ icon={Navigation} 
+ actions={
+ <div className="flex gap-4">
+ <Button className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
+ <Globe size={18} /> 서비스 연동
+ </Button>
+ <Button className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl">
+ <Plus size={18} /> 거점 등록
+ </Button>
  </div>
- <div className="relative group max-w-[200px] w-full">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
+ }
+ />
+
+ <HubMetricGrid>
+ <HubMetricCard title="전체 거점" value={displayItems.length} icon={Layers} color="primary" />
+ <HubMetricCard title="공간 인덱스" value="OPTIMIZED" icon={Zap} color="emerald" status="최적" />
+ <HubMetricCard title="데이터 무결성" value="100%" icon={Activity} color="indigo" />
+ <HubMetricCard title="최근 업데이트" value="DAILY" icon={Clock} color="amber" />
+ </HubMetricGrid>
+
+ <HubSectionCard 
+ title="거점 자산 매트릭스" 
+ description="시스템에 등록된 모든 지리 공간 자산의 상세 명세입니다." 
+ icon={MapPin}
+ className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+ >
+ <div className="space-y-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="relative group max-w-xl w-full">
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
- className="h-11 bg-white border-none shadow-sm rounded-lg pl-11 font-bold text-xs ring-1 ring-slate-100 focus:ring-primary/20" 
- placeholder="거점 검색.." 
+ className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ placeholder="거점 명칭 또는 주소 검색.." 
  />
  </div>
  </div>
 
- <Card className="flex-1 rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col">
- <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-elegant">
- {isLoading ? (
- <div className="h-full flex items-center justify-center animate-pulse text-slate-300 text-xs font-bold tracking-[0.5em]">SYNCHRONIZING MAP NODES...</div>
- ) : displayItems.length === 0 ? (
- <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-5">
- <Map size={64} />
- <span className="font-bold text-lg tracking-tighter uppercase">NO MAP ASSETS FOUND</span>
- </div>
- ) : displayItems.map((map) => (
- <motion.div 
- layout
- key={map.roughMapId} 
- className="p-6 bg-white border border-slate-50 rounded-lg hover:ring-[15px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group flex items-center justify-between"
- >
- <div className="flex items-center gap-5">
- <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white group-hover:bg-primary transition-colors pr-2">
- <MapPin size={22} className="rotate-12" />
- </div>
- <div className="space-y-0.5">
- <h4 className="text-base font-bold text-slate-900 tracking-tighter group-hover:text-primary transition-colors">{map.roughMapSj}</h4>
- <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5 leading-none">
- <span className="text-primary uppercase">LOC</span> {map.roughMapAddress}
- </p>
+ <div className="min-h-[500px]">
+ <StandardDataTable
+ columns={columns}
+ data={displayItems}
+ loading={isLoading}
+ emptyMessage="식별된 거점 자산이 존재하지 않습니다."
+ isPremium={true}
+ className="border-none bg-transparent shadow-none"
+ />
  </div>
  </div>
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal size={18} /></Button>
- </motion.div>
- ))}
- </div>
- </Card>
- </div>
-
- {/* Right: Visual Projection Map (60%) */}
- <div className="col-span-12 lg:col-span-7 h-full">
- <Card className="h-full rounded-lg border-0 bg-slate-50 shadow-2xl overflow-hidden relative group ring-1 ring-slate-900/5">
- <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
- 
- {/* Fake Map Elements */}
- <div className="absolute inset-0 flex items-center justify-center scale-150 rotate-3 opacity-10">
- <div className="w-[1000px] h-[1000px] border-[2px] border-slate-300 rounded-lg animate-spin-slow" />
- <div className="absolute w-[600px] h-[600px] border-[1px] border-slate-300 rounded-lg animate-reverse-slow" />
- </div>
-
- {/* Information Overlay */}
- <div className="absolute top-12 left-12 z-20 space-y-4">
- <div className="p-6 bg-white/90 backdrop-blur-xl rounded-lg border border-white shadow-2xl space-y-3 max-w-[280px]">
- <div className="flex items-center justify-between">
- <span className="text-xs font-bold text-primary uppercase tracking-widest leading-none">Asset Info</span>
- <Activity size={14} className="text-primary animate-pulse" />
- </div>
- <div className="space-y-1">
- <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{displayItems[0]?.roughMapSj || 'Select Node'}</h3>
- <p className="text-xs font-bold text-slate-400 tabular-nums uppercase tracking-tight">LAT: {displayItems[0]?.lat || '0.000'} / LNG: {displayItems[0]?.lng || '0.000'}</p>
- </div>
- </div>
- </div>
-
- {/* Marker Projections */}
- <div className="absolute inset-0 flex items-center justify-center">
- {displayItems.slice(0, 5).map((map, i) => (
- <motion.div 
- key={map.roughMapId}
- initial={{ opacity: 0, scale: 0 }}
- animate={{ opacity: 1, scale: 1 }}
- transition={{ delay: i * 0.1 }}
- className="absolute"
- style={{ 
- left: `${20 + (i * 15)}%`, 
- top: `${30 + ((i % 2) * 20)}%` 
- }}
- >
- <div className="relative group/pin cursor-pointer">
- <div className="absolute -inset-4 bg-primary/20 rounded-lg blur-xl group-hover/pin:bg-primary/40 animate-pulse transition-all" />
- <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-2xl border-2 border-white group-hover/pin:bg-primary transition-all rotate-45 -translate-y-4 group-hover/pin:-translate-y-6">
- <MapPin size={18} className="-rotate-45" />
- </div>
- <div className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest opacity-0 group-hover/pin:opacity-100 transition-opacity shadow-2xl">
- {map.roughMapSj}
- </div>
- </div>
- </motion.div>
- ))}
- </div>
-
- {/* Bottom Control */}
- <div className="absolute bottom-12 right-12 flex gap-4">
- <Button className="h-11 w-14 rounded-lg bg-white/90 backdrop-blur-xl shadow-2xl border border-white text-slate-900 group-hover:scale-110 transition-all"><Layers size={20} /></Button>
- <Button className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-[0.3em] text-xs shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-primary transition-all uppercase ">공간 시뮬레이션 실행</Button>
- </div>
- </Card>
- </div>
- </div>
-
+ </HubSectionCard>
  </div>
  );
 }
-

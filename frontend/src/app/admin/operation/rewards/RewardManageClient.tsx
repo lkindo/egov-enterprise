@@ -36,18 +36,25 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
 
  const columns: Column<any>[] = [
  {
+ header: '번호',
+ accessor: (_, index) => (
+ <span className="font-mono text-xs font-bold text-slate-400">
+ {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
+ </span>
+ ),
+ className: 'w-20 text-center'
+ },
+ {
  header: '포상 명칭',
  accessor: (item) => (
- <div className="flex items-center gap-6 py-2">
- <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
- <Trophy size={20} />
- </div>
- <div className="flex flex-col gap-0.5 min-w-0">
- <span className="font-bold text-slate-900 leading-tight tracking-tight group-hover:text-primary transition-colors">{item.rwardNm}</span>
- <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md leading-none bg-amber-50/50 uppercase tracking-widest">{item.rwardCode}</span>
- <span className="text-xs text-slate-400 font-bold truncate leading-none">{item.rwardLevel || 'STANDARD'}</span>
- </div>
+ <div className="flex flex-col gap-1 py-1">
+ <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ {item.rwardNm}
+ </span>
+ <div className="flex items-center gap-2 opacity-60">
+ <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.rwardCode}</span>
+ <span className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">•</span>
+ <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.rwardLevel || 'STANDARD'}</span>
  </div>
  </div>
  )
@@ -60,30 +67,20 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  {
  header: '포상일자',
  accessor: (item) => (
- <div className="flex items-center gap-2.5 text-slate-500 font-bold text-xs">
- <Calendar size={12} className="opacity-40" />
- <span className="tabular-nums">{item.rwardDe}</span>
- </div>
- )
+ <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
+ {item.rwardDe}
+ </span>
+ ),
+ className: 'w-32'
  },
  {
  header: '승인상태',
  accessor: (item) => (
- <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-all ${item.confmAt === 'Y'
- ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
- : 'bg-slate-50 text-slate-400 border border-slate-100'
+ <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.confmAt === 'Y'
+ ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+ : 'bg-slate-100 text-slate-400 border border-slate-200'
  }`}>
- {item.confmAt === 'Y' ? (
- <>
- <CheckCircle2 size={12} className="animate-pulse" />
- <span>동기화승인</span>
- </>
- ) : (
- <>
- <RefreshCcw size={12} className="animate-spin-slow" />
- <span>대기중</span>
- </>
- )}
+ {item.confmAt === 'Y' ? '동기화승인' : '대기중'}
  </div>
  ),
  className: 'w-36 text-center'
@@ -91,7 +88,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  {
  header: '승인일시',
  accessor: 'sanctnDt',
- className: 'w-48 text-slate-300 text-xs tabular-nums font-mono pr-8 text-right'
+ className: 'w-48 text-slate-300 text-[10px] tabular-nums font-bold pr-8 text-right'
  }
  ];
 
@@ -110,19 +107,19 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  <HubHeader
  title="Reward &"
  highlight="Honor"
- subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 투명하게 트래킹하고 승인 프로세스를 관리하는 통제실입니다."
+ subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 관리합니다."
  icon={Trophy}
  actions={
  <div className="flex gap-4">
  <Button
  variant="outline"
  onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-lg active:scale-95"
+ className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm active:scale-95"
  >
- <RefreshCcw size={22} className="hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={20} />
  </Button>
- <Button className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
- <Plus size={20} /> 포상 기록 신규 저장
+ <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+ <Plus size={20} /> 포상 기록 등록
  </Button>
  </div>
  }
@@ -137,24 +134,22 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
 
  <HubSectionCard
  title="포상 아카이브 매트릭스"
- description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림 및 상세 명세입니다."
+ description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림입니다."
  icon={Trophy}
+ className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="포상 명칭 또는 대상자 식별자로 분석..."
- className="h-11 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
+ className="h-11 pl-16 rounded-xl border-none bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />
- <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
+ <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">ANALYZE</Button>
  </form>
- <div>
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono tabular-nums">DATA_PROBE_UPDATING...</span>
- </div>
  </div>
 
  <div className="min-h-[500px]">
@@ -164,6 +159,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
  loading={isLoading}
  emptyMessage="식별된 포상 내역 레코드가 존재하지 않습니다."
  className="border-none bg-transparent shadow-none"
+ isPremium={true}
  pagination={{
  currentPage: page,
  totalPages: totalPages,

@@ -1,10 +1,11 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import client from '../../../../../lib/api/client';
 
 /**
  * 게시글 목록 데이터를 서버 사이드에서 가져오는 함수
  */
-export async function getInitialBoardData(params: {
+export const getInitialBoardData = cache(async (params: {
   bbsId: string;
   page: number;
   searchWrd: string;
@@ -12,7 +13,7 @@ export async function getInitialBoardData(params: {
   orderBy: string;
   startDate?: string;
   endDate?: string;
-}) {
+}) => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
 
@@ -53,4 +54,4 @@ export async function getInitialBoardData(params: {
     console.error('BoardListServer: Failed to fetch board list', error);
     return { list: [], total: 0, totalPage: 0 };
   }
-}
+});

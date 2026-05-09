@@ -13,9 +13,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({ 
+  children,
+  initialUser = null
+}: { 
+  children: React.ReactNode;
+  initialUser?: UserInfo | null;
+}) {
+  const [user, setUser] = useState<UserInfo | null>(initialUser);
+  const [loading, setLoading] = useState(!initialUser);
 
   const checkAuth = useCallback(async () => {
     if (typeof window === 'undefined') return;

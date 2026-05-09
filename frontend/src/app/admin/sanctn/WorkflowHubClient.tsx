@@ -120,46 +120,57 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
             <Card className="h-full rounded-lg border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50/50 border-b p-8 space-y-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-bold text-slate-400 tracking-tight">
-                    결재 양식 인벤토리
-                  </CardTitle>
-                  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-lg"><Plus size={20} /></Button>
+                  <div>
+                    <CardTitle className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-2">
+                      <Layers size={14} className="text-primary" /> 결재 양식 인벤토리
+                    </CardTitle>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Enterprise Resource List</p>
+                  </div>
+                  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-lg shadow-lg shadow-slate-200 hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
                 </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-                  <Input className="pl-9 h-11 bg-white border-slate-100 rounded-lg text-sm font-bold" placeholder="검색..." />
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={14} />
+                  <Input className="pl-9 h-11 bg-white border-slate-100 rounded-lg text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all" placeholder="양식명 또는 ID 검색..." />
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-2">
+              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 {forms.map((form) => (
                   <div 
                     key={form.id}
                     onClick={() => setSelectedFormId(form.id)}
                     className={cn(
-                      "group p-6 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between",
+                      "group p-5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
                       selectedFormId === form.id 
-                      ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
-                      : "bg-white border-transparent hover:border-slate-50 text-slate-600"
+                      ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
+                      : "bg-white border-slate-50 hover:border-slate-200 hover:shadow-xl text-slate-600"
                     )}
                   >
-                    <div className="space-y-1 max-w-[70%]">
+                    {selectedFormId === form.id && (
+                      <motion.div 
+                        layoutId="active-glow"
+                        className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent pointer-events-none"
+                      />
+                    )}
+                    <div className="space-y-1.5 max-w-[70%] relative z-10">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={cn(
-                          "w-1.5 h-1.5 rounded-lg",
-                          form.status === '활성' ? "bg-emerald-400 animate-pulse" : 
-                          form.status === '초안' ? "bg-amber-400" : "bg-rose-400"
-                        )} />
-                        <span className={cn("text-xs font-bold tracking-tight opacity-40")}>{form.status}</span>
+                        <div className={cn(
+                          "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
+                          form.status === '활성' ? "bg-emerald-500/10 text-emerald-500" : 
+                          form.status === '초안' ? "bg-amber-500/10 text-amber-500" : "bg-rose-500/10 text-rose-500"
+                        )}>
+                          {form.status}
+                        </div>
+                        <span className="text-[10px] font-bold tracking-tight opacity-30 font-mono">{form.version}</span>
                       </div>
-                      <h4 className={cn("text-sm font-bold truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 ")}>
+                      <h4 className={cn("text-sm font-bold truncate tracking-tight", selectedFormId === form.id ? "text-white" : "text-slate-900")}>
                         {form.title}
                       </h4>
-                      <p className={cn("text-xs font-bold opacity-40")}>ID: {form.id} ~ {form.version}</p>
+                      <p className={cn("text-[10px] font-bold opacity-40 font-mono tracking-tighter uppercase")}>UID: {form.id}</p>
                     </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-xs font-bold opacity-40">사용량</span>
-                      <span className={cn("text-sm font-bold", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
-                        {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'k' : form.usage}
+                    <div className="text-right flex flex-col items-end gap-1 relative z-10">
+                      <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Usage</span>
+                      <span className={cn("text-base font-black tracking-tighter tabular-nums", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
+                        {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'K' : form.usage}
                       </span>
                     </div>
                   </div>

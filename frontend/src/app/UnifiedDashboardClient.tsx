@@ -61,16 +61,13 @@ export default function UnifiedDashboardClient({
   dataPromise 
 }: UnifiedDashboardClientProps) {
   const data = use(dataPromise);
-  const initialNotiList = data.initialNotiList || [];
-  const initialTaskList = data.initialTaskList || [];
-  const pendingApprovalCount = data.pendingApprovalCount || 0;
+  const notiList = data.initialNotiList || [];
+  const taskList = data.initialTaskList || [];
+  const pendingCount = data.pendingApprovalCount || 0;
   const { t } = useMessage();
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [notiList] = useState<DashboardTask[]>(initialNotiList);
-  const [taskList] = useState<DashboardTask[]>(initialTaskList);
-  const [pendingCount] = useState<number>(pendingApprovalCount);
   const [isMounted, setIsMounted] = useState(false);
 
   // 접속 통계 데이터 조회 (최근 7일)

@@ -17,8 +17,9 @@ export function BannerSlider() {
       try {
         const data = await bannerAdminService.getReflectedBanners();
         setBanners(data || []);
-      } catch (error: any) {
-        if (error?.response?.status === 403) {
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number } };
+        if (err.response?.status === 403) {
           console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');
         } else {
           console.error('>>> [BannerSlider] Failed to fetch banners:', error);
@@ -48,7 +49,7 @@ export function BannerSlider() {
   };
 
   if (loading) {
-    return <div className="w-full h-48 bg-muted animate-pulse rounded-lg" />;
+    return <div className="w-full h-48 md:h-64 bg-muted animate-pulse rounded-lg" />;
   }
 
   if (banners.length === 0) {
@@ -66,6 +67,7 @@ export function BannerSlider() {
         src={imageUrl}
         alt={currentBanner.bannerNm}
         fill
+        sizes="100vw"
         className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
         style={{ opacity: 0.8 }}
         priority
@@ -83,6 +85,7 @@ export function BannerSlider() {
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`${currentBanner.bannerNm} 자세히 보기 새창 열림`}
             className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
             자세히 보기 <ExternalLink size={14} />
@@ -94,12 +97,14 @@ export function BannerSlider() {
         <>
           <button
             onClick={prevSlide}
+            aria-label="이전 슬라이드"
             className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronLeft size={24} />
           </button>
           <button
             onClick={nextSlide}
+            aria-label="다음 슬라이드"
             className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronRight size={24} />
@@ -110,6 +115,7 @@ export function BannerSlider() {
               <button
                 key={`banner-dot-${banner.bannerId || idx}`}
                 onClick={() => setCurrentIndex(idx)}
+                aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(
                   "w-2 h-2 rounded-lg transition-all",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"

@@ -11,6 +11,7 @@ interface HubMetricProps {
   icon: LucideIcon;
   color?: 'primary' | 'emerald' | 'rose' | 'amber' | 'indigo' | 'slate';
   status?: string;
+  unit?: string;
   trend?: string;
   className?: string;
 }
@@ -21,6 +22,7 @@ export function HubMetricCard({
   icon: Icon, 
   color = 'primary', 
   status = 'NOMINAL', 
+  unit,
   trend,
   className 
 }: HubMetricProps) {
@@ -67,8 +69,9 @@ export function HubMetricCard({
         </div>
       </div>
       <div className="relative z-10">
-        <h3 className="text-3xl font-bold tracking-tighter text-foreground leading-none tabular-nums">
+        <h3 className="text-3xl font-bold tracking-tighter text-foreground leading-none tabular-nums flex items-baseline gap-1.5">
           {typeof value === 'number' ? value.toLocaleString() : value}
+          {unit && <span className="text-sm font-bold text-slate-400 tracking-tight uppercase">{unit}</span>}
         </h3>
         <p className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none flex items-center gap-3">
           <span className="w-6 h-0.5 bg-current opacity-40" />

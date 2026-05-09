@@ -135,27 +135,22 @@ export default function BoardMasterListPage() {
     {
       header: '마스터 아이템',
       accessor: (board: BoardMaster) => (
-        <div className="flex items-center gap-6 group">
-          <div className="w-16 h-11 rounded-lg bg-background border-2 border-border/50 shadow-sm flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
-            {board.bbsTyCodeNm?.includes('지식') ? <BookOpen size={28} /> : 
-             board.bbsTyCodeNm === 'Visual Gallery' ? <ImageIcon size={28} /> : 
-             <ListIcon size={28} />}
-          </div>
-          <div className="space-y-1 text-left">
-            <p className="text-2xl font-bold text-foreground tracking-tighter leading-none">{board.bbsNm}</p>
-            <p className="text-xs font-bold text-muted-foreground/40 uppercase leading-none tracking-widest">{board.bbsId}</p>
+        <div className="flex items-center group">
+          <div className="space-y-1 text-left min-w-0 flex-1 overflow-hidden">
+            <p className="text-base font-bold text-foreground tracking-tight leading-none truncate">{board.bbsNm}</p>
+            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase leading-none tracking-widest truncate">{board.bbsId}</p>
           </div>
         </div>
       ),
-      className: 'px-10'
+      className: 'px-6 max-w-[350px]'
     },
     {
       header: '메타 정보',
       accessor: (board: BoardMaster) => (
-        <div className="space-y-1.5 text-left">
-          <p className="text-sm font-bold text-slate-500 line-clamp-1 leading-snug">{board.bbsIntrcn}</p>
+        <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
+          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsIntrcn}</p>
           <div className="flex gap-2">
-            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-3 font-bold text-xs uppercase tracking-tighter">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
               {board.bbsTyCodeNm}
             </Badge>
           </div>

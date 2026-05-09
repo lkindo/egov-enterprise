@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardNoti, DashboardTask } from '@/types/foundation/dashboard';
+import { DashboardTask } from '@/types/foundation/dashboard';
 
 /**
  * P2: Dynamic Import for Heavy Dashboard Client
@@ -17,8 +17,9 @@ const UnifiedDashboardClient = dynamic(() => import('./UnifiedDashboardClient'),
 /**
  * P3: Server-side Data Refinement
  * Minifies the JSON payload sent to the client by picking only required fields.
+ * cache() ensures that even if this is called multiple times in one request, only one API call is made.
  */
-async function getDashboardData() {
+const getDashboardData = cache(async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
 
@@ -29,27 +30,31 @@ async function getDashboardData() {
   const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
 
   try {
-    const dashboardRes = await client.get<any>('/dashboard', axiosConfig);
+    const dashboardRes = await client.get<{
+      notiList: Record<string, unknown>[];
+      taskList: Record<string, unknown>[];
+      pendingApprovalCount: number;
+    }>('/dashboard', axiosConfig);
 
     if (!dashboardRes) return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
 
     // Picking only necessary fields and slicing to minimize payload size
-    const initialNotiList = (dashboardRes.notiList || [])
+    const initialNotiList: DashboardTask[] = (dashboardRes.notiList || [])
       .slice(0, 6)
-      .map((item: any) => ({
-        id: item.id || item.nttId,
-        title: item.title || item.nttSj,
-        date: item.frstRegisterPnttmStr || item.date || '',
-        isNew: item.isNew || false
+      .map((item: Record<string, unknown>) => ({
+        id: String(item.id || item.nttId || ''),
+        title: String(item.title || item.nttSj || ''),
+        date: String(item.frstRegisterPnttmStr || item.date || ''),
+        isNew: Boolean(item.isNew || false)
       }));
 
-    const initialTaskList = (dashboardRes.taskList || [])
+    const initialTaskList: DashboardTask[] = (dashboardRes.taskList || [])
       .slice(0, 6)
-      .map((item: any) => ({
-        id: item.id || item.nttId,
-        title: item.title || item.nttSj,
-        date: item.frstRegisterPnttmStr || item.date || '',
-        isNew: item.isNew || false
+      .map((item: Record<string, unknown>) => ({
+        id: String(item.id || item.nttId || ''),
+        title: String(item.title || item.nttSj || ''),
+        date: String(item.frstRegisterPnttmStr || item.date || ''),
+        isNew: Boolean(item.isNew || false)
       }));
 
     return {
@@ -57,10 +62,10 @@ async function getDashboardData() {
       initialTaskList,
       pendingApprovalCount: dashboardRes.pendingApprovalCount || 0
     };
-  } catch (err) {
+  } catch {
     return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
   }
-}
+});
 
 export default async function UnifiedDashboardPage() {
   const dataPromise = getDashboardData();

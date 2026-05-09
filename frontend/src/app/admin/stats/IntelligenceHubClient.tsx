@@ -177,23 +177,40 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                   {isUserLoading || isBbsLoading || isScreenLoading ? (
                     <HubListSkeleton />
                   ) : activeTab === 'SURVEYS' ? (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {surveys?.list?.map((s: any) => (
-                        <div key={s.qestnrId} className="p-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
-                          <div className="flex items-center gap-6">
-                            <div className="w-14 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                              <Vote className="text-primary" />
+                        <div 
+                          key={s.qestnrId} 
+                          className="group p-8 rounded-xl bg-white border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center justify-between relative overflow-hidden"
+                        >
+                          <div className="flex items-center gap-8 relative z-10">
+                            <div className="w-16 h-12 bg-slate-50 group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">
+                              <Vote className="text-slate-400 group-hover:text-primary transition-colors" size={24} />
                             </div>
-                            <div className="space-y-1">
-                              <h4 className="text-base font-bold text-slate-900 tracking-tighter">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
+                                  s.qestnrEndDe > new Date().toISOString() 
+                                    ? "bg-emerald-500/10 text-emerald-500" 
+                                    : "bg-slate-500/10 text-slate-500"
+                                )}>
+                                  {s.qestnrEndDe > new Date().toISOString() ? 'Active' : 'Archived'}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-400 font-mono">END: {s.qestnrEndDe}</span>
+                              </div>
+                              <h4 className="text-lg font-bold text-slate-900 tracking-tighter group-hover:text-primary transition-colors">
                                 {s.qestnrSj}
                               </h4>
-                              <p className="text-xs font-bold text-slate-600 tracking-tight">
-                                상태: {s.qestnrEndDe > new Date().toISOString() ? '활성 진행중' : '기간 종료 보관됨'} • 마감: {s.qestnrEndDe}
-                              </p>
                             </div>
                           </div>
-                          <Button variant="ghost" className="rounded-lg h-10 text-xs font-bold tracking-tight gap-2 transition-all group-hover:translate-x-2">분석 상세 보기 <ChevronRight size={14} /></Button>
+                          <Button 
+                            variant="ghost" 
+                            className="rounded-lg h-12 px-6 text-xs font-bold tracking-tight gap-2 transition-all hover:bg-slate-900 hover:text-white border-2 border-transparent hover:border-slate-900 group-hover:translate-x-2"
+                          >
+                            인텔리전스 리포트 <ChevronRight size={16} />
+                          </Button>
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       ))}
                     </div>

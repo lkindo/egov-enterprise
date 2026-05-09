@@ -1,7 +1,8 @@
+import { cache } from 'react';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 
-export async function getInitialMenus(accessToken?: string) {
+export const getInitialMenus = cache(async (accessToken?: string) => {
   if (!accessToken) return [];
 
   const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
@@ -22,4 +23,4 @@ export async function getInitialMenus(accessToken?: string) {
     console.error('Failed to pre-fetch menus:', error);
     return [];
   }
-}
+});

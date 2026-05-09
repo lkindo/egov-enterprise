@@ -189,30 +189,30 @@ const SortableMenuNode = ({
                             )}
                             {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
                             <div className={cn(
-                                "w-11 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                                depth === 0 ? "bg-white text-slate-900" : depth === 1 ? "bg-primary text-white" : "bg-white text-muted-foreground border border-slate-200 shadow-sm"
+                                "w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
+                                depth === 0 ? "bg-white text-slate-900" : depth === 1 ? "bg-slate-900 text-white" : "bg-white text-slate-400 border border-slate-200 shadow-sm"
                             )}>
                                 {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
                             </div>
                         </div>
                         <div className="flex flex-col">
                             <span className={cn(
-                              "font-bold tracking-tight transition-colors", 
+                              "font-black tracking-tight transition-colors", 
                               depth === 0 ? "text-white text-base" : depth === 1 ? "text-slate-900 text-sm" : "text-slate-600 text-xs"
                             )}>
                                 {item.menuNm}
                             </span>
                             <div className="flex items-center gap-3 mt-1">
                                 <span className={cn(
-                                  "text-xs font-bold px-1.5 py-0.5 rounded-md font-mono",
-                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600 opacity-100"
+                                  "text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest",
+                                   depth === 0 ? "bg-white/10 text-white/40" : "bg-slate-100 text-slate-400 opacity-100"
                                 )}>
-                                    NODE_{item.menuNo}
+                                    ID: {item.menuNo}
                                 </span>
                                 {item.progrmFileNm && (
                                     <span className={cn(
-                                      "text-xs flex items-center gap-1 font-bold",
-                                       depth === 0 ? "text-slate-300" : "text-primary opacity-100"
+                                      "text-[10px] flex items-center gap-1 font-black uppercase tracking-widest",
+                                       depth === 0 ? "text-slate-400" : "text-primary opacity-100"
                                     )}>
                                         <LinkIcon size={10} /> {item.progrmFileNm}
                                     </span>
@@ -451,16 +451,16 @@ export default function MenuAdminClient({
   const activeItem = activeId ? flattenedMenus.find(m => m.menuNo === activeId) : null;
 
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-10 pb-24">
       <PageHeader title="시스템 메뉴 아키텍처" breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]} />
 
       <HubHeader
-        title="메뉴" highlight="아키텍처"
-        subtitle="항목을 좌우로 움직여 계층(Depth)을 조정하고, 위아래로 끌어 순서를 실시간으로 설계하십시오."
+        title="메뉴" highlight="구조 설계"
+        subtitle="항목을 자유롭게 이동하여 시스템 계층 구조를 설계하십시오."
         icon={FolderTree}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
-            <Plus size={20} /> 신규 등록
+          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-10 px-8 rounded-xl bg-slate-900 text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 active:scale-95">
+            <Plus size={18} /> 신규 등록
           </Button>
         }
       />
@@ -469,28 +469,28 @@ export default function MenuAdminClient({
         <HubMetricCard title="전체 노드" value={flattenedMenus.length} icon={Database} color="primary" />
         <HubMetricCard title="계층 깊이" value={Math.max(...flattenedMenus.map(m => m.depth), 0) + 1} icon={Layers} color="indigo" />
         <HubMetricCard title="활성 경로" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="연결 무결성" value="최적" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="연결성" value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="시스템 네비게이션 트리"
-        description="그립 핸들을 잡고 항목을 자유롭게 배치하십시오. 가로 이동으로 부모 관계가 변경됩니다."
+        title="네비게이션 트리"
+        description="그립 핸들을 사용하여 순서와 계층을 조정할 수 있습니다."
         icon={SearchCode}
         action={
-          <div className="flex gap-4 items-center">
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              <Button variant="ghost" className="h-8 px-3 text-xs font-bold" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1" /> 펼치기</Button>
-              <Button variant="ghost" className="h-8 px-3 text-xs font-bold" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1" /> 접기</Button>
+          <div className="flex gap-3 items-center">
+            <div className="flex bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/60 shadow-sm ring-1 ring-black/5">
+              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1.5" /> Expand</Button>
+              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1.5" /> Collapse</Button>
             </div>
             {hasChanges && (
-                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-lg font-bold text-xs gap-2 shadow-lg scale-in-center">
-                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={16} />} 레이아웃 적용
+                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-9 px-5 rounded-lg font-black text-[10px] tracking-widest gap-2 shadow-lg scale-in-center active:scale-95 uppercase">
+                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={14} />} Save Layout
                 </Button>
             )}
           </div>
         }
       >
-        <div className="px-4">
+        <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-6 ring-1 ring-black/5 min-h-[600px]">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

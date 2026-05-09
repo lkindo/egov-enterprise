@@ -19,7 +19,15 @@ const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboardin
 const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
 
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+import { UserInfo } from '@/services/foundation/auth/authService';
+
+export default function Providers({ 
+  children,
+  initialUser 
+}: { 
+  children: React.ReactNode;
+  initialUser?: UserInfo | null;
+}) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -51,7 +59,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ToastProvider>
         <ConfirmProvider>
           <GlobalShortcutProvider>
-            <AuthProvider>
+            <AuthProvider initialUser={initialUser}>
               <LayoutProvider>
                 <WebSocketProvider>
                   <TooltipProvider delayDuration={0}>

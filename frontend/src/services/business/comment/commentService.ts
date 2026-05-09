@@ -6,9 +6,9 @@ import { PageResponse } from '@/types/foundation/system';
 /**
  * 댓글 ?쒕퉬님 */
 class CommentService extends ApiService {
- constructor() {
- super('/v1/comments');
- }
+  constructor() {
+    super('comments');
+  }
 
   /** 댓글 목록 조회 */
   async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {

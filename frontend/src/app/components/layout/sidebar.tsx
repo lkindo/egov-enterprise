@@ -367,7 +367,7 @@ export function Sidebar({
         <div className="flex flex-col h-full py-8 px-5 overflow-y-auto no-scrollbar">
           {/* Mobile Header in Sidebar */}
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
-            <Link href="/" className="flex items-center gap-3.5" onClick={() => setSidebarOpen(false)}>
+            <Link href="/" aria-label="메인 화면으로 이동" className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg" onClick={() => setSidebarOpen(false)}>
               <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
                 <span className="text-primary font-bold text-lg">EG</span>
               </div>
@@ -380,7 +380,8 @@ export function Sidebar({
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(false)}
-              className="rounded-lg w-10 h-10"
+              aria-label="사이드바 닫기"
+              className="rounded-lg w-10 h-10 focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X size={20} className="text-muted-foreground" />
             </Button>

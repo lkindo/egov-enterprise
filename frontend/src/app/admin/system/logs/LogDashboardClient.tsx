@@ -70,14 +70,14 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       {
         header: '발생 시각',
         accessor: (item: any) => (
-          <div className="flex items-center gap-3 py-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
+          <div className="flex items-center gap-3 py-2">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
               <Clock size={14} />
             </div>
-            <span className="text-xs font-mono font-bold text-slate-600 tracking-tighter">_ {item.creatDt || item.occcrrncDe || '-'}</span>
+            <span className="text-xs font-black text-slate-600 tracking-tight">{item.creatDt || item.occcrrncDe || '-'}</span>
           </div>
         ),
-        className: 'w-48'
+        className: 'w-48 py-4'
       }
     ];
 
@@ -88,24 +88,27 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           header: '요청자',
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-bold text-xs text-slate-600">
+              <div className="w-9 h-9 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-xs text-slate-600">
                 {item.loginNm?.substring(0, 1)}
               </div>
-              <span className="text-xs font-bold text-slate-700">{item.loginNm} ({item.loginId})</span>
+              <span className="text-xs font-black text-slate-700 tracking-tight">{item.loginNm} ({item.loginId})</span>
             </div>
-          )
+          ),
+          className: 'py-4'
         },
         {
           header: '접속 IP',
           accessor: (item: any) => (
-            <div className="font-mono text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
-          )
+            <div className="font-mono text-[10px] font-black text-slate-500 bg-slate-100/50 px-2.5 py-1 rounded-lg border border-slate-200/50 w-fit">{item.loginIp}</div>
+          ),
+          className: 'py-4'
         },
         {
           header: '구분',
           accessor: (item: any) => (
-            <HubStatusBadge label={item.loginMthd} variant={item.loginMthd === 'LOGIN' ? 'success' : 'secondary'} />
-          )
+            <HubStatusBadge status={item.loginMthd} />
+          ),
+          className: 'py-4'
         }
       ];
     }
@@ -114,34 +117,36 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       ...commonCols,
       {
         header: '요청자',
-        className: 'w-32',
+        className: 'w-32 py-4',
         accessor: (item: any) => (
-          <span className="text-xs font-bold text-slate-700">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
+          <span className="text-xs font-black text-slate-700 tracking-tight">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
         )
       },
       {
-        header: '수행 서비스 / 리소스',
+        header: '수행 내역',
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
-            <span className="text-xs font-bold text-foreground truncate uppercase tracking-tighter">_ {item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
-            <span className="text-xs font-bold text-slate-300 font-mono truncate">{item.methodNm || item.trgetMenuNm || '-'}</span>
+            <span className="text-sm font-black text-slate-900 tracking-tighter uppercase">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
+            <span className="text-[10px] font-bold text-slate-400 truncate tracking-tight">{item.methodNm || item.trgetMenuNm || '-'}</span>
           </div>
-        )
+        ),
+        className: 'py-4'
       },
       {
         header: '접속 정보',
         accessor: (item: any) => (
-          <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-600">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-black text-slate-500 bg-slate-100/50 px-2.5 py-1 rounded-lg border border-slate-200/50 w-fit">
             <Globe size={11} className="opacity-40" />
             {item.rqesterIp || '127.0.0.1'}
           </div>
-        )
+        ),
+        className: 'py-4'
       }
     ];
   }, [activeCategory]);
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="로그 통합 리포트"
         breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }]}
@@ -149,13 +154,13 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
 
       <HubHeader
         title="시스템"
-        highlight="로그 통합 관리"
-        subtitle="시스템 전반에서 발생하는 보안, 접속, 행동, 웹 요청 로그를 통합적으로 모니터링합니다"
+        highlight="로그 관리"
+        subtitle="시스템 전반에서 발생하는 보안, 접속, 행동, 웹 요청 로그를 통합 모니터링합니다."
         icon={History}
         actions={
-          <div className="flex gap-4">
-            <Button variant="outline" size="lg" className="h-11 px-8 rounded-lg border-2 font-bold text-xs tracking-widest gap-3">
-              <SearchCode size={18} /> 상세 로그 검색
+          <div className="flex gap-3">
+            <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-slate-200 bg-white font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-slate-900 hover:text-white transition-all">
+              <SearchCode size={18} /> 상세 검색
             </Button>
           </div>
         }
@@ -163,34 +168,34 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
 
       <HubMetricGrid>
         <HubMetricCard title="오늘 전체 로그" value="1,492" icon={Database} color="primary" />
-        <HubMetricCard title="보안 위협 로그" value="3" icon={Lock} color="rose" status="이상 징후" />
+        <HubMetricCard title="보안 위협" value="3" icon={Lock} color="rose" status="이상 징후" />
         <HubMetricCard title="활성 세션" value="84" icon={Activity} color="emerald" status="안전" />
-        <HubMetricCard title="평균 처리 속도" value="38ms" icon={Zap} color="amber" />
+        <HubMetricCard title="처리 속도" value="38ms" icon={Zap} color="amber" />
       </HubMetricGrid>
 
-      <div className="grid grid-cols-12 gap-12">
+      <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-3">
-          <div className="rounded-lg bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-3" id="log-categories">
+          <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl p-3 flex flex-col gap-3" id="log-categories">
             {logCategories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={cn(
-                  "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-5 relative overflow-hidden",
+                  "w-full group p-6 rounded-xl border border-transparent transition-all flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
-                    ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
-                    : "bg-transparent border-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900"
+                    ? "bg-slate-900 text-white shadow-2xl scale-[1.03] z-10"
+                    : "hover:bg-white/50 text-slate-600 hover:text-slate-900"
                 )}
               >
                 <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all shadow-lg",
-                  activeCategory === cat.id ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
+                  "w-10 h-9 rounded-xl flex items-center justify-center transition-all shadow-md",
+                  activeCategory === cat.id ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:text-primary"
                 )}>
                   {cat.icon}
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold tracking-tighter uppercase leading-tight">{cat.label}</span>
-                  <span className="text-[7px] font-bold text-slate-600 tracking-widest uppercase opacity-100 truncate max-w-[120px]">{cat.description}</span>
+                  <span className="text-sm font-black tracking-tighter uppercase leading-tight">{cat.label}</span>
+                  <span className="text-[10px] font-bold text-slate-400 tracking-tight opacity-100 truncate max-w-[120px] uppercase">{cat.description}</span>
                 </div>
               </button>
             ))}
@@ -200,23 +205,26 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard
             title="실시간 로그 스트림"
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 활동 스트림 데이터입니다.`}
+            description={`${logCategories.find(c => c.id === activeCategory)?.label} 활동 데이터입니다.`}
             icon={Activity}
           >
-            <StandardDataTable
-              columns={columns}
-              data={logs}
-              loading={isLoading}
-              className="border-none bg-transparent"
-              onRowClick={(item) => setSelectedLog(item)}
-              search={{
-                placeholder: '요청자 IP, 메시지 등으로 정밀 분석...',
-                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page: 1 })
-              }}
-            />
+            <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5">
+              <StandardDataTable
+                columns={columns}
+                data={logs}
+                loading={isLoading}
+                className="border-none bg-transparent shadow-none"
+                onRowClick={(item) => setSelectedLog(item)}
+                isPremium={true}
+                search={{
+                  placeholder: '검색어를 입력하세요...',
+                  onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page: 1 })
+                }}
+              />
+            </div>
 
             {(Number(pagination.totalPageCount) || 0) > 1 && (
-              <div className="mt-12 flex justify-center">
+              <div className="mt-10 flex justify-center">
                 <PagePagination
                   pagination={pagination}
                   onPageChange={(page) => setParams({ ...params, page: page })}
@@ -231,26 +239,26 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       <StandardModal
         isOpen={!!selectedLog}
         onClose={() => setSelectedLog(null)}
-        title="Log Inspector (Raw Intel)"
+        title="로그 상세 정보"
         maxWidth="2xl"
       >
         <div className="p-8 space-y-8 font-sans text-left">
-          <div className="flex items-center justify-between p-6 bg-slate-50 rounded-lg border-2 border-slate-100">
+          <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-xl border border-slate-100 shadow-inner">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl">
+              <div className="w-12 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
                 <Terminal size={22} />
               </div>
               <div className="text-left">
-                <p className="text-xs font-bold text-slate-600 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
-                <p className="text-sm font-bold text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '식별자 없음'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">ID</p>
+                <p className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase">{selectedLog?.logId || selectedLog?.requstId || 'None'}</p>
               </div>
             </div>
-            <HubStatusBadge label="확인됨" variant="success" />
+            <HubStatusBadge status="확인됨" />
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-[0.3em] px-2">_ Raw Architecture Payload</h4>
-            <div className="p-10 rounded-lg bg-slate-900 text-emerald-400 font-mono text-xs overflow-auto shadow-2xl relative group max-h-[400px]">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Raw Payload</h4>
+            <div className="p-10 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-[10px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />
               </div>
@@ -262,9 +270,9 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <button 
                 type="button"
                 onClick={() => setSelectedLog(null)} 
-                className="flex-1 h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
+                className="flex-1 h-11 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
             >
-              CLOSE_INSPECTOR
+              Close
             </button>
           </div>
         </div>

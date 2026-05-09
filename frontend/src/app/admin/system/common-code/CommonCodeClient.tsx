@@ -452,42 +452,43 @@ export default function CommonCodeClient({
  const columns: Column<CmmnDetailCode>[] = [
  {
  header: '코드',
- accessor: (item: CmmnDetailCode) => <span className="font-mono font-bold text-slate-700 tracking-tight">{item.code}</span>,
- className: 'w-24'
+ accessor: (item: CmmnDetailCode) => <span className="font-black text-slate-700 tracking-tight text-xs">{item.code}</span>,
+ className: 'w-24 py-4'
  },
  {
  header: '코드 명칭',
  accessor: (item: CmmnDetailCode) => (
- <div className="flex flex-col">
- <span className="font-bold text-slate-900 tracking-tight">{item.codeNm}</span>
- <span className="text-xs font-bold text-slate-500 line-clamp-1 ">{item.codeDc || 'No description available'}</span>
+ <div className="flex flex-col gap-0.5">
+ <span className="font-black text-slate-900 tracking-tighter text-sm">{item.codeNm}</span>
+ <span className="text-[10px] font-bold text-slate-400 line-clamp-1 uppercase tracking-tight">{item.codeDc || 'No description available'}</span>
  </div>
- )
+ ),
+ className: 'py-4'
  },
  {
- header: '상태 프로토콜',
+ header: '상태',
  accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useAt === 'Y' ? '사용 중' : '미사용'} />,
- className: 'w-32'
+ className: 'w-32 py-4'
  },
  {
- header: '관리 도구',
- className: 'text-right w-28',
+ header: '관리',
+ className: 'text-right w-24 py-4',
  accessor: (item: CmmnDetailCode) => (
- <div className="flex justify-end gap-2">
+ <div className="flex justify-end gap-1.5">
  <Button
  type="button"
  variant="ghost"
  size="icon"
- className="h-9 w-9 hover:bg-slate-100 rounded-lg"
+ className="h-8 w-8 hover:bg-slate-100 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
- <Settings size={14} className="text-slate-600" />
+ <Settings size={14} className="text-slate-400" />
  </Button>
  <Button
  type="button"
  variant="ghost"
  size="icon"
- className="h-9 w-9 text-rose-500 hover:bg-rose-50 rounded-lg"
+ className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
  >
  <Trash2 size={14} />
@@ -500,18 +501,18 @@ export default function CommonCodeClient({
  const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
 
  return (
- <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
- <div className="flex flex-col lg:flex-row gap-10 min-h-[750px]">
+ <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+ <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
  {/* --- Left Sidebar: Code Tree --- */}
- <aside className="w-full lg:w-[400px] flex flex-col gap-6">
- <div className="bg-white/95 backdrop-blur-3xl rounded-lg border border-slate-200/60 shadow-2xl overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
- <div className="p-7 border-b border-slate-100 bg-slate-50/50 space-y-5">
+ <aside className="w-full lg:w-[380px] flex flex-col gap-6">
+ <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden flex flex-col h-full ring-1 ring-black/5">
+ <div className="p-6 border-b border-slate-100/50 bg-slate-50/30 space-y-4">
  <div className="flex items-center justify-between">
- <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
- <Database size={18} />
+ <div className="flex items-center gap-2.5">
+ <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+ <Database size={16} />
  </div>
- <h3 className="text-xs font-bold tracking-[0.2em] text-slate-900 uppercase">
+ <h3 className="text-[10px] font-black tracking-widest text-slate-900 uppercase">
  Explorer
  </h3>
  </div>
@@ -519,34 +520,34 @@ export default function CommonCodeClient({
  {hasExplorerChanges && (
  <button 
  onClick={handleSaveExplorerChanges}
- className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest hover:bg-emerald-600 transition-colors flex items-center gap-1.5"
+ className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-md active:scale-95"
  >
  <Save size={12} /> Save
  </button>
  )}
- <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold tracking-widest">
+ <span className="px-2.5 py-1 rounded-lg bg-white/60 text-slate-500 text-[10px] font-black tracking-widest border border-white/80 uppercase shadow-sm">
  {clCodes.length} Domains
  </span>
  </div>
  </div>
  <div className="relative group">
- <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+ <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
  <Input
- placeholder="도메인 또는 그룹 검색.."
+ placeholder="검색어를 입력하세요..."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-12 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-lg text-xs font-bold tracking-tight shadow-inner focus:border-primary/30 transition-all placeholder:text-slate-300"
+ className="h-10 pl-12 pr-6 bg-white/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
  />
  </div>
  </div>
 
- <div className="flex-1 overflow-y-auto p-4 custom-scrollbar max-h-[650px]">
+ <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[600px]">
  {visibleNodes.length === 0 ? (
  <div className="py-20 text-center space-y-4">
- <div className="w-16 h-11 rounded-lg bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+ <div className="w-16 h-10 rounded-xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
  <SearchSlash size={32} />
  </div>
- <p className="text-xs font-bold tracking-[0.3em] uppercase text-slate-400">결과를 찾을 수 없음</p>
+ <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">No results found</p>
  </div>
  ) : (
  <DndContext
@@ -600,87 +601,86 @@ export default function CommonCodeClient({
  <main className="flex-1 space-y-6">
  {selectedGroup ? (
  <div className="space-y-6">
- <div className="p-8 rounded-lg bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
+ <div className="p-8 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-black/5">
  <div className="flex items-center gap-6">
- <div className="w-16 h-11 rounded-lg bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
- <Fingerprint size={28} />
+ <div className="w-14 h-11 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-2xl rotate-2">
+ <Fingerprint size={24} />
  </div>
- <div className="space-y-1">
+ <div className="space-y-1.5">
  <div className="flex items-center gap-3">
- <h2 className="text-2xl font-bold tracking-tighter text-slate-900 uppercase">
+ <h2 className="text-xl font-black tracking-tighter text-slate-900 uppercase">
  {selectedGroup.codeIdNm}
  </h2>
- <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-mono font-bold text-slate-600">
+ <div className="px-2.5 py-1 rounded-lg bg-white/60 border border-white/80 text-[10px] font-black text-slate-400 tracking-widest shadow-sm">
  {selectedGroup.codeId}
  </div>
  </div>
- <p className="text-xs font-bold text-slate-700 ">
+ <p className="text-xs font-bold text-slate-500 ">
  {selectedGroup.codeIdDc || '정의된 명세가 없습니다.'}
  </p>
  </div>
  </div>
  <div className="flex items-center gap-3">
- <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
+ <Button onClick={handleCreateDetail} size="lg" className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-xs tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2 active:scale-95">
  <Plus size={16} /> 신규 등록
  </Button>
  </div>
  </div>
 
  <div className={cn(
- "bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
+ "bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5 transition-all",
  detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
  )}>
- <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+ <div className="p-6 border-b border-slate-100/50 flex items-center justify-between bg-slate-50/30">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
- {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
+ <div className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-primary shadow-sm">
+ {detailsLoading ? <RefreshCcw size={16} className="animate-spin" /> : <Layers size={16} />}
  </div>
  <div className="text-left">
- <h3 className="text-sm font-bold tracking-tight text-slate-900 uppercase leading-none mb-1.5">시스템 구성 명세</h3>
- <p className="text-xs font-bold text-slate-700 leading-none">
- {detailsLoading ? '서버로부터 명세를 읽어오는 중..' : `총 ${selectedGroup.details?.length || 0}개의 파라미터가 정의됨`}
+ <h3 className="text-xs font-black tracking-widest text-slate-900 uppercase leading-none mb-1.5">구성 명세</h3>
+ <p className="text-[10px] font-bold text-slate-400 leading-none uppercase">
+ {detailsLoading ? 'Syncing...' : `Total ${selectedGroup.details?.length || 0} Units`}
  </p>
  </div>
  </div>
  <div>
  <div className="flex flex-col items-end pr-4 text-right">
- <span className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
+ <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Integrity</span>
  <div className="flex items-center gap-1">
- <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
- <span className="text-xs font-bold text-emerald-500 font-mono">99.9%</span>
+ <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+ <span className="text-[10px] font-black text-emerald-500 tracking-widest">99.9%</span>
  </div>
  </div>
  </div>
  </div>
- <div className="p-4">
+ <div className="p-2">
  <StandardDataTable<CmmnDetailCode>
  columns={columns}
  data={selectedGroup.details || []}
- emptyMessage="선택된 그룹에 상세 코드가 존재하지 않습니다."
- className="border-none"
- isPremium={false}
+ emptyMessage="데이터가 존재하지 않습니다."
+ className="border-none shadow-none bg-transparent"
+ isPremium={true}
  />
  </div>
  </div>
  </div>
  ) : (
- <div className="h-full flex flex-col items-center justify-center p-12 rounded-lg bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
- <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
- <Database size={40} className="animate-pulse" />
+ <div className="h-full flex flex-col items-center justify-center p-12 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 min-h-[500px]">
+ <div className="w-24 h-20 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-200 mb-8 shadow-xl group hover:rotate-6 transition-transform">
+ <Database size={40} className="opacity-20 group-hover:opacity-100 transition-opacity" />
  </div>
- <h3 className="text-xl font-bold tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
- <p className="text-xs font-bold text-slate-700 text-center max-w-sm leading-relaxed mb-10">
- 왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
- 도메인 계층별 모든 마스터 데이터가 이곳에 노출됩니다.
+ <h3 className="text-xl font-black tracking-widest text-slate-200 uppercase mb-4">No Selection</h3>
+ <p className="text-[10px] font-black text-slate-300 text-center max-w-sm leading-relaxed mb-10 uppercase tracking-widest">
+ Select a domain or group from the explorer<br />to begin management
  </p>
  <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
- <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
- <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">도메인 클러스터</span>
- <span className="text-2xl font-bold text-slate-900 font-mono ">{initialClusters.length}</span>
+ <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
+ <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Domains</span>
+ <span className="text-2xl font-black text-slate-900 ">{initialClusters.length}</span>
  </div>
- <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
- <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">활성 그룹 수</span>
- <span className="text-2xl font-bold text-slate-900 font-mono ">{groups.length}</span>
+ <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
+ <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Groups</span>
+ <span className="text-2xl font-black text-slate-900 ">{groups.length}</span>
  </div>
  </div>
  </div>

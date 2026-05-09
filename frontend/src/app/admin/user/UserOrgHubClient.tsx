@@ -408,20 +408,20 @@ export default function UserOrgHubClient({
 
   const userColumns: Column<UserManage>[] = [
     {
-      header: 'IDENTITY',
+      header: '사용자 정보',
       accessor: (user) => (
-        <div className="flex items-center gap-6 py-2">
+        <div className="flex items-center gap-4 py-1">
           <div className={cn(
-            "w-14 h-11 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === user?.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"
+            "w-12 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-md transition-transform group-hover:rotate-6",
+            selectedItemId === user?.esntlId ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
           )}>
             {user?.userNm?.[0]}
           </div>
-          <div className="space-y-1">
-            <h4 className={cn("text-md font-bold tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
+          <div className="space-y-0.5">
+            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-slate-900")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-xs font-bold tracking-tight opacity-100 ")}>_ {user.userId}</p>
+            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === user.esntlId ? "text-white/80" : "text-slate-400")}>{user.userId}</p>
           </div>
         </div>
       )
@@ -430,20 +430,20 @@ export default function UserOrgHubClient({
 
   const deptColumns: Column<Department>[] = [
     {
-      header: 'TOPOLOGY_NODE',
+      header: '부서 정보',
       accessor: (dept) => (
-        <div className="flex items-center gap-6 py-2">
+        <div className="flex items-center gap-4 py-1">
           <div className={cn(
-            "w-14 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-500"
+            "w-12 h-10 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:rotate-6",
+            selectedItemId === dept.orgnztId ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-500"
           )}>
-            <Building2 size={24} />
+            <Building2 size={20} />
           </div>
-          <div className="space-y-1">
-            <h4 className={cn("text-md font-bold tracking-tighter leading-none ", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
+          <div className="space-y-0.5">
+            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
               {dept.orgnztNm}
             </h4>
-            <p className={cn("text-xs font-bold tracking-tight opacity-100 ")}>_ NODE_{dept.orgnztId}</p>
+            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === dept.orgnztId ? "text-white/80" : "text-slate-400")}>{dept.orgnztId}</p>
           </div>
         </div>
       )
@@ -452,27 +452,27 @@ export default function UserOrgHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 아키텍처 거버넌스"
+        title="조직 및 사용자 관리"
         breadcrumbs={[{ label: '사용자 관리' }, { label: '조직 통합 허브' }]}
       />
 
       <HubHeader
-        title="Identity"
-        highlight="Fabric"
-        subtitle="전사 인적 자원 매트릭스 및 조직 계층 토폴로지 통합 컨트롤 센터"
+        title="사용자"
+        highlight="관리 허브"
+        subtitle="전사 인적 자원 및 조직 계층 구조를 통합 관리하는 컨트롤 센터입니다."
         icon={UserCog}
         actions={
-          <div className="flex gap-4 p-2 items-center">
+          <div className="flex gap-3 p-1 items-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="lg" aria-label="개인화 환경 설정" className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
-                  <Settings size={22} className="group-hover:rotate-90 transition-transform duration-500" />
+                <Button variant="ghost" size="lg" aria-label="개인화 환경 설정" className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95">
+                  <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                개인화 UI 및 필터 환경 설정
+                환경 설정
               </TooltipContent>
             </Tooltip>
 
@@ -480,7 +480,7 @@ export default function UserOrgHubClient({
               <TooltipTrigger asChild>
                 <Button 
                   size="lg" 
-                  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
                   onClick={() => {
                     setFormMode('create');
                     if (activeTab === 'DEPTS') {
@@ -490,79 +490,78 @@ export default function UserOrgHubClient({
                     }
                   }}
                 >
-                  {activeTab === 'DEPTS' ? <LayoutGrid size={20} /> : <UserPlus size={20} />}
-                  {activeTab === 'DEPTS' ? '신규 부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
-                  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {activeTab === 'DEPTS' ? <LayoutGrid size={18} /> : <UserPlus size={18} />}
+                  {activeTab === 'DEPTS' ? '부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                {activeTab === 'DEPTS' ? '디렉토리에 새로운 조직 노드 추가' : '새로운 아이덴티티 프로필 생성'}
+                {activeTab === 'DEPTS' ? '새로운 부서 추가' : '새로운 사용자 생성'}
               </TooltipContent>
             </Tooltip>
           </div>
         }
       />
 
-      <div className={cn("grid grid-cols-12 gap-12 min-h-[900px] transition-opacity duration-500", isPending && "opacity-60 pointer-events-none")}>
-        <div className="col-span-12 lg:col-span-3 space-y-8 flex flex-col h-full">
-          <div className="rounded-lg bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-4">
-            <NavButton icon={<Users size={22} />} subLabel="Section_01" label="사용자" active={activeTab === 'USERS'} onClick={() => startTransition(() => { setActiveTab('USERS'); setSelectedItemId(null); })} />
-            <NavButton icon={<Network size={22} />} subLabel="Section_02" label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => startTransition(() => { setActiveTab('DEPTS'); setSelectedItemId(null); })} />
-            <NavButton icon={<UserMinus size={22} />} subLabel="Section_03" label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => startTransition(() => { setActiveTab('ABSENCES'); setSelectedItemId(null); })} />
-            <NavButton icon={<ShieldCheck size={22} />} subLabel="Section_04" label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => startTransition(() => { setActiveTab('POLICIES'); setSelectedItemId(null); })} />
+      <div className={cn("grid grid-cols-12 gap-8 min-h-[800px] transition-opacity duration-500", isPending && "opacity-60 pointer-events-none")}>
+        <div className="col-span-12 lg:col-span-3 space-y-6 flex flex-col h-full">
+          <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl p-3 flex flex-col gap-3">
+            <NavButton icon={<Users size={20} />} subLabel="Menu_01" label="사용자" active={activeTab === 'USERS'} onClick={() => startTransition(() => { setActiveTab('USERS'); setSelectedItemId(null); })} />
+            <NavButton icon={<Network size={20} />} subLabel="Menu_02" label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => startTransition(() => { setActiveTab('DEPTS'); setSelectedItemId(null); })} />
+            <NavButton icon={<UserMinus size={20} />} subLabel="Menu_03" label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => startTransition(() => { setActiveTab('ABSENCES'); setSelectedItemId(null); })} />
+            <NavButton icon={<ShieldCheck size={20} />} subLabel="Menu_04" label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => startTransition(() => { setActiveTab('POLICIES'); setSelectedItemId(null); })} />
           </div>
 
-          <div className="mt-auto rounded-lg bg-slate-900 text-white p-12 space-y-8 shadow-2xl relative overflow-hidden group border-none">
-            <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-              <CloudLightning size={240} className="text-primary" />
+          <div className="mt-auto rounded-2xl bg-slate-900 text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group border-none">
+            <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
+              <CloudLightning size={200} className="text-primary" />
             </div>
-            <div className="relative z-10 space-y-6 text-center lg:text-left">
-              <div className="w-16 h-11 bg-white/10 rounded-lg flex items-center justify-center mx-auto lg:mx-0 border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
-                <Activity size={32} className="text-primary" />
+            <div className="relative z-10 space-y-4 text-center lg:text-left">
+              <div className="w-12 h-10 bg-white/10 rounded-xl flex items-center justify-center mx-auto lg:mx-0 border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
+                <Activity size={24} className="text-primary" />
               </div>
-              <div className="space-y-4">
-                <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ IDENTITY<br />INTELLIGENCE</h4>
-                <p className="text-xs text-white/80 font-bold tracking-tight leading-relaxed">Active Directory (AD)<br />동기화 완료</p>
+              <div className="space-y-2">
+                <h4 className="text-xl font-black tracking-tighter leading-tight">사용자 통계</h4>
+                <p className="text-[10px] text-white/60 font-bold tracking-tight leading-relaxed uppercase">Real-time status synced</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className={cn("col-span-12 lg:col-span-4 h-full flex flex-col gap-8 transition-opacity duration-300", isPending && "opacity-50")}>
+        <div className={cn("col-span-12 lg:col-span-4 h-full flex flex-col gap-6 transition-opacity duration-300", isPending && "opacity-50")}>
           <HubSectionCard
-            title={activeTab === 'DEPTS' ? "조직 노드 토폴로지 스트림" : "인적 자원 아이덴티티 매트릭스"}
-            description="전사 통합 디렉토리에서 실시간으로 동기화되는 객체 프로필 및 보안 상태 명세입니다"
+            title={activeTab === 'DEPTS' ? "조직 구조" : "사용자 목록"}
+            description="실시간으로 동기화되는 조직 및 사용자 명세입니다."
             icon={activeTab === 'DEPTS' ? Network : Users}
           >
-            <div className="space-y-8">
-              <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-1 pt-1 border-b border-slate-100/50 pb-6">
                 <div>
-                  <span className="text-xs font-bold text-slate-600 tracking-tight">_ 실시간 디렉토리 동기화</span>
+                  <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">실시간 데이터 동기화</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" aria-label="서버 데이터 동기화" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-lg px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all group shadow-sm">
-                      <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
+                    <Button variant="ghost" size="sm" aria-label="서버 데이터 동기화" onClick={() => queryClient.invalidateQueries()} className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all group shadow-sm uppercase">
+                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> Sync
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                    서버 지능형 엔진과 데이터 정합성 맞추기
+                    데이터 동기화
                   </TooltipContent>
                 </Tooltip>
               </div>
 
               <div className="relative group/search">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                 <Input
-                  className="pl-16 h-11 bg-slate-50/50 border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500"
-                  placeholder="Probing for identity..."
+                  className="pl-14 h-10 bg-slate-50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+                  placeholder="검색어를 입력하세요..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   suppressHydrationWarning
                 />
               </div>
 
-              <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[700px]">
+              <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -648,19 +647,19 @@ export default function UserOrgHubClient({
                                     }
                                   }}
                                   disabled={isSaving}
-                                  className="w-full h-12 rounded-lg bg-emerald-500 text-white font-bold text-xs tracking-tight shadow-xl hover:bg-emerald-600 transition-all gap-2"
+                                  className="w-full h-11 rounded-xl bg-emerald-500 text-white font-black text-xs tracking-widest shadow-lg hover:bg-emerald-600 transition-all gap-2 uppercase"
                                 >
                                   {isSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />} 
-                                  Save_Topology_Structure
+                                  Save Structure
                                 </Button>
                               </div>
                             )}
                             {flattenedDepts.length === 0 && !isDeptsLoading && (
                                 <div className="py-20 text-center space-y-4">
-                                    <div className="w-16 h-11 rounded-lg bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+                                    <div className="w-16 h-10 rounded-xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
                                         <SearchSlash size={32} />
                                     </div>
-                                    <p className="text-xs font-bold tracking-tight text-slate-400">조직 노드를 찾을 수 없음</p>
+                                    <p className="text-xs font-bold tracking-tight text-slate-400 uppercase tracking-widest">No nodes found</p>
                                 </div>
                             )}
                         </div>
@@ -675,7 +674,7 @@ export default function UserOrgHubClient({
                                 if (item.userId) setSelectedItemId(item.userId);
                             }}
                             keyField="userId"
-                            emptyMessage="검색된 객체가 존재하지 않습니다."
+                            emptyMessage="데이터가 존재하지 않습니다."
                             isPremium={true}
                             enableSelection={true}
                             bulkActions={userBulkActions}
@@ -699,34 +698,34 @@ export default function UserOrgHubClient({
             {selectedItemId ? (
               <motion.div
                 key={selectedItemId}
-                initial={{ opacity: 0, x: 30 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                className="h-full flex flex-col gap-8"
+                exit={{ opacity: 0, x: -20 }}
+                className="h-full flex flex-col gap-6"
               >
-                <div className="rounded-lg bg-white border-2 border-slate-100 shadow-2xl h-full p-12 space-y-12 flex flex-col relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000">
-                    <SearchCode size={320} className="text-primary" />
+                <div className="rounded-2xl bg-white/70 backdrop-blur-xl border border-white shadow-2xl h-full p-10 space-y-10 flex flex-col relative overflow-hidden ring-1 ring-black/5">
+                  <div className="absolute top-0 right-0 p-12 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000">
+                    <SearchCode size={250} className="text-primary" />
                   </div>
 
-                  <div className="flex items-start justify-between border-b border-slate-100 pb-12 relative z-10">
-                    <div className="flex items-center gap-10">
-                      <div className="w-28 h-28 bg-slate-900 rounded-lg flex items-center justify-center font-bold text-5xl text-white shadow-2xl rotate-3 group hover:rotate-6 transition-transform">
-                        <span className="text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+                  <div className="flex items-start justify-between border-b border-slate-100/50 pb-10 relative z-10">
+                    <div className="flex items-center gap-8">
+                      <div className="w-24 h-20 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-4xl text-white shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
+                        <span className="text-primary">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
                         </span>
                       </div>
-                      <div className="space-y-5 pt-2">
-                        <h2 className="text-5xl font-bold text-foreground tracking-tighter leading-none truncate max-w-[400px]">
+                      <div className="space-y-4 pt-1">
+                        <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none truncate max-w-[350px]">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm : (selectedItem as UserManage)?.userNm}
                         </h2>
-                        <div className="flex gap-4">
-                          <span className="bg-primary/5 text-primary text-xs font-bold px-6 py-2 rounded-lg tracking-tight border border-primary/10 shadow-sm flex items-center gap-2">
-                            <ShieldCheck size={14} /> 신원 확인됨
+                        <div className="flex gap-3">
+                          <span className="bg-primary/5 text-primary text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border border-primary/10 shadow-sm flex items-center gap-2 uppercase">
+                            <ShieldCheck size={14} /> Verified
                           </span>
                           {activeTab === 'ABSENCES' && (
-                            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-6 py-2 rounded-lg tracking-tight border border-amber-200 shadow-sm animate-pulse">
-                              부재중
+                            <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border border-amber-200 shadow-sm animate-pulse uppercase">
+                              Away
                             </span>
                           )}
                         </div>
@@ -735,8 +734,8 @@ export default function UserOrgHubClient({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      aria-label="객체 정보 수정"
-                      className="h-11 w-16 rounded-lg bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
+                      aria-label="정보 수정"
+                      className="h-10 w-14 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
                       onClick={() => {
                         setFormMode('edit');
                         if (activeTab === 'DEPTS') {
@@ -746,35 +745,35 @@ export default function UserOrgHubClient({
                         }
                       }}
                     >
-                      <Pencil size={24} className="group-hover:scale-110 transition-transform" />
+                      <Pencil size={20} className="group-hover:scale-110 transition-transform" />
                     </Button>
                   </div>
 
-                  <div className="flex-1 space-y-12 relative z-10">
-                    <div className="grid grid-cols-2 gap-8">
-                      <InfoBlock icon={<Mail size={18} />} label="Communication Endpoint" value={(selectedItem as UserManage)?.emailAdres || (activeTab === 'DEPTS' ? 'DEPT_INBOX' : 'PENDING_DNS')} />
-                      <InfoBlock icon={<Phone size={18} />} label="Hotline Contact" value={(selectedItem as UserManage)?.moblphonNo || (selectedItem as Department)?.orgnztNm || 'NOT_DECLARED'} />
-                      <InfoBlock icon={<Building2 size={18} />} label="Topology Cluster" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || 'GLOBAL_ROOT'} />
-                      <InfoBlock icon={<MapPin size={18} />} label="Operational Zone" value="본사 클러스터" />
+                  <div className="flex-1 space-y-10 relative z-10">
+                    <div className="grid grid-cols-2 gap-6">
+                      <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={(selectedItem as UserManage)?.emailAdres || (activeTab === 'DEPTS' ? '부서 공용' : '미지정')} />
+                      <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.moblphonNo || (selectedItem as Department)?.orgnztNm || '미등록'} />
+                      <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || '최상위'} />
+                      <InfoBlock icon={<MapPin size={16} />} label="근무지" value="본사" />
                     </div>
 
-                    <div className="pt-12 border-t border-slate-100 space-y-10">
+                    <div className="pt-10 border-t border-slate-100/50 space-y-8">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                            <ShieldCheck size={20} />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                            <ShieldCheck size={16} />
                           </div>
                           <div>
-                            <h4 className="text-xs font-bold text-slate-600 tracking-tight leading-none mb-1">권한 프로토콜</h4>
-                            <p className="text-sm font-bold text-foreground tracking-tighter">_ 활성 권한 매트릭스</p>
+                            <h4 className="text-[10px] font-black text-slate-400 tracking-widest leading-none mb-1.5 uppercase">권한 프로토콜</h4>
+                            <p className="text-sm font-black text-slate-900 tracking-tighter uppercase leading-none">Access Matrix</p>
                           </div>
                         </div>
-                        <Button variant="ghost" className="h-12 px-6 rounded-lg bg-slate-50 text-xs font-bold text-primary gap-3 tracking-tight hover:bg-primary hover:text-white transition-all">_ MANAGE_MATRIX <ChevronRight size={14} /></Button>
+                        <Button variant="ghost" className="h-10 px-5 rounded-xl bg-slate-50 text-[10px] font-black text-primary gap-2 tracking-widest hover:bg-primary hover:text-white transition-all uppercase">Manage <ChevronRight size={14} /></Button>
                       </div>
-                      <div className="flex flex-wrap gap-4">
-                        {['ACCESS_CMS', 'SYSTEM_ADMIN_LEVEL_4', 'ANALYTICS_DASHBOARD_LIVE', 'USER_DIRECTORY_CONTROLLER', 'SECURITY_AUDIT_PROBE'].map(p => (
-                          <div key={p} className="pl-6 pr-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-lg text-xs font-bold text-slate-500 tracking-tight shadow-sm flex items-center gap-3 group/tag hover:border-primary/30 transition-all cursor-default">
-                            <div className="w-2 h-2 rounded-lg bg-primary opacity-30 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex flex-wrap gap-3">
+                        {['ACCESS_CMS', 'SYSTEM_ADMIN', 'ANALYTICS', 'USER_DIRECTORY', 'SECURITY_AUDIT'].map(p => (
+                          <div key={p} className="pl-4 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black text-slate-500 tracking-widest shadow-sm flex items-center gap-2.5 group/tag hover:border-primary/30 transition-all cursor-default uppercase">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary opacity-30 group-hover:opacity-100 transition-opacity" />
                             {p}
                           </div>
                         ))}
@@ -782,30 +781,30 @@ export default function UserOrgHubClient({
                     </div>
                   </div>
 
-                  <div className="flex gap-6 pt-12 mt-auto border-t border-slate-100 relative z-10">
+                  <div className="flex gap-4 pt-10 mt-auto border-t border-slate-100/50 relative z-10">
                     <Button 
                       onClick={handleDeleteUser}
-                      className="flex-1 h-11 bg-slate-100 text-rose-500 rounded-lg font-bold tracking-tight text-xs hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                      className="flex-1 h-10 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase"
                     >
-                      REVOKE_ACCESS
+                      Revoke
                     </Button>
-                    <Button className="flex-[2] h-11 bg-slate-900 text-white rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
-                      <Zap size={18} className="text-primary group-hover:animate-pulse" /> COMMIT_SPECIFICATION_CHANGE
+                    <Button className="flex-[2] h-10 bg-slate-900 text-white rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase">
+                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> Save Changes
                     </Button>
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full rounded-lg border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-24 text-center select-none group">
-                <div className="w-32 h-32 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-12 group-hover:rotate-12 transition-transform duration-1000">
-                  <Contact2 size={64} className="opacity-20 group-hover:opacity-100 transition-opacity" />
+              <div className="h-full rounded-2xl border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-20 text-center select-none group">
+                <div className="w-28 h-24 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
+                  <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h3 className="text-4xl font-bold text-slate-200 tracking-tighter">_ Idle_Probe_State</h3>
-                <p className="text-[12px] font-bold text-slate-300 tracking-tight mt-6 leading-relaxed max-w-[280px]">_ 인텔리전스 동기화를 시작하려면 토폴로지 스트림에서 엔터티를 선택하세요</p>
-                <div className="mt-12 flex gap-4 opacity-10 grayscale">
-                  <Fingerprint size={32} />
-                  <Database size={32} />
-                  <ShieldAlert size={32} />
+                <h3 className="text-3xl font-black text-slate-200 tracking-tighter uppercase">No Selection</h3>
+                <p className="text-[10px] font-bold text-slate-300 tracking-tight mt-4 leading-relaxed max-w-[240px] uppercase tracking-widest">Select an entity from the stream to begin management</p>
+                <div className="mt-10 flex gap-4 opacity-10 grayscale">
+                  <Fingerprint size={24} />
+                  <Database size={24} />
+                  <ShieldAlert size={24} />
                 </div>
               </div>
             )}
