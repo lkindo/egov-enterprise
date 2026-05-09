@@ -82,13 +82,13 @@ describe('UserManageClient Component', () => {
 
   it('renders bento-style titles', async () => {
     renderWithClient(<UserManageClient />);
-    expect(screen.getByText(/Identity Stream/i)).toBeDefined();
-    expect(screen.getByText(/사용자 인벤토리/i)).toBeDefined();
+    expect(screen.getByText(/Security/i)).toBeDefined();
+    expect(screen.getByText(/사용자 관리/i)).toBeDefined();
   });
 
   it('contains the new creation button', async () => {
     renderWithClient(<UserManageClient />);
-    expect(screen.getByText(/신규 계정 생성/i)).toBeDefined();
+    expect(screen.getByText(/사용자 추가/i)).toBeDefined();
   });
 
   it('shows edit and delete buttons in each row', async () => {

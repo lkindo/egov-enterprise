@@ -170,15 +170,14 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
                           </div>
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          {editingId === comment.id ? (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.id)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50"><Check className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-50"><X className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.id)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-50" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.id); setEditCn(comment.commentCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100"><Edit2 className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.id)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50"><Trash2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.id); setEditCn(comment.commentCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.id)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
                             </>
                           )}
                         </div>

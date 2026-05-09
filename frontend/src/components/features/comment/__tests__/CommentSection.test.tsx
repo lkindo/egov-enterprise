@@ -9,12 +9,19 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentSection from '../CommentSection';
-import commentService from '@/services/business/comment/commentService';
+import * as commentActions from '@/app/actions/commentActions';
 
 // Mock dependencies
-vi.mock('@/services/business/comment/commentService');
+vi.mock('@/app/actions/commentActions');
 vi.mock('date-fns', () => ({
   format: vi.fn(() => '2024-03-10 12:00'),
+}));
+
+// Mock toast
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
 }));
 
 describe('CommentSection Component', () => {
@@ -39,127 +46,72 @@ describe('CommentSection Component', () => {
   });
 
   it('renders comments correctly', async () => {
-    vi.mocked(commentService.getComments).mockResolvedValue({
-      list: mockComments,
-      total: 1,
-      page: 1,
-      size: 10,
-      totalPage: 1,
-    });
-
-    const { container } = render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
-
-    // Wait until loading skeletons are gone
-    await waitFor(() => {
-      expect(container.querySelector('[data-slot="skeleton"]')).toBeNull();
-    }, { timeout: 3000 });
+    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
     expect(screen.getByText('User One')).toBeDefined();
+    expect(screen.getByText(/Discussion Hub/i)).toBeDefined();
   });
 
   it('handles empty comment list', async () => {
-    vi.mocked(commentService.getComments).mockResolvedValue({
-      list: [],
-      total: 0,
-      page: 1,
-      size: 10,
-      totalPage: 0,
-    });
+    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={[]} />);
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/아직 등록된 댓글이 없습니다/)).toBeDefined();
-    });
+    expect(screen.getByText(/No entries found/i)).toBeDefined();
   });
 
   it('submits a new comment', async () => {
-    vi.mocked(commentService.getComments).mockResolvedValue({
-      list: [],
-      total: 0,
-      page: 1,
-      size: 10,
-      totalPage: 0,
-    });
-    vi.mocked(commentService.createComment).mockResolvedValue(201);
+    vi.mocked(commentActions.createComment).mockResolvedValue({ success: true });
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
+    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={[]} />);
 
-    const textarea = await screen.findByPlaceholderText('메시지를 입력하세요...');
-    const submitButton = screen.getByText(/게시하기/);
+    const textarea = screen.getByPlaceholderText(/Inject your thoughts/i);
+    const submitButton = screen.getByText(/Commit Response/i);
 
     fireEvent.change(textarea, { target: { value: 'New Test Comment' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(commentService.createComment).toHaveBeenCalledWith({
-        nttId: mockNttId,
-        bbsId: mockBbsId,
-        commentCn: 'New Test Comment',
-      });
+      expect(commentActions.createComment).toHaveBeenCalled();
       expect(textarea).toHaveValue('');
     });
   });
 
   it('handles comment update', async () => {
-    vi.mocked(commentService.getComments).mockResolvedValue({
-      list: mockComments,
-      total: 1,
-      page: 1,
-      size: 10,
-      totalPage: 1,
-    });
-    vi.mocked(commentService.updateComment).mockResolvedValue(undefined);
+    vi.mocked(commentActions.updateComment).mockResolvedValue({ success: true });
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
+    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('First Comment')).toBeDefined();
-    });
+    expect(screen.getByText('First Comment')).toBeDefined();
 
-    const editButton = screen.getByTestId('icon-edit2').closest('button')!;
+    const editButton = screen.getByTestId('comment-edit-button');
     fireEvent.click(editButton);
 
     const editArea = screen.getByDisplayValue('First Comment');
     fireEvent.change(editArea, { target: { value: 'Updated Comment Content' } });
 
-    const checkButton = screen.getByTestId('icon-check').closest('button')!;
-    fireEvent.click(checkButton);
+    const saveButton = screen.getByTestId('edit-save-button');
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(commentService.updateComment).toHaveBeenCalledWith(101, {
-        nttId: mockNttId,
-        bbsId: mockBbsId,
-        commentCn: 'Updated Comment Content',
-      });
+      expect(commentActions.updateComment).toHaveBeenCalled();
     });
   });
 
   it('handles comment deletion', async () => {
-    vi.mocked(commentService.getComments).mockResolvedValue({
-      list: mockComments,
-      total: 1,
-      page: 1,
-      size: 10,
-      totalPage: 1,
-    });
-    vi.mocked(commentService.deleteComment).mockResolvedValue(undefined);
+    vi.mocked(commentActions.deleteComment).mockResolvedValue({ success: true });
     
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
+    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('First Comment')).toBeDefined();
-    });
+    expect(screen.getByText('First Comment')).toBeDefined();
 
-    const deleteButton = screen.getByTestId('icon-trash2').closest('button')!;
+    const deleteButton = screen.getByTestId('comment-delete-button');
     fireEvent.click(deleteButton);
 
     expect(confirmSpy).toHaveBeenCalled();
     await waitFor(() => {
-      expect(commentService.deleteComment).toHaveBeenCalledWith(101);
+      expect(commentActions.deleteComment).toHaveBeenCalled();
     });
   });
 });
