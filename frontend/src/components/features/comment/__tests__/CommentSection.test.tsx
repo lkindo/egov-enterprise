@@ -13,6 +13,13 @@ import * as commentActions from '@/app/actions/commentActions';
 
 // Mock dependencies
 vi.mock('@/app/actions/commentActions');
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    form: ({ children, ...props }: any) => <form {...props}>{children}</form>,
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
 vi.mock('date-fns', () => ({
   format: vi.fn(() => '2024-03-10 12:00'),
 }));

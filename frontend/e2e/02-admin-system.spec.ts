@@ -122,19 +122,19 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // Section_02: DEPTS tab
             // After click, table shows column header "TOPOLOGY_NODE"
             console.log('>>> Step 2: Switching to Section_02 (DEPTS tab)');
-            const deptTab = page.locator('button:has-text("Section_02")').first();
+            const deptTab = page.locator('button:has-text("Menu_02")').first();
             await expect(deptTab).toBeVisible({ timeout: 20000 });
             await deptTab.click({ force: true });
             // Wait for Framer Motion animation + data load
             await page.waitForTimeout(1000);
-            await expect(page.locator('text=조직 노드 토폴로지 스트림').first()).toBeVisible({ timeout: 20000 });
+            await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
             console.log('>>> Section_02 (DEPTS): PASS');
 
             // Section_03: ABSENCES tab
             // NOTE: ABSENCES tab still shows the user list (same data, just filtered view)
             // Verify tab is activated by checking its CSS class "bg-slate-900" (active state)
             console.log('>>> Step 3: Switching to Section_03 (ABSENCES tab)');
-            const absenceTab = page.locator('button:has-text("Section_03")').first();
+            const absenceTab = page.locator('button:has-text("Menu_03")').first();
             await expect(absenceTab).toBeVisible({ timeout: 10000 });
             await absenceTab.click({ force: true });
             await page.waitForTimeout(1000);

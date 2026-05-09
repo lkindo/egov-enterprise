@@ -82,7 +82,7 @@ describe('UserManageClient Component', () => {
 
   it('renders bento-style titles', async () => {
     renderWithClient(<UserManageClient />);
-    expect(screen.getByText(/Security/i)).toBeDefined();
+    expect(screen.getAllByText(/Security/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/사용자 관리/i)).toBeDefined();
   });
 
