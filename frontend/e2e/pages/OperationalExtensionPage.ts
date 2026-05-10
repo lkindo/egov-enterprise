@@ -22,12 +22,12 @@ export class OperationalExtensionPage {
     async gotoExternalHr() {
         console.log('>>> Navigating to External HR Management');
         await this.page.goto('/admin/operation/external-hr');
-        await expect(this.page.getByText('외부인사정보 관리')).toBeVisible();
+        await expect(this.page.getByText('외부 인사 인벤토리')).toBeVisible();
     }
 
     async searchExternalHr(name: string) {
         console.log(`>>> Searching external HR with name: ${name}`);
-        const searchInput = this.page.getByPlaceholder('성명을 입력하세요...');
+        const searchInput = this.page.getByPlaceholder('인사 성명으로 검색...');
         await searchInput.fill(name);
         // StandardSearchFilter might have an icon or button to click
         await this.page.keyboard.press('Enter');
@@ -38,20 +38,21 @@ export class OperationalExtensionPage {
     async gotoMemoReports() {
         console.log('>>> Navigating to Memo Reports');
         await this.page.goto('/admin/operation/memo-reports');
-        await expect(this.page.getByText('메모 보고 매트릭스')).toBeVisible();
+        await expect(this.page.getByText('메모 보고 관리')).toBeVisible();
     }
 
-    async switchReportTab(tab: 'RECEIVED' | 'MY OPS' | 'GLOBAL') {
+    async switchReportTab(tab: string) {
         console.log(`>>> Switching to report tab: ${tab}`);
-        await this.page.getByRole('button', { name: tab }).click();
+        await this.page.getByText(tab, { exact: true }).click();
         await this.page.waitForLoadState('networkidle');
+        await this.page.waitForTimeout(1000); // Buffer for React state sync
     }
 
     // Rough Map
     async gotoRoughMap() {
         console.log('>>> Navigating to Rough Map Management');
         await this.page.goto('/admin/operation/rough-map');
-        await expect(this.page.getByText('약도 지리 관리')).toBeVisible();
+        await expect(this.page.getByText('약도 및 거점 관리')).toBeVisible();
     }
 
     // SMS Service

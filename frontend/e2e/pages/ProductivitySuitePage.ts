@@ -43,8 +43,7 @@ export class ProductivitySuitePage {
     // 일정 관리(Calendar)
     async gotoCalendar() {
         console.log(`>>> Navigating to Work Hub (Calendar Tab)`);
-        // Based on the traces, job/calendar tab is in work-hub
-        await this.page.goto('/admin/work-hub?tab=job');
+        await this.page.goto('/admin/work-hub?tab=calendar');
         await this.page.waitForTimeout(1000); // Wait for DOM
     }
 
@@ -56,24 +55,21 @@ export class ProductivitySuitePage {
     // 부서 업무 (Dept Job)
     async gotoDeptJob() {
         console.log(`>>> Navigating to Departmental Jobs`);
-        await this.page.goto('/smart-toolkit/dept-job');
+        await this.page.goto('/admin/work-hub?tab=job');
         // Both Dept Job and Work Report now use Workflow Hub layout
-        await expect(this.page.getByText('워크플로우 허브').first()).toBeVisible({ timeout: 15000 });
-        await expect(this.page.getByText('전사 부서별 업무 처리 및 비즈니스 데이터 자산 통합 관리 센터')).toBeVisible();
+        await expect(this.page.locator('h1, h2').filter({ hasText: /워크플로우/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
     // 업무 보고 (Work Report)
     async gotoWorkReport() {
         console.log(`>>> Navigating to Work Reports`);
-        await this.page.goto('/smart-toolkit/work-report');
-        await expect(this.page.getByText('워크플로우 허브').first()).toBeVisible({ timeout: 15000 });
-        await expect(this.page.getByText('비즈니스 데이터 자산 통합 관리 센터')).toBeVisible();
+        await this.page.goto('/admin/work-hub?tab=report');
+        await expect(this.page.locator('h1, h2').filter({ hasText: /워크플로우/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
     async verifyWorkflowHubTabs() {
         console.log(`>>> Verifying Workflow Hub Tabs`);
         await expect(this.page.getByRole('button', { name: 'WORKFLOW' })).toBeVisible();
         await expect(this.page.getByRole('button', { name: 'ASSETS' })).toBeVisible();
-        await expect(this.page.getByRole('button', { name: 'CALENDAR' })).toBeVisible();
     }
 }

@@ -32,6 +32,12 @@ import {
  Activity,
  MoreVertical
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { noteService } from '@/services/business/user/NoteService';
@@ -52,6 +58,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  const { toast } = useToast();
  const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
  const [searchKeyword, setSearchKeyword] = useState('');
+
+ React.useEffect(() => {
+   if (defaultTab) {
+     setActiveTab(defaultTab);
+   }
+ }, [defaultTab]);
 
  // --- Data Fetching ---
  const { data: noteData, isLoading: notesLoading } = useQuery({
@@ -174,7 +186,23 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  }
  ];
 
+ const headerAction = useMemo(() => {
+    if (activeTab === 'ADDRESS_BOOK') {
+      return (
+        <Button onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
+          <Plus size={18} /> 신규 연락처
+        </Button>
+      );
+    }
+    return (
+      <Button onClick={() => router.push('/admin/collaboration/mail-send')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
+        <Plus size={18} /> 신규 전송
+      </Button>
+    );
+  }, [activeTab, router]);
+
  return (
+ <TooltipProvider delayDuration={0}>
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
  <PageHeader
  title="협업 및 네트워크 허브"
@@ -187,7 +215,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  subtitle="조직 내 원활한 소통과 정보 공유를 위한 통합 협업 공간입니다." 
  icon={Share2} 
  actions={
- <div className="flex gap-4">
+ <div className="flex gap-4 items-center">
  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
  <Button
  variant="ghost"
@@ -214,9 +242,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  SCRAPS
  </Button>
  </div>
- <Button onClick={() => router.push('/admin/collaboration/mail-send')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
- <Plus size={18} /> 신규 전송
- </Button>
+ {headerAction}
  </div>
  }
  />
@@ -263,5 +289,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  </div>
  </HubSectionCard>
  </div>
+ </TooltipProvider>
  );
 }

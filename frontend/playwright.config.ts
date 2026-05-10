@@ -137,6 +137,30 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            name: 'tier-19-hierarchy',
+            testMatch: /19-hierarchy-modernization\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-20-security',
+            testMatch: /20-common-security-validation\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-21-resilience',
+            testMatch: /21-advanced-resilience\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-22-guard',
+            testMatch: /22-deep-security-guard\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

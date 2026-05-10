@@ -72,7 +72,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 for (const payload of payloads) {
                     console.log(`>>> Testing Payload: ${payload}`);
                     await commentInput.fill(payload);
-                    await page.locator('button:has-text("등록"), button:has-text("Comment")').click();
+                    await page.locator('button:has-text("등록"), button:has-text("Comment"), button:has-text("Commit Response")').click();
                     
                     // Wait for it to appear in the list
                     await page.waitForTimeout(1000);

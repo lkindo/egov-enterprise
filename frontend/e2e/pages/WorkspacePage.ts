@@ -9,9 +9,9 @@ export class WorkspacePage {
     }
 
     async verifyMyPageHeader() {
-        const header = this.page.locator('h1');
+        const header = this.page.getByRole('heading', { name: '마이페이지 설정' }).first();
         await header.waitFor({ state: 'visible' });
-        await expect(header).toContainText(/마이페이지 설정/i);
+        await expect(header).toBeVisible();
     }
 
     async toggleContentStatus(index: number = 0) {

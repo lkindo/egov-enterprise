@@ -17,10 +17,10 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await page.goto('/admin/system/menus');
         
         // Wait for tree container
-        await expect(page.locator('text=시스템 네비게이션 트리').first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('text=네비게이션 트리').first()).toBeVisible({ timeout: 20000 });
         
-        // Check for node elements (NODE_ prefix)
-        const nodes = page.locator('text=/NODE_\\d+/');
+        // Check for node elements (ID: prefix)
+        const nodes = page.locator('text=/ID: \\d+/');
         await expect(nodes.first()).toBeVisible({ timeout: 10000 });
         
         console.log('>>> Menu Tree UI: PASS');
@@ -31,7 +31,7 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await page.goto('/admin/system/common-code');
         
         // Wait for explorer aside
-        await expect(page.locator('text=코드 익스플로러').first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('text=Explorer').first()).toBeVisible({ timeout: 20000 });
         
         // Check for cluster/domain items
         const domains = page.locator('text=/\\d+ Domains/');
@@ -45,12 +45,12 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await page.goto('/admin/user/manage');
         
         // Switch to DEPTS tab
-        const deptTab = page.locator('button:has-text("Section_02")').first();
+        const deptTab = page.locator('button:has-text("부서 관리")').first();
         await expect(deptTab).toBeVisible();
         await deptTab.click();
         
         // Wait for tree title
-        await expect(page.locator('text=조직 노드 토폴로지 스트림').first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
         
         // Check for topology nodes (e.g., ORGNZT_0000000000001)
         const deptNodes = page.locator('text=/ORGNZT_\\d+/');
@@ -64,10 +64,10 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await page.goto('/admin/user/manage');
         
         // Switch to DEPTS tab
-        await page.locator('button:has-text("Section_02")').click();
+        await page.locator('button:has-text("부서 관리")').click();
         
         // The SAVE_CHANGES button should NOT be visible initially
-        const saveBtn = page.locator('button:has-text("Save_Topology_Structure")');
+        const saveBtn = page.locator('button:has-text("Save Structure")');
         await expect(saveBtn).not.toBeVisible();
         
         console.log('>>> Initial Save Button State: PASS');

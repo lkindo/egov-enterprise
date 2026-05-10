@@ -27,7 +27,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // --- Step 1: Navigate ---
             console.log('>>> Step 1: Navigating to User Management');
             await page.goto('/admin/user/manage');
-            await expect(page.locator('h1').first()).toBeVisible({ timeout: 20000 });
+            await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible({ timeout: 20000 });
 
             // --- Step 2: Open Modal ---
             console.log('>>> Step 2: Opening Registration Modal');
@@ -82,12 +82,12 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.locator(`text=${testName}`).first().click();
             await page.waitForTimeout(1000);
 
-            // Delete button text is exactly "REVOKE_ACCESS"
-            const revokeBtn = page.locator('button:has-text("REVOKE_ACCESS")').first();
-            await expect(revokeBtn).toBeVisible({ timeout: 15000 });
+            // The button text is "Revoke" in UserOrgHubClient.tsx
+            const deleteBtn = page.locator('button:has-text("Revoke")').first();
+            await expect(deleteBtn).toBeVisible({ timeout: 10000 });
+            await deleteBtn.click();
 
-            // CRITICAL: handleDeleteUser calls custom useConfirm modal (REVOKE_IDENTITY button)
-            await revokeBtn.click();
+            // Confirm Text is "REVOKE_IDENTITY"
             const confirmBtn = page.locator('button:has-text("REVOKE_IDENTITY")').first();
             await expect(confirmBtn).toBeVisible({ timeout: 5000 });
             await confirmBtn.click();
@@ -117,7 +117,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         test('Department and Absence Management Access', async ({ page }) => {
             console.log('\n>>> Step 1: Navigate to User/Org Hub');
             await page.goto('/admin/user/manage');
-            await expect(page.locator('h1').first()).toBeVisible({ timeout: 20000 });
+            await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible({ timeout: 20000 });
 
             // Section_02: DEPTS tab
             // After click, table shows column header "TOPOLOGY_NODE"

@@ -15,7 +15,7 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         
         // 1. Navigate to Approval Hub
         await page.goto('/approvals');
-        await expect(page.locator('h1')).toContainText('Approval Hub');
+        await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
         
         // 2. Draft New Approval
         console.log('>>> Navigating to Draft Center');
@@ -38,14 +38,22 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         
         // 6. Verify Redirect & Presence in List
         await expect(page).toHaveURL(/\/approvals/);
-        console.log(`>>> Verifying if #${subject} (subject in content) exists in the stream`);
+        console.log(`>>> Verifying if #${subject} exists in the stream`);
         
         // Check for success toast
         await expect(page.locator('text=결재 상신이 완료되었습니다')).toBeVisible();
+
+        // Ensure we are looking at 'My History' to see our own request
+        const historyTab = page.getByRole('button', { name: /My History/i });
+        if (await historyTab.isVisible()) {
+            await historyTab.click();
+            await page.waitForLoadState('domcontentloaded');
+        }
         
-        // In the list, the items might show the ID instead of the subject, but let's check the first item
-        const firstItem = page.locator('.group.p-5').first();
-        await expect(firstItem).toBeVisible();
+        // Retry logic: Wait for the item to appear in the list (indexing/refresh delay)
+        const firstItem = page.locator('.group.p-5, .approval-item').first();
+        await expect(firstItem).toBeVisible({ timeout: 15000 });
+        console.log('>>> Approval successfully detected in history stream.');
     });
 
     test('Productivity: Smart Toolkit - Department Schedule', async ({ page }) => {

@@ -11,7 +11,7 @@ export class OpsDetailPage {
 
     async searchEvents(keyword: string) {
         console.log(`>>> [OpsDetail] Searching events with keyword: ${keyword}`);
-        const searchInput = this.page.getByPlaceholder(/행사 태그 검색/i);
+        const searchInput = this.page.getByPlaceholder(/행사 검색/i);
         await expect(searchInput).toBeVisible({ timeout: 10000 });
         
         await searchInput.click();
@@ -33,7 +33,8 @@ export class OpsDetailPage {
 
     async createEvent(data: { name: string, desc: string, capacity: number, startDate: string, endDate: string, recruitDate: string, recruitEndDate: string }) {
         console.log(`>>> [OpsDetail] Creating New Event: ${data.name}`);
-        await this.page.getByRole('button', { name: /행사 신규 생성/i }).click();
+        // Button text is "행사 등록"
+        await this.page.getByRole('button', { name: /행사 등록/i }).click();
         
         await expect(this.page.getByText(/Dispatch New Event/i)).toBeVisible({ timeout: 10000 });
         

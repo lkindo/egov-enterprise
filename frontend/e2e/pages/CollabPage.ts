@@ -10,21 +10,23 @@ export class CollabPage {
     async goto() {
         console.log('>>> [Collab] Navigating to Collaboration Hub');
         await this.page.goto('/admin/collaboration');
-        await expect(this.page.getByRole('heading', { name: /Connect Matrix/i })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: /협업 및 네트워크 허브/i })).toBeVisible({ timeout: 15000 });
     }
 
-    async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR') {
-        const testId = tab === 'MESSAGES' ? 'tab-messages' : tab === 'CONTACTS' ? 'tab-contacts' : 'tab-calendar';
-        await this.page.getByTestId(testId).click();
-        await this.page.waitForLoadState('domcontentloaded');
+    async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS') {
+        console.log(`>>> [Collab] Switching to tab: ${tab}`);
+        const label = tab === 'MESSAGES' ? 'MESSAGES' : tab === 'CONTACTS' ? 'CONTACTS' : tab === 'SCRAPS' ? 'SCRAPS' : 'CALENDAR';
+        await this.page.getByRole('button', { name: label }).click();
         await this.page.waitForTimeout(1000);
     }
 
     async sendNote(recipient: string = 'webmaster', subject: string, content: string) {
         console.log(`>>> [Collab] Sending Note to: ${recipient}`);
-        await this.page.getByRole('button', { name: /Send Note/i }).click({ force: true });
+        await this.switchTab('MESSAGES');
+        
+        // The button text is "신규 전송" (with Plus icon)
+        await this.page.getByRole('button', { name: /신규 전송/i }).click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-send/, { timeout: 30000 });
-        await this.page.waitForLoadState('networkidle');
         
         const searchInput = this.page.getByTestId('mail-recipient-input');
         await expect(searchInput).toBeVisible({ timeout: 20000 });
@@ -55,14 +57,15 @@ export class CollabPage {
         await sendBtn.click();
         
         await expect(this.page.getByText(/성공|발송되었습니다/i)).toBeVisible({ timeout: 20000 });
-        await this.page.waitForLoadState('networkidle');
         
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-history/);
     }
 
     async createContact(name: string, email: string, tel: string = '010-0000-0000') {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
-        await this.page.getByRole('button', { name: /New Identity/i }).click();
+        await this.switchTab('CONTACTS');
+        
+        await this.page.getByRole('button', { name: /신규 연락처/i }).click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
         const nameInput = this.page.getByTestId('identity-name-input');
@@ -86,10 +89,13 @@ export class CollabPage {
 
     async verifyIdentityInList(name: string) {
         console.log(`>>> [Collab] Verifying visibility in Network Index: ${name}`);
-        const searchInput = this.page.getByPlaceholder(/데이터 노드 검색/i);
+        await this.switchTab('CONTACTS');
+        
+        const searchInput = this.page.getByPlaceholder(/검색어를 입력하십시오/i);
         await expect(searchInput).toBeVisible();
         
         await searchInput.click();
+        await searchInput.fill('');
         await searchInput.pressSequentially(name, { delay: 100 });
         await this.page.keyboard.press('Enter');
         
@@ -113,30 +119,36 @@ export class CollabPage {
                 console.log(`>>> [Collab] Searching for mail with subject: ${subject} (Attempt ${i+1})`);
                 const searchInput = this.page.getByPlaceholder(/메일 제목 또는 수신자 검색/i);
                 await searchInput.click();
-                await searchInput.fill('');
-                await searchInput.pressSequentially(subject, { delay: 50 });
+                await searchInput.fill(subject);
+                // Wait for potential debounce and network request
                 await this.page.waitForTimeout(2000);
             }
 
-            const mailItems = this.page.locator('[data-testid="mail-item"]');
-            const targetItem = subject ? mailItems.filter({ hasText: subject }).first() : mailItems.first();
+            // Target only the data rows, avoiding the header
+            const mailRows = this.page.locator('tbody tr');
+            const targetRow = subject 
+                ? mailRows.filter({ hasText: subject }).first() 
+                : mailRows.first();
             
-            if (await targetItem.isVisible()) {
-                await targetItem.click();
-                console.log('>>> [Collab] Item selected for deletion');
+            if (await targetRow.isVisible()) {
+                console.log('>>> [Collab] Target row found in history');
                 found = true;
                 break;
             }
-            console.log(`>>> [Collab] Mail item not found, retrying... (${i+1}/3)`);
-            await this.page.waitForTimeout(3000);
+            console.log(`>>> [Collab] Target row not found, retrying... (${i+1}/3)`);
+            await this.page.waitForTimeout(2000);
         }
 
         if (!found) {
-            throw new Error(`[Collab] CRITICAL: No mail items found with subject "${subject}" to delete after retries.`);
+            throw new Error(`[Collab] CRITICAL: No mail items found with subject "${subject}" after retries.`);
         }
 
-        // Delete button in the detail pane
-        const deleteBtn = this.page.getByTestId('delete-mail-btn');
+        // Re-identify the target row outside the loop
+        const mailRows = this.page.locator('tbody tr');
+        const targetItem = subject ? mailRows.filter({ hasText: subject }).first() : mailRows.first();
+
+        // The delete button is inside the row in the Bento Grid version
+        const deleteBtn = targetItem.getByTestId('delete-mail-btn');
         await expect(deleteBtn).toBeVisible({ timeout: 10000 });
         
         this.page.once('dialog', async dialog => {
@@ -146,7 +158,7 @@ export class CollabPage {
 
         await deleteBtn.click();
         
-        await expect(this.page.getByText(/성공|삭제되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/성공적으로 삭제되었습니다/i).first()).toBeVisible({ timeout: 20000 });
         await this.page.waitForLoadState('networkidle');
         console.log('>>> [Collab] Mail record purged successfully');
     }

@@ -119,14 +119,14 @@ export class MailPage {
         await mailItem.click();
         
         const detailPanel = this.page.locator('.lg\\:col-span-7');
-        await expect(detailPanel.locator('h2')).toHaveText('Mail Intelligence', { timeout: 10000 });
+        await expect(detailPanel.locator('h2').first()).toHaveText('Mail Intelligence', { timeout: 10000 });
 
         this.page.once('dialog', async dialog => {
             console.log(`[E2E] Confirming delete dialog: ${dialog.message()}`);
             await dialog.accept();
         });
 
-        const deleteBtn = this.page.getByTestId('delete-mail-btn');
+        const deleteBtn = detailPanel.getByTestId('delete-mail-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click();
         

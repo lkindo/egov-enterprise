@@ -17,7 +17,7 @@ test.describe('Tier 21: Advanced Resilience', () => {
 
         console.log('>>> Step 1: Navigating to User Management');
         await page.goto('/admin/user/manage');
-        await expect(page.locator('h1').first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible();
 
         console.log('>>> Step 2: Intercepting User List API to return 500');
         // Intercept the users list API and force it to fail
@@ -48,12 +48,12 @@ test.describe('Tier 21: Advanced Resilience', () => {
         console.log('>>> Error Toast successfully detected and verified.');
 
         // UI should still be interactable
-        await expect(page.locator('h1').first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible();
     });
 
     test('UI Stability: Rapid Interaction Stress Test', async ({ page }) => {
         await page.goto('/admin/community/boards/master');
-        await expect(page.locator('h1').first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: '게시판 마스터' }).first()).toBeVisible();
 
         console.log('>>> Step 1: Rapidly clicking pagination/tabs');
         const nextBtn = page.locator('button[aria-label*="Next"], button:has-text(">")').first();
@@ -69,7 +69,7 @@ test.describe('Tier 21: Advanced Resilience', () => {
         console.log('>>> Step 2: Verifying UI state consistency');
         // Ensure the page didn't crash or show a white screen
         await expect(page.locator('body')).toBeVisible();
-        await expect(page.locator('h1').first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: '게시판 마스터' }).first()).toBeVisible();
         console.log('>>> System remained stable after rapid interaction.');
     });
 

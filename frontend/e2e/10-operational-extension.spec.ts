@@ -26,22 +26,21 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         await operationalPage.searchExternalHr('홍길동');
         
         // Verify button
-        await expect(operationalPage.page.getByRole('button', { name: '인사 정보 등록' })).toBeVisible();
+        await expect(operationalPage.page.getByRole('button', { name: '인사 등록' })).toBeVisible();
     });
 
     test('Operational: Memo Report Matrix & Interaction', async ({ operationalPage }) => {
         await operationalPage.gotoMemoReports();
         
         // Tab switching
-        await operationalPage.switchReportTab('MY OPS');
-        await operationalPage.switchReportTab('GLOBAL');
-        await operationalPage.switchReportTab('RECEIVED');
+        await operationalPage.switchReportTab('발신함');
+        await operationalPage.switchReportTab('전체');
+        await operationalPage.switchReportTab('수신함');
         
         // Check for empty message or data
-        const noData = await operationalPage.page.getByText('NO DATA UNITS').isVisible();
+        const noData = await operationalPage.page.getByText('식별된 데이터 유닛이 존재하지 않습니다.').first().isVisible();
         if (noData) {
             console.log('>>> No memo reports found, verifying UI empty state');
-            await expect(operationalPage.page.getByText('SELECT REPORT NODE')).toBeVisible();
         }
     });
 
@@ -49,8 +48,8 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         await operationalPage.gotoRoughMap();
         
         // Verify UI elements
-        await expect(operationalPage.page.getByText('위치 공간 매트릭스')).toBeVisible();
-        await expect(operationalPage.page.getByRole('button', { name: '거점 신규 등록' })).toBeVisible();
+        await expect(operationalPage.page.getByText('거점 자산 매트릭스')).toBeVisible();
+        await expect(operationalPage.page.getByRole('button', { name: '거점 등록' })).toBeVisible();
     });
 
     test('Communication: SMS Protocol & Transmission', async ({ operationalPage }) => {

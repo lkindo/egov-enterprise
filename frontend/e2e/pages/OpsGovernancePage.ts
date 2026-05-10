@@ -21,7 +21,8 @@ export class OpsGovernancePage {
     async gotoLoginPolicy() {
         console.log(`>>> Navigating to Login Policy Hub`);
         await this.page.goto('/admin/user/login-policy');
-        await expect(this.page.getByText('조직 아키텍처 거버넌스')).toBeVisible();
+        // Updated for Bento Grid UI
+        await expect(this.page.getByText('조직 및 사용자 관리')).toBeVisible();
     }
 
     async verifyPolicyTab() {
@@ -31,7 +32,7 @@ export class OpsGovernancePage {
         // Wait for the UI state to update
         await this.page.waitForTimeout(1000);
         // It might show Idle_Probe_State if nothing is selected, which is expected for now
-        await expect(this.page.getByText(/Idle_Probe_State|조직 정책/i).first()).toBeVisible();
+        await expect(this.page.getByText(/Idle_Probe_State|조직 정책|Access Matrix/i).first()).toBeVisible();
     }
 
     async gotoMenuByAuthority() {

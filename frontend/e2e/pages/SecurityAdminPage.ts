@@ -10,7 +10,7 @@ export class SecurityAdminPage {
     async gotoAuthorities() {
         console.log('>>> Navigating to Authority Management');
         await this.page.goto('/admin/security/authority');
-        await expect(this.page.locator('h1').filter({ hasText: /보안.*거버넌스/i })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: /보안.*거버넌스/i }).first()).toBeVisible();
     }
 
     async createAuthority(authCode: string, authNm: string) {
@@ -35,7 +35,7 @@ export class SecurityAdminPage {
     async gotoGroups() {
         console.log('>>> Navigating to Group Management');
         await this.page.goto('/admin/security/group');
-        await expect(this.page.locator('h1').filter({ hasText: /그룹.*거버넌스/i })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: /그룹.*거버넌스/i }).first()).toBeVisible();
     }
 
     async createGroup(groupId: string, groupNm: string) {
@@ -57,7 +57,7 @@ export class SecurityAdminPage {
     async gotoRoles() {
         console.log('>>> Navigating to Role Management');
         await this.page.goto('/admin/security/role');
-        await expect(this.page.locator('h1').filter({ hasText: /롤.*아키텍처/i })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: /롤.*아키텍처/i }).first()).toBeVisible();
     }
 
     async createRole(roleCode: string, roleNm: string) {

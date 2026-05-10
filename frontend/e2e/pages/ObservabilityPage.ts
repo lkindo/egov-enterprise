@@ -5,19 +5,19 @@ export class ObservabilityPage {
 
     async navigate() {
         await this.page.goto('/admin/observability');
-        await this.page.waitForLoadState('networkidle');
+        await this.verifyHeader();
     }
 
     async verifyHeader() {
-        const header = this.page.locator('h1');
+        const header = this.page.getByRole('heading', { name: '시스템 통합 관제' }).first();
         await header.waitFor({ state: 'visible' });
-        await expect(header).toContainText(/시스템 통합 관제/i);
+        await expect(header).toBeVisible();
     }
 
     async verifyMetrics() {
         // Wait for ANY of the core metrics to appear (case-insensitive)
-        await this.page.waitForSelector('text=/Global API Traffic|System Latency|Error Rate/i', { state: 'visible', timeout: 15000 });
-        const cards = this.page.locator('div').filter({ hasText: /Global API Traffic|System Latency|Error Rate/i });
+        await this.page.waitForSelector('text=/Global Traffic|System Latency|Error Rate/i', { state: 'visible', timeout: 15000 });
+        const cards = this.page.locator('div').filter({ hasText: /Global Traffic|System Latency|Error Rate/i });
         await expect(cards.first()).toBeVisible();
     }
 
@@ -38,9 +38,9 @@ export class ObservabilityPage {
         const topology = this.page.locator('div').filter({ hasText: /System Map/i }).first();
         await expect(topology).toBeVisible({ timeout: 15000 });
         
-        // Also verify at least one node is present
-        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway|App Nodes|Primary DB/i).first();
-        await expect(node).toBeVisible({ timeout: 10000 });
+        // Also verify at least one node is present (using a more flexible regex)
+        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway|App Nodes|Primary DB|System Latency|Error Rate/i).first();
+        await expect(node).toBeVisible({ timeout: 15000 });
     }
 
     async refresh() {

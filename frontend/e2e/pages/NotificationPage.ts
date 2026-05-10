@@ -12,11 +12,10 @@ export class NotificationPage {
         await expect(drawer).toBeVisible({ timeout: 15000 });
         
         // Wait for the header to be visible which indicates the drawer content is rendering
-        await expect(drawer.locator('h2')).toContainText(/Alert Sentinel/i, { timeout: 10000 });
+        await expect(drawer.locator('h2')).toContainText(/알림.*센터/i, { timeout: 10000 });
         
         // Wait for at least one notification item or the "No active alerts" message
-        // Use a more specific selector to avoid hidden elements
-        await drawer.locator('div.group, span:has-text("No active alerts")').first().waitFor({ state: 'visible', timeout: 15000 });
+        await drawer.locator('div.group, span:has-text("알림이 없습니다")').first().waitFor({ state: 'visible', timeout: 15000 });
     }
 
     async closeNotificationDrawer() {
@@ -46,10 +45,12 @@ export class NotificationPage {
 
     async markNotificationAsRead(title: string) {
         const notificationItem = this.page.locator('div.group').filter({ has: this.page.locator('h3', { hasText: title }) }).first();
-        await notificationItem.click();
+        await notificationItem.scrollIntoViewIfNeeded();
+        await notificationItem.click({ force: true });
         
         // Wait for the opacity-60 class to be applied (visual confirmation of state change)
-        await expect(notificationItem).toHaveClass(/opacity-60/, { timeout: 10000 });
+        // Bento Grid uses opacity-60 for read items
+        await expect(notificationItem).toHaveClass(/opacity-60/, { timeout: 15000 });
         
         // Also wait a bit for the badge count to sync (background update)
         await this.page.waitForTimeout(1000);

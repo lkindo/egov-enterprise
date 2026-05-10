@@ -138,6 +138,7 @@ export default function AdminStatsClient({
             <Button
               variant="outline"
               size="lg"
+              aria-label="새로고침"
               onClick={handleRefresh}
               className="h-12 w-12 p-0 rounded-lg border-2 font-bold shadow-sm"
             >

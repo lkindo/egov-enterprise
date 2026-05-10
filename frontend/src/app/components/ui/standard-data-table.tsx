@@ -51,7 +51,8 @@ const DataRow = memo(function DataRow({
   index,
   enableSelection,
   onToggle,
-  onRowClick
+  onRowClick,
+  rowTestId
 }: {
   item: any;
   columns: Column<any>[];
@@ -60,6 +61,7 @@ const DataRow = memo(function DataRow({
   enableSelection: boolean;
   onToggle: () => void;
   onRowClick?: (item: any) => void;
+  rowTestId?: string;
 }) {
   if (!item) return null;
 
@@ -67,6 +69,7 @@ const DataRow = memo(function DataRow({
     <tr
       role="button"
       tabIndex={0}
+      data-testid={rowTestId}
       onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
         "group transition-all duration-300 outline-none focus-within:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
@@ -170,7 +173,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   onRetry,
   pagination,
   search,
-  stickyHeader = true
+  stickyHeader = true,
+  rowTestId
 }: StandardDataTableProps<T>) {
 
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
@@ -325,7 +329,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 </tr>
               ) : (data || []).length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center" data-testid="empty-table-msg">
                     <EmptyStateDisplay emptyMessage={emptyMessage} />
                   </td>
                 </tr>
@@ -343,6 +347,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                       enableSelection={enableSelection}
                       onToggle={() => toggleOne(item?.[keyField])}
                       onRowClick={onRowClick}
+                      rowTestId={rowTestId}
                     />
                   );
                 })

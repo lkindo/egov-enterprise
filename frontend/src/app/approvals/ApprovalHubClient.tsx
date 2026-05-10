@@ -35,6 +35,7 @@ import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { Badge } from '@/components/ui/badge';
 import { ApprovalStepper } from './ApprovalStepper';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { HubListSkeleton, HubDetailSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 type ApprovalTab = 'PENDING' | 'HISTORY' | 'ARCHIVE';
@@ -227,13 +228,14 @@ export default function ApprovalHubClient() {
           </div>
           
           <div className="flex items-center gap-4">
-            <Button 
-                onClick={() => router.push('/approvals/draft')}
-                className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
-            >
-              <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-              새 결재 기안
-            </Button>
+            <Link href="/approvals/draft" passHref>
+              <Button 
+                  className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
+              >
+                <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+                새 결재 기안
+              </Button>
+            </Link>
           </div>
         </div>
 

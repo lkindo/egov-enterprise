@@ -11,8 +11,7 @@ export class StatsPage {
 
     async refresh() {
         console.log('>>> Refreshing stats data');
-        await this.page.getByRole('button').filter({ has: this.page.locator('svg.animate-spin, svg:not(.animate-spin)') }).filter({ has: this.page.locator('path') }).first().click();
-        // The refresh button has RefreshCcw icon. In AdminStatsClient.tsx line 144
+        await this.page.locator('button[aria-label="새로고침"]').click();
     }
 
     async changePeriod(period: string) {

@@ -23,6 +23,9 @@ export class ConsoleErrorGuard {
     /controlled/i,
     /XSRF-TOKEN/i,
     /Failed to load resource/i, // Skip resource loading logs in console (handled by response listener)
+    // Ignore non-fatal WebSocket closure warnings common in dev environments
+    /WebSocket connection to 'ws:\/\/.*' failed: WebSocket is closed before the connection is established\./,
+    /WebSocket connection to 'ws:\/\/.*' failed: Error in connection establishment/,
   ];
 
   constructor(page: Page) {
