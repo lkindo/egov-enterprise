@@ -1,22 +1,47 @@
 package nuri.foundation.service.system.service.survey.dto;
 
-import lombok.*;
-import java.io.Serializable;
+import nuri.foundation.domain.system.service.survey.QustnrTmplat;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class QustnrTmplatDto implements Serializable {
+@Schema(description = "설문템플릿 DTO")
+public class QustnrTmplatDto {
+
+    @Schema(description = "설문템플릿아이디")
     private String qustnrTmplatId;
+
+    @Schema(description = "설문템플릿유형")
     private String qustnrTmplatTy;
-    private String qustnrTmplatDc;
-    private String qustnrTmplatPathNm;
-    private String qustnrTmplatImageInfo;
-    private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+
+    @Schema(description = "설문템플릿이미지경로")
+    private String qustnrTmplatImagepathnm;
+
+    @Schema(description = "설문템플릿내용")
+    private String qustnrTmplatCn;
+
+    @Schema(description = "등록자")
+    private String createdBy;
+
+    @Schema(description = "등록일시")
+    private LocalDateTime createdDate;
+
+    public static QustnrTmplatDto from(QustnrTmplat entity) {
+        if (entity == null) return null;
+        return QustnrTmplatDto.builder()
+                .qustnrTmplatId(entity.getQustnrTmplatId())
+                .qustnrTmplatTy(entity.getQustnrTmplatTy())
+                .qustnrTmplatImagepathnm(entity.getQustnrTmplatImagepathnm())
+                .qustnrTmplatCn(entity.getQustnrTmplatCn())
+                .createdBy(entity.getCreatedBy())
+                .createdDate(entity.getCreatedDate())
+                .build();
+    }
 }

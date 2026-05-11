@@ -1,14 +1,10 @@
 package nuri.foundation.domain.system.service.survey;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 
-/**
- * 설문조사 문항 Repository
- */
+@Repository
 public interface QustnrQesitmRepository extends JpaRepository<QustnrQesitm, String> {
-    Page<QustnrQesitm> findByQestnrId(String qestnrId, Pageable pageable);
-    List<QustnrQesitm> findByQestnrIdOrderByQestnSnAsc(String qestnrId);
+    List<QustnrQesitm> findByQustnrIdOrderByQestnSnAsc(String qustnrId);
 }

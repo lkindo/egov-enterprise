@@ -13,49 +13,49 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "설문문항 DTO")
 public class QustnrQesitmDto {
 
-    @Schema(description = "Description")
-    private String qestnrQesitmId;
+    @Schema(description = "설문문항아이디")
+    private String qustnrQesitmId;
 
-    @Schema(description = "Description")
-    private String qestnrId;
+    @Schema(description = "설문아이디")
+    private String qustnrId;
 
-    @Schema(description = "Description")
+    @Schema(description = "질문순번")
     private Long qestnSn;
 
-    @Schema(description = "Description")
+    @Schema(description = "질문유형코드")
     private String qestnTyCode;
 
-    @Schema(description = "Description")
+    @Schema(description = "질문내용")
     private String qestnCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "최대선택수")
     private Integer mxmmChoiseCo;
 
-    @Schema(description = "Description")
-    private String qestnrTmplatId;
+    @Schema(description = "설문템플릿아이디")
+    private String qustnrTmplatId;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
-    @Schema(description = "Description")
+    @Schema(description = "설문항목목록")
     private List<QustnrIemDto> items;
 
     public static QustnrQesitmDto from(QustnrQesitm entity) {
         if (entity == null) return null;
         return QustnrQesitmDto.builder()
-                .qestnrQesitmId(entity.getQestnrQesitmId())
-                .qestnrId(entity.getQestnrId())
+                .qustnrQesitmId(entity.getQustnrQesitmId())
+                .qustnrId(entity.getQustnrId())
                 .qestnSn(entity.getQestnSn())
                 .qestnTyCode(entity.getQestnTyCode())
                 .qestnCn(entity.getQestnCn())
                 .mxmmChoiseCo(entity.getMxmmChoiseCo())
-                .qestnrTmplatId(entity.getQestnrTmplatId())
+                .qustnrTmplatId(entity.getQustnrTmplatId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

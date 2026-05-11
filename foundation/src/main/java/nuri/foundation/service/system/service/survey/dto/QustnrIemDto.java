@@ -12,46 +12,46 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "설문항목 DTO")
 public class QustnrIemDto {
 
-    @Schema(description = "Description")
+    @Schema(description = "설문항목아이디")
     private String qustnrIemId;
 
-    @Schema(description = "Description")
-    private String qestnrQesitmId;
+    @Schema(description = "설문문항아이디")
+    private String qustnrQesitmId;
 
-    @Schema(description = "Description")
-    private String qestnrId;
+    @Schema(description = "설문아이디")
+    private String qustnrId;
 
-    @Schema(description = "Description")
+    @Schema(description = "항목순번")
     private Long iemSn;
 
-    @Schema(description = "Description")
+    @Schema(description = "항목내용")
     private String iemCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "기타답변여부")
     private String etcAnswerAt;
 
-    @Schema(description = "Description")
-    private String qestnrTmplatId;
+    @Schema(description = "설문템플릿아이디")
+    private String qustnrTmplatId;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
     public static QustnrIemDto from(QustnrIem entity) {
         if (entity == null) return null;
         return QustnrIemDto.builder()
                 .qustnrIemId(entity.getQustnrIemId())
-                .qestnrQesitmId(entity.getQestnrQesitmId())
-                .qestnrId(entity.getQestnrId())
+                .qustnrQesitmId(entity.getQustnrQesitmId())
+                .qustnrId(entity.getQustnrId())
                 .iemSn(entity.getIemSn())
                 .iemCn(entity.getIemCn())
                 .etcAnswerAt(entity.getEtcAnswerAt())
-                .qestnrTmplatId(entity.getQestnrTmplatId())
+                .qustnrTmplatId(entity.getQustnrTmplatId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

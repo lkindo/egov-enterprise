@@ -1,16 +1,12 @@
 package nuri.foundation.domain.system.service.survey;
+
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-/**
- * 설문 항목 엔티티
- * 매핑 테이블: NQUSTNRIEM
- */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NQUSTNRIEM")
@@ -25,23 +21,23 @@ public class QustnrIem extends BaseEntity {
     @Column(name = "QUSTNR_IEM_ID", length = 20)
     private String qustnrIemId;
 
-    @Column(name = "QESTNR_ID", length = 20, nullable = false)
-    private String qestnrId;
+    @Column(name = "QUSTNR_QESITM_ID", length = 20)
+    private String qustnrQesitmId;
 
-    @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
-    private String qestnrQesitmId;
-
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
-    private String qestnrTmplatId;
+    @Column(name = "QUSTNR_ID", length = 20)
+    private String qustnrId;
 
     @Column(name = "IEM_SN")
     private Long iemSn;
 
-    @Column(name = "IEM_CN", length = 1000)
+    @Column(name = "IEM_CN", length = 2500)
     private String iemCn;
 
     @Column(name = "ETC_ANSWER_AT", length = 1)
     private String etcAnswerAt;
+
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
+    private String qustnrTmplatId;
 
     public void update(Long iemSn, String iemCn, String etcAnswerAt) {
         this.iemSn = iemSn;
