@@ -1,7 +1,8 @@
 ﻿import client from '@/lib/api/client';
 
 /**
- * 筌뤾쑴理님雅굝님뇡님類λ룴님 */
+ * 인증 서비스
+ */
 
 export interface LoginResponse {
  accessToken: string;
@@ -23,12 +24,12 @@ export const authService = {
  return client.post<LoginResponse>(`${BASE_URL}/login`, loginData);
  },
 
- /** 로그?꾩썐 */
+ /** 로그아웃 */
  logout: async (): Promise<void> => {
  return client.post<void>(`${BASE_URL}/logout`);
  },
 
- /** ?좏겙 щ컻님*/
+ /** 토큰 갱신 */
  reissue: async (): Promise<{ accessToken: string }> => {
  return client.post<{ accessToken: string }>(`${BASE_URL}/reissue`);
  },

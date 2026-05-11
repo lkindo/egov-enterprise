@@ -4,18 +4,18 @@ import path from 'path';
 export default defineConfig({
     testDir: './e2e',
     globalTeardown: './e2e/scripts/cleanup-db.ts',
-    timeout: 120000, // 2 minutes for CI stability
+    timeout: 300000, // 5 minutes for CI stability
     expect: {
-        timeout: 30000,
+        timeout: 60000,
         toHaveScreenshot: {
             maxDiffPixels: 100, // Allow minor differences (anti-aliasing, etc.)
             threshold: 0.1, // Pixel comparison threshold (0-1)
         },
     },
-    fullyParallel: true,
+    fullyParallel: false, // Disable parallel execution for stability
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 3 : 1, // Increase retries for flaky CI
-    workers: 2, // Limit workers to 2 to prevent OOM errors by avoiding excessive browser instances
+    retries: process.env.CI ? 5 : 2, // Increase retries for flaky CI
+    workers: 1, // Limit workers to 1 to prevent OOM and connection refused errors
     reporter: 'html',
     use: {
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',

@@ -4,20 +4,21 @@ import { useEffect } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
 
 /**
- * 실시간쒕낫님접속 異붿쟻 님 */
+ * 실시간 대시보드 접속 추적 훅
+ */
 export function useDashboardConnection() {
  const { client, isConnected } = useWebSocket();
 
   useEffect(() => {
     if (!client || !isConnected) return;
 
-    // 접속 ?뚮┝ 발송
+    // 접속 알림 발송
     client.publish({
       destination: '/app/user.connect',
       body: JSON.stringify({ timestamp: new Date().toISOString() })
     });
 
-    // ?곌껐 종료 님?뚮┝
+    // 연결 종료 알림
     return () => {
       if (client.connected) {
         client.publish({
