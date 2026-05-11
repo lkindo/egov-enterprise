@@ -5,11 +5,10 @@ export class WorkspacePage {
 
     async navigateToMyPageSettings() {
         await this.page.goto('/admin/workspace/my-page');
-        await this.page.waitForLoadState('networkidle');
     }
 
     async verifyMyPageHeader() {
-        const header = this.page.getByRole('heading', { name: '마이페이지 설정' }).first();
+        const header = this.page.getByRole('heading', { name: /마이페이지 (환경 )?설정/ }).first();
         await header.waitFor({ state: 'visible' });
         await expect(header).toBeVisible();
     }

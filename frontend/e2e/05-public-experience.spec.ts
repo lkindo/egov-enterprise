@@ -21,7 +21,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await adminSurvey.gotoManage();
             await adminSurvey.searchAndWait(searchKeyword, surveyTitle);
             
-            const surveyRow = adminPage.getByText(surveyTitle);
+            const surveyRow = adminPage.getByText(surveyTitle).first();
             await expect(surveyRow).toBeVisible({ timeout: 15000 });
         });
 

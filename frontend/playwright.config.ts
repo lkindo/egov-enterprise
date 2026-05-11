@@ -131,7 +131,7 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
-            name: 'tier-18-business',
+            name: 'tier-18-business-ext',
             testMatch: /18-business-extension\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],
@@ -155,7 +155,7 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
-            name: 'tier-22-guard',
+            name: 'tier-22-security',
             testMatch: /22-deep-security-guard\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],

@@ -13,8 +13,9 @@ export class PromotionPage {
 
     async createPopup(title: string) {
         console.log(`>>> [Promotion] Configuring popup: ${title}`);
+        
         await this.page.getByRole('button', { name: /팝업 설정/i }).click();
-        await this.page.getByRole('button', { name: /팝업 설계/i }).click();
+        await this.page.getByRole('button', { name: /팝업 설계|신규 팝업 등록/i }).first().click();
 
         await this.page.getByPlaceholder(/팝업 제목 입력/i).fill(title);
 
@@ -52,8 +53,9 @@ export class PromotionPage {
 
     async createBanner(title: string) {
         console.log(`>>> [Promotion] Configuring banner: ${title}`);
+        
         await this.page.getByRole('button', { name: /배너 설정/i }).click();
-        await this.page.getByRole('button', { name: /배너 등록/i }).click();
+        await this.page.getByRole('button', { name: /배너 등록|신규 배너 등록/i }).first().click();
 
         await this.page.getByPlaceholder(/배너 이름/i).fill(title);
         await this.page.getByPlaceholder(/\/pages\//i).fill('https://egovframe.go.kr');
@@ -75,21 +77,19 @@ export class PromotionPage {
             fs.writeFileSync(dummyPath, buf);
         }
 
-        const fileChooserPromise = this.page.waitForEvent('filechooser');
-        await this.page.locator('input[type="file"]').first().click({ force: true });
-        const fileChooser = await fileChooserPromise;
-        await fileChooser.setFiles(dummyPath);
+        const fileInput = this.page.locator('input[type="file"]').first();
+        await fileInput.setInputFiles(dummyPath);
+        await this.page.waitForTimeout(1000); // Allow time for upload preview if any
         console.log('>>> [Promotion] Image uploaded successfully.');
     }
 
     private async clickSubmitAndWait() {
         console.log('>>> [Promotion] Clicking submit button...');
-        // Match the button containing "운영 배포" or "자산 수정"
-        const submitBtn = this.page.getByRole('button', { name: /운영 배포|자산 수정/i }).first();
-        await submitBtn.click();
-        console.log('>>> [Promotion] Submit button clicked');
-        
-        // Wait for success toast or modal close
+        // Match the button containing "운영 배포" or "자산 수정" or "등록" or "저장"
+        const submitBtn = this.page.getByRole('button', { name: /운영 배포|자산 수정|등록|저장/i }).first();
+        await submitBtn.waitFor({ state: 'visible', timeout: 5000 });
+        await submitBtn.click({ force: true });
+        console.log('>>> [Promotion] Submit button clicked, waiting for response...');
         await this.page.waitForTimeout(3000); 
         console.log('>>> [Promotion] Creation step completed');
     }

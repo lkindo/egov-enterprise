@@ -24,7 +24,7 @@ export class SurveyPage {
 
     async gotoManage() {
         await this.page.goto('/admin/survey/manage');
-        await expect(this.page.getByText(/설문.*관리|설문.*인벤토리/i)).toBeVisible();
+        await expect(this.page.getByText(/설문.*관리|설문.*인벤토리/i).first()).toBeVisible();
     }
 
     async gotoCreate() {
@@ -247,7 +247,12 @@ export class SurveyPage {
         
         for (let i = 0; i < 3; i++) {
             await this.searchInput.fill(keyword);
-            await this.searchInput.press('Enter');
+            const searchBtn = this.page.getByRole('button', { name: /SEARCH/i }).first();
+            if (await searchBtn.isVisible()) {
+                await searchBtn.click();
+            } else {
+                await this.searchInput.press('Enter');
+            }
             await this.page.waitForTimeout(3000);
             
             if (expectedText) {
