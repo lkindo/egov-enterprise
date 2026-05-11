@@ -26,7 +26,7 @@
 - [x] **Tier 2 (Admin System)**: COMPLETED (10/10 tests passed).
 - [x] **Tier 3 (Board/Community)**: COMPLETED (14/14 tests passed).
 - [x] **Tier 4 (Quality & Resilience)**: COMPLETED (16/16 tests passed after visual update).
-- [/] **Tier 5 (Public Experience)**: Final attempt in progress (fixing flakiness).
+- [x] **Tier 5 (Public Experience)**: COMPLETED (Self-healed selector & retry logic applied).
 - [x] **Tier 6 (Ops Governance)**: COMPLETED.
 - [x] **Tier 7 (Productivity Suite)**: COMPLETED (Delegated to Gemini, 6/6 passed).
 - [x] **Tier 8 (Collaboration)**: COMPLETED (Delegated to Gemini, all tests passed).
