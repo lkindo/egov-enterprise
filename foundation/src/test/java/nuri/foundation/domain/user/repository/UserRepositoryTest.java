@@ -1,7 +1,6 @@
 package nuri.foundation.domain.user.repository;
 
-import nuri.foundation.domain.user.entity.EnterpriseUser;
-import nuri.foundation.domain.user.entity.GeneralUser;
+
 import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.support.PersistenceTestSupport;
@@ -45,7 +44,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
     @Test
     @DisplayName("사용자 ID로 조회")
     void findById() {
-        Optional<User> found = userRepository.findById("testUser");
+        Optional<User> found = userRepository.findByUserId("testUser");
         assertThat(found).isPresent();
         assertThat(found.get().getUserNm()).isEqualTo("테스트유저");
     }
@@ -87,24 +86,30 @@ class UserRepositoryTest extends PersistenceTestSupport {
     }
 
     @Test
-    @DisplayName("아이디 중복 체크 (User, Enterprise, General 통합)")
+    @DisplayName("아이디 중복 체크 (통합된 User 테이블 내 중복 검증)")
     void checkIdDplct() {
         // Given
-        EnterpriseUser enterpriseUser = EnterpriseUser.builder()
-                .entrprsmberId("entUser")
+        User entUser = User.builder()
+                .userId("entUser")
                 .esntlId("ENT_001")
-                .entrprsMberPassword("password")
-                .build();
-        em.persist(enterpriseUser);
-
-        GeneralUser generalUser = GeneralUser.builder()
-                .mberId("genUser")
-                .esntlId("GEN_001")
-                .mberNm("일반회원")
+                .userNm("기업회원")
                 .password("password")
+                .userType("ENT")
+                .role(Role.USER)
                 .build();
-        em.persist(generalUser);
+        userRepository.save(entUser);
+
+        User genUser = User.builder()
+                .userId("genUser")
+                .esntlId("GEN_001")
+                .userNm("일반회원")
+                .password("password")
+                .userType("GNR")
+                .role(Role.USER)
+                .build();
+        userRepository.save(genUser);
         em.flush();
+        em.clear();
 
         // When & Then
         assertThat(userRepository.checkIdDplct("testUser")).isGreaterThan(0);

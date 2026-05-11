@@ -84,7 +84,7 @@ public class EgovTestDataConfig {
                     .areaNo("02")
                     .homemiddleTelno("0000")
                     .zip("000000")
-                    .empStatus("P")
+                    .statusCode("A")
                     .sbscrbDe(LocalDateTime.now())
                     .build();
 

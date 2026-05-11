@@ -154,7 +154,7 @@ public class UserDto {
                 .emailAdres(user.getEmailAdres())
                 .ofcpsNm(user.getOfcpsNm())
                 .subDn(user.getSubDn())
-                .userSttusCode(user.getEmpStatus())
+                .userSttusCode(user.getStatusCode())
                 .createdDate(user.getCreatedDate())
                 .build();
     }

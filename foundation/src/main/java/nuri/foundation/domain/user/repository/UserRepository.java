@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, String>, UserRepositoryCustom {
     Optional<User> findByEsntlId(String esntlId);
+    Optional<User> findByUserId(String userId);
 
     Optional<User> findBySubDn(String subDn);
 
@@ -37,7 +38,7 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     List<Object[]> findAllWithAuthorities();
 
     @NonNull
-    Optional<User> findById(@NonNull @Param("userId") String userId);
+    Optional<User> findById(@NonNull @Param("esntlId") String esntlId);
 
     Page<User> findByUserNmContainingIgnoreCase(String userNm, Pageable pageable);
 

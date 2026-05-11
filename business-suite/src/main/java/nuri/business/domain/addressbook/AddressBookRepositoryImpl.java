@@ -8,12 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import static nuri.business.domain.addressbook.QAddressBook.addressBook;
 import static nuri.foundation.domain.user.entity.QUser.user;
-import static nuri.foundation.domain.user.entity.QEnterpriseUser.enterpriseUser;
 
 @RequiredArgsConstructor
 public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
@@ -63,49 +61,32 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
         @Override
         public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword,
                         Pageable pageable) {
-                // JPA does not support UNION directly. We combine results from 3 user types.
-                // For simplicity in this CLI context, we implement a combined search.
-
-                List<AddressBookUserSearchResult> combinedResults = new ArrayList<>();
-
-                BooleanExpression internalPredicate = null;
+                // 통합 테이블(nuserinfo)에서 단일 쿼리로 모든 사용자 유형 검색
+                BooleanExpression searchPredicate = null;
                 if (StringUtils.hasText(searchKeyword)) {
-                    internalPredicate = user.userNm.contains(searchKeyword)
+                    searchPredicate = user.userNm.contains(searchKeyword)
                                 .or(user.userId.contains(searchKeyword));
                 }
 
-                // 1. Internal Users
-                combinedResults.addAll(queryFactory
+                List<AddressBookUserSearchResult> results = queryFactory
                                 .select(Projections.fields(AddressBookUserSearchResult.class,
                                                 user.userId.as("emplyrId"),
                                                 user.userNm.as("nm"),
                                                 user.emailAdres,
                                                 user.moblphonNo))
                                 .from(user)
-                                .where(internalPredicate)
-                                .fetch());
+                                .where(searchPredicate)
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
 
-                BooleanExpression enterprisePredicate = null;
-                if (StringUtils.hasText(searchKeyword)) {
-                    enterprisePredicate = enterpriseUser.cmpnyNm.contains(searchKeyword)
-                                .or(enterpriseUser.entrprsmberId.contains(searchKeyword));
-                }
+                Long total = queryFactory
+                                .select(user.count())
+                                .from(user)
+                                .where(searchPredicate)
+                                .fetchOne();
 
-                // 2. Enterprise Users
-                combinedResults.addAll(queryFactory
-                                .select(Projections.fields(AddressBookUserSearchResult.class,
-                                                enterpriseUser.entrprsmberId.as("emplyrId"),
-                                                enterpriseUser.cmpnyNm.as("nm"),
-                                                enterpriseUser.applcntEmailAdres.as("emailAdres")))
-                                .from(enterpriseUser)
-                                .where(enterprisePredicate)
-                                .fetch());
-
-                // Note: Real implementation would handle proper offset/limit across 3 queries
-                // or use a view.
-                // For this migration, we provide the architectural pattern.
-
-                return new PageImpl<>(Objects.requireNonNull(combinedResults), Objects.requireNonNull(pageable),
-                                combinedResults.size());
+                return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable),
+                                total != null ? total.longValue() : 0L);
         }
 }

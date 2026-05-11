@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import com.querydsl.core.types.Projections;
 import nuri.foundation.service.user.dto.UserDto;
-import static nuri.foundation.domain.user.entity.QEnterpriseUser.enterpriseUser;
-import static nuri.foundation.domain.user.entity.QGeneralUser.generalUser;
+
 import static nuri.foundation.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
@@ -83,25 +82,11 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     @Override
     public int checkIdDplct(String checkId) {
-        long userCount = queryFactory
+        return (int) queryFactory
                 .select(user.count())
                 .from(user)
                 .where(user.userId.eq(checkId))
-                .fetchOne();
-
-        long enterpriseCount = queryFactory
-                .select(enterpriseUser.count())
-                .from(enterpriseUser)
-                .where(enterpriseUser.entrprsmberId.eq(checkId))
-                .fetchOne();
-
-        long generalCount = queryFactory
-                .select(generalUser.count())
-                .from(generalUser)
-                .where(generalUser.mberId.eq(checkId))
-                .fetchOne();
-
-        return (int) (userCount + enterpriseCount + generalCount);
+                .fetchOne().longValue();
     }
 
     private BooleanExpression statusEq(String sbscrbSttus) {

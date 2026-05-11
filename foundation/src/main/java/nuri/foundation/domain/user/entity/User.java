@@ -12,12 +12,12 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * 사용자 정보 엔티티
- * 테이블: NEMPLYRINFO (전자정부 프레임워크 표준 기반)
+ * 통합 사용자 정보 엔티티
+ * 테이블: NUSERINFO (업무/일반/기업 사용자 통합)
  * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공
  */
 @Entity
-@Table(name = "NEMPLYRINFO")
+@Table(name = "NUSERINFO")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,92 +28,34 @@ public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "EMPLYR_ID", length = 30) // DB check: emplyr_id is likely 30? let me verify
-    @NonNull
-    private String userId;
-
-    @Column(name = "ESNTL_ID", nullable = false, length = 20, unique = true)
+    @Column(name = "ESNTL_ID", length = 20)
     @NonNull
     private String esntlId;
 
-    @Column(name = "USER_NM", nullable = false, length = 60) // Sync: 180 -> 60
+    @Column(name = "USER_ID", nullable = false, length = 30, unique = true)
+    @NonNull
+    private String userId;
+
+    @Builder.Default
+    @Column(name = "USER_TYPE", nullable = false, length = 10)
+    private String userType = "EMP";
+
+    @Column(name = "USER_NM", nullable = false, length = 60)
     @NonNull
     private String userNm;
 
-    @Column(name = "PASSWORD", nullable = false, length = 200) // Sync: 600 -> 200
+    @Column(name = "PASSWORD", nullable = false, length = 600)
     @NonNull
     private String password;
 
-    @Column(name = "PASSWORD_HINT", length = 100) // Sync: 300 -> 100
+    @Column(name = "PASSWORD_HINT", length = 300)
     private String passwordHint;
 
-    @Column(name = "PASSWORD_CNSR", length = 100) // Sync: 300 -> 100
+    @Column(name = "PASSWORD_CNSR", length = 300)
     private String passwordCnsr;
-
-    @Column(name = "EMPL_NO", length = 20) // Sync: 60 -> 20
-    private String emplNo;
-
-    @Column(name = "IHIDNUM", length = 200) // DB: normally 200 for encrypted
-    private String ihidnum;
-
-    @Column(name = "SEXDSTN_CODE", length = 1) // DB check: usually 1
-    private String sexdstnCode;
-
-    @Column(name = "BRTHDY", length = 20) // Sync: 60 -> 20
-    private String brth;
-
-    @Column(name = "FXNUM", length = 20) // Sync: 60 -> 20
-    private String fxnum;
-
-    @Column(name = "HOUSE_ADRES", length = 100) // DB check
-    private String homeadres;
 
     @Column(name = "CHG_PWD_LAST_PNTTM", columnDefinition = "TIMESTAMP")
     private LocalDateTime passwordUpdateDate;
-
-    @Column(name = "AREA_NO", length = 4) // Sync: 12 -> 4
-    private String areaNo;
-
-    @Column(name = "HOUSE_MIDDLE_TELNO", length = 4) // Sync: 12 -> 4
-    private String homemiddleTelno;
-
-    @Column(name = "HOUSE_END_TELNO", length = 4) // Sync: 12 -> 4
-    private String homeendTelno;
-
-    @Column(name = "DETAIL_ADRES", length = 100) // Sync: 300 -> 100
-    private String detailAdres;
-
-    @Column(name = "ZIP", length = 6) // Sync: 18 -> 6
-    private String zip;
-
-    @Column(name = "OFFM_TELNO", length = 20) // Sync: 60 -> 20
-    private String offmTelno;
-
-    @Column(name = "MBTLNUM", length = 20) // Sync: 60 -> 20
-    private String moblphonNo;
-
-    @Column(name = "EMAIL_ADRES", length = 50) // Sync: 150 -> 50
-    private String emailAdres;
-
-    @Column(name = "OFCPS_NM", length = 60) // Sync: 180 -> 60
-    private String ofcpsNm;
-
-    @Column(name = "GROUP_ID", length = 20) // Sync: 60 -> 20
-    private String groupId;
-
-    @Column(name = "ORGNZT_ID", length = 20) // Sync: 60 -> 20
-    private String orgnztId;
-
-    @Column(name = "PSTINST_CODE", length = 8) // Sync: 24 -> 8
-    private String insttCode;
-
-    @Column(name = "EMPLYR_STTUS_CODE", length = 1) // DB check: usually 1
-    private String empStatus;
-
-    @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(name = "ROLE", length = 50)
-    private Role role = Role.USER;
 
     @Column(name = "CHG_PWD_CNT")
     private Integer changePasswordCount;
@@ -128,15 +70,101 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "LOCK_LAST_PNTTM")
     private LocalDateTime lockLastDate;
 
-    @CreatedDate
-    @Column(name = "SBSCRB_DE", updatable = false)
-    private LocalDateTime sbscrbDe;
+    @Column(name = "OTP_SECRET", length = 32)
+    private String otpSecret;
 
     @Column(name = "CRTFC_DN_VALUE", length = 100)
     private String subDn;
 
-    @Column(name = "OTP_SECRET", length = 32)
-    private String otpSecret;
+    // ■ 개인 정보
+    @Column(name = "IHIDNUM", length = 600)
+    private String ihidnum;
+
+    @Column(name = "SEXDSTN_CODE", length = 1)
+    private String sexdstnCode;
+
+    @Column(name = "BRTHDY", length = 20)
+    private String brth;
+
+    @Column(name = "EMAIL_ADRES", length = 50)
+    private String emailAdres;
+
+    @Column(name = "MBTLNUM", length = 20)
+    private String moblphonNo;
+
+    // ■ 주소 정보
+    @Column(name = "ZIP", length = 6)
+    private String zip;
+
+    @Column(name = "ADRES", length = 300)
+    private String homeadres;
+
+    @Column(name = "DETAIL_ADRES", length = 300)
+    private String detailAdres;
+
+    @Column(name = "AREA_NO", length = 4)
+    private String areaNo;
+
+    @Column(name = "MIDDLE_TELNO", length = 4)
+    private String homemiddleTelno;
+
+    @Column(name = "END_TELNO", length = 4)
+    private String homeendTelno;
+
+    @Column(name = "FXNUM", length = 20)
+    private String fxnum;
+
+    @Column(name = "OFFM_TELNO", length = 20)
+    private String offmTelno;
+
+    // ■ 조직 및 권한
+    @Column(name = "GROUP_ID", length = 20)
+    private String groupId;
+
+    @Column(name = "ORGNZT_ID", length = 20)
+    private String orgnztId;
+
+    @Column(name = "PSTINST_CODE", length = 8)
+    private String insttCode;
+
+    @Column(name = "EMPL_NO", length = 20)
+    private String emplNo;
+
+    @Column(name = "OFCPS_NM", length = 60)
+    private String ofcpsNm;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ROLE", length = 50)
+    private Role role = Role.USER;
+
+    // ■ 기업 전용 (nullable)
+    @Column(name = "BIZRNO", length = 10)
+    private String bizrno;
+
+    @Column(name = "JURIRNO", length = 13)
+    private String jurirno;
+
+    @Column(name = "CMPNY_NM", length = 50)
+    private String cmpnyNm;
+
+    @Column(name = "CXFC", length = 50)
+    private String cxfc;
+
+    @Column(name = "INDUTY_CODE", length = 15)
+    private String indutyCode;
+
+    @Column(name = "ENTRPRS_SE_CODE", length = 15)
+    private String entrprsSeCode;
+
+    // ■ 상태 및 감사
+    @Builder.Default
+    @Column(name = "STATUS_CODE", length = 15)
+    private String statusCode = "P";
+
+    @CreatedDate
+    @Column(name = "SBSCRB_DE", updatable = false)
+    private LocalDateTime sbscrbDe;
 
     public void update(String userNm, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth,
@@ -206,7 +234,7 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void updateStatus(String status) {
-        this.empStatus = status;
+        this.statusCode = status;
     }
 
     public void updateOrgnztId(String orgnztId) {

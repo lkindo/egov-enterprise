@@ -28,7 +28,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         Root<UserLog> root = cq.from(UserLog.class);
 
         // JOIN 으로 사용자 정보 조회 (N+1 방지)
-        Join<UserLog, Object> userJoin = root.join("comvnUserMaster", JoinType.LEFT);
+        Join<UserLog, Object> userJoin = root.join("vnUserMaster", JoinType.LEFT);
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -56,7 +56,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         // 카운트 쿼리
         CriteriaQuery<Long> countCq = cb.createQuery(Long.class);
         Root<UserLog> countRoot = countCq.from(UserLog.class);
-        Join<UserLog, Object> countUserJoin = countRoot.join("comvnUserMaster", JoinType.LEFT);
+        Join<UserLog, Object> countUserJoin = countRoot.join("vnUserMaster", JoinType.LEFT);
 
         List<Predicate> countPredicates = new ArrayList<>();
         if (searchWrd != null && !searchWrd.isEmpty()) {

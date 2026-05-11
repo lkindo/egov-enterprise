@@ -30,7 +30,7 @@ public class UserLog extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RQESTER_ID", referencedColumnName = "ESNTL_ID", insertable = false, updatable = false)
-    private User comvnUserMaster;
+    private User vnUserMaster;
 
     @Id
     @Column(name = "OCCRRNC_DE", length = 20)

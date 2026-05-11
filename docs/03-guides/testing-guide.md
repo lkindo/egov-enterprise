@@ -383,7 +383,7 @@ class MyTest {
 export default async function cleanup() {
     // 테스트 데이터 정리
     await db.deleteFrom('NUSERLOG').execute();
-    await db.deleteFrom('COMVNUSERMASTER').execute();
+    await db.deleteFrom('VNUSERMASTER').execute();
 }
 ```
 
