@@ -111,9 +111,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Override
         @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
-                User user = userRepository.findById(required(id, "사용자 ID 는 null 일 수 없습니다"))
-                                .orElseGet(() -> userRepository.findByEsntlId(required(id, "사용자 ID 는 null 일 수 없습니다"))
-                                                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
+                // [NUSERINFO 통합] userId로 먼저 찾고, 없으면 PK(esntlId)로 찾음
+                User user = userRepository.findByUserId(id)
+                                .or(() -> userRepository.findById(id))
+                                .or(() -> userRepository.findByEsntlId(id))
+                                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 String authorCode = userAuthorityRepository
                                 .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
@@ -144,8 +146,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
 
-                // [안정성] ID 중복 체크
-                if (userRepository.existsById(userId)) {
+                // [안정성] ID 중복 체크 (통합 테이블 내 userId 필드 기준)
+                if (userRepository.findByUserId(userId).isPresent()) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
@@ -191,7 +193,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
-                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
+                User user = userRepository.findByUserId(userId)
+                                .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 // [보안] 본인 또는 관리자만 수정 가능
@@ -233,7 +236,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Override
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
-                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
+                User user = userRepository.findByUserId(userId)
+                                .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 
@@ -256,10 +260,15 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
 
-                if (!userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"))) {
+                if (!userRepository.findByUserId(userId).isPresent() && !userRepository.existsById(userId)) {
                         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
                 }
-                userRepository.deleteById(required(userId));
+                
+                User user = userRepository.findByUserId(userId)
+                                .or(() -> userRepository.findById(userId))
+                                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                
+                userRepository.delete(user);
         }
 
         /**
@@ -331,7 +340,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
          */
         @Override
         public boolean checkIdDplct(@NonNull String userId) {
-                return userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"));
+                return userRepository.findByUserId(required(userId, "사용자 ID 는 null 일 수 없습니다")).isPresent();
         }
 
         /**
@@ -346,7 +355,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
 
-                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
+                User user = userRepository.findByUserId(userId)
+                                .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
         }

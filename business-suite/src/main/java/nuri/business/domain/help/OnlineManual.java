@@ -8,10 +8,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 온라인 메뉴얼 Entity
- * 매핑 테이블: NONLINEMNUAL
+ * 매핑 테이블: NONLINEMANUAL (표준 명칭으로 정비 완료)
  */
 @Entity
-@Table(name = "NONLINEMNUAL")
+@Table(name = "NONLINEMANUAL")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

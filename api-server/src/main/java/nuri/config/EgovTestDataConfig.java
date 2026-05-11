@@ -35,7 +35,7 @@ public class EgovTestDataConfig {
     @Transactional
     public void initTestData() {
         createTestUser("webmaster", "관리자", "ROLE_ADMIN", "USRCNFRM_00000000001");
-        createTestUser("user_regular", "일반사용자", "ROLE_USER", "USRCNFRM_00000000002");
+        createTestUser("TEST1", "일반사용자", "ROLE_USER", "USRCNFRM_00000000002");
         
         // Initialize Test Boards for E2E
         createTestBoard("BBSMSTR_AAAAAAAAAAAA", "E2E 공지사항 (List)", "BBST01");
