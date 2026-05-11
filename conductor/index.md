@@ -15,6 +15,7 @@ Navigation hub for project context.
 - [Detailed Module Audit](../docs/02-architecture/detailed-module-audit.md)
 - [Design System](../docs/02-architecture/design.md)
 - [UI/UX Improvement Plan](../docs/02-architecture/ui-ux-improvement-plan.md)
+- [Domain Security & Resilience](../docs/02-architecture/domain-resilience.md)
 - [Legacy Design (Archived)](../docs/archived/LLD.MD)
 
 ### 03. Development Guides
@@ -23,6 +24,9 @@ Navigation hub for project context.
 - [E2E Test Guide (Tiered)](../docs/03-guides/e2e-test-guide.md)
 - [API Documentation Guide](../docs/03-guides/api-documentation-guide.md)
 - [CI/CD Pipeline](../docs/03-guides/cicd-pipeline.md)
+- [CCG Orchestration](../docs/03-guides/ccg-orchestration.md)
+- [Map-Driven Development](../docs/03-guides/map-driven-development.md)
+- [Documentation Policy](../docs/03-guides/documentation-policy.md)
 
 ### 04. Operations & Optimization
 - [k6 Load Test Quickstart](../docs/04-operations/k6-load-test-quickstart.md)

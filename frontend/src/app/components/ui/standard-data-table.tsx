@@ -42,6 +42,7 @@ export interface StandardDataTableProps<T> {
     onSearch: (keyword: string) => void;
   };
   stickyHeader?: boolean;
+  rowTestId?: string;
 }
 
 const DataRow = memo(function DataRow({

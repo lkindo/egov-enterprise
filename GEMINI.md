@@ -111,64 +111,23 @@ graph TD
 | `pageIndex` 직접 계산 | `ApiService`의 자동 매핑 로직에 위임 |
 | 복잡한 로직을 Server Component에 인라인 작성 | 별도의 `Service` 또는 `Logic` 파일로 분리 |
 
-## 9. CCG Orchestration (Claude + Claude + Gemini)
+## 10. 확장 가이드 참조 (Extended Guides)
 
-본 프로젝트는 **@nst173/superpowers-ccg**를 기반으로 한 오케스트레이션을 **기본 실행 프로세스**로 채택한다.
-- **Claude (Antigravity)**: 오케스트레이터로서 전체 설계를 담당하며, **백엔드/시스템/인프라** 구현을 직접 수행한다.
-- **Gemini (via MCP)**: **프론트엔드/UI/UX/스타일** 구현 전문가로 활용하며, `gemini` CLI를 통해 위임한다.
+아래 문서는 특정 워크플로우에서만 참조한다. 해당 작업을 수행할 때 열어볼 것.
 
-**강제 사항 (위임 및 자동화)**:
-- **자동 승인(YOLO)**: 프론트엔드 작업 위임 시 반드시 `gemini -y --skip-trust -p` 옵션을 사용하여 사용자 승인 대기 없이 자율적으로 작업을 완수한다.
-- **위임 워크플로우**: 모든 위임 작업은 `[구현] -> [빌드/린트 검증] -> [테스트 실행] -> [결과 보고]`의 풀 사이클을 포함해야 한다.
-- **Routing**: 모든 기능 구현 작업은 `.agent/skills/superpowers-ccg`의 워크플로우(CP0~CP4)를 따라 모델별 작업을 라우팅한다.
-- **교차 검증**: 풀스택 작업 시 Claude와 Gemini의 **CROSS_VALIDATION**을 수행하여 아키텍처의 일관성을 확보한다.
+| 가이드 | 경로 | 적용 시점 |
+|--------|------|-----------|
+| CCG Orchestration | `docs/03-guides/ccg-orchestration.md` | 프론트/백엔드 협업 구현 시 |
+| Map-Driven Development | `docs/03-guides/map-driven-development.md` | 대규모 아키텍처 변경 시 |
+| 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 시 |
+| 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 보안/상태전이/비동기 작업 구현 시 |
 
-**Gemini 위임 골든 프롬프트 템플릿**:
-```text
-[Task]: {요구사항}
-[Context]: {관련 파일 및 API 명세}
-[Protocol]: 1. 모든 수정 사항은 전체 파일 코드로 응답할 것. 2. 수정 후 반드시 빌드/린트 검증을 수행할 것.
-[Final Check]: 모든 테스트가 PASS되면 "SUCCESS" 문구와 함께 요약을 보고하고 종료해.
-```
+## 11. Database Interaction Rules (via Local Bridge)
 
-## 10. Map-Driven Development (via Graphify)
-
-복잡한 아키텍처 변경이나 대규모 기능 추가 시 **지식 그래프(Knowledge Graph)**를 활용하여 효율성을 극대화한다.
-- **Pre-flight Analysis**: 대형 작업 시작 전 `/graphify`를 실행하여 영향 범위(Blast Radius)를 시각적으로 파악한다.
-- **Strategic CP0**: 브레인스토밍 단계에서 그래프를 쿼리하여 숨겨진 의존성과 기술적 부채를 사전에 식별한다.
-- **Token Optimization**: 이미 구축된 그래프 인덱스를 활용하여 불필요한 파일 전체 읽기를 지양하고 토큰 소모를 최소화한다.
-- **Graph Maintenance**: 대규모 구현 완료 후 `/graphify --update`를 통해 최신 아키텍처 상태를 지도에 반영한다.
-
-## 11. 문서 관리 정책 (Documentation Policy)
-
-모든 새로운 문서는 다음의 구조와 규칙을 엄격히 준수하여 생성한다.
-
-- **저장 위치**:
-    - `docs/01-product/`: 제품 정의, 비즈니스 로직, 기획서 (PRD 등)
-    - `docs/02-architecture/`: 아키텍처 설계, 테크 스택, 설계서 (TRD, LLD)
-    - `docs/03-guides/`: 개발 가이드, 워크플로우, 테스트 지침
-    - `docs/04-operations/`: 운영 매뉴얼, 성능 최적화, 배포 가이드
-    - `docs/archived/`: 구버전 문서 보관
-- **파일명 규칙**: 반드시 `kebab-case.md` 형식을 사용한다. (예: `new-feature-guide.md`)
-- **인덱스 업데이트**: 새로운 영구 문서를 생성한 후에는 반드시 `conductor/index.md`의 지식 베이스(Knowledge Base) 섹션에 해당 링크를 추가하여 탐색 가능하게 만든다.
-
-## 12. 도메인 보안 및 회복탄력성 가이드 (Domain Security & Resilience)
-
-본 프로젝트는 엔터프라이즈급 안정성을 위해 다음의 도메인 가드레일을 준수한다.
-
-### 12.1 서비스 레이어 권한 재검증 (Double-Check Security)
-- 컨트롤러의 권한 체크(`@PreAuthorize`)와 별개로, 서비스 레이어에서 `SecurityUtil`을 사용하여 리소스 소유자 또는 관리자 권한을 명시적으로 재검증한다.
-- 특히 개인정보 수정, 비밀번호 변경, 결재 승인 등 민감한 작업에 필수 적용한다.
-
-### 12.2 상태 전이 유효성 검사 (Deterministic State Transition)
-- 도메인 엔티티 내에 상태 전이 로직을 캡슐화하거나, 서비스 레이어에서 현재 상태를 체크하여 유효하지 않은 비즈니스 흐름(예: 이미 처리된 결재의 재수정)을 차단한다.
-
-### 12.3 비동기 작업의 회복탄력성 (Async Resilience)
-- 외부 시스템(SMTP, SMS Gateway) 연동 시 반드시 `@Retryable`을 사용하여 일시적 장애에 대응한다.
-- `@Retryable` 사용 시 self-invocation 문제를 방지하기 위해 반드시 self-injection(Lazy Autowired) 패턴을 사용한다.
-
-### 12.4 안전한 ID 생성 전략
-- 고부하 상황에서의 충돌을 방지하기 위해 `System.currentTimeMillis()` 대신 `IdGenerationUtil`의 UUID 기반 ID 생성기를 사용한다.
+- **실행**: `node .agent/scripts/db-bridge.js "QUERY" [--json]`
+- **접속 정보**: `application.yml` 기반 자동 연동 (OCI PostgreSQL 17)
+- **보안**: SELECT 위주 수행. INSERT/UPDATE/DELETE는 사용자 승인 필수.
 
 ---
-*Last Updated: 2026-05-07 (Updated via Antigravity)*
+*Last Updated: 2026-05-11 (Updated via Antigravity)*
+
