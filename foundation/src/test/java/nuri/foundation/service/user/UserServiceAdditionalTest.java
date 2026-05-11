@@ -160,15 +160,15 @@ class UserServiceAdditionalTest {
     void deleteUser_success() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            // Given
             String userId = "testUser";
-            when(userRepository.existsById(userId)).thenReturn(true);
+            User user = createBaseUser(userId).build();
+            when(userRepository.findByUserId(userId)).thenReturn(Optional.of(user));
 
             // When
             userService.deleteUser(userId);
 
             // Then
-            verify(userRepository).deleteById(userId);
+            verify(userRepository).delete(user);
         }
     }
 

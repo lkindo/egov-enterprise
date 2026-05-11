@@ -68,13 +68,4 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent().get(0).getSrvcNm()).isEqualTo("TestService");
     }
 
-    @Test
-    @DisplayName("로그 요약 삽입 테스트")
-    void insertLogSummary() {
-        // given
-        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        
-        // Native Query의 제약 조건 문제로 인해 검색 로직 위주로 먼저 검증
-        assertThat(yesterday).isNotNull();
-    }
 }

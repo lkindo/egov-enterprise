@@ -78,28 +78,6 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
 
     @Override
     @Transactional
-    public void insertLogSummary() {
-        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "INSERT INTO NUSERLOG (OCCRRNC_DE, RQESTER_ID, SVC_NM, METHOD_NM, CREAT_CO, UPDT_CO, RDCNT, DELETE_CO, OUTPT_CO, ERROR_CO) "
-                +
-                "SELECT b.OCCRRNC_DE, b.RQESTER_ID, b.SVC_NM, b.METHOD_NM, " +
-                "SUM(CASE WHEN b.PROCESS_SE_CODE = 'C' THEN 1 ELSE 0 END), " +
-                "SUM(CASE WHEN b.PROCESS_SE_CODE = 'U' THEN 1 ELSE 0 END), " +
-                "SUM(CASE WHEN b.PROCESS_SE_CODE = 'R' THEN 1 ELSE 0 END), " +
-                "SUM(CASE WHEN b.PROCESS_SE_CODE = 'D' THEN 1 ELSE 0 END), 0, 0 " +
-                "FROM NSYSLOG b " +
-                "WHERE NOT EXISTS (SELECT 1 FROM NUSERLOG c WHERE c.OCCRRNC_DE = :yesterday) " +
-                "AND b.OCCRRNC_DE = :yesterday " +
-                "AND b.RQESTER_ID IS NOT NULL " +
-                "GROUP BY b.OCCRRNC_DE, b.RQESTER_ID, b.SVC_NM, b.METHOD_NM";
-
-        entityManager.createNativeQuery(sql)
-                .setParameter("yesterday", yesterday)
-                .executeUpdate();
-    }
-
-    @Override
-    @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String sql = "DELETE FROM NSYSLOG WHERE OCCRRNC_DE < :targetDe";

@@ -67,22 +67,6 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
 
     @Override
     @Transactional
-    public void insertLogSummary() {
-        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "INSERT INTO SWEBLOGSUMMARY (OCCRRNC_DE, URL, RDCNT) " +
-                "SELECT TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ), b.URL, COUNT(b.URL) " +
-                "FROM NWEBLOG b " +
-                "WHERE NOT EXISTS (SELECT 1 FROM SWEBLOGSUMMARY c WHERE c.OCCRRNC_DE = :yesterday) " +
-                "AND TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ) = :yesterday " +
-                "GROUP BY TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ), b.URL";
-
-        entityManager.createNativeQuery(sql)
-                .setParameter("yesterday", yesterday)
-                .executeUpdate();
-    }
-
-    @Override
-    @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String sql = "DELETE FROM NWEBLOG WHERE TO_CHAR(OCCRRNC_DE, 'YYYYMMDD') < :targetDe";

@@ -25,20 +25,37 @@ public class AuthenticationControllerIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private nuri.foundation.security.service.EgovPasswordEncoder egovPasswordEncoder;
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private nuri.foundation.domain.auth.UserAuthorityRepository userAuthorityRepository;
 
     @BeforeEach
     void setUp() {
+        userAuthorityRepository.deleteAll();
         userRepository.deleteAll();
+        
+        String userId = "testuser";
+        String esntlId = "USR001";
+        
         User user = User.builder()
-                .userId("testuser")
-                .esntlId("USR001")
-                .password(egovPasswordEncoder.encode("password", "testuser"))
+                .userId(userId)
+                .esntlId(esntlId)
+                .password(passwordEncoder.encode("password"))
                 .userNm("테스트")
                 .role(Role.USER)
                 .statusCode("A")
                 .build();
         userRepository.save(user);
+        
+        userAuthorityRepository.save(nuri.foundation.domain.auth.UserAuthority.builder()
+                .uniqId(esntlId)
+                .authorCode("ROLE_USER")
+                .mberTyCode("USR")
+                .build());
+        
+        userRepository.flush();
+        userAuthorityRepository.flush();
     }
 
     @Test
@@ -47,7 +64,6 @@ public class AuthenticationControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":\"testuser\", \"password\":\"password\"}"))
-                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isOk());
     }
 }

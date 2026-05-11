@@ -38,22 +38,14 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         try {
             log.info(">>> [EgovAuthenticationProvider] DB check started for userId: {}", userId);
             
-            // Try find by userId
-            var userOpt = userRepository.findById(userId);
-            if (userOpt.isPresent()) {
-                log.info(">>> [EgovAuthenticationProvider] User found by findById: {}", userOpt.get().getUserId());
-            } else {
-                log.warn(">>> [EgovAuthenticationProvider] User NOT found by findById: {}", userId);
-            }
+            log.info(">>> [EgovAuthenticationProvider] DB check started for userId: {}", userId);
             
-            User userEntity = userOpt
-                    .orElseGet(() -> {
-                        log.info(">>> [EgovAuthenticationProvider] Trying findByEsntlId for: {}", userId);
-                        return userRepository.findByEsntlId(userId)
-                            .orElseThrow(() -> {
-                                log.warn(">>> [EgovAuthenticationProvider] User NOT found by either method: {}", userId);
-                                return new BadCredentialsException("Invalid User ID or Password");
-                            });
+            User userEntity = userRepository.findByUserId(userId)
+                    .or(() -> userRepository.findById(userId))
+                    .or(() -> userRepository.findByEsntlId(userId))
+                    .orElseThrow(() -> {
+                        log.warn(">>> [EgovAuthenticationProvider] User NOT found by any method: {}", userId);
+                        return new BadCredentialsException("Invalid User ID or Password");
                     });
             
             validateAccountStatus(userEntity);

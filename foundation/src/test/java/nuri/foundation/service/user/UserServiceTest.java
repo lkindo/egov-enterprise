@@ -57,7 +57,7 @@ class UserServiceTest {
         list.add(new Object[]{user, authority});
         
         given(userRepository.findAllWithAuthorities()).willReturn(list);
-        given(userMapper.toDtoWithAuthority(any(), any())).willReturn(new UserDto());
+        lenient().when(userMapper.toDtoWithAuthority(any(), any())).thenReturn(new UserDto());
 
         List<UserDto> result = userService.getUserList();
 
@@ -73,7 +73,7 @@ class UserServiceTest {
         
         given(userRepository.findById("USR1")).willReturn(Optional.of(user));
         given(userAuthorityRepository.findById("USR1")).willReturn(Optional.empty());
-        given(userMapper.toDtoWithAuthority(any(), any())).willReturn(new UserDto());
+        lenient().when(userMapper.toDtoWithAuthority(any(), any())).thenReturn(new UserDto());
 
         UserDto result = userService.getUserById("USR1");
 
@@ -85,7 +85,7 @@ class UserServiceTest {
     void registerUserSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(userRepository.existsById("testuser")).willReturn(false);
+            given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
             String userId = userService.registerUser("testuser", "password", "홍길동", null, null, "USER");
@@ -101,7 +101,7 @@ class UserServiceTest {
     void registerUserDuplicateIdTest() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(userRepository.existsById("testuser")).willReturn(true);
+            given(userRepository.findByUserId("testuser")).willReturn(Optional.of(mock(User.class)));
             
             assertThrows(BusinessException.class, () -> 
                 userService.registerUser("testuser", "password", "홍길동", null, null, "USER"));
@@ -174,7 +174,7 @@ class UserServiceTest {
 
         given(userRepository.existsById("newuser")).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
-        given(userMapper.toResponse(any())).willReturn(null);
+        lenient().when(userMapper.toResponse(any())).thenReturn(null);
 
         userService.signup(request);
 

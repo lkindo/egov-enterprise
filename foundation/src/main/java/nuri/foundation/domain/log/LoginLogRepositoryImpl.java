@@ -67,22 +67,6 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
 
     @Override
     @Transactional
-    public void insertLogSummary() {
-        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "INSERT INTO SUSERSUMMARY (OCCRRNC_DE, STATS_SE, DETAIL_STATS_SE, USER_CO) " +
-                "SELECT TO_CHAR(b.CREAT_DT, 'YYYYMMDD' ), 'LGN', b.CONECT_MTHD, COUNT(b.CONECT_MTHD) " +
-                "FROM NLOGINLOG b " +
-                "WHERE NOT EXISTS (SELECT 1 FROM SUSERSUMMARY c WHERE c.OCCRRNC_DE = :yesterday AND c.STATS_SE = 'LGN') " +
-                "AND TO_CHAR(b.CREAT_DT, 'YYYYMMDD' ) = :yesterday " +
-                "GROUP BY TO_CHAR(b.CREAT_DT, 'YYYYMMDD' ), b.CONECT_MTHD";
-
-        entityManager.createNativeQuery(sql)
-                .setParameter("yesterday", yesterday)
-                .executeUpdate();
-    }
-
-    @Override
-    @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String sql = "DELETE FROM NLOGINLOG WHERE TO_CHAR(CREAT_DT, 'YYYYMMDD') < :targetDe";

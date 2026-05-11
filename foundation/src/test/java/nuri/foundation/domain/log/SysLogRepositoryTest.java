@@ -59,28 +59,6 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
     }
 
     @Test
-    @DisplayName("로그 요약 서비스")
-    void insertLogSummary() {
-        // given
-        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        SysLog log = SysLog.builder()
-                .requstId("REQ_002")
-                .occrrncDe(yesterday)
-                .processSeCode("C")
-                .srvcNm("SummaryService")
-                .methodNm("summaryMethod")
-                .build();
-        sysLogRepository.save(log);
-
-        // when
-        sysLogRepository.insertLogSummary();
-
-        // then
-        // 요약 테이블 조회는 다른 리포지토리가 필요할 수 있으나, native query 실행에 의미를 둠
-        // 실제로는 SSYSLOGSUMMARY 테이블에 데이터가 들어갔는지 확인해야 함
-    }
-
-    @Test
     @DisplayName("오래된 로그 삭제")
     void deleteOldLogs() {
         // given
