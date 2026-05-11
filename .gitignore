@@ -198,3 +198,6 @@ module-knowledge/
 **/.snyk
 
 
+
+# Database Dumps
+database/dumps/
