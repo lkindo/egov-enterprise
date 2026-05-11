@@ -248,3 +248,8 @@ async function cleanup() {
 module.exports = async function globalTeardown() {
   await cleanup();
 };
+
+// Allow running directly
+if (require.main === module) {
+  cleanup();
+}
