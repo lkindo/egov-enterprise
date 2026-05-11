@@ -21,7 +21,6 @@ public class SurveyRespondentDto {
     private String areaNo;
     private String middleTelno;
     private String endTelno;
-    private String respondId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
@@ -39,7 +38,6 @@ public class SurveyRespondentDto {
                 .areaNo(entity.getAreaNo())
                 .middleTelno(entity.getMiddleTelno())
                 .endTelno(entity.getEndTelno())
-                .respondId(entity.getRespondId())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())

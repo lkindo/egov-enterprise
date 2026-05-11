@@ -59,7 +59,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
         SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
-                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), dto.getRespondId());
+                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
     }
 
     @Override

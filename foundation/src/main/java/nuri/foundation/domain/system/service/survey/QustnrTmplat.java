@@ -30,8 +30,8 @@ public class QustnrTmplat extends BaseEntity {
     @Column(name = "QUSTNR_TMPLAT_PATH_NM", length = 100)
     private String qustnrTmplatImagepathnm; // DTO와 맞춤 (Imagepathnm)
 
-    @Column(name = "QUSTNR_TMPLAT_IMAGE_INFO", length = 2000)
-    private String qustnrTmplatImageInfo;
+    @Column(name = "QUSTNR_TMPLAT_IMAGE_INFO")
+    private byte[] qustnrTmplatImageInfo;
 
     public void update(String qustnrTmplatTy, String qustnrTmplatImagepathnm, String qustnrTmplatCn) {
         this.qustnrTmplatTy = qustnrTmplatTy;
