@@ -25,8 +25,8 @@
 - [x] **Tier 1 (Core Base)**: COMPLETED (Login & Dashboard verified).
 - [x] **Tier 2 (Admin System)**: COMPLETED (10/10 tests passed).
 - [x] **Tier 3 (Board/Community)**: COMPLETED (14/14 tests passed).
-- [ ] **Tier 4 (Quality & Resilience)**: In progress (Performance & Error handling).
-- [ ] **Tier 5 (Public Experience)**: Pending.
+- [ ] **Tier 4 (Quality & Resilience)**: Delegated to Gemini (YOLO mode).
+- [ ] **Tier 5 (Public Experience)**: Delegated to Gemini (YOLO mode).
 - [ ] **Tier 6 (Ops Governance)**: Pending.
 - [ ] **Tier 7 (Productivity Suite)**: Pending.
 - [ ] **Tier 8 (Collaboration)**: Pending.
@@ -43,7 +43,8 @@
 - [ ] **Tier 19 (Hierarchy Modernization)**: Pending.
 - [ ] **Tier 20 (Common Security Validation)**: Pending.
 - [ ] **Tier 21 (Advanced Resilience)**: Pending.
-- [ ] **Tier 22 (Deep Security Guard)**: Pending.
+- [ ] **Tier 22 (Deep Security Guard)**: In Progress (Directly managed by Claude).
+
 
 ## Logs
 ### 2026-05-11 (Phase 1)
@@ -53,6 +54,11 @@
     - `QustnrTmplat.java`: `qustnrTmplatImageInfo` type changed to `byte[]`.
     - `application.yml`: `ddl-auto` set to `none`.
 - **E2E Progress**: 
-    - Tier 1: COMPLETED.
-    - Tier 3: COMPLETED (14/14 passed).
-    - Tier 4: Executing... (Quality & Resilience).
+    - Tier 1-3: COMPLETED.
+    - Tier 4-8: Executing in parallel (2 workers).
+- **Action**: Optimized execution using 4 workers after user suggestion.
+### 2026-05-11 (Phase 4)
+- **Status**: Strategy shifted to REVERSE ORDER (Tier 22 -> Tier 4).
+- **Delegation**: Tiers 4 & 5 delegated to Gemini CLI in YOLO mode.
+- **Direct Execution**: Claude is directly handling Tier 22 and will move downwards.
+- **Environment Note**: Encountered `AttachConsole failed` in Gemini CLI, attempting `--raw-output` to bypass PTY issues.

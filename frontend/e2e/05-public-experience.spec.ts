@@ -51,7 +51,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
 
         await test.step('Admin: Configure Layer Popup', async () => {
             console.log(`>>> Configuring popup: ${popupTitle}`);
-            await promo.goto(); // Fixed method name
+            await promo.gotoBannerPopupAdmin(); // Fixed method name
             await promo.createPopup(popupTitle);
         });
 
