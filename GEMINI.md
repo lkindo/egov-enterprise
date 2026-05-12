@@ -10,8 +10,24 @@
 에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-계획-실행** 루틴을 반드시 준수한다.
 
 1.  **Discovery First (`using-superpowers`)**: 모든 응답(단순 질문 포함) 및 탐색 전, 반드시 `using-superpowers` 스킬을 호출하여 현재 태스크에 적용 가능한 최적의 워크플로우/스킬을 식별한다.
-2.  **Context-Aware Analysis**: 지시를 받자마자 코드를 수정하지 않고, 먼저 `brainstorming` 또는 `systematic-debugging` 스킬을 통해 요구사항을 분석하고 영향 범위를 파악한다.
-3.  **Strict Orchestration**: 복잡한 구현이나 프론트엔드/백엔드 협업이 필요한 경우, 예외 없이 `superpowers-ccg` 워크플로우를 가동하여 모델별 역할을 분담한다.
+2.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. **검증된 계획은 반드시 사용자의 명시적 승인(Approved)을 받은 후 다음 단계로 진행한다.**
+3.  **Caveman Communication**: 모든 답변과 보고는 **`caveman` 스킬 프로토콜**을 엄격히 준수하여 불필요한 토큰 소모를 차단한다.
+4.  **Strict Orchestration**: 검증된 계획에 따라 구현 시, 복잡한 작업은 예외 없이 `superpowers-ccg` 워크플로우를 가동하여 모델별 역할을 분담한다.
+
+---
+
+## 0.1. 증거 우선 검증 (Evidence-Based Verification) - [MANDATORY]
+
+에이전트는 모든 구현 작업 완료 시, "성공했습니다"라는 선언 이전에 반드시 객관적인 증거를 제시해야 한다. 증거 없는 완료 보고는 인정되지 않는다.
+
+1.  **필수 증거 (Type of Evidence)**:
+    - **UI/Frontend**: 브라우저 스크린샷, Playwright 테스트 로그, 또는 스토리북 렌더링 결과.
+    - **Backend/API**: JUnit 테스트 결과 로그, API 응답 데이터 덤프(JSON).
+    - **Database**: 쿼리 실행 결과 행(Row) 수, `EXPLAIN ANALYZE` 결과(성능 개선 시), 또는 스키마 변경 확인 로그.
+2.  **검증 문서화 (Verification Artifact)**:
+    - 복잡도가 높은 작업(리팩토링, 신규 기능 등)의 경우, 반드시 `.gemini/tasks/` 내의 해당 태스크 파일이나 별도의 `VERIFICATION.md`에 검증 로그를 포함해야 한다.
+3.  **No Proof, No Completion**:
+    - 모든 빌드나 테스트가 통과된 터미널 출력값이 최소 1회 이상 대화 세션에 노출되어야 한다.
 
 ---
 
@@ -118,6 +134,7 @@ graph TD
 | 가이드 | 경로 | 적용 시점 |
 |--------|------|-----------|
 | CCG Orchestration | `docs/03-guides/ccg-orchestration.md` | 프론트/백엔드 협업 구현 시 |
+| GStack Review | `.agent/skills/gstack-review/SKILL.md` | 계획 수립 및 설계 검증 시 |
 | Map-Driven Development | `docs/03-guides/map-driven-development.md` | 대규모 아키텍처 변경 시 |
 | 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 시 |
 | 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 보안/상태전이/비동기 작업 구현 시 |
