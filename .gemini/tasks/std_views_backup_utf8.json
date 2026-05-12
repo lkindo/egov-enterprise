@@ -1,0 +1,362 @@
+﻿[
+  {
+    "table_name": "std_common_cl_code",
+    "view_definition": " SELECT cl_code AS clsf_cd,\n    cl_code_nm AS clsf_cd_nm,\n    cl_code_dc AS clsf_cd_expln,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ccmmnclcode;"
+  },
+  {
+    "table_name": "std_admin_district_code",
+    "view_definition": " SELECT administ_zone_code AS admdst_cd,\n    administ_zone_nm AS admdst_nm,\n    administ_zone_se AS admdst_se,\n    upper_administ_zone_code AS up_admdst_cd,\n    creat_de AS crt_ymd,\n    abl_de AS abl_ymd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM cadministcode;"
+  },
+  {
+    "table_name": "std_common_code",
+    "view_definition": " SELECT code_id AS com_cd_id,\n    code_id_nm AS com_cd_nm,\n    code_id_dc AS com_cd_expln,\n    cl_code AS clsf_cd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ccmmncode;"
+  },
+  {
+    "table_name": "std_common_detail_code",
+    "view_definition": " SELECT code_id AS com_cd_id,\n    code AS com_dtl_cd,\n    code_nm AS com_dtl_cd_nm,\n    code_dc AS com_dtl_cd_expln,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ccmmndetailcode;"
+  },
+  {
+    "table_name": "std_file_detail",
+    "view_definition": " SELECT (atch_file_id)::character varying(20) AS atch_file_mng_no,\n    file_sn AS atch_file_sn,\n    file_stre_cours AS atch_file_path_nm,\n    stre_file_nm AS strg_file_nm,\n    orignl_file_nm AS orgnl_file_nm,\n    file_extsn AS extn_nm,\n    file_size AS file_sz,\n    (file_cn)::text AS atch_file_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nfiledetail;"
+  },
+  {
+    "table_name": "std_dept_task_info",
+    "view_definition": " SELECT dept_job_id AS dept_task_id,\n    dept_job_nm AS dept_task_nm,\n    dept_job_cn AS dept_task_cn,\n    dept_jobbx_id AS dept_task_box_id,\n    charger_id AS pic_id,\n    priort AS prord,\n    atch_file_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ndeptjob;"
+  },
+  {
+    "table_name": "std_file_master",
+    "view_definition": " SELECT atch_file_id AS atch_file_mng_no,\n    (use_at)::character(1) AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nfile;"
+  },
+  {
+    "table_name": "std_tmplt_info",
+    "view_definition": " SELECT tmplat_id AS tmplt_no,\n    tmplat_nm AS tmplt_nm,\n    tmplat_se_code AS tmplt_se_cd,\n    (tmplat_cours)::character varying(2000) AS tmplt_path_nm,\n    (use_at)::character(1) AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ntmplatinfo;"
+  },
+  {
+    "table_name": "std_leader_schdl",
+    "view_definition": " SELECT schdul_id AS schdl_mng_no,\n    leader_id,\n    (schdul_nm)::character varying(765) AS schdl_nm,\n    (schdul_cn)::character varying(1000) AS schdl_cn,\n    (schdul_place)::character varying(765) AS plc_nm,\n    (schdul_bgnde)::character(8) AS schdl_bgng_ymd,\n    (schdul_endde)::character(8) AS schdl_end_ymd,\n    schdul_charger_id AS schdl_pic_id,\n    (schdul_se)::character varying(6) AS schdl_se_cd,\n    (schdul_ipcr_code)::character varying(6) AS schdl_imprt_cd,\n    (reptit_se_code)::character varying(6) AS rept_se_cd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nleaderschdul;"
+  },
+  {
+    "table_name": "std_leader_schdl_de",
+    "view_definition": " SELECT schdul_id AS schdl_mng_no,\n    (schdul_de)::character(8) AS schdl_ymd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nleaderschdulde;"
+  },
+  {
+    "table_name": "std_inst_code",
+    "view_definition": " SELECT instt_code AS inst_cd,\n    all_instt_nm AS all_inst_nm,\n    lowest_instt_nm AS lwtrk_inst_nm,\n    instt_abrv_nm AS inst_abbr_nm,\n    reprsnt_instt_code AS rprs_inst_cd,\n    upper_instt_code AS up_inst_cd,\n    instt_ty_lclas AS inst_type_lclsf,\n    instt_ty_mlsfc AS inst_type_mclsf,\n    instt_ty_sclas AS inst_type_sclsf,\n    instt_odr AS inst_seq,\n    sort_ordr AS sort_seq,\n    telno,\n    fxnum AS fxno,\n    abl_ennc AS abl_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ninsttcode;"
+  },
+  {
+    "table_name": "std_adbk_info",
+    "view_definition": " SELECT adbk_id,\n    nm,\n    email_adres AS eml_addr,\n    mbtlnum AS mbl_telno,\n    fxnum AS fxno,\n    house_telno AS home_telno,\n    offm_telno AS ofc_telno,\n    emplyr_id AS user_id,\n    adbk_constnt_id AS adbk_mbr_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nadbk;"
+  },
+  {
+    "table_name": "std_adbk_manage",
+    "view_definition": " SELECT adbk_id,\n    adbk_nm,\n    othbc_scope AS rls_scp,\n    trget_orgnzt_id AS trgt_ognz_id,\n    wrter_id AS wrtr_id,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nadbkmanage;"
+  },
+  {
+    "table_name": "std_survey_info",
+    "view_definition": " SELECT qustnr_id AS srvy_id,\n    qustnr_sj AS srvy_ttl,\n    qustnr_purps AS srvy_prps,\n    qustnr_trget AS srvy_trgt,\n    qustnr_writng_guidance_cn AS srvy_wrt_gd_cn,\n    qustnr_bgnde AS bgng_ymd,\n    qustnr_endde AS end_ymd,\n    qustnr_tmplat_id AS srvy_tmplt_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnrinfo;"
+  },
+  {
+    "table_name": "std_event_info",
+    "view_definition": " SELECT event_id AS evnt_id,\n    event_cn AS evnt_cn,\n    event_svc_bgnde AS evnt_bgng_ymd,\n    event_svc_endde AS evnt_end_ymd,\n    event_ty_code AS evnt_type_cd,\n    event_confm_at AS aprv_yn,\n    event_confm_de AS aprv_ymd,\n    bsns_year AS biz_yr,\n    bsns_code AS biz_cd,\n    svc_use_nmpr_co AS evnt_srvc_use_prsnl_cnt,\n    charger_nm AS pic_nm,\n    prparetg_cn AS prep_mttr,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM neventinfo;"
+  },
+  {
+    "table_name": "std_schdul_info",
+    "view_definition": " SELECT schdul_id AS schdl_id,\n    schdul_nm AS schdl_nm,\n    schdul_cn AS schdl_cn,\n    schdul_se AS schdl_se_cd,\n    schdul_knd_code AS schdl_knd_cd,\n    schdul_bgnde AS bgng_ymd,\n    schdul_endde AS end_ymd,\n    schdul_ipcr_code AS schdl_imprt_cd,\n    reptit_se_code AS rept_se_cd,\n    schdul_dept_id AS dept_id,\n    schdul_charger_id AS schdl_pic_id,\n    schdul_place AS plc_nm,\n    atch_file_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nschdulinfo;"
+  },
+  {
+    "table_name": "std_survey_item",
+    "view_definition": " SELECT qustnr_iem_id AS artcl_id,\n    qustnr_qesitm_id AS qitem_id,\n    qustnr_id AS srvy_id,\n    iem_sn AS artcl_sn,\n    iem_cn AS artcl_cn,\n    etc_answer_at AS etc_ans_yn,\n    qustnr_tmplat_id AS srvy_tmplt_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnriem;"
+  },
+  {
+    "table_name": "std_survey_qitem",
+    "view_definition": " SELECT qustnr_qesitm_id AS qitem_id,\n    qustnr_id AS srvy_id,\n    qestn_sn AS qitem_sn,\n    qestn_cn AS qitem_cn,\n    qestn_ty_code AS qitem_type_cd,\n    mxmm_choise_co AS max_chc_cnt,\n    qustnr_tmplat_id AS srvy_tmplt_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnrqesitm;"
+  },
+  {
+    "table_name": "std_author_role_map",
+    "view_definition": " SELECT author_code AS authrt_cd,\n    role_code AS role_cd,\n    creat_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nauthorrolerelate;"
+  },
+  {
+    "table_name": "std_author_group_info",
+    "view_definition": " SELECT group_id,\n    group_nm,\n    group_dc AS group_expln,\n    group_creat_de AS group_creat_ymd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nauthorgroupinfo;"
+  },
+  {
+    "table_name": "std_role_hierarchy",
+    "view_definition": " SELECT parnts_role AS up_role_cd,\n    chldrn_role AS sub_role_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nroles_hierarchy;"
+  },
+  {
+    "table_name": "std_user_author_map",
+    "view_definition": " SELECT scrty_dtrmn_trget_id AS user_id,\n    author_code AS authrt_cd,\n    mber_ty_code AS user_type_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nemplyrscrtyestbs;"
+  },
+  {
+    "table_name": "std_bnr_info",
+    "view_definition": " SELECT (banner_id)::character varying(50) AS bnr_id,\n    (banner_nm)::character varying(256) AS bnr_nm,\n    (banner_image)::character varying(256) AS bnr_img,\n    (banner_image_file)::character varying(256) AS bnr_img_file,\n    banner_dc AS bnr_expln,\n    (link_url)::character varying(256) AS link_url,\n    (sort_ordr)::numeric(10,0) AS sort_ordr,\n    reflct_at AS rflt_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nbanner;"
+  },
+  {
+    "table_name": "std_login_policy",
+    "view_definition": " SELECT emplyr_id AS user_id,\n    ip_info AS ip_addr,\n    strt_tm,\n    end_tm,\n    dplct_perm_at AS dplct_perm_yn,\n    lmtt_at AS lmtt_yn,\n    otp_enabled_at AS otp_use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nloginpolicy;"
+  },
+  {
+    "table_name": "std_login_log",
+    "view_definition": " SELECT log_id,\n    conect_id AS conn_user_id,\n    conect_ip AS conn_ip_addr,\n    conect_mthd AS conn_mthd_cd,\n    error_occrrnc_at AS err_ocrn_yn,\n    error_code AS err_cd,\n    creat_dt,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nloginlog;"
+  },
+  {
+    "table_name": "std_survey_tmplt",
+    "view_definition": " SELECT qustnr_tmplat_id AS srvy_tmplt_id,\n    qustnr_tmplat_ty AS srvy_tmplt_type,\n    qustnr_tmplat_dc AS srvy_tmplt_expln,\n    qustnr_tmplat_path_nm AS srvy_tmplt_path_nm,\n    qustnr_tmplat_image_info AS srvy_tmplt_img_info,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnrtmplat;"
+  },
+  {
+    "table_name": "std_survey_respondent",
+    "view_definition": " SELECT qustnr_respond_id AS srvy_rspdnt_id,\n    respond_nm AS rspdnt_nm,\n    sexdstn_code AS gndr_cd,\n    brthdy AS brdt,\n    occp_ty_code AS ocpt_type_cd,\n    area_no AS rgn_telno,\n    middle_telno AS mid_telno,\n    end_telno,\n    qustnr_tmplat_id AS srvy_tmplt_id,\n    qestnr_id AS qitem_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnrrespondinfo;"
+  },
+  {
+    "table_name": "std_survey_result",
+    "view_definition": " SELECT qustnr_rspns_id AS srvy_ans_id,\n    qustnr_qesitm_id AS qitem_id,\n    qustnr_iem_id AS artcl_id,\n    respond_nm AS rspdnt_nm,\n    respond_answer_cn AS rspdnt_ans_cn,\n    etc_answer_cn AS etc_ans_cn,\n    qustnr_tmplat_id AS srvy_tmplt_id,\n    qestnr_id AS srvy_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nqustnrrspnsresult;"
+  },
+  {
+    "table_name": "std_popup_info",
+    "view_definition": " SELECT (popup_id)::character varying(50) AS popup_id,\n    (popup_sj_nm)::character varying(256) AS popup_ttl_nm,\n    (file_url)::character varying(256) AS file_url,\n    (popup_vrticl_size)::numeric(10,0) AS popup_vrtc_size,\n    (popup_vrticl_lc)::numeric(10,0) AS popup_vrtc_pstn,\n    (popup_width_size)::numeric(10,0) AS popup_wdth_size,\n    (popup_width_lc)::numeric(10,0) AS popup_wdth_pstn,\n    (ntce_bgnde)::character varying(10) AS pstg_bgng_ymd,\n    (ntce_endde)::character varying(10) AS pstg_end_ymd,\n    stopvew_setup_at AS stvw_set_yn,\n    ntce_at AS pstg_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM npopupmanage;"
+  },
+  {
+    "table_name": "std_club_info",
+    "view_definition": " SELECT clb_id AS club_id,\n    cmmnty_id AS cmnty_id,\n    clb_nm AS club_nm,\n    clb_intrcn AS club_intro_cn,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nclub;"
+  },
+  {
+    "table_name": "std_blog_info",
+    "view_definition": " SELECT blog_id,\n    blog_nm,\n    blog_intrcn AS blog_intro_cn,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nblog;"
+  },
+  {
+    "table_name": "std_onln_mnl_info",
+    "view_definition": " SELECT (online_mnl_id)::character varying(50) AS onln_mnl_id,\n    (online_mnl_nm)::character varying(256) AS onln_mnl_nm,\n    (online_mnl_se_code)::character(3) AS onln_mnl_se_cd,\n    online_mnl_dfn AS onln_mnl_dfn,\n    online_mnl_dc AS onln_mnl_expln,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nonlinemanual;"
+  },
+  {
+    "table_name": "std_author_info",
+    "view_definition": " SELECT (author_code)::character varying(50) AS authrt_cd,\n    (author_nm)::character varying(100) AS authrt_nm,\n    (author_dc)::character varying(1000) AS authrt_expln,\n    (author_creat_de)::character varying(10) AS authrt_creat_ymd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nauthorinfo;"
+  },
+  {
+    "table_name": "std_main_image",
+    "view_definition": " SELECT (image_id)::character varying(50) AS main_img_id,\n    (image_nm)::character varying(256) AS main_img_nm,\n    (image)::character varying(256) AS main_img_file_path,\n    (image_file)::character varying(256) AS main_img_file_nm,\n    image_dc AS main_img_expln,\n    reflct_at AS rflt_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nmainimage;"
+  },
+  {
+    "table_name": "std_noti_info",
+    "view_definition": " SELECT ntcn_no AS noti_no,\n    (ntcn_sj)::character varying(256) AS noti_ttl,\n    (ntcn_cn)::character varying(4000) AS noti_cn,\n    (ntcn_tm)::character varying(50) AS noti_time,\n    (bh_ntcn_intrvl)::character varying(50) AS bfhd_noti_intvl,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nntfcinfo;"
+  },
+  {
+    "table_name": "std_faq_info",
+    "view_definition": " SELECT (faq_id)::character varying(50) AS faq_id,\n    (qestn_sj)::character varying(256) AS qstn_ttl,\n    qestn_cn AS qstn_cn,\n    answer_cn AS ans_cn,\n    (rdcnt)::numeric(10,0) AS inq_cnt,\n    (atch_file_id)::character varying(50) AS atch_file_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nfaqinfo;"
+  },
+  {
+    "table_name": "std_sitemap_info",
+    "view_definition": " SELECT (mapng_creat_id)::character varying(50) AS mpng_crt_id,\n    (mapng_file_nm)::character varying(100) AS mpng_file_nm,\n    (mapng_file_path)::character varying(256) AS mpng_file_path,\n    (creat_person_id)::character varying(50) AS crtr_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nsitemap;"
+  },
+  {
+    "table_name": "std_stsfdg_info",
+    "view_definition": " SELECT stsfdg_no AS dgstfn_no,\n    ntt_id,\n    (bbs_id)::character varying(50) AS bbs_id,\n    (wrter_id)::character varying(50) AS wrtr_id,\n    (stsfdg_cn)::character varying(4000) AS dgstfn_cn,\n    stsfdg AS dgstfn_scr,\n    (use_at)::character(1) AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nstsfdg;"
+  },
+  {
+    "table_name": "std_role_info",
+    "view_definition": " SELECT role_code AS role_cd,\n    (role_nm)::character varying(100) AS role_nm,\n    (role_pttrn)::character varying(500) AS role_pattrn,\n    (role_dc)::character varying(1000) AS role_expln,\n    (role_ty)::character(10) AS role_type_cd,\n    (role_sort)::numeric(10,0) AS role_sort_ordr,\n    (role_creat_de)::character varying(10) AS role_creat_ymd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nroleinfo;"
+  },
+  {
+    "table_name": "std_user_info",
+    "view_definition": " SELECT (user_id)::character varying(50) AS user_id,\n    (user_nm)::character varying(100) AS user_nm,\n    (password)::character varying(256) AS pswd,\n    (email_adres)::character varying(100) AS eml_addr,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nuserinfo;"
+  },
+  {
+    "table_name": "std_leader_sttus",
+    "view_definition": " SELECT (leader_id)::character varying(50) AS leader_id,\n    (leader_sttus)::character(1) AS leader_stts_cd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nleadersttus;"
+  },
+  {
+    "table_name": "std_bbs_item",
+    "view_definition": " SELECT ntt_id AS pst_id,\n    ntt_no AS pst_no,\n    ntt_sj AS pst_ttl,\n    (ntt_cn)::text AS pst_cn,\n    (rdcnt)::numeric(10,0) AS inq_cnt,\n    (ntcr_id)::character varying(50) AS wrtr_id,\n    (ntcr_nm)::character varying(100) AS wrtr_nm,\n    (password)::character varying(256) AS pswd,\n    answer_at AS ans_yn,\n    parntsctt_no AS up_pst_no,\n    (ntce_bgnde)::character varying(10) AS ntc_bgng_ymd,\n    (ntce_endde)::character varying(10) AS ntc_end_ymd,\n    (like_co)::numeric(10,0) AS like_cnt,\n    (atch_file_id)::character varying(50) AS atch_file_id,\n    (bbs_id)::character varying(50) AS bbs_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nbbs;"
+  },
+  {
+    "table_name": "std_bbs_master",
+    "view_definition": " SELECT (bbs_id)::character varying(50) AS bbs_id,\n    (bbs_nm)::character varying(256) AS bbs_nm,\n    (bbs_intrcn)::character varying(4000) AS bbs_intro_cn,\n    (bbs_ty_code)::character(10) AS bbs_type_cd,\n    reply_posbl_at AS reply_psblty_yn,\n    file_atch_posbl_at AS file_atch_psblty_yn,\n    (atch_posbl_file_number)::numeric(10,0) AS atch_psblty_file_cnt,\n    use_at AS use_yn,\n    (tmplat_id)::character varying(50) AS tmplt_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nbbsmaster;"
+  },
+  {
+    "table_name": "std_bbs_comment",
+    "view_definition": " SELECT answer_no AS cmnt_no,\n    ntt_id AS pst_id,\n    (bbs_id)::character varying(50) AS bbs_id,\n    (wrter_id)::character varying(50) AS wrtr_id,\n    (wrter_nm)::character varying(100) AS wrtr_nm,\n    (answer)::character varying(1000) AS cmnt_cn,\n    use_at AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ncomment;"
+  },
+  {
+    "table_name": "std_onln_poll_manage",
+    "view_definition": " SELECT (poll_id)::character varying(50) AS poll_id,\n    (poll_nm)::character varying(256) AS poll_nm,\n    (poll_knd)::character varying(50) AS poll_knd_cd,\n    poll_bgnde AS poll_bgng_ymd,\n    poll_endde AS poll_end_ymd,\n    (poll_atmc_dsuse_ennc)::character(1) AS auto_dscd_yn,\n    (poll_dsuse_ennc)::character(1) AS dscd_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nonlinepollmanage;"
+  },
+  {
+    "table_name": "std_onln_poll_artcl",
+    "view_definition": " SELECT (poll_id)::character varying(50) AS poll_id,\n    (poll_iem_id)::character varying(50) AS poll_artcl_id,\n    (poll_iem_nm)::character varying(256) AS poll_artcl_nm,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nonlinepolliem;"
+  },
+  {
+    "table_name": "std_onln_poll_rslt",
+    "view_definition": " SELECT (poll_id)::character varying(50) AS poll_id,\n    (poll_iem_id)::character varying(50) AS poll_artcl_id,\n    (poll_result_id)::character varying(50) AS poll_rslt_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nonlinepollresult;"
+  },
+  {
+    "table_name": "std_note_info",
+    "view_definition": " SELECT (note_id)::character varying(50) AS note_id,\n    (note_sj)::character varying(256) AS note_ttl,\n    note_cn,\n    (atch_file_id)::character varying(50) AS atch_file_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nnote;"
+  },
+  {
+    "table_name": "std_note_rcptn",
+    "view_definition": " SELECT (note_recptn_id)::character varying(50) AS note_rcptn_id,\n    (note_id)::character varying(50) AS note_id,\n    (note_trnsmit_id)::character varying(50) AS note_trsm_id,\n    (rcver_id)::character varying(50) AS rcver_id,\n    (recptn_se)::character(1) AS rcptn_se_cd,\n    (open_yn)::character(1) AS open_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nnoterecptn;"
+  },
+  {
+    "table_name": "std_club_user_map",
+    "view_definition": " SELECT clb_id AS club_id,\n    cmmnty_id AS cmnty_id,\n    emplyr_id AS user_id,\n    oprtr_at AS optr_yn,\n    sbscrb_de AS join_ymd,\n    secsn_de AS whdwl_ymd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updt_pnttm AS last_mdfcn_dt,\n    last_updusr_id AS last_mdfr_id\n   FROM nclubuser;"
+  },
+  {
+    "table_name": "std_cmnty_user_map",
+    "view_definition": " SELECT cmmnty_id AS cmnty_id,\n    emplyr_id AS user_id,\n    mngr_at AS mngr_yn,\n    mber_sttus AS mbr_stts_cd,\n    sbscrb_de AS join_ymd,\n    secsn_de AS whdwl_ymd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updt_pnttm AS last_mdfcn_dt,\n    last_updusr_id AS last_mdfr_id\n   FROM ncmmntyuser;"
+  },
+  {
+    "table_name": "std_bbs_master_optn",
+    "view_definition": " SELECT bbs_id,\n    answer_at AS ans_yn,\n    stsfdg_at AS dgstfn_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nbbsmasteroptn;"
+  },
+  {
+    "table_name": "std_bbs_use_info",
+    "view_definition": " SELECT bbs_id,\n    trget_id AS trgt_id,\n    regist_se_code AS reg_se_cd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    NULL::character varying(20) AS frst_rgtr_id,\n    NULL::character varying(20) AS last_mdfr_id\n   FROM nbbsuse;"
+  },
+  {
+    "table_name": "std_bbs_stats",
+    "view_definition": " SELECT stats_id,\n    ntce_co AS ntc_cnt,\n    avrg_rdcnt AS avg_inq_cnt,\n    top_rdcnt AS max_inq_cnt,\n    mumm_rdcnt AS min_inq_cnt,\n    top_ntcr_id AS top_wrtr_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nbbsstats;"
+  },
+  {
+    "table_name": "std_bbs_scrap",
+    "view_definition": " SELECT scrap_id AS scrp_id,\n    scrap_nm AS scrp_nm,\n    scrap_dc AS scrp_expln,\n    scrap_url AS scrp_url,\n    ntt_id AS pst_id,\n    bbs_id,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM nscrap;"
+  },
+  {
+    "table_name": "std_blog_user_map",
+    "view_definition": " SELECT blog_id,\n    emplyr_id AS user_id,\n    mngr_at AS mngr_yn,\n    mber_sttus AS mbr_stts_cd,\n    sbscrb_de AS join_ymd,\n    secsn_de AS whdwl_ymd,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updt_pnttm AS last_mdfcn_dt,\n    last_updusr_id AS last_mdfr_id\n   FROM nbloguser;"
+  },
+  {
+    "table_name": "std_cmnty_info",
+    "view_definition": " SELECT cmmnty_id AS cmnty_id,\n    cmmnty_nm AS cmnty_nm,\n    cmmnty_intrcn AS cmnty_intro_cn,\n    use_at AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    frst_register_id AS frst_rgtr_id,\n    last_updusr_id AS last_mdfr_id\n   FROM ncmmnty;"
+  },
+  {
+    "table_name": "std_note_trsm",
+    "view_definition": " SELECT (note_trnsmit_id)::character varying(50) AS note_trsm_id,\n    (note_id)::character varying(50) AS note_id,\n    (trnsmiter_id)::character varying(50) AS trsmtr_id,\n    (delete_at)::character(1) AS del_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nnotetrnsmit;"
+  },
+  {
+    "table_name": "std_sms_info",
+    "view_definition": " SELECT (sms_id)::character varying(50) AS sms_id,\n    trnsmis_telno AS trsm_telno,\n    trnsmis_cn AS trsm_cn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nsms;"
+  },
+  {
+    "table_name": "std_sms_rcptn",
+    "view_definition": " SELECT (sms_id)::character varying(50) AS sms_id,\n    recptn_telno AS rcptn_telno,\n    (result_code)::character(4) AS rslt_cd,\n    result_mssage AS rslt_msg_cn\n   FROM nsmsrecptn;"
+  },
+  {
+    "table_name": "std_rpt_info",
+    "view_definition": " SELECT (reprt_id)::character varying(50) AS rpt_id,\n    (reprt_se)::character(3) AS rpt_se_cd,\n    (reprt_sj)::character varying(256) AS rpt_ttl,\n    reprt_cn AS rpt_cn,\n    (reprt_de)::character varying(10) AS rpt_ymd,\n    (wrter_id)::character varying(50) AS wrtr_id,\n    (reprt_sttus)::character varying(50) AS rpt_stts_cd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nwikmnthngreprt;"
+  },
+  {
+    "table_name": "std_memo_rpt_info",
+    "view_definition": " SELECT (reprt_id)::character varying(50) AS memo_rpt_id,\n    (reprt_sj)::character varying(256) AS memo_rpt_ttl,\n    report_cn AS memo_rpt_cn,\n    report_de AS memo_rpt_ymd,\n    (wrter_id)::character varying(50) AS wrtr_id,\n    (reportr_id)::character varying(50) AS rptr_id,\n    (reportr_inqire_dt)::character varying(50) AS rptr_inq_dt,\n    (drct_matter)::character varying(1000) AS drct_matter_cn,\n    (drct_matter_regist_dt)::character varying(50) AS drct_matter_reg_dt,\n    (atch_file_id)::character varying(50) AS atch_file_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nmemoreprt;"
+  },
+  {
+    "table_name": "std_memo_todo_info",
+    "view_definition": " SELECT (todo_id)::character varying(50) AS todo_id,\n    (todo_sj)::character varying(256) AS todo_ttl,\n    (todo_cn)::character varying(1000) AS todo_cn,\n    (todo_begin_time)::character varying(50) AS todo_bgng_tm,\n    (todo_end_time)::character varying(50) AS todo_end_tm,\n    (wrter_id)::character varying(50) AS wrtr_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nmemotodo;"
+  },
+  {
+    "table_name": "std_diary_info",
+    "view_definition": " SELECT (diary_id)::character varying(50) AS diary_id,\n    (diary_nm)::character varying(256) AS diary_nm,\n    diary_progrsrt AS diary_progrs_rt,\n    drct_matter AS drct_matter_cn,\n    partclr_matter AS prtclr_matter_cn,\n    (schdul_id)::character varying(50) AS schdl_id,\n    (atch_file_id)::character varying(50) AS atch_file_id,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ndiaryinfo;"
+  },
+  {
+    "table_name": "std_ifml_atrz_info",
+    "view_definition": " SELECT (infrml_sanctn_id)::character varying(50) AS ifml_atrz_id,\n    (job_se_code)::character varying(50) AS job_se_cd,\n    (applcnt_id)::character varying(50) AS aplcnt_id,\n    reqst_de AS reqst_ymd,\n    (sanctner_id)::character varying(50) AS aprvr_id,\n    (sanctn_dt)::timestamp without time zone AS atrz_dt,\n    return_resn AS rjct_rsn_cn,\n    (confm_at)::character(1) AS aprv_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ninfrmlsanctn;"
+  },
+  {
+    "table_name": "std_web_log",
+    "view_definition": " SELECT (requst_id)::character varying(50) AS req_id,\n    (rqester_id)::character varying(50) AS rqstr_id,\n    (rqester_ip)::character varying(50) AS rqstr_ip_addr,\n    (url)::character varying(256) AS url,\n    (occrrnc_de)::timestamp without time zone AS ocur_dt,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nweblog;"
+  },
+  {
+    "table_name": "std_user_log",
+    "view_definition": " SELECT (rqester_id)::character varying(50) AS rqstr_id,\n    (svc_nm)::character varying(256) AS svc_nm,\n    (method_nm)::character varying(256) AS mthd_nm,\n    creat_co AS crt_cnt,\n    rdcnt AS inq_cnt,\n    updt_co AS mdfcn_cnt,\n    delete_co AS del_cnt,\n    outpt_co AS outpt_cnt,\n    error_co AS err_cnt,\n    (occrrnc_de)::character varying(10) AS ocur_ymd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nuserlog;"
+  },
+  {
+    "table_name": "std_privacy_log",
+    "view_definition": " SELECT (requst_id)::character varying(50) AS req_id,\n    (rqester_id)::character varying(50) AS rqstr_id,\n    (rqester_ip)::character varying(50) AS rqstr_ip_addr,\n    (srvc_nm)::character varying(256) AS svc_nm,\n    (inqire_info)::character varying(256) AS inq_info_cn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nprivacylog;"
+  },
+  {
+    "table_name": "std_http_mntrng_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (sys_id)::character varying(50) AS sys_id,\n    (site_url)::character varying(256) AS site_url,\n    websvc_knd AS web_svc_knd_cd,\n    (http_sttus_code)::character varying(10) AS http_stts_cd,\n    (log_info)::character varying(4000) AS log_cn,\n    (mngr_nm)::character varying(256) AS mngr_nm,\n    (mngr_email_adres)::character varying(256) AS mngr_eml_addr,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM hhttpmonloginfo;"
+  },
+  {
+    "table_name": "std_proc_mntrng_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (procs_id)::character varying(50) AS proc_id,\n    (procs_nm)::character varying(256) AS proc_nm,\n    (procs_sttus)::character varying(10) AS proc_stts_cd,\n    (log_info)::character varying(4000) AS log_cn,\n    (mngr_nm)::character varying(256) AS mngr_nm,\n    (mngr_email_adres)::character varying(256) AS mngr_eml_addr,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nprocessmonloginfo;"
+  },
+  {
+    "table_name": "std_file_sys_mntrng_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (file_sys_id)::character varying(50) AS file_sys_id,\n    (file_sys_nm)::character varying(256) AS file_sys_nm,\n    (file_sys_manage_nm)::character varying(256) AS file_sys_mng_nm,\n    file_sys_size AS file_sys_sz,\n    file_sys_thrhld AS file_sys_thrh_sz,\n    file_sys_usgqty AS file_sys_usg_qty,\n    (mntrng_sttus)::character varying(10) AS mntr_stts_cd,\n    (log_info)::character varying(4000) AS log_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nfilesysmntrngloginfo;"
+  },
+  {
+    "table_name": "std_trrc_mntrng_log",
+    "view_definition": " SELECT (cntc_id)::character varying(50) AS cntc_id,\n    (test_class_nm)::character varying(256) AS test_class_nm,\n    (mngr_nm)::character varying(256) AS mngr_nm,\n    (mngr_email_adres)::character varying(256) AS mngr_eml_addr,\n    (mntrng_sttus)::character varying(10) AS mntr_stts_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ntrsmrcvmntrng;"
+  },
+  {
+    "table_name": "std_server_info",
+    "view_definition": " SELECT (server_id)::character varying(50) AS server_id,\n    (server_nm)::character varying(256) AS server_nm,\n    (server_knd)::character varying(10) AS server_knd_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nserverinfo;"
+  },
+  {
+    "table_name": "std_server_eqpmnt_info",
+    "view_definition": " SELECT (server_eqpmn_id)::character varying(50) AS server_eqpmnt_id,\n    (server_eqpmn_nm)::character varying(256) AS server_eqpmnt_nm,\n    (server_eqpmn_ip)::character varying(50) AS server_eqpmnt_ip_addr,\n    (server_eqpmn_mngr)::character varying(256) AS server_eqpmnt_mngr_nm,\n    (mngr_email_adres)::character varying(256) AS mngr_eml_addr,\n    (opersysm_info)::character varying(1000) AS os_info_cn,\n    (cpu_info)::character varying(1000) AS cpu_info_cn,\n    (mory_info)::character varying(1000) AS mmry_info_cn,\n    (hddisk)::character varying(1000) AS hdd_info_cn,\n    (etc_info)::character varying(1000) AS etc_info_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nservereqpmninfo;"
+  },
+  {
+    "table_name": "std_server_resrc_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (server_id)::character varying(50) AS server_id,\n    (server_eqpmn_id)::character varying(50) AS server_eqpmnt_id,\n    cpu_use_rt,\n    mory_use_rt AS mmry_use_rt,\n    (svc_sttus)::character varying(10) AS svc_stts_cd,\n    (log_info)::character varying(4000) AS log_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nserverresrceloginfo;"
+  },
+  {
+    "table_name": "std_ntwrk_info",
+    "view_definition": " SELECT (ntwrk_id)::character varying(50) AS ntwrk_id,\n    (ntwrk_ip)::character varying(50) AS ntwrk_ip_addr,\n    (gtwy)::character varying(50) AS gtwy_addr,\n    (subnet)::character varying(50) AS sbnet_addr,\n    (domn_nm_server)::character varying(50) AS dns_addr,\n    (manage_iem)::character varying(256) AS mng_item_cn,\n    (user_nm)::character varying(256) AS user_nm,\n    (use_at)::character varying(10) AS use_yn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nntwrkinfo;"
+  },
+  {
+    "table_name": "std_orgnzt_info",
+    "view_definition": " SELECT (orgnzt_id)::character varying(50) AS orgnzt_id,\n    (orgnzt_nm)::character varying(256) AS orgnzt_nm,\n    (orgnzt_dc)::character varying(1000) AS orgnzt_expln,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM norgnztinfo;"
+  },
+  {
+    "table_name": "std_sys_log",
+    "view_definition": " SELECT (requst_id)::character varying(50) AS req_id,\n    (rqester_id)::character varying(50) AS rqstr_id,\n    (rqester_ip)::character varying(50) AS rqstr_ip_addr,\n    (svc_nm)::character varying(256) AS svc_nm,\n    (method_nm)::character varying(256) AS mthd_nm,\n    (process_se_code)::character varying(10) AS proc_se_cd,\n    (process_time)::character varying(50) AS proc_tm,\n    (rspns_code)::character varying(10) AS rspns_cd,\n    (occrrnc_de)::character varying(10) AS ocur_ymd,\n    (error_se)::character varying(10) AS err_se_cd,\n    (error_code)::character varying(50) AS err_cd,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nsyslog;"
+  },
+  {
+    "table_name": "std_trrc_log",
+    "view_definition": " SELECT (requst_id)::character varying(50) AS req_id,\n    (rqester_id)::character varying(50) AS rqstr_id,\n    (cntc_id)::character varying(50) AS cntc_id,\n    (trsmrcv_se_code)::character varying(10) AS trrc_se_cd,\n    (result_code)::character varying(10) AS rslt_cd,\n    result_mssage AS rslt_msg_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ntrsmrcvlog;"
+  },
+  {
+    "table_name": "std_aprv_hstry",
+    "view_definition": " SELECT confm_no AS aprv_no,\n    (confm_rqester_id)::character varying(50) AS aprv_rqstr_id,\n    (confmer_id)::character varying(50) AS aprvr_id,\n    (confm_de)::character varying(10) AS aprv_ymd,\n    (confm_ty_code)::character varying(10) AS aprv_type_cd,\n    (confm_sttus_code)::character varying(10) AS aprv_stts_cd,\n    (opert_ty_code)::character varying(10) AS opert_type_cd,\n    (opert_id)::character varying(50) AS opert_id,\n    (trget_job_ty_code)::character varying(10) AS trgt_job_type_cd,\n    (trget_job_id)::character varying(50) AS trgt_job_id,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM hconfmhistory;"
+  },
+  {
+    "table_name": "std_db_mntrng_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (data_sourc_nm)::character varying(256) AS ds_nm,\n    (server_nm)::character varying(256) AS server_nm,\n    (dbms_knd)::character varying(10) AS dbms_knd_cd,\n    (ceck_sql)::character varying(1000) AS chck_sql_cn,\n    (mngr_nm)::character varying(256) AS mngr_nm,\n    (mngr_email_adres)::character varying(256) AS mngr_eml_addr,\n    (mntrng_sttus)::character varying(10) AS mntr_stts_cd,\n    (log_info)::character varying(4000) AS log_cn,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM hdbmntrngloginfo;"
+  },
+  {
+    "table_name": "std_proxy_info",
+    "view_definition": " SELECT (proxy_id)::character varying(50) AS proxy_id,\n    (proxy_nm)::character varying(256) AS proxy_nm,\n    (proxy_ip)::character varying(50) AS proxy_ip_addr,\n    proxy_port AS proxy_port_no,\n    (trget_svc_nm)::character varying(256) AS trgt_svc_nm,\n    (svc_dc)::character varying(1000) AS svc_expln,\n    (svc_ip)::character varying(50) AS svc_ip_addr,\n    svc_port AS svc_port_no,\n    (svc_sttus)::character varying(10) AS svc_stts_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nproxyinfo;"
+  },
+  {
+    "table_name": "std_proxy_log",
+    "view_definition": " SELECT (log_id)::character varying(50) AS log_id,\n    (proxy_id)::character varying(50) AS proxy_id,\n    (clnt_ip)::character varying(50) AS clnt_ip_addr,\n    clnt_port AS clnt_port_no,\n    (conect_time)::character varying(50) AS conn_tm,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nproxyloginfo;"
+  },
+  {
+    "table_name": "std_fxtrs_manage",
+    "view_definition": " SELECT (fxtrs_code)::character varying(50) AS fxtrs_cd,\n    (fxtrs_nm)::character varying(256) AS fxtrs_nm,\n    (makr_nm)::character varying(256) AS makr_nm,\n    price AS amt,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nfxtrsmanage;"
+  },
+  {
+    "table_name": "std_mtg_place_fxtrs",
+    "view_definition": " SELECT (mtgrum_id)::character varying(50) AS mtg_rm_id,\n    (fxtrs_code)::character varying(50) AS fxtrs_cd,\n    (qy)::integer AS qty,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nmtgplacefxtrs;"
+  },
+  {
+    "table_name": "std_bkup_schdl",
+    "view_definition": " SELECT (backup_opert_id)::character varying(50) AS bkup_opert_id,\n    (execut_schdul_dfk_se)::character varying(10) AS exec_schdl_dw_se_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM nbackupschduldfk;"
+  },
+  {
+    "table_name": "std_trobl_info",
+    "view_definition": " SELECT (trobl_id)::character varying(50) AS dsblty_id,\n    (trobl_nm)::character varying(256) AS dsblty_nm,\n    (trobl_knd)::character varying(10) AS dsblty_knd_cd,\n    (trobl_dc)::character varying(1000) AS dsblty_expln,\n    (trobl_occrrnc_time)::character varying(50) AS dsblty_ocur_tm,\n    (trobl_rqester_nm)::character varying(256) AS dsblty_rqstr_nm,\n    (trobl_requst_time)::character varying(50) AS dsblty_req_tm,\n    (trobl_process_result)::character varying(4000) AS dsblty_proc_rslt_cn,\n    (trobl_opetr_nm)::character varying(256) AS dsblty_opert_nm,\n    (trobl_process_time)::character varying(50) AS dsblty_proc_tm,\n    (process_sttus)::character varying(10) AS proc_stts_cd,\n    frst_regist_pnttm AS frst_reg_dt,\n    last_updt_pnttm AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ntroblinfo;"
+  },
+  {
+    "table_name": "std_com_clsf_cd",
+    "view_definition": " SELECT (cl_code)::character varying(50) AS clsf_cd,\n    (cl_code_nm)::character varying(256) AS clsf_cd_nm,\n    (cl_code_dc)::character varying(1000) AS clsf_cd_expln,\n    (use_at)::character varying(10) AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ccmmnclcode;"
+  },
+  {
+    "table_name": "std_com_cd",
+    "view_definition": " SELECT (code_id)::character varying(50) AS com_cd_id,\n    (code_id_nm)::character varying(256) AS com_cd_nm,\n    (code_id_dc)::character varying(1000) AS com_cd_expln,\n    (cl_code)::character varying(50) AS clsf_cd,\n    (use_at)::character varying(10) AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ccmmncode;"
+  },
+  {
+    "table_name": "std_com_dtl_cd",
+    "view_definition": " SELECT (code)::character varying(50) AS dtl_cd,\n    (code_nm)::character varying(256) AS dtl_cd_nm,\n    (code_dc)::character varying(1000) AS dtl_cd_expln,\n    (code_id)::character varying(50) AS com_cd_id,\n    (use_at)::character varying(10) AS use_yn,\n    (frst_regist_pnttm)::timestamp without time zone AS frst_reg_dt,\n    (last_updt_pnttm)::timestamp without time zone AS last_mdfcn_dt,\n    (frst_register_id)::character varying(50) AS frst_rgtr_id,\n    (last_updusr_id)::character varying(50) AS last_mdfr_id\n   FROM ccmmndetailcode;"
+  }
+]
