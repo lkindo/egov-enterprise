@@ -165,7 +165,16 @@ public class LoginPolicyManageService {
             LocalTime start = LocalTime.parse(policy.getStartTime(), DateTimeFormatter.ofPattern("HH:mm"));
             LocalTime end = LocalTime.parse(policy.getEndTime(), DateTimeFormatter.ofPattern("HH:mm"));
 
-            if (now.isBefore(start) || now.isAfter(end)) {
+            boolean isAllowed;
+            if (start.isBefore(end)) {
+                // 일반적인 시간 범위 (예: 09:00 ~ 18:00)
+                isAllowed = !now.isBefore(start) && !now.isAfter(end);
+            } else {
+                // 자정을 넘기는 시간 범위 (예: 22:00 ~ 06:00)
+                isAllowed = !now.isBefore(start) || !now.isAfter(end);
+            }
+
+            if (!isAllowed) {
                 log.warn(">>> [Login Policy] Time Restriction. Allowed: {} - {}, Current: {}", policy.getStartTime(), policy.getEndTime(), now);
                 throw new BusinessException(ErrorCode.LOGIN_POLICY_TIME_RESTRICTED);
             }
