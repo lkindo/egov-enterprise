@@ -45,6 +45,28 @@ public class StatisticsApiController {
         return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
     }
 
+    @Operation(summary = "게시물 통계 조회")
+    @GetMapping("/bbs")
+    public ResponseEntity<ApiResponse<List<StatsDto>>> getBbsStats(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) throws Exception {
+
+        String[] dates = setDefaultDates(fromDate, toDate);
+        List<Object[]> stats = reportStatsService.getBbsStatsByDate(dates[0], dates[1]);
+        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
+    }
+
+    @Operation(summary = "사용자 통계 조회")
+    @GetMapping("/user")
+    public ResponseEntity<ApiResponse<List<StatsDto>>> getUserStats(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) throws Exception {
+
+        String[] dates = setDefaultDates(fromDate, toDate);
+        List<Object[]> stats = reportStatsService.getUserStatsByDate(dates[0], dates[1]);
+        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
+    }
+
 
     private List<StatsDto> convertToStatsDto(List<Object[]> stats) {
         return stats.stream()

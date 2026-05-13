@@ -13,7 +13,9 @@
 - [x] Tier 18 (Antigravity) - COMPLETED
 - [x] Tier 13 (Antigravity) - COMPLETED
 - [x] Tier 14 (Antigravity) - COMPLETED
-- [ ] Tier 15 ~ Tier 17 - QUEUED
+- [x] Tier 15 (Antigravity) - COMPLETED
+- [x] Tier 16 (Antigravity) - IN_PROGRESS (Direct Execution)
+- [x] Tier 17 (Antigravity) - COMPLETED (8 Passed)
 
 ## Results Table
 | Tier | Status | Focus | Notes |

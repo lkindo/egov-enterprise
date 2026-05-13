@@ -23,6 +23,7 @@ public class ScrapService implements EgovScrapService {
     private final ScrapRepository scrapRepository;
 
     @Override
+    public Page<ScrapDto> getMyScrapList(String userId, Pageable pageable) {
         return scrapRepository
                 .findByCreatedByAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(ScrapDto::from);

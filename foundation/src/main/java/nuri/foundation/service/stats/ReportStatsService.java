@@ -22,9 +22,22 @@ public class ReportStatsService {
 
     private final ReprtStatsRepository reprtStatsRepository;
     private final DtaUseStatsRepository dtaUseStatsRepository;
+    private final nuri.foundation.domain.log.UserLogRepository userLogRepository;
 
     @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
     private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
+
+    // ========== 사용자 통계 ==========
+
+    /**
+     * 날짜별 사용자 활동 통계
+     */
+    public List<Object[]> getUserStatsByDate(String fromDate, String toDate) {
+        String from = fromDate.replace("-", "");
+        String to = toDate.replace("-", "");
+        // TB_USER_LOG에서 날짜별로 집계
+        return userLogRepository.countByDate(from, to);
+    }
 
     // ========== 보고서 통계 ==========
 
@@ -128,5 +141,14 @@ public class ReportStatsService {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
         return dtaUseStatsRepository.countByBbsId(from, to);
+    }
+
+    /**
+     * 날짜별 게시판 활동 통계
+     */
+    public List<Object[]> getBbsStatsByDate(String fromDate, String toDate) {
+        String from = fromDate + " 00:00:00";
+        String to = toDate + " 23:59:59";
+        return dtaUseStatsRepository.countByDate(from, to);
     }
 }
