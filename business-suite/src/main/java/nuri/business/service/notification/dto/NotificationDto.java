@@ -1,18 +1,22 @@
 package nuri.business.service.notification.dto;
 
 import nuri.business.domain.notification.Notification;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Getter
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NotificationDto {
     private String ntfcNo;
     private String ntfcSj;
     private String ntfcCn;
-    private String ntfcTime;
+    private LocalDateTime ntfcTime;
     private String bhNtfcIntrvl;
     private String receiverId;
     private String isRead;
@@ -35,6 +39,7 @@ public class NotificationDto {
                 .receiverId(entity.getReceiverId())
                 .isRead(entity.getIsRead())
                 .uniqId(entity.getLinkUrl())
+                .ntfcTime(entity.getNtfcTime())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

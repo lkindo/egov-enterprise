@@ -5,6 +5,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.foundation.domain.common.BaseEntity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import java.time.LocalDateTime;
 
 /**
  * 사용자 알림 엔티티
@@ -40,8 +41,8 @@ public class Notification extends BaseEntity {
     @Column(name = "LINK_URL")
     private String linkUrl;
 
-    @Column(name = "NTCN_DT", length = 20)
-    private String ntfcTime;
+    @Column(name = "NTCN_DT")
+    private LocalDateTime ntfcTime;
 
     @Column(name = "NTCN_IVL_VAL", length = 20)
     private String bhNtfcIntrvl;
@@ -50,7 +51,7 @@ public class Notification extends BaseEntity {
         this.isRead = "Y";
     }
 
-    public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
+    public void update(String ntfcSj, String ntfcCn, LocalDateTime ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
         this.ntfcTime = ntfcTime;

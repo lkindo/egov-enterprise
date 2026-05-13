@@ -11,9 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import nuri.foundation.security.annotation.LoginUser;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Notification", description = "알림 관리 API")
@@ -36,7 +36,7 @@ public class NotificationApiController {
     @Operation(summary = "미열람 알림 수 조회", description = "읽지 않은 알림의 총 개수를 조회합니다.")
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @LoginUser CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getUnreadCount(userDetails.getUsername())));
     }
 
@@ -58,7 +58,7 @@ public class NotificationApiController {
     @Operation(summary = "알림 등록 (관리자용)", description = "시스템 공지 알림을 직접 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createNotification(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             @RequestBody NotificationDto request) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.createNotification(userDetails.getUsername(), request)));
     }
