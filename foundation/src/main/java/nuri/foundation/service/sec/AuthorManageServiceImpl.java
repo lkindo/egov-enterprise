@@ -89,7 +89,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .rolePttrn(dto.getRolePtn())
                 .roleDc(dto.getRoleDc())
                 .roleTy(dto.getRoleTyp())
-                .roleSort(dto.getRoleSort())
+                .roleSort(dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null)
                 .build();
         roleInfoRepository.save(Objects.requireNonNull(role));
     }
@@ -102,7 +102,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         role.update(Objects.requireNonNull(dto.getRoleNm()), dto.getRolePtn(), dto.getRoleDc(), dto.getRoleTyp(),
-                dto.getRoleSort());
+                dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null);
     }
 
     @Override
@@ -174,8 +174,8 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .rolePtn(role.getRolePttrn())
                 .roleDc(role.getRoleDc())
                 .roleTyp(role.getRoleTy())
-                .roleSort(role.getRoleSort())
-                .roleCreatDe(role.getCreatDt())
+                .roleSort(role.getRoleSort() != null ? role.getRoleSort().toString() : null)
+                .roleCreatDe(role.getCreatDt() != null ? role.getCreatDt().toString() : null)
                 .build();
     }
 }

@@ -253,10 +253,12 @@ export class SurveyPage {
             } else {
                 await this.searchInput.press('Enter');
             }
+            
+            await this.page.waitForLoadState('networkidle').catch(() => {});
             await this.page.waitForTimeout(3000);
             
             if (expectedText) {
-                const expectedLoc = this.page.getByText(new RegExp(expectedText, 'i')).first();
+                const expectedLoc = this.page.getByText(expectedText).first();
                 if (await expectedLoc.isVisible({ timeout: 5000 }).catch(() => false)) {
                     console.log(`>>> [Survey] Found expected text: ${expectedText}`);
                     return;

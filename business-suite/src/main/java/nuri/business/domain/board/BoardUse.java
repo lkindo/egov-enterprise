@@ -35,7 +35,7 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     @Column(name = "REGIST_SE_CODE", length = 6)
     private String registSeCode;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     public BoardUse(String bbsId, String trgetId, String registSeCode, String useAt) {

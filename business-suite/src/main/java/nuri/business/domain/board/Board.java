@@ -18,7 +18,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "TB_BBS_ITEM")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@SQLRestriction("use_at = 'Y'")
+@SQLRestriction("use_yn = 'Y'")
 @SuperBuilder
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -35,13 +35,13 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "REPLY_SN")
     private Long nttNo;
 
-    @Column(name = "NTT_SJ", length = 2000)
+    @Column(name = "PST_TTL", length = 2000)
     private String nttSj;
 
-    @Column(name = "NTT_CN")
+    @Column(name = "PST_CN")
     private String nttCn;
 
-    @Column(name = "ANSWER_AT", length = 1)
+    @Column(name = "ANSWER_YN", length = 1)
     private String replyAt;
 
     @Column(name = "UP_PST_ID")
@@ -53,14 +53,14 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "SORT_ORDR")
     private Long sortOrdr;
 
-    @Column(name = "SJ_BOLD_AT", length = 1)
+    @Column(name = "SJ_BOLD_YN", length = 1)
     private String sjBoldAt;
 
-    @Column(name = "RDCNT")
+    @Column(name = "INQ_CNT")
     @Builder.Default
     private Integer inqireCo = 0;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     @Builder.Default
     private String useAt = "Y";
 
@@ -82,10 +82,10 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "SECRET_AT", length = 1)
+    @Column(name = "SECRET_YN", length = 1)
     private String secretAt;
 
-    @Column(name = "NOTICE_AT", length = 1)
+    @Column(name = "NOTICE_YN", length = 1)
     private String noticeAt;
 
     @Column(name = "BLOG_ID", length = 20)

@@ -2,6 +2,7 @@ package nuri.foundation.domain.operation;
 
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
+import java.time.LocalDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
@@ -34,11 +35,11 @@ public class EventInfo extends BaseEntity {
     @Column(name = "EVENT_CN", length = 2500)
     private String eventCn;
 
-    @Column(name = "EVENT_SVC_BGNDE", length = 20)
-    private String eventSvcBgnde;
+    @Column(name = "EVENT_SVC_BGNDE")
+    private LocalDate eventSvcBgnde;
 
-    @Column(name = "EVENT_SVC_ENDDE", length = 20)
-    private String eventSvcEndde;
+    @Column(name = "EVENT_SVC_ENDDE")
+    private LocalDate eventSvcEndde;
 
     @Column(name = "EVNT_SRVC_USE_PRSNL_CNT")
     private Long svcUseNmprCo;
@@ -55,6 +56,6 @@ public class EventInfo extends BaseEntity {
     @Column(name = "EVENT_CONFM_YN", length = 1)
     private String eventConfmAt;
 
-    @Column(name = "EVENT_CONFM_DE", length = 20)
-    private String eventConfmDe;
+    @Column(name = "EVENT_CONFM_DE")
+    private LocalDate eventConfmDe;
 }

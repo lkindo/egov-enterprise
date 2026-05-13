@@ -10,25 +10,40 @@ async function authenticate(request: any, id: string, password: string, authFile
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/';
     const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
 
-    let token: string;
-    let refreshToken: string;
-    let role: string;
+    let token: string = '';
+    let refreshToken: string = '';
+    let role: string = '';
+    let success = false;
+    let lastErr: any;
 
-    try {
-        const response = await request.post(url, {
-            data: { userId: id, password: password }
-        });
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await request.post(url, {
+                data: { userId: id, password: password },
+                timeout: 5000
+            });
 
-        if (response.ok()) {
-            const resBody = await response.json();
-            token = resBody.data.accessToken;
-            refreshToken = resBody.data.refreshToken;
-            role = resBody.data.role;
-        } else {
-            throw new Error(`[AUTH SETUP] Backend login failed for ${id} (status: ${response.status()}).`);
+            if (response.ok()) {
+                const resBody = await response.json();
+                token = resBody.data.accessToken;
+                refreshToken = resBody.data.refreshToken;
+                role = resBody.data.role;
+                success = true;
+                break;
+            } else {
+                lastErr = new Error(`status: ${response.status()}`);
+            }
+        } catch (err: any) {
+            lastErr = err;
         }
-    } catch (err: any) {
-        throw new Error(`[AUTH SETUP] Backend unreachable for ${id} (${err.message}).`);
+        
+        if (!success && attempt < 3) {
+            await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
+        }
+    }
+
+    if (!success) {
+        throw new Error(`[AUTH SETUP] Backend unreachable for ${id} after 3 attempts (${lastErr?.message || 'unknown'}).`);
     }
 
     const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';

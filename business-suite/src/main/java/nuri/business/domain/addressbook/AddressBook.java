@@ -21,10 +21,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @AttributeOverrides({
-    @AttributeOverride(name = "createdBy", column = @Column(name = "frst_register_id", updatable = false, length = 20)),
-    @AttributeOverride(name = "lastModifiedBy", column = @Column(name = "last_updusr_id", length = 20)),
-    @AttributeOverride(name = "createdDate", column = @Column(name = "frst_regist_pnttm", updatable = false)),
-    @AttributeOverride(name = "lastModifiedDate", column = @Column(name = "last_updt_pnttm"))
+    @AttributeOverride(name = "createdBy", column = @Column(name = "frst_rgtr_id", updatable = false, length = 20)),
+    @AttributeOverride(name = "lastModifiedBy", column = @Column(name = "last_mdfr_id", length = 20)),
+    @AttributeOverride(name = "createdDate", column = @Column(name = "creat_dt", updatable = false)),
+    @AttributeOverride(name = "lastModifiedDate", column = @Column(name = "mdfcn_dt"))
 })
 public class AddressBook extends BaseEntity {
 
@@ -41,7 +41,7 @@ public class AddressBook extends BaseEntity {
     @Column(name = "trget_orgnzt_id", length = 20)
     private String trgetOrgnztId;
 
-    @Column(name = "use_at", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useAt;
 
     @Column(name = "wrter_id", length = 20)

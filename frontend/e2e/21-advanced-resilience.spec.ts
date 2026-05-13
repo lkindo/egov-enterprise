@@ -99,7 +99,9 @@ test.describe('Tier 21: Advanced Resilience', () => {
         await expect(resultAlert.first()).toBeVisible({ timeout: 30000 });
         
         const alertText = await resultAlert.first().innerText();
-        console.log(`>>> Submission Result: ${alertText}`);
+        const alertHtml = await resultAlert.first().innerHTML();
+        console.log(`>>> Submission Result Text: '${alertText}'`);
+        console.log(`>>> Submission Result HTML: '${alertHtml}'`);
         
         if (alertText.includes('성공')) {
             console.log('>>> Huge payload handled successfully by backend.');

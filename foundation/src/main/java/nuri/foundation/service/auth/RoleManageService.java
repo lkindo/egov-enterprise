@@ -70,7 +70,7 @@ public class RoleManageService {
                 .rolePttrn(dto.getRolePttrn())
                 .roleDc(dto.getRoleDc())
                 .roleTy(dto.getRoleTy())
-                .roleSort(dto.getRoleSort())
+                .roleSort(dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null)
                 .build();
         roleInfoRepository.save(Objects.requireNonNull(entity));
     }
@@ -81,7 +81,8 @@ public class RoleManageService {
     @Transactional
     public void updateRole(RoleManageDto dto) {
         roleInfoRepository.findById(Objects.requireNonNull(dto.getRoleCode())).ifPresent(entity -> {
-            entity.update(dto.getRoleNm(), dto.getRolePttrn(), dto.getRoleDc(), dto.getRoleTy(), dto.getRoleSort());
+            entity.update(dto.getRoleNm(), dto.getRolePttrn(), dto.getRoleDc(), dto.getRoleTy(), 
+                dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null);
         });
     }
 
@@ -109,8 +110,8 @@ public class RoleManageService {
                 .rolePttrn(entity.getRolePttrn())
                 .roleDc(entity.getRoleDc())
                 .roleTy(entity.getRoleTy())
-                .roleSort(entity.getRoleSort())
-                .creatDt(entity.getCreatDt())
+                .roleSort(entity.getRoleSort() != null ? entity.getRoleSort().toString() : null)
+                .creatDt(entity.getCreatDt() != null ? entity.getCreatDt().toString() : null)
                 .build();
     }
 }

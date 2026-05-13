@@ -1,13 +1,13 @@
 package nuri.foundation.domain.code;
 
+import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -17,7 +17,8 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "TB_COM_CD")
-public class CommonCodeGroup implements Serializable {
+@SuperBuilder
+public class CommonCodeGroup extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -38,19 +39,6 @@ public class CommonCodeGroup implements Serializable {
     @Column(name = "USE_YN", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime createdDate;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastModifiedDate;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Builder
     public CommonCodeGroup(@NonNull String codeId, @NonNull String codeIdNm, String codeIdDc, String clCode,
             String useAt,
             String frstRegisterId) {
@@ -59,22 +47,18 @@ public class CommonCodeGroup implements Serializable {
         this.codeIdDc = codeIdDc;
         this.clCode = clCode;
         this.useAt = useAt == null ? "Y" : useAt;
-        this.frstRegisterId = frstRegisterId;
-        this.lastUpdusrId = frstRegisterId;
-        this.createdDate = LocalDateTime.now();
-        this.lastModifiedDate = LocalDateTime.now();
+        this.createdBy = frstRegisterId;
+        this.lastModifiedBy = frstRegisterId;
     }
 
     public void update(@NonNull String codeIdNm, String codeIdDc, String useAt, String lastUpdusrId) {
         this.codeIdNm = Objects.requireNonNull(codeIdNm);
         this.codeIdDc = codeIdDc;
         this.useAt = useAt;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastModifiedDate = LocalDateTime.now();
+        this.lastModifiedBy = lastUpdusrId;
     }
 
     public void delete() {
         this.useAt = "N";
-        this.lastModifiedDate = LocalDateTime.now();
     }
 }

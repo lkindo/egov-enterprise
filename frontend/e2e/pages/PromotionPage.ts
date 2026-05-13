@@ -21,20 +21,18 @@ export class PromotionPage {
 
         // Date range - using explicit labels for precision
         console.log('>>> [Promotion] Setting date range...');
-        const startDateInput = this.page.locator('div').filter({ hasText: /^게시 시작 시점/ }).locator('input').first();
-        const endDateInput = this.page.locator('div').filter({ hasText: /^게시 종료 시점/ }).locator('input').first();
+        const startDateInput = this.page.locator('label').filter({ hasText: /게시 시작 시점/ }).locator('..').locator('input');
+        const endDateInput = this.page.locator('label').filter({ hasText: /게시 종료 시점/ }).locator('..').locator('input');
         
         await startDateInput.scrollIntoViewIfNeeded();
-        await startDateInput.click();
-        await startDateInput.type('20260510');
+        await startDateInput.fill('2026-05-10');
         
         await endDateInput.scrollIntoViewIfNeeded();
-        await endDateInput.click();
-        await endDateInput.type('20261231');
+        await endDateInput.fill('2026-12-31');
 
         // Select 'YES' for 'Notice Status' (게시 설정) - It's a Select component
         console.log('>>> [Promotion] Setting Notice Status to YES');
-        const noticeStatusTrigger = this.page.locator('button[role="combobox"]').filter({ hasText: /게시 설정/ }).first();
+        const noticeStatusTrigger = this.page.locator('label').filter({ hasText: /게시 설정/ }).locator('..').locator('button[role="combobox"]');
         if (await noticeStatusTrigger.isVisible()) {
             await noticeStatusTrigger.click();
             await this.page.getByRole('option', { name: /게시 \(LIVE\)/i }).click();

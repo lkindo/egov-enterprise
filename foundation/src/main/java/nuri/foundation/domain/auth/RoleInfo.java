@@ -4,6 +4,7 @@ import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,12 +30,12 @@ public class RoleInfo extends BaseEntity {
     @Column(name = "ROLE_TY", length = 80)
     private String roleTy;
 
-    @Column(name = "ROLE_SORT", length = 10)
-    private String roleSort;
+    @Column(name = "ROLE_SORT")
+    private Integer roleSort;
 
-    @Column(name = "ROLE_CREAT_DE", length = 20)
+    @Column(name = "ROLE_CREAT_DE")
     @Builder.Default
-    private String creatDt = java.time.LocalDate.now().toString().replace("-", "");
+    private LocalDate creatDt = LocalDate.now();
 
     /**
      * Updates the role information.
@@ -45,7 +46,7 @@ public class RoleInfo extends BaseEntity {
      * @param roleTy    Role Type
      * @param roleSort  Role Sort Order
      */
-    public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
+    public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, Integer roleSort) {
         this.roleNm = roleNm;
         this.rolePttrn = rolePttrn;
         this.roleDc = roleDc;
