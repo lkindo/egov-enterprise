@@ -50,16 +50,16 @@ public class ExternalHr {
     @Column(name = "EML_ADDR", length = 50)
     private String emailAdres;
 
-    @Column(name = "FRST_REGIST_PNTTM")
+    @Column(name = "CREAT_DT")
     private LocalDateTime frstRegistPnttm;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
+    @Column(name = "FRST_RGTR_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "LAST_UPDT_PNTTM")
+    @Column(name = "MDFCN_DT")
     private LocalDateTime lastUpdtPnttm;
 
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
+    @Column(name = "LAST_MDFR_ID", length = 20)
     private String lastUpdusrId;
 
     @ManyToOne(fetch = FetchType.LAZY)

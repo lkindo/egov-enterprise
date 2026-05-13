@@ -1,0 +1,4 @@
+Tier 9 E2E tests passed successfully on 2026-05-13.
+Test file: e2e/09-admin-observability-workspace.spec.ts
+Project: tier-9-observability
+Result: 6 passed

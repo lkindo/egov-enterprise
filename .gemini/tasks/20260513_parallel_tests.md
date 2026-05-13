@@ -3,19 +3,28 @@
 ## Status: IN_PROGRESS
 - [x] Tier 4 (Antigravity) - COMPLETED
 - [x] Tier 7 (Antigravity) - COMPLETED
-- [ ] Tier 8 (Antigravity) - RUNNING
+- [x] Tier 8 (Antigravity) - COMPLETED
+- [x] Tier 6 (Antigravity) - COMPLETED
+- [x] Tier 7 (Antigravity) - COMPLETED
+- [x] Tier 8 (Antigravity) - COMPLETED
+- [x] Tier 9 (Antigravity) - COMPLETED
+- [ ] Tier 10 (Antigravity) - RUNNING
+- [ ] Tier 11 (Antigravity) - RUNNING
 - [x] Tier 18 (Subagent) - COMPLETED
-- [ ] Tier 6 (Subagent) - RUNNING
-- [ ] Tier 9 ~ Tier 17 - QUEUED
+- [ ] Tier 12 ~ Tier 17 - QUEUED
 
 ## Active Workers (Limit: 2 + Me)
 | Tier | Command ID | Status | Focus |
 |------|------------|--------|-------|
 | 4 | a40e770d | COMPLETED | 14 Passed, 2 Failed (Visual Regression) |
 | 5 | Antigravity | COMPLETED | 100% Pass |
-| 6 | f0b1c10a | RUNNING | Digital Service & Connectivity (Delegated) |
+| 6 | f85fe77c | COMPLETED | 100% Pass |
 | 7 | e15dca19 | COMPLETED | 100% Pass |
-| 8 | 7a9eb87a | RUNNING | Advanced Collaboration |
+| 8 | 00bf73b3 | COMPLETED | 10 Passed (including retries) |
+| 9 | 557bbe6e | COMPLETED | 100% Pass |
+| 10 | 5cbe08a1 | RUNNING | Operational Extension (Retry) |
+| 11 | 516f7b27 | COMPLETED | 100% Pass |
+| 12 | 50fe8691 | RUNNING | Notification Suite |
 | 18 | 4db9bf89 | COMPLETED | 8 Passed in 24.4s |
 
 ## Completed
@@ -24,7 +33,8 @@
 - [x] Tier 19 - Hierarchy Modernization
 
 ## Queued
-- Tier 4 ~ Tier 17 (Sequential processing recommended)
+- Tier 10: 10-operational-extension.spec.ts
+- Tier 11 ~ Tier 17 - QUEUED
 
 ## Environment Note
 - **ISSUE**: Multiple `gemini` CLI instances on Windows trigger `AttachConsole failed`.
