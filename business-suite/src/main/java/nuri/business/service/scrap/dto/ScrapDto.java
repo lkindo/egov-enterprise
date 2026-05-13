@@ -17,7 +17,7 @@ public class ScrapDto {
     private String scrapNm;
     private String scrapUrl;
     private String scrapDc;
-    private String useAt;
+    private String useYn;
     private String uniqId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
@@ -34,7 +34,7 @@ public class ScrapDto {
                 .scrapNm(entity.getScrapNm())
                 .scrapUrl(entity.getScrapUrl())
                 .scrapDc(entity.getScrapDc())
-                .useAt(entity.getUseAt())
+                .useYn(entity.getUseYn())
                 .uniqId(entity.getUniqId())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getCreatedDate())

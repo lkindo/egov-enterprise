@@ -13,5 +13,5 @@ public interface ScrapRepository extends JpaRepository<Scrap, String> {
 
     Page<Scrap> findByBbsId(String bbsId, Pageable pageable);
 
-    Page<Scrap> findByCreatedByAndUseAt(String createdBy, String useAt, Pageable pageable);
+    Page<Scrap> findByCreatedByAndUseYn(String createdBy, String useYn, Pageable pageable);
 }
