@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NPRIVACYLOG")
+@Table(name = "TB_PRIVACY_LOG")
 @Getter
 @Setter
 @NoArgsConstructor

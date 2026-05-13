@@ -14,7 +14,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "NAUTHORROLERELATE")
+@Table(name = "TB_AUTHOR_ROLE_MAP")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @AttributeOverride(name = "createdDate", column = @Column(name = "CREAT_DT", updatable = false))
 @SuperBuilder

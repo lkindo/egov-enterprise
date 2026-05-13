@@ -8,7 +8,7 @@ import lombok.*;
  * 매핑 테이블: NSMSRECPTN (레거시: COMTNSMSRECPTN)
  */
 @Entity
-@Table(name = "NSMSRECPTN")
+@Table(name = "TB_SMS_RCPTN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SmsRecptn {

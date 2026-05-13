@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "HEMAILDSPTCHMANAGE")
+@Table(name = "TB_EMAIL_DSPTCH_MANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NINDVDLPGE")
+@Table(name = "TB_INDVDL_PGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class IndividualPage extends BaseEntity {
     @Column(name = "PGE_NM", length = 255, nullable = false)
     private String pageNm;
 
-    @Column(name = "PGE_DC", length = 1000)
+    @Column(name = "PAGE_EXPLN", length = 1000)
     private String pageDc;
 
     @Column(name = "EMPLYR_ID", length = 20, nullable = false)

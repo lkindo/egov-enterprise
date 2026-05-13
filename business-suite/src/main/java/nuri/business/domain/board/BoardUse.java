@@ -19,7 +19,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NBBSUSE")
+@Table(name = "TB_BBS_USE_INFO")
 @IdClass(BoardUseId.class)
 @SuperBuilder
 public class BoardUse extends BaseTimeEntity implements Serializable {

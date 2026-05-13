@@ -6,7 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "NDEPTJOB")
+@Table(name = "TB_DEPT_TASK_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -29,7 +29,7 @@ public class DeptJob extends BaseEntity {
     @Column(name = "CHARGER_ID", length = 20)
     private String chargerId;
 
-    @Column(name = "PRIORT", length = 1)
+    @Column(name = "PRORD", length = 1)
     private String priort; // 1: 높음, 2: 보통, 3: 낮음
 
     @Column(name = "ATCH_FILE_ID", length = 20)

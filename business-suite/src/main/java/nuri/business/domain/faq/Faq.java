@@ -12,7 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: NFAQINFO
  */
 @Entity
-@Table(name = "NFAQINFO")
+@Table(name = "TB_FAQ_INFO")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

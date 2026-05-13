@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NLOGINLOG")
+@Table(name = "TB_LOGIN_LOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -32,7 +32,7 @@ public class LoginLog extends BaseEntity {
     @Column(name = "CONECT_IP", length = 23)
     private String loginIp;
 
-    @Column(name = "CONECT_MTHD", length = 10)
+    @Column(name = "CONN_MTHD_CD", length = 10)
     private String loginMthd;
 
     @Column(name = "ERROR_OCCRRNC_AT", length = 1)

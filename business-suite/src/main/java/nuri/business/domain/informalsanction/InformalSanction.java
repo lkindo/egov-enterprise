@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 비정형 결재 Entity
  */
 @Entity
-@Table(name = "NINFRMLSANCTN")
+@Table(name = "TB_IFML_ATRZ_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -33,7 +33,7 @@ public class InformalSanction extends BaseEntity {
     @Column(name = "APPLCNT_ID", length = 20, nullable = false)
     private String applicantId;
 
-    @Column(name = "REQST_DE", length = 10)
+    @Column(name = "REQST_YMD", length = 10)
     private String requestDe;
 
     @Column(name = "SANCTNER_ID", length = 20, nullable = false)
@@ -45,7 +45,7 @@ public class InformalSanction extends BaseEntity {
     @Column(name = "SANCTN_DT")
     private LocalDateTime sanctionDt;
 
-    @Column(name = "RETURN_RESN", length = 1000)
+    @Column(name = "RJCT_RSN_CN", length = 1000)
     private String returnResn;
 
     public void update(String jobSeCode, String requestDe, String sanctionerId) {

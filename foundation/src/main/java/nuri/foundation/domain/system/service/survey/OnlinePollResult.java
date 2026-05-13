@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NONLINEPOLLRESULT")
+@Table(name = "TB_ONLN_POLL_RSLT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

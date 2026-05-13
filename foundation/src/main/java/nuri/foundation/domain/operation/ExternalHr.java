@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "NEXTRLHRINFO")
+@Table(name = "TB_EXTRL_HR_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(ExternalHrId.class)
@@ -47,7 +47,7 @@ public class ExternalHr {
     @Column(name = "END_TELNO", length = 4)
     private String endTelno;
 
-    @Column(name = "EMAIL_ADRES", length = 50)
+    @Column(name = "EML_ADDR", length = 50)
     private String emailAdres;
 
     @Column(name = "FRST_REGIST_PNTTM")

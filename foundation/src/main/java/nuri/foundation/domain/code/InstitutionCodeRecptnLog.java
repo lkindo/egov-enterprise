@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "NINSTTCODERECPTNLOG")
+@Table(name = "TB_INST_CD_RCPTN_LOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstitutionCodeRecptnLog {
@@ -49,10 +49,10 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "INSTT_ODR", length = 2)
     private String insttOdr;
 
-    @Column(name = "BEST_INSTT_CODE", length = 10)
+    @Column(name = "TOP_INST_CD", length = 10)
     private String bestInsttCode;
 
-    @Column(name = "UPPER_INSTT_CODE", length = 10)
+    @Column(name = "UP_INST_CD", length = 10)
     private String upperInsttCode;
 
     @Column(name = "REPRSNT_INSTT_CODE", length = 10)
@@ -114,7 +114,7 @@ public class InstitutionCodeRecptnLog {
         @Column(name = "OCCRRNC_DE", length = 20)
         private String occrrncDe;
 
-        @Column(name = "INSTT_CODE", length = 10)
+        @Column(name = "INST_CD", length = 10)
         private String insttCode;
 
         @Column(name = "OPERT_SN")

@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NSCHDULINFO")
+@Table(name = "TB_SCHDUL_INFO")
 @SuperBuilder
 public class Schedule extends BaseEntity implements Serializable {
 

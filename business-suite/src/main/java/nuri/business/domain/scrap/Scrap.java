@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: NSCRAP
  */
 @Entity
-@Table(name = "NSCRAP")
+@Table(name = "TB_BBS_SCRAP")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

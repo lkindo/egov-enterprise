@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NWIKMNTHNGREPRT")
+@Table(name = "TB_RPT_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

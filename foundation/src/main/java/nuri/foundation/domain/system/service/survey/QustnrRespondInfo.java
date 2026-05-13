@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NQUSTNRRSPNSRESULT")
+@Table(name = "TB_SURVEY_RESULT")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,13 +37,13 @@ public class QustnrRespondInfo extends BaseEntity {
     @Column(name = "QUSTNR_IEM_ID", length = 20, nullable = false)
     private String qustnrIemId;
 
-    @Column(name = "RESPOND_ANSWER_CN", length = 1000)
+    @Column(name = "RSPDNT_ANS_CN", length = 1000)
     private String respondAnswerCn;
 
     @Column(name = "RESPOND_NM", length = 50)
     private String respondNm;
 
-    @Column(name = "ETC_ANSWER_CN", length = 1000)
+    @Column(name = "ETC_ANS_CN", length = 1000)
     private String etcAnswerCn;
 
     public void update(String respondAnswerCn, String respondNm, String etcAnswerCn) {

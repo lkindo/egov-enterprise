@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NSITEMAP")
+@Table(name = "TB_SITEMAP_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NBLOG")
+@Table(name = "TB_BLOG_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

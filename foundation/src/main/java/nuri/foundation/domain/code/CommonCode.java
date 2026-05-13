@@ -17,7 +17,7 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @IdClass(CommonCodeId.class)
-@Table(name = "CCMMNDETAILCODE")
+@Table(name = "TB_COM_DTL_CD")
 public class CommonCode implements Serializable {
     private static final long serialVersionUID = 1L;
 

@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NNOTERECPTN")
+@Table(name = "TB_NOTE_RCPTN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

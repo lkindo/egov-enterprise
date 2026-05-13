@@ -19,7 +19,7 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NCOMMENT")
+@Table(name = "TB_BBS_COMMENT")
 @SQLRestriction("use_at = 'Y'")
 public class Comment extends BaseEntity implements Serializable {
 

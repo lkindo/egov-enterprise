@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "N_USER_NOTIFICATION")
+@Table(name = "TB_USER_NTCN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -23,27 +23,27 @@ public class Notification extends BaseEntity {
     @Column(name = "NTCN_NO", length = 20)
     private String ntfcNo;
 
-    @Column(name = "NTCN_SJ", length = 250)
+    @Column(name = "NTCN_TTL_NM", length = 250)
     private String ntfcSj;
 
     @Column(name = "NTCN_CN", length = 2500)
     private String ntfcCn;
 
-    @Column(name = "RECEIVER_ID", length = 20)
+    @Column(name = "RCVR_ID", length = 20)
     private String receiverId;
 
     @Builder.Default
-    @Column(name = "IS_READ", length = 1)
+    @Column(name = "READ_YN", length = 1)
     private String isRead = "N";
 
 
     @Column(name = "LINK_URL")
     private String linkUrl;
 
-    @Column(name = "NTCN_TM", length = 20)
+    @Column(name = "NTCN_DT", length = 20)
     private String ntfcTime;
 
-    @Column(name = "BH_NTCN_INTRVL", length = 20)
+    @Column(name = "NTCN_IVL_VAL", length = 20)
     private String bhNtfcIntrvl;
 
     public void markAsRead() {

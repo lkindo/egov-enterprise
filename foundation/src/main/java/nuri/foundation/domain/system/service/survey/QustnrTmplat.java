@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NQUSTNRTMPLAT")
+@Table(name = "TB_SURVEY_TMPLT")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -21,7 +21,7 @@ public class QustnrTmplat extends BaseEntity {
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
     private String qustnrTmplatId;
 
-    @Column(name = "QUSTNR_TMPLAT_TY", length = 100)
+    @Column(name = "SRVY_TMPLT_TYPE", length = 100)
     private String qustnrTmplatTy;
 
     @Column(name = "QUSTNR_TMPLAT_DC", length = 2000)
@@ -30,7 +30,7 @@ public class QustnrTmplat extends BaseEntity {
     @Column(name = "QUSTNR_TMPLAT_PATH_NM", length = 100)
     private String qustnrTmplatImagepathnm; // DTO와 맞춤 (Imagepathnm)
 
-    @Column(name = "QUSTNR_TMPLAT_IMAGE_INFO")
+    @Column(name = "SRVY_TMPLT_IMG_INFO")
     private byte[] qustnrTmplatImageInfo;
 
     public void update(String qustnrTmplatTy, String qustnrTmplatImagepathnm, String qustnrTmplatCn) {

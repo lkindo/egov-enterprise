@@ -17,7 +17,7 @@ import java.util.Objects;
  * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공
  */
 @Entity
-@Table(name = "NUSERINFO")
+@Table(name = "TB_USER_INFO")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -86,7 +86,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "BRTHDY", length = 20)
     private String brth;
 
-    @Column(name = "EMAIL_ADRES", length = 50)
+    @Column(name = "EML_ADDR", length = 50)
     private String emailAdres;
 
     @Column(name = "MBTLNUM", length = 20)

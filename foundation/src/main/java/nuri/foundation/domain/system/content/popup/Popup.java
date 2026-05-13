@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity(name = "PopupDomain")
-@Table(name = "NPOPUPMANAGE")
+@Table(name = "TB_POPUP_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

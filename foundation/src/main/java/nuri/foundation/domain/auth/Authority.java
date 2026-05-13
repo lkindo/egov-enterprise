@@ -12,7 +12,7 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "NAUTHORINFO")
+@Table(name = "TB_AUTHOR_INFO")
 @SuperBuilder
 public class Authority extends BaseEntity implements java.io.Serializable {
     private static final long serialVersionUID = 1L;

@@ -20,7 +20,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NDIARYINFO")
+@Table(name = "TB_DIARY_INFO")
 public class Diary extends BaseEntity implements Serializable {
 
     @Id
@@ -30,7 +30,7 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(name = "SCHDUL_ID", length = 20)
     private String schdulId;
 
-    @Column(name = "DIARY_PROGRSRT")
+    @Column(name = "DIARY_PROGRS_RT")
     private Integer diaryProcsPte;
 
     @Column(name = "DIARY_NM", length = 255)

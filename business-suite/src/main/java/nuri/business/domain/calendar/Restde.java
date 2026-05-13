@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NCALRESTDE")
+@Table(name = "TB_HLDY_INFO")
 public class Restde extends BaseEntity {
 
     @Id
@@ -24,16 +24,16 @@ public class Restde extends BaseEntity {
     @Column(name = "RESTDE_NO")
     private Integer restdeNo;
 
-    @Column(name = "RESTDE_DE", length = 8)
+    @Column(name = "HLDY_YMD", length = 8)
     private String restdeDe;
 
-    @Column(name = "RESTDE_NM", length = 60)
+    @Column(name = "HLDY_NM", length = 60)
     private String restdeNm;
 
-    @Column(name = "RESTDE_DC", length = 200)
+    @Column(name = "HLDY_EXPLN", length = 200)
     private String restdeDc;
 
-    @Column(name = "RESTDE_SE_CODE", length = 1)
+    @Column(name = "HLDY_SE_CD", length = 1)
     private String restdeSeCode;
 
     public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode) {

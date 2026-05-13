@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NADBK")
+@Table(name = "TB_ADBK_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -37,18 +37,18 @@ public class AddressBookUser extends BaseEntity {
     @Column(name = "nm", length = 50)
     private String nm;
 
-    @Column(name = "email_adres", length = 50)
+    @Column(name = "EML_ADDR", length = 50)
     private String emailAdres;
 
-    @Column(name = "house_telno", length = 20)
+    @Column(name = "HOME_TELNO", length = 20)
     private String homeTelno;
 
-    @Column(name = "mbtlnum", length = 20)
+    @Column(name = "MBL_TELNO", length = 20)
     private String moblphonNo;
 
-    @Column(name = "offm_telno", length = 20)
+    @Column(name = "OFC_TELNO", length = 20)
     private String offmTelno;
 
-    @Column(name = "fxnum", length = 20)
+    @Column(name = "FXNO", length = 20)
     private String fxnum;
 }

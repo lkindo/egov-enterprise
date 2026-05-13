@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "CCMMNCLCODE")
+@Table(name = "TB_COM_CLSF_CD")
 public class CommonCodeCategory {
 
     @Id

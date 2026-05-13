@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NWEBLOG")
+@Table(name = "TB_WEB_LOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

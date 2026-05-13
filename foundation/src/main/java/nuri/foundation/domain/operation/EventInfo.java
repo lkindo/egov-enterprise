@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NEVENTINFO")
+@Table(name = "TB_EVENT_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -25,7 +25,7 @@ public class EventInfo extends BaseEntity {
     @Column(name = "EVENT_ID", length = 20)
     private String eventId;
 
-    @Column(name = "BSNS_YEAR", length = 4)
+    @Column(name = "BIZ_YR", length = 4)
     private String bsnsYear;
 
     @Column(name = "BSNS_CODE", length = 20)
@@ -40,13 +40,13 @@ public class EventInfo extends BaseEntity {
     @Column(name = "EVENT_SVC_ENDDE", length = 20)
     private String eventSvcEndde;
 
-    @Column(name = "SVC_USE_NMPR_CO")
+    @Column(name = "EVNT_SRVC_USE_PRSNL_CNT")
     private Long svcUseNmprCo;
 
     @Column(name = "CHARGER_NM", length = 60)
     private String chargerNm;
 
-    @Column(name = "PRPARETG_CN", length = 2500)
+    @Column(name = "PREP_MTTR", length = 2500)
     private String prparetgCn;
 
     @Column(name = "EVENT_TY_CODE", length = 20)

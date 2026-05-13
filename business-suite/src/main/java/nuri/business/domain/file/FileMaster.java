@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NFILE")
+@Table(name = "TB_FILE_MASTER")
 @SuperBuilder
 public class FileMaster extends BaseEntity {
 

@@ -20,7 +20,7 @@ import lombok.Builder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "NCNSLTLIST")
+@Table(name = "TB_CNSLT_LIST")
 @SuperBuilder
 public class CnsltManage extends BaseEntity {
 
@@ -70,7 +70,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "WRITNG_DE", length = 20)
     private String writngDe;
 
-    @Column(name = "RDCNT")
+    @Column(name = "INQ_CNT")
     @Builder.Default
     private Integer inqireCo = 0;
 
@@ -81,7 +81,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "MANAGT_CN", columnDefinition = "TEXT")
+    @Column(name = "PROC_CN", columnDefinition = "TEXT")
     private String managtCn;
 
     @Column(name = "MANAGT_DE", length = 20)

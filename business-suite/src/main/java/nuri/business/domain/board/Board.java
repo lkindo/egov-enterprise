@@ -16,7 +16,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "NBBS")
+@Table(name = "TB_BBS_ITEM")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SQLRestriction("use_at = 'Y'")
 @SuperBuilder
@@ -26,13 +26,13 @@ public class Board extends BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "nttIdSeq")
     @SequenceGenerator(name = "nttIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
-    @Column(name = "NTT_ID")
+    @Column(name = "PST_ID")
     private Long nttId;
 
     @Column(name = "BBS_ID", nullable = false)
     private String bbsId;
 
-    @Column(name = "NTT_NO")
+    @Column(name = "REPLY_SN")
     private Long nttNo;
 
     @Column(name = "NTT_SJ", length = 2000)
@@ -44,7 +44,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "ANSWER_AT", length = 1)
     private String replyAt;
 
-    @Column(name = "PARNTSCTT_NO")
+    @Column(name = "UP_PST_ID")
     private Long parnts;
 
     @Column(name = "ANSWER_LC")

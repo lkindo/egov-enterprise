@@ -17,7 +17,7 @@ import java.io.Serializable;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NCMMNTY")
+@Table(name = "TB_CMNTY_INFO")
 @SuperBuilder
 public class Community extends BaseEntity implements Serializable {
 

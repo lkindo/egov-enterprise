@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NINTNETSVC")
+@Table(name = "TB_INTERNET_SVC")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class InternetSvcGuidance extends BaseEntity {
     @Column(name = "INTNET_SVC_NM", length = 255)
     private String intnetSvcNm;
 
-    @Column(name = "INTNET_SVC_DC", length = 1000)
+    @Column(name = "INTERNET_SVC_EXPLN", length = 1000)
     private String intnetSvcDc;
 
     @Column(name = "REFLCT_AT", length = 1)

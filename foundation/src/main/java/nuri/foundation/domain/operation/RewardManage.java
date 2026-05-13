@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NRWARDMANAGE")
+@Table(name = "TB_RWARD_MANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -46,10 +46,10 @@ public class RewardManage extends BaseEntity {
     @Column(name = "CONFM_AT", length = 1)
     private String confmAt;
 
-    @Column(name = "SANCTN_DT")
+    @Column(name = "APRV_DT")
     private java.time.LocalDateTime sanctnDt;
 
-    @Column(name = "RETURN_RESN", length = 1000)
+    @Column(name = "RTRN_RSN_CN", length = 1000)
     private String returnResn;
 
     @Column(name = "ATCH_FILE_ID", length = 20)

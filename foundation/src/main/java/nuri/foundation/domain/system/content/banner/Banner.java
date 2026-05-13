@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NBANNER")
+@Table(name = "TB_BNR_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -36,7 +36,7 @@ public class Banner extends BaseEntity {
     @Column(name = "BANNER_IMAGE", length = 100)
     private String bannerImage;
 
-    @Column(name = "BANNER_DC", length = 1000)
+    @Column(name = "BNR_EXPLN", length = 1000)
     private String bannerDc;
 
     @Column(name = "SORT_ORDR")

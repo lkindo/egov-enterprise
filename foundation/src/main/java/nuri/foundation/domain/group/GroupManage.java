@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "NAUTHORGROUPINFO")
+@Table(name = "TB_AUTHOR_GROUP_INFO")
 @SuperBuilder
 public class GroupManage extends BaseEntity {
 

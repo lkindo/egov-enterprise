@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "NPROGRMLIST")
+@Table(name = "TB_PROGRM_LIST")
 @SuperBuilder
 public class Program extends BaseEntity {
 

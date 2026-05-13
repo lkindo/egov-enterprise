@@ -14,7 +14,7 @@ import lombok.Builder;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity(name = "BoardTemplate")
-@Table(name = "NTMPLATINFO")
+@Table(name = "TB_TMPLT_INFO")
 public class Template extends BaseEntity {
 
     @Id

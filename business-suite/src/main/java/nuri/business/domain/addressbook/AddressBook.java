@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "nadbkmanage")
+@Table(name = "TB_ADBK_MANAGE")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,7 +35,7 @@ public class AddressBook extends BaseEntity {
     @Column(name = "adbk_nm", length = 100, nullable = false)
     private String adbkNm;
 
-    @Column(name = "othbc_scope", length = 20)
+    @Column(name = "RLS_SCP", length = 20)
     private String othbcScope;
 
     @Column(name = "trget_orgnzt_id", length = 20)

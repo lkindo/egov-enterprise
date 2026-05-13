@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NORGNZTINFO
  */
 @Entity
-@Table(name = "NORGNZTINFO")
+@Table(name = "TB_ORGNZT_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

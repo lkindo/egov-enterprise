@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NCMMNTYUSER")
+@Table(name = "TB_CMNTY_USER_MAP")
 @SuperBuilder
 public class CommunityUser extends BaseEntity implements Serializable {
 

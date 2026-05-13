@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NTMPLATINFO
  */
 @Entity
-@Table(name = "NTMPLATINFO")
+@Table(name = "TB_TMPLT_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

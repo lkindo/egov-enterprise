@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: NONLINEMANUAL (표준 명칭으로 정비 완료)
  */
 @Entity
-@Table(name = "NONLINEMANUAL")
+@Table(name = "TB_ONLN_MNL_INFO")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,7 +30,7 @@ public class OnlineManual extends BaseEntity {
     @Column(name = "ONLINE_MNL_SE_CODE", length = 3, nullable = false)
     private String onlineMnlSeCode;
 
-    @Column(name = "ONLINE_MNL_DFN", length = 1000)
+    @Column(name = "ONLN_MNL_DFN", length = 1000)
     private String onlineMnlDf;
 
     @Column(name = "ONLINE_MNL_DC", columnDefinition = "TEXT")

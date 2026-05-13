@@ -16,7 +16,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "CCMMNCODE")
+@Table(name = "TB_COM_CD")
 public class CommonCodeGroup implements Serializable {
     private static final long serialVersionUID = 1L;
 

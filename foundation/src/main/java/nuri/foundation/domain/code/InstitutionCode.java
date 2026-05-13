@@ -11,13 +11,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "NINSTTCODE")
+@Table(name = "TB_INST_CODE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstitutionCode extends BaseEntity {
 
     @Id
-    @Column(name = "INSTT_CODE", length = 10)
+    @Column(name = "INST_CD", length = 10)
     private String insttCode;
 
     @Column(name = "ALL_INSTT_NM", length = 180)
@@ -35,31 +35,31 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "ORD", length = 3)
     private String ord;
 
-    @Column(name = "INSTT_ODR", length = 2)
+    @Column(name = "INST_SEQ", length = 2)
     private String insttOdr;
 
     @Column(name = "BEST_INSTT_CODE", length = 10)
     private String bestInsttCode;
 
-    @Column(name = "UPPER_INSTT_CODE", length = 10)
+    @Column(name = "UP_INST_CD", length = 10)
     private String upperInsttCode;
 
-    @Column(name = "REPRSNT_INSTT_CODE", length = 10)
+    @Column(name = "RPRS_INST_CD", length = 10)
     private String reprsntInsttCode;
 
-    @Column(name = "INSTT_TY_LCLAS", length = 2)
+    @Column(name = "INST_TYPE_LCLSF", length = 2)
     private String insttTyLclas;
 
-    @Column(name = "INSTT_TY_MLSFC", length = 2)
+    @Column(name = "INST_TYPE_MCLSF", length = 2)
     private String insttTyMclas;
 
-    @Column(name = "INSTT_TY_SCLAS", length = 2)
+    @Column(name = "INST_TYPE_SCLSF", length = 2)
     private String insttTySclas;
 
     @Column(name = "TELNO", length = 20)
     private String telno;
 
-    @Column(name = "FXNUM", length = 20)
+    @Column(name = "FXNO", length = 20)
     private String fxnum;
 
     @Column(name = "CREAT_DE", length = 20)
@@ -80,7 +80,7 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "BSIS_DE", length = 20)
     private String bsisDe;
 
-    @Column(name = "SORT_ORDR")
+    @Column(name = "SORT_SEQ")
     private Integer sortOrdr;
 
     @Builder

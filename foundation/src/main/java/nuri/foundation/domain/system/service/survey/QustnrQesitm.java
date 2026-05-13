@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NQUSTNRQESITM")
+@Table(name = "TB_SURVEY_QITEM")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -24,7 +24,7 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "QUSTNR_ID", length = 20)
     private String qustnrId;
 
-    @Column(name = "QESTN_SN")
+    @Column(name = "QITEM_SN")
     private Long qestnSn;
 
     @Column(name = "QESTN_TY_CODE", length = 20)
@@ -33,7 +33,7 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "QESTN_CN", length = 2500)
     private String qestnCn;
 
-    @Column(name = "MXMM_CHOISE_CO")
+    @Column(name = "MAX_CHC_CNT")
     private Integer mxmmChoiseCo;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)

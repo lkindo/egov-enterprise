@@ -14,7 +14,7 @@ import lombok.Builder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NSTSFDG")
+@Table(name = "TB_STSFDG_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -40,7 +40,7 @@ public class Satisfaction extends BaseEntity {
     @Column(name = "PASSWORD", length = 200)
     private String password;
 
-    @Column(name = "STSFDG", nullable = false)
+    @Column(name = "DGSTFN_SCR", nullable = false)
     private Integer satisfactionLevel;
 
     @Column(name = "STSFDG_CN", length = 2500)

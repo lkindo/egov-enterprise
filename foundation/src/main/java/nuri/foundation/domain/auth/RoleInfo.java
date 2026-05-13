@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "NROLEINFO")
+@Table(name = "TB_ROLE_INFO")
 @SuperBuilder
 public class RoleInfo extends BaseEntity {
 

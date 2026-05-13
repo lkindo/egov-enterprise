@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NSYSLOG")
+@Table(name = "TB_SYS_LOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

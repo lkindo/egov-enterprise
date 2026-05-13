@@ -19,7 +19,7 @@ import lombok.Builder;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NBBSMASTER")
+@Table(name = "TB_BBS_MASTER")
 @SecondaryTable(name = "NBBSMASTEROPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
 @SuperBuilder
 @DynamicUpdate

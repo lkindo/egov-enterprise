@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공 (PrePersist 제거 및 표준화)
  */
 @Entity
-@Table(name = "NMENUINFO")
+@Table(name = "TB_MENU_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -33,7 +33,7 @@ public class Menu extends BaseEntity {
     @Column(name = "PROGRM_FILE_NM", length = 60)
     private String progrmFileNm;
 
-    @Column(name = "UPPER_MENU_NO")
+    @Column(name = "UP_MENU_NO")
     private Long upperMenuNo;
 
     @Column(name = "MENU_ORDR", nullable = false)

@@ -21,7 +21,7 @@ import java.util.List;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NONLINEPOLLMANAGE")
+@Table(name = "TB_ONLN_POLL_MANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -35,10 +35,10 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "POLL_NM", length = 255, nullable = false)
     private String pollNm;
 
-    @Column(name = "POLL_BGNDE", length = 10)
+    @Column(name = "POLL_BGNG_YMD", length = 10)
     private String pollBeginDe;
 
-    @Column(name = "POLL_ENDDE", length = 10)
+    @Column(name = "POLL_END_YMD", length = 10)
     private String pollEndDe;
 
     @Column(name = "POLL_KND", length = 20)

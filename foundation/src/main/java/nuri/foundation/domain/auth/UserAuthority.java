@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
-@Table(name = "NEMPLYRSCRTYESTBS")
+@Table(name = "TB_USER_AUTHOR_MAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

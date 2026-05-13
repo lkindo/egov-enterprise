@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NQUSTNRINFO")
+@Table(name = "TB_SURVEY_INFO")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,7 +28,7 @@ public class QustnrInfo extends BaseEntity {
     @Column(name = "QUSTNR_SJ", length = 255, nullable = false)
     private String qustnrSj;
 
-    @Column(name = "QUSTNR_PURPS", length = 1000)
+    @Column(name = "SRVY_PRPS", length = 1000)
     private String qustnrPurps;
 
     @Column(name = "QUSTNR_WRITNG_GUIDANCE_CN", length = 2000)
@@ -40,7 +40,7 @@ public class QustnrInfo extends BaseEntity {
     @Column(name = "QUSTNR_ENDDE", length = 10)
     private String qustnrEndDe;
 
-    @Column(name = "QUSTNR_TRGET", length = 1000)
+    @Column(name = "SRVY_TRGT", length = 1000)
     private String qustnrTrget;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)

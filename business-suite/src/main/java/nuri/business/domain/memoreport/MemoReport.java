@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NMEMOREPRT")
+@Table(name = "TB_MEMO_RPT_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -23,7 +23,7 @@ public class MemoReport extends BaseEntity {
     @Column(name = "REPRT_SJ", length = 255, nullable = false)
     private String reprtSj;
 
-    @Column(name = "REPORT_DE", length = 10)
+    @Column(name = "MEMO_RPT_YMD", length = 10)
     private String reportDe;
 
     @Column(name = "WRTER_ID", length = 20, nullable = false)

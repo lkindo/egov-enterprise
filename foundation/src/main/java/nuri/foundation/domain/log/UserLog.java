@@ -21,7 +21,7 @@ import jakarta.persistence.ManyToOne;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NUSERLOG")
+@Table(name = "TB_USER_LOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(UserLogId.class)
@@ -48,22 +48,22 @@ public class UserLog extends BaseEntity {
     @Column(name = "METHOD_NM", length = 60)
     private String methodNm;
 
-    @Column(name = "CREAT_CO")
+    @Column(name = "CRT_CNT")
     private Integer creatCo;
 
-    @Column(name = "UPDT_CO")
+    @Column(name = "MDFCN_CNT")
     private Integer updtCo;
 
-    @Column(name = "RDCNT")
+    @Column(name = "INQ_CNT")
     private Integer rdCnt;
 
-    @Column(name = "DELETE_CO")
+    @Column(name = "DEL_CNT")
     private Integer deleteCo;
 
-    @Column(name = "OUTPT_CO")
+    @Column(name = "OUTPT_CNT")
     private Integer outptCo;
 
-    @Column(name = "ERROR_CO")
+    @Column(name = "ERR_CNT")
     private Integer errorCo;
 
     public UserLog(String occrrncDe, String rqesterId, String srvcNm, String methodNm,

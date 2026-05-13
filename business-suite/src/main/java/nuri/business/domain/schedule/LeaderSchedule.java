@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NLEADERSCHDUL")
+@Table(name = "TB_LEADER_SCHDL")
 @Getter
 @Setter
 @NoArgsConstructor
