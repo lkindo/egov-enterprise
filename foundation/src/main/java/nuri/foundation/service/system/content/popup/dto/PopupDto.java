@@ -4,6 +4,8 @@ import nuri.foundation.domain.system.content.popup.Popup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Getter
 @Setter
@@ -27,9 +29,9 @@ public class PopupDto {
     @Schema(description = "팝업 너비 크기")
     private String popupWidthSize;
     @Schema(description = "게시 시작일")
-    private String noticeBeginDate;
+    private LocalDate noticeBeginDate;
     @Schema(description = "게시 종료일")
-    private String noticeEndDate;
+    private LocalDate noticeEndDate;
     @Schema(description = "그만보기 여부")
     private String isStopView;
     @Schema(description = "게시 여부")
@@ -60,11 +62,11 @@ public class PopupDto {
     }
 
     public String getNtceBgnde() {
-        return noticeBeginDate;
+        return noticeBeginDate != null ? noticeBeginDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) : null;
     }
 
     public String getNtceEndde() {
-        return noticeEndDate;
+        return noticeEndDate != null ? noticeEndDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) : null;
     }
 
     public String getStopVewAt() {

@@ -80,7 +80,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM NSYSLOG WHERE OCCRRNC_DE < :targetDe";
+        String sql = "DELETE FROM TB_USER_LOG WHERE OCCRRNC_DE < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

@@ -44,11 +44,11 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "POLL_KND", length = 20)
     private String pollKindCode;
 
-    @Column(name = "POLL_DSUSE_ENNC", length = 1)
+    @Column(name = "POLL_DSUSE_YN", length = 1)
     @Builder.Default
     private String pollDsuseYn = "N";
 
-    @Column(name = "POLL_ATMC_DSUSE_ENNC", length = 1)
+    @Column(name = "POLL_ATMC_DSUSE_YN", length = 1)
     @Builder.Default
     private String pollAutoDsuseYn = "N";
 

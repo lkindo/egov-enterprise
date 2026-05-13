@@ -33,7 +33,7 @@ public class QustnrIem extends BaseEntity {
     @Column(name = "ARTCL_CN", length = 2500)
     private String iemCn;
 
-    @Column(name = "ETC_ANSWER_AT", length = 1)
+    @Column(name = "ETC_ANSWER_YN", length = 1)
     private String etcAnswerAt;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)

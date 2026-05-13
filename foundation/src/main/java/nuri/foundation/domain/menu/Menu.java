@@ -55,7 +55,7 @@ public class Menu extends BaseEntity {
     private String modernRoute;
 
     @UpdateTimestamp
-    @Column(name = "ROUTE_UPDATED_AT")
+    @Column(name = "ROUTE_UPDATED_YN")
     private LocalDateTime routeUpdatedAt;
 
     /**

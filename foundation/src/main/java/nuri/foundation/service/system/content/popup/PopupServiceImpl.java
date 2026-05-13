@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +37,7 @@ public class PopupServiceImpl implements PopupService {
 
     @Override
     public List<PopupDto> getActivePopups() {
-        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
-        return popupRepository.findActivePopups(now).stream()
+        return popupRepository.findActivePopups(LocalDate.now()).stream()
                 .map(PopupDto::from)
                 .collect(Collectors.toList());
     }

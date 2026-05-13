@@ -8,18 +8,18 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface LoginLogRepository extends JpaRepository<LoginLog, String>, LoginLogRepositoryCustom {
-        java.util.List<LoginLog> findTop100ByOrderByCreatDtDesc();
+        java.util.List<LoginLog> findTop100ByOrderByCreatedDateDesc();
 
         /**
          * 개인별 통계 (연도별)
          */
         @org.springframework.data.jpa.repository.Query(value = """
-                        SELECT COUNT(CONECT_ID) AS statsCo,
+                        SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) AS statsDate,
                                '' AS conectMethod,
                                0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
-                          FROM NLOGINLOG
-                         WHERE CONECT_ID = :detailStatsKind
+                          FROM TB_LOGIN_LOG
+                         WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CREAT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
                          GROUP BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4)
                          ORDER BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4)
@@ -33,12 +33,12 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
          * 개인별 통계 (월별)
          */
         @org.springframework.data.jpa.repository.Query(value = """
-                        SELECT COUNT(CONECT_ID) AS statsCo,
+                        SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2) AS statsDate,
                                '' AS conectMethod,
                                0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
-                          FROM NLOGINLOG
-                         WHERE CONECT_ID = :detailStatsKind
+                          FROM TB_LOGIN_LOG
+                         WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CREAT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
                          GROUP BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2)
                          ORDER BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2)
@@ -52,12 +52,12 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
          * 개인별 통계 (일별)
          */
         @org.springframework.data.jpa.repository.Query(value = """
-                        SELECT COUNT(CONECT_ID) AS statsCo,
+                        SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 7, 2) AS statsDate,
                                '' AS conectMethod,
                                0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
-                          FROM NLOGINLOG
-                         WHERE CONECT_ID = :detailStatsKind
+                          FROM TB_LOGIN_LOG
+                         WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CREAT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
                          GROUP BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 7, 2)
                          ORDER BY SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CREAT_DT, 'YYYYMMDD'), 7, 2)

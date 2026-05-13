@@ -35,7 +35,7 @@ public class CommonCodeGroup implements Serializable {
     @Column(name = "CL_CODE", length = 3)
     private String clCode;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     @Column(name = "FRST_REGIST_PNTTM")

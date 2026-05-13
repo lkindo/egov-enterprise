@@ -30,7 +30,7 @@ public class AdministCode extends BaseEntity {
     @Column(name = "UP_ADMDST_CD", length = 10)
     private String upperAdministZoneCode;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     @Column(name = "CREAT_DE", length = 8)

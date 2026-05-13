@@ -38,7 +38,7 @@ public class CommonCode implements Serializable {
     @Column(name = "CODE_DC", length = 600)
     private String codeDc; // 상세코드설명
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt; // 사용여부 (Y/N)
 
     @Column(name = "FRST_REGIST_PNTTM")

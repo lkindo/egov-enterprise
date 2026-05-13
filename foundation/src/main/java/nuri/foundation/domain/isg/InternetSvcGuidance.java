@@ -30,7 +30,7 @@ public class InternetSvcGuidance extends BaseEntity {
     @Column(name = "INTERNET_SVC_EXPLN", length = 1000)
     private String intnetSvcDc;
 
-    @Column(name = "REFLCT_AT", length = 1)
+    @Column(name = "REFLCT_YN", length = 1)
     private String reflctAt;
 
     public void update(String intnetSvcNm, String intnetSvcDc, String reflctAt) {

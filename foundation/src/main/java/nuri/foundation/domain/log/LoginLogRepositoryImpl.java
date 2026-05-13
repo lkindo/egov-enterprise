@@ -33,7 +33,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
                         creatDtBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(loginLog.creatDt.desc())
+                .orderBy(loginLog.createdDate.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -59,7 +59,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
             LocalDateTime start = LocalDate.parse(searchBgnDe, DateTimeFormatter.ofPattern("yyyyMMdd")).atStartOfDay();
             LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyyMMdd"))
                     .atTime(LocalTime.MAX);
-            return loginLog.creatDt.between(start, end);
+            return loginLog.createdDate.between(start, end);
         } catch (Exception e) {
             return null;
         }
@@ -69,7 +69,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM NLOGINLOG WHERE TO_CHAR(CREAT_DT, 'YYYYMMDD') < :targetDe";
+        String sql = "DELETE FROM TB_LOGIN_LOG WHERE TO_CHAR(CREAT_DT, 'YYYYMMDD') < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

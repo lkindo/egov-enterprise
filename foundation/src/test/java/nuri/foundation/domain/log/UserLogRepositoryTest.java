@@ -33,8 +33,8 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("DELETE FROM NSYSLOG");
-        jdbcTemplate.execute("DELETE FROM NUSERLOG");
+        jdbcTemplate.execute("DELETE FROM TB_SYS_LOG");
+        jdbcTemplate.execute("DELETE FROM TB_USER_LOG");
     }
 
     @Test

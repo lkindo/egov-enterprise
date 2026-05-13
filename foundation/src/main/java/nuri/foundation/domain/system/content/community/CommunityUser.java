@@ -22,7 +22,7 @@ public class CommunityUser extends BaseEntity implements Serializable {
     @EmbeddedId
     private CommunityUserId id;
 
-    @Column(name = "MNGR_AT", length = 1)
+    @Column(name = "MNGR_YN", length = 1)
     private String mngrAt;
 
     @Column(name = "SBSCRB_DE")
@@ -34,7 +34,7 @@ public class CommunityUser extends BaseEntity implements Serializable {
     @Column(name = "MBER_STTUS", length = 15)
     private String mberSttus;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     public void approve() {

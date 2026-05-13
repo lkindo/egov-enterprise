@@ -34,7 +34,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "CNSLT_CN", columnDefinition = "TEXT")
     private String cnsltCn;
 
-    @Column(name = "OTHBC_AT", length = 1)
+    @Column(name = "OTHBC_YN", length = 1)
     private String othbcAt;
 
     @Column(name = "WRITNG_PASSWORD", length = 20)
@@ -61,7 +61,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "EMAIL_ADRES", length = 50)
     private String emailAdres;
 
-    @Column(name = "EMAIL_ANSWER_AT", length = 1)
+    @Column(name = "EMAIL_ANSWER_YN", length = 1)
     private String emailAnswerAt;
 
     @Column(name = "WRTER_NM", length = 20)

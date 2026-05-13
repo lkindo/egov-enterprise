@@ -28,11 +28,11 @@ import java.time.LocalDateTime;
 public abstract class BaseTimeEntity {
 
     @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
+    @Column(name = "CREAT_DT", updatable = false)
     protected LocalDateTime createdDate;
 
     @LastModifiedDate
-    @Column(name = "LAST_UPDT_PNTTM")
+    @Column(name = "MDFCN_DT")
     protected LocalDateTime lastModifiedDate;
 
     // ----- [Legacy Aliases] -----

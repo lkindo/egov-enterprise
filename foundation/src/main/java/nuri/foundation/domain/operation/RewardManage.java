@@ -43,7 +43,7 @@ public class RewardManage extends BaseEntity {
     @Column(name = "SANCTNER_ID", length = 20)
     private String sanctnerId;
 
-    @Column(name = "CONFM_AT", length = 1)
+    @Column(name = "CONFM_YN", length = 1)
     private String confmAt;
 
     @Column(name = "APRV_DT")

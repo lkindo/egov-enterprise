@@ -42,7 +42,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
                 .loginMthd(mthd)
                 .errOccrrAt(errAt)
                 .errorCode(errCode)
-                .creatDt(java.time.LocalDateTime.now())
+                .createdDate(java.time.LocalDateTime.now())
                 .build();
         loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
     }
@@ -52,7 +52,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
      */
     @Override
     public List<LogDto> getRecentLoginLogs() {
-        return loginLogRepository.findTop100ByOrderByCreatDtDesc().stream()
+        return loginLogRepository.findTop100ByOrderByCreatedDateDesc().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -63,7 +63,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
                 .conectMthd(log.getLoginMthd())
                 .conectId(log.getLoginId())
                 .conectIp(log.getLoginIp())
-                .creatDt(log.getCreatDt())
+                .creatDt(log.getCreatedDate())
                 .errOccrrAt(log.getErrOccrrAt())
                 .build();
     }

@@ -79,7 +79,7 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "ABL_DE", length = 20)
     private String ablDe;
 
-    @Column(name = "ABL_ENNC", length = 1)
+    @Column(name = "ABL_YN", length = 1)
     private String ablEnnc;
 
     @Column(name = "CHANGE_DE", length = 20)

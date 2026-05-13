@@ -20,7 +20,7 @@ import lombok.Builder;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "TB_BBS_MASTER")
-@SecondaryTable(name = "NBBSMASTEROPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
+@SecondaryTable(name = "TB_BBS_MASTER_OPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
 @SuperBuilder
 @DynamicUpdate
 public class BoardMaster extends BaseEntity {
@@ -41,11 +41,11 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "BBS_ATTRB_CODE", length = 6, nullable = false)
     private String bbsAttrbCode;
 
-    @Column(name = "REPLY_POSBL_AT", length = 1)
+    @Column(name = "REPLY_POSBL_YN", length = 1)
     @Builder.Default
     private String replyPosblAt = "N";
 
-    @Column(name = "FILE_ATCH_POSBL_AT", length = 1, nullable = false)
+    @Column(name = "FILE_ATCH_POSBL_YN", length = 1, nullable = false)
     @Builder.Default
     private String fileAtchPosblAt = "N";
 
@@ -56,7 +56,7 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "ATCH_POSBL_FILE_SIZE")
     private Long atchPosblFileSize;
 
-    @Column(name = "USE_AT", nullable = false, length = 1)
+    @Column(name = "USE_YN", nullable = false, length = 1)
     @Builder.Default
     private String useAt = "Y";
 
@@ -66,32 +66,32 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
-    @Column(name = "BLOG_AT", length = 1)
+    @Column(name = "BLOG_YN", length = 1)
     @Builder.Default
     private String blogAt = "N";
 
     @Column(name = "CMMNTY_ID", length = 20)
     private String cmmntyId;
 
-    @Column(table = "NBBSMASTEROPTN", name = "ANSWER_AT", length = 1)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "ANSWER_YN", length = 1)
     @Builder.Default
     private String commentAt = "N";
 
-    @Column(table = "NBBSMASTEROPTN", name = "STSFDG_AT", length = 1)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "STSFDG_YN", length = 1)
     @Builder.Default
     private String stsfdgAt = "N";
 
-    // NBBSMASTEROPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
-    @Column(table = "NBBSMASTEROPTN", name = "FRST_REGISTER_ID", length = 20, updatable = false)
+    // TB_BBS_MASTER_OPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "FRST_RGTR_ID", length = 20, updatable = false)
     private String optnFrstRegisterId;
 
-    @Column(table = "NBBSMASTEROPTN", name = "FRST_REGIST_PNTTM", updatable = false)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "CREAT_DT", updatable = false)
     private LocalDateTime optnFrstRegistPnttm;
 
-    @Column(table = "NBBSMASTEROPTN", name = "LAST_UPDUSR_ID", length = 20)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "LAST_MDFR_ID", length = 20)
     private String optnLastUpdusrId;
 
-    @Column(table = "NBBSMASTEROPTN", name = "LAST_UPDT_PNTTM")
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "MDFCN_DT")
     private LocalDateTime optnLastUpdtPnttm;
 
     @PrePersist

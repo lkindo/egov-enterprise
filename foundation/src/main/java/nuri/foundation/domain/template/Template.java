@@ -30,7 +30,7 @@ public class Template extends BaseEntity {
     @Column(name = "TMPLAT_COURS", length = 2000)
     private String tmplatCours;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     public void update(String tmplatNm, String tmplatSeCode, String tmplatCours, String useAt) {

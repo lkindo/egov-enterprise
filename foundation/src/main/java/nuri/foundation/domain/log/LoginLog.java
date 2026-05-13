@@ -35,14 +35,11 @@ public class LoginLog extends BaseEntity {
     @Column(name = "CONN_MTHD_CD", length = 10)
     private String loginMthd;
 
-    @Column(name = "ERROR_OCCRRNC_AT", length = 1)
+    @Column(name = "ERROR_OCCRRNC_YN", length = 1)
     private String errOccrrAt;
 
     @Column(name = "ERROR_CODE", length = 3)
     private String errorCode;
-
-    @Column(name = "CREAT_DT")
-    private LocalDateTime creatDt;
 
     public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,
             LocalDateTime creatDt) {
@@ -52,6 +49,6 @@ public class LoginLog extends BaseEntity {
         this.loginMthd = loginMthd;
         this.errOccrrAt = errOccrrAt;
         this.errorCode = errorCode;
-        this.creatDt = creatDt;
+        this.createdDate = creatDt;
     }
 }

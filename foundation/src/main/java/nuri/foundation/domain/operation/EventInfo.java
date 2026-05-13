@@ -52,7 +52,7 @@ public class EventInfo extends BaseEntity {
     @Column(name = "EVENT_TY_CODE", length = 20)
     private String eventTyCode;
 
-    @Column(name = "EVENT_CONFM_AT", length = 1)
+    @Column(name = "EVENT_CONFM_YN", length = 1)
     private String eventConfmAt;
 
     @Column(name = "EVENT_CONFM_DE", length = 20)

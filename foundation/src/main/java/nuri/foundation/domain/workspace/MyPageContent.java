@@ -31,7 +31,7 @@ public class MyPageContent extends BaseEntity {
     @Column(name = "CNTC_URL", length = 255)
     private String cntcUrl;
 
-    @Column(name = "CNTNTS_USE_AT", length = 1)
+    @Column(name = "CNTNTS_USE_YN", length = 1)
     private String cntntsUseAt;
 
     @Column(name = "CNTNTS_LINK_URL", length = 255)

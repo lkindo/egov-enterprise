@@ -37,7 +37,7 @@ public class Community extends BaseEntity implements Serializable {
     @Column(name = "TMPLAT_ID", length = 20)
     private String tmplatId;
 
-    @Column(name = "USE_AT", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useAt;
 
     public void update(String cmmntyNm, String cmmntyIntrcn, String tmplatId, String useAt) {

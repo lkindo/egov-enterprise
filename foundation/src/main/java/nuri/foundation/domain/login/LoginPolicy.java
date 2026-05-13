@@ -33,10 +33,10 @@ public class LoginPolicy extends BaseEntity {
     @Column(name = "IP_INFO", length = 23)
     private String ipInfo;
 
-    @Column(name = "DPLCT_PERM_AT", length = 1)
+    @Column(name = "DPLCT_PERM_YN", length = 1)
     private String dplctPermAt;
 
-    @Column(name = "LMTT_AT", length = 1)
+    @Column(name = "LMTT_YN", length = 1)
     private String lmttAt;
 
     @Column(name = "STRT_TM", length = 5)
@@ -45,7 +45,7 @@ public class LoginPolicy extends BaseEntity {
     @Column(name = "END_TM", length = 5)
     private String endTime; // HH:mm
 
-    @Column(name = "OTP_ENABLED_AT", length = 1)
+    @Column(name = "OTP_ENABLED_YN", length = 1)
     private String otpEnabledAt;
 
     public void update(String ipInfo, String dplctPermAt, String lmttAt, String startTime, String endTime, String otpEnabledAt) {

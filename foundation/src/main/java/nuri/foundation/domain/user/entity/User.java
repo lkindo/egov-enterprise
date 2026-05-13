@@ -61,7 +61,7 @@ public class User extends BaseEntity implements Serializable {
     private Integer changePasswordCount;
 
     @Builder.Default
-    @Column(name = "LOCK_AT", length = 1)
+    @Column(name = "LOCK_YN", length = 1)
     private String lockAt = "N";
 
     @Column(name = "LOCK_CNT")

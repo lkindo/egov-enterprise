@@ -61,8 +61,8 @@ public class LoginLogManageService {
                 .loginMthd(entity.getLoginMthd())
                 .errOccrrAt(entity.getErrOccrrAt())
                 .errorCode(entity.getErrorCode())
-                .creatDt(entity.getCreatDt() != null
-                        ? entity.getCreatDt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                .creatDt(entity.getCreatedDate() != null
+                        ? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         : null)
                 .build();
     }
