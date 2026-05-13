@@ -44,39 +44,54 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 // Triple the timeout for this multi-step CRUD flow (120s × 3 = 360s)
                 test.slow();
                 console.log(`\n>>> Starting CRUD Flow for: ${template.name}`);
+
+                // Handle ANY dialog early (Deletion confirm, Draft restoration confirm, etc.)
+                page.on('dialog', async dialog => {
+                    console.log(`>>> Dialog detected: [${dialog.message()}] - Auto-accepting.`);
+                    await dialog.accept();
+                });
                 
                 const articleTitle = `E2E Article ${Date.now()}`;
                 let createdNttId: string | null = null;
 
                 // [Strategy] Intercept API response to capture nttId immediately after creation
-                // This avoids all dependency on search index eventual consistency
                 const responseHandler = async (response: import('@playwright/test').Response) => {
                     const url = response.url();
                     const method = response.request().method();
-                    if (method === 'POST' && url.includes('/api/v1/boards/') && url.includes('/articles')) {
+                    // Actual backend URL: /api/v1/bbs/{bbsId}
+                    if (method === 'POST' && url.includes('/api/v1/bbs/')) {
                         try {
                             const body = await response.json();
-                            const nttId = body?.result?.nttId ?? body?.data?.nttId ?? body?.nttId;
-                            if (nttId) {
+                            // Backend ApiResponse format: { success: true, data: nttId }
+                            const nttId = body?.data;
+                            if (nttId && (typeof nttId === 'number' || typeof nttId === 'string')) {
                                 createdNttId = String(nttId);
                                 console.log(`>>> [API Intercept] Captured nttId: ${createdNttId}`);
                             }
-                        } catch { /* ignore */ }
+                        } catch (e) { 
+                            console.log(`>>> [API Intercept] Failed to parse response: ${e.message}`);
+                        }
                     }
                 };
                 page.on('response', responseHandler);
 
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
                 await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
-                await expect(page.locator('h1, h2, .title').first()).toBeVisible({ timeout: 20000 });
+                await expect(page.locator('h1, h2, .title, [data-testid="article-title-input"]').first()).toBeVisible({ timeout: 20000 });
                 
                 console.log('>>> Step 2: Creating Article');
-                await page.locator('input[name="nttSj"]').fill(articleTitle);
-                const editor = page.locator('.ProseMirror');
-                await editor.fill('Initial E2E test content.');
-                await page.locator('button:has-text("Commit Knowledge")').first().click();
+                const titleInput = page.locator('input[name="nttSj"], [data-testid="article-title-input"]');
+                await expect(titleInput).toBeVisible({ timeout: 15000 });
+                await titleInput.fill(articleTitle);
 
-                // Wait for navigation AWAY from the insert page (not just any /boards/ URL)
+                const editor = page.locator('.ProseMirror, [data-testid="rich-text-editor"] .ProseMirror');
+                await expect(editor).toBeVisible({ timeout: 15000 });
+                await editor.fill('Initial E2E test content.');
+
+                const commitBtn = page.locator('button:has-text("Commit Knowledge"), button[aria-label="게시글 저장"]').first();
+                await commitBtn.click();
+
+                // Wait for navigation AWAY from the insert page
                 await page.waitForURL((url) => !url.href.includes('insertBoardArticle'), { timeout: 30000 });
                 page.off('response', responseHandler);
 
@@ -126,10 +141,10 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 await expect(page.locator('input[name="nttSj"]')).toHaveValue(articleTitle, { timeout: 15000 });
                 
-                const titleInput = page.locator('input[name="nttSj"]');
-                await titleInput.click();
-                await titleInput.clear();
-                await titleInput.fill(`${articleTitle} [Updated]`);
+                const editTitleInput = page.locator('input[name="nttSj"]');
+                await editTitleInput.click();
+                await editTitleInput.clear();
+                await editTitleInput.fill(`${articleTitle} [Updated]`);
                 await page.keyboard.press('Tab');
                 
                 console.log('>>> Injecting content into Tiptap editor');
@@ -157,14 +172,9 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     
                     // Also check detail page
                     await firstRowLink.click();
-                    await expect(page.getByText(`${articleTitle} [Updated]`)).toBeVisible({ timeout: 15000 });
+                    // Use first() to avoid strict mode violation if title appears in both breadcrumb and heading
+                    await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeVisible({ timeout: 15000 });
                     console.log(`>>> Update verified via list and detail.`);
-                });
-
-                // Handle deletion confirm dialog
-                page.on('dialog', dialog => {
-                    console.log(`>>> Dialog: [${dialog.message()}] - Accepting.`);
-                    dialog.accept();
                 });
 
                 console.log('>>> Step 4: Deleting Article');

@@ -61,15 +61,22 @@ export class BoardMasterPage {
   }
 
   async fillStep2(templateName: string = '지식 허브') {
+    console.log(`>>> Step 2: Selecting template [${templateName}]`);
+
+    // Wait for step 2 content to be ready
+    await this.page.waitForSelector('h4:has-text("Layout strategy select"), .text-slate-900', { timeout: 15000 }).catch(() => {});
+    await this.page.waitForTimeout(1000); // Wait for animation
+
     const selectors = [
+      this.page.getByText(templateName, { exact: true }).first(),
       this.page.locator('h4').filter({ hasText: templateName }).first(),
-      this.page.locator(`text=${templateName}`).first(),
       this.page.locator('.group.relative.p-8').first()
     ];
 
     let found = false;
     for (const selector of selectors) {
-      if (await selector.isVisible().catch(() => false)) {
+      if (await selector.isVisible({ timeout: 2000 }).catch(() => false)) {
+        console.log(`>>> Found template selector: ${selector}`);
         await selector.click();
         found = true;
         break;
@@ -77,9 +84,18 @@ export class BoardMasterPage {
     }
 
     if (!found) {
-      await this.page.locator('.group.relative.p-8').first().click().catch(() => {});
+      console.log('>>> Warning: Specific template not found visible, trying fallback (first card)...');
+      const fallback = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl').first();
+      if (await fallback.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await fallback.click();
+      } else {
+        console.log('>>> CRITICAL: No template cards found!');
+      }
     }
 
+    await this.page.waitForTimeout(500);
+    await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
+    console.log('>>> Clicking Next button after template selection');
     await this.nextButton.click();
     console.log('>>> Step 2 completed');
   }

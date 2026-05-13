@@ -67,7 +67,7 @@ export default function NotePage() {
   };
 
   const handleUserSelect = (user: any) => {
-    setFormData({ ...formData, rcverId: user.ncrdId, rcverNm: user.ncrdNm });
+    setFormData({ ...formData, rcverId: user.emplyrId || user.adbkUserId, rcverNm: user.nm });
   };
 
   const handleDetail = (note: Note) => {
