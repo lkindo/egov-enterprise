@@ -30,8 +30,8 @@
 #### C. 설문 인텔리전스 (Survey Intelligence)
 - **표준**: [DB 헌법] 메타 데이터 SSOT 준수 및 [UX 헌법] 데이터 시각화 표준 준수.
 - **태스크**:
-    - [ ] `SurveyHubClient.tsx` 내 정적 배열 제거 및 `StatsAdminService` 통합.
-    - [ ] 차트 컴포넌트에 마이크로 인터랙션 및 필터링 애니메이션 추가.
+    - [x] `SurveyHubClient.tsx` 내 정적 배열 제거 및 `StatsAdminService` 통합.
+    - [x] 차트 컴포넌트에 마이크로 인터랙션 및 필터링 애니메이션 추가.
 
 ---
 
@@ -56,7 +56,8 @@
 | **Observability** | 시스템 통합 관제 | `/admin/observability` | **Functional** | UX 제8조 |
 | **Workflow** | 프로세스 설정 | `/admin/workflow` | <span style="color: #e11d48">**Mockup**</span> | 백엔드 제10조 |
 | **Sanction** | 전자결재 | `/admin/sanctn` | <span style="color: #e11d48">**Mockup**</span> | UX 제2조 |
-| **Notification** | 알림 센터 | `/admin/notifications` | <span style="color: #e11d48">**Mockup**</span> | UX 제4조 |
+| **Notification** | 알림 센터 | `/admin/notifications` | <span style="color: #e11d48">**Mockup**</span> | 실시간 스트림 및 발송 연동 필요 |
+| **Intelligence** | 설문/데이터 통계 | `/admin/survey` | **Functional** | `SurveyHubClient` 실데이터 연동 완결 |
 
 ---
 *Last Updated: 2026-05-14*

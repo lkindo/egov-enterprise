@@ -2,17 +2,23 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
  LayoutGrid, BarChart3, HelpCircle, Users, FileStack, Settings2,
  PieChart, Target, Zap, ArrowUpRight, Search, Plus, Loader2, Sparkles,
- Layers, Clock, ShieldCheck
+ Layers, Clock, ShieldCheck, Activity
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Services
+import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
+import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 
 // Components
 import PollManagePage from '../manage/page';
@@ -22,6 +28,21 @@ export function SurveyHubClient() {
  const router = useRouter();
  const searchParams = useSearchParams();
  const currentTab = searchParams.get('tab') || 'manage';
+
+ // 1. Data Fetching
+ const { data: surveyData, isLoading: isSurveyLoading } = useQuery({
+   queryKey: ['admin-surveys-all'],
+   queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, recordCountPerPage: 1 }),
+ });
+
+ const { data: statsData, isLoading: isStatsLoading } = useQuery({
+   queryKey: ['admin-stats-summary'],
+   queryFn: () => statsAdminService.getSummary(),
+ });
+
+ const totalSurveys = surveyData?.total || 0;
+ const totalUsers = (statsData as any)?.totalUsers || 0;
+ const todayConnects = (statsData as any)?.todayConnects || 0;
 
  const onTabChange = (value: string) => {
  const params = new URLSearchParams(searchParams);
@@ -53,9 +74,14 @@ export function SurveyHubClient() {
  <div className="flex items-center gap-4">
  <div className="hidden sm:flex flex-col items-end mr-4">
  <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">활성 설문 노드</span>
- <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-1">12 / 48</span>
+ {isSurveyLoading ? (
+   <Skeleton className="h-8 w-20 mt-1" />
+ ) : (
+   <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-1">{totalSurveys} / 50</span>
+ )}
  </div>
  <Button 
+ onClick={() => router.push('/admin/survey/manage/create')}
  className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Launch New Survey
@@ -65,10 +91,21 @@ export function SurveyHubClient() {
 
  {/* 2. Metric Insight Grid */}
  <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6 px-2">
- <MetricCard label="Global Response" value="8,241" trend="+12.4%" icon={Users} color="rose" />
- <MetricCard label="Completion Rate" value="94.2%" trend="+2.1%" icon={Target} color="emerald" />
- <MetricCard label="Insight Score" value="88/100" trend="Optimal" icon={Zap} color="amber" />
- <MetricCard label="Active Nodes" value="12 Units" trend="Running" icon={Layers} color="primary" />
+ {isStatsLoading || isSurveyLoading ? (
+   <>
+     <MetricCardSkeleton />
+     <MetricCardSkeleton />
+     <MetricCardSkeleton />
+     <MetricCardSkeleton />
+   </>
+ ) : (
+   <>
+     <MetricCard label="Global Response" value={totalUsers.toLocaleString()} trend="+12.4%" icon={Users} color="rose" />
+     <MetricCard label="Daily Active" value={todayConnects.toLocaleString()} trend="+2.1%" icon={Activity} color="emerald" />
+     <MetricCard label="Insight Score" value="88/100" trend="Optimal" icon={Zap} color="amber" />
+     <MetricCard label="Active Nodes" value={`${totalSurveys} Units`} trend="Running" icon={Layers} color="primary" />
+   </>
+ )}
  </motion.div>
 
  {/* 3. Navigation Matrix */}
@@ -164,6 +201,24 @@ function MetricCard({ label, value, trend, icon: Icon, color }: any) {
  </div>
  </div>
  );
+}
+
+function MetricCardSkeleton() {
+  return (
+    <div className="hub-glass-premium p-8 rounded-lg border-2 border-slate-100/50 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </div>
+      <div className="space-y-2 pt-2">
+        <Skeleton className="h-9 w-24" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-12" />
+          <Skeleton className="h-[1px] flex-1" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PlaceholderCard({ title, description, icon: Icon }: any) {
