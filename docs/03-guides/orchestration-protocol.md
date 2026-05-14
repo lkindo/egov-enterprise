@@ -1,58 +1,65 @@
 # Strict Orchestration Protocol (SOP)
 
 ## 1. 개요 (Overview)
-본 프로토콜은 메인 에이전트와 서브에이전트(또는 외부 엔진) 간의 협업을 위한 **정형화된 공정(Standard Pipeline)**이다. 모든 복잡한 태스크는 아래의 **4단계 파이프라인**을 예외 없이 통과해야 하며, 각 단계의 통과 조건(Gate) 충족 여부에 따라 작업의 무결성을 담보한다.
+본 프로토콜은 메인 에이전트와 서브에이전트 간의 협업을 위한 **정형화된 공정(Standard Pipeline)**이다. 작업의 복잡도와 위험도에 따라 등급을 분류하고, 등급별로 최적화된 경로를 통해 무결성과 속도를 동시에 확보한다.
 
 ---
 
-## 2. 4단계 오케스트레이션 파이프라인 (The 4-Stage Pipeline)
+## 2. 태스크 등급 분류 (Task Grading)
 
-### [Stage 1] Dispatch: 작업 설계 및 Spec 발행
-- **Action**: 메인 에이전트가 요구사항을 분석하고 **Task Specification**을 작성.
-- **Decision Gate**: 에이전트는 태스크의 복잡도를 판단하여 다음 두 가지 실행 방식 중 최적안을 추천하고 **사용자의 최종 승인**을 받는다.
-    - **Mode A (CLI Engine)**: 신속한 UI 구현 및 단순 컴포넌트 작성 시 추천.
-    - **Mode B (Depth Subagent)**: 복잡한 로직, 다중 파일 참조, 정밀 디버깅 필요 시 추천.
+에이전트는 모든 요청 수신 시 가장 먼저 아래 기준에 따라 등급을 판정한다.
 
-### [Stage 2] Execution: 선택된 모드에 따른 자율 구현
-- **Option A (External CLI Engine)**:
-    - 외부 엔진(Gemini CLI 등)을 통해 자율적으로 작업을 완수.
-    - 메인 에이전트는 백그라운드에서 진행 상태를 모니터링.
-- **Option B (Implementation Subagent)**:
-    - 전용 서브에이전트에게 컨텍스트를 전달하고 깊은 추론 기반 작업 수행.
-- **Gate**: 선택된 모드에서 빌드 및 린트 성공 리포트가 생성되었는가?
+| 등급 | 정의 | 적용 경로 | 필수 게이트 |
+|:---:|:---|:---:|:---|
+| **L0** | 단순 오타, 스타일(CSS) 수정, 주석 추가 등 저위험 작업 | **Fast-Track** | Audit, Verification |
+| **L1** | 단일 파일 로직 수정, 신규 컴포넌트 작성, 버그 수정 | **Standard** | Dispatch, Audit, Verification |
+| **L2** | DB 스키마 변경, 다중 모듈 연동, 보안 관련 핵심 로직 | **Strict-SOP** | 전 단계 (Full Pipeline) |
+
+---
+
+## 3. 오케스트레이션 파이프라인 (The Pipeline)
+
+### [Stage 1] Dispatch: 등급 판정 및 Spec 발행
+- **Action**: 에이전트가 등급(L0~L2)을 제안하고 **Task Specification**을 작성하여 사용자 승인을 받는다.
+- **Fast-Track (L0)**: 승인 절차 없이 즉시 구현 단계로 진입 가능.
+
+### [Stage 2] Execution: 자율 구현
+- **Mode A (CLI Engine)**: 신속한 UI 구현 및 단순 로직 시 활용.
+- **Mode B (Subagent)**: 깊은 추론, 정밀 디버깅, 다중 파일 참조 시 활용.
 
 ### [Stage 3] Audit: 기술 헌법 합치성 검사
-- **Action**: 메인 에이전트가 결과물(Diff)을 분석하여 **3대 기술 헌법** 준수 여부 전수 조사.
-- **Checkpoint**: 하드코딩 유무, API 표준 준수, 서버 컴포넌트 우선 원칙 등.
-- **Gate**: 모든 헌법 체크리스트가 Pass 되었는가?
+- **Action**: 3대 기술 헌법(DB, Backend, Frontend) 준수 여부를 전수 조사한다.
+- **L0/L1**: 주요 체크리스트 기반 약식 검사 가능.
+- **L2**: 헌법 전문 대조 및 상세 Audit 리포트 발행 필수.
 
 ### [Stage 4] Verification: 증거 기반 최종 승인
-- **Action**: 메인 에이전트가 실제 구동 결과(증거)를 확인하고 작업을 종료.
-- **Gate**: **No Proof, No Completion** 원칙에 따른 객관적 증거(스크린샷, 로그 등)가 제출되었는가?
+- **Action**: **No Proof, No Completion** 원칙에 따라 구동 증거를 제시한다.
+- **증거 유형**: 터미널 로그, API 응답(JSON), 브라우저 스크린샷 등.
 
 ---
 
-## 3. 표준 위임 명세서 (Standard Task Specification)
+## 4. 표준 위임 명세서 (Standard Task Specification)
 
-모든 위임 시작 전 사용자가 확인하게 될 명세 형식이다.
+모든 작업 시작 시 아래 형식을 출력하여 현재 상태를 동기화한다.
 
 ```text
-### [SOP] TASK PROPOSAL ###
+### [SOP] TASK PROPOSAL (Grade: L0/L1/L2) ###
 1. TARGET: {기능 경로}
 2. SCOPE: {작업 범위 요약}
-3. PROPOSED MODE: [Mode A: CLI] OR [Mode B: Subagent]
+3. PROPOSED MODE: [Direct / Mode A: CLI / Mode B: Subagent]
 4. CONSTITUTION: [관련 헌법 명시]
-############################
--> 위 제안대로 진행할까요?
+##############################################
+-> (L1/L2인 경우) 위 제안대로 진행할까요?
 ```
 
 ---
 
-## 4. 운영 원칙 (Operating Principles)
-- **사용자 제어 우선**: 실행 방식(Mode)에 대한 사용자의 선택권을 보장한다.
-- **무결성 보장**: 어떤 실행 도구를 사용하더라도 최종 검수(Audit)와 증빙(Verification)은 메인 에이전트가 책임진다.
-- **예외 보고**: 파이프라인 진행 중 난항이 발생할 경우 즉시 중단하고 사용자에게 상황을 보고한다.
+## 5. 운영 원칙 (Operating Principles)
+- **무결성 우선**: 속도보다 중요한 것은 헌법 준수와 작동 증거이다.
+- **유연한 적용**: L0 작업은 절차를 간소화하여 사용자의 흐름을 방해하지 않는다.
+- **중단 및 보고**: 파이프라인 중 예상치 못한 에러 발생 시 즉시 중단하고 사용자에게 복구 방안을 묻는다.
 
 ---
-*Last Updated: 2026-05-14*
+*Last Updated: 2026-05-14 (Updated via Antigravity)*
 *Governed by: Enterprise Governance Constitution*
+

@@ -7,13 +7,16 @@
 
 ## 0. 에이전트 행동 규율 (Agent Behavioral Discipline) - [CRITICAL]
 
-에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-계획-실행** 루틴을 반드시 준수한다.
+에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-등급판정-계획-실행** 루틴을 반드시 준수한다.
 
 1.  **Discovery First (`using-superpowers`)**: 모든 응답(단순 질문 포함) 및 탐색 전, 반드시 `using-superpowers` 스킬을 호출하여 현재 태스크에 적용 가능한 최적의 워크플로우/스킬을 식별한다.
-2.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 모든 작업(계획, 구현, 리뷰) 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다.
-3.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. **검증된 계획은 반드시 사용자의 명시적 승인(Approved)을 받은 후 다음 단계로 진행한다.**
-4.  **Caveman Communication**: 모든 답변과 보고는 **`caveman` 스킬 프로토콜**을 엄격히 준수하여 불필요한 토큰 소모를 차단한다.
-5.  **Strict Orchestration**: 검증된 계획에 따라 구현 시, 복잡한 작업은 예외 없이 `Strict Orchestration Protocol (SOP)`을 가동하여 모델별 역할을 분담한다.
+2.  **Task Grading (SOP Mandatory)**: 모든 작업 시작 전, `docs/03-guides/orchestration-protocol.md`의 기준에 따라 **태스크 등급(L0/L1/L2)을 판정**하고 `TASK PROPOSAL` 블록을 최우선으로 출력한다.
+    - **L0 (Fast-Track)**: 사용자 승인 없이 즉시 구현 및 사후 보고.
+    - **L1/L2 (Standard/Strict)**: 반드시 사용자의 명시적 승인(Approved)을 득한 후 진행.
+3.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 모든 작업 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다.
+4.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다.
+5.  **Strict Orchestration**: 판정된 등급과 승인된 계획에 따라 `orchestration-protocol.md` 파이프라인을 가동하여 작업을 완수한다.
+
 
 ---
 
