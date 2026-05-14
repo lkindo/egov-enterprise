@@ -124,8 +124,8 @@ ALTER TABLE tb_dept_task_info RENAME CONSTRAINT idx_tb_dept_task_info_dept_job_i
 -- tb_leader_schdl
 ALTER TABLE tb_leader_schdl RENAME CONSTRAINT idx_tb_leader_schdl_schdul_id TO pk_tb_leader_schdl;
 
--- tb_leader_sttus
-ALTER TABLE tb_leader_sttus RENAME CONSTRAINT idx_tb_leader_sttus_leader_id TO pk_tb_leader_sttus;
+-- tb_leader_stts
+ALTER TABLE tb_leader_stts RENAME CONSTRAINT idx_tb_leader_stts_leader_id TO pk_tb_leader_stts;
 
 -- tb_rpt_info
 ALTER TABLE tb_rpt_info RENAME CONSTRAINT idx_tb_rpt_info_reprt_id TO pk_tb_rpt_info;

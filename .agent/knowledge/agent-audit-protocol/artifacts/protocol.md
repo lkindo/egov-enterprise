@@ -1,3 +1,16 @@
+# ⚠️ DEPRECATED - 본 문서는 SOP에 통합되었습니다.
+
+> **이관 완료**: 본 프로토콜의 모든 내용은 `docs/03-guides/orchestration-protocol.md`의 **Stage 3 (Audit)** 섹션에 통합되었습니다.
+> 
+> 이 파일은 이력 보존 목적으로 유지되며, 더 이상 참조하지 않습니다.
+> 
+> - **이관일**: 2026-05-14
+> - **이관 대상**: SOP Stage 3.1~3.6
+
+---
+
+*(아래는 원본 내용 보존)*
+
 # 🛡️ 에이전트 감사 프로토콜 (Agent Audit Protocol)
 
 ## 1. 목적 (Purpose)
