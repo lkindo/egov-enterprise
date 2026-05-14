@@ -12,11 +12,15 @@ ALTER TABLE tb_com_dtl_cd RENAME COLUMN code TO dtl_cd;
 
 ALTER TABLE tb_menu_info 
     RENAME COLUMN menu_nm TO menu_nm, -- Gold standard
-    RENAME COLUMN menu_dc TO menu_expln;
+    ALTER COLUMN menu_nm TYPE VARCHAR(300),
+    RENAME COLUMN menu_dc TO menu_expln,
+    ALTER COLUMN menu_expln TYPE VARCHAR(4000);
 
 ALTER TABLE tb_progrm_list 
     RENAME COLUMN progrm_korean_nm TO prgrm_nm,
-    RENAME COLUMN progrm_dc TO prgrm_expln;
+    ALTER COLUMN prgrm_nm TYPE VARCHAR(300),
+    RENAME COLUMN progrm_dc TO prgrm_expln,
+    ALTER COLUMN prgrm_expln TYPE VARCHAR(4000);
 
 -- 2. [Collaboration]
 ALTER TABLE tb_schdul_info 

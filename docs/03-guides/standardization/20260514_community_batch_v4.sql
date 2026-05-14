@@ -15,9 +15,10 @@ ALTER TABLE tb_cmmnty_info
     RENAME COLUMN cmmnty_id TO cmnty_id,
     RENAME COLUMN cmmnty_nm TO cmnty_nm,
     ALTER COLUMN cmnty_nm TYPE VARCHAR(300),
-    RENAME COLUMN cmmnty_intrcn TO cmnty_expln,
-    ALTER COLUMN cmnty_expln TYPE VARCHAR(4000),
+    RENAME COLUMN cmmnty_intrcn TO cmnty_intr_cn,
+    ALTER COLUMN cmnty_intr_cn TYPE VARCHAR(4000),
     RENAME COLUMN use_at TO use_yn,
+    ALTER COLUMN use_yn TYPE CHAR(1),
     RENAME COLUMN creat_dt TO crt_dt;
 
 -- 2. tb_cmmnty_user_map
@@ -25,12 +26,15 @@ ALTER TABLE tb_cmmnty_user_map
     RENAME COLUMN cmmnty_id TO cmnty_id,
     RENAME COLUMN emplyr_id TO user_id,
     RENAME COLUMN mngr_at TO mngr_yn,
+    ALTER COLUMN mngr_yn TYPE CHAR(1),
     RENAME COLUMN mber_sttus TO mbr_stts_cd,
+    ALTER COLUMN mbr_stts_cd TYPE VARCHAR(12),
     RENAME COLUMN sbscrb_de TO join_ymd,
     ALTER COLUMN join_ymd TYPE CHAR(8),
     RENAME COLUMN secsn_de TO whdwl_ymd,
     ALTER COLUMN whdwl_ymd TYPE CHAR(8),
     RENAME COLUMN use_at TO use_yn,
+    ALTER COLUMN use_yn TYPE CHAR(1),
     RENAME COLUMN creat_dt TO crt_dt;
 
 -- 3. tb_club_info
@@ -39,8 +43,8 @@ ALTER TABLE tb_club_info
     RENAME COLUMN clb_id TO club_id,
     RENAME COLUMN clb_nm TO club_nm,
     ALTER COLUMN club_nm TYPE VARCHAR(300),
-    RENAME COLUMN clb_intrcn TO club_expln,
-    ALTER COLUMN club_expln TYPE VARCHAR(4000),
+    RENAME COLUMN clb_intrcn TO club_intr_cn,
+    ALTER COLUMN club_intr_cn TYPE VARCHAR(4000),
     RENAME COLUMN use_at TO use_yn,
     RENAME COLUMN creat_dt TO crt_dt;
 
@@ -61,8 +65,8 @@ ALTER TABLE tb_club_user_map
 ALTER TABLE tb_blog_info 
     RENAME COLUMN blog_nm TO blog_ttl,
     ALTER COLUMN blog_ttl TYPE VARCHAR(300),
-    RENAME COLUMN blog_intrcn TO blog_expln,
-    ALTER COLUMN blog_expln TYPE VARCHAR(4000),
+    RENAME COLUMN blog_intrcn TO blog_intr_cn,
+    ALTER COLUMN blog_intr_cn TYPE VARCHAR(4000),
     RENAME COLUMN regist_se_code TO reg_se_cd,
     ALTER COLUMN reg_se_cd TYPE VARCHAR(12),
     RENAME COLUMN creat_dt TO crt_dt;

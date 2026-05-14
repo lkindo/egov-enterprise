@@ -74,6 +74,7 @@ ALTER TABLE tb_extrl_hr_info
     RENAME COLUMN brthdy TO brth_ymd,
     ALTER COLUMN brth_ymd TYPE CHAR(8),
     RENAME COLUMN eml_addr TO eml_addr, -- Keep standard
+    ALTER COLUMN eml_addr TYPE VARCHAR(300),
     RENAME COLUMN creat_dt TO crt_dt;
 
 COMMIT;
