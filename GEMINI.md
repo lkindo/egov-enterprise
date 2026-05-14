@@ -35,7 +35,7 @@
 ## 1. 프로젝트 개요 (Project Overview)
 
 - **이름**: eGov Enterprise (차세대 기업용 표준 프레임워크 기반 서비스)
-- **주요 목표**: 전자정부 표준 프레임워크(eGovFrame)를 최신 기술 스택(Java 21, Spring Boot 3.4, Next.js 15)으로 현대화하여 기업용 엔터프라이즈 환경에 최적화된 아키텍처 제공.
+- **주요 목표**: 전자정부 표준 프레임워크(eGovFrame)를 최신 기술 스택(Java 21, Spring Boot 3.4.3, Next.js 16.2.4)으로 현대화하여 기업용 엔터프라이즈 환경에 최적화된 아키텍처 제공.
 - **아키텍처 흐름**:
 ```mermaid
 graph TD
@@ -54,14 +54,14 @@ graph TD
 ## 2. 기술 스택 (Technology Stack)
 
 ### Backend
-- **Core**: Java 21 / Spring Boot 3.4.1 / eGovFrame 4.x
-- **Build**: Gradle (Multi-module: `api-server`, `business-suite`, `foundation`)
+- **Core**: Java 21 / Spring Boot 3.4.3 / eGovFrame 5.0.0
+- **Build**: Gradle 9.4.1 (Multi-module: `api-server`, `business-suite`, `foundation`)
 - **Database**: OCI PostgreSQL 17 (Port 5432)
 - **Rules**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 준수
 
 ### Frontend
-- **Framework**: Next.js 15.1.7 (App Router / React 19)
-- **Styling**: Tailwind CSS 4, Framer Motion
+- **Framework**: Next.js 16.2.4 (App Router / React 19)
+- **Styling**: Tailwind CSS 4.0, Framer Motion
 - **Rules**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 준수
 
 ### Data Governance

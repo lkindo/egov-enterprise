@@ -22,7 +22,7 @@
 ## 제2장 아키텍처 및 상태 관리 (Frontend Architecture)
 
 ### 제3조 (서버 컴포넌트 우선 원칙)
-1. Next.js 15 App Router 환경에서 모든 컴포넌트는 기본적으로 **Server Component**로 설계한다.
+1. Next.js 16.2.4 App Router 환경에서 모든 컴포넌트는 기본적으로 **Server Component**로 설계한다.
 2. `'use client'` 지시어는 인터랙션이 필요한 최소 단위의 컴포넌트에만 제한적으로 사용한다.
 
 ### 제4조 (상태 관리의 이원화)

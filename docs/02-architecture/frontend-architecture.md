@@ -1,7 +1,7 @@
 # Frontend Architecture: eGov Enterprise (Modernized)
 
 ## 🚀 Overview
-본 프로젝트의 프론트엔드는 **Next.js 15 (App Router)** 기반으로 구축되었으며, **React 19**의 최신 기능(Server Components, Actions, Suspense)을 적극 활용합니다. 시각적 예술성과 기술적 성능의 조화를 목표로 합니다.
+본 프로젝트의 프론트엔드는 **Next.js 16.2.4 (App Router)** 기반으로 구축되었으며, **React 19**의 최신 기능(Server Components, Actions, Suspense)을 적극 활용합니다. 시각적 예술성과 기술적 성능의 조화를 목표로 합니다.
 
 ## 🏗️ Core Architecture
 
