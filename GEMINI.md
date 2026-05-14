@@ -10,9 +10,10 @@
 에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-계획-실행** 루틴을 반드시 준수한다.
 
 1.  **Discovery First (`using-superpowers`)**: 모든 응답(단순 질문 포함) 및 탐색 전, 반드시 `using-superpowers` 스킬을 호출하여 현재 태스크에 적용 가능한 최적의 워크플로우/스킬을 식별한다.
-2.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. **검증된 계획은 반드시 사용자의 명시적 승인(Approved)을 받은 후 다음 단계로 진행한다.**
-3.  **Caveman Communication**: 모든 답변과 보고는 **`caveman` 스킬 프로토콜**을 엄격히 준수하여 불필요한 토큰 소모를 차단한다.
-4.  **Strict Orchestration**: 검증된 계획에 따라 구현 시, 복잡한 작업은 예외 없이 `superpowers-ccg` 워크플로우를 가동하여 모델별 역할을 분담한다.
+2.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 모든 작업(계획, 구현, 리뷰) 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다.
+3.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. **검증된 계획은 반드시 사용자의 명시적 승인(Approved)을 받은 후 다음 단계로 진행한다.**
+4.  **Caveman Communication**: 모든 답변과 보고는 **`caveman` 스킬 프로토콜**을 엄격히 준수하여 불필요한 토큰 소모를 차단한다.
+5.  **Strict Orchestration**: 검증된 계획에 따라 구현 시, 복잡한 작업은 예외 없이 `superpowers-ccg` 워크플로우를 가동하여 모델별 역할을 분담한다.
 
 ---
 
@@ -56,30 +57,31 @@ graph TD
 - **Core**: Java 21 / Spring Boot 3.4.1 / eGovFrame 4.x
 - **Build**: Gradle (Multi-module: `api-server`, `business-suite`, `foundation`)
 - **Database**: OCI PostgreSQL 17 (Port 5432)
-- **Test**: JUnit 5, Mockito, JaCoCo (Target Coverage: 50%+)
+- **Rules**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 준수
 
 ### Frontend
 - **Framework**: Next.js 15.1.7 (App Router / React 19)
 - **Styling**: Tailwind CSS 4, Framer Motion
-- **State**: TanStack Query (Server State), React Context (Global UI State)
-- **Quality**: Storybook 10, Lighthouse CI, Bundle Analyzer, Playwright (E2E)
+- **Rules**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 준수
+
+### Data Governance
+- **SSOT**: 모든 DB 객체 명명 및 데이터 타입은 [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에 따른 메타 테이블을 진실의 원천으로 삼는다.
 
 ## 3. 코드 아키텍처 컨벤션 (Code Architecture Conventions)
 
-### 3.1 Backend: Domain Integrity & Mapping
-- **Entity Exposure Forbidden**: JPA Entity 클래스는 절대 컨트롤러 층으로 노출되지 않는다. 반드시 DTO(`Request`/`Response`)를 통해 데이터를 교환한다.
-- **Mapping Responsibility**: 데이터 변환은 `business-suite` 모듈의 서비스 레이어에서 수행한다. 가능하면 매퍼 클래스나 생성자를 활용하여 로직을 분리한다.
-- **Validation**: API 입력값 검증은 `@Valid`를 활용하여 `GlobalExceptionHandler`에서 자동 처리되도록 한다.
+본 프로젝트의 모든 코딩 컨벤션은 아래 3대 헌법을 최우위 규범으로 따르며, 상세 구현 방식은 해당 헌법 문서를 참조한다.
 
-### 3.2 Frontend: State Management Partitioning
-- **Server State**: 모든 서버 데이터는 `TanStack Query`를 통해 관리하며, 직접적인 `useEffect` 데이터 패칭을 지양한다.
-- **Global UI State**: 테마, 사이드바 상태 등 범용 UI 상태는 `React Context`를 사용한다.
-- **URL State**: 검색 필터, 정렬, 페이지네이션 등 SSR과 연동이 필요한 상태는 쿼리 스트링(`useSearchParams`)을 최우선으로 사용한다.
-- **Form State**: 모든 폼은 `useAppForm` (react-hook-form + Zod)을 사용하여 격리한다.
+### 3.1 Backend & Domain Integrity
+- **Constitutional Priority**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 준수.
+- **핵심 원칙**: 멀티 모듈 책임 분립, 엔티티 격리, 서비스 레이어 매핑, 권한 재검증.
 
-### 3.3 프론트엔드 서비스 레이어 패턴
-- 모든 서비스는 `ApiService` 추상 클래스를 상속한다.
-- **자동 매핑**: `ApiService`의 `get()` 메서드는 프론트의 `page`(0-based)를 백엔드의 `pageIndex`(1-based)로 자동 변환하므로 수동 변환을 금지한다.
+### 3.2 Frontend & UI/UX Strategy
+- **Constitutional Priority**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 준수.
+- **핵심 원칙**: RSC(Server Component) 우선 설계, URL State 기반 오케스트레이션, 디자인 토큰 활용.
+
+### 3.3 Database & Data Governance
+- **Constitutional Priority**: [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 준수.
+- **핵심 원칙**: 메타 데이터 SSOT 준수, 오브젝트 명명 규칙(Prefix) 강제.
 
 ## 4. 성능 최적화 정책 (Performance Policy)
 
@@ -118,26 +120,27 @@ graph TD
     - `admin`: `webmaster` / `1` (기본 관리자)
     - `user`: `TEST1` / `1` (일반 사용자)
 
-## 9. 안티패턴 (하지 말 것)
+## 9. 안티패턴 (헌법 위반 사례)
 
-| 안티패턴 | 올바른 방향 |
-|---------|-----------|
-| 컨트롤러에서 Entity 반환 | DTO 전문 클래스 생성 및 매핑 |
-| 페이지 컴포넌트에 직접 `axios` 호출 | `services/` 레이어의 서비스 클래스 활용 |
-| `pageIndex` 직접 계산 | `ApiService`의 자동 매핑 로직에 위임 |
-| 복잡한 로직을 Server Component에 인라인 작성 | 별도의 `Service` 또는 `Logic` 파일로 분리 |
+| 안티패턴 | 올바른 방향 | 관련 헌법 |
+|---------|-----------|-----------|
+| 컨트롤러에서 Entity 반환 | DTO 전문 클래스 생성 및 매핑 | [백엔드 헌법 제3조] |
+| 서비스 레이어 권한 체크 생략 | `SecurityUtil`을 통한 이중 검증 | [백엔드 헌법 제8조] |
+| 디자인 토큰 대신 하드코딩 사용 | 정의된 CSS 변수 및 토큰 활용 | [프론트엔드 헌법 제6조] |
+| `pageIndex` 직접 계산 | `ApiService`의 자동 매핑 로직에 위임 | [프론트엔드 헌법 제3.3절] |
 
 ## 10. 확장 가이드 참조 (Extended Guides)
 
-아래 문서는 특정 워크플로우에서만 참조한다. 해당 작업을 수행할 때 열어볼 것.
+아래 문서는 헌법의 원칙을 실무에 적용하는 구체적인 가이드로, 해당 작업 수행 시 반드시 병행 참조한다.
 
 | 가이드 | 경로 | 적용 시점 |
 |--------|------|-----------|
 | CCG Orchestration | `docs/03-guides/ccg-orchestration.md` | 프론트/백엔드 협업 구현 시 |
-| GStack Review | `.agent/skills/gstack-review/SKILL.md` | 계획 수립 및 설계 검증 시 |
-| Map-Driven Development | `docs/03-guides/map-driven-development.md` | 대규모 아키텍처 변경 시 |
-| 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 시 |
-| 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 보안/상태전이/비동기 작업 구현 시 |
+| 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 고가용성 로직 설계 시 |
+| API 설계 및 문서화 가이드 | `docs/03-guides/api-documentation-guide.md` | 신규 API 생성 및 연동 시 |
+| DB 표준화 이행 지침 | `.agent/knowledge/db-standard-constitution/artifacts/standard_terms.md` | DB 오브젝트 설계 시 |
+| Map-Driven Development | `docs/03-guides/map-driven-development.md` | 대규모 아키텍처 변경 및 지도 기능 개발 시 |
+| 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 및 지식 관리 시 |
 
 ## 11. Database Interaction Rules (via Local Bridge)
 
@@ -146,5 +149,5 @@ graph TD
 - **보안**: SELECT 위주 수행. INSERT/UPDATE/DELETE는 사용자 승인 필수.
 
 ---
-*Last Updated: 2026-05-11 (Updated via Antigravity)*
+*Last Updated: 2026-05-14 (Updated via Antigravity)*
 

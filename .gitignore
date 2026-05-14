@@ -145,8 +145,14 @@
 # ----- AI Tools -----
 **/.jules/
 **/.sisyphus/
-**/.agent/*
+!**/.agent/
+.agent/logs/
+.agent/temp/
+!**/.agent/knowledge/
 !**/.agent/skills/
+!**/.agent/workflows/
+!**/.agent/scripts/
+!**/.agent/mcp-servers/
 **/.gemini/*
 !**/.gemini/tasks/
 !**/.claude/settings.json

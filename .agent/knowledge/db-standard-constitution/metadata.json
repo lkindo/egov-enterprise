@@ -1,0 +1,12 @@
+{
+  "title": "DB Standardization Constitution",
+  "summary": "egov-enterprise 프로젝트의 모든 DB 설계(테이블, 컬럼, 인덱스 등)에 적용되는 근본 원칙과 명명 규칙 및 데이터 표준 가이드입니다.",
+  "category": "Architecture",
+  "tags": ["DB", "Constitution", "Naming", "Standard", "PostgreSQL"],
+  "updatedAt": "2026-05-14T08:28:00Z",
+  "references": [
+    "table://public.meta_standard_words",
+    "table://public.meta_standard_terms",
+    "table://public.meta_standard_domains"
+  ]
+}
