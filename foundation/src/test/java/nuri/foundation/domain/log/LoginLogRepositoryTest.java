@@ -29,7 +29,7 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         // given
         LoginLog log = LoginLog.builder()
                 .logId("LOG_001")
-                .crtDt(LocalDateTime.of(2024, 1, 1, 10, 0))
+                .createdDate(LocalDateTime.of(2024, 1, 1, 10, 0))
                 .loginMthd("LOGIN")
                 .loginIp("127.0.0.1")
                 .build();
@@ -49,7 +49,7 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         // given
         LoginLog oldLog = LoginLog.builder()
                 .logId("LOG_OLD")
-                .crtDt(LocalDateTime.of(2020, 1, 1, 10, 0))
+                .createdDate(LocalDateTime.of(2020, 1, 1, 10, 0))
                 .build();
         loginLogRepository.save(oldLog);
         entityManager.flush();

@@ -212,7 +212,7 @@ class MenuServiceTest {
         Menu menu1 = Menu.builder().id(1L).upperMenuSn(0L).build();
 
         when(menuRepository.findByProgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
-        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
+        when(menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
 
         // when
         Long rootId = menuService.getRootMenuIdByProgrmFileNm("Prog3");

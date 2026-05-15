@@ -31,20 +31,20 @@ public class AdministCode extends BaseEntity {
     private String upperAdministZoneCode;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
-    @Column(name = "CREAT_DE", length = 8)
+    @Column(name = "CREAT_YMD", length = 8)
     private String creatDe;
 
-    @Column(name = "ABL_DE", length = 8)
+    @Column(name = "ABL_YMD", length = 8)
     private String ablDe;
 
     public void update(String administZoneSe, String administZoneNm, String upperAdministZoneCode, 
-                       String useAt, String lastModifiedBy) {
+                       String useYn, String lastModifiedBy) {
         this.administZoneSe = administZoneSe;
         this.administZoneNm = administZoneNm;
         this.upperAdministZoneCode = upperAdministZoneCode;
-        this.useAt = useAt;
+        this.useYn = useYn;
         this.lastModifiedBy = lastModifiedBy;
     }
 }

@@ -27,7 +27,7 @@ public class MenuDto {
     private String progrmFileNm;
 
     @Schema(description = "상위 메뉴 번호", example = "0")
-    private Long upperMenuNo;
+    private Long upperMenuSn;
 
     @Schema(description = "상위 메뉴 ID", example = "0")
     private Long upperMenuId;
@@ -39,7 +39,7 @@ public class MenuDto {
     private String chkURL;
 
     @Schema(description = "메뉴 설명", example = "시스템 전반을 관리하는 최상위 메뉴")
-    private String menuDc;
+    private String menuExpln;
 
     @Schema(description = "관련 이미지 경로", example = "/images/menu/")
     private String relateImagePath;

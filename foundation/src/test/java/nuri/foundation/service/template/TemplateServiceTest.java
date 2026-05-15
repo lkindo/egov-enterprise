@@ -99,7 +99,7 @@ class TemplateServiceTest {
     @Test
     @DisplayName("템플릿 생성")
     void createTemplate() {
-        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/path").tmplatSeCode("C1").useAt("Y").build();
+        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/path").tmplatSeCode("C1").useYn("Y").build();
 
         String id = templateService.createTemplate("user1", dto);
 
@@ -113,7 +113,7 @@ class TemplateServiceTest {
         Template template = mock(Template.class);
         given(templateRepository.findById("T1")).willReturn(Optional.of(template));
 
-        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/n").tmplatSeCode("S").useAt("N").build();
+        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/n").tmplatSeCode("S").useYn("N").build();
         templateService.updateTemplate("T1", "user1", dto);
 
         verify(template).update("New", "/n", "S", "N");

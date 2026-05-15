@@ -30,20 +30,20 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
 
         List<SysLog> content = queryFactory
                 .selectFrom(QSysLog.sysLog)
-                .leftJoin(commonCode).on(QSysLog.sysLog.processSeCode.trim().eq(commonCode.code)
+                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.code)
                         .and(commonCode.codeGroupId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(QSysLog.sysLog.occrrncDe.desc())
+                .orderBy(QSysLog.sysLog.ocrnYmd.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
                 .select(QSysLog.sysLog.count())
                 .from(QSysLog.sysLog)
-                .leftJoin(commonCode).on(QSysLog.sysLog.processSeCode.trim().eq(commonCode.code)
+                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.code)
                         .and(commonCode.codeGroupId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
@@ -57,7 +57,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_SYS_LOG WHERE OCCRRNC_DE < :targetDe";
+        String sql = "DELETE FROM TB_SYS_LOG WHERE OCRN_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();
@@ -71,6 +71,6 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        return QSysLog.sysLog.occrrncDe.trim().between(searchBgnDe, searchEndDe);
+        return QSysLog.sysLog.ocrnYmd.trim().between(searchBgnDe, searchEndDe);
     }
 }

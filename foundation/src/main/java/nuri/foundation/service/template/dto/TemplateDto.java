@@ -15,7 +15,7 @@ public class TemplateDto {
     private String tmplatNm;
     private String tmplatCours;
     private String tmplatSeCode;
-    private String useAt;
+    private String useYn;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
@@ -25,7 +25,7 @@ public class TemplateDto {
                 .tmplatNm(entity.getTmplatNm())
                 .tmplatCours(entity.getTmplatCours())
                 .tmplatSeCode(entity.getTmplatSeCode())
-                .useAt(entity.getUseAt())
+                .useYn(entity.getUseYn())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getFrstRegisterPnttm())
                 .build();

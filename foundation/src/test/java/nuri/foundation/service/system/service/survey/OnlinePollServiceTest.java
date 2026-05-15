@@ -60,12 +60,12 @@ class OnlinePollServiceTest {
     void getPollList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
-        given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findByPollTtlContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(pollManageRepository).findByPollNmContaining(eq("Keyword"), eq(pageable));
+        verify(pollManageRepository).findByPollTtlContaining(eq("Keyword"), eq(pageable));
     }
 
     @Test

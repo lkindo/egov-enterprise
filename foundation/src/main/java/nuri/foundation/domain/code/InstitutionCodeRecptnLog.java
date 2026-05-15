@@ -22,22 +22,22 @@ public class InstitutionCodeRecptnLog {
     @EmbeddedId
     private InstitutionCodeRecptnLogId id;
 
-    @Column(name = "CHANGE_SE_CODE", length = 1)
+    @Column(name = "CHG_SE_CD", length = 1)
     private String changeSeCode;
 
-    @Column(name = "PROCESS_SE", length = 1)
+    @Column(name = "PRCS_SE_CD", length = 1)
     private String processSe;
 
-    @Column(name = "ETC_CODE", length = 45)
+    @Column(name = "ETC_CD", length = 45)
     private String etcCode;
 
-    @Column(name = "ALL_INSTT_NM", length = 180)
+    @Column(name = "ALL_INST_NM", length = 300)
     private String allInsttNm;
 
     @Column(name = "LOWEST_INSTT_NM", length = 180)
     private String lowestInsttNm;
 
-    @Column(name = "INSTT_ABRV_NM", length = 180)
+    @Column(name = "INST_ABBR_NM", length = 300)
     private String insttAbrvNm;
 
     @Column(name = "ODR", length = 2)
@@ -46,64 +46,64 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "ORD", length = 3)
     private String ord;
 
-    @Column(name = "INSTT_ODR", length = 2)
+    @Column(name = "INST_SEQ", length = 2)
     private String insttOdr;
 
-    @Column(name = "TOP_INST_CD", length = 10)
+    @Column(name = "BEST_INST_CD", length = 30)
     private String bestInsttCode;
 
     @Column(name = "UP_INST_CD", length = 10)
     private String upperInsttCode;
 
-    @Column(name = "REPRSNT_INSTT_CODE", length = 10)
+    @Column(name = "REPRSNT_INST_CD", length = 10)
     private String reprsntInsttCode;
 
-    @Column(name = "INSTT_TY_LCLAS", length = 2)
+    @Column(name = "INST_TY_LCLAS_CD", length = 2)
     private String insttTyLclas;
 
-    @Column(name = "INSTT_TY_MLSFC", length = 2)
+    @Column(name = "INST_TY_MCLAS_CD", length = 2)
     private String insttTyMclas;
 
-    @Column(name = "INSTT_TY_SCLAS", length = 2)
+    @Column(name = "INST_TY_SCLAS_CD", length = 2)
     private String insttTySclas;
 
     @Column(name = "TELNO", length = 20)
     private String telno;
 
-    @Column(name = "FXNUM", length = 20)
+    @Column(name = "FXNO", length = 20)
     private String fxnum;
 
-    @Column(name = "CREAT_DE", length = 20)
+    @Column(name = "CRT_YMD", length = 8)
     private String creatDe;
 
-    @Column(name = "ABL_DE", length = 20)
+    @Column(name = "ABL_YMD", length = 8)
     private String ablDe;
 
     @Column(name = "ABL_YN", length = 1)
     private String ablEnnc;
 
-    @Column(name = "CHANGE_DE", length = 20)
+    @Column(name = "CHG_YMD", length = 8)
     private String changede;
 
-    @Column(name = "CHANGE_TIME", length = 20)
+    @Column(name = "CHG_TM", length = 20)
     private String changeTime;
 
-    @Column(name = "BSIS_DE", length = 20)
+    @Column(name = "BSIS_YMD", length = 8)
     private String bsisDe;
 
-    @Column(name = "SORT_ORDR")
+    @Column(name = "SORT_SEQ")
     private Integer sortOrdr;
 
-    @Column(name = "FRST_REGIST_PNTTM")
+    @Column(name = "CRT_DT")
     private LocalDateTime frstRegisterPnttm;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
+    @Column(name = "FRST_RGTR_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "LAST_UPDT_PNTTM")
+    @Column(name = "MDFCN_DT")
     private LocalDateTime lastUpdtPnttm;
 
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
+    @Column(name = "LAST_MDFR_ID", length = 20)
     private String lastUpdusrId;
 
     @Embeddable
@@ -111,8 +111,8 @@ public class InstitutionCodeRecptnLog {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @EqualsAndHashCode
     public static class InstitutionCodeRecptnLogId implements Serializable {
-        @Column(name = "OCCRRNC_DE", length = 20)
-        private String occrrncDe;
+        @Column(name = "OCRN_YMD", length = 20)
+        private String ocrnYmd;
 
         @Column(name = "INST_CD", length = 10)
         private String insttCode;
@@ -121,8 +121,8 @@ public class InstitutionCodeRecptnLog {
         private Long opertSn;
 
         @Builder
-        public InstitutionCodeRecptnLogId(String occrrncDe, String insttCode, Long opertSn) {
-            this.occrrncDe = occrrncDe;
+        public InstitutionCodeRecptnLogId(String ocrnYmd, String insttCode, Long opertSn) {
+            this.ocrnYmd = ocrnYmd;
             this.insttCode = insttCode;
             this.opertSn = opertSn;
         }

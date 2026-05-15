@@ -25,7 +25,7 @@ class AddressBookServiceIntegrationTest extends BusinessIntegrationTestSupport {
         AddressBookDto saveRequest = AddressBookDto.builder()
                 .adbkNm("My Integration Test Book")
                 .othbcScope("P") // Public
-                .useAt("Y")
+                .useYn("Y")
                 .adbkMan(Collections.emptyList())
                 .build();
 

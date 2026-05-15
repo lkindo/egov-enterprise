@@ -49,7 +49,7 @@ class LoginLogManageServiceTest {
             LoginLog log1 = LoginLog.builder()
                     .logId("LGN_001")
                     .loginId("user01")
-                    .crtDt(LocalDateTime.now())
+                    .createdDate(LocalDateTime.now())
                     .build();
 
             Page<LoginLog> page = new PageImpl<>(Arrays.asList(log1));
@@ -88,13 +88,13 @@ class LoginLogManageServiceTest {
             LoginLog log = LoginLog.builder()
                     .logId(logId)
                     .loginId("user01")
-                    .crtDt(LocalDateTime.now())
+                    .createdDate(LocalDateTime.now())
                     .build();
 
             when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLog(logId);
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(logId);
 
             // Then
             assertNotNull(result);
@@ -110,7 +110,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.findById(logId)).thenReturn(Optional.empty());
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLog(logId);
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(logId);
 
             // Then
             assertNull(result);

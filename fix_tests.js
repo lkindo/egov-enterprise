@@ -2,46 +2,31 @@ const fs = require('fs');
 const path = require('path');
 
 const renames = [
-    { old: /\.pollNm\(/g, new: '.pollTtl(' },
+    { old: /\.getInstitutionCodeList\(/g, new: '.selectInstitutionCodeList(' },
+    { old: /\.getInstitutionCodeDetail\(/g, new: '.selectInstitutionCodeDetail(' },
+    { old: /\.getInstitutionCodeRecptnList\(/g, new: '.selectInstitutionCodeRecptnList(' },
+    { old: /\.processInstitutionCodeRecptn\(/g, new: '.updateInstitutionCodeRecptn(' },
+    { old: /\.selectLoginLog\(/g, new: '.selectLoginLogDetail(' },
+    { old: /\.selectSysLog\(/g, new: '.selectSysLogDetail(' },
+    { old: /\.insertSysLog\(/g, new: '.logInsertSysLog(' },
+    { old: /\.insertLoginLog\(/g, new: '.logInsertLoginLog(' },
+    { old: /\.crtDt\(/g, new: '.createdDate(' },
     { old: /\.getPollNm\(/g, new: '.getPollTtl(' },
-    { old: /\.pollBeginDe\(/g, new: '.pollBgngYmd(' },
-    { old: /\.getPollBeginDe\(/g, new: '.getPollBgngYmd(' },
-    { old: /\.pollEndDe\(/g, new: '.pollEndYmd(' },
-    { old: /\.getPollEndDe\(/g, new: '.getPollEndYmd(' },
-    { old: /\.cmmntyId\(/g, new: '.cmntyId(' },
-    { old: /\.getCmmntyId\(/g, new: '.getCmntyId(' },
-    { old: /\.cmmntyNm\(/g, new: '.cmntyTtl(' },
-    { old: /\.getCmmntyNm\(/g, new: '.getCmntyTtl(' },
-    { old: /\.cmmntyIntrcn\(/g, new: '.cmntyIntroCn(' },
-    { old: /\.getCmmntyIntrcn\(/g, new: '.getCmntyIntroCn(' },
+    { old: /\.pollNm\(/g, new: '.pollTtl(' },
+    { old: /\.qustnrBeginDe\(/g, new: '.srvyBgngYmd(' },
+    { old: /\.qustnrEndDe\(/g, new: '.srvyEndYmd(' },
+    { old: /\.findByPollNmContaining\(/g, new: '.findByPollTtlContaining(' },
+    { old: /\.findByRespondNmContaining\(/g, new: '.findByRspdNmContaining(' },
+    { old: /\.findByQustnrTmplatTyContaining\(/g, new: '.findBySrvyTmplatTypeCdContaining(' },
+    { old: /\.findByQustnrIdOrderByQestnSnAsc\(/g, new: '.findBySrvyIdOrderBySrvyQitemSnAsc(' },
+    { old: /\.findByQustnrQesitmIdOrderByIemSnAsc\(/g, new: '.findBySrvyQitemIdOrderBySrvyItemSnAsc(' },
+    { old: /\.findAllByOrderByUpperMenuNoAscMenuOrdrAsc\(/g, new: '.findAllByOrderByUpperMenuSnAscMenuOrdrAsc(' },
+    { old: /\.processSeCode\(/g, new: '.prcsSeCd(' },
     { old: /\.requstId\(/g, new: '.dmndId(' },
+    { old: /\.setRequstId\(/g, new: '.setDmndId(' },
     { old: /\.getRequstId\(/g, new: '.getDmndId(' },
-    { old: /\.occrrncDe\(/g, new: '.ocrnYmd(' },
-    { old: /\.getOccrrncDe\(/g, new: '.getOcrnYmd(' },
-    { old: /\.rqesterId\(/g, new: '.dmndUserId(' },
-    { old: /\.getRqesterId\(/g, new: '.getDmndUserId(' },
-    { old: /\.upperMenuNo\(/g, new: '.upperMenuSn(' },
-    { old: /\.getUpperMenuNo\(/g, new: '.getUpperMenuSn(' },
-    { old: /\.menuDc\(/g, new: '.menuExpln(' },
-    { old: /\.getMenuDc\(/g, new: '.getMenuExpln(' },
-    { old: /\.pageNm\(/g, new: '.pageTtl(' },
-    { old: /\.getPageNm\(/g, new: '.getPageTtl(' },
-    { old: /\.pageDc\(/g, new: '.pageExpln(' },
-    { old: /\.getPageDc\(/g, new: '.getPageExpln(' },
-    { old: /\.qustnrId\(/g, new: '.srvyId(' },
-    { old: /\.getQustnrId\(/g, new: '.getSrvyId(' },
-    { old: /\.qustnrSj\(/g, new: '.srvyTtl(' },
-    { old: /\.getQustnrSj\(/g, new: '.getSrvyTtl(' },
-    { old: /\.qustnrBgnde\(/g, new: '.srvyBgngYmd(' },
-    { old: /\.getQustnrBgnde\(/g, new: '.getSrvyBgngYmd(' },
-    { old: /\.qustnrEndde\(/g, new: '.srvyEndYmd(' },
-    { old: /\.getQustnrEndde\(/g, new: '.getSrvyEndYmd(' },
-    { old: /\.creatDt\(/g, new: '.crtDt(' },
-    { old: /\.getCreatDt\(/g, new: '.getCrtDt(' },
-    { old: /\.qestnrRespondId\(/g, new: '.srvyRspdId(' },
-    { old: /\.getQestnrRespondId\(/g, new: '.getSrvyRspdId(' },
-    { old: /\.respondNm\(/g, new: '.rspdNm(' },
-    { old: /\.getRespondNm\(/g, new: '.getRspdNm(' }
+    { old: /\.getUseAt\(/g, new: '.getUseYn(' },
+    { old: /\.setUseAt\(/g, new: '.setUseYn(' }
 ];
 
 function walk(dir) {
@@ -71,3 +56,4 @@ function walk(dir) {
 
 walk('foundation/src/test/java');
 walk('business-suite/src/test/java');
+walk('foundation/src/main/java/nuri/foundation/domain'); // Also check repositories

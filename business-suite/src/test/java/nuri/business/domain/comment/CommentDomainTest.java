@@ -15,7 +15,7 @@ class CommentDomainTest {
                 .id(1L)
                 .bbsId("BBS1")
                 .commentCn("Old Content")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         
         // When - update
@@ -24,7 +24,7 @@ class CommentDomainTest {
 
         // When - delete
         comment.delete();
-        assertEquals("N", comment.getUseAt());
+        assertEquals("N", comment.getUseYn());
     }
 
     @Test

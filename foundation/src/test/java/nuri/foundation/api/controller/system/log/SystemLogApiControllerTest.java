@@ -61,8 +61,8 @@ class SystemLogApiControllerTest {
     @DisplayName("시스템 로그 상세 조회 성공")
     void testGetSysLog() throws Exception {
         SysLogDto dto = new SysLogDto();
-        dto.setRequstId("REQ_001");
-        when(logManageService.selectSysLog("REQ_001")).thenReturn(dto);
+        dto.setDmndId("REQ_001");
+        when(logManageService.selectSysLogDetail("REQ_001")).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/logs/system/REQ_001"))
                 .andExpect(status().isOk())

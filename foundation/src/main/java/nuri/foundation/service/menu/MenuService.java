@@ -117,7 +117,7 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuSn(menu.getUpperMenuSn())
                     .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
@@ -128,7 +128,7 @@ public class MenuService {
 
             dtoMap.put(dto.getId(), dto);
 
-            Long upperNo = dto.getUpperMenuNo();
+            Long upperNo = dto.getUpperMenuSn();
             if (rootMenuNo == null) {
                 if (upperNo == null || upperNo == 0) {
                     rootNodes.add(dto);
@@ -178,7 +178,7 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuSn(menu.getUpperMenuSn())
                     .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
@@ -284,9 +284,9 @@ public class MenuService {
                 .id(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
                 .progrmFileNm(vo.getProgrmFileNm())
-                .upperMenuSn(vo.getUpperMenuNo())
+                .upperMenuSn(vo.getUpperMenuSn())
                 .menuOrdr(vo.getMenuOrdr())
-                .menuExpln(vo.getMenuDc())
+                .menuExpln(vo.getMenuExpln())
                 .relateImagePath(vo.getRelateImagePath())
                 .relateImageNm(vo.getRelateImageNm())
                 .modernRoute(vo.getModernRoute())
@@ -303,8 +303,8 @@ public class MenuService {
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(),
-                vo.getMenuDc(),
+        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuSn(), vo.getMenuOrdr(),
+                vo.getMenuExpln(),
                 vo.getRelateImagePath(), vo.getRelateImageNm(), vo.getModernRoute());
     }
 
@@ -400,7 +400,7 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuSn(menu.getUpperMenuSn())
                     .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
@@ -426,7 +426,7 @@ public class MenuService {
                 .menuNo(menu.getId())
                 .menuNm(menu.getMenuNm())
                 .progrmFileNm(menu.getProgrmFileNm())
-                .upperMenuNo(menu.getUpperMenuSn())
+                .upperMenuSn(menu.getUpperMenuSn())
                 .upperMenuId(menu.getUpperMenuSn())
                 .menuOrdr(menu.getMenuOrdr())
                 .chkURL(url)

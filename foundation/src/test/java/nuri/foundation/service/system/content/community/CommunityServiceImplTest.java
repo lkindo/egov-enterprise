@@ -142,7 +142,7 @@ class CommunityServiceImplTest {
         // given
         Community community = Community.builder()
                 .cmntyId("CMMNTY_01")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
         
@@ -150,7 +150,7 @@ class CommunityServiceImplTest {
         communityService.deleteCommunity("CMMNTY_01", "user1");
         
         // then
-        assertThat(community.getUseAt()).isEqualTo("N");
+        assertThat(community.getUseYn()).isEqualTo("N");
     }
     
     @Test
@@ -182,7 +182,7 @@ class CommunityServiceImplTest {
         String userId = "user1";
         Community community = Community.builder()
                 .cmntyId(cmmntyId)
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         given(communityRepository.findById(cmmntyId)).willReturn(Optional.of(community));
         given(communityUserRepository.existsById(any())).willReturn(false);

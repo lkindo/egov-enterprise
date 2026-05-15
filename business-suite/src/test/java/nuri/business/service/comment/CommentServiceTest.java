@@ -53,7 +53,7 @@ class CommentServiceTest {
                 .nttId(nttId)
                 .bbsId(bbsId)
                 .commentCn("Test Comment")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
@@ -180,7 +180,7 @@ class CommentServiceTest {
                 .id(id)
                 .bbsId("BBS_01")
                 .nttId(1L)
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         given(commentRepository.findById(id)).willReturn(Optional.of(comment));
@@ -189,7 +189,7 @@ class CommentServiceTest {
         commentService.deleteComment(id, userId);
 
         // then
-        assertThat(comment.getUseAt()).isEqualTo("N");
+        assertThat(comment.getUseYn()).isEqualTo("N");
         verify(eventPublisher, times(1)).publishEvent(any(CommentDeletedEvent.class));
     }
 

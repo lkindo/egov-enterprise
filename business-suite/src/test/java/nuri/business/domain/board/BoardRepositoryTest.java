@@ -55,7 +55,7 @@ class BoardRepositoryTest {
                 .bbsNm("Integrated Test Board")
                 .bbsTyCode("COM004")
                 .bbsAttrbCode("COM009")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardMasterRepository.save(testMaster);
     }
@@ -68,7 +68,7 @@ class BoardRepositoryTest {
                 .bbsId(testMaster.getBbsId())
                 .nttSj("Detail Test Subject")
                 .nttCn("Detail Test Content")
-                .useAt("Y")
+                .useYn("Y")
                 .ntcrId("USR_001")
                 .ntcrNm("Tester")
                 .build();
@@ -94,14 +94,14 @@ class BoardRepositoryTest {
                 .nttSj("Search Target 1")
                 .nttCn("Content 1")
                 .ntcrNm("User1")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         Board article2 = Board.builder()
                 .bbsId(testMaster.getBbsId())
                 .nttSj("Other Topic")
                 .nttCn("Special Content")
                 .ntcrNm("Manager")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardRepository.save(article1);
         boardRepository.save(article2);
@@ -142,7 +142,7 @@ class BoardRepositoryTest {
                 .nttSj("Low")
                 .inqireCo(10)
                 .commentCo(1)
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardRepository.save(articleLow);
         
@@ -153,7 +153,7 @@ class BoardRepositoryTest {
                 .nttSj("High")
                 .inqireCo(100)
                 .commentCo(10)
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardRepository.save(articleHigh);
         em.flush();
@@ -182,7 +182,7 @@ class BoardRepositoryTest {
     @DisplayName("날짜 기간 검색 테스트")
     void searchWithDateRangeTest() {
         // Given
-        Board oldPost = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Old").useAt("Y").build();
+        Board oldPost = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Old").useYn("Y").build();
         boardRepository.save(oldPost);
         em.flush();
         em.clear();
@@ -203,7 +203,7 @@ class BoardRepositoryTest {
     @DisplayName("기본 search 및 findByIdCustom 테스트")
     void otherCustomMethodsTest() {
         // Given
-        Board article = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Topic").useAt("Y").build();
+        Board article = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Topic").useYn("Y").build();
         Board saved = boardRepository.save(article);
         em.flush();
         em.clear();

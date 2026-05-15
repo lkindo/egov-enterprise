@@ -40,7 +40,7 @@ public class LoginLogApiController {
     @GetMapping("/{logId}")
     public ResponseEntity<ApiResponse<LoginLogDto>> getLoginLog(
             @PathVariable("logId") String logId) throws Exception {
-        LoginLogDto result = loginLogManageService.selectLoginLog(logId.trim());
+        LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId.trim()).build());
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

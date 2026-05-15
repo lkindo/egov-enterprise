@@ -24,7 +24,7 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
                 .tmplatNm("테스트 템플릿")
                 .tmplatSeCode("TMS001")
                 .tmplatCours("/test/path")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         // when
@@ -44,7 +44,7 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
                 .tmplatId("TMPLT_002")
                 .tmplatNm("구 템플릿")
                 .tmplatSeCode("TMS001")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         templateRepository.save(template);
 
@@ -57,6 +57,6 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
         Template result = templateRepository.findById("TMPLT_002").orElseThrow();
         assertThat(result.getTmplatNm()).isEqualTo("신 템플릿");
         assertThat(result.getTmplatSeCode()).isEqualTo("TMS002");
-        assertThat(result.getUseAt()).isEqualTo("N");
+        assertThat(result.getUseYn()).isEqualTo("N");
     }
 }

@@ -22,7 +22,7 @@ class BoardMasterTest {
         assertThat(master.getBbsNm()).isEqualTo("Notice");
         assertThat(master.getBbsTyCode()).isEqualTo("BBST01");
         assertThat(master.getBbsAttrbCode()).isEqualTo("BBSA01");
-        assertThat(master.getUseAt()).isEqualTo("Y");
+        assertThat(master.getUseYn()).isEqualTo("Y");
         assertThat(master.getReplyPosblAt()).isEqualTo("N");
         assertThat(master.getFileAtchPosblAt()).isEqualTo("N");
         assertThat(master.getAtchPosblFileNumber()).isEqualTo(0);
@@ -54,11 +54,11 @@ class BoardMasterTest {
     void deleteTest() {
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_001")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         master.delete();
 
-        assertThat(master.getUseAt()).isEqualTo("N");
+        assertThat(master.getUseYn()).isEqualTo("N");
     }
 }

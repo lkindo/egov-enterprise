@@ -37,14 +37,14 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
                 .codeGroupId("COM033")
                 .code("C")
                 .codeNm("생성")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         commonCodeRepository.save(code);
 
         SysLog log = SysLog.builder()
                 .dmndId("REQ_001")
                 .ocrnYmd("20240101")
-                .processSeCode("C")
+                .prcsSeCd("C")
                 .srvcNm("TestService")
                 .methodNm("testMethod")
                 .build();

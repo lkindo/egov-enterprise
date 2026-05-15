@@ -61,7 +61,7 @@ class BoardMasterServiceLogicTest {
         .atchPosblFileNumber(3)
         .atchPosblFileSize(1024L * 1024L * 5L) // 5MB
         .tmplatId("TMPL01")
-        .useAt("Y")
+        .useYn("Y")
         .createdBy("USER001")
         .lastModifiedBy("USER001")
         .blogAt("N")
@@ -80,7 +80,7 @@ class BoardMasterServiceLogicTest {
         .atchPosblFileNumber(3)
         .atchPosblFileSize(1024L * 1024L * 5L) // 5MB
         .tmplatId("TMPL01")
-        .useAt("Y")
+        .useYn("Y")
         .frstRegisterId("USER001")
         .lastUpdusrId("USER001")
         .blogAt("N")
@@ -119,7 +119,7 @@ class BoardMasterServiceLogicTest {
     BoardMaster savedEntity = captor.getValue();
     assertThat(savedEntity.getBbsId()).isEqualTo("BBS_NEW0000001");
     assertThat(savedEntity.getBbsNm()).isEqualTo("신규 게시판");
-    assertThat(savedEntity.getUseAt()).isEqualTo("Y"); // Default value
+    assertThat(savedEntity.getUseYn()).isEqualTo("Y"); // Default value
     assertThat(savedEntity.getCreatedBy()).isEqualTo("USER001");
   }
 
@@ -261,7 +261,7 @@ class BoardMasterServiceLogicTest {
             .bbsTyCode("BBST01")
             .bbsAttrbCode("BBSA01")
             .tmplatId("TMPL01")
-            .useAt("Y")
+            .useYn("Y")
             .build());
     Page<BoardMasterSearchResult> searchResultPage = new PageImpl<>(searchResults);
     Pageable pageable = PageRequest.of(0, 10);
@@ -290,7 +290,7 @@ class BoardMasterServiceLogicTest {
     // Then
     assertThat(result.getBbsId()).isEqualTo("BBS_0000000001");
     assertThat(result.getBbsNm()).isEqualTo("사용자게시판");
-    assertThat(result.getUseAt()).isEqualTo("Y");
+    assertThat(result.getUseYn()).isEqualTo("Y");
   }
 
   @Test

@@ -16,7 +16,7 @@ public class AdministCodeDto {
     private String administZoneSe;
     private String administZoneNm;
     private String upperAdministZoneCode;
-    private String useAt;
+    private String useYn;
     private String creatDe;
     private String ablDe;
     private String createdBy;

@@ -28,25 +28,25 @@ public class CommonCodeCategory extends BaseEntity {
     private String clCodeDc;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
-    public CommonCodeCategory(String clCode, String clCodeNm, String clCodeDc, String useAt, String frstRegisterId) {
+    public CommonCodeCategory(String clCode, String clCodeNm, String clCodeDc, String useYn, String frstRegisterId) {
         this.clCode = clCode;
         this.clCodeNm = clCodeNm;
         this.clCodeDc = clCodeDc;
-        this.useAt = useAt == null ? "Y" : useAt;
+        this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(String clCodeNm, String clCodeDc, String useAt, String lastUpdusrId) {
+    public void update(String clCodeNm, String clCodeDc, String useYn, String lastUpdusrId) {
         this.clCodeNm = clCodeNm;
         this.clCodeDc = clCodeDc;
-        this.useAt = useAt;
+        this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

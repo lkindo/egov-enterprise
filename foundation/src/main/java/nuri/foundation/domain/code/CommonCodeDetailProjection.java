@@ -11,5 +11,5 @@ public class CommonCodeDetailProjection {
     private String code;
     private String codeNm;
     private String codeDc;
-    private String useAt;
+    private String useYn;
 }

@@ -115,12 +115,12 @@ class AddressBookServiceImplTest {
     @Test
     @DisplayName("주소록 삭제 (논리 삭제)")
     void deleteAddressBook() {
-        AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Book").useAt("Y").build();
+        AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Book").useYn("Y").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
 
         addressBookService.deleteAddressBook("A1", "user1");
 
-        assertThat(entity.getUseAt()).isEqualTo("N");
+        assertThat(entity.getUseYn()).isEqualTo("N");
     }
 
     @Test

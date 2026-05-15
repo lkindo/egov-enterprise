@@ -1,5 +1,6 @@
 package nuri.foundation.api.controller.code;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.code.AdministCodeService;
 import nuri.foundation.service.code.InstitutionCodeService;
 import nuri.foundation.service.code.CommonCodeService;
@@ -72,7 +73,7 @@ class CodeApiControllerTest {
     @DisplayName("기관코드 목록 조회 테스트")
     void getInstitutionCodeListTest() throws Exception {
         Page<InstitutionCodeDto> page = new PageImpl<>(List.of(new InstitutionCodeDto()));
-        given(institutionCodeService.getInstitutionCodeList(any(), any())).willReturn(page);
+        given(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution")
                         .param("pageIndex", "1")

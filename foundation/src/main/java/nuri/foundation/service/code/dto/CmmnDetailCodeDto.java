@@ -31,7 +31,7 @@ public class CmmnDetailCodeDto {
     private String codeDc;
 
     @Schema(description = "Use Y/N")
-    private String useAt;
+    private String useYn;
 
     @Schema(description = "First Register ID")
     private String frstRegisterId;

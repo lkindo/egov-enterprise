@@ -51,7 +51,7 @@ class InstitutionCodeServiceTest {
         given(institutionCodeRepository.findAll(pageable)).willReturn(page);
 
         // when
-        Page<InstitutionCodeDto> result = institutionCodeService.getInstitutionCodeList(null, pageable);
+        Page<InstitutionCodeDto> result = institutionCodeService.selectInstitutionCodeList(null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -71,7 +71,7 @@ class InstitutionCodeServiceTest {
         given(institutionCodeRepository.findByAllInsttNmContaining(eq("테스트"), any())).willReturn(page);
 
         // when
-        Page<InstitutionCodeDto> result = institutionCodeService.getInstitutionCodeList("테스트", pageable);
+        Page<InstitutionCodeDto> result = institutionCodeService.selectInstitutionCodeList("테스트", pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -81,7 +81,7 @@ class InstitutionCodeServiceTest {
     @DisplayName("기관코드 상세 조회 테스트 - 존재하지 않는 경우")
     void getInstitutionCodeDetail_NotFound() {
         given(institutionCodeRepository.findById("NOT_EXIST")).willReturn(Optional.empty());
-        assertThat(institutionCodeService.getInstitutionCodeDetail("NOT_EXIST")).isNull();
+        assertThat(institutionCodeService.selectInstitutionCodeDetail("NOT_EXIST")).isNull();
     }
 
     @Test
@@ -97,7 +97,7 @@ class InstitutionCodeServiceTest {
 
         // when
         Page<nuri.foundation.service.code.dto.InstitutionCodeRecptnDto> result = 
-                institutionCodeService.getInstitutionCodeRecptnList("Test", "1", pageable);
+                institutionCodeService.selectInstitutionCodeRecptnList("Test", "1", pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -121,7 +121,7 @@ class InstitutionCodeServiceTest {
         given(institutionCodeRepository.findById(insttCode)).willReturn(Optional.empty());
 
         // when
-        institutionCodeService.processInstitutionCodeRecptn(occrrncDe, insttCode, opertSn, userId);
+        institutionCodeService.updateInstitutionCodeRecptn(occrrncDe, insttCode, opertSn, userId);
 
         // then
         verify(logEntity).updateProcessSe("1", userId);

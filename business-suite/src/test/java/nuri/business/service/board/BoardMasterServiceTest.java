@@ -130,7 +130,7 @@ class BoardMasterServiceTest {
     void deleteBoardMaster() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useAt("Y").build();
+            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
             boardMasterService.deleteBoardMaster("BBS_01", "user1");

@@ -40,6 +40,6 @@ public record CommonCodeDto(
                 entity.getCode(),
                 entity.getCodeNm(),
                 entity.getCodeDc(),
-                entity.getUseAt());
+                entity.getUseYn());
     }
 }

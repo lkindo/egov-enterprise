@@ -21,7 +21,7 @@ class BoardTest {
         assertThat(board.getNttSj()).isEqualTo("Title");
         assertThat(board.getNttCn()).isEqualTo("Content");
         assertThat(board.getInqireCo()).isEqualTo(0);
-        assertThat(board.getUseAt()).isEqualTo("Y");
+        assertThat(board.getUseYn()).isEqualTo("Y");
     }
 
     @Test
@@ -50,12 +50,12 @@ class BoardTest {
     void deleteTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         board.delete();
 
-        assertThat(board.getUseAt()).isEqualTo("N");
+        assertThat(board.getUseYn()).isEqualTo("N");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package nuri.foundation.api.controller.code;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.InstitutionCodeService;
@@ -54,7 +55,7 @@ class InstitutionCodeApiControllerTest {
     @DisplayName("기관코드 목록 조회")
     void getInstitutionCodeList() throws Exception {
         Page<InstitutionCodeDto> page = new PageImpl<>(List.of(new InstitutionCodeDto()));
-        when(institutionCodeService.getInstitutionCodeList(anyString(), any(PageRequest.class))).thenReturn(page);
+        when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution")
                 .param("pageIndex", "1")
@@ -68,7 +69,7 @@ class InstitutionCodeApiControllerTest {
     void getInstitutionCodeDetail() throws Exception {
         InstitutionCodeDto dto = new InstitutionCodeDto();
         dto.setInsttCode("INST1");
-        when(institutionCodeService.getInstitutionCodeDetail("INST1")).thenReturn(dto);
+        when(institutionCodeService.selectInstitutionCodeDetail(any(InstitutionCodeDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/INST1")
                 .accept(MediaType.APPLICATION_JSON))
@@ -80,7 +81,7 @@ class InstitutionCodeApiControllerTest {
     @DisplayName("기관코드 수신 내역 조회")
     void getInstitutionCodeRecptnList() throws Exception {
         Page<InstitutionCodeRecptnDto> page = new PageImpl<>(List.of(new InstitutionCodeRecptnDto()));
-        when(institutionCodeService.getInstitutionCodeRecptnList(any(), any(), any())).thenReturn(page);
+        when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/receptions")
                 .param("pageIndex", "1")

@@ -25,5 +25,5 @@ public class CodeDto {
     private String codeDc;
 
     @Schema(description = "사용여부", example = "Y")
-    private String useAt;
+    private String useYn;
 }

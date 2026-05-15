@@ -42,12 +42,12 @@ class SurveyRespondentServiceTest {
     void getSurveyRespondentList_NullKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("User1").build();
-        given(surveyRespondentRepository.findByRespondNmContaining(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(surveyRespondentRepository.findByRspdNmContaining(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRespondNmContaining(eq(""), eq(pageable));
+        verify(surveyRespondentRepository).findByRspdNmContaining(eq(""), eq(pageable));
     }
 
     @Test
@@ -55,12 +55,12 @@ class SurveyRespondentServiceTest {
     void getSurveyRespondentList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("User1").build();
-        given(surveyRespondentRepository.findByRespondNmContaining(eq("User"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(surveyRespondentRepository.findByRspdNmContaining(eq("User"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", "User", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRespondNmContaining(eq("User"), eq(pageable));
+        verify(surveyRespondentRepository).findByRspdNmContaining(eq("User"), eq(pageable));
     }
 
     @Test

@@ -14,14 +14,14 @@ class CodeDtoCoverageTest {
         dto.setClCode("C1");
         dto.setClCodeNm("N1");
         dto.setClCodeDc("D1");
-        dto.setUseAt("Y");
+        dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
         assertThat(dto.getClCode()).isEqualTo("C1");
         assertThat(dto.getClCodeNm()).isEqualTo("N1");
         assertThat(dto.getClCodeDc()).isEqualTo("D1");
-        assertThat(dto.getUseAt()).isEqualTo("Y");
+        assertThat(dto.getUseYn()).isEqualTo("Y");
         assertThat(dto.getFrstRegisterId()).isEqualTo("U1");
         assertThat(dto.getLastUpdusrId()).isEqualTo("U2");
     }
@@ -35,13 +35,13 @@ class CodeDtoCoverageTest {
         dto.setCodeId("G1");
         dto.setCodeIdNm("GN1");
         dto.setCodeIdDc("GD1");
-        dto.setUseAt("Y");
+        dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
         assertThat(dto.getClCode()).isEqualTo("C1");
         assertThat(dto.getCodeId()).isEqualTo("G1");
-        assertThat(dto.getUseAt()).isEqualTo("Y");
+        assertThat(dto.getUseYn()).isEqualTo("Y");
     }
 
     @Test
@@ -53,7 +53,7 @@ class CodeDtoCoverageTest {
         dto.setCode("C1");
         dto.setCodeNm("CN1");
         dto.setCodeDc("CD1");
-        dto.setUseAt("Y");
+        dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
@@ -68,12 +68,12 @@ class CodeDtoCoverageTest {
         AdministCodeDto dto = AdministCodeDto.builder()
                 .administZoneCode("110")
                 .administZoneNm("Seoul")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         assertThat(dto.getAdministZoneCode()).isEqualTo("110");
         assertThat(dto.getAdministZoneNm()).isEqualTo("Seoul");
-        assertThat(dto.getUseAt()).isEqualTo("Y");
+        assertThat(dto.getUseYn()).isEqualTo("Y");
         
         AdministCodeDto fullDto = new AdministCodeDto("1", "S", "N", "U", "Y", "C", "A", "CB", null, "MB", null);
         assertThat(fullDto.getAdministZoneCode()).isEqualTo("1");

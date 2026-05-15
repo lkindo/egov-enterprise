@@ -31,12 +31,12 @@ public class Template extends BaseEntity {
     private String tmplatCours;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
-    public void update(String tmplatNm, String tmplatSeCode, String tmplatCours, String useAt) {
+    public void update(String tmplatNm, String tmplatSeCode, String tmplatCours, String useYn) {
         this.tmplatNm = tmplatNm;
         this.tmplatSeCode = tmplatSeCode;
         this.tmplatCours = tmplatCours;
-        this.useAt = useAt;
+        this.useYn = useYn;
     }
 }

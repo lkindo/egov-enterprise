@@ -75,7 +75,7 @@ class LogServiceTest {
                     .loginId("user01")
                     .loginIp("127.0.0.1")
                     .loginMthd("LOGIN")
-                    .crtDt(LocalDateTime.now())
+                    .createdDate(LocalDateTime.now())
                     .build();
 
             LoginLog log2 = LoginLog.builder()
@@ -83,7 +83,7 @@ class LogServiceTest {
                     .loginId("user02")
                     .loginIp("127.0.0.1")
                     .loginMthd("LOGIN")
-                    .crtDt(LocalDateTime.now().minusMinutes(1))
+                    .createdDate(LocalDateTime.now().minusMinutes(1))
                     .build();
 
             when(loginLogRepository.findTop100ByOrderByCreatDtDesc()).thenReturn(Arrays.asList(log1, log2));

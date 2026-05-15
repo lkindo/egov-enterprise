@@ -110,7 +110,7 @@ class AddressBookServiceTest {
         addressBookService.deleteAddressBook("ADBK_1", "user");
 
         // Then
-        assertThat(entity.getUseAt()).isEqualTo("N");
+        assertThat(entity.getUseYn()).isEqualTo("N");
     }
 
     @Test

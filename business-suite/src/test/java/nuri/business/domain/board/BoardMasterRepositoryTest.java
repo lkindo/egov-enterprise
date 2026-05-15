@@ -59,7 +59,7 @@ class BoardMasterRepositoryTest {
                 .bbsNm("Test Board")
                 .bbsTyCode("COM004")
                 .bbsAttrbCode("COM009")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         // When
@@ -82,7 +82,7 @@ class BoardMasterRepositoryTest {
                 .bbsNm("Searchable Board")
                 .bbsTyCode("BBST01")
                 .bbsAttrbCode("BBSA01")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
 
@@ -90,7 +90,7 @@ class BoardMasterRepositoryTest {
                 .code("BBST01")
                 .codeGroupId("COM004")
                 .codeNm("General Board")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         commonCodeRepository.save(code);
         
@@ -122,14 +122,14 @@ class BoardMasterRepositoryTest {
                 .bbsNm("Detail Board")
                 .bbsTyCode("T1")
                 .bbsAttrbCode("A1")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
 
         BoardUse use = BoardUse.builder()
                 .bbsId("BBS_DETAIL_001")
                 .trgetId("USER_001")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         boardUseRepository.save(use);
         
@@ -149,12 +149,12 @@ class BoardMasterRepositoryTest {
     @DisplayName("미사용 보드 검색 테스트 (notUsedOnly)")
     void searchNotUsedTest() {
         // Given
-        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsNm("Used").bbsTyCode("T1").bbsAttrbCode("A1").useAt("Y").build();
-        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsNm("Not Used").bbsTyCode("T1").bbsAttrbCode("A1").useAt("Y").build();
+        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsNm("Used").bbsTyCode("T1").bbsAttrbCode("A1").useYn("Y").build();
+        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsNm("Not Used").bbsTyCode("T1").bbsAttrbCode("A1").useYn("Y").build();
         boardMasterRepository.save(masterUsed);
         boardMasterRepository.save(masterNotUsed);
 
-        BoardUse use = BoardUse.builder().bbsId("BBS_USED").trgetId("SYSTEM").useAt("Y").build();
+        BoardUse use = BoardUse.builder().bbsId("BBS_USED").trgetId("SYSTEM").useYn("Y").build();
         boardUseRepository.save(use);
         
         em.flush();

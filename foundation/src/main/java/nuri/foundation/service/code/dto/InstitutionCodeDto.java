@@ -28,4 +28,8 @@ public class InstitutionCodeDto {
     private String creatDe;
     private String ablDe;
     private String ablEnnc;
+    private String changede;
+    private String changeTime;
+    private String bsisDe;
+    private Integer sortOrdr;
 }

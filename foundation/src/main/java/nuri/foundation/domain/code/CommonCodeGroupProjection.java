@@ -11,5 +11,5 @@ public class CommonCodeGroupProjection {
     private String codeIdDc;
     private String clCode;
     private String clCodeNm;
-    private String useAt;
+    private String useYn;
 }

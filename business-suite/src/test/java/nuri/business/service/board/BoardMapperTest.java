@@ -111,7 +111,7 @@ class BoardMapperTest {
         Board entity = mapper.toEntity(request, "BBS1", "USER1", "Name1", 10L);
         
         assertNotNull(entity);
-        assertEquals("Y", entity.getUseAt());
+        assertEquals("Y", entity.getUseYn());
         assertEquals("OPEN", entity.getQnaStatus());
         assertNull(entity.getEventDate());
     }

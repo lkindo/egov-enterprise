@@ -30,7 +30,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
      */
     @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
-        return commonCodeRepository.findByCodeGroupIdAndUseAt(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
+        return commonCodeRepository.findByCodeGroupIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -42,7 +42,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
     @Override
     public List<CodeDto> getAllActiveCodes() {
         return commonCodeRepository.findAll().stream()
-                .filter(code -> "Y".equals(code.getUseAt()))
+                .filter(code -> "Y".equals(code.getUseYn()))
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -53,7 +53,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
                 .code(code.getCode())
                 .codeNm(code.getCodeNm())
                 .codeDc(code.getCodeDc())
-                .useAt(code.getUseAt())
+                .useYn(code.getUseYn())
                 .build();
     }
 }

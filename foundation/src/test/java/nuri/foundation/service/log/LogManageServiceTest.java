@@ -45,14 +45,14 @@ class LogManageServiceTest {
                     .dmndId("REQ_001")
                     .srvcNm("UserService")
                     .methodNm("getUser")
-                    .processSeCode("REQ")
+                    .prcsSeCd("REQ")
                     .processTime("100")
                     .dmndUserId("admin")
                     .rqesterIp("127.0.0.1")
                     .build();
 
             // When
-            logManageService.insertSysLog(dto);
+            logManageService.logInsertSysLog(dto);
 
             // Then
             verify(sysLogRepository, times(1)).save(any(SysLog.class));
@@ -123,7 +123,7 @@ class LogManageServiceTest {
             when(sysLogRepository.findById(requestId)).thenReturn(Optional.of(log));
 
             // When
-            SysLogDto result = logManageService.selectSysLog(requestId);
+            SysLogDto result = logManageService.selectSysLogDetail(requestId);
 
             // Then
             assertNotNull(result);
@@ -139,7 +139,7 @@ class LogManageServiceTest {
             when(sysLogRepository.findById(requestId)).thenReturn(Optional.empty());
 
             // When
-            SysLogDto result = logManageService.selectSysLog(requestId);
+            SysLogDto result = logManageService.selectSysLogDetail(requestId);
 
             // Then
             assertNull(result);

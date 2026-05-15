@@ -40,28 +40,28 @@ public class CommonCode extends BaseEntity implements Serializable {
     private String codeDc; // 상세코드설명
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt; // 사용여부 (Y/N)
+    private String useYn; // 사용여부 (Y/N)
 
     public CommonCode(@NonNull String codeGroupId, @NonNull String code, @NonNull String codeNm, String codeDc,
-            String useAt,
+            String useYn,
             String frstRegisterId) {
         this.codeGroupId = Objects.requireNonNull(codeGroupId);
         this.code = Objects.requireNonNull(code);
         this.codeNm = Objects.requireNonNull(codeNm);
         this.codeDc = codeDc;
-        this.useAt = useAt == null ? "Y" : useAt;
+        this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(@NonNull String codeNm, String codeDc, String useAt, String lastUpdusrId) {
+    public void update(@NonNull String codeNm, String codeDc, String useYn, String lastUpdusrId) {
         this.codeNm = Objects.requireNonNull(codeNm);
         this.codeDc = codeDc;
-        this.useAt = useAt;
+        this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

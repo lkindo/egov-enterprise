@@ -31,7 +31,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
         categoryRepository.save(CommonCodeCategory.builder()
                 .clCode("C01")
                 .clCodeNm("테스트 분류")
-                .useAt("Y")
+                .useYn("Y")
                 .build());
 
         // when
@@ -48,14 +48,14 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
         categoryRepository.save(CommonCodeCategory.builder()
                 .clCode("C02")
                 .clCodeNm("테스트 분류2")
-                .useAt("Y")
+                .useYn("Y")
                 .build());
 
         groupRepository.save(CommonCodeGroup.builder()
                 .codeId("G01")
                 .codeIdNm("테스트 그룹")
                 .clCode("C02")
-                .useAt("Y")
+                .useYn("Y")
                 .build());
 
         // when
@@ -73,14 +73,14 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
                 .codeId("G02")
                 .codeIdNm("테스트 그룹2")
                 .clCode("C03")
-                .useAt("Y")
+                .useYn("Y")
                 .build());
 
         codeRepository.save(CommonCode.builder()
                 .codeGroupId("G02")
                 .code("CODE01")
                 .codeNm("테스트 코드")
-                .useAt("Y")
+                .useYn("Y")
                 .build());
 
         // when

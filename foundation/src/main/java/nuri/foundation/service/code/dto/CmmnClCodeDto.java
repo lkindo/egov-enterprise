@@ -25,7 +25,7 @@ public class CmmnClCodeDto {
     private String clCodeDc;
 
     @Schema(description = "Use Y/N")
-    private String useAt;
+    private String useYn;
 
     @Schema(description = "First Register ID")
     private String frstRegisterId;

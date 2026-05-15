@@ -49,37 +49,37 @@ class SurveyServiceTest {
     @DisplayName("설문 템플릿 목록 조회 - 키워드 없음")
     void getTmplatList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrTmplat tmplat = QustnrTmplat.builder().qustnrTmplatId("T1").qustnrTmplatTy("Type1").build();
+        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").srvyTmplatTypeCd("Type1").build();
         given(tmplatRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(tmplat)));
 
         Page<QustnrTmplatDto> result = surveyService.getTmplatList(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getQustnrTmplatId()).isEqualTo("T1");
+        assertThat(result.getContent().get(0).getSrvyTmplatId()).isEqualTo("T1");
     }
 
     @Test
     @DisplayName("설문 템플릿 목록 조회 - 키워드 있음")
     void getTmplatList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrTmplat tmplat = QustnrTmplat.builder().qustnrTmplatId("T1").qustnrTmplatTy("Type1").build();
-        given(tmplatRepository.findByQustnrTmplatTyContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(tmplat)));
+        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").srvyTmplatTypeCd("Type1").build();
+        given(tmplatRepository.findBySrvyTmplatTypeCdContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(tmplat)));
 
         Page<QustnrTmplatDto> result = surveyService.getTmplatList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(tmplatRepository).findByQustnrTmplatTyContaining(eq("Keyword"), any());
+        verify(tmplatRepository).findBySrvyTmplatTypeCdContaining(eq("Keyword"), any());
     }
 
     @Test
     @DisplayName("설문 템플릿 상세 조회 - 성공")
     void getTmplat_Success() {
-        QustnrTmplat tmplat = QustnrTmplat.builder().qustnrTmplatId("T1").build();
+        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").build();
         given(tmplatRepository.findById("T1")).willReturn(Optional.of(tmplat));
 
         QustnrTmplatDto result = surveyService.getTmplat("T1");
 
-        assertThat(result.getQustnrTmplatId()).isEqualTo("T1");
+        assertThat(result.getSrvyTmplatId()).isEqualTo("T1");
     }
 
     @Test
@@ -110,8 +110,8 @@ class SurveyServiceTest {
     void insertSurvey_Success() {
         QustnrInfoDto dto = QustnrInfoDto.builder()
                 .srvyTtl("Subject")
-                .qustnrBeginDe("2024-01-01")
-                .qustnrEndDe("2024-01-31")
+                .srvyBgngYmd("2024-01-01")
+                .srvyEndYmd("2024-01-31")
                 .build();
         surveyService.insertSurvey(dto);
         verify(infoRepository, times(1)).save(any(QustnrInfo.class));
@@ -120,15 +120,15 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 목록 조회")
     void getQuestionList() {
-        QustnrQesitm question = QustnrQesitm.builder().qustnrQesitmId("Q1").srvyId("S1").qestnSn(1L).build();
-        given(qesitmRepository.findByQustnrIdOrderByQestnSnAsc("S1")).willReturn(List.of(question));
+        QustnrQesitm question = QustnrQesitm.builder().srvyQitemId("Q1").srvyId("S1").srvyQitemSn(1L).build();
+        given(qesitmRepository.findBySrvyIdOrderBySrvyQitemSnAsc("S1")).willReturn(List.of(question));
         
-        QustnrIem item = QustnrIem.builder().qustnrIemId("I1").qustnrQesitmId("Q1").iemSn(1L).build();
-        given(iemRepository.findByQustnrQesitmIdOrderByIemSnAsc("Q1")).willReturn(List.of(item));
+        QustnrIem item = QustnrIem.builder().srvyItemId("I1").srvyQitemId("Q1").srvyItemSn(1L).build();
+        given(iemRepository.findBySrvyQitemIdOrderBySrvyItemSnAsc("Q1")).willReturn(List.of(item));
 
         List<QustnrQesitmDto> result = surveyService.getQuestionList("S1");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getQustnrQesitmId()).isEqualTo("Q1");
+        assertThat(result.get(0).getSrvyQitemId()).isEqualTo("Q1");
     }
 }

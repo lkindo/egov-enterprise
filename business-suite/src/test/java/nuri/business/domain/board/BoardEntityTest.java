@@ -26,9 +26,9 @@ class BoardEntityTest {
     @Test
     @DisplayName("게시글 삭제(상태변경) 테스트")
     void deleteTest() {
-        Board board = Board.builder().useAt("Y").build();
+        Board board = Board.builder().useYn("Y").build();
         board.delete();
-        assertThat(board.getUseAt()).isEqualTo("N");
+        assertThat(board.getUseYn()).isEqualTo("N");
     }
 
     @Test

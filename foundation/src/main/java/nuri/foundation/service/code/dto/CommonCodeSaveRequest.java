@@ -23,5 +23,5 @@ public record CommonCodeSaveRequest(
         String codeDc,
 
         @Schema(description = "Use Y/N")
-        String useAt) {
+        String useYn) {
 }

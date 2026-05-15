@@ -111,7 +111,7 @@ public class RoleManageService {
                 .roleDc(entity.getRoleDc())
                 .roleTy(entity.getRoleTy())
                 .roleSort(entity.getRoleSort() != null ? entity.getRoleSort().toString() : null)
-                .creatDt(entity.getCreatDt() != null ? entity.getCreatDt().toString() : null)
+                .creatDt(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
                 .build();
     }
 }

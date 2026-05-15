@@ -1,97 +1,80 @@
 package nuri.foundation.service.log;
 
-import nuri.foundation.domain.common.BaseSearchDto;
+import nuri.foundation.core.service.BaseAbstractService;
 import nuri.foundation.domain.log.SysLog;
 import nuri.foundation.domain.log.SysLogRepository;
 import nuri.foundation.service.log.dto.SysLogDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
+import nuri.foundation.domain.common.BaseSearchDto;
+import org.springframework.lang.NonNull;
 
-/**
- * 로그인 로그 관리 서비스
- */
-@Service("logManageService")
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class LogManageService {
+@Service("egovLogManageService")
+public class LogManageService extends BaseAbstractService implements EgovLogManageService {
 
     private final SysLogRepository sysLogRepository;
 
-    /**
-     * 시스템 로그 등록 (비동기 수행)
-     */
-    @Async("logExecutor")
-    @Transactional
-    public void insertSysLog(SysLogDto dto) {
-
-        SysLog entity = SysLog.builder()
-                .requstId(dto.getRequstId())
-                .srvcNm(dto.getSrvcNm())
-                .methodNm(dto.getMethodNm())
-                .processSeCode(dto.getProcessSeCode())
-                .processTime(dto.getProcessTime())
-                .rqesterId(dto.getRqesterId())
-                .rqesterIp(dto.getRqesterIp())
-                .occrrncDe(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
-                .build();
-        sysLogRepository.save(Objects.requireNonNull(entity));
+    public LogManageService(SysLogRepository sysLogRepository) {
+        this.sysLogRepository = required(sysLogRepository, "SysLogRepository 는 null 일 수 없습니다");
     }
 
-    /**
-     * 시스템 로그 목록 조회
-     */
-    public List<SysLogDto> selectSysLogList(BaseSearchDto searchVO) {
+    @Override
+    @Transactional
+    public void logInsertSysLog(@NonNull SysLogDto dto) {
+        SysLog entity = SysLog.builder()
+                .dmndId(dto.getDmndId())
+                .srvcNm(dto.getSrvcNm())
+                .methodNm(dto.getMethodNm())
+                .prcsSeCd(dto.getPrcsSeCd())
+                .prcsTm(dto.getPrcsTm())
+                .dmndUserId(dto.getDmndUserId())
+                .rqesterIp(dto.getRqesterIp())
+                .ocrnYmd(dto.getOcrnYmd())
+                .build();
+        sysLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+    }
+
+    @Override
+    public List<SysLogDto> selectSysLogList(@NonNull BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
-
         Page<SysLog> page = sysLogRepository.searchSysLogs(
-                searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
-                null, // Start date
-                null, // End date
-                pageable);
-        return page.getContent().stream().map(this::toSysLogDto).collect(Collectors.toList());
+                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(),
+                required(pageable, "pageable 는 null 일 수 없습니다"));
+        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    /**
-     * 시스템 로그 목록 건수 조회
-     */
-    public int selectSysLogListTotCnt(BaseSearchDto searchVO) {
+    @Override
+    public int selectSysLogListTotCnt(@NonNull BaseSearchDto searchVO) {
+        Pageable pageable = PageRequest.of(0, 1);
         return (int) sysLogRepository.searchSysLogs(
-                searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
-                null,
-                null,
-                PageRequest.of(0, 1)).getTotalElements();
+                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(), pageable)
+                .getTotalElements();
     }
 
-    /**
-     * 시스템 로그 상세 조회
-     */
-    public SysLogDto selectSysLog(String requstId) {
-        return sysLogRepository.findById(Objects.requireNonNull(requstId))
-                .map(this::toSysLogDto)
+    @Override
+    public SysLogDto selectSysLogDetail(@NonNull SysLogDto dto) {
+        return sysLogRepository.findById(required(dto.getDmndId(), "dto.getDmndId() 는 null 일 수 없습니다"))
+                .map(this::toDto)
                 .orElse(null);
     }
 
-    private SysLogDto toSysLogDto(SysLog entity) {
+    private SysLogDto toDto(SysLog entity) {
         return SysLogDto.builder()
-                .requstId(entity.getRequstId())
+                .dmndId(entity.getDmndId())
                 .srvcNm(entity.getSrvcNm())
                 .methodNm(entity.getMethodNm())
-                .processSeCode(entity.getProcessSeCode())
-                .processTime(entity.getProcessTime())
-                .rqesterId(entity.getRqesterId())
+                .prcsSeCd(entity.getPrcsSeCd())
+                .prcsTm(entity.getPrcsTm())
+                .dmndUserId(entity.getDmndUserId())
                 .rqesterIp(entity.getRqesterIp())
-                .occrrncDe(entity.getOccrrncDe())
+                .ocrnYmd(entity.getOcrnYmd())
                 .build();
     }
 }

@@ -175,7 +175,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .roleDc(role.getRoleDc())
                 .roleTyp(role.getRoleTy())
                 .roleSort(role.getRoleSort() != null ? role.getRoleSort().toString() : null)
-                .roleCreatDe(role.getCreatDt() != null ? role.getCreatDt().toString() : null)
+                .roleCreatDe(role.getCreatedDate() != null ? role.getCreatedDate().toString() : null)
                 .build();
     }
 }

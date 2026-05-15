@@ -9,4 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface InstitutionCodeRepository extends JpaRepository<InstitutionCode, String> {
     Page<InstitutionCode> findByAllInsttNmContaining(String allInsttNm, Pageable pageable);
+
+    default Page<InstitutionCode> searchInstitutionCodes(String searchCondition, String searchKeyword, Pageable pageable) {
+        return findByAllInsttNmContaining(searchKeyword, pageable);
+    }
 }

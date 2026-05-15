@@ -45,7 +45,7 @@ class FaqServiceTest {
         Faq faq = Faq.builder()
                 .faqId("FAQ_1")
                 .qestnSj("Question 1")
-                .qestnCn("Content 1")
+                .srvyQitemCn("Content 1")
                 .answerCn("Answer 1")
                 .build();
         Page<Faq> faqPage = new PageImpl<>(List.of(faq));
@@ -69,7 +69,7 @@ class FaqServiceTest {
         Faq faq = Faq.builder()
                 .faqId(faqId)
                 .qestnSj("Question 1")
-                .qestnCn("Content 1")
+                .srvyQitemCn("Content 1")
                 .answerCn("Answer 1")
                 .build();
 
@@ -102,7 +102,7 @@ class FaqServiceTest {
         String userId = "user1";
         FaqDto dto = FaqDto.builder()
                 .qestnSj("New Question")
-                .qestnCn("New Content")
+                .srvyQitemCn("New Content")
                 .answerCn("New Answer")
                 .build();
 
@@ -125,14 +125,14 @@ class FaqServiceTest {
         String userId = "user1";
         FaqDto dto = FaqDto.builder()
                 .qestnSj("Updated Question")
-                .qestnCn("Updated Content")
+                .srvyQitemCn("Updated Content")
                 .answerCn("Updated Answer")
                 .build();
 
         Faq existingFaq = Faq.builder()
                 .faqId(faqId)
                 .qestnSj("Old Question")
-                .qestnCn("Old Content")
+                .srvyQitemCn("Old Content")
                 .answerCn("Old Answer")
                 .build();
 
@@ -143,7 +143,7 @@ class FaqServiceTest {
 
         // then
         assertThat(existingFaq.getQestnSj()).isEqualTo("Updated Question");
-        assertThat(existingFaq.getQestnCn()).isEqualTo("Updated Content");
+        assertThat(existingFaq.getSrvyQitemCn()).isEqualTo("Updated Content");
         assertThat(existingFaq.getAnswerCn()).isEqualTo("Updated Answer");
     }
 

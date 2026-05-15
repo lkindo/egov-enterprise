@@ -29,11 +29,11 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
                         commonCode.code,
                         commonCode.codeNm,
                         commonCode.codeDc,
-                        commonCode.useAt))
+                        commonCode.useYn))
                 .from(commonCode)
                 .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
                 .where(
-                        commonCodeGroup.useAt.eq("Y"),
+                        commonCodeGroup.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -44,7 +44,7 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
                 .from(commonCode)
                 .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
                 .where(
-                        commonCodeGroup.useAt.eq("Y"),
+                        commonCodeGroup.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 

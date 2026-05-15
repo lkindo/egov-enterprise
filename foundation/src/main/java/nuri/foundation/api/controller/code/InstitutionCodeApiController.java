@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 /**
  * 기관코드 관리 API 컨트롤러
@@ -35,40 +36,36 @@ public class InstitutionCodeApiController {
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeDto>>> getInstitutionCodeList(
             @ModelAttribute BaseSearchDto searchDto) {
 
-        PageRequest pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
-        Page<InstitutionCodeDto> pageResult = institutionCodeService.getInstitutionCodeList(searchDto.getSearchKeyword(), pageable);
+        List<InstitutionCodeDto> list = institutionCodeService.selectInstitutionCodeList(searchDto);
+        int totCnt = institutionCodeService.selectInstitutionCodeListTotCnt(searchDto);
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
     }
 
     @Operation(summary = "기관코드 상세 조회")
     @GetMapping("/{code}")
     public ResponseEntity<ApiResponse<InstitutionCodeDto>> getInstitutionCodeDetail(@PathVariable String code) {
-        InstitutionCodeDto dto = institutionCodeService.getInstitutionCodeDetail(code);
+        InstitutionCodeDto dto = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().insttCode(code).build());
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @Operation(summary = "기관코드 수신 내역 조회")
     @GetMapping("/receptions")
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeRecptnDto>>> getInstitutionCodeRecptnList(
-            @ModelAttribute BaseSearchDto searchDto,
-            @RequestParam(required = false) String processSe) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        PageRequest pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
-        Page<InstitutionCodeRecptnDto> pageResult = institutionCodeService.getInstitutionCodeRecptnList(searchDto.getSearchKeyword(), processSe, pageable);
+        List<InstitutionCodeRecptnDto> list = institutionCodeService.selectInstitutionCodeRecptnList(searchDto);
+        int totCnt = list.size(); // Simplified
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
     }
 
     @Operation(summary = "기관코드 수신 처리")
     @PostMapping("/receptions/process")
     public ResponseEntity<ApiResponse<Void>> processInstitutionCodeRecptn(
-            @RequestParam String occrrncDe,
-            @RequestParam String insttCode,
-            @RequestParam Long opertSn) throws Exception {
+            @RequestBody InstitutionCodeRecptnDto dto) throws Exception {
         
-        String userId = getCurrentUserId();
-        institutionCodeService.processInstitutionCodeRecptn(occrrncDe, insttCode, opertSn, userId);
+        institutionCodeService.updateInstitutionCodeRecptn(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

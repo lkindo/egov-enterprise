@@ -225,7 +225,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long nttId = 1L;
         String userId = "user1";
-        Board board = Board.builder().nttId(nttId).useAt("Y").ntcrId(userId).build();
+        Board board = Board.builder().nttId(nttId).useYn("Y").ntcrId(userId).build();
 
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
@@ -234,7 +234,7 @@ class BoardServiceTest {
         boardService.deletePost(bbsId, nttId, "user1");
 
         // then
-        assertThat(board.getUseAt()).isEqualTo("N");
+        assertThat(board.getUseYn()).isEqualTo("N");
     }
 
     @Test

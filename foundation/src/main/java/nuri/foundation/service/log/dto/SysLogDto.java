@@ -16,23 +16,23 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SysLogDto {
     /** 요청 ID */
-    private String requstId;
+    private String dmndId;
     /** 서비스명 */
     private String srvcNm;
     /** 메서드명 */
     private String methodNm;
     /** 처리구분코드 */
-    private String processSeCode;
+    private String prcsSeCd;
     /** 처리시간 */
-    private String processTime;
+    private String prcsTm;
     /** 요청자ID */
-    private String rqesterId;
+    private String dmndUserId;
     /** 요청자IP */
     private String rqesterIp;
     /** 발생일자 */
-    private String occrrncDe;
+    private String ocrnYmd;
 
-    public String getOcccrrncDe() {
-        return occrrncDe;
+    public String getOcrnYmd() {
+        return ocrnYmd;
     }
 }

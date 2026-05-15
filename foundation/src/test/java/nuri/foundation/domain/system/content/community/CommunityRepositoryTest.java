@@ -30,7 +30,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
                 .cmntyId("CMMNTY_000000000001")
                 .cmntyTtl("테스트 커뮤니티")
                 .cmntyIntroCn("테스트 커뮤니티 설명")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
 
         // when
@@ -48,7 +48,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         Community community = Community.builder()
                 .cmntyId("CMMNTY_000000000001")
                 .cmntyTtl("테스트 커뮤니티")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         communityRepository.save(community);
 
@@ -61,7 +61,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         // then
         Community foundCommunity = communityRepository.findById("CMMNTY_000000000001").orElseThrow();
         assertThat(foundCommunity.getCmntyTtl()).isEqualTo("수정된 커뮤니티");
-        assertThat(foundCommunity.getUseAt()).isEqualTo("N");
+        assertThat(foundCommunity.getUseYn()).isEqualTo("N");
     }
 
     @Test
@@ -71,7 +71,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         Community community = Community.builder()
                 .cmntyId("CMMNTY_000000000001")
                 .cmntyTtl("테스트 커뮤니티")
-                .useAt("Y")
+                .useYn("Y")
                 .build();
         communityRepository.save(community);
 
@@ -83,7 +83,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
 
         // then
         Community foundCommunity = communityRepository.findById("CMMNTY_000000000001").orElseThrow();
-        assertThat(foundCommunity.getUseAt()).isEqualTo("N");
+        assertThat(foundCommunity.getUseYn()).isEqualTo("N");
     }
 
     @Test
@@ -93,10 +93,10 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         CommunityUserId id = new CommunityUserId("CMMNTY_001", "USER_001");
         CommunityUser user = CommunityUser.builder()
                 .id(id)
-                .mngrAt("N")
-                .mberSttus("A")
-                .useAt("Y")
-                .sbscrbDe(LocalDateTime.now())
+                .mngrYn("N")
+                .mbrSttsCd("A")
+                .useYn("Y")
+                .joinYmd(LocalDateTime.now())
                 .build();
 
         // when
@@ -105,7 +105,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         // then
         Optional<CommunityUser> foundUser = communityUserRepository.findById(id);
         assertThat(foundUser).isPresent();
-        assertThat(foundUser.get().getMngrAt()).isEqualTo("N");
+        assertThat(foundUser.get().getMngrYn()).isEqualTo("N");
 
         // when: 승인 및 관리자 권한 부여
         foundUser.get().approve();
@@ -116,8 +116,8 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
 
         // then
         CommunityUser updatedUser = communityUserRepository.findById(id).orElseThrow();
-        assertThat(updatedUser.getMberSttus()).isEqualTo("P");
-        assertThat(updatedUser.getMngrAt()).isEqualTo("Y");
+        assertThat(updatedUser.getMbrSttsCd()).isEqualTo("P");
+        assertThat(updatedUser.getMngrYn()).isEqualTo("Y");
 
         // when: 관리자 권한 해제 및 탈퇴
         updatedUser.revokeAdmin();
@@ -128,8 +128,8 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
 
         // then
         CommunityUser finalUser = communityUserRepository.findById(id).orElseThrow();
-        assertThat(finalUser.getMngrAt()).isEqualTo("N");
-        assertThat(finalUser.getUseAt()).isEqualTo("N");
-        assertThat(finalUser.getSecsnDe()).isNotNull();
+        assertThat(finalUser.getMngrYn()).isEqualTo("N");
+        assertThat(finalUser.getUseYn()).isEqualTo("N");
+        assertThat(finalUser.getWdrlYmd()).isNotNull();
     }
 }

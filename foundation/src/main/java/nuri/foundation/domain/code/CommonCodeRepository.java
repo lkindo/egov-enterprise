@@ -17,5 +17,5 @@ public interface CommonCodeRepository extends JpaRepository<CommonCode, CommonCo
     @Transactional
     void deleteById(@NonNull CommonCodeId id);
 
-    List<CommonCode> findByCodeGroupIdAndUseAt(String codeGroupId, String useAt);
+    List<CommonCode> findByCodeGroupIdAndUseYn(String codeGroupId, String useYn);
 }

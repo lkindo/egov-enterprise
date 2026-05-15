@@ -58,7 +58,7 @@ public class TemplateService implements EgovTemplateService {
                 .tmplatNm(dto.getTmplatNm())
                 .tmplatCours(dto.getTmplatCours())
                 .tmplatSeCode(dto.getTmplatSeCode())
-                .useAt(dto.getUseAt())
+                .useYn(dto.getUseYn())
                 .build();
 
         templateRepository.save(Objects.requireNonNull(template));
@@ -72,7 +72,7 @@ public class TemplateService implements EgovTemplateService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         template.update(dto.getTmplatNm(), dto.getTmplatCours(), dto.getTmplatSeCode(),
-                dto.getUseAt());
+                dto.getUseYn());
     }
 
     @Override

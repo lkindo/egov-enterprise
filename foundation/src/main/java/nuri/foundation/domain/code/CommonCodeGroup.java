@@ -37,28 +37,28 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     private String clCode;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
     public CommonCodeGroup(@NonNull String codeId, @NonNull String codeIdNm, String codeIdDc, String clCode,
-            String useAt,
+            String useYn,
             String frstRegisterId) {
         this.codeId = Objects.requireNonNull(codeId);
         this.codeIdNm = Objects.requireNonNull(codeIdNm);
         this.codeIdDc = codeIdDc;
         this.clCode = clCode;
-        this.useAt = useAt == null ? "Y" : useAt;
+        this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(@NonNull String codeIdNm, String codeIdDc, String useAt, String lastUpdusrId) {
+    public void update(@NonNull String codeIdNm, String codeIdDc, String useYn, String lastUpdusrId) {
         this.codeIdNm = Objects.requireNonNull(codeIdNm);
         this.codeIdDc = codeIdDc;
-        this.useAt = useAt;
+        this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

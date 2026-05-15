@@ -74,7 +74,7 @@ class AuthDtoTest {
                 .roleDc("일반사용자역할")
                 .roleTy("URL")
                 .roleSort("1")
-                .crtDt("2024-01-01")
+                .createdDate("2024-01-01")
                 .build();
 
         assertThat(dto.getRoleCode()).isEqualTo("ROLE_001");

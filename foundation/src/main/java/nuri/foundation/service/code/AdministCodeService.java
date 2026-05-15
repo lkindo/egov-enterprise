@@ -39,7 +39,7 @@ public class AdministCodeService {
                 .administZoneSe(dto.getAdministZoneSe())
                 .administZoneNm(dto.getAdministZoneNm())
                 .upperAdministZoneCode(dto.getUpperAdministZoneCode())
-                .useAt(dto.getUseAt())
+                .useYn(dto.getUseYn())
                 .creatDe(dto.getCreatDe())
                 .createdBy(userId)
                 .build();
@@ -50,7 +50,7 @@ public class AdministCodeService {
     public void updateAdministCode(String code, AdministCodeDto dto, String userId) {
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("Administrative code not found: " + code));
-        entity.update(dto.getAdministZoneSe(), dto.getAdministZoneNm(), dto.getUpperAdministZoneCode(), dto.getUseAt(), userId);
+        entity.update(dto.getAdministZoneSe(), dto.getAdministZoneNm(), dto.getUpperAdministZoneCode(), dto.getUseYn(), userId);
     }
 
     @Transactional
@@ -64,7 +64,7 @@ public class AdministCodeService {
                 .administZoneSe(entity.getAdministZoneSe())
                 .administZoneNm(entity.getAdministZoneNm())
                 .upperAdministZoneCode(entity.getUpperAdministZoneCode())
-                .useAt(entity.getUseAt())
+                .useYn(entity.getUseYn())
                 .creatDe(entity.getCreatDe())
                 .ablDe(entity.getAblDe())
                 .createdBy(entity.getCreatedBy())
