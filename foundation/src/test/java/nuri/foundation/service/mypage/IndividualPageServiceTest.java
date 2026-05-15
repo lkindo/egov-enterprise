@@ -38,8 +38,8 @@ class IndividualPageServiceTest {
         // given
         IndividualPageDto dto = IndividualPageDto.builder()
                 .pageId("PGE_01")
-                .pageNm("My Page")
-                .pageDc("Description")
+                .pageTtl("My Page")
+                .pageExpln("Description")
                 .userId("user1")
                 .build();
 
@@ -56,24 +56,24 @@ class IndividualPageServiceTest {
         // given
         IndividualPage page = IndividualPage.builder()
                 .pageId("PGE_01")
-                .pageNm("Old Page")
-                .pageDc("Old Desc")
+                .pageTtl("Old Page")
+                .pageExpln("Old Desc")
                 .userId("user1")
                 .build();
         given(individualPageRepository.findById("PGE_01")).willReturn(Optional.of(page));
 
         IndividualPageDto updateDto = IndividualPageDto.builder()
                 .pageId("PGE_01")
-                .pageNm("Updated Page")
-                .pageDc("Updated Desc")
+                .pageTtl("Updated Page")
+                .pageExpln("Updated Desc")
                 .build();
 
         // when
         individualPageService.updateIndividualPage(updateDto);
 
         // then
-        assertThat(page.getPageNm()).isEqualTo("Updated Page");
-        assertThat(page.getPageDc()).isEqualTo("Updated Desc");
+        assertThat(page.getPageTtl()).isEqualTo("Updated Page");
+        assertThat(page.getPageExpln()).isEqualTo("Updated Desc");
     }
 
     @Test
@@ -108,8 +108,8 @@ class IndividualPageServiceTest {
         String userId = "user1";
         IndividualPage page = IndividualPage.builder()
                 .pageId("PGE_01")
-                .pageNm("My Page")
-                .pageDc("Desc")
+                .pageTtl("My Page")
+                .pageExpln("Desc")
                 .userId(userId)
                 .build();
         given(individualPageRepository.findByUserId(userId)).willReturn(Optional.of(page));
@@ -120,7 +120,7 @@ class IndividualPageServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getPageId()).isEqualTo("PGE_01");
-        assertThat(result.getPageNm()).isEqualTo("My Page");
+        assertThat(result.getPageTtl()).isEqualTo("My Page");
         assertThat(result.getUserId()).isEqualTo(userId);
     }
 

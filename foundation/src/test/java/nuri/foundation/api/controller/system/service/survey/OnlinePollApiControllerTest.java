@@ -39,7 +39,7 @@ class OnlinePollApiControllerTest {
     @Test
     @DisplayName("온라인 설문 목록 페이징 조회")
     void getPolls() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollTtl("Poll 1").build();
         given(onlinePollService.getPollList(any(), any())).willReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/v1/admin/system/polls"))
@@ -50,7 +50,7 @@ class OnlinePollApiControllerTest {
     @Test
     @DisplayName("온라인 설문 상세 조회")
     void getPoll() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollTtl("Poll 1").build();
         given(onlinePollService.getPoll("P1")).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/polls/P1"))
@@ -61,7 +61,7 @@ class OnlinePollApiControllerTest {
     @Test
     @DisplayName("온라인 설문 등록")
     void insertPoll() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollNm("New Poll").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollTtl("New Poll").build();
 
         mockMvc.perform(post("/api/v1/admin/system/polls")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -32,7 +32,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(QWebLog.webLog.occrrncDe.desc())
+                .orderBy(QWebLog.webLog.ocrnYmd.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -69,7 +69,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_WEB_LOG WHERE TO_CHAR(OCCRRNC_DE, 'YYYYMMDD') < :targetDe";
+        String sql = "DELETE FROM TB_WEB_LOG WHERE TO_CHAR(OCRN_YMD, 'YYYYMMDD') < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

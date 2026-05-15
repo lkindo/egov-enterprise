@@ -90,7 +90,7 @@ class InstitutionCodeServiceTest {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId.builder()
-                .occrrncDe("20240314").insttCode("123").opertSn(1L).build();
+                .ocrnYmd("20240314").insttCode("123").opertSn(1L).build();
         InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder().id(id).allInsttNm("Test").build();
         given(recptnLogRepository.findByAllInsttNmContainingAndProcessSe(eq("Test"), eq("1"), eq(pageable)))
                 .willReturn(new PageImpl<>(Collections.singletonList(entity)));
@@ -113,7 +113,7 @@ class InstitutionCodeServiceTest {
         String userId = "admin";
 
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId.builder()
-                .occrrncDe(occrrncDe).insttCode(insttCode).opertSn(opertSn).build();
+                .ocrnYmd(occrrncDe).insttCode(insttCode).opertSn(opertSn).build();
         InstitutionCodeRecptnLog logEntity = spy(InstitutionCodeRecptnLog.builder()
                 .id(id).allInsttNm("New Instt").build());
         

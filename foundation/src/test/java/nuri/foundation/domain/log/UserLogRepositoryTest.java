@@ -50,8 +50,8 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
         entityManager.persist(user);
 
         UserLog log = UserLog.builder()
-                .occrrncDe("20240408")
-                .rqesterId("ESNTL_01")
+                .ocrnYmd("20240408")
+                .dmndUserId("ESNTL_01")
                 .srvcNm("TestService")
                 .methodNm("testMethod")
                 .creatCo(1)

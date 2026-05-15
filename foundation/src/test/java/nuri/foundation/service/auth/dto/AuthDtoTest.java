@@ -74,7 +74,7 @@ class AuthDtoTest {
                 .roleDc("일반사용자역할")
                 .roleTy("URL")
                 .roleSort("1")
-                .creatDt("2024-01-01")
+                .crtDt("2024-01-01")
                 .build();
 
         assertThat(dto.getRoleCode()).isEqualTo("ROLE_001");
@@ -83,7 +83,7 @@ class AuthDtoTest {
         assertThat(dto.getRoleDc()).isEqualTo("일반사용자역할");
         assertThat(dto.getRoleTy()).isEqualTo("URL");
         assertThat(dto.getRoleSort()).isEqualTo("1");
-        assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
+        assertThat(dto.getCrtDt()).isEqualTo("2024-01-01");
         // Compatibility getters
         assertThat(dto.getRoleTyp()).isEqualTo("URL");
         assertThat(dto.getRoleCreatDe()).isEqualTo("2024-01-01");

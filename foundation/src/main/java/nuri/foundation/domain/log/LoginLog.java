@@ -42,13 +42,13 @@ public class LoginLog extends BaseEntity {
     private String errorCode;
 
     public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,
-            LocalDateTime creatDt) {
+            LocalDateTime createdDate) {
         this.logId = logId;
         this.loginId = loginId;
         this.loginIp = loginIp;
         this.loginMthd = loginMthd;
         this.errOccrrAt = errOccrrAt;
         this.errorCode = errorCode;
-        this.createdDate = creatDt;
+        this.createdDate = createdDate;
     }
 }

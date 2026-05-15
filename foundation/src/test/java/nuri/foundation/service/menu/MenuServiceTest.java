@@ -68,7 +68,7 @@ class MenuServiceTest {
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
         Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
-        Menu menu2 = Menu.builder().id(2L).menuNm("Menu 2").menuOrdr(2).upperMenuNo(1L).build();
+        Menu menu2 = Menu.builder().id(2L).menuNm("Menu 2").menuOrdr(2).upperMenuSn(1L).build();
         
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
@@ -207,9 +207,9 @@ class MenuServiceTest {
     @DisplayName("getRootIdByProgrmFileNm - 최상위 메뉴 ID 찾기")
     void getRootIdByProgrmFileNm() {
         // given
-        Menu menu3 = Menu.builder().id(3L).upperMenuNo(2L).progrmFileNm("Prog3").build();
-        Menu menu2 = Menu.builder().id(2L).upperMenuNo(1L).build();
-        Menu menu1 = Menu.builder().id(1L).upperMenuNo(0L).build();
+        Menu menu3 = Menu.builder().id(3L).upperMenuSn(2L).progrmFileNm("Prog3").build();
+        Menu menu2 = Menu.builder().id(2L).upperMenuSn(1L).build();
+        Menu menu1 = Menu.builder().id(1L).upperMenuSn(0L).build();
 
         when(menuRepository.findByProgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));

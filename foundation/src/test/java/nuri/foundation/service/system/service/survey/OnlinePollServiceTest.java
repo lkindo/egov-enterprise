@@ -47,7 +47,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 키워드 없음")
     void getPollList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
@@ -59,7 +59,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 키워드 있음")
     void getPollList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
         given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", pageable);
@@ -83,7 +83,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 상세 조회 - 성공")
     void getPoll_Success() {
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         
         OnlinePollItem item = OnlinePollItem.builder().pollIemId("I1").pollManage(entity).pollIemNm("Item 1").build();
@@ -109,7 +109,7 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollItemDto itemDto = OnlinePollItemDto.builder().pollIemNm("Item").build();
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                    .pollNm("New Poll")
+                    .pollTtl("New Poll")
                     .pollItems(List.of(itemDto))
                     .build();
 
@@ -126,20 +126,20 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollManage entity = OnlinePollManage.builder()
                     .pollId("P1")
-                    .pollNm("Old")
+                    .pollTtl("Old")
                     .pollItems(new ArrayList<>())
                     .build();
             given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollId("P1")
-                    .pollNm("New")
+                    .pollTtl("New")
                     .pollItems(List.of(OnlinePollItemDto.builder().pollIemNm("New Item").build()))
                     .build();
 
             onlinePollService.updatePoll(dto);
 
-            assertThat(entity.getPollNm()).isEqualTo("New");
+            assertThat(entity.getPollTtl()).isEqualTo("New");
             assertThat(entity.getPollItems()).hasSize(1);
         }
     }
@@ -169,8 +169,8 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
-                .pollBeginDe(today)
-                .pollEndDe(today)
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
                 .build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
@@ -194,8 +194,8 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
-                .pollBeginDe(tomorrow)
-                .pollEndDe(tomorrow)
+                .pollBgngYmd(tomorrow)
+                .pollEndYmd(tomorrow)
                 .build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
@@ -208,8 +208,8 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
-                .pollBeginDe(yesterday)
-                .pollEndDe(yesterday)
+                .pollBgngYmd(yesterday)
+                .pollEndYmd(yesterday)
                 .build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
@@ -222,8 +222,8 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
-                .pollBeginDe(today)
-                .pollEndDe(today)
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
                 .build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(1L);

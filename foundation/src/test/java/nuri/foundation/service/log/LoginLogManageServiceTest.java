@@ -49,7 +49,7 @@ class LoginLogManageServiceTest {
             LoginLog log1 = LoginLog.builder()
                     .logId("LGN_001")
                     .loginId("user01")
-                    .creatDt(LocalDateTime.now())
+                    .crtDt(LocalDateTime.now())
                     .build();
 
             Page<LoginLog> page = new PageImpl<>(Arrays.asList(log1));
@@ -88,7 +88,7 @@ class LoginLogManageServiceTest {
             LoginLog log = LoginLog.builder()
                     .logId(logId)
                     .loginId("user01")
-                    .creatDt(LocalDateTime.now())
+                    .crtDt(LocalDateTime.now())
                     .build();
 
             when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));

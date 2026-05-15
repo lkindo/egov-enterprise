@@ -58,7 +58,7 @@ class LogServiceTest {
             assertEquals(mthd, savedLog.getLoginMthd());
             assertEquals(errAt, savedLog.getErrOccrrAt());
             assertEquals(errCode, savedLog.getErrorCode());
-            assertNotNull(savedLog.getCreatDt());
+            assertNotNull(savedLog.getCrtDt());
         }
     }
 
@@ -75,7 +75,7 @@ class LogServiceTest {
                     .loginId("user01")
                     .loginIp("127.0.0.1")
                     .loginMthd("LOGIN")
-                    .creatDt(LocalDateTime.now())
+                    .crtDt(LocalDateTime.now())
                     .build();
 
             LoginLog log2 = LoginLog.builder()
@@ -83,7 +83,7 @@ class LogServiceTest {
                     .loginId("user02")
                     .loginIp("127.0.0.1")
                     .loginMthd("LOGIN")
-                    .creatDt(LocalDateTime.now().minusMinutes(1))
+                    .crtDt(LocalDateTime.now().minusMinutes(1))
                     .build();
 
             when(loginLogRepository.findTop100ByOrderByCreatDtDesc()).thenReturn(Arrays.asList(log1, log2));

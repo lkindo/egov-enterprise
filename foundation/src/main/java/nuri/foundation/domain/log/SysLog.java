@@ -22,51 +22,51 @@ import lombok.NoArgsConstructor;
 public class SysLog extends BaseEntity {
 
     @Id
-    @Column(name = "REQUST_ID", length = 20)
-    private String requstId;
+    @Column(name = "DMND_ID", length = 20)
+    private String dmndId;
 
-    @Column(name = "SVC_NM", length = 255)
+    @Column(name = "SRVC_NM", length = 255)
     private String srvcNm;
 
     @Column(name = "METHOD_NM", length = 60)
     private String methodNm;
 
-    @Column(name = "PROCESS_SE_CODE", length = 3)
-    private String processSeCode;
+    @Column(name = "PRCS_SE_CD", length = 3)
+    private String prcsSeCd;
 
-    @Column(name = "PROCESS_TIME", length = 14)
-    private String processTime;
+    @Column(name = "PRCS_TM", length = 14)
+    private String prcsTm;
 
-    @Column(name = "RQESTER_ID", length = 20)
-    private String rqesterId;
+    @Column(name = "DMND_USER_ID", length = 20)
+    private String dmndUserId;
 
     @Column(name = "RQESTER_IP", length = 23)
     private String rqesterIp;
 
-    @Column(name = "OCCRRNC_DE", length = 20)
-    private String occrrncDe;
+    @Column(name = "OCRN_YMD", length = 20)
+    private String ocrnYmd;
 
-    @Column(name = "RSPNS_CODE", length = 3)
-    private String rspnsCode;
+    @Column(name = "RSPNS_CD", length = 3)
+    private String rspnsCd;
 
-    @Column(name = "ERROR_CODE", length = 15)
-    private String errorCode;
+    @Column(name = "ERR_CD", length = 15)
+    private String errCd;
 
-    @Column(name = "ERROR_SE", length = 3)
-    private String errorSe;
+    @Column(name = "ERR_SE_CD", length = 3)
+    private String errSeCd;
 
-    public SysLog(String requstId, String srvcNm, String methodNm, String processSeCode, String processTime,
-            String rqesterId, String rqesterIp, String occrrncDe, String rspnsCode, String errorCode, String errorSe) {
-        this.requstId = requstId;
+    public SysLog(String dmndId, String srvcNm, String methodNm, String prcsSeCd, String prcsTm,
+            String dmndUserId, String rqesterIp, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
+        this.dmndId = dmndId;
         this.srvcNm = srvcNm;
         this.methodNm = methodNm;
-        this.processSeCode = processSeCode;
-        this.processTime = processTime;
-        this.rqesterId = rqesterId;
+        this.prcsSeCd = prcsSeCd;
+        this.prcsTm = prcsTm;
+        this.dmndUserId = dmndUserId;
         this.rqesterIp = rqesterIp;
-        this.occrrncDe = occrrncDe;
-        this.rspnsCode = rspnsCode;
-        this.errorCode = errorCode;
-        this.errorSe = errorSe;
+        this.ocrnYmd = ocrnYmd;
+        this.rspnsCd = rspnsCd;
+        this.errCd = errCd;
+        this.errSeCd = errSeCd;
     }
 }

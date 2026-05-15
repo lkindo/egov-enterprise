@@ -11,10 +11,10 @@ class UserLogTest {
     @DisplayName("UserLog 빌더 확인")
     void testBuilder() {
         UserLog log = UserLog.builder()
-                .rqesterId("user01")
-                .occrrncDe("20240101")
+                .dmndUserId("user01")
+                .ocrnYmd("20240101")
                 .build();
 
-        assertEquals("user01", log.getRqesterId());
+        assertEquals("user01", log.getDmndUserId());
     }
 }

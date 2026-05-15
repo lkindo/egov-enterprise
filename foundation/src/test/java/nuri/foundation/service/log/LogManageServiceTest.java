@@ -42,12 +42,12 @@ class LogManageServiceTest {
         void testInsertSysLog_Success() {
             // Given
             SysLogDto dto = SysLogDto.builder()
-                    .requstId("REQ_001")
+                    .dmndId("REQ_001")
                     .srvcNm("UserService")
                     .methodNm("getUser")
                     .processSeCode("REQ")
                     .processTime("100")
-                    .rqesterId("admin")
+                    .dmndUserId("admin")
                     .rqesterIp("127.0.0.1")
                     .build();
 
@@ -73,7 +73,7 @@ class LogManageServiceTest {
             searchVO.setSearchKeyword("UserService");
 
             SysLog log1 = SysLog.builder()
-                    .requstId("REQ_001")
+                    .dmndId("REQ_001")
                     .srvcNm("UserService")
                     .build();
 
@@ -87,7 +87,7 @@ class LogManageServiceTest {
             // Then
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals("REQ_001", result.get(0).getRequstId());
+            assertEquals("REQ_001", result.get(0).getDmndId());
             assertEquals("UserService", result.get(0).getSrvcNm());
             verify(sysLogRepository, times(1)).searchSysLogs(eq("UserService"), any(), any(), any(Pageable.class));
         }
@@ -116,7 +116,7 @@ class LogManageServiceTest {
             // Given
             String requestId = "REQ_001";
             SysLog log = SysLog.builder()
-                    .requstId(requestId)
+                    .dmndId(requestId)
                     .srvcNm("UserService")
                     .build();
 
@@ -127,7 +127,7 @@ class LogManageServiceTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(requestId, result.getRequstId());
+            assertEquals(requestId, result.getDmndId());
             assertEquals("UserService", result.getSrvcNm());
         }
 

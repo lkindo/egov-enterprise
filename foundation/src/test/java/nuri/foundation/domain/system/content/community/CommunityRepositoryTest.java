@@ -27,9 +27,9 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
     void saveCommunity() {
         // given
         Community community = Community.builder()
-                .cmmntyId("CMMNTY_000000000001")
-                .cmmntyNm("테스트 커뮤니티")
-                .cmmntyIntrcn("테스트 커뮤니티 설명")
+                .cmntyId("CMMNTY_000000000001")
+                .cmntyTtl("테스트 커뮤니티")
+                .cmntyIntroCn("테스트 커뮤니티 설명")
                 .useAt("Y")
                 .build();
 
@@ -37,8 +37,8 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         Community savedCommunity = communityRepository.save(community);
 
         // then
-        assertThat(savedCommunity.getCmmntyId()).isEqualTo("CMMNTY_000000000001");
-        assertThat(savedCommunity.getCmmntyNm()).isEqualTo("테스트 커뮤니티");
+        assertThat(savedCommunity.getCmntyId()).isEqualTo("CMMNTY_000000000001");
+        assertThat(savedCommunity.getCmntyTtl()).isEqualTo("테스트 커뮤니티");
     }
 
     @Test
@@ -46,8 +46,8 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
     void updateCommunity() {
         // given
         Community community = Community.builder()
-                .cmmntyId("CMMNTY_000000000001")
-                .cmmntyNm("테스트 커뮤니티")
+                .cmntyId("CMMNTY_000000000001")
+                .cmntyTtl("테스트 커뮤니티")
                 .useAt("Y")
                 .build();
         communityRepository.save(community);
@@ -60,7 +60,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
 
         // then
         Community foundCommunity = communityRepository.findById("CMMNTY_000000000001").orElseThrow();
-        assertThat(foundCommunity.getCmmntyNm()).isEqualTo("수정된 커뮤니티");
+        assertThat(foundCommunity.getCmntyTtl()).isEqualTo("수정된 커뮤니티");
         assertThat(foundCommunity.getUseAt()).isEqualTo("N");
     }
 
@@ -69,8 +69,8 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
     void deleteCommunity() {
         // given
         Community community = Community.builder()
-                .cmmntyId("CMMNTY_000000000001")
-                .cmmntyNm("테스트 커뮤니티")
+                .cmntyId("CMMNTY_000000000001")
+                .cmntyTtl("테스트 커뮤니티")
                 .useAt("Y")
                 .build();
         communityRepository.save(community);

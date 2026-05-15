@@ -42,8 +42,8 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
         commonCodeRepository.save(code);
 
         SysLog log = SysLog.builder()
-                .requstId("REQ_001")
-                .occrrncDe("20240101")
+                .dmndId("REQ_001")
+                .ocrnYmd("20240101")
                 .processSeCode("C")
                 .srvcNm("TestService")
                 .methodNm("testMethod")
@@ -55,7 +55,7 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getRequstId()).isEqualTo("REQ_001");
+        assertThat(result.getContent().get(0).getDmndId()).isEqualTo("REQ_001");
     }
 
     @Test
@@ -63,8 +63,8 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
     void deleteOldLogs() {
         // given
         SysLog oldLog = SysLog.builder()
-                .requstId("REQ_OLD")
-                .occrrncDe("20200101")
+                .dmndId("REQ_OLD")
+                .ocrnYmd("20200101")
                 .build();
         sysLogRepository.save(oldLog);
         entityManager.flush();

@@ -14,8 +14,8 @@ class IndividualPageTest {
         // Given
         IndividualPage pge = IndividualPage.builder()
                 .pageId("PGE_001")
-                .pageNm("테스트 페이지")
-                .pageDc("설명")
+                .pageTtl("테스트 페이지")
+                .pageExpln("설명")
                 .userId("user1")
                 .build();
 
@@ -23,7 +23,7 @@ class IndividualPageTest {
         pge.update("수정된 명칭", "새 설명");
 
         // Then
-        assertEquals("수정된 명칭", pge.getPageNm());
-        assertEquals("새 설명", pge.getPageDc());
+        assertEquals("수정된 명칭", pge.getPageTtl());
+        assertEquals("새 설명", pge.getPageExpln());
     }
 }
