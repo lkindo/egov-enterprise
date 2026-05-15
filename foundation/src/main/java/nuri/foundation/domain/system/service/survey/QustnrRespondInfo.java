@@ -23,32 +23,32 @@ public class QustnrRespondInfo extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_RSPNS_ID", length = 20)
-    private String qestnrQesrspnsId;
+    private String srvyRspdId;
 
     @Column(name = "QESTNR_ID", length = 20, nullable = false)
-    private String qestnrId;
+    private String srvyId;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
-    private String qestnrTmplatId;
+    private String srvyTmplatId;
 
     @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
-    private String qestnrQesitmId;
+    private String srvyQitemId;
 
     @Column(name = "QUSTNR_IEM_ID", length = 20, nullable = false)
-    private String qustnrIemId;
+    private String srvyItemId;
 
     @Column(name = "RSPDNT_ANS_CN", length = 1000)
-    private String respondAnswerCn;
+    private String rspdAnsCn;
 
     @Column(name = "RESPOND_NM", length = 50)
-    private String respondNm;
+    private String rspdNm;
 
     @Column(name = "ETC_ANS_CN", length = 1000)
-    private String etcAnswerCn;
+    private String etcAnsCn;
 
-    public void update(String respondAnswerCn, String respondNm, String etcAnswerCn) {
-        this.respondAnswerCn = respondAnswerCn;
-        this.respondNm = respondNm;
-        this.etcAnswerCn = etcAnswerCn;
+    public void update(String rspdAnsCn, String rspdNm, String etcAnsCn) {
+        this.rspdAnsCn = rspdAnsCn;
+        this.rspdNm = rspdNm;
+        this.etcAnsCn = etcAnsCn;
     }
 }

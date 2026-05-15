@@ -23,56 +23,56 @@ public class Schedule extends BaseEntity implements Serializable {
 
     @Id
     @Column(name = "SCHDUL_ID", length = 20)
-    private String schdulId;
+    private String schdlId;
 
     @Column(name = "SCHDUL_SE", length = 1)
-    private String schdulSe; // 1: 부서, 2: 개인, 3: 메인화면
+    private String schdlSeCd; // 1: 부서, 2: 개인, 3: 메인화면
 
     @Column(name = "SCHDUL_DEPT_ID", length = 20)
-    private String schdulDeptId;
+    private String schdlDeptId;
 
     @Column(name = "SCHDUL_KND_CODE", length = 1)
-    private String schdulKindCode; // 1: 중요일정, 2: 일반일정
+    private String schdlKindCd; // 1: 중요일정, 2: 일반일정
 
     @Column(name = "SCHDUL_BGNDE", length = 20)
-    private String schdulBgnde; // 날짜형식(YYYYMMDDHHMM)
+    private String schdlBgngYmd; // 날짜형식(YYYYMMDDHHMM)
 
     @Column(name = "SCHDUL_ENDDE", length = 20)
-    private String schdulEndde; // 날짜형식(YYYYMMDDHHMM)
+    private String schdlEndYmd; // 날짜형식(YYYYMMDDHHMM)
 
     @Column(name = "SCHDUL_NM", length = 255)
-    private String schdulNm;
+    private String schdlTtl;
 
     @Column(name = "SCHDUL_CN", columnDefinition = "TEXT")
-    private String schdulCn;
+    private String schdlCn;
 
     @Column(name = "SCHDUL_PLACE", length = 255)
-    private String schdulPlace;
+    private String schdlPlcNm;
 
     @Column(name = "SCHDUL_IPCR_CODE", length = 1)
-    private String schdulIpcrCode; // 중요도(A,B,C)
+    private String schdlIpcrCd; // 중요도(A,B,C)
 
     @Column(name = "SCHDUL_CHARGER_ID", length = 20)
-    private String schdulChargerId;
+    private String schdlPicId;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
     @Column(name = "REPTIT_SE_CODE", length = 1)
-    private String reptitSeCode; // 1:매일, 2:매주, 3:매달
+    private String reptitSeCd; // 1:매일, 2:매주, 3:매달
 
-    public void update(String schdulSe, String schdulKindCode, String schdulBgnde, String schdulEndde,
-            String schdulNm, String schdulCn, String schdulPlace, String schdulIpcrCode,
-            String atchFileId, String reptitSeCode) {
-        this.schdulSe = schdulSe;
-        this.schdulKindCode = schdulKindCode;
-        this.schdulBgnde = schdulBgnde;
-        this.schdulEndde = schdulEndde;
-        this.schdulNm = schdulNm;
-        this.schdulCn = schdulCn;
-        this.schdulPlace = schdulPlace;
-        this.schdulIpcrCode = schdulIpcrCode;
+    public void update(String schdlSeCd, String schdlKindCd, String schdlBgngYmd, String schdlEndYmd,
+            String schdlTtl, String schdlCn, String schdlPlcNm, String schdlIpcrCd,
+            String atchFileId, String reptitSeCd) {
+        this.schdlSeCd = schdlSeCd;
+        this.schdlKindCd = schdlKindCd;
+        this.schdlBgngYmd = schdlBgngYmd;
+        this.schdlEndYmd = schdlEndYmd;
+        this.schdlTtl = schdlTtl;
+        this.schdlCn = schdlCn;
+        this.schdlPlcNm = schdlPlcNm;
+        this.schdlIpcrCd = schdlIpcrCd;
         this.atchFileId = atchFileId;
-        this.reptitSeCode = reptitSeCode;
+        this.reptitSeCd = reptitSeCd;
     }
 }

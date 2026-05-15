@@ -26,12 +26,12 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
         }
 
         if (StringUtils.hasText(searchSe) && !"0".equals(searchSe)) {
-            builder.and(workReport.reportType.eq(searchSe));
+            builder.and(workReport.rptTypeCd.eq(searchSe));
         }
 
         if (StringUtils.hasText(searchWrd)) {
             if ("0".equals(searchCnd)) {
-                builder.and(workReport.reportSubject.contains(searchWrd));
+                builder.and(workReport.rptTtl.contains(searchWrd));
             }
         }
 
@@ -40,7 +40,7 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(workReport.reportId.desc())
+                .orderBy(workReport.rptId.desc())
                 .fetch();
 
         long total = queryFactory

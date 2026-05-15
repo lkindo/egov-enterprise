@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CommentService {
-    Page<CommentDto> getComments(Long nttId, String bbsId, Pageable pageable);
+    Page<CommentDto> getComments(Long pstId, String bbsId, Pageable pageable);
 
     Page<CommentDto> getAllComments(Pageable pageable);
 

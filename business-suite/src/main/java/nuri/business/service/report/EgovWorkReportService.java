@@ -9,9 +9,9 @@ public interface EgovWorkReportService {
 
     void updateWorkReport(WorkReportDto dto);
 
-    void deleteWorkReport(String reportId);
+    void deleteWorkReport(String rptId);
 
-    WorkReportDto getWorkReport(String reportId);
+    WorkReportDto getWorkReport(String rptId);
 
     Page<WorkReportDto> getWorkReportList(String writerId, String searchWrd, Pageable pageable);
 }

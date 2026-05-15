@@ -25,9 +25,9 @@ public class CommentServiceImpl implements CommentService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Page<CommentDto> getComments(Long nttId, String bbsId, Pageable pageable) {
+    public Page<CommentDto> getComments(Long pstId, String bbsId, Pageable pageable) {
         return commentRepository
-                .findByBbsIdAndNttId(Objects.requireNonNull(bbsId), Objects.requireNonNull(nttId),
+                .findByBbsIdAndPstId(Objects.requireNonNull(bbsId), Objects.requireNonNull(pstId),
                         Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
@@ -40,7 +40,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public Page<CommentDto> searchComments(String keyword, Pageable pageable) {
-        return commentRepository.findByCommentCnContaining(Objects.requireNonNull(keyword),
+        return commentRepository.findByCmntCnContaining(Objects.requireNonNull(keyword),
                 Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
@@ -56,19 +56,20 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public Long createComment(String userId, String userNm, CommentSaveRequest request) {        
         Comment comment = Comment.builder()
-                .nttId(request.getNttId())
+                .pstId(request.getPstId())
                 .bbsId(request.getBbsId())
-                .wrterId(userId)
-                .wrterNm(userNm)
+                .writerId(userId)
+                .writerNm(userNm)
                 .password(request.getPassword())
-                .commentCn(request.getCommentCn())
+                .cmntCn(request.getCmntCn())
+                .useYn("Y")
                 .build();
 
         Long commentId = Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))   
                 .getId();
         
         // 이벤트 발행
-        eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getNttId()));
+        eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getPstId()));
         
         return commentId;
     }
@@ -79,7 +80,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        comment.update(request.getCommentCn());
+        comment.update(request.getCmntCn());
     }
 
     @Override
@@ -91,18 +92,18 @@ public class CommentServiceImpl implements CommentService {
         comment.delete();
         
         // 이벤트 발행
-        eventPublisher.publishEvent(new CommentDeletedEvent(this, comment.getBbsId(), comment.getNttId()));
+        eventPublisher.publishEvent(new CommentDeletedEvent(this, comment.getBbsId(), comment.getPstId()));
     }
 
     private CommentDto convertToDto(Comment entity) {
         return CommentDto.builder()
                 .id(entity.getId())
-                .nttId(entity.getNttId())
+                .pstId(entity.getPstId())
                 .bbsId(entity.getBbsId())
-                .wrterId(entity.getWrterId())
-                .wrterNm(entity.getWrterNm())
-                .commentCn(entity.getCommentCn())
-                .useAt(entity.getUseAt())
+                .writerId(entity.getWriterId())
+                .writerNm(entity.getWriterNm())
+                .cmntCn(entity.getCmntCn())
+                .useYn(entity.getUseYn())
                 .createdDate(entity.getCreatedDate())
                 .modifiedDate(entity.getLastModifiedDate())
                 .build();

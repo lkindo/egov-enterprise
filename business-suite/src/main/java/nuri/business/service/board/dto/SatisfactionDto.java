@@ -16,18 +16,18 @@ import java.time.LocalDateTime;
 public class SatisfactionDto {
     private Long satisfactionId;
     @NotNull(message = "게시물ID는 필수입니다.")
-    private Long articleId;
+    private Long pstId;
     @NotBlank(message = "게시판ID는 필수입니다.")
-    private String boardId;
+    private String bbsId;
     private String writerId;
     private String writerNm;
     @NotNull(message = "만족도는 필수입니다.")
     @Min(value = 1, message = "만족도는 1 이상이어야 합니다.")
     @Max(value = 5, message = "만족도는 5 이하여야 합니다.")
-    private Integer satisfactionLevel;
-    @Size(max = 2000, message = "??껄?? 2000?????????땲??")
-    private String satisfactionOpinion;
-    private String useAt;
+    private Integer stsfdgLevel;
+    @Size(max = 2000, message = "만족도 의견은 2000자 이내여야 합니다.")
+    private String stsfdgCn;
+    private String useYn;
     private String satisfactionPassword;
     private LocalDateTime createdDate;
 }

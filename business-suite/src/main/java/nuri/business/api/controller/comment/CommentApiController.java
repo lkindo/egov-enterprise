@@ -29,10 +29,10 @@ public class CommentApiController {
     @Operation(summary = "댓글 목록 조회", description = "특정 게시물의 댓글 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
-            @RequestParam Long nttId,
+            @RequestParam Long pstId,
             @RequestParam String bbsId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommentDto> result = commentService.getComments(nttId, bbsId, pageable);
+        Page<CommentDto> result = commentService.getComments(pstId, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

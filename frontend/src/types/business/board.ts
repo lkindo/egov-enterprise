@@ -1,9 +1,8 @@
 export interface BoardPost {
-  id: number;
-  nttId: number;
+  pstId: number;
   bbsId: string;
-  nttSj: string;
-  nttCn: string;
+  pstTtl: string;
+  pstCn: string;
   ntcrNm?: string;
   frstRegisterNm?: string;
   inqireCo: number;
@@ -11,14 +10,14 @@ export interface BoardPost {
   frstRegisterPnttm: string;
   createdDate?: string;
   atchFileId?: string;
-  nttNo: number;
+  pstSn: number;
   sortOrdr: number;
   parnts: string;
-  replyAt: string;
+  replyYn: string;
   replyLc: number;
-  ntceBgnde: string;
-  ntceEndde: string;
-  useAt: string;
+  ntceBgnyYmd: string;
+  ntceEndYmd: string;
+  useYn: string;
   isExpired: string;
   frstRegisterPnttmStr: string;
   ntcrId?: string;
@@ -26,11 +25,11 @@ export interface BoardPost {
   lastUpdusrId: string;
   lastUpdtPnttm: string;
   password: string;
-  noticeAt: string;
-  secretAt: string;
-  blogAt: string;
+  noticeYn: string;
+  secretYn: string;
+  blogYn: string;
   commentCo: number;
-  bbsNm: string;
+  bbsTtl: string;
   eventDate: string;
   qnaStatus: string;
   qnaCategory: string;

@@ -23,13 +23,13 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
     @Override
     public Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, Pageable pageable) {
         return leaderScheduleRepository
-                .findByScheduleNmContaining(keyword == null ? "" : keyword, Objects.requireNonNull(pageable))
+                .findBySchdlTtlContaining(keyword == null ? "" : keyword, Objects.requireNonNull(pageable))
                 .map(LeaderScheduleDto::from);
     }
 
     @Override
-    public LeaderScheduleDto getLeaderSchedule(String scheduleId) {
-        return leaderScheduleRepository.findById(Objects.requireNonNull(scheduleId))
+    public LeaderScheduleDto getLeaderSchedule(String schdlId) {
+        return leaderScheduleRepository.findById(Objects.requireNonNull(schdlId))
                 .map(LeaderScheduleDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -39,17 +39,17 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
     public String createLeaderSchedule(String userId, LeaderScheduleDto dto) {
         String id = "LSCH_" + System.currentTimeMillis();
         LeaderSchedule entity = LeaderSchedule.builder()
-                .scheduleId(id)
-                .scheduleSe(dto.getScheduleSe())
-                .scheduleNm(dto.getScheduleNm())
-                .scheduleCn(dto.getScheduleCn())
-                .schedulePlace(dto.getSchedulePlace())
+                .schdlId(id)
+                .schdlSeCd(dto.getSchdlSeCd())
+                .schdlTtl(dto.getSchdlTtl())
+                .schdlCn(dto.getSchdlCn())
+                .schdlPlcNm(dto.getSchdlPlcNm())
                 .leaderId(dto.getLeaderId())
-                .reptitSeCode(dto.getReptitSeCode())
-                .scheduleIpcrCode(dto.getScheduleIpcrCode())
-                .beginDate(dto.getBeginDate())
-                .endDate(dto.getEndDate())
-                .chargerId(dto.getChargerId())
+                .reptitSeCd(dto.getReptitSeCd())
+                .schdlIpcrCd(dto.getSchdlIpcrCd())
+                .bgngYmd(dto.getBgngYmd())
+                .endYmd(dto.getEndYmd())
+                .schdlPicId(dto.getSchdlPicId())
                 .build();
         entity.setCreatedBy(userId);
         leaderScheduleRepository.save(Objects.requireNonNull(entity));
@@ -58,27 +58,27 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
 
     @Override
     @Transactional
-    public void updateLeaderSchedule(String scheduleId, String userId, LeaderScheduleDto dto) {
-        LeaderSchedule schedule = leaderScheduleRepository.findById(Objects.requireNonNull(scheduleId))
+    public void updateLeaderSchedule(String schdlId, String userId, LeaderScheduleDto dto) {
+        LeaderSchedule schedule = leaderScheduleRepository.findById(Objects.requireNonNull(schdlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         schedule.update(
-                dto.getScheduleSe(),
-                dto.getScheduleNm(),
-                dto.getScheduleCn(),
-                dto.getSchedulePlace(),
+                dto.getSchdlSeCd(),
+                dto.getSchdlTtl(),
+                dto.getSchdlCn(),
+                dto.getSchdlPlcNm(),
                 dto.getLeaderId(),
-                dto.getReptitSeCode(),
-                dto.getScheduleIpcrCode(),
-                dto.getBeginDate(),
-                dto.getEndDate(),
-                dto.getChargerId(),
+                dto.getReptitSeCd(),
+                dto.getSchdlIpcrCd(),
+                dto.getBgngYmd(),
+                dto.getEndYmd(),
+                dto.getSchdlPicId(),
                 userId);
     }
 
     @Override
     @Transactional
-    public void deleteLeaderSchedule(String scheduleId) {
-        leaderScheduleRepository.deleteById(Objects.requireNonNull(scheduleId));
+    public void deleteLeaderSchedule(String schdlId) {
+        leaderScheduleRepository.deleteById(Objects.requireNonNull(schdlId));
     }
 
     @Override

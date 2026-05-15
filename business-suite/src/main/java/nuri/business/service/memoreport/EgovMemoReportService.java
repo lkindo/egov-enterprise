@@ -11,19 +11,19 @@ public interface EgovMemoReportService {
 
     Page<MemoReportDto> getMemoReportList(String keyword, Pageable pageable);
 
-    Page<MemoReportDto> getMyReportList(String wrterId, Pageable pageable);
+    Page<MemoReportDto> getMyReportList(String writerId, Pageable pageable);
 
-    Page<MemoReportDto> getReceivedReportList(String reportrId, Pageable pageable);
+    Page<MemoReportDto> getReceivedReportList(String rptUserId, Pageable pageable);
 
-    MemoReportDto getMemoReport(String reprtId);
+    MemoReportDto getMemoReport(String rptId);
 
     String createMemoReport(String userId, MemoReportDto dto);
 
-    void updateMemoReport(String reprtId, String userId, MemoReportDto dto);
+    void updateMemoReport(String rptId, String userId, MemoReportDto dto);
 
-    void deleteMemoReport(String reprtId);
+    void deleteMemoReport(String rptId);
 
-    void readMemoReport(String reprtId);
+    void readMemoReport(String rptId);
 
-    void updateDrctMatter(String reprtId, String drctMatter);
+    void updateDrctMatter(String rptId, String instrCn);
 }

@@ -47,12 +47,6 @@ public class ScheduleService implements EgovScheduleService {
 
     @Override
     public Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        // userId가 null일 때는 전체 조회 or 본인 것만?
-        // eGov standard logic: usually lists schedules or own schedules.
-        // Assuming strict dept scope, but for step 1, let's filter by
-        // register/charger.
-        // For simplicity, implement findByFrstRegisterId (My Schedules).
-
         if (userId == null) {
             return scheduleRepository.findAll(Objects.requireNonNull(pageable)).map(ScheduleDto::from);
         }
@@ -71,30 +65,22 @@ public class ScheduleService implements EgovScheduleService {
 
     @Override
     public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
-        // Legacy Default: Individual (Scope handling might need update if userId is
-        // used for Dept)
-        // For now, assume this finds ALL overlapping schedules logic in repository was
-        // generic.
-        // It's safer to redirect to scoped method if possible, but let's leave it as
-        // "generic" overlap for now?
-        // Actually, previous impl used findOverlappingSchedules which had NO owner
-        // filter.
         return scheduleRepository.findOverlappingSchedules(startDate, endDate).stream()
                 .map(ScheduleDto::from)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId,
+    public Page<ScheduleDto> getScheduleList(String schdlSeCd, String ownerId,
             @org.springframework.lang.NonNull Pageable pageable) {
-        return scheduleRepository.findSchedules(schdulSe, ownerId, Objects.requireNonNull(pageable))
+        return scheduleRepository.findSchedules(schdlSeCd, ownerId, Objects.requireNonNull(pageable))
                 .map(ScheduleDto::from);
     }
 
     @Override
-    public List<ScheduleDto> getScheduleListByDateRange(String schdulSe, String ownerId, String startDate,
+    public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate,
             String endDate) {
-        return scheduleRepository.findSchedulesByRange(schdulSe, ownerId, startDate, endDate).stream()
+        return scheduleRepository.findSchedulesByRange(schdlSeCd, ownerId, startDate, endDate).stream()
                 .map(ScheduleDto::from)
                 .collect(Collectors.toList());
     }
@@ -113,19 +99,19 @@ public class ScheduleService implements EgovScheduleService {
         String id = "SCHDUL_" + java.util.UUID.randomUUID().toString().substring(0, 13);
 
         Schedule schedule = Schedule.builder()
-                .schdulId(id)
-                .schdulSe(dto.getSchdulSe())
-                .schdulDeptId(dto.getSchdulDeptId())
-                .schdulKindCode(dto.getSchdulKindCode())
-                .schdulBgnde(dto.getSchdulBgnde())
-                .schdulEndde(dto.getSchdulEndde())
-                .schdulNm(dto.getSchdulNm())
-                .schdulCn(dto.getSchdulCn())
-                .schdulPlace(dto.getSchdulPlace())
-                .schdulIpcrCode(dto.getSchdulIpcrCode())
-                .schdulChargerId(dto.getSchdulChargerId())
+                .schdlId(id)
+                .schdlSeCd(dto.getSchdlSeCd())
+                .schdlDeptId(dto.getSchdlDeptId())
+                .schdlKindCd(dto.getSchdlKindCd())
+                .schdlBgngYmd(dto.getSchdlBgngYmd())
+                .schdlEndYmd(dto.getSchdlEndYmd())
+                .schdlTtl(dto.getSchdlTtl())
+                .schdlCn(dto.getSchdlCn())
+                .schdlPlcNm(dto.getSchdlPlcNm())
+                .schdlIpcrCd(dto.getSchdlIpcrCd())
+                .schdlPicId(dto.getSchdlPicId())
                 .atchFileId(dto.getAtchFileId())
-                .reptitSeCode(dto.getReptitSeCode())
+                .reptitSeCd(dto.getReptitSeCd())
                 .build();
 
         scheduleRepository.save(schedule);
@@ -139,16 +125,16 @@ public class ScheduleService implements EgovScheduleService {
                 .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
 
         schedule.update(
-                dto.getSchdulSe(),
-                dto.getSchdulKindCode(),
-                dto.getSchdulBgnde(),
-                dto.getSchdulEndde(),
-                dto.getSchdulNm(),
-                dto.getSchdulCn(),
-                dto.getSchdulPlace(),
-                dto.getSchdulIpcrCode(),
+                dto.getSchdlSeCd(),
+                dto.getSchdlKindCd(),
+                dto.getSchdlBgngYmd(),
+                dto.getSchdlEndYmd(),
+                dto.getSchdlTtl(),
+                dto.getSchdlCn(),
+                dto.getSchdlPlcNm(),
+                dto.getSchdlIpcrCd(),
                 dto.getAtchFileId(),
-                dto.getReptitSeCode());
+                dto.getReptitSeCd());
     }
 
     @Override

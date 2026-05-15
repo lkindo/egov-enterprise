@@ -138,7 +138,7 @@ const BBSDetailClient = () => {
             {/* 제목 입력 */}
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
-                <Label htmlFor="nttSj" className={cn(
+                <Label htmlFor="pstTtl" className={cn(
                   "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
                   tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
@@ -147,13 +147,13 @@ const BBSDetailClient = () => {
                 <span className="text-xs font-bold text-primary/40 tracking-tight">필수</span>
               </div>
               <Input
-                id="nttSj"
-                name="nttSj"
+                id="pstTtl"
+                name="pstTtl"
                 placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
                   "h-11 text-3xl font-bold border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
                   tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
-                  state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
+                  state?.field === 'pstTtl' && "border-rose-500 bg-rose-50"
                 )}
                 required
               />
@@ -206,7 +206,7 @@ const BBSDetailClient = () => {
             {/* 본문 입력 영역 */}
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
-                <Label htmlFor="nttCn" className={cn(
+                <Label htmlFor="pstCn" className={cn(
                   "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
                   tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
@@ -216,8 +216,8 @@ const BBSDetailClient = () => {
               </div>
               <div className="relative">
                 <Textarea
-                  id="nttCn"
-                  name="nttCn"
+                  id="pstCn"
+                  name="pstCn"
                   placeholder={
                     tmplatId === 'TMPLT_QNA' 
                       ? "질문 내용을 자세히 기재해 주시면 더 정확한 답변을 받으실 수 있습니다..."
@@ -226,7 +226,7 @@ const BBSDetailClient = () => {
                   className={cn(
                     "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
                     tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
-                    state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
+                    state?.field === 'pstCn' && "border-rose-500 bg-rose-50"
                   )}
                   required
                 />

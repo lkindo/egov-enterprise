@@ -25,7 +25,7 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
             <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/10 dark:bg-primary/20 blur-[100px] rounded-lg" />
             <div className="relative z-10 space-y-6">
               <Badge className="bg-primary hover:bg-primary text-white border-none font-bold tracking-[0.4em] uppercase py-1 px-4 text-xs">FEATURED_KNOWLEDGE</Badge>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${list[0].nttId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
                 <h3 className="text-4xl font-bold tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
               </Link>
               <div className="flex items-center gap-8 mt-8">
@@ -55,11 +55,11 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
       {/* Grid for minor posts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
-          <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-lg border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
+          <Card key={item.pstId} className="group p-8 bg-slate-50/50 rounded-lg border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-125 transition-all text-primary">
               <BookOpen size={60} />
             </div>
-            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h4 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
             </Link>
             <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">

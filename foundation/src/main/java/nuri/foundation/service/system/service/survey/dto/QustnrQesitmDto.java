@@ -17,25 +17,25 @@ import java.util.List;
 public class QustnrQesitmDto {
 
     @Schema(description = "설문문항아이디")
-    private String qustnrQesitmId;
+    private String srvyQitemId;
 
     @Schema(description = "설문아이디")
-    private String qustnrId;
+    private String srvyId;
 
     @Schema(description = "질문순번")
-    private Long qestnSn;
+    private Long srvyQitemSn;
 
     @Schema(description = "질문유형코드")
-    private String qestnTyCode;
+    private String srvyQitemTypeCd;
 
     @Schema(description = "질문내용")
-    private String qestnCn;
+    private String srvyQitemCn;
 
     @Schema(description = "최대선택수")
-    private Integer mxmmChoiseCo;
+    private Integer maxChcCnt;
 
     @Schema(description = "설문템플릿아이디")
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
     @Schema(description = "등록자")
     private String createdBy;
@@ -49,13 +49,13 @@ public class QustnrQesitmDto {
     public static QustnrQesitmDto from(QustnrQesitm entity) {
         if (entity == null) return null;
         return QustnrQesitmDto.builder()
-                .qustnrQesitmId(entity.getQustnrQesitmId())
-                .qustnrId(entity.getQustnrId())
-                .qestnSn(entity.getQestnSn())
-                .qestnTyCode(entity.getQestnTyCode())
-                .qestnCn(entity.getQestnCn())
-                .mxmmChoiseCo(entity.getMxmmChoiseCo())
-                .qustnrTmplatId(entity.getQustnrTmplatId())
+                .srvyQitemId(entity.getSrvyQitemId())
+                .srvyId(entity.getSrvyId())
+                .srvyQitemSn(entity.getSrvyQitemSn())
+                .srvyQitemTypeCd(entity.getSrvyQitemTypeCd())
+                .srvyQitemCn(entity.getSrvyQitemCn())
+                .maxChcCnt(entity.getMaxChcCnt())
+                .srvyTmplatId(entity.getSrvyTmplatId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

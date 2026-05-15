@@ -23,37 +23,37 @@ public class QustnrInfo extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_ID", length = 20)
-    private String qustnrId;
+    private String srvyId;
 
     @Column(name = "QUSTNR_SJ", length = 255, nullable = false)
-    private String qustnrSj;
+    private String srvyTtl;
 
     @Column(name = "SRVY_PRPS", length = 1000)
-    private String qustnrPurps;
+    private String srvyPrpsCn;
 
     @Column(name = "QUSTNR_WRITNG_GUIDANCE_CN", length = 2000)
-    private String qustnrWritngGuidanceCn;
+    private String srvyGuidCn;
 
     @Column(name = "QUSTNR_BGNDE", length = 10)
-    private String qustnrBeginDe;
+    private String srvyBgngYmd;
 
     @Column(name = "QUSTNR_ENDDE", length = 10)
-    private String qustnrEndDe;
+    private String srvyEndYmd;
 
     @Column(name = "SRVY_TRGT", length = 1000)
-    private String qustnrTrget;
+    private String srvyTrgtCn;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
-    public void update(String qustnrSj, String qustnrPurps, String qustnrWritngGuidanceCn,
-            String qustnrBeginDe, String qustnrEndDe, String qustnrTrget, String qustnrTmplatId) {
-        this.qustnrSj = qustnrSj;
-        this.qustnrPurps = qustnrPurps;
-        this.qustnrWritngGuidanceCn = qustnrWritngGuidanceCn;
-        this.qustnrBeginDe = qustnrBeginDe;
-        this.qustnrEndDe = qustnrEndDe;
-        this.qustnrTrget = qustnrTrget;
-        this.qustnrTmplatId = qustnrTmplatId;
+    public void update(String srvyTtl, String srvyPrpsCn, String srvyGuidCn,
+            String srvyBgngYmd, String srvyEndYmd, String srvyTrgtCn, String srvyTmplatId) {
+        this.srvyTtl = srvyTtl;
+        this.srvyPrpsCn = srvyPrpsCn;
+        this.srvyGuidCn = srvyGuidCn;
+        this.srvyBgngYmd = srvyBgngYmd;
+        this.srvyEndYmd = srvyEndYmd;
+        this.srvyTrgtCn = srvyTrgtCn;
+        this.srvyTmplatId = srvyTmplatId;
     }
 }

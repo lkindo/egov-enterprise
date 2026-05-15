@@ -1,10 +1,10 @@
-ï»¿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 export interface Scrap {
  scrapId: string;
  bbsId: string;
- nttId: number;
+ pstId: number;
  scrapNm: string;
  createdDate: string;
 }
@@ -15,14 +15,14 @@ class ScrapService extends ApiService {
  }
 
  /**
- * ?ì„ì“½ ìŠ¤í¬ë©ëª©ë¡ ì¡°íšŒ
+ * ?˜ì˜ ½ºÅ©·¦¸ñ·Ï Á¶È¸
  */
  async getMyScraps(params: { page?: number; size?: number }): Promise<PageResponse<Scrap>> {
  return this.get<PageResponse<Scrap>>('', { params });
  }
 
  /**
- * ìŠ¤í¬ë©ë‹˜ì £
+ * ½ºÅ©·¦´Ô œ
  */
  async deleteScrap(id: string): Promise<void> {
  return this.delete<void>(`/${id}`);

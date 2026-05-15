@@ -32,7 +32,7 @@ public class SurveyService implements EgovSurveyService {
         if (keyword == null || keyword.isEmpty()) {
             return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(QustnrTmplatDto::from);
         }
-        return tmplatRepository.findByQustnrTmplatTyContaining(keyword, Objects.requireNonNull(pageable))
+        return tmplatRepository.findBySrvyTmplatTypeCdContaining(keyword, Objects.requireNonNull(pageable))
                 .map(QustnrTmplatDto::from);
     }
 
@@ -48,19 +48,19 @@ public class SurveyService implements EgovSurveyService {
     public void insertTmplat(QustnrTmplatDto dto) {
         String id = "QUSTMP_" + System.currentTimeMillis();
         tmplatRepository.save(Objects.requireNonNull(QustnrTmplat.builder()
-                .qustnrTmplatId(id)
-                .qustnrTmplatTy(dto.getQustnrTmplatTy())
-                .qustnrTmplatImagepathnm(dto.getQustnrTmplatImagepathnm())
-                .qustnrTmplatCn(dto.getQustnrTmplatCn())
+                .srvyTmplatId(id)
+                .srvyTmplatTypeCd(dto.getSrvyTmplatTypeCd())
+                .srvyTmplatImgPath(dto.getSrvyTmplatImgPath())
+                .srvyTmplatCn(dto.getSrvyTmplatCn())
                 .build()));
     }
 
     @Override
     @Transactional
     public void updateTmplat(QustnrTmplatDto dto) {
-        QustnrTmplat entity = tmplatRepository.findById(Objects.requireNonNull(dto.getQustnrTmplatId()))
+        QustnrTmplat entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmplatId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQustnrTmplatTy(), dto.getQustnrTmplatImagepathnm(), dto.getQustnrTmplatCn());
+        entity.update(dto.getSrvyTmplatTypeCd(), dto.getSrvyTmplatImgPath(), dto.getSrvyTmplatCn());
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SurveyService implements EgovSurveyService {
         if (keyword == null || keyword.isEmpty()) {
             return infoRepository.findAll(Objects.requireNonNull(pageable)).map(QustnrInfoDto::from);
         }
-        return infoRepository.findByQustnrSjContaining(keyword, Objects.requireNonNull(pageable))
+        return infoRepository.findBySrvyTtlContaining(keyword, Objects.requireNonNull(pageable))
                 .map(QustnrInfoDto::from);
     }
 
@@ -89,28 +89,28 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertSurvey(QustnrInfoDto dto) {
-        validateSurveyDates(dto.getQustnrBeginDe(), dto.getQustnrEndDe());
+        validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
         String id = "QESTNR_" + System.currentTimeMillis();
         infoRepository.save(Objects.requireNonNull(QustnrInfo.builder()
-                .qustnrId(id)
-                .qustnrSj(dto.getQustnrSj())
-                .qustnrPurps(dto.getQustnrPurps())
-                .qustnrWritngGuidanceCn(dto.getQustnrWritngGuidanceCn())
-                .qustnrBeginDe(dto.getQustnrBeginDe())
-                .qustnrEndDe(dto.getQustnrEndDe())
-                .qustnrTrget(dto.getQustnrTrget())
-                .qustnrTmplatId(dto.getQustnrTmplatId())
+                .srvyId(id)
+                .srvyTtl(dto.getSrvyTtl())
+                .srvyPrpsCn(dto.getSrvyPrpsCn())
+                .srvyGuidCn(dto.getSrvyGuidCn())
+                .srvyBgngYmd(dto.getSrvyBgngYmd())
+                .srvyEndYmd(dto.getSrvyEndYmd())
+                .srvyTrgtCn(dto.getSrvyTrgtCn())
+                .srvyTmplatId(dto.getSrvyTmplatId())
                 .build()));
     }
 
     @Override
     @Transactional
     public void updateSurvey(QustnrInfoDto dto) {
-        validateSurveyDates(dto.getQustnrBeginDe(), dto.getQustnrEndDe());
-        QustnrInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getQustnrId()))
+        validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
+        QustnrInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvyId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQustnrSj(), dto.getQustnrPurps(), dto.getQustnrWritngGuidanceCn(),
-                dto.getQustnrBeginDe(), dto.getQustnrEndDe(), dto.getQustnrTrget(), dto.getQustnrTmplatId());
+        entity.update(dto.getSrvyTtl(), dto.getSrvyPrpsCn(), dto.getSrvyGuidCn(),
+                dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgtCn(), dto.getSrvyTmplatId());
     }
 
     @Override
@@ -122,10 +122,10 @@ public class SurveyService implements EgovSurveyService {
     // 설문 문항
     @Override
     public List<QustnrQesitmDto> getQuestionList(String qustnrId) {
-        return qesitmRepository.findByQustnrIdOrderByQestnSnAsc(Objects.requireNonNull(qustnrId)).stream()
+        return qesitmRepository.findBySrvyIdOrderBySrvyQitemSnAsc(Objects.requireNonNull(qustnrId)).stream()
                 .map(q -> {
                     QustnrQesitmDto dto = QustnrQesitmDto.from(q);
-                    dto.setItems(getItemList(q.getQustnrQesitmId()));
+                    dto.setItems(getItemList(q.getSrvyQitemId()));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -143,22 +143,22 @@ public class SurveyService implements EgovSurveyService {
     public void insertQuestion(QustnrQesitmDto dto) {
         String id = "QESITM_" + System.currentTimeMillis();
         qesitmRepository.save(Objects.requireNonNull(QustnrQesitm.builder()
-                .qustnrQesitmId(id)
-                .qustnrId(dto.getQustnrId())
-                .qestnSn(dto.getQestnSn())
-                .qestnTyCode(dto.getQestnTyCode())
-                .qestnCn(dto.getQestnCn())
-                .mxmmChoiseCo(dto.getMxmmChoiseCo())
-                .qustnrTmplatId(dto.getQustnrTmplatId())
+                .srvyQitemId(id)
+                .srvyId(dto.getSrvyId())
+                .srvyQitemSn(dto.getSrvyQitemSn())
+                .srvyQitemTypeCd(dto.getSrvyQitemTypeCd())
+                .srvyQitemCn(dto.getSrvyQitemCn())
+                .maxChcCnt(dto.getMaxChcCnt())
+                .srvyTmplatId(dto.getSrvyTmplatId())
                 .build()));
     }
 
     @Override
     @Transactional
     public void updateQuestion(QustnrQesitmDto dto) {
-        QustnrQesitm entity = qesitmRepository.findById(Objects.requireNonNull(dto.getQustnrQesitmId()))
+        QustnrQesitm entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQitemId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQestnSn(), dto.getQestnTyCode(), dto.getQestnCn(), dto.getMxmmChoiseCo());
+        entity.update(dto.getSrvyQitemSn(), dto.getSrvyQitemTypeCd(), dto.getSrvyQitemCn(), dto.getMaxChcCnt());
     }
 
     @Override
@@ -170,7 +170,7 @@ public class SurveyService implements EgovSurveyService {
     // 설문 항목
     @Override
     public List<QustnrIemDto> getItemList(String qesitmId) {
-        return iemRepository.findByQustnrQesitmIdOrderByIemSnAsc(Objects.requireNonNull(qesitmId)).stream()
+        return iemRepository.findBySrvyQitemIdOrderBySrvyItemSnAsc(Objects.requireNonNull(qesitmId)).stream()
                 .map(QustnrIemDto::from)
                 .collect(Collectors.toList());
     }
@@ -180,22 +180,22 @@ public class SurveyService implements EgovSurveyService {
     public void insertItem(QustnrIemDto dto) {
         String id = "IEM_" + System.currentTimeMillis();
         iemRepository.save(Objects.requireNonNull(QustnrIem.builder()
-                .qustnrIemId(id)
-                .qustnrQesitmId(dto.getQustnrQesitmId())
-                .qustnrId(dto.getQustnrId())
-                .iemSn(dto.getIemSn())
-                .iemCn(dto.getIemCn())
-                .etcAnswerAt(dto.getEtcAnswerAt())
-                .qustnrTmplatId(dto.getQustnrTmplatId())
+                .srvyItemId(id)
+                .srvyQitemId(dto.getSrvyQitemId())
+                .srvyId(dto.getSrvyId())
+                .srvyItemSn(dto.getSrvyItemSn())
+                .srvyItemCn(dto.getSrvyItemCn())
+                .etcAnsYn(dto.getEtcAnsYn())
+                .srvyTmplatId(dto.getSrvyTmplatId())
                 .build()));
     }
 
     @Override
     @Transactional
     public void updateItem(QustnrIemDto dto) {
-        QustnrIem entity = iemRepository.findById(Objects.requireNonNull(dto.getQustnrIemId()))
+        QustnrIem entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyItemId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getIemSn(), dto.getIemCn(), dto.getEtcAnswerAt());
+        entity.update(dto.getSrvyItemSn(), dto.getSrvyItemCn(), dto.getEtcAnsYn());
     }
 
     @Override

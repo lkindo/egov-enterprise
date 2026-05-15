@@ -21,30 +21,30 @@ public class Blog extends BaseEntity {
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
-    @Column(name = "BLOG_NM", nullable = false, length = 255)
-    private String blogNm;
+    @Column(name = "BLOG_TTL", nullable = false, length = 300)
+    private String blogTtl;
 
-    @Column(name = "BLOG_INTRCN", length = 2400)
-    private String blogIntrcn;
+    @Column(name = "BLOG_INTRO_CN", length = 4000)
+    private String blogIntroCn;
 
-    @Column(name = "REGIST_SE_CODE", length = 6)
-    private String registSeCode;
+    @Column(name = "REG_SE_CD", length = 12)
+    private String regTypeCd;
 
     @Column(name = "TMPLAT_ID", length = 20)
     private String tmplatId;
 
-    @Column(name = "USE_AT", length = 1)
-    private String useAt;
+    @Column(name = "USE_YN", length = 1)
+    private String useYn;
 
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
 
-    @Column(name = "BLOG_AT", length = 1)
-    private String blogAt;
+    @Column(name = "BLOG_YN", length = 1)
+    private String blogYn;
 
-    public void update(String blogNm, String blogIntrcn, String useAt) {
-        this.blogNm = blogNm;
-        this.blogIntrcn = blogIntrcn;
-        this.useAt = useAt;
+    public void update(String blogTtl, String blogIntroCn, String useYn) {
+        this.blogTtl = blogTtl;
+        this.blogIntroCn = blogIntroCn;
+        this.useYn = useYn;
     }
 }

@@ -11,7 +11,7 @@ interface BoardTemplateGalleryProps {
   list: BoardPost[];
   bbsId: string;
   querySearchWrd: string;
-  onLike: (e: React.MouseEvent, nttId: string) => void;
+  onLike: (e: React.MouseEvent, pstId: string) => void;
   isLikePending?: boolean;
 }
 
@@ -39,7 +39,7 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 p-10">
       {list.map((item: BoardPost) => (
-        <Card key={item.nttId} className="group overflow-hidden rounded-lg bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+        <Card key={item.pstId} className="group overflow-hidden rounded-lg bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
           <div className="h-64 overflow-hidden relative bg-slate-100">
             <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 group-hover:scale-105 transition-transform duration-700" />
@@ -49,7 +49,7 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
             <div className="absolute top-6 right-6 px-4 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-lg text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
           </div>
           <CardContent className="p-8 space-y-6">
-            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">
                 <HighlightText text={item.nttSj} highlight={querySearchWrd} />
               </h3>
@@ -67,14 +67,14 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
               <div className="flex gap-6">
                 <button 
                   data-testid="like-button"
-                  onClick={(e) => onLike(e, String(item.nttId))}
+                  onClick={(e) => onLike(e, String(item.pstId))}
                   className="flex items-center gap-1.5 text-slate-300 hover:text-primary transition-all active:scale-125"
-                  aria-label="좋아요"
+                  aria-label="좋아??
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
                   <span data-testid="like-count" className="text-xs font-bold text-slate-900">{item.likeCo || 0}</span>
                 </button>
-                <div className="flex items-center gap-1.5 text-slate-300" aria-label="공유하기"><Share2 size={16} /></div>
+                <div className="flex items-center gap-1.5 text-slate-300" aria-label="공유?�기"><Share2 size={16} /></div>
               </div>
             </div>
           </CardContent>

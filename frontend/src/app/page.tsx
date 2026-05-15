@@ -42,8 +42,8 @@ const getDashboardData = cache(async () => {
     const initialNotiList: DashboardTask[] = (dashboardRes.notiList || [])
       .slice(0, 6)
       .map((item: Record<string, unknown>) => ({
-        id: String(item.id || item.nttId || ''),
-        title: String(item.title || item.nttSj || ''),
+        id: String(item.id || item.pstId || ''),
+        title: String(item.title || item.pstTtl || ''),
         date: String(item.frstRegisterPnttmStr || item.date || ''),
         isNew: Boolean(item.isNew || false)
       }));
@@ -51,8 +51,8 @@ const getDashboardData = cache(async () => {
     const initialTaskList: DashboardTask[] = (dashboardRes.taskList || [])
       .slice(0, 6)
       .map((item: Record<string, unknown>) => ({
-        id: String(item.id || item.nttId || ''),
-        title: String(item.title || item.nttSj || ''),
+        id: String(item.id || item.pstId || ''),
+        title: String(item.title || item.pstTtl || ''),
         date: String(item.frstRegisterPnttmStr || item.date || ''),
         isNew: Boolean(item.isNew || false)
       }));

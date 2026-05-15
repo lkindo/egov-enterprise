@@ -54,9 +54,9 @@ public class EgovTestDataConfig {
                     .bbsIntrcn(bbsNm + " 설명")
                     .bbsTyCode(tyCode)
                     .bbsAttrbCode("BBSA01")
-                    .useAt("Y")
-                    .replyPosblAt("Y")
-                    .fileAtchPosblAt("Y")
+                    .useYn("Y")
+                    .replyPosblYn("Y")
+                    .fileAtchPosblYn("Y")
                     .atchPosblFileNumber(3)
                     .optnFrstRegisterId("webmaster")
                     .build();

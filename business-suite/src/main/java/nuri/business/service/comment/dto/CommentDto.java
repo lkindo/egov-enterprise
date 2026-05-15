@@ -10,46 +10,42 @@ import java.time.LocalDateTime;
 @Builder
 public class CommentDto {
     private Long id;
-    private Long nttId;
+    private Long pstId;
     private String bbsId;
-    private String wrterId;
-    private String wrterNm;
-    private String commentCn;
-    private String useAt;
+    private String writerId;
+    private String writerNm;
+    private String cmntCn;
+    private String useYn;
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
 
-    // Manual getters to bypass Lombok issues
+    // Manual getters to bypass potential Lombok issues during refactoring
     public Long getId() {
         return id;
     }
 
-    public Long getCommentNo() {
-        return id;
-    }
-
-    public Long getNttId() {
-        return nttId;
+    public Long getPstId() {
+        return pstId;
     }
 
     public String getBbsId() {
         return bbsId;
     }
 
-    public String getWrterId() {
-        return wrterId;
+    public String getWriterId() {
+        return writerId;
     }
 
-    public String getWrterNm() {
-        return wrterNm;
+    public String getWriterNm() {
+        return writerNm;
     }
 
-    public String getCommentCn() {
-        return commentCn;
+    public String getCmntCn() {
+        return cmntCn;
     }
 
-    public String getUseAt() {
-        return useAt;
+    public String getUseYn() {
+        return useYn;
     }
 
     public LocalDateTime getCreatedDate() {

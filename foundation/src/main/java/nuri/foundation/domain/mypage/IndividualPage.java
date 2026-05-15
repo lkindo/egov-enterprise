@@ -21,20 +21,20 @@ import lombok.experimental.SuperBuilder;
 public class IndividualPage extends BaseEntity {
 
     @Id
-    @Column(name = "PGE_ID", length = 20)
+    @Column(name = "PAGE_ID", length = 20)
     private String pageId;
 
-    @Column(name = "PGE_NM", length = 255, nullable = false)
-    private String pageNm;
+    @Column(name = "PAGE_TTL", length = 300, nullable = false)
+    private String pageTtl;
 
-    @Column(name = "PAGE_EXPLN", length = 1000)
-    private String pageDc;
+    @Column(name = "PAGE_EXPLN", length = 4000)
+    private String pageExpln;
 
-    @Column(name = "EMPLYR_ID", length = 20, nullable = false)
+    @Column(name = "USER_ID", length = 30, nullable = false)
     private String userId;
 
-    public void update(String pageNm, String pageDc) {
-        this.pageNm = pageNm;
-        this.pageDc = pageDc;
+    public void update(String pageTtl, String pageExpln) {
+        this.pageTtl = pageTtl;
+        this.pageExpln = pageExpln;
     }
 }

@@ -12,15 +12,15 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityUserDto {
-    private String cmmntyId;
-    private String emplyrId;
-    private String emplyrNm;
-    private String mngrAt;
-    private String sbscrbDe;
-    private String secsnDe;
-    private String mberSttus;
-    private String mberSttusNm;
-    private String useAt;
+    private String cmntyId;
+    private String userId;
+    private String userNm;
+    private String mngrYn;
+    private String joinYmd;
+    private String wdrlYmd;
+    private String mbrSttsCd;
+    private String mbrSttsCdNm;
+    private String useYn;
     private String frstRegisterPnttm;
     private String frstRegisterId;
 
@@ -28,15 +28,13 @@ public class CommunityUserDto {
         if (entity == null)
             return null;
         return CommunityUserDto.builder()
-                .cmmntyId(entity.getId().getCmmntyId())
-                .emplyrId(entity.getId().getEmplyrId())
-                .mngrAt(entity.getMngrAt())
-                .sbscrbDe(entity.getSbscrbDe() != null
-                        ? entity.getSbscrbDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : null)
-                .secsnDe(entity.getSecsnDe())
-                .mberSttus(entity.getMberSttus())
-                .useAt(entity.getUseAt())
+                .cmntyId(entity.getId().getCmntyId())
+                .userId(entity.getId().getUserId())
+                .mngrYn(entity.getMngrYn())
+                .joinYmd(entity.getJoinYmd())
+                .wdrlYmd(entity.getWdrlYmd())
+                .mbrSttsCd(entity.getMbrSttsCd())
+                .useYn(entity.getUseYn())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getFrstRegisterPnttm() != null
                         ? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))

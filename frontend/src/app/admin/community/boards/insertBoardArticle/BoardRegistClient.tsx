@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppForm } from '@/hooks/useAppForm';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { motion } from 'framer-motion';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -24,15 +25,17 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 });
 
 const boardSchema = z.object({
-  nttSj: z.string().min(1, '제목을 입력해주세요.'),
-  nttCn: z.string().min(1, '내용을 입력해주세요.'),
+  pstTtl: z.string().min(1, '제목을 입력해주세요.'),
+  pstCn: z.string().min(1, '내용을 입력해주세요.'),
   ntcrNm: z.string().optional(),
   password: z.string().optional(),
   bbsId: z.string(),
-  nttId: z.string().optional(),
-  parntsId: z.string().optional(),
-  replyAt: z.enum(['Y', 'N']).default('N'),
+  pstId: z.string().optional(),
+  parnts: z.string().optional(),
+  replyYn: z.enum(['Y', 'N']).default('N'),
   atchFileId: z.string().optional(),
+  secretYn: z.enum(['Y', 'N']).default('N'),
+  noticeYn: z.enum(['Y', 'N']).default('N'),
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
@@ -40,13 +43,11 @@ type BoardFormValues = z.infer<typeof boardSchema>;
 interface BoardRegistClientProps {
   initialData?: any;
   bbsId: string;
-  nttId?: string;
-  parntsId?: string;
+  pstId?: string;
+  parnts?: string;
 }
 
-import { motion } from 'framer-motion';
-
-export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: BoardRegistClientProps) {
+export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRegistClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,43 +56,44 @@ export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: Board
   const form = useAppForm(boardSchema, {
     defaultValues: {
       bbsId: bbsId,
-      nttId: nttId,
-      nttSj: initialData?.knoNm || initialData?.nttSj || '',
-      nttCn: initialData?.knoCn || initialData?.nttCn || '',
+      pstId: pstId || initialData?.pstId,
+      pstTtl: initialData?.pstTtl || '',
+      pstCn: initialData?.pstCn || '',
       ntcrNm: initialData?.ntcrNm || '관리자',
       password: initialData?.password || '1',
-      parntsId: parntsId || initialData?.parntsId,
-      replyAt: (parntsId || initialData?.replyAt === 'Y') ? 'Y' : 'N',
+      parnts: parnts || initialData?.parnts,
+      replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
       atchFileId: initialData?.atchFileId || '',
+      secretYn: initialData?.secretYn || 'N',
+      noticeYn: initialData?.noticeYn || 'N',
     } as BoardFormValues
-
   });
 
   // 자동 임시저장 훅 연동
   const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
     storageKey: `board_insert_${bbsId}`,
     getData: () => ({
-      title: form.getValues('nttSj'),
-      content: form.getValues('nttCn')
+      title: form.getValues('pstTtl'),
+      content: form.getValues('pstCn')
     }),
     onRestore: (data) => {
-      form.setValue('nttSj', data.title);
-      form.setValue('nttCn', data.content);
+      form.setValue('pstTtl', data.title);
+      form.setValue('pstCn', data.content);
     }
   });
 
   // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   useEffect(() => {
-    if (hasDraft && !form.getValues('nttSj') && !form.getValues('nttCn') && !nttId) {
+    if (hasDraft && !form.getValues('pstTtl') && !form.getValues('pstCn') && !pstId) {
       if (confirm('이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?')) {
         restoreDraft();
         toast('임시저장 데이터를 복구했습니다.', 'success');
       }
     }
-  }, [hasDraft, restoreDraft, toast, nttId, form]);
+  }, [hasDraft, restoreDraft, toast, pstId, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
-    if (!values.nttCn || values.nttCn === '<p></p>') {
+    if (!values.pstCn || values.pstCn === '<p></p>') {
       toast('내용을 입력해 주세요.', 'error');
       return;
     }
@@ -158,7 +160,7 @@ export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: Board
             transition={{ delay: 0.1 }}
             className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none"
           >
-            {nttId ? 'Update Knowledge Asset' : 'New Knowledge Asset'}
+            {pstId ? 'Update Knowledge Asset' : 'New Knowledge Asset'}
           </motion.h1>
         </div>
       </div>
@@ -184,7 +186,7 @@ export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: Board
               </div>
               <FormField
                 control={form.control}
-                name="nttSj"
+                name="pstTtl"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
@@ -226,7 +228,7 @@ export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: Board
             </div>
             <FormField
               control={form.control}
-              name="nttCn"
+              name="pstCn"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
@@ -312,4 +314,3 @@ export function BoardRegistClient({ initialData, bbsId, nttId, parntsId }: Board
     </motion.div>
   );
 }
-

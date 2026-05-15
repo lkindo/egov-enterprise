@@ -30,35 +30,35 @@ public class BoardMaster extends BaseEntity {
     private String bbsId;
 
     @Column(name = "BBS_NM", nullable = false, length = 765)
-    private String bbsNm;
+    private String bbsTtl;
 
     @Column(name = "BBS_INTRCN", length = 7200)
-    private String bbsIntrcn;
+    private String bbsIntroCn;
 
     @Column(name = "BBS_TY_CODE", length = 6, nullable = false)
-    private String bbsTyCode;
+    private String bbsTypeCd;
 
     @Column(name = "BBS_ATTRB_CODE", length = 6, nullable = false)
-    private String bbsAttrbCode;
+    private String bbsAttrCd;
 
     @Column(name = "REPLY_POSBL_YN", length = 1)
     @Builder.Default
-    private String replyPosblAt = "N";
+    private String replyPsblYn = "N";
 
     @Column(name = "FILE_ATCH_POSBL_YN", length = 1, nullable = false)
     @Builder.Default
-    private String fileAtchPosblAt = "N";
+    private String fileAtchPsblYn = "N";
 
     @Column(name = "ATCH_POSBL_FILE_NUMBER", nullable = false)
     @Builder.Default
-    private Integer atchPosblFileNumber = 0;
+    private Integer atchPsblFileCnt = 0;
 
     @Column(name = "ATCH_POSBL_FILE_SIZE")
-    private Long atchPosblFileSize;
+    private Long atchPsblFileSize;
 
     @Column(name = "USE_YN", nullable = false, length = 1)
     @Builder.Default
-    private String useAt = "Y";
+    private String useYn = "Y";
 
     @Column(name = "TMPLAT_ID", length = 20)
     private String tmplatId;
@@ -68,18 +68,18 @@ public class BoardMaster extends BaseEntity {
 
     @Column(name = "BLOG_YN", length = 1)
     @Builder.Default
-    private String blogAt = "N";
+    private String blogYn = "N";
 
-    @Column(name = "CMMNTY_ID", length = 20)
-    private String cmmntyId;
+    @Column(name = "CMNTY_ID", length = 20)
+    private String cmntyId;
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "ANSWER_YN", length = 1)
     @Builder.Default
-    private String commentAt = "N";
+    private String commentYn = "N";
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "STSFDG_YN", length = 1)
     @Builder.Default
-    private String stsfdgAt = "N";
+    private String stsfdgYn = "N";
 
     // TB_BBS_MASTER_OPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
     @Column(table = "TB_BBS_MASTER_OPTN", name = "FRST_RGTR_ID", length = 20, updatable = false)
@@ -112,33 +112,33 @@ public class BoardMaster extends BaseEntity {
         this.optnLastUpdtPnttm = LocalDateTime.now();
     }
 
-    public void update(String bbsNm, String bbsIntrcn, String replyPosblAt, String fileAtchPosblAt,
-            Integer atchPosblFileNumber, Long atchPosblFileSize, String tmplatId, String useAt,
-            String commentAt, String stsfdgAt) {
-        this.bbsNm = bbsNm;
-        this.bbsIntrcn = bbsIntrcn;
-        this.replyPosblAt = replyPosblAt;
-        this.fileAtchPosblAt = fileAtchPosblAt;
-        this.atchPosblFileNumber = atchPosblFileNumber;
-        this.atchPosblFileSize = atchPosblFileSize;
+    public void update(String bbsTtl, String bbsIntroCn, String replyPsblYn, String fileAtchPsblYn,
+            Integer atchPsblFileCnt, Long atchPsblFileSize, String tmplatId, String useYn,
+            String commentYn, String stsfdgYn) {
+        this.bbsTtl = bbsTtl;
+        this.bbsIntroCn = bbsIntroCn;
+        this.replyPsblYn = replyPsblYn;
+        this.fileAtchPsblYn = fileAtchPsblYn;
+        this.atchPsblFileCnt = atchPsblFileCnt;
+        this.atchPsblFileSize = atchPsblFileSize;
         this.tmplatId = tmplatId;
-        this.useAt = useAt;
-        this.commentAt = commentAt;
-        this.stsfdgAt = stsfdgAt;
+        this.useYn = useYn;
+        this.commentYn = commentYn;
+        this.stsfdgYn = stsfdgYn;
     }
 
-    public void updateBbsNm(String bbsNm) { this.bbsNm = bbsNm; }
-    public void updateBbsIntrcn(String bbsIntrcn) { this.bbsIntrcn = bbsIntrcn; }
-    public void updateReplyPosblAt(String replyPosblAt) { this.replyPosblAt = replyPosblAt; }
-    public void updateFileAtchPosblAt(String fileAtchPosblAt) { this.fileAtchPosblAt = fileAtchPosblAt; }
-    public void updateAtchPosblFileNumber(Integer atchPosblFileNumber) { this.atchPosblFileNumber = atchPosblFileNumber; }
-    public void updateAtchPosblFileSize(Long atchPosblFileSize) { this.atchPosblFileSize = atchPosblFileSize; }
+    public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
+    public void updateBbsIntroCn(String bbsIntroCn) { this.bbsIntroCn = bbsIntroCn; }
+    public void updateReplyPsblYn(String replyPsblYn) { this.replyPsblYn = replyPsblYn; }
+    public void updateFileAtchPsblYn(String fileAtchPsblYn) { this.fileAtchPsblYn = fileAtchPsblYn; }
+    public void updateAtchPsblFileCnt(Integer atchPsblFileCnt) { this.atchPsblFileCnt = atchPsblFileCnt; }
+    public void updateAtchPsblFileSize(Long atchPsblFileSize) { this.atchPsblFileSize = atchPsblFileSize; }
     public void updateTmplatId(String tmplatId) { this.tmplatId = tmplatId; }
-    public void updateUseAt(String useAt) { this.useAt = useAt; }
-    public void updateCommentAt(String commentAt) { this.commentAt = commentAt; }
-    public void updateStsfdgAt(String stsfdgAt) { this.stsfdgAt = stsfdgAt; }
+    public void updateUseYn(String useYn) { this.useYn = useYn; }
+    public void updateCommentYn(String commentYn) { this.commentYn = commentYn; }
+    public void updateStsfdgYn(String stsfdgYn) { this.stsfdgYn = stsfdgYn; }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

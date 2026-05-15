@@ -8,31 +8,32 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class WorkReportDto {
-    private String reportId;
-    private String reportSubject;
-    private String reportContent;
-    private String reportType;
-    private String reportDate;
+    private String rptId;
+    private String rptTtl;
+    private String rptCn;
+    private String rptTypeCd;
+    private String rptYmd;
     private String writerId;
-    private String reportStatus;
+    private String rptSttsCd;
 
+    // Aliases for legacy compatibility
     public String getReportNm() {
-        return reportSubject;
+        return rptTtl;
     }
 
     public String getReportCn() {
-        return reportContent;
+        return rptCn;
     }
 
     public String getWritngBgnde() {
-        return reportDate;
+        return rptYmd;
     }
 
     public String getWritngEndde() {
-        return reportDate;
+        return rptYmd;
     }
 
     public String getSanctnSttus() {
-        return "1".equals(reportStatus) ? "DRAFT" : "APPROVED";
+        return "1".equals(rptSttsCd) ? "DRAFT" : "APPROVED";
     }
 }

@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * 게시판 서비스 인터페이스
- * - 전자정부 표준프레임워크 5.0 호환성 인증 요건을 충족하기 위한 인터페이스 정의
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건을 충족하기 위한 인터페이스 정의 (v5 standardized)
  */
 public interface EgovBoardService {
 
@@ -38,15 +38,15 @@ public interface EgovBoardService {
                         List<MultipartFile> files)
                         throws IOException;
 
-        BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId);
+        BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstId);
 
-        void updatePost(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request);
+        void updatePost(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request);
 
-        void updatePostWithFiles(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request,
+        void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException;
 
-        void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId);
+        void deletePost(@NonNull String bbsId, @NonNull Long pstId, String authorId);
 
-        Integer incrementLike(@NonNull String bbsId, @NonNull Long nttId);
+        Integer incrementLike(@NonNull String bbsId, @NonNull Long pstId);
 }

@@ -39,17 +39,11 @@ public class OnlinePollService implements EgovOnlinePollService {
         if (searchKeyword.isEmpty()) {
             entities = pollManageRepository.findAll(pageable);
         } else {
-            entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
+            entities = pollManageRepository.findByPollTtlContaining(searchKeyword, pageable);
         }
-
-        log.debug(">>> [DEBUG] getPollList found {} entities", entities.getContent().size());
-        entities.getContent().forEach(e -> 
-            log.debug(">>> [DEBUG] Poll: {}, Items count: {}", e.getPollNm(), (e.getPollItems() != null ? e.getPollItems().size() : "null"))
-        );
 
         return entities.map(entity -> {
             OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
-            // Optionally populate vote counts for the list view if needed by summary components
             if (dto.getPollItems() != null) {
                 dto.getPollItems().forEach(itemDto -> {
                     itemDto.setPollIemCo(pollResultRepository.countByPollIemId(itemDto.getPollIemId()));
@@ -71,23 +65,21 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         
-        log.debug(">>> [DEBUG] insertPoll received beginDe: {}, endDe: {}", dto.getPollBeginDe(), dto.getPollEndDe());
-        validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
+        validatePollDates(dto.getPollBgngYmd(), dto.getPollEndYmd());
         if (dto.getPollId() == null || dto.getPollId().isEmpty()) {
             dto.setPollId("P" + System.currentTimeMillis());
         }
         
         OnlinePollManage pollManage = OnlinePollManage.builder()
                 .pollId(dto.getPollId())
-                .pollNm(dto.getPollNm())
-                .pollBeginDe(dto.getPollBeginDe())
-                .pollEndDe(dto.getPollEndDe())
-                .pollKindCode(dto.getPollKindCode())
+                .pollTtl(dto.getPollTtl())
+                .pollBgngYmd(dto.getPollBgngYmd())
+                .pollEndYmd(dto.getPollEndYmd())
+                .pollTypeCd(dto.getPollTypeCd())
                 .pollDsuseYn(dto.getPollDsuseYn() != null ? dto.getPollDsuseYn() : "N")
                 .pollAutoDsuseYn(dto.getPollAutoDsuseYn() != null ? dto.getPollAutoDsuseYn() : "N")
                 .pollItems(new ArrayList<>())
@@ -112,19 +104,17 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
-        validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
+        validatePollDates(dto.getPollBgngYmd(), dto.getPollEndYmd());
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
-        entity.update(dto.getPollNm(), dto.getPollBeginDe(), dto.getPollEndDe(),
-                dto.getPollKindCode(), dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
+        entity.update(dto.getPollTtl(), dto.getPollBgngYmd(), dto.getPollEndYmd(),
+                dto.getPollTypeCd(), dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
         
-        // Handle items update if provided (simplistic replacement for items)
         if (dto.getPollItems() != null) {
             entity.getPollItems().clear();
             long timestamp = System.currentTimeMillis();
@@ -143,7 +133,6 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePoll(String pollId) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
@@ -196,21 +185,18 @@ public class OnlinePollService implements EgovOnlinePollService {
         OnlinePollManage poll = pollManageRepository.findById(pollId)
                 .orElseThrow(() -> new BusinessException("설문을 찾을 수 없습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 1. 폐기 여부 확인
         if ("Y".equals(poll.getPollDsuseYn())) {
             throw new BusinessException("종료되었거나 폐기된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // 2. 설문 기간 확인
         String today = java.time.LocalDate.now().toString();
-        if (poll.getPollBeginDe().compareTo(today) > 0) {
+        if (poll.getPollBgngYmd().compareTo(today) > 0) {
             throw new BusinessException("설문 시작 전입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
-        if (poll.getPollEndDe().compareTo(today) < 0) {
+        if (poll.getPollEndYmd().compareTo(today) < 0) {
             throw new BusinessException("이미 종료된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // 3. 중복 투표 확인 (1인 1투표)
         if (pollResultRepository.countByPollIdAndFrstRegisterId(pollId, userId) > 0) {
             throw new BusinessException("이미 참여하신 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -223,6 +209,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .createdBy(userId)
                 .build()));
     }
+
     private void validatePollDates(String beginDe, String endDe) {
         if (beginDe != null && endDe != null) {
             if (beginDe.compareTo(endDe) > 0) {

@@ -10,17 +10,17 @@ interface ActionResponse {
 }
 
 interface CreateCommentData {
-  nttId: number;
+  pstId: number;
   bbsId: string;
-  commentCn: string;
+  cmntCn: string;
 }
 
 export async function createComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const nttId = formData.get('nttId') as string;
+  const pstId = formData.get('pstId') as string;
   const bbsId = formData.get('bbsId') as string;
-  const commentCn = formData.get('commentCn') as string;
+  const cmntCn = formData.get('cmntCn') as string;
 
-  if (!commentCn || commentCn.trim() === '') {
+  if (!cmntCn || cmntCn.trim() === '') {
     return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
@@ -30,9 +30,9 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const commentData: CreateCommentData = {
-      nttId: parseInt(nttId),
+      pstId: parseInt(pstId),
       bbsId,
-      commentCn
+      cmntCn
     };
 
     const response: unknown = await client.post(`/comments`, commentData, axiosConfig);
@@ -51,9 +51,9 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
 }
 
 export async function deleteComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const id = formData.get('commentId') as string;
+  const id = formData.get('id') as string;
   const bbsId = formData.get('bbsId') as string;
-  const nttId = formData.get('nttId') as string;
+  const pstId = formData.get('pstId') as string;
 
   try {
     const cookieStore = await cookies();
@@ -63,7 +63,7 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
     const response: unknown = await client.delete(`/comments/${id}`, axiosConfig);
 
     if (response !== undefined) {
-      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${nttId}`);
+      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
       return { success: true, message: '댓글이 삭제되었습니다.' };
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
@@ -74,13 +74,14 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
     return { success: false, message: errorMessage };
   }
 }
-export async function updateComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const id = formData.get('commentId') as string;
-  const bbsId = formData.get('bbsId') as string;
-  const nttId = formData.get('nttId') as string;
-  const commentCn = formData.get('commentCn') as string;
 
-  if (!commentCn || commentCn.trim() === '') {
+export async function updateComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
+  const id = formData.get('id') as string;
+  const bbsId = formData.get('bbsId') as string;
+  const pstId = formData.get('pstId') as string;
+  const cmntCn = formData.get('cmntCn') as string;
+
+  if (!cmntCn || cmntCn.trim() === '') {
     return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
@@ -90,15 +91,15 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const commentData = {
-      nttId: parseInt(nttId),
+      pstId: parseInt(pstId),
       bbsId,
-      commentCn
+      cmntCn
     };
 
     const response: unknown = await client.put(`/comments/${id}`, commentData, axiosConfig);
 
     if (response) {
-      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${nttId}`);
+      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
       return { success: true, message: '댓글이 수정되었습니다.' };
     } else {
       return { success: false, message: '수정에 실패했습니다.' };

@@ -160,11 +160,11 @@ async function cleanup() {
         });
         const posts = postsRes.data.data?.list || postsRes.data.data?.content || [];
         const testPosts = posts.filter((p: any) => 
-          p.nttSj?.startsWith('E2E') || p.title?.startsWith('E2E')
+          p.pstTtl?.startsWith('E2E') || p.title?.startsWith('E2E')
         );
         for (const post of testPosts) {
-          const postId = post.nttId || post.id;
-          process.stdout.write(`  - Deleting Post: ${post.nttSj || post.title} (${postId})... `);
+          const postId = post.pstId || post.id;
+          process.stdout.write(`  - Deleting Post: ${post.pstTtl || post.title} (${postId})... `);
           await axios.delete(`${API_BASE}/boards/${bbsId}/posts/${postId}`, { headers });
           console.log('DONE');
         }

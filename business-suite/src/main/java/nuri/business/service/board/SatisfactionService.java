@@ -25,14 +25,14 @@ public class SatisfactionService implements EgovSatisfactionService {
     public void registerSatisfaction(SatisfactionDto dto) {
         Satisfaction satisfaction = Satisfaction.builder()
                 .id(dto.getSatisfactionId())
-                .articleId(dto.getArticleId())
-                .boardId(dto.getBoardId())
+                .pstId(dto.getPstId())
+                .bbsId(dto.getBbsId())
                 .writerId(dto.getWriterId())
                 .writerNm(dto.getWriterNm())
-                .satisfactionLevel(dto.getSatisfactionLevel())
-                .satisfactionOpinion(dto.getSatisfactionOpinion())
+                .stsfdgLevel(dto.getStsfdgLevel())
+                .stsfdgCn(dto.getStsfdgCn())
                 .password(dto.getSatisfactionPassword())
-                .useAt("Y")
+                .useYn("Y")
                 .createdBy(dto.getWriterId())
                 .build();
         satisfactionRepository.save(Objects.requireNonNull(satisfaction));
@@ -42,7 +42,7 @@ public class SatisfactionService implements EgovSatisfactionService {
     @Transactional
     public void updateSatisfaction(SatisfactionDto dto) {
         satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
-                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(),
+                .ifPresent(s -> s.update(dto.getStsfdgLevel(), dto.getStsfdgCn(),
                         dto.getSatisfactionPassword()));
     }
 
@@ -53,28 +53,28 @@ public class SatisfactionService implements EgovSatisfactionService {
     }
 
     @Override
-    public List<SatisfactionDto> getSatisfactionList(Long articleId, String boardId) {
+    public List<SatisfactionDto> getSatisfactionList(Long pstId, String bbsId) {
         return satisfactionRepository
-                .findByArticleIdAndBoardIdAndUseAt(Objects.requireNonNull(articleId), Objects.requireNonNull(boardId),
+                .findByPstIdAndBbsIdAndUseYn(Objects.requireNonNull(pstId), Objects.requireNonNull(bbsId),
                         "Y")
                 .stream()
                 .map(s -> SatisfactionDto.builder()
                         .satisfactionId(s.getId())
-                        .articleId(s.getArticleId())
-                        .boardId(s.getBoardId())
+                        .pstId(s.getPstId())
+                        .bbsId(s.getBbsId())
                         .writerId(s.getWriterId())
                         .writerNm(s.getWriterNm())
-                        .satisfactionLevel(s.getSatisfactionLevel())
-                        .satisfactionOpinion(s.getSatisfactionOpinion())
+                        .stsfdgLevel(s.getStsfdgLevel())
+                        .stsfdgCn(s.getStsfdgCn())
                         .createdDate(s.getCreatedDate())
                         .build())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Double getAverageSatisfaction(Long articleId, String boardId) {
-        return satisfactionRepository.getAverageSatisfaction(Objects.requireNonNull(articleId),
-                Objects.requireNonNull(boardId));
+    public Double getAverageSatisfaction(Long pstId, String bbsId) {
+        return satisfactionRepository.getAverageSatisfaction(Objects.requireNonNull(pstId),
+                Objects.requireNonNull(bbsId));
     }
 
     @Override
@@ -83,13 +83,13 @@ public class SatisfactionService implements EgovSatisfactionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return SatisfactionDto.builder()
                 .satisfactionId(satisfaction.getId())
-                .articleId(satisfaction.getArticleId())
-                .boardId(satisfaction.getBoardId())
+                .pstId(satisfaction.getPstId())
+                .bbsId(satisfaction.getBbsId())
                 .writerId(satisfaction.getWriterId())
                 .writerNm(satisfaction.getWriterNm())
-                .satisfactionLevel(satisfaction.getSatisfactionLevel())
-                .satisfactionOpinion(satisfaction.getSatisfactionOpinion())
-                .useAt(satisfaction.getUseAt())
+                .stsfdgLevel(satisfaction.getStsfdgLevel())
+                .stsfdgCn(satisfaction.getStsfdgCn())
+                .useYn(satisfaction.getUseYn())
                 .createdDate(satisfaction.getCreatedDate())
                 .build();
     }

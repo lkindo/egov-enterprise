@@ -11,15 +11,15 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class SurveyRespondentDto {
-    private String qestnrRespondId;
-    private String qestnrId;
-    private String qestnrTmplatId;
-    private String sexdstnCode;
-    private String occpTyCode;
-    private String respondNm;
-    private String brth;
-    private String areaNo;
-    private String middleTelno;
+    private String srvyRspdId;
+    private String srvyId;
+    private String srvyTmplatId;
+    private String gndrCd;
+    private String jobTypeCd;
+    private String rspdNm;
+    private String brthYmd;
+    private String areaTelno;
+    private String midTelno;
     private String endTelno;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
@@ -28,15 +28,15 @@ public class SurveyRespondentDto {
 
     public static SurveyRespondentDto from(SurveyRespondent entity) {
         return SurveyRespondentDto.builder()
-                .qestnrRespondId(entity.getQestnrRespondId())
-                .qestnrId(entity.getQestnrId())
-                .qestnrTmplatId(entity.getQestnrTmplatId())
-                .sexdstnCode(entity.getSexdstnCode())
-                .occpTyCode(entity.getOccpTyCode())
-                .respondNm(entity.getRespondNm())
-                .brth(entity.getBrthdy())
-                .areaNo(entity.getAreaNo())
-                .middleTelno(entity.getMiddleTelno())
+                .srvyRspdId(entity.getSrvyRspdId())
+                .srvyId(entity.getSrvyId())
+                .srvyTmplatId(entity.getSrvyTmplatId())
+                .gndrCd(entity.getGndrCd())
+                .jobTypeCd(entity.getJobTypeCd())
+                .rspdNm(entity.getRspdNm())
+                .brthYmd(entity.getBrthYmd())
+                .areaTelno(entity.getAreaTelno())
+                .midTelno(entity.getMidTelno())
                 .endTelno(entity.getEndTelno())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())

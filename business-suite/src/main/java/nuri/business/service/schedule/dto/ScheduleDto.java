@@ -8,42 +8,43 @@ import lombok.Getter;
 @Getter
 @Builder
 public class ScheduleDto {
-    private String schdulId;
-    private String schdulSe;
-    private String schdulDeptId;
-    private String schdulKindCode;
-    private String schdulBgnde;
-    private String schdulEndde;
-    private String schdulNm;
-    private String schdulCn;
-    private String schdulPlace;
-    private String schdulIpcrCode;
-    private String schdulChargerId;
+    private String schdlId;
+    private String schdlSeCd;
+    private String schdlDeptId;
+    private String schdlKindCd;
+    private String schdlBgngYmd;
+    private String schdlEndYmd;
+    private String schdlTtl;
+    private String schdlCn;
+    private String schdlPlcNm;
+    private String schdlIpcrCd;
+    private String schdlPicId;
     private String atchFileId;
-    private String reptitSeCode;
+    private String reptitSeCd;
     private String frstRegisterId;
     private LocalDateTime createdDate;
     private String lastUpdusrId;
     private LocalDateTime modifiedDate;
 
     public static ScheduleDto from(Schedule entity) {
+        if (entity == null) return null;
         return ScheduleDto.builder()
-                .schdulId(entity.getSchdulId())
-                .schdulSe(entity.getSchdulSe())
-                .schdulDeptId(entity.getSchdulDeptId())
-                .schdulKindCode(entity.getSchdulKindCode())
-                .schdulBgnde(entity.getSchdulBgnde())
-                .schdulEndde(entity.getSchdulEndde())
-                .schdulNm(entity.getSchdulNm())
-                .schdulCn(entity.getSchdulCn())
-                .schdulPlace(entity.getSchdulPlace())
-                .schdulIpcrCode(entity.getSchdulIpcrCode())
-                .schdulChargerId(entity.getSchdulChargerId())
+                .schdlId(entity.getSchdlId())
+                .schdlSeCd(entity.getSchdlSeCd())
+                .schdlDeptId(entity.getSchdlDeptId())
+                .schdlKindCd(entity.getSchdlKindCd())
+                .schdlBgngYmd(entity.getSchdlBgngYmd())
+                .schdlEndYmd(entity.getSchdlEndYmd())
+                .schdlTtl(entity.getSchdlTtl())
+                .schdlCn(entity.getSchdlCn())
+                .schdlPlcNm(entity.getSchdlPlcNm())
+                .schdlIpcrCd(entity.getSchdlIpcrCd())
+                .schdlPicId(entity.getSchdlPicId())
                 .atchFileId(entity.getAtchFileId())
-                .reptitSeCode(entity.getReptitSeCode())
-                .frstRegisterId(entity.getFrstRegisterId())
+                .reptitSeCd(entity.getReptitSeCd())
+                .frstRegisterId(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastUpdusrId())
+                .lastUpdusrId(entity.getLastModifiedBy())
                 .modifiedDate(entity.getLastModifiedDate())
                 .build();
     }

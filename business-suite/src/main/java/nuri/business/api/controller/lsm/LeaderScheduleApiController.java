@@ -33,10 +33,10 @@ public class LeaderScheduleApiController {
     }
 
     @Operation(summary = "간부 일정 상세 조회", description = "특정 간부 일정의 상세 정보를 조회합니다.")
-    @GetMapping("/{scheduleId}")
+    @GetMapping("/{schdlId}")
     public ResponseEntity<ApiResponse<LeaderScheduleDto>> getLeaderSchedule(
-            @Parameter(description = "일정 ID") @PathVariable String scheduleId) {
-        return ResponseEntity.ok(ApiResponse.success(leaderScheduleService.getLeaderSchedule(scheduleId)));
+            @Parameter(description = "일정 ID") @PathVariable String schdlId) {
+        return ResponseEntity.ok(ApiResponse.success(leaderScheduleService.getLeaderSchedule(schdlId)));
     }
 
     @Operation(summary = "간부 일정 등록", description = "새로운 간부 일정을 등록합니다.")
@@ -47,18 +47,18 @@ public class LeaderScheduleApiController {
     }
 
     @Operation(summary = "간부 일정 수정", description = "간부 일정 정보를 수정합니다.")
-    @PutMapping("/{scheduleId}")
+    @PutMapping("/{schdlId}")
     public ResponseEntity<ApiResponse<Void>> updateLeaderSchedule(
-            @PathVariable String scheduleId,
+            @PathVariable String schdlId,
             @RequestBody LeaderScheduleDto dto) {
-        leaderScheduleService.updateLeaderSchedule(scheduleId, "ADMIN", dto);
+        leaderScheduleService.updateLeaderSchedule(schdlId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "간부 일정 삭제", description = "간부 일정 정보를 삭제합니다.")
-    @DeleteMapping("/{scheduleId}")
-    public ResponseEntity<ApiResponse<Void>> deleteLeaderSchedule(@PathVariable String scheduleId) {
-        leaderScheduleService.deleteLeaderSchedule(scheduleId);
+    @DeleteMapping("/{schdlId}")
+    public ResponseEntity<ApiResponse<Void>> deleteLeaderSchedule(@PathVariable String schdlId) {
+        leaderScheduleService.deleteLeaderSchedule(schdlId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

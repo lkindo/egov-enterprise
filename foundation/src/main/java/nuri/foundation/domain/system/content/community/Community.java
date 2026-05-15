@@ -22,32 +22,32 @@ import java.io.Serializable;
 public class Community extends BaseEntity implements Serializable {
 
     @Id
-    @Column(name = "CMMNTY_ID", length = 20, nullable = false)
-    private String cmmntyId;
+    @Column(name = "CMNTY_ID", length = 20, nullable = false)
+    private String cmntyId;
 
-    @Column(name = "CMMNTY_NM", length = 255)
-    private String cmmntyNm;
+    @Column(name = "CMNTY_NM", length = 300)
+    private String cmntyTtl;
 
-    @Column(name = "CMMNTY_INTRCN", length = 2400)
-    private String cmmntyIntrcn;
+    @Column(name = "CMNTY_INTRO_CN", length = 4000)
+    private String cmntyIntroCn;
 
-    @Column(name = "REGIST_SE_CODE", length = 6)
-    private String registSeCode;
+    @Column(name = "REG_SE_CD", length = 12)
+    private String regTypeCd;
 
     @Column(name = "TMPLAT_ID", length = 20)
     private String tmplatId;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
-    public void update(String cmmntyNm, String cmmntyIntrcn, String tmplatId, String useAt) {
-        this.cmmntyNm = cmmntyNm;
-        this.cmmntyIntrcn = cmmntyIntrcn;
+    public void update(String cmntyTtl, String cmntyIntroCn, String tmplatId, String useYn) {
+        this.cmntyTtl = cmntyTtl;
+        this.cmntyIntroCn = cmntyIntroCn;
         this.tmplatId = tmplatId;
-        this.useAt = useAt;
+        this.useYn = useYn;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

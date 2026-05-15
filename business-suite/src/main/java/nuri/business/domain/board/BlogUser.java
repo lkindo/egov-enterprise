@@ -27,23 +27,23 @@ public class BlogUser extends BaseEntity {
     private String blogId;
 
     @Id
-    @Column(name = "EMPLYR_ID", length = 20)
-    private String emplyrId;
+    @Column(name = "USER_ID", length = 30)
+    private String userId;
 
-    @Column(name = "MNGR_AT", length = 1)
-    private String mngrAt;
+    @Column(name = "MNGR_YN", length = 1)
+    private String mngrYn;
 
-    @Column(name = "SBSCRB_DE")
-    private LocalDateTime sbscrbDe;
+    @Column(name = "JOIN_YMD", length = 8)
+    private String joinYmd;
 
-    @Column(name = "SECSN_DE", length = 20)
-    private String secsnDe;
+    @Column(name = "WHDWL_YMD", length = 8)
+    private String wdrlYmd;
 
-    @Column(name = "MBER_STTUS", length = 1)
-    private String mberSttus;
+    @Column(name = "MBR_STTS_CD", length = 12)
+    private String mbrSttsCd;
 
-    @Column(name = "USE_AT", length = 1)
-    private String useAt;
+    @Column(name = "USE_YN", length = 1)
+    private String useYn;
 }
 
 @EqualsAndHashCode
@@ -53,5 +53,5 @@ public class BlogUser extends BaseEntity {
 @SuperBuilder
 class BlogUserId implements Serializable {
     private String blogId;
-    private String emplyrId;
+    private String userId;
 }

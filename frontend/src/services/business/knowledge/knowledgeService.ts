@@ -2,19 +2,16 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 지식 기반 서비스 DTO
+ * 지식 기반 서비스 DTO (Enterprise v5 Standard)
  */
 export interface KnowledgeDto {
-  knoId: string;
-  knoNm: string;
-  knoCn: string;
-  knoTypeCd?: string;
+  pstId: string;
+  pstTtl: string;
+  pstCn: string;
   atchFileId?: string;
   frstRegisterId?: string;
   frstRegisterPnttm?: string;
   inqireCo?: number;
-  nttSj?: string;
-  nttCn?: string;
   ntcrNm?: string;
   frstRegisterPnttmStr?: string;
   bbsId?: string;
@@ -23,28 +20,15 @@ export interface KnowledgeDto {
   qnaStatus?: string;
   qnaCategory?: string;
   eventDate?: string;
+  likeCo?: number;
+  commentCo?: number;
+  // Legacy mappings for backward compatibility during transition if needed
+  knoId?: string;
+  knoNm?: string;
+  knoCn?: string;
 }
 
 export type BoardArticle = KnowledgeDto;
-
-export interface CommentDto {
-  id: number;
-  nttId: number;
-  bbsId: string;
-  wrterId: string;
-  wrterNm: string;
-  commentCn: string;
-  createdDate: string;
-}
-
-export interface FileDto {
-  atchFileId: string;
-  fileSn: number;
-  fileExtsn: string;
-  fileMg: number;
-  orignlFileNm: string;
-  streFileNm: string;
-}
 
 /**
  * 지식 허브 서비스
@@ -104,8 +88,8 @@ class KnowledgeService extends ApiService {
     return {
       list: (res.list || []).map((item: any) => ({
         ...item,
-        id: item.nttId,
-        nttSj: item.nttSj,
+        pstId: item.pstId || item.nttId,
+        pstTtl: item.pstTtl || item.nttSj,
       })),
     };
   }
@@ -113,8 +97,8 @@ class KnowledgeService extends ApiService {
   /**
    * 게시물 상세 조회
    */
-  public async getArticle(bbsId: string, nttId: string): Promise<KnowledgeDto> {
-    return this.get<KnowledgeDto>(`/${bbsId}/posts/${nttId}`);
+  public async getArticle(bbsId: string, pstId: string): Promise<KnowledgeDto> {
+    return this.get<KnowledgeDto>(`/${bbsId}/posts/${pstId}`);
   }
 
   /**
@@ -133,9 +117,9 @@ class KnowledgeService extends ApiService {
     const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 10 } });
     
     return (res.list || []).map((item: any) => ({
-      id: item.nttId,
+      id: item.pstId || item.nttId,
       type: 'SHARE',
-      title: item.nttSj,
+      title: item.pstTtl || item.nttSj,
       user: item.ntcrNm || item.frstRegisterId,
       time: item.frstRegisterPnttm?.split('T')[0] || 'Just now',
       impact: `+${(item.inqireCo || 0) % 100} Reach`,

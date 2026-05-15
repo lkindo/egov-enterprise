@@ -37,11 +37,11 @@ public class CommunityServiceImpl implements CommunityService {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
-        builder.and(qCommunity.registSeCode.eq("REGC01"));
+        builder.and(qCommunity.regTypeCd.eq("REGC01"));
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
             if ("0".equals(searchCnd)) {
-                builder.and(qCommunity.cmmntyNm.contains(searchWrd));
+                builder.and(qCommunity.cmntyTtl.contains(searchWrd));
             }
         }
 
@@ -64,8 +64,8 @@ public class CommunityServiceImpl implements CommunityService {
     }
 
     @Override
-    public CommunityDto getCommunity(String cmmntyId) {
-        return communityRepository.findById(Objects.requireNonNull(cmmntyId))
+    public CommunityDto getCommunity(String cmntyId) {
+        return communityRepository.findById(Objects.requireNonNull(cmntyId))
                 .map(CommunityDto::from)
                 .orElse(null);
     }
@@ -74,14 +74,14 @@ public class CommunityServiceImpl implements CommunityService {
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
         try {
-            String cmmntyId = egovCmmntyIdGnrService.getNextStringId();
+            String cmntyId = egovCmmntyIdGnrService.getNextStringId();
             Community community = Community.builder()
-                    .cmmntyId(cmmntyId)
-                    .cmmntyNm(dto.getCmmntyNm())
-                    .cmmntyIntrcn(dto.getCmmntyIntrcn())
-                    .registSeCode("REGC01")
+                    .cmntyId(cmntyId)
+                    .cmntyTtl(dto.getCmntyTtl())
+                    .cmntyIntroCn(dto.getCmntyIntroCn())
+                    .regTypeCd("REGC01")
                     .tmplatId(dto.getTmplatId())
-                    .useAt("Y")
+                    .useYn("Y")
                     .build();
             return CommunityDto.from(Objects
                     .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
@@ -93,21 +93,21 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void updateCommunity(String userId, CommunityDto dto) {
-        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmmntyId()))
-                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + dto.getCmmntyId()));
+        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmntyId()))
+                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + dto.getCmntyId()));
 
         community.update(
-                dto.getCmmntyNm(),
-                dto.getCmmntyIntrcn(),
+                dto.getCmntyTtl(),
+                dto.getCmntyIntroCn(),
                 dto.getTmplatId(),
-                dto.getUseAt());
+                dto.getUseYn());
     }
 
     @Override
     @Transactional
-    public void deleteCommunity(String cmmntyId, String userId) {
-        Community community = communityRepository.findById(Objects.requireNonNull(cmmntyId))
-                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmmntyId));
+    public void deleteCommunity(String cmntyId, String userId) {
+        Community community = communityRepository.findById(Objects.requireNonNull(cmntyId))
+                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmntyId));
         community.delete();
     }
 
@@ -116,7 +116,7 @@ public class CommunityServiceImpl implements CommunityService {
         QCommunity qCommunity = QCommunity.community;
         return queryFactory
                 .selectFrom(qCommunity)
-                .where(qCommunity.useAt.eq("Y"))
+                .where(qCommunity.useYn.eq("Y"))
                 .orderBy(qCommunity.createdDate.desc())
                 .fetch()
                 .stream()
@@ -126,25 +126,25 @@ public class CommunityServiceImpl implements CommunityService {
 
     @Override
     @Transactional
-    public void joinCommunity(String cmmntyId, String userId) {
-        Community community = communityRepository.findById(Objects.requireNonNull(cmmntyId))
-                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmmntyId));
+    public void joinCommunity(String cmntyId, String userId) {
+        Community community = communityRepository.findById(Objects.requireNonNull(cmntyId))
+                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmntyId));
 
-        if (!"Y".equals(community.getUseAt())) {
+        if (!"Y".equals(community.getUseYn())) {
             throw new IllegalStateException("This community is not active.");
         }
 
-        CommunityUserId id = new CommunityUserId(cmmntyId, userId);
+        CommunityUserId id = new CommunityUserId(cmntyId, userId);
         if (communityUserRepository.existsById(id)) {
             throw new IllegalStateException("Already a member or join request pending.");
         }
 
         CommunityUser communityUser = CommunityUser.builder()
                 .id(id)
-                .mberSttus("A") // A: Requested
-                .mngrAt("N")
-                .sbscrbDe(LocalDateTime.now())
-                .useAt("Y")
+                .mbrSttsCd("A") // A: Requested
+                .mngrYn("N")
+                .joinYmd(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
+                .useYn("Y")
                 .build();
 
         communityUserRepository.save(communityUser);

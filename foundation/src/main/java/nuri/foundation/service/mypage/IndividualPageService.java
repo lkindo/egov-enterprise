@@ -25,8 +25,8 @@ public class IndividualPageService implements EgovIndividualPageService {
     public void registerIndividualPage(IndividualPageDto dto) {
         IndividualPage page = IndividualPage.builder()
                 .pageId(dto.getPageId())
-                .pageNm(dto.getPageNm())
-                .pageDc(dto.getPageDc())
+                .pageTtl(dto.getPageTtl())
+                .pageExpln(dto.getPageExpln())
                 .userId(dto.getUserId())
                 .createdBy(dto.getUserId())
                 .build();
@@ -38,7 +38,7 @@ public class IndividualPageService implements EgovIndividualPageService {
     public void updateIndividualPage(IndividualPageDto dto) {
         IndividualPage page = individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-        page.update(dto.getPageNm(), dto.getPageDc());
+        page.update(dto.getPageTtl(), dto.getPageExpln());
     }
 
     @Override
@@ -52,8 +52,8 @@ public class IndividualPageService implements EgovIndividualPageService {
         return individualPageRepository.findByUserId(userId)
                 .map(p -> IndividualPageDto.builder()
                         .pageId(p.getPageId())
-                        .pageNm(p.getPageNm())
-                        .pageDc(p.getPageDc())
+                        .pageTtl(p.getPageTtl())
+                        .pageExpln(p.getPageExpln())
                         .userId(p.getUserId())
                         .build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));

@@ -36,10 +36,10 @@ public class WorkReportApiController {
     }
 
     @Operation(summary = "업무보고 상세 조회", description = "업무보고 상세 정보를 조회합니다.")
-    @GetMapping("/{reportId}")
+    @GetMapping("/{rptId}")
     public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(
-            @Parameter(description = "보고 ID") @PathVariable String reportId) {
-        return ResponseEntity.ok(ApiResponse.success(workReportService.getWorkReport(reportId)));
+            @Parameter(description = "보고 ID") @PathVariable String rptId) {
+        return ResponseEntity.ok(ApiResponse.success(workReportService.getWorkReport(rptId)));
     }
 
     @Operation(summary = "업무보고 등록", description = "새로운 업무보고를 등록합니다.")
@@ -52,19 +52,19 @@ public class WorkReportApiController {
     }
 
     @Operation(summary = "업무보고 수정", description = "업무보고 정보를 수정합니다.")
-    @PutMapping("/{reportId}")
+    @PutMapping("/{rptId}")
     public ResponseEntity<ApiResponse<Void>> updateWorkReport(
-            @PathVariable String reportId,
+            @PathVariable String rptId,
             @RequestBody WorkReportDto dto) {
-        dto.setReportId(reportId);
+        dto.setRptId(rptId);
         workReportService.updateWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "업무보고 삭제", description = "업무보고 정보를 삭제합니다.")
-    @DeleteMapping("/{reportId}")
-    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable String reportId) {
-        workReportService.deleteWorkReport(reportId);
+    @DeleteMapping("/{rptId}")
+    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable String rptId) {
+        workReportService.deleteWorkReport(rptId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class IndividualPageDto {
     private String pageId;
-    private String pageNm;
-    private String pageDc;
+    private String pageTtl;
+    private String pageExpln;
     private String userId;
 }

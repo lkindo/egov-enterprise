@@ -63,18 +63,17 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     private BoardMasterDto convertSearchResultToDto(BoardMasterSearchResult r) {
         return BoardMasterDto.builder()
                 .bbsId(r.getBbsId())
-                .bbsNm(r.getBbsNm())
-                .bbsTyCode(r.getBbsTyCode())
-                .bbsAttrbCode(r.getBbsAttrbCode())
+                .bbsTtl(r.getBbsTtl())
+                .bbsTypeCd(r.getBbsTypeCd())
+                .bbsAttrCd(r.getBbsAttrCd())
                 .tmplatId(r.getTmplatId())
-                .useAt(r.getUseAt())
+                .useYn(r.getUseYn())
                 .build();
     }
 
     @Override
     @Transactional
     public String createBoardMaster(BoardMasterDto dto) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
@@ -88,23 +87,23 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
         BoardMaster entity = BoardMaster.builder()
                 .bbsId(bbsId)
-                .bbsNm(dto.getBbsNm())
-                .bbsIntrcn(dto.getBbsIntrcn())
-                .bbsTyCode(dto.getBbsTyCode())
-                .bbsAttrbCode(dto.getBbsAttrbCode())
-                .replyPosblAt(dto.getReplyPosblAt())
-                .fileAtchPosblAt(dto.getFileAtchPosblAt())
-                .atchPosblFileNumber(dto.getAtchPosblFileNumber())
-                .atchPosblFileSize(dto.getAtchPosblFileSize())
+                .bbsTtl(dto.getBbsTtl())
+                .bbsIntroCn(dto.getBbsIntroCn())
+                .bbsTypeCd(dto.getBbsTypeCd())
+                .bbsAttrCd(dto.getBbsAttrCd())
+                .replyPsblYn(dto.getReplyPsblYn())
+                .fileAtchPsblYn(dto.getFileAtchPsblYn())
+                .atchPsblFileCnt(dto.getAtchPsblFileCnt())
+                .atchPsblFileSize(dto.getAtchPsblFileSize())
                 .tmplatId(dto.getTmplatId())
-                .useAt("Y")
+                .useYn("Y")
                 .createdBy(dto.getFrstRegisterId())
                 .lastModifiedBy(dto.getFrstRegisterId())
-                .cmmntyId(dto.getCmmntyId())
+                .cmntyId(dto.getCmntyId())
                 .blogId(dto.getBlogId())
-                .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N") // Ensure default
-                .commentAt(dto.getCommentAt() != null ? dto.getCommentAt() : "N") // Ensure default
-                .stsfdgAt(dto.getStsfdgAt() != null ? dto.getStsfdgAt() : "N") // Ensure default
+                .blogYn(dto.getBlogYn() != null ? dto.getBlogYn() : "N")
+                .commentYn(dto.getCommentYn() != null ? dto.getCommentYn() : "N")
+                .stsfdgYn(dto.getStsfdgYn() != null ? dto.getStsfdgYn() : "N")
                 .optnFrstRegisterId(dto.getFrstRegisterId())
                 .optnFrstRegistPnttm(java.time.LocalDateTime.now())
                 .optnLastUpdusrId(dto.getFrstRegisterId())
@@ -118,7 +117,6 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     @Override
     @Transactional
     public void updateBoardMaster(BoardMasterDto dto) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
@@ -126,22 +124,21 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = boardMasterRepository.findById(required(dto.getBbsId(), "dto.getBbsId() 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        if (dto.getBbsNm() != null) entity.updateBbsNm(dto.getBbsNm());
-        if (dto.getBbsIntrcn() != null) entity.updateBbsIntrcn(dto.getBbsIntrcn());
-        if (dto.getReplyPosblAt() != null) entity.updateReplyPosblAt(dto.getReplyPosblAt());
-        if (dto.getFileAtchPosblAt() != null) entity.updateFileAtchPosblAt(dto.getFileAtchPosblAt());
-        if (dto.getAtchPosblFileNumber() != null) entity.updateAtchPosblFileNumber(dto.getAtchPosblFileNumber());
-        if (dto.getAtchPosblFileSize() != null) entity.updateAtchPosblFileSize(dto.getAtchPosblFileSize());
+        if (dto.getBbsTtl() != null) entity.updateBbsTtl(dto.getBbsTtl());
+        if (dto.getBbsIntroCn() != null) entity.updateBbsIntroCn(dto.getBbsIntroCn());
+        if (dto.getReplyPsblYn() != null) entity.updateReplyPsblYn(dto.getReplyPsblYn());
+        if (dto.getFileAtchPsblYn() != null) entity.updateFileAtchPsblYn(dto.getFileAtchPsblYn());
+        if (dto.getAtchPsblFileCnt() != null) entity.updateAtchPsblFileCnt(dto.getAtchPsblFileCnt());
+        if (dto.getAtchPsblFileSize() != null) entity.updateAtchPsblFileSize(dto.getAtchPsblFileSize());
         if (dto.getTmplatId() != null) entity.updateTmplatId(dto.getTmplatId());
-        if (dto.getUseAt() != null) entity.updateUseAt(dto.getUseAt());
-        if (dto.getCommentAt() != null) entity.updateCommentAt(dto.getCommentAt());
-        if (dto.getStsfdgAt() != null) entity.updateStsfdgAt(dto.getStsfdgAt());
+        if (dto.getUseYn() != null) entity.updateUseYn(dto.getUseYn());
+        if (dto.getCommentYn() != null) entity.updateCommentYn(dto.getCommentYn());
+        if (dto.getStsfdgYn() != null) entity.updateStsfdgYn(dto.getStsfdgYn());
     }
 
     @Override
     @Transactional
     public void deleteBoardMaster(String bbsId, String userId) {
-        // [보안] 관리자 권한 확인
         if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
@@ -149,35 +146,27 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 1. 게시판 사용 정보 삭제 (물리 삭제)
         boardUseRepository.deleteByBbsId(bbsId);
-        
-        // 2. 게시판 마스터 정보 삭제 (물리 삭제)
-        // 기존 entity.delete()는 useAt='N'만 수행하므로 목록에 계속 남음.
-        // 사용자가 "완전 삭제"를 원하므로 repository.delete() 호출
         boardMasterRepository.delete(entity);
-        
-        log.info("BoardMaster deleted: {} by user: {}", bbsId, userId);
     }
 
     @Override
     public boolean canUseSatisfaction(String bbsId) {
         return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                .map(bm -> "Y".equals(bm.getStsfdgAt()))
+                .map(bm -> "Y".equals(bm.getStsfdgYn()))
                 .orElse(false);
     }
 
     @Override
     public boolean canUseComment(String bbsId) {
         return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                .map(bm -> "Y".equals(bm.getCommentAt()))
+                .map(bm -> "Y".equals(bm.getCommentYn()))
                 .orElse(false);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
-        // QueryDSL 기반 검색이 필요할 수 있으나 현재는 단순 findAll로 처리 (필요시 Custom Repository 추가)
         return blogRepository.findAll(required(pageable, "pageable 는 null 일 수 없습니다")).map(BlogDto::from);
     }
 
@@ -199,25 +188,25 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         Blog entity = Blog.builder()
                 .blogId(dto.getBlogId())
                 .bbsId(dto.getBbsId())
-                .blogNm(dto.getBlogNm())
-                .blogIntrcn(dto.getBlogIntrcn())
-                .registSeCode(dto.getRegistSeCode())
+                .blogTtl(dto.getBlogTtl())
+                .blogIntroCn(dto.getBlogIntroCn())
+                .regTypeCd(dto.getRegTypeCd())
                 .tmplatId(dto.getTmplatId())
-                .useAt(dto.getUseAt())
+                .useYn(dto.getUseYn())
                 .createdBy(dto.getFrstRegisterId())
-                .blogAt(dto.getBlogAt())
+                .blogYn(dto.getBlogYn())
                 .build();
         blogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
     @Override
     @Transactional
-    public void joinBlog(String blogId, String userId, String mngrAt) {
+    public void joinBlog(String blogId, String userId, String mngrYn) {
         BlogUser user = BlogUser.builder()
                 .blogId(blogId)
-                .emplyrId(userId)
-                .mngrAt(mngrAt)
-                .useAt("Y")
+                .userId(userId)
+                .mngrYn(mngrYn)
+                .useYn("Y")
                 .createdBy(userId)
                 .build();
         blogUserRepository.save(required(user, "user 는 null 일 수 없습니다"));
@@ -243,8 +232,8 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     @Override
     @Transactional(readOnly = true)
-    public List<BoardMasterDto> getBoardMasterListByCommunity(String cmmntyId) {
-        return boardMasterRepository.findByCmmntyIdAndUseAt(required(cmmntyId, "cmmntyId 는 null 일 수 없습니다"), "Y")
+    public List<BoardMasterDto> getBoardMasterListByCommunity(String cmntyId) {
+        return boardMasterRepository.findByCmntyIdAndUseYn(required(cmntyId, "cmntyId 는 null 일 수 없습니다"), "Y")
                 .stream()
                 .map(BoardMasterDto::from)
                 .collect(Collectors.toList());

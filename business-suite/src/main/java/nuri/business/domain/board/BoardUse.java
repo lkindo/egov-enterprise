@@ -36,21 +36,21 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     private String registSeCode;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
-    public BoardUse(String bbsId, String trgetId, String registSeCode, String useAt) {
+    public BoardUse(String bbsId, String trgetId, String registSeCode, String useYn) {
         this.bbsId = bbsId;
         this.trgetId = trgetId;
         this.registSeCode = registSeCode;
-        this.useAt = useAt;
+        this.useYn = useYn;
     }
 
-    public void update(String useAt) {
-        this.useAt = useAt;
+    public void update(String useYn) {
+        this.useYn = useYn;
     }
 
-    public void setUseAt(String useAt) {
-        this.useAt = useAt;
+    public void setUseYn(String useYn) {
+        this.useYn = useYn;
     }
 
     public void setLastUpdusrId(String lastUpdusrId) {

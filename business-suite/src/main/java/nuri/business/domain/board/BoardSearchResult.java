@@ -12,25 +12,26 @@ import java.time.LocalDateTime;
 @Builder
 public class BoardSearchResult {
     private String bbsId;
-    private Long nttId;
-    private String nttSj;
+    private Long pstId;
+    private String pstTtl;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
     private Integer inqireCo;
     private Integer likeCo;
     private Long parnts;
-    private String replyAt;
+    private String replyYn;
     private Integer replyLc;
-    private String useAt;
+    private String useYn;
     private String atchFileId;
-    private String ntceBgnde;
-    private String ntceEndde;
-    private String sjBoldAt;
-    private String noticeAt;
-    private String secretAt;
+    private String ntceBgnyYmd;
+    private String ntceEndYmd;
+    private String sjBoldYn;
+    private String noticeYn;
+    private String secretYn;
     private Integer commentCo; // Integer로 변경
     private LocalDateTime eventDate;
     private String qnaStatus;
     private String qnaCategory;
+    private Long pstSn;
 }

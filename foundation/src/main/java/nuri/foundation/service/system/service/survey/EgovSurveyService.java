@@ -23,31 +23,31 @@ public interface EgovSurveyService {
     // 설문정보
     Page<QustnrInfoDto> getSurveyList(String keyword, Pageable pageable);
 
-    QustnrInfoDto getSurvey(String qustnrId);
+    QustnrInfoDto getSurvey(String srvyId);
 
     void insertSurvey(QustnrInfoDto dto);
 
     void updateSurvey(QustnrInfoDto dto);
 
-    void deleteSurvey(String qustnrId);
+    void deleteSurvey(String srvyId);
 
     // 설문문항
-    List<QustnrQesitmDto> getQuestionList(String qustnrId);
+    List<QustnrQesitmDto> getQuestionList(String srvyId);
 
-    QustnrQesitmDto getQuestion(String qesitmId);
+    QustnrQesitmDto getQuestion(String srvyQitemId);
 
     void insertQuestion(QustnrQesitmDto dto);
 
     void updateQuestion(QustnrQesitmDto dto);
 
-    void deleteQuestion(String qesitmId);
+    void deleteQuestion(String srvyQitemId);
 
     // 설문항목
-    List<QustnrIemDto> getItemList(String qesitmId);
+    List<QustnrIemDto> getItemList(String srvyQitemId);
 
     void insertItem(QustnrIemDto dto);
 
     void updateItem(QustnrIemDto dto);
 
-    void deleteItem(String iemId);
+    void deleteItem(String srvyItemId);
 }

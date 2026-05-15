@@ -21,5 +21,5 @@ public interface BoardMasterRepository extends JpaRepository<BoardMaster, String
     @Transactional
     void deleteById(@NonNull String bbsId);
 
-    List<BoardMaster> findByCmmntyIdAndUseAt(String cmmntyId, String useAt);
+    List<BoardMaster> findByCmntyIdAndUseYn(String cmntyId, String useYn);
 }

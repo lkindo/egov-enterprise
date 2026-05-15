@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface QustnrInfoRepository extends JpaRepository<QustnrInfo, String> {
-    Optional<QustnrInfo> findByQustnrId(String qustnrId);
-    Page<QustnrInfo> findByQustnrSjContaining(String keyword, Pageable pageable);
+    Optional<QustnrInfo> findBySrvyId(String srvyId);
+    Page<QustnrInfo> findBySrvyTtlContaining(String keyword, Pageable pageable);
 }

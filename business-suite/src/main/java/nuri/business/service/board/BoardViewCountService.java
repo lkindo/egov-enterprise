@@ -23,7 +23,7 @@ public class BoardViewCountService {
     private final BoardRepository boardRepository;
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
-    // 인메모리 버퍼: nttId -> 조회수 증가량
+    // 인메모리 버퍼: pstId -> 조회수 증가량
     private final Map<Long, AtomicInteger> viewCountBuffer = new ConcurrentHashMap<>();
 
     @jakarta.annotation.PostConstruct
@@ -37,8 +37,8 @@ public class BoardViewCountService {
     /**
      * 조회수 증가 (인메모리 버퍼)
      */
-    public void increaseViewCount(Long nttId) {
-        viewCountBuffer.computeIfAbsent(nttId, k -> new AtomicInteger(0))
+    public void increaseViewCount(Long pstId) {
+        viewCountBuffer.computeIfAbsent(pstId, k -> new AtomicInteger(0))
                 .incrementAndGet();
     }
 
@@ -56,13 +56,13 @@ public class BoardViewCountService {
         
         int count = 0;
         // 동기화를 위해 현재 버퍼의 키셋을 순회
-        for (Long nttId : viewCountBuffer.keySet()) {
+        for (Long pstId : viewCountBuffer.keySet()) {
             try {
                 // 현재 누적된 조회수를 가져오고 버퍼에서 0으로 초기화 (또는 제거)
-                AtomicInteger views = viewCountBuffer.remove(nttId);
+                AtomicInteger views = viewCountBuffer.remove(pstId);
                 if (views != null && views.get() > 0) {
                     int increment = views.get();
-                    boardRepository.findById(nttId).ifPresent(board -> {
+                    boardRepository.findById(pstId).ifPresent(board -> {
                         for (int i = 0; i < increment; i++) {
                             board.increaseInqireCo();
                         }
@@ -71,7 +71,7 @@ public class BoardViewCountService {
                     count++;
                 }
             } catch (Exception e) {
-                log.error("Failed to sync view count for ID: {}", nttId, e);
+                log.error("Failed to sync view count for ID: {}", pstId, e);
             }
         }
         

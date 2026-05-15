@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface QustnrTmplatRepository extends JpaRepository<QustnrTmplat, String> {
-    Optional<QustnrTmplat> findByQustnrTmplatId(String qustnrTmplatId);
-    Page<QustnrTmplat> findByQustnrTmplatTyContaining(String keyword, Pageable pageable);
+    Optional<QustnrTmplat> findBySrvyTmplatId(String srvyTmplatId);
+    Page<QustnrTmplat> findBySrvyTmplatTypeCdContaining(String keyword, Pageable pageable);
 }

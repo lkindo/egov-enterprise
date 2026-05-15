@@ -20,7 +20,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             await boardMasterPage.fillStep1(boardName, 'E2E Optimized Board Description');
 
             console.log('>>> Step 3: Phase 2 - Template Choice');
-            await boardMasterPage.fillStep2('지식 허브');
+            await boardMasterPage.fillStep2('지???�브');
 
             console.log('>>> Step 4: Phase 3 - ACL Permissions');
             await boardMasterPage.fillStep3();
@@ -52,9 +52,9 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 });
                 
                 const articleTitle = `E2E Article ${Date.now()}`;
-                let createdNttId: string | null = null;
+                let createdpstId: string | null = null;
 
-                // [Strategy] Intercept API response to capture nttId immediately after creation
+                // [Strategy] Intercept API response to capture pstId immediately after creation
                 const responseHandler = async (response: import('@playwright/test').Response) => {
                     const url = response.url();
                     const method = response.request().method();
@@ -62,11 +62,11 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     if (method === 'POST' && url.includes('/api/v1/bbs/')) {
                         try {
                             const body = await response.json();
-                            // Backend ApiResponse format: { success: true, data: nttId }
-                            const nttId = body?.data;
-                            if (nttId && (typeof nttId === 'number' || typeof nttId === 'string')) {
-                                createdNttId = String(nttId);
-                                console.log(`>>> [API Intercept] Captured nttId: ${createdNttId}`);
+                            // Backend ApiResponse format: { success: true, data: pstId }
+                            const pstId = body?.data;
+                            if (pstId && (typeof pstId === 'number' || typeof pstId === 'string')) {
+                                createdpstId = String(pstId);
+                                console.log(`>>> [API Intercept] Captured pstId: ${createdpstId}`);
                             }
                         } catch (e) { 
                             console.log(`>>> [API Intercept] Failed to parse response: ${e.message}`);
@@ -80,7 +80,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await expect(page.locator('h1, h2, .title, [data-testid="article-title-input"]').first()).toBeVisible({ timeout: 20000 });
                 
                 console.log('>>> Step 2: Creating Article');
-                const titleInput = page.locator('input[name="nttSj"], [data-testid="article-title-input"]');
+                const titleInput = page.locator('input[name="pstTtl"], [data-testid="article-title-input"]');
                 await expect(titleInput).toBeVisible({ timeout: 15000 });
                 await titleInput.fill(articleTitle);
 
@@ -88,7 +88,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await expect(editor).toBeVisible({ timeout: 15000 });
                 await editor.fill('Initial E2E test content.');
 
-                const commitBtn = page.locator('button:has-text("Commit Knowledge"), button[aria-label="게시글 저장"]').first();
+                const commitBtn = page.locator('button:has-text("Commit Knowledge"), button[aria-label="게시글 ?�??]').first();
                 await commitBtn.click();
 
                 // Wait for navigation AWAY from the insert page
@@ -96,19 +96,19 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 page.off('response', responseHandler);
 
                 // If API interception didn't work, try extracting from URL
-                if (!createdNttId) {
-                    const urlMatch = page.url().match(/[?&]nttId=(\d+)/);
-                    if (urlMatch) createdNttId = urlMatch[1];
+                if (!createdpstId) {
+                    const urlMatch = page.url().match(/[?&]pstId=(\d+)/);
+                    if (urlMatch) createdpstId = urlMatch[1];
                 }
-                console.log(`>>> Post-create URL: ${page.url()} | nttId: ${createdNttId ?? 'NOT FOUND'}`);
+                console.log(`>>> Post-create URL: ${page.url()} | pstId: ${createdpstId ?? 'NOT FOUND'}`);
 
                 await test.step('User: Navigate to Created Article (Direct)', async () => {
                     // Navigate to list first to ensure it's refreshed
                     await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
                     await page.waitForLoadState('domcontentloaded');
                     
-                    // The new Bento Grid UI uses cards with links containing nttId
-                    const firstArticleLink = page.locator('a[href*="nttId="], a.group\\/link, table tbody tr td a').first();
+                    // The new Bento Grid UI uses cards with links containing pstId
+                    const firstArticleLink = page.locator('a[href*="pstId="], a.group\\/link, table tbody tr td a').first();
                     
                     try {
                         await firstArticleLink.waitFor({ state: 'visible', timeout: 15000 });
@@ -118,15 +118,15 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                         
                         // Detail URL pattern: /boards/detail OR /boards/selectBoardArticle
                         await page.waitForURL(/\/admin\/community\/boards\/(detail|selectBoardArticle)/, { timeout: 20000 });
-                        const detailUrlMatch = page.url().match(/[?&]nttId=(\d+)/);
-                        if (detailUrlMatch) createdNttId = detailUrlMatch[1];
-                        console.log(`>>> Navigated to detail. nttId=${createdNttId}`);
+                        const detailUrlMatch = page.url().match(/[?&]pstId=(\d+)/);
+                        if (detailUrlMatch) createdpstId = detailUrlMatch[1];
+                        console.log(`>>> Navigated to detail. pstId=${createdpstId}`);
                         
                         await expect(page.getByText(articleTitle)).toBeVisible({ timeout: 15000 });
                     } catch (e) {
-                        console.error(`>>> Failed to find article in list. Trying direct ID if available: ${createdNttId}`);
-                        if (createdNttId) {
-                            await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&nttId=${createdNttId}`);
+                        console.error(`>>> Failed to find article in list. Trying direct ID if available: ${createdpstId}`);
+                        if (createdpstId) {
+                            await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
                             await expect(page.getByText(articleTitle)).toBeVisible({ timeout: 15000 });
                         } else {
                             throw e;
@@ -135,13 +135,13 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 });
 
                 console.log('\n>>> Step 3: Updating Article');
-                const editBtn = page.getByLabel('게시글 수정').first();
+                const editBtn = page.getByLabel('게시글 ?�정').first();
                 await editBtn.waitFor({ state: 'visible', timeout: 10000 });
                 await editBtn.click();
                 
-                await expect(page.locator('input[name="nttSj"]')).toHaveValue(articleTitle, { timeout: 15000 });
+                await expect(page.locator('input[name="pstTtl"]')).toHaveValue(articleTitle, { timeout: 15000 });
                 
-                const editTitleInput = page.locator('input[name="nttSj"]');
+                const editTitleInput = page.locator('input[name="pstTtl"]');
                 await editTitleInput.click();
                 await editTitleInput.clear();
                 await editTitleInput.fill(`${articleTitle} [Updated]`);
@@ -158,7 +158,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 console.log('>>> Clicking Save Button');
                 await saveButton.click();
                 
-                await expect(page.getByText(/성공적으로 (수정|등록)되었습니다|저장되었습니다/)).toBeVisible({ timeout: 15000 });
+                await expect(page.getByText(/?�공?�으�?(?�정|?�록)?�었?�니???�?�되?�습?�다/)).toBeVisible({ timeout: 15000 });
                 console.log('>>> Save success toast detected');
                 await page.waitForURL(/\/admin\/community\/boards/, { timeout: 30000 });
 
@@ -167,7 +167,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
                     await page.waitForLoadState('domcontentloaded');
                     
-                    const firstRowLink = page.locator('a[href*="nttId="]').first();
+                    const firstRowLink = page.locator('a[href*="pstId="]').first();
                     await expect(firstRowLink).toContainText('[Updated]', { timeout: 15000 });
                     
                     // Also check detail page
@@ -178,7 +178,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 });
 
                 console.log('>>> Step 4: Deleting Article');
-                const deleteBtn = page.getByLabel('게시글 삭제').first();
+                const deleteBtn = page.getByLabel('게시글 ??��').first();
                 await deleteBtn.click();
                 await expect(page).toHaveURL(/\/admin\/community\/boards(\/selectBoardList)?/, { timeout: 20000 });
                 console.log('>>> Successfully deleted and returned to list.');

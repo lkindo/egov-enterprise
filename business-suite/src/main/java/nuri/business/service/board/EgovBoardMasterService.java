@@ -37,5 +37,5 @@ public interface EgovBoardMasterService {
 
     List<BoardMasterDto> getBoardMasterListPortlet();
 
-    List<BoardMasterDto> getBoardMasterListByCommunity(String cmmntyId);
+    List<BoardMasterDto> getBoardMasterListByCommunity(String cmntyId);
 }

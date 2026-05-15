@@ -4,7 +4,7 @@ import { AxiosRequestConfig } from 'axios';
 
 export interface CommentDetail {
  commentNo: number;
- nttId: number;
+ pstId: number;
  bbsId: string;
  wrterId: string;
  wrterNm: string;
@@ -13,19 +13,19 @@ export interface CommentDetail {
 }
 
 /**
- * 댓글 관리 서비스(Admin)
+ * ?��? 관�??�비??Admin)
  */
 class CommentAdminService extends AdminService {
  constructor() {
  super('/comments');
  }
 
- /** 전체 댓글 목록 조회 */
- async getComments(params: { nttId?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+ /** ?�체 ?��? 목록 조회 */
+ async getComments(params: { pstId?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
  return this.get<PageResponse<CommentDetail>>('', { ...config, params });
  }
 
- /** 댓글 삭제 */
+ /** ?��? ??�� */
  async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${commentNo}`, config);
  }

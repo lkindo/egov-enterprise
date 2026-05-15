@@ -21,13 +21,13 @@ public class WorkReportService implements EgovWorkReportService {
     @Transactional
     public void registerWorkReport(WorkReportDto dto) {
         WorkReport report = WorkReport.builder()
-                .reportId(dto.getReportId())
-                .reportSubject(dto.getReportSubject())
-                .reportContent(dto.getReportContent())
-                .reportType(dto.getReportType())
-                .reportDate(dto.getReportDate())
+                .rptId(dto.getRptId())
+                .rptTtl(dto.getRptTtl())
+                .rptCn(dto.getRptCn())
+                .rptTypeCd(dto.getRptTypeCd())
+                .rptYmd(dto.getRptYmd())
                 .writerId(dto.getWriterId())
-                .reportStatus(dto.getReportStatus())
+                .rptSttsCd(dto.getRptSttsCd())
                 .createdBy(dto.getWriterId())
                 .lastModifiedBy(dto.getWriterId())
                 .build();
@@ -37,13 +37,13 @@ public class WorkReportService implements EgovWorkReportService {
     @Override
     @Transactional
     public void updateWorkReport(WorkReportDto dto) {
-        workReportRepository.findById(Objects.requireNonNull(dto.getReportId()))
+        workReportRepository.findById(Objects.requireNonNull(dto.getRptId()))
                 .ifPresent(r -> r.update(
-                        dto.getReportSubject(),
-                        dto.getReportContent(),
-                        dto.getReportType(),
-                        dto.getReportDate(),
-                        dto.getReportStatus()));
+                        dto.getRptTtl(),
+                        dto.getRptCn(),
+                        dto.getRptTypeCd(),
+                        dto.getRptYmd(),
+                        dto.getRptSttsCd()));
     }
 
     @Override
@@ -56,13 +56,13 @@ public class WorkReportService implements EgovWorkReportService {
     public WorkReportDto getWorkReport(String reportId) {
         return workReportRepository.findById(Objects.requireNonNull(reportId))
                 .map(r -> Objects.requireNonNull(WorkReportDto.builder()
-                        .reportId(r.getReportId())
-                        .reportSubject(r.getReportSubject())
-                        .reportContent(r.getReportContent())
-                        .reportType(r.getReportType())
-                        .reportDate(r.getReportDate())
+                        .rptId(r.getRptId())
+                        .rptTtl(r.getRptTtl())
+                        .rptCn(r.getRptCn())
+                        .rptTypeCd(r.getRptTypeCd())
+                        .rptYmd(r.getRptYmd())
                         .writerId(r.getWriterId())
-                        .reportStatus(r.getReportStatus())
+                        .rptSttsCd(r.getRptSttsCd())
                         .build()))
                 .orElse(null);
     }
@@ -72,10 +72,10 @@ public class WorkReportService implements EgovWorkReportService {
         Objects.requireNonNull(pageable);
         return workReportRepository.searchWorkReports(null, null, null, null, "0", searchWrd, null, null, pageable)
                 .map(r -> Objects.requireNonNull(WorkReportDto.builder()
-                        .reportId(r.getReportId())
-                        .reportSubject(r.getReportSubject())
-                        .reportDate(r.getReportDate())
-                        .reportStatus(r.getReportStatus())
+                        .rptId(r.getRptId())
+                        .rptTtl(r.getRptTtl())
+                        .rptYmd(r.getRptYmd())
+                        .rptSttsCd(r.getRptSttsCd())
                         .build()));
     }
 }

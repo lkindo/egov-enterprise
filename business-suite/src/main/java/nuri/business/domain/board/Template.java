@@ -27,17 +27,17 @@ public class Template extends BaseEntity {
     @Column(name = "TMPLAT_COURS", nullable = false, length = 6000)
     private String tmplatCours;
 
-    @Column(name = "USE_AT", nullable = false, length = 1)
+    @Column(name = "USE_YN", nullable = false, length = 1)
     @Builder.Default
-    private String useAt = "Y";
+    private String useYn = "Y";
 
     @Column(name = "TMPLAT_SE_CODE", length = 6, nullable = false)
     private String tmplatSeCode;
 
-    public void update(String tmplatNm, String tmplatCours, String useAt, String tmplatSeCode) {
+    public void update(String tmplatNm, String tmplatCours, String useYn, String tmplatSeCode) {
         this.tmplatNm = tmplatNm;
         this.tmplatCours = tmplatCours;
-        this.useAt = useAt;
+        this.useYn = useYn;
         this.tmplatSeCode = tmplatSeCode;
     }
 }

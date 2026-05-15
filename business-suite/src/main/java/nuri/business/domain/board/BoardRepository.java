@@ -21,17 +21,17 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         @Query("SELECT COALESCE(MAX(b.sortOrdr), 0L) FROM Board b WHERE b.bbsId = :bbsId")
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
 
-        @Query("SELECT COALESCE(MAX(b.nttNo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
-        Long findMaxNttNo(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
+        @Query("SELECT COALESCE(MAX(b.pstSn), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
+        Long findMaxPstSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
-        @Query("SELECT COALESCE(MAX(b.nttId), 0L) FROM Board b")
-        Long findMaxNttId();
+        @Query("SELECT COALESCE(MAX(b.pstId), 0L) FROM Board b")
+        Long findMaxPstId();
 
-        long countByBbsIdAndUseAt(String bbsId, String useAt);
+        long countByBbsIdAndUseYn(String bbsId, String useYn);
 
-        @Query("SELECT COALESCE(SUM(b.inqireCo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useAt = :useAt")
-        long sumInqireCoByBbsIdAndUseAt(@Param("bbsId") String bbsId, @Param("useAt") String useAt);
+        @Query("SELECT COALESCE(SUM(b.inqireCo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
+        long sumInqireCoByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 
-        @Query("SELECT b.ntcrNm FROM Board b WHERE b.bbsId = :bbsId AND b.useAt = :useAt GROUP BY b.ntcrNm ORDER BY COUNT(b) DESC LIMIT 1")
-        String findTopContributorByBbsIdAndUseAt(@Param("bbsId") String bbsId, @Param("useAt") String useAt);
+        @Query("SELECT b.ntcrNm FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn GROUP BY b.ntcrNm ORDER BY COUNT(b) DESC LIMIT 1")
+        String findTopContributorByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 }

@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LeaderScheduleRepository extends JpaRepository<LeaderSchedule, String> {
-    Page<LeaderSchedule> findByScheduleNmContaining(String keyword, Pageable pageable);
+    Page<LeaderSchedule> findBySchdlTtlContaining(String keyword, Pageable pageable);
 }

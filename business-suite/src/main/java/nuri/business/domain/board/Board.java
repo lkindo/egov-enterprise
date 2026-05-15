@@ -24,25 +24,25 @@ public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "nttIdSeq")
-    @SequenceGenerator(name = "nttIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pstIdSeq")
+    @SequenceGenerator(name = "pstIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
     @Column(name = "PST_ID")
-    private Long nttId;
+    private Long pstId;
 
     @Column(name = "BBS_ID", nullable = false)
     private String bbsId;
 
     @Column(name = "REPLY_SN")
-    private Long nttNo;
+    private Long pstSn;
 
     @Column(name = "PST_TTL", length = 2000)
-    private String nttSj;
+    private String pstTtl;
 
     @Column(name = "PST_CN")
-    private String nttCn;
+    private String pstCn;
 
     @Column(name = "ANSWER_YN", length = 1)
-    private String replyAt;
+    private String replyYn;
 
     @Column(name = "UP_PST_ID")
     private Long parnts;
@@ -54,7 +54,7 @@ public class Board extends BaseEntity implements Serializable {
     private Long sortOrdr;
 
     @Column(name = "SJ_BOLD_YN", length = 1)
-    private String sjBoldAt;
+    private String sjBoldYn;
 
     @Column(name = "INQ_CNT")
     @Builder.Default
@@ -62,13 +62,13 @@ public class Board extends BaseEntity implements Serializable {
 
     @Column(name = "USE_YN", length = 1)
     @Builder.Default
-    private String useAt = "Y";
+    private String useYn = "Y";
 
     @Column(name = "NTCE_BGNDE", length = 20)
-    private String ntceBgnde;
+    private String ntceBgnyYmd;
 
     @Column(name = "NTCE_ENDDE", length = 20)
-    private String ntceEndde;
+    private String ntceEndYmd;
 
     @Column(name = "NTCR_ID", length = 20)
     private String ntcrId;
@@ -83,10 +83,10 @@ public class Board extends BaseEntity implements Serializable {
     private String atchFileId;
 
     @Column(name = "SECRET_YN", length = 1)
-    private String secretAt;
+    private String secretYn;
 
     @Column(name = "NOTICE_YN", length = 1)
-    private String noticeAt;
+    private String noticeYn;
 
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
@@ -114,24 +114,24 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer likeCo = 0;
 
-    public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
-            String ntceEndde, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretAt) {
-        this.nttSj = nttSj;
-        this.nttCn = nttCn;
+    public void update(String pstTtl, String pstCn, String ntcrId, String ntcrNm, String password, String ntceBgnyYmd,
+            String ntceEndYmd, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretYn) {
+        this.pstTtl = pstTtl;
+        this.pstCn = pstCn;
         this.ntcrId = ntcrId;
         this.ntcrNm = ntcrNm;
         this.password = password;
-        this.ntceBgnde = ntceBgnde;
-        this.ntceEndde = ntceEndde;
+        this.ntceBgnyYmd = ntceBgnyYmd;
+        this.ntceEndYmd = ntceEndYmd;
         this.atchFileId = atchFileId;
         this.eventDate = eventDate;
         this.qnaStatus = qnaStatus;
         this.qnaCategory = qnaCategory;
-        this.secretAt = secretAt;
+        this.secretYn = secretYn;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 
     public void increaseInqireCo() {
@@ -141,8 +141,8 @@ public class Board extends BaseEntity implements Serializable {
         this.inqireCo++;
     }
 
-    public void updateReplyOrder(Long nttNo) {
-        this.nttNo = nttNo;
+    public void updateReplyOrder(Long pstSn) {
+        this.pstSn = pstSn;
     }
 
     public void increaseLikeCo() {

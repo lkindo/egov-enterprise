@@ -11,11 +11,11 @@ import org.springframework.data.repository.query.Param;
  */
 public interface SurveyRespondentRepository extends JpaRepository<SurveyRespondent, String> {
 
-    Page<SurveyRespondent> findByQestnrId(String qestnrId, Pageable pageable);
+    Page<SurveyRespondent> findBySrvyId(String srvyId, Pageable pageable);
 
-    Page<SurveyRespondent> findByRespondNmContaining(String respondNm, Pageable pageable);
+    Page<SurveyRespondent> findByRspdNmContaining(String rspdNm, Pageable pageable);
 
-    @Query("SELECT s FROM SurveyRespondent s WHERE s.qestnrId = :qestnrId AND (s.respondNm LIKE %:keyword% OR s.sexdstnCode = :keyword)")
-    Page<SurveyRespondent> searchByQestnrIdAndKeyword(@Param("qestnrId") String qestnrId,
+    @Query("SELECT s FROM SurveyRespondent s WHERE s.srvyId = :srvyId AND (s.rspdNm LIKE %:keyword% OR s.gndrCd = :keyword)")
+    Page<SurveyRespondent> searchBySrvyIdAndKeyword(@Param("srvyId") String srvyId,
             @Param("keyword") String keyword, Pageable pageable);
 }

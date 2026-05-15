@@ -12,7 +12,7 @@ interface BoardTemplateQnaProps {
   list: BoardPost[];
   bbsId: string;
   querySearchWrd: string;
-  onLike: (e: React.MouseEvent, nttId: string) => void;
+  onLike: (e: React.MouseEvent, pstId: string) => void;
   isLikePending?: boolean;
 }
 
@@ -39,7 +39,7 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
   return (
     <div className="space-y-6 p-10">
       {list.map((item: BoardPost) => (
-        <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-lg flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
+        <Card key={item.pstId} className="group p-8 bg-white border-2 border-slate-100 rounded-lg flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
           <div className="flex flex-col items-center gap-2 min-w-[80px]">
             <div className={cn(
               "w-16 h-11 rounded-lg flex items-center justify-center font-bold text-2xl shadow-inner transition-all group-hover:scale-110",
@@ -59,7 +59,7 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
               </Badge>
               <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
             </div>
-            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+            <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h4 className="text-2xl font-bold text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase ">
                 <HighlightText text={item.nttSj} highlight={querySearchWrd} />
               </h4>
@@ -79,9 +79,9 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
               <div className="h-4 w-px bg-slate-200" />
               <button 
                 data-testid="like-button"
-                onClick={(e) => onLike(e, String(item.nttId))}
+                onClick={(e) => onLike(e, String(item.pstId))}
                 className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-bold text-xs transition-all active:scale-110"
-                aria-label="좋아요"
+                aria-label="좋아??
               >
                 <ThumbsUp size={14} className={cn("opacity-30", isLikePending && "animate-bounce")} />
                 <span data-testid="like-count">{item.likeCo || 0} Likes</span>

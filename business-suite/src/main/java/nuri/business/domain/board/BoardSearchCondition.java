@@ -9,7 +9,7 @@ public class BoardSearchCondition {
     private String bbsId;
     private String searchCnd;
     private String searchWrd;
-    private String useAt;
+    private String useYn;
     private String frstRegisterId;
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;

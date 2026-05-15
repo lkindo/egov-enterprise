@@ -20,8 +20,8 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     private final SurveyRespondentRepository surveyRespondentRepository;
 
     @Override
-    public Page<SurveyRespondentDto> getSurveyRespondentList(String qestnrId, String keyword, Pageable pageable) {
-        return surveyRespondentRepository.findByRespondNmContaining(keyword == null ? "" : keyword, pageable)
+    public Page<SurveyRespondentDto> getSurveyRespondentList(String srvyId, String keyword, Pageable pageable) {
+        return surveyRespondentRepository.findByRspdNmContaining(keyword == null ? "" : keyword, pageable)
                 .map(SurveyRespondentDto::from);
     }
 
@@ -37,15 +37,15 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
         String id = "SRES_" + System.currentTimeMillis();
         SurveyRespondent entity = SurveyRespondent.builder()
-                .qestnrRespondId(id)
-                .qestnrId(dto.getQestnrId())
-                .qestnrTmplatId(dto.getQestnrTmplatId())
-                .sexdstnCode(dto.getSexdstnCode())
-                .occpTyCode(dto.getOccpTyCode())
-                .respondNm(dto.getRespondNm())
-                .brthdy(dto.getBrth())
-                .areaNo(dto.getAreaNo())
-                .middleTelno(dto.getMiddleTelno())
+                .srvyRspdId(id)
+                .srvyId(dto.getSrvyId())
+                .srvyTmplatId(dto.getSrvyTmplatId())
+                .gndrCd(dto.getGndrCd())
+                .jobTypeCd(dto.getJobTypeCd())
+                .rspdNm(dto.getRspdNm())
+                .brthYmd(dto.getBrthYmd())
+                .areaTelno(dto.getAreaTelno())
+                .midTelno(dto.getMidTelno())
                 .endTelno(dto.getEndTelno())
                 .createdBy(userId)
                 .build();
@@ -58,8 +58,8 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     public void updateSurveyRespondent(String respondentId, String userId, SurveyRespondentDto dto) {
         SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
-                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
+        entity.update(dto.getGndrCd(), dto.getJobTypeCd(), dto.getRspdNm(),
+                dto.getBrthYmd(), dto.getAreaTelno(), dto.getMidTelno(), dto.getEndTelno());
     }
 
     @Override

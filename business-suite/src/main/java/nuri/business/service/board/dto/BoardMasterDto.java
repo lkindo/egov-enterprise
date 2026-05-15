@@ -14,135 +14,54 @@ import java.time.LocalDateTime;
 public class BoardMasterDto {
 
     private String bbsId;
-    private String bbsNm;
-    private String bbsIntrcn;
-    private String bbsTyCode;
-    private String bbsAttrbCode;
-    private String replyPosblAt;
-    private String fileAtchPosblAt;
-    private Integer atchPosblFileNumber;
-    private Long atchPosblFileSize;
+    private String bbsTtl;
+    private String bbsIntroCn;
+    private String bbsTypeCd;
+    private String bbsAttrCd;
+    private String replyPsblYn;
+    private String fileAtchPsblYn;
+    private Integer atchPsblFileCnt;
+    private Long atchPsblFileSize;
     private String tmplatId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdusrPnttm;
-    private String useAt;
-    private String cmmntyId;
+    private String useYn;
+    private String cmntyId;
     private String blogId;
-    private String blogAt;
-    private String commentAt;
-    private String stsfdgAt;
+    private String blogYn;
+    private String commentYn;
+    private String stsfdgYn;
 
     // Additional fields for completeness
     private String authFlag;
     private String tmplatCours;
-
-    // Manual getters to bypass Lombok issues
-    public String getBbsId() {
-        return bbsId;
-    }
-
-    public String getBbsNm() {
-        return bbsNm;
-    }
-
-    public String getBbsIntrcn() {
-        return bbsIntrcn;
-    }
-
-    public String getBbsTyCode() {
-        return bbsTyCode;
-    }
-
-    public String getBbsAttrbCode() {
-        return bbsAttrbCode;
-    }
-
-    public String getReplyPosblAt() {
-        return replyPosblAt;
-    }
-
-    public String getFileAtchPosblAt() {
-        return fileAtchPosblAt;
-    }
-
-    public Integer getAtchPosblFileNumber() {
-        return atchPosblFileNumber;
-    }
-
-    public Long getAtchPosblFileSize() {
-        return atchPosblFileSize;
-    }
-
-    public String getTmplatId() {
-        return tmplatId;
-    }
-
-    public String getFrstRegisterId() {
-        return frstRegisterId;
-    }
-
-    public LocalDateTime getFrstRegisterPnttm() {
-        return frstRegisterPnttm;
-    }
-
-    public String getLastUpdusrId() {
-        return lastUpdusrId;
-    }
-
-    public LocalDateTime getLastUpdusrPnttm() {
-        return lastUpdusrPnttm;
-    }
-
-    public String getUseAt() {
-        return useAt;
-    }
-
-    public String getCmmntyId() {
-        return cmmntyId;
-    }
-
-    public String getBlogId() {
-        return blogId;
-    }
-
-    public String getBlogAt() {
-        return blogAt;
-    }
-
-    public String getCommentAt() {
-        return commentAt;
-    }
-
-    public String getStsfdgAt() {
-        return stsfdgAt;
-    }
 
     public static BoardMasterDto from(BoardMaster entity) {
         if (entity == null)
             return null;
         return BoardMasterDto.builder()
                 .bbsId(entity.getBbsId())
-                .bbsNm(entity.getBbsNm())
-                .bbsIntrcn(entity.getBbsIntrcn())
-                .bbsTyCode(entity.getBbsTyCode())
-                .bbsAttrbCode(entity.getBbsAttrbCode())
-                .replyPosblAt(entity.getReplyPosblAt())
-                .fileAtchPosblAt(entity.getFileAtchPosblAt())
-                .atchPosblFileNumber(entity.getAtchPosblFileNumber())
-                .atchPosblFileSize(entity.getAtchPosblFileSize())
+                .bbsTtl(entity.getBbsTtl())
+                .bbsIntroCn(entity.getBbsIntroCn())
+                .bbsTypeCd(entity.getBbsTypeCd())
+                .bbsAttrCd(entity.getBbsAttrCd())
+                .replyPsblYn(entity.getReplyPsblYn())
+                .fileAtchPsblYn(entity.getFileAtchPsblYn())
+                .atchPsblFileCnt(entity.getAtchPsblFileCnt())
+                .atchPsblFileSize(entity.getAtchPsblFileSize())
                 .tmplatId(entity.getTmplatId())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
-                .useAt(entity.getUseAt())
-                .cmmntyId(entity.getCmmntyId())
+                .useYn(entity.getUseYn())
+                .cmntyId(entity.getCmntyId())
                 .blogId(entity.getBlogId())
-                .blogAt(entity.getBlogAt())
-                .commentAt(entity.getCommentAt())
-                .stsfdgAt(entity.getStsfdgAt())
+                .blogYn(entity.getBlogYn())
+                .commentYn(entity.getCommentYn())
+                .stsfdgYn(entity.getStsfdgYn())
                 .build();
     }
 }

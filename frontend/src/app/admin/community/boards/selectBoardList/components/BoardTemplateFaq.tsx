@@ -87,7 +87,7 @@ export const BoardTemplateFaq = ({ list }: BoardTemplateFaqProps) => {
   return (
     <div className="p-10 space-y-4">
       {list.map((item: BoardPost) => (
-        <FAQItem key={item.nttId} item={item} />
+        <FAQItem key={item.pstId} item={item} />
       ))}
     </div>
   );

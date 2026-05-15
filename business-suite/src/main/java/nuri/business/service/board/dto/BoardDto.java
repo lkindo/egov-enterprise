@@ -15,16 +15,16 @@ import java.time.LocalDateTime;
 @Schema(description = "게시물 정보 DTO")
 public class BoardDto {
     @Schema(description = "게시물 ID", example = "1001")
-    private final Long id;
+    private final Long pstId;
 
     @Schema(description = "게시판 ID", example = "BBS_000000000001")
     private final String bbsId;
 
     @Schema(description = "게시물 제목")
-    private final String nttSj;
+    private final String pstTtl;
 
     @Schema(description = "게시물 내용")
-    private final String nttCn;
+    private final String pstCn;
 
     @Schema(description = "작성자 이름")
     private final String ntcrNm;
@@ -42,7 +42,7 @@ public class BoardDto {
     private final String atchFileId;
 
     @Schema(description = "게시물 번호")
-    private final Long nttNo;
+    private final Long pstSn;
 
     @Schema(description = "정렬 순서")
     private final Long sortOrdr;
@@ -51,19 +51,19 @@ public class BoardDto {
     private final String parnts;
 
     @Schema(description = "답글 여부", example = "N")
-    private final String replyAt;
+    private final String replyYn;
 
     @Schema(description = "답글 레벨")
     private final Integer replyLc;
 
     @Schema(description = "게시 시작일")
-    private final String ntceBgnde;
+    private final String ntceBgnyYmd;
 
     @Schema(description = "게시 종료일")
-    private final String ntceEndde;
+    private final String ntceEndYmd;
 
     @Schema(description = "사용 여부", example = "Y")
-    private final String useAt;
+    private final String useYn;
 
     @Schema(description = "만료 여부", example = "N")
     private final String isExpired;
@@ -88,16 +88,16 @@ public class BoardDto {
     private final String password;
 
     @Schema(description = "비밀 게시글 여부")
-    private final String secretAt;
+    private final String secretYn;
 
     @Schema(description = "블로그 게시글 여부")
-    private final String blogAt;
+    private final String blogYn;
 
     @Schema(description = "댓글 수")
     private final Integer commentCo;
 
     @Schema(description = "게시판 명")
-    private final String bbsNm;
+    private final String bbsTtl;
 
     @Schema(description = "행사 일시")
     private final LocalDateTime eventDate;
@@ -109,7 +109,7 @@ public class BoardDto {
     private final String qnaCategory;
 
     @Schema(description = "공지사항 여부")
-    private final String noticeAt;
+    private final String noticeYn;
 
     @Schema(description = "별칭 ID (레거시 호환)")
     private final String knoId;
@@ -132,7 +132,7 @@ public class BoardDto {
     // Compatibility getters for legacy JSP
 
     public Long getNttId() {
-        return id;
+        return pstId;
     }
 
     public String getFrstRegisterNm() {

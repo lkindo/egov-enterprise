@@ -9,13 +9,13 @@ import org.springframework.data.domain.Pageable;
  */
 public interface EgovSurveyRespondentService {
 
-    Page<SurveyRespondentDto> getSurveyRespondentList(String qestnrId, String keyword, Pageable pageable);
+    Page<SurveyRespondentDto> getSurveyRespondentList(String srvyId, String keyword, Pageable pageable);
 
-    SurveyRespondentDto getSurveyRespondent(String qestnrRespondId);
+    SurveyRespondentDto getSurveyRespondent(String srvyRspdId);
 
     String createSurveyRespondent(String userId, SurveyRespondentDto dto);
 
-    void updateSurveyRespondent(String qestnrRespondId, String userId, SurveyRespondentDto dto);
+    void updateSurveyRespondent(String srvyRspdId, String userId, SurveyRespondentDto dto);
 
-    void deleteSurveyRespondent(String qestnrRespondId);
+    void deleteSurveyRespondent(String srvyRspdId);
 }

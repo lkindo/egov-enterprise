@@ -15,38 +15,38 @@ import java.time.LocalDateTime;
 public class BoardDetailResult {
     // Board fields
     private String bbsId;
-    private Long nttId;
-    private String nttSj;
+    private Long pstId;
+    private String pstTtl;
     private String ntcrId;
     private String ntcrNm;
-    private Long nttNo;
-    private String nttCn;
+    private Long pstSn;
+    private String pstCn;
     private String password;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
-    private String ntceBgnde;
-    private String ntceEndde;
+    private String ntceBgnyYmd;
+    private String ntceEndYmd;
     private Integer inqireCo;
     private Integer likeCo;
-    private String useAt;
+    private String useYn;
     private String atchFileId;
     private Long parnts;
-    private String replyAt;
+    private String replyYn;
     private Integer replyLc;
     private Long sortOrdr;
-    private String sjBoldAt;
-    private String noticeAt;
-    private String secretAt;
+    private String sjBoldYn;
+    private String noticeYn;
+    private String secretYn;
     private Integer commentCo;
     private LocalDateTime eventDate;
     private String qnaStatus;
     private String qnaCategory;
 
     // BoardMaster fields
-    private String bbsTyCode;
-    private String replyPosblAt;
-    private String fileAtchPosblAt;
-    private Integer atchPosblFileNumber;
-    private String bbsNm;
+    private String bbsTypeCd;
+    private String replyPsblYn;
+    private String fileAtchPsblYn;
+    private Integer atchPsblFileCnt;
+    private String bbsTtl;
 }

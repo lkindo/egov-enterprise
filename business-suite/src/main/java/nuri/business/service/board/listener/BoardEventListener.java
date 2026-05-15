@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 게시판 관련 이벤트 리스너
+ * 게시판 관련 이벤트 리스너 (v5 standardized)
  * - 댓글 작성/삭제 시 게시글의 댓글 수 반정규화 필드 업데이트
  */
 @Slf4j
@@ -27,24 +27,24 @@ public class BoardEventListener {
     @EventListener
     @Transactional
     public void handleCommentCreated(CommentCreatedEvent event) {
-        log.debug(">>> Handling CommentCreatedEvent for nttId: {}", event.getNttId());
-        updateCommentCount(event.getNttId(), event.getBbsId());
+        log.debug(">>> Handling CommentCreatedEvent for pstId: {}", event.getPstId());
+        updateCommentCount(event.getPstId(), event.getBbsId());
     }
 
     @Async("taskExecutor")
     @EventListener
     @Transactional
     public void handleCommentDeleted(CommentDeletedEvent event) {
-        log.debug(">>> Handling CommentDeletedEvent for nttId: {}", event.getNttId());
-        updateCommentCount(event.getNttId(), event.getBbsId());
+        log.debug(">>> Handling CommentDeletedEvent for pstId: {}", event.getPstId());
+        updateCommentCount(event.getPstId(), event.getBbsId());
     }
 
-    private void updateCommentCount(Long nttId, String bbsId) {
-        long count = commentRepository.countByBbsIdAndNttIdAndUseAt(bbsId, nttId, "Y");
+    private void updateCommentCount(Long pstId, String bbsId) {
+        long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
         
-        boardRepository.findById(nttId).ifPresent(board -> {
+        boardRepository.findById(pstId).ifPresent(board -> {
             board.updateCommentCount((int) count);
-            log.info(">>> Updated Board(nttId={}) comment count to {}", nttId, count);
+            log.info(">>> Updated Board(pstId={}) comment count to {}", pstId, count);
         });
     }
 }

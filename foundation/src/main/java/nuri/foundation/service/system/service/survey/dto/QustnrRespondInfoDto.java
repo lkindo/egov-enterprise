@@ -12,51 +12,51 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "설문응답 DTO")
 public class QustnrRespondInfoDto {
 
-    @Schema(description = "Description")
-    private String qestnrQesrspnsId;
+    @Schema(description = "설문응답아이디")
+    private String srvyRspdId;
 
-    @Schema(description = "Description")
-    private String qestnrQesitmId;
+    @Schema(description = "설문문항아이디")
+    private String srvyQitemId;
 
-    @Schema(description = "Description")
-    private String qestnrId;
+    @Schema(description = "설문아이디")
+    private String srvyId;
 
-    @Schema(description = "Description")
-    private String qestnrTmplatId;
+    @Schema(description = "설문템플릿아이디")
+    private String srvyTmplatId;
 
-    @Schema(description = "Description")
-    private String qustnrIemId;
+    @Schema(description = "설문항목아이디")
+    private String srvyItemId;
 
-    @Schema(description = "Description")
-    private String respondAnswerCn;
+    @Schema(description = "응답답변내용")
+    private String rspdAnsCn;
 
-    @Schema(description = "Description")
-    private String respondNm;
+    @Schema(description = "응답자명")
+    private String rspdNm;
 
-    @Schema(description = "Description")
-    private String etcAnswerCn;
+    @Schema(description = "기타답변내용")
+    private String etcAnsCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
     public static QustnrRespondInfoDto from(QustnrRespondInfo entity) {
         if (entity == null)
             return null;
         return QustnrRespondInfoDto.builder()
-                .qestnrQesrspnsId(entity.getQestnrQesrspnsId())
-                .qestnrQesitmId(entity.getQestnrQesitmId())
-                .qestnrId(entity.getQestnrId())
-                .qestnrTmplatId(entity.getQestnrTmplatId())
-                .qustnrIemId(entity.getQustnrIemId())
-                .respondAnswerCn(entity.getRespondAnswerCn())
-                .respondNm(entity.getRespondNm())
-                .etcAnswerCn(entity.getEtcAnswerCn())
+                .srvyRspdId(entity.getSrvyRspdId())
+                .srvyQitemId(entity.getSrvyQitemId())
+                .srvyId(entity.getSrvyId())
+                .srvyTmplatId(entity.getSrvyTmplatId())
+                .srvyItemId(entity.getSrvyItemId())
+                .rspdAnsCn(entity.getRspdAnsCn())
+                .rspdNm(entity.getRspdNm())
+                .etcAnsCn(entity.getEtcAnsCn())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

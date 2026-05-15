@@ -12,12 +12,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BoardMasterSearchResult {
     private String bbsId;
-    private String bbsTyCode;
-    private String bbsTyCodeNm;
-    private String bbsAttrbCode;
-    private String bbsAttrbCodeNm;
-    private String bbsNm;
+    private String bbsTypeCd;
+    private String bbsTypeCdNm;
+    private String bbsAttrCd;
+    private String bbsAttrCdNm;
+    private String bbsTtl;
     private String tmplatId;
-    private String useAt;
+    private String useYn;
     private LocalDateTime createdDate;
 }

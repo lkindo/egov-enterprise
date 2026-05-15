@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 스크랩 정보 Entity
+ * 스크랩 정보 Entity (v5 standardized)
  * 매핑 테이블: NSCRAP
  */
 @Entity
@@ -28,7 +28,7 @@ public class Scrap extends BaseEntity {
     private String bbsId;
 
     @Column(name = "NTT_ID")
-    private Long nttId;
+    private Long pstId;
 
     @Column(name = "SCRAP_NM", length = 100)
     private String scrapNm;

@@ -29,7 +29,7 @@ interface TemplateProps {
   list: BoardPost[];
   bbsId: string;
   querySearchWrd: string;
-  handleLike: (e: React.MouseEvent, nttId: string) => void;
+  handleLike: (e: React.MouseEvent, pstId: string) => void;
   isLikePending: boolean;
   page?: number;
   totalCount?: number;
@@ -74,8 +74,8 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
             
             <div className="relative z-10 space-y-8">
               <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">FEATURED_KNOWLEDGE</Badge>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${list[0].nttId}`}>
-                <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].nttSj}</h3>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
+                <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].pstTtl}</h3>
               </Link>
               <div className="flex flex-wrap items-center gap-10 mt-10">
                 <div className="flex items-center gap-4">
@@ -103,17 +103,17 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
-          <motion.div key={item.nttId} variants={itemVariants}>
+          <motion.div key={item.pstId} variants={itemVariants}>
             <Card className="group p-8 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 space-y-6 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
               <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 group-hover:scale-125 transition-all text-primary">
                 <BookOpen size={80} />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="secondary" className="bg-slate-100/80 text-slate-500 font-bold px-3 py-1 rounded-lg">KNOWLEDGE</Badge>
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">UNIT_{String(item.nttId).slice(-4)}</span>
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">UNIT_{String(item.pstId).slice(-4)}</span>
               </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
-                <h4 className="font-black text-slate-800 text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.nttSj}</h4>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
+                <h4 className="font-black text-slate-800 text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
               </Link>
               <div className="flex justify-between items-center pt-6 border-t border-slate-200/50">
                 <div className="flex gap-4">
@@ -145,7 +145,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 p-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.nttId} variants={itemVariants}>
+        <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md border border-white shadow-xl transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 ring-1 ring-black/5">
             <div className="h-72 overflow-hidden relative bg-slate-100">
               <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
@@ -156,9 +156,9 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
               <div className="absolute top-8 right-8 px-5 py-2 bg-slate-900/80 backdrop-blur-xl rounded-2xl text-white text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
             </div>
             <CardContent className="p-10 space-y-8">
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                 <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-[1.1] group-hover:text-primary transition-all cursor-pointer line-clamp-2">
-                  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h3>
               </Link>
               <div className="flex items-center justify-between pt-8 border-t border-slate-100/50">
@@ -174,9 +174,9 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                 <div className="flex gap-4">
                   <motion.button 
                     whileTap={{ scale: 0.9 }}
-                    onClick={(e) => handleLike(e, String(item.nttId))}
+                    onClick={(e) => handleLike(e, String(item.pstId))}
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 hover:text-primary hover:border-primary/30 transition-all"
-                    aria-label="좋아요"
+                    aria-label="좋아??
                   >
                     <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} />
                     <span className="text-sm font-black text-slate-900">{item.likeCo || 0}</span>
@@ -205,7 +205,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
       className="space-y-8 p-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.nttId} variants={itemVariants}>
+        <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group p-8 bg-white/60 backdrop-blur-md border border-white rounded-[2rem] flex flex-col md:flex-row gap-10 hover:shadow-2xl hover:border-amber-400/50 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
             <div className="flex flex-col items-center gap-3 min-w-[100px] justify-center">
               <motion.div 
@@ -230,9 +230,9 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                 <span className="text-[10px] font-black text-slate-400 flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
               </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                 <h4 className="text-3xl font-black text-slate-900 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
-                  <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h4>
               </Link>
               <div className="flex flex-wrap items-center gap-8 pt-4">
@@ -250,9 +250,9 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="h-4 w-px bg-slate-100" />
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
-                  onClick={(e) => handleLike(e, String(item.nttId))}
+                  onClick={(e) => handleLike(e, String(item.pstId))}
                   className="flex items-center gap-2.5 text-slate-400 hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
-                  aria-label="좋아요"
+                  aria-label="좋아??
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
                   <span>{item.likeCo || 0} Appreciations</span>
@@ -314,7 +314,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
             variant="outline" 
             onClick={onPrevMonth}
             className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-slate-900 rounded-2xl transition-all"
-            aria-label="이전 달"
+            aria-label="?�전 ??
           >
             <ChevronRight className="rotate-180" size={24} />
           </Button>
@@ -322,7 +322,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
             variant="outline" 
             onClick={onNextMonth}
             className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-slate-900 rounded-2xl transition-all"
-            aria-label="다음 달"
+            aria-label="?�음 ??
           >
             <ChevronRight size={24} />
           </Button>
@@ -372,15 +372,15 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               <div className="space-y-2.5 max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
                 {dayPosts.map((post) => (
                   <Link 
-                    key={post.nttId}
-                    href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${post.nttId}`}
+                    key={post.pstId}
+                    href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate uppercase tracking-tight",
-                      post.noticeAt === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white"
+                      post.noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white"
                     )}
-                    title={post.nttSj}
+                    title={post.pstTtl}
                   >
-                    {post.nttSj}
+                    {post.pstTtl}
                   </Link>
                 ))}
               </div>
@@ -424,7 +424,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
               "text-2xl font-black tracking-tighter transition-colors uppercase leading-tight",
               isOpen ? "text-indigo-600" : "text-slate-800"
             )}>
-              {item.nttSj}
+              {item.pstTtl}
             </h4>
           </div>
           <motion.div 
@@ -454,7 +454,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-xl shadow-emerald-500/20">A</div>
                   <div className="space-y-6 flex-1">
                     <p className="text-slate-600 font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
-                      {item.nttCn}
+                      {item.pstCn}
                     </p>
                     <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-slate-50">
                       <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
@@ -482,7 +482,7 @@ export const FaqTemplate = ({ list }: TemplateProps) => {
       className="p-10 space-y-6"
     >
       {list.map((item: BoardPost) => (
-        <FAQItem key={item.nttId} item={item} />
+        <FAQItem key={item.pstId} item={item} />
       ))}
     </motion.div>
   );
@@ -498,7 +498,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
       className="p-10 space-y-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.nttId} variants={itemVariants}>
+        <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden bg-white/40 backdrop-blur-md border border-white hover:border-slate-900 transition-all rounded-[2.5rem] shadow-xl hover:shadow-2xl ring-1 ring-black/5">
             <div className="flex flex-col md:flex-row">
               <div className="w-full md:w-24 bg-slate-900 flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
@@ -510,12 +510,12 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                   <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 rounded-lg border-slate-100 px-4 py-1.5">Documentation_v3.0</Badge>
                   <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                 </div>
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
+                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                   <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
-                    <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                    <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </h4>
                 </Link>
-                <p className="text-slate-500 font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.nttCn}</p>
+                <p className="text-slate-500 font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
                 <div className="flex items-center gap-10 pt-8 border-t border-slate-50">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Compiler</span>
@@ -545,22 +545,22 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
         <TableHeader className="bg-slate-50/50">
           <TableRow className="hover:bg-transparent border-b-2 border-slate-100">
             <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-wider text-[11px] py-6">번호</TableHead>
-            <TableHead className="font-black text-slate-900 tracking-wider text-[11px] py-6 px-8">제목</TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">작성자</TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">등록일</TableHead>
+            <TableHead className="font-black text-slate-900 tracking-wider text-[11px] py-6 px-8">?�목</TableHead>
+            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">?�성??/TableHead>
+            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">?�록??/TableHead>
             <TableHead className="w-[160px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">조회/추천</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {list.map((item: BoardPost, idx: number) => (
-            <TableRow key={item.nttId} className="hover:bg-primary/[0.03] transition-all group border-b border-slate-50 last:border-0 relative">
+            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-slate-50 last:border-0 relative">
               <TableCell className="text-center font-bold text-xs text-slate-400 py-5">
                 {(totalCount - ((page - 1) * 10) - idx).toString().padStart(3, '0')}
               </TableCell>
               <TableCell className="px-8 py-5">
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
+                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
                   <div className="text-sm font-black text-slate-800 group-hover/link:text-primary transition-all tracking-tight leading-snug truncate">
-                    <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                    <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="h-[1px] w-5 bg-primary/30" />
@@ -586,9 +586,9 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={(e) => handleLike(e, String(item.nttId))}
+                    onClick={(e) => handleLike(e, String(item.pstId))}
                     className="font-bold text-[10px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-100 shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
-                    aria-label="좋아요"
+                    aria-label="좋아??
                   >
                     <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
                     <span>{item.likeCo || 0}</span>
@@ -647,4 +647,3 @@ export const BoardSkeleton = ({ tmplatId }: { tmplatId: string }) => {
     </div>
   );
 };
-

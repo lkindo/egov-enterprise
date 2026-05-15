@@ -13,14 +13,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MemoReportRepository extends JpaRepository<MemoReport, String> {
 
-    @Query("SELECT m FROM MemoReport m WHERE m.wrterId = :wrterId ORDER BY m.reportDe DESC")
-    Page<MemoReport> findByWrterId(@Param("wrterId") String wrterId, Pageable pageable);
+    @Query("SELECT m FROM MemoReport m WHERE m.writerId = :writerId ORDER BY m.rptYmd DESC")
+    Page<MemoReport> findByWriterId(@Param("writerId") String writerId, Pageable pageable);
 
-    @Query("SELECT m FROM MemoReport m WHERE m.reportrId = :reportrId ORDER BY m.reportDe DESC")
-    Page<MemoReport> findByReportrId(@Param("reportrId") String reportrId, Pageable pageable);
+    @Query("SELECT m FROM MemoReport m WHERE m.rptUserId = :rptUserId ORDER BY m.rptYmd DESC")
+    Page<MemoReport> findByRptUserId(@Param("rptUserId") String rptUserId, Pageable pageable);
 
     @Query("SELECT m FROM MemoReport m WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR m.reprtSj LIKE %:keyword% OR m.reportCn LIKE %:keyword%) " +
-            "ORDER BY m.reportDe DESC")
+            "(:keyword IS NULL OR :keyword = '' OR m.rptTtl LIKE %:keyword% OR m.rptCn LIKE %:keyword%) " +
+            "ORDER BY m.rptYmd DESC")
     Page<MemoReport> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

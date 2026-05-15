@@ -35,18 +35,18 @@ public class CommunityUserApiController {
     }
 
     @Operation(summary = "커뮤니티 상세 조회", description = "특정 커뮤니티의 상세 정보를 조회합니다.")
-    @GetMapping("/{cmmntyId}")
+    @GetMapping("/{cmntyId}")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
-            @Parameter(description = "커뮤니티 ID") @PathVariable String cmmntyId) {
-        return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmmntyId)));
+            @Parameter(description = "커뮤니티 ID") @PathVariable String cmntyId) {
+        return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmntyId)));
     }
 
     @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다.")
-    @PostMapping("/{cmmntyId}/join")
+    @PostMapping("/{cmntyId}/join")
     public ResponseEntity<ApiResponse<Void>> joinCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cmmntyId) {
-        communityService.joinCommunity(cmmntyId, userDetails.getUsername());
+            @PathVariable String cmntyId) {
+        communityService.joinCommunity(cmntyId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

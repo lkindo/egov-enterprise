@@ -34,14 +34,14 @@ vi.mock('./UnifiedDashboardClient', () => ({
       dataPromise.then(setData);
     }, [dataPromise]);
 
-    if (!data) return <div data-testid="loading">로딩 중...</div>;
+    if (!data) return <div data-testid="loading">로딩 �?..</div>;
 
     return (
       <div data-testid="dashboard-client">
-        <div data-testid="noti-count">공지사항: {data.initialNotiList.length}개</div>
-        <div data-testid="task-count">할일: {data.initialTaskList.length}개</div>
-        <div>결재대기: {data.pendingApprovalCount}건</div>
-        {data.initialTaskList.length > 0 && <div>할일 테스트</div>}
+        <div data-testid="noti-count">공�??�항: {data.initialNotiList.length}�?/div>
+        <div data-testid="task-count">?�일: {data.initialTaskList.length}�?/div>
+        <div>결재?��? {data.pendingApprovalCount}�?/div>
+        {data.initialTaskList.length > 0 && <div>?�일 ?�스??/div>}
       </div>
     );
   }
@@ -52,7 +52,7 @@ describe('DashboardPage Server Component', () => {
     vi.clearAllMocks();
   });
 
-  it('토큰이 없는 경우 /login으로 리다이렉트됩니다.', async () => {
+  it('?�큰???�는 경우 /login?�로 리다?�렉?�됩?�다.', async () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue(null),
     } as any);
@@ -66,14 +66,14 @@ describe('DashboardPage Server Component', () => {
     expect(redirect).toHaveBeenCalledWith('/login');
   });
 
-  it('인증된 경우 데이터를 포함한 대시보드를 렌더링합니다.', async () => {
+  it('?�증??경우 ?�이?��? ?�함???�?�보?��? ?�더링합?�다.', async () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),
     } as any);
 
     vi.mocked(client.get).mockResolvedValue({
-      notiList: [{ nttId: 1, nttSj: '공지사항 테스트' }],
-      taskList: [{ nttId: 2, nttSj: '할일 테스트' }],
+      notiList: [{ pstId: 1, pstTtl: '공�??�항 ?�스?? }],
+      taskList: [{ pstId: 2, pstTtl: '?�일 ?�스?? }],
       pendingApprovalCount: 10
     });
 
@@ -82,9 +82,9 @@ describe('DashboardPage Server Component', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('dashboard-client')).toBeInTheDocument();
-      expect(screen.getByText(/할일 테스트/)).toBeInTheDocument();
-      expect(screen.getByText(/공지사항: 1개/)).toBeInTheDocument();
-      expect(screen.getByText(/결재대기: 10건/)).toBeInTheDocument();
+      expect(screen.getByText(/?�일 ?�스??)).toBeInTheDocument();
+      expect(screen.getByText(/공�??�항: 1�?)).toBeInTheDocument();
+      expect(screen.getByText(/결재?��? 10�?)).toBeInTheDocument();
     });
   });
 });

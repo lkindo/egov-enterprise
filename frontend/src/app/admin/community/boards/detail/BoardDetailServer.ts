@@ -4,7 +4,7 @@ import { knowledgeService } from '@/services/business/knowledge/knowledgeService
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { commentService } from '@/services/business/comment/commentService';
 
-export const getInitialBoardDetailData = cache(async (bbsId: string, nttId: string) => {
+export const getInitialBoardDetailData = cache(async (bbsId: string, pstId: string) => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
 
@@ -17,9 +17,9 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, nttId: stri
 
   try {
     const [article, masterInfo, commentResult] = await Promise.all([
-      knowledgeService.getArticle(bbsId, nttId),
+      knowledgeService.getArticle(bbsId, pstId),
       boardAdminService.getBoardMaster(bbsId, axiosConfig),
-      commentService.getComments({ nttId: Number(nttId), bbsId, size: 100 }, axiosConfig)
+      commentService.getComments({ pstId: Number(pstId), bbsId, size: 100 }, axiosConfig)
     ]);
 
     return { 

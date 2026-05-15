@@ -29,9 +29,9 @@ public class BoardPredicate {
         if (StringUtils.hasText(condition.getSearchWrd())) {
             String searchWrd = condition.getSearchWrd();
             if ("0".equals(condition.getSearchCnd())) { // Title
-                builder.and(nttSjContains(searchWrd));
+                builder.and(pstTtlContains(searchWrd));
             } else if ("1".equals(condition.getSearchCnd())) { // Content
-                builder.and(nttCnContains(searchWrd));
+                builder.and(pstCnContains(searchWrd));
             } else if ("2".equals(condition.getSearchCnd())) { // Writer
                 builder.and(ntcrNmContains(searchWrd));
             }
@@ -60,12 +60,12 @@ public class BoardPredicate {
         return QBoard.board.bbsId.eq(bbsId);
     }
 
-    public static BooleanExpression nttSjContains(String nttSj) {
-        return QBoard.board.nttSj.contains(nttSj);
+    public static BooleanExpression pstTtlContains(String pstTtl) {
+        return QBoard.board.pstTtl.contains(pstTtl);
     }
 
-    public static BooleanExpression nttCnContains(String nttCn) {
-        return QBoard.board.nttCn.contains(nttCn);
+    public static BooleanExpression pstCnContains(String pstCn) {
+        return QBoard.board.pstCn.contains(pstCn);
     }
 
     public static BooleanExpression ntcrNmContains(String ntcrNm) {

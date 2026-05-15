@@ -48,11 +48,11 @@ public class BbsApiController {
     }
 
     @Operation(summary = "게시물 상세 조회", description = "특정 게시물의 상세 정보를 조회합니다.")
-    @GetMapping("/{bbsId}/{nttId}")
+    @GetMapping("/{bbsId}/{pstId}")
     public ResponseEntity<ApiResponse<BoardDto>> getBoardDetail(
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("nttId") Long nttId) {
-        BoardDto boardDto = boardService.getPostDetail(bbsId, nttId);
+            @PathVariable("pstId") Long pstId) {
+        BoardDto boardDto = boardService.getPostDetail(bbsId, pstId);
         return ResponseEntity.ok(ApiResponse.success(boardDto));
     }
 
@@ -66,43 +66,43 @@ public class BbsApiController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userId = (auth == null || !auth.isAuthenticated()) ? "GUEST" : auth.getName();
         
-        Long nttId;
+        Long pstId;
         if (files != null && !files.isEmpty()) {
-            nttId = boardService.createPostWithFiles(userId, request, files);
+            pstId = boardService.createPostWithFiles(userId, request, files);
         } else {
-            nttId = boardService.createPost(userId, request);
+            pstId = boardService.createPost(userId, request);
         }
         
-        return ResponseEntity.ok(ApiResponse.success(nttId));
+        return ResponseEntity.ok(ApiResponse.success(pstId));
     }
 
     @Operation(summary = "게시물 수정", description = "기존 게시물을 수정합니다.")
-    @PutMapping("/{bbsId}/{nttId}")
+    @PutMapping("/{bbsId}/{pstId}")
     public ResponseEntity<ApiResponse<Void>> updateBoard(
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("nttId") Long nttId,
+            @PathVariable("pstId") Long pstId,
             @Valid @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws Exception {
         
         if (files != null && !files.isEmpty()) {
-            boardService.updatePostWithFiles(bbsId, nttId, request, files);
+            boardService.updatePostWithFiles(bbsId, pstId, request, files);
         } else {
-            boardService.updatePost(bbsId, nttId, request);
+            boardService.updatePost(bbsId, pstId, request);
         }
         
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "게시물 삭제", description = "게시물을 삭제합니다.")
-    @DeleteMapping("/{bbsId}/{nttId}")
+    @DeleteMapping("/{bbsId}/{pstId}")
     public ResponseEntity<ApiResponse<Void>> deleteBoard(
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("nttId") Long nttId) {
+            @PathVariable("pstId") Long pstId) {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userId = (auth == null || !auth.isAuthenticated()) ? "GUEST" : auth.getName();
         
-        boardService.deletePost(bbsId, nttId, userId);
+        boardService.deletePost(bbsId, pstId, userId);
         
         return ResponseEntity.ok(ApiResponse.success(null));
     }

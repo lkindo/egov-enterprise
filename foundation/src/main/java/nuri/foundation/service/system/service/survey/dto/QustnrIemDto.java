@@ -16,25 +16,25 @@ import java.time.LocalDateTime;
 public class QustnrIemDto {
 
     @Schema(description = "설문항목아이디")
-    private String qustnrIemId;
+    private String srvyItemId;
 
     @Schema(description = "설문문항아이디")
-    private String qustnrQesitmId;
+    private String srvyQitemId;
 
     @Schema(description = "설문아이디")
-    private String qustnrId;
+    private String srvyId;
 
     @Schema(description = "항목순번")
-    private Long iemSn;
+    private Long srvyItemSn;
 
     @Schema(description = "항목내용")
-    private String iemCn;
+    private String srvyItemCn;
 
     @Schema(description = "기타답변여부")
-    private String etcAnswerAt;
+    private String etcAnsYn;
 
     @Schema(description = "설문템플릿아이디")
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
     @Schema(description = "등록자")
     private String createdBy;
@@ -45,13 +45,13 @@ public class QustnrIemDto {
     public static QustnrIemDto from(QustnrIem entity) {
         if (entity == null) return null;
         return QustnrIemDto.builder()
-                .qustnrIemId(entity.getQustnrIemId())
-                .qustnrQesitmId(entity.getQustnrQesitmId())
-                .qustnrId(entity.getQustnrId())
-                .iemSn(entity.getIemSn())
-                .iemCn(entity.getIemCn())
-                .etcAnswerAt(entity.getEtcAnswerAt())
-                .qustnrTmplatId(entity.getQustnrTmplatId())
+                .srvyItemId(entity.getSrvyItemId())
+                .srvyQitemId(entity.getSrvyQitemId())
+                .srvyId(entity.getSrvyId())
+                .srvyItemSn(entity.getSrvyItemSn())
+                .srvyItemCn(entity.getSrvyItemCn())
+                .etcAnsYn(entity.getEtcAnsYn())
+                .srvyTmplatId(entity.getSrvyTmplatId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

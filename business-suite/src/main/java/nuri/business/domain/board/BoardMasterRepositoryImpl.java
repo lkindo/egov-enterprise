@@ -35,13 +35,13 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         QCommonCode commonCodeAttr = new QCommonCode("commonCodeAttr");
 
         BooleanBuilder builder = new BooleanBuilder();
-        if (StringUtils.hasText(condition.getUseAt())) {
-            builder.and(boardMaster.useAt.eq(condition.getUseAt()));
+        if (StringUtils.hasText(condition.getUseYn())) {
+            builder.and(boardMaster.useYn.eq(condition.getUseYn()));
         }
 
         if (StringUtils.hasText(condition.getSearchWrd())) {
             if ("0".equals(condition.getSearchCnd())) {
-                builder.and(boardMaster.bbsNm.contains(condition.getSearchWrd()));
+                builder.and(boardMaster.bbsTtl.contains(condition.getSearchWrd()));
             } else if ("1".equals(condition.getSearchCnd())) {
                 builder.and(commonCodeTy.codeNm.contains(condition.getSearchWrd()));
             }
@@ -49,31 +49,31 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         if (StringUtils.hasText(condition.getTrgetId())) {
             builder.and(boardUse.trgetId.eq(condition.getTrgetId()));
-            builder.and(boardUse.useAt.eq("Y"));
+            builder.and(boardUse.useYn.eq("Y"));
         }
 
         if (condition.isNotUsedOnly()) {
             builder.and(boardMaster.bbsId.notIn(
                     JPAExpressions.select(boardUse.bbsId)
                             .from(boardUse)
-                            .where(boardUse.useAt.eq("Y"))));
+                            .where(boardUse.useYn.eq("Y"))));
         }
 
         JPAQuery<BoardMasterSearchResult> query = queryFactory.select(Projections.fields(BoardMasterSearchResult.class,
                 boardMaster.bbsId,
-                boardMaster.bbsTyCode,
-                commonCodeTy.codeNm.as("bbsTyCodeNm"),
-                boardMaster.bbsAttrbCode,
-                commonCodeAttr.codeNm.as("bbsAttrbCodeNm"),
-                boardMaster.bbsNm,
+                boardMaster.bbsTypeCd.as("bbsTypeCd"),
+                commonCodeTy.codeNm.as("bbsTypeCdNm"),
+                boardMaster.bbsAttrCd.as("bbsAttrCd"),
+                commonCodeAttr.codeNm.as("bbsAttrCdNm"),
+                boardMaster.bbsTtl.as("bbsTtl"),
                 boardMaster.tmplatId,
-                boardMaster.useAt,
+                boardMaster.useYn,
                 boardMaster.createdDate))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTyCode.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
-                .on(boardMaster.bbsAttrbCode.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")));
+                .on(boardMaster.bbsAttrCd.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")));
 
         if (StringUtils.hasText(condition.getTrgetId())) {
             query.join(boardUse).on(boardMaster.bbsId.eq(boardUse.bbsId));
@@ -89,7 +89,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         Long totalResult = queryFactory.select(Wildcard.count)
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTyCode.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
                 .where(builder)
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;
@@ -104,33 +104,33 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         BoardMasterDetailResult result = queryFactory.select(Projections.fields(BoardMasterDetailResult.class,
                 boardMaster.bbsId,
-                boardMaster.bbsTyCode,
-                commonCodeTy.codeNm.as("bbsTyCodeNm"),
-                boardMaster.bbsIntrcn,
-                boardMaster.bbsAttrbCode,
-                commonCodeAttr.codeNm.as("bbsAttrbCodeNm"),
-                boardMaster.bbsNm,
+                boardMaster.bbsTypeCd.as("bbsTypeCd"),
+                commonCodeTy.codeNm.as("bbsTypeCdNm"),
+                boardMaster.bbsIntroCn.as("bbsIntroCn"),
+                boardMaster.bbsAttrCd.as("bbsAttrCd"),
+                commonCodeAttr.codeNm.as("bbsAttrCdNm"),
+                boardMaster.bbsTtl.as("bbsTtl"),
                 boardMaster.tmplatId,
                 template.tmplatNm,
                 template.tmplatCours,
-                boardMaster.fileAtchPosblAt,
-                boardMaster.atchPosblFileNumber,
-                boardMaster.atchPosblFileSize,
-                boardMaster.replyPosblAt,
+                boardMaster.fileAtchPsblYn.as("fileAtchPsblYn"),
+                boardMaster.atchPsblFileCnt.as("atchPsblFileCnt"),
+                boardMaster.atchPsblFileSize.as("atchPsblFileSize"),
+                boardMaster.replyPsblYn.as("replyPsblYn"),
                 boardMaster.createdBy.as("frstRegisterId"),
-                boardMaster.useAt,
+                boardMaster.useYn,
                 boardMaster.createdDate))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTyCode.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
-                .on(boardMaster.bbsAttrbCode.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")))
+                .on(boardMaster.bbsAttrCd.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")))
                 .leftJoin(template).on(boardMaster.tmplatId.eq(template.tmplatId))
                 .where(boardMaster.bbsId.eq(bbsId))
                 .fetchOne();
 
         if (result != null && StringUtils.hasText(uniqId)) {
-            String authFlag = queryFactory.select(boardUse.useAt)
+            String authFlag = queryFactory.select(boardUse.useYn)
                     .from(boardUse)
                     .where(boardUse.bbsId.eq(bbsId)
                             .and(boardUse.trgetId.in(uniqId, "SYSTEM_DEFAULT_BOARD")))

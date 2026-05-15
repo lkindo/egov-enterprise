@@ -12,14 +12,14 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityDto {
-    private String cmmntyId;
-    private String cmmntyNm;
-    private String cmmntyIntrcn;
-    private String registSeCode;
-    private String registSeCodeNm;
+    private String cmntyId;
+    private String cmntyTtl;
+    private String cmntyIntroCn;
+    private String regTypeCd;
+    private String regTypeCdNm;
     private String tmplatId;
     private String tmplatNm;
-    private String useAt;
+    private String useYn;
     private String frstRegisterId;
     private String frstRegisterNm;
     private String frstRegisterPnttm;
@@ -28,12 +28,12 @@ public class CommunityDto {
         if (community == null)
             return null;
         return CommunityDto.builder()
-                .cmmntyId(community.getCmmntyId())
-                .cmmntyNm(community.getCmmntyNm())
-                .cmmntyIntrcn(community.getCmmntyIntrcn())
-                .registSeCode(community.getRegistSeCode())
+                .cmntyId(community.getCmntyId())
+                .cmntyTtl(community.getCmntyTtl())
+                .cmntyIntroCn(community.getCmntyIntroCn())
+                .regTypeCd(community.getRegTypeCd())
                 .tmplatId(community.getTmplatId())
-                .useAt(community.getUseAt())
+                .useYn(community.getUseYn())
                 .frstRegisterId(community.getFrstRegisterId())
                 .frstRegisterPnttm(community.getFrstRegisterPnttm() != null
                         ? community.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))

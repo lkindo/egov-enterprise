@@ -115,68 +115,68 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
- 
+  
  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
  const { data, isLoading: loading } = useBoardList({
- bbsId,
- page: queryPage,
- pageUnit: 10,
- searchWrd: querySearchWrd,
- searchCnd: querySearchCnd,
- orderBy: queryOrderBy,
- startDate: queryStartDate || undefined,
- endDate: queryEndDate || undefined
+  bbsId,
+  page: queryPage,
+  pageUnit: 10,
+  searchWrd: querySearchWrd,
+  searchCnd: querySearchCnd,
+  orderBy: queryOrderBy,
+  startDate: queryStartDate || undefined,
+  endDate: queryEndDate || undefined
  }, hasFilter ? undefined : initialData);
 
  // 낙관적 업데이트를 적용한 좋아요 뮤테이션
  const likeMutation = useMutation({
- mutationFn: (nttId: string) => likeBoardArticle(bbsId, nttId),
- onMutate: async (nttId: string) => {
- const currentParams = {
- bbsId,
- page: queryPage,
- pageUnit: 10,
- searchWrd: querySearchWrd,
- searchCnd: querySearchCnd,
- orderBy: queryOrderBy,
- startDate: queryStartDate || undefined,
- endDate: queryEndDate || undefined
- };
- const queryKey = ['boardList', currentParams];
+  mutationFn: (pstId: string) => likeBoardArticle(bbsId, pstId),
+  onMutate: async (pstId: string) => {
+  const currentParams = {
+  bbsId,
+  page: queryPage,
+  pageUnit: 10,
+  searchWrd: querySearchWrd,
+  searchCnd: querySearchCnd,
+  orderBy: queryOrderBy,
+  startDate: queryStartDate || undefined,
+  endDate: queryEndDate || undefined
+  };
+  const queryKey = ['boardList', currentParams];
 
- // 진행 중인 쿼리 취소
- await queryClient.cancelQueries({ queryKey });
- 
- // 이전 상태 저장 (롤백용)
- const previousData = queryClient.getQueryData(queryKey);
- 
- // 캐시 데이터 즉시 업데이트
- queryClient.setQueryData(queryKey, (old: any) => {
- if (!old || !old.list) return old;
- return {
- ...old,
- list: old.list.map((item: any) => 
- String(item.nttId) === nttId ? { ...item, likeCo: (item.likeCo || 0) + 1 } : item
- )
- };
- });
- 
- return { previousData };
- },
- onError: (err, nttId, context) => {
- // 실패 시 롤백
- queryClient.setQueryData(['boardList', bbsId, queryPage, querySearchWrd, queryOrderBy], context?.previousData);
- },
- onSettled: () => {
- // 최종적으로 서버 데이터와 동기화
- queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
- }
+  // 진행 중인 쿼리 취소
+  await queryClient.cancelQueries({ queryKey });
+  
+  // 이전 상태 저장 (롤백용)
+  const previousData = queryClient.getQueryData(queryKey);
+  
+  // 캐시 데이터 즉시 업데이트
+  queryClient.setQueryData(queryKey, (old: any) => {
+  if (!old || !old.list) return old;
+  return {
+  ...old,
+  list: old.list.map((item: any) => 
+  String(item.pstId) === pstId ? { ...item, likeCo: (item.likeCo || 0) + 1 } : item
+  )
+  };
+  });
+  
+  return { previousData };
+  },
+  onError: (err, pstId, context) => {
+  // 실패 시 롤백
+  queryClient.setQueryData(['boardList', bbsId, queryPage, querySearchWrd, queryOrderBy], context?.previousData);
+  },
+  onSettled: () => {
+  // 최종적으로 서버 데이터와 동기화
+  queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+  }
  });
 
- const handleLike = (e: React.MouseEvent, nttId: string) => {
- e.preventDefault();
- e.stopPropagation();
- likeMutation.mutate(nttId);
+ const handleLike = (e: React.MouseEvent, pstId: string) => {
+  e.preventDefault();
+  e.stopPropagation();
+  likeMutation.mutate(pstId);
  };
 
  const list: BoardPost[] = data?.list || [];
@@ -412,4 +412,3 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </motion.div>
  );
 };
-

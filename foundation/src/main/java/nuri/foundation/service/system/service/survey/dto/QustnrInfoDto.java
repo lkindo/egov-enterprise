@@ -16,28 +16,28 @@ import java.time.LocalDateTime;
 public class QustnrInfoDto {
 
     @Schema(description = "설문아이디")
-    private String qustnrId;
+    private String srvyId;
 
     @Schema(description = "설문제목")
-    private String qustnrSj;
+    private String srvyTtl;
 
     @Schema(description = "설문목적")
-    private String qustnrPurps;
+    private String srvyPrpsCn;
 
     @Schema(description = "설문작성안내내용")
-    private String qustnrWritngGuidanceCn;
+    private String srvyGuidCn;
 
     @Schema(description = "설문시작일자")
-    private String qustnrBeginDe;
+    private String srvyBgngYmd;
 
     @Schema(description = "설문종료일자")
-    private String qustnrEndDe;
+    private String srvyEndYmd;
 
     @Schema(description = "설문대상")
-    private String qustnrTrget;
+    private String srvyTrgtCn;
 
     @Schema(description = "설문템플릿아이디")
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
     @Schema(description = "등록자")
     private String createdBy;
@@ -49,14 +49,14 @@ public class QustnrInfoDto {
         if (entity == null)
             return null;
         return QustnrInfoDto.builder()
-                .qustnrId(entity.getQustnrId())
-                .qustnrSj(entity.getQustnrSj())
-                .qustnrPurps(entity.getQustnrPurps())
-                .qustnrWritngGuidanceCn(entity.getQustnrWritngGuidanceCn())
-                .qustnrBeginDe(entity.getQustnrBeginDe())
-                .qustnrEndDe(entity.getQustnrEndDe())
-                .qustnrTrget(entity.getQustnrTrget())
-                .qustnrTmplatId(entity.getQustnrTmplatId())
+                .srvyId(entity.getSrvyId())
+                .srvyTtl(entity.getSrvyTtl())
+                .srvyPrpsCn(entity.getSrvyPrpsCn())
+                .srvyGuidCn(entity.getSrvyGuidCn())
+                .srvyBgngYmd(entity.getSrvyBgngYmd())
+                .srvyEndYmd(entity.getSrvyEndYmd())
+                .srvyTrgtCn(entity.getSrvyTrgtCn())
+                .srvyTmplatId(entity.getSrvyTmplatId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

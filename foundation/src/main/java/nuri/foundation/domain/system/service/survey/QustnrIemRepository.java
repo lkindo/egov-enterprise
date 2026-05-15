@@ -6,5 +6,5 @@ import java.util.List;
 
 @Repository
 public interface QustnrIemRepository extends JpaRepository<QustnrIem, String> {
-    List<QustnrIem> findByQustnrQesitmIdOrderByIemSnAsc(String qustnrQesitmId);
+    List<QustnrIem> findBySrvyQitemIdOrderBySrvyItemSnAsc(String srvyQitemId);
 }

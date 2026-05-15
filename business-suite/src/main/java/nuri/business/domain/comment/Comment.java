@@ -10,8 +10,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
- * 게시물 댓글 엔티티
- * [Consistency Fix] 댓글 내용(answer) 용량 확장 (TEXT)
+ * 게시물 댓글 엔티티 (v5 standardized)
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,7 +19,7 @@ import org.hibernate.annotations.SQLRestriction;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "TB_BBS_COMMENT")
-@SQLRestriction("use_at = 'Y'")
+@SQLRestriction("use_yn = 'Y'")
 public class Comment extends BaseEntity implements Serializable {
 
     @Id
@@ -30,31 +29,31 @@ public class Comment extends BaseEntity implements Serializable {
     private Long id;
 
     @Column(name = "NTT_ID")
-    private Long nttId;
+    private Long pstId;
 
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
 
     @Column(name = "WRTER_ID", length = 20)
-    private String wrterId;
+    private String writerId;
 
     @Column(name = "WRTER_NM", length = 20)
-    private String wrterNm;
+    private String writerNm;
 
     @Column(name = "PASSWORD", length = 200)
     private String password;
 
     @Column(name = "ANSWER", columnDefinition = "TEXT")
-    private String commentCn;
+    private String cmntCn;
 
     @Column(name = "USE_AT", length = 1)
-    private String useAt;
+    private String useYn;
 
-    public void update(String commentCn) {
-        this.commentCn = commentCn;
+    public void update(String cmntCn) {
+        this.cmntCn = cmntCn;
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

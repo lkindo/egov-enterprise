@@ -23,35 +23,35 @@ public class CommunityUser extends BaseEntity implements Serializable {
     private CommunityUserId id;
 
     @Column(name = "MNGR_YN", length = 1)
-    private String mngrAt;
+    private String mngrYn;
 
-    @Column(name = "SBSCRB_DE")
-    private LocalDateTime sbscrbDe;
+    @Column(name = "JOIN_YMD", length = 8)
+    private String joinYmd;
 
-    @Column(name = "SECSN_DE", length = 20)
-    private String secsnDe;
+    @Column(name = "WHDWL_YMD", length = 8)
+    private String wdrlYmd;
 
-    @Column(name = "MBER_STTUS", length = 15)
-    private String mberSttus;
+    @Column(name = "MBR_STTS_CD", length = 12)
+    private String mbrSttsCd;
 
     @Column(name = "USE_YN", length = 1)
-    private String useAt;
+    private String useYn;
 
     public void approve() {
-        this.mberSttus = "P"; // Example status for approved
+        this.mbrSttsCd = "P"; // Example status for approved
     }
 
     public void withdraw() {
-        this.useAt = "N";
-        this.secsnDe = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        this.mngrAt = "N";
+        this.useYn = "N";
+        this.wdrlYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        this.mngrYn = "N";
     }
 
     public void grantAdmin() {
-        this.mngrAt = "Y";
+        this.mngrYn = "Y";
     }
 
     public void revokeAdmin() {
-        this.mngrAt = "N";
+        this.mngrYn = "N";
     }
 }

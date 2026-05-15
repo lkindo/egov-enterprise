@@ -51,11 +51,11 @@ public class BoardApiController {
     }
 
     @Operation(summary = "게시글 상세 조회", description = "특정 게시판의 게시글 상세 정보를 조회합니다.")
-    @GetMapping("/{bbsId}/posts/{id}")
+    @GetMapping("/{bbsId}/posts/{pstId}")
     public ResponseEntity<ApiResponse<BoardDto>> getPost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, id)));
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstId) {
+        return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstId)));
     }
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
@@ -67,32 +67,32 @@ public class BoardApiController {
     }
 
     @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다.")
-    @PutMapping("/{bbsId}/posts/{id}")
+    @PutMapping("/{bbsId}/posts/{pstId}")
     public ResponseEntity<ApiResponse<Void>> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String bbsId,
-            @PathVariable Long id,
+            @PathVariable Long pstId,
             @Valid @RequestBody BoardSaveRequest request) {
-        boardService.updatePost(bbsId, id, request);
+        boardService.updatePost(bbsId, pstId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
-    @DeleteMapping("/{bbsId}/posts/{id}")
+    @DeleteMapping("/{bbsId}/posts/{pstId}")
     public ResponseEntity<ApiResponse<Void>> deletePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long id) {
-        boardService.deletePost(bbsId, id, userDetails.getUsername());
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstId) {
+        boardService.deletePost(bbsId, pstId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "게시글 좋아요(추천)", description = "게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)")
-    @PatchMapping("/{bbsId}/posts/{id}/like")
+    @PatchMapping("/{bbsId}/posts/{pstId}/like")
     public ResponseEntity<ApiResponse<Integer>> likePost(
             @PathVariable String bbsId,
-            @PathVariable Long id) {
+            @PathVariable Long pstId) {
         // 실제 운영 환경에서는 중복 추천 방지 로직이 필요하나, 여기서는 낙관적 업데이트 시연을 위해 단순 증가 처리
-        return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, id)));
+        return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, pstId)));
     }
 }

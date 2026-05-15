@@ -2,18 +2,18 @@ import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 댓글 정보 인터페이스
+ * 댓글 정보 인터페이스 (v5 standardized)
  */
 export interface Comment {
     id: number;
-    nttId: number;
+    pstId: number;
     bbsId: string;
-    commentNo: number;
-    wrterId: string;
-    wrterNm: string;
-    commentPassword?: string;
-    commentCn: string;
-    frstRegisterPnttm: string;
+    writerId: string;
+    writerNm: string;
+    cmntCn: string;
+    useYn: string;
+    createdDate: string;
+    modifiedDate?: string;
 }
 
 /**
@@ -28,7 +28,7 @@ class CommentService extends UserService {
     /**
      * 댓글 목록 조회
      */
-    async getComments(params: { nttId: number; bbsId: string; page?: number; size?: number }): Promise<PageResponse<Comment>> {
+    async getComments(params: { pstId: number; bbsId: string; page?: number; size?: number }): Promise<PageResponse<Comment>> {
         return this.get<PageResponse<Comment>>('', { params });
     }
 

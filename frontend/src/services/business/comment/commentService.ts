@@ -4,7 +4,8 @@ import { AxiosRequestConfig } from 'axios';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 댓글 ?쒕퉬님 */
+ * 댓글 서비스 (Enterprise v5 Standard)
+ */
 class CommentService extends ApiService {
   constructor() {
     super('comments');
@@ -13,7 +14,6 @@ class CommentService extends ApiService {
   /** 댓글 목록 조회 */
   async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {
     const response = await this.get<any>('', { ...config, params });
-    // Handle both legacy and new structures if necessary, but here we assume normalization
     return {
       list: response.list || response.resultList || [],
       total: response.total || response.paginationInfo?.totalRecordCount || 0,
@@ -33,7 +33,7 @@ class CommentService extends ApiService {
  return this.put<void>(`/${id}`, data, config);
  }
 
- /** 댓글 님젣 */
+ /** 댓글 삭제 */
  async deleteComment(id: number, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${id}`, config);
  }

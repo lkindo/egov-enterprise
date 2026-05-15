@@ -38,7 +38,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
-  const nttId = searchParams.get('nttId');
+  const pstId = searchParams.get('pstId');
 
   // React Query for revalidation/stale handling, seeded with initialData
   const { data: masterInfo } = useQuery({
@@ -49,8 +49,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   });
 
   const { data: article } = useQuery({
-    queryKey: ['article-detail', bbsId, nttId],
-    queryFn: () => knowledgeService.getArticle(bbsId!, nttId!),
+    queryKey: ['article-detail', bbsId, pstId],
+    queryFn: () => knowledgeService.getArticle(bbsId!, pstId!),
     initialData: initialData.article,
     enabled: !!initialData.article,
   });
@@ -106,7 +106,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 {bbsId === 'BBSMSTR_AAAAAAAAAAAA' ? 'WIKI ARCHIVE' : 'TECH COMMUNITY'}
               </Badge>
               <div className="h-[2px] w-10 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-black text-slate-300 tracking-[0.3em] uppercase">NODE_REF: {nttId?.slice(-8)}</span>
+              <span className="text-[10px] font-black text-slate-300 tracking-[0.3em] uppercase">NODE_REF: {pstId?.slice(-8)}</span>
             </motion.div>
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
@@ -114,7 +114,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               transition={{ delay: 0.2 }}
               className="text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase max-w-4xl"
             >
-              {article.knoNm || (article as any).nttSj}
+              {article.pstTtl || (article as any).knoNm}
             </motion.h1>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         >
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&nttId=${nttId}`)}
+            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&pstId=${pstId}`)}
             className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
@@ -135,7 +135,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parntsId=${nttId}&replyAt=Y`)}
+            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
             className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
@@ -150,7 +150,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             }
           }}>
             <input type="hidden" name="bbsId" value={bbsId ?? ""} />
-            <input type="hidden" name="nttId" value={nttId ?? ""} />
+            <input type="hidden" name="pstId" value={pstId ?? ""} />
             <Button
               type="submit"
               variant="outline"
@@ -210,7 +210,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 "prose-blockquote:border-l-[8px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-14 prose-blockquote:py-12 prose-blockquote:rounded-3xl prose-blockquote:not-italic prose-blockquote:text-slate-900 prose-blockquote:font-black",
                 "prose-code:bg-slate-100 prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-slate-900 prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
               )}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.knoCn || (article as any).nttCn || '') }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || (article as any).knoCn || '') }}
             />
 
             <div className="pt-32 flex items-center justify-center opacity-10">
@@ -250,7 +250,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                     <FileText size={24} className="text-primary" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-black tracking-tight leading-none mb-1">Technical_Spec_Unit_{nttId?.slice(-4)}.pdf</span>
+                    <span className="text-sm font-black tracking-tight leading-none mb-1">Technical_Spec_Unit_{pstId?.slice(-4)}.pdf</span>
                     <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">3.4 MB • PDF Document</span>
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       >
         <CommentSection 
           bbsId={bbsId!} 
-          nttId={Number(nttId)} 
+          pstId={Number(pstId)} 
           initialComments={initialData.initialComments} 
         />
       </motion.div>
@@ -292,6 +292,3 @@ function MetaItem({ icon, label, value }: { icon: React.ReactNode, label: string
     </div>
   );
 }
-
-
-

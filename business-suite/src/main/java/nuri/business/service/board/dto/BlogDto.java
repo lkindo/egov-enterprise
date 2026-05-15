@@ -12,16 +12,16 @@ import java.time.LocalDateTime;
 public class BlogDto {
     private String blogId;
     private String bbsId;
-    private String blogNm;
-    private String blogIntrcn;
-    private String registSeCode;
+    private String blogTtl;
+    private String blogIntroCn;
+    private String regTypeCd;
     private String tmplatId;
-    private String useAt;
+    private String useYn;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdusrPnttm;
-    private String blogAt;
+    private String blogYn;
 
     public LocalDateTime getCreatedDate() {
         return frstRegisterPnttm;
@@ -33,16 +33,16 @@ public class BlogDto {
         return BlogDto.builder()
                 .blogId(entity.getBlogId())
                 .bbsId(entity.getBbsId())
-                .blogNm(entity.getBlogNm())
-                .blogIntrcn(entity.getBlogIntrcn())
-                .registSeCode(entity.getRegistSeCode())
+                .blogTtl(entity.getBlogTtl())
+                .blogIntroCn(entity.getBlogIntroCn())
+                .regTypeCd(entity.getRegTypeCd())
                 .tmplatId(entity.getTmplatId())
-                .useAt(entity.getUseAt())
+                .useYn(entity.getUseYn())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
-                .blogAt(entity.getBlogAt())
+                .blogYn(entity.getBlogYn())
                 .build();
     }
 }

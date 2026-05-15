@@ -9,8 +9,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 
 /**
- * 만족도 조사 엔티티
- * 매핑 테이블: NSTSFDG
+ * 만족도 조사 엔티티 (v5 standardized)
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -26,10 +25,10 @@ public class Satisfaction extends BaseEntity {
     private Long id;
 
     @Column(name = "NTT_ID", nullable = false)
-    private Long articleId;
+    private Long pstId;
 
     @Column(name = "BBS_ID", length = 20, nullable = false)
-    private String boardId;
+    private String bbsId;
 
     @Column(name = "WRTER_ID", length = 20)
     private String writerId;
@@ -41,24 +40,24 @@ public class Satisfaction extends BaseEntity {
     private String password;
 
     @Column(name = "DGSTFN_SCR", nullable = false)
-    private Integer satisfactionLevel;
+    private Integer stsfdgLevel;
 
     @Column(name = "STSFDG_CN", length = 2500)
-    private String satisfactionOpinion;
+    private String stsfdgCn;
 
     @Builder.Default
-    @Column(name = "USE_AT", length = 1)
-    private String useAt = "Y";
+    @Column(name = "USE_YN", length = 1)
+    private String useYn = "Y";
 
-    public void update(Integer satisfactionLevel, String satisfactionOpinion, String password) {
-        this.satisfactionLevel = satisfactionLevel;
-        this.satisfactionOpinion = satisfactionOpinion;
+    public void update(Integer stsfdgLevel, String stsfdgCn, String password) {
+        this.stsfdgLevel = stsfdgLevel;
+        this.stsfdgCn = stsfdgCn;
         if (password != null && !password.isEmpty()) {
             this.password = password;
         }
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
     }
 }

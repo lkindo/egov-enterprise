@@ -15,9 +15,9 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class CommunityUserId implements Serializable {
 
-    @Column(name = "CMMNTY_ID", length = 20, nullable = false)
-    private String cmmntyId;
+    @Column(name = "CMNTY_ID", length = 20, nullable = false)
+    private String cmntyId;
 
-    @Column(name = "EMPLYR_ID", length = 20, nullable = false)
-    private String emplyrId;
+    @Column(name = "USER_ID", length = 30, nullable = false)
+    private String userId;
 }

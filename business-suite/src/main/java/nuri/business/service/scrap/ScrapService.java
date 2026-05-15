@@ -45,7 +45,7 @@ public class ScrapService implements EgovScrapService {
         Scrap scrap = Scrap.builder()
                 .scrapId(scrapId)
                 .bbsId(dto.getBbsId())
-                .nttId(dto.getNttId())
+                .pstId(dto.getPstId())
                 .scrapNm(dto.getScrapNm())
                 .scrapUrl(dto.getScrapUrl())
                 .scrapDc(dto.getScrapDc())

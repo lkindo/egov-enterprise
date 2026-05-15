@@ -18,51 +18,51 @@ public class MemoReport extends BaseEntity {
 
     @Id
     @Column(name = "REPRT_ID", length = 20)
-    private String reprtId;
+    private String rptId;
 
     @Column(name = "REPRT_SJ", length = 255, nullable = false)
-    private String reprtSj;
+    private String rptTtl;
 
     @Column(name = "MEMO_RPT_YMD", length = 10)
-    private String reportDe;
+    private String rptYmd;
 
     @Column(name = "WRTER_ID", length = 20, nullable = false)
-    private String wrterId;
+    private String writerId;
 
     @Column(name = "REPORTR_ID", length = 20, nullable = false)
-    private String reportrId;
+    private String rptUserId;
 
     @Column(name = "REPORT_CN", columnDefinition = "TEXT")
-    private String reportCn;
+    private String rptCn;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
     @Column(name = "DRCT_MATTER", length = 2000)
-    private String drctMatter;
+    private String instrCn;
 
     @Column(name = "DRCT_MATTER_REGIST_DT", length = 20)
-    private String drctMatterRegistDt;
+    private String instrRegDt;
 
     @Column(name = "REPORTR_INQIRE_DT", length = 20)
-    private String reportrInqireDt;
+    private String rptInqDt;
 
-    public void update(String reprtSj, String reportDe, String wrterId, String reportrId,
-                      String reportCn, String atchFileId) {
-        this.reprtSj = reprtSj;
-        this.reportDe = reportDe;
-        this.wrterId = wrterId;
-        this.reportrId = reportrId;
-        this.reportCn = reportCn;
+    public void update(String rptTtl, String rptYmd, String writerId, String rptUserId,
+                      String rptCn, String atchFileId) {
+        this.rptTtl = rptTtl;
+        this.rptYmd = rptYmd;
+        this.writerId = writerId;
+        this.rptUserId = rptUserId;
+        this.rptCn = rptCn;
         this.atchFileId = atchFileId;
     }
 
-    public void updateInqireDt(String reportrInqireDt) {
-        this.reportrInqireDt = reportrInqireDt;
+    public void updateInqireDt(String rptInqDt) {
+        this.rptInqDt = rptInqDt;
     }
 
-    public void updateDrctMatter(String drctMatter, String drctMatterRegistDt) {
-        this.drctMatter = drctMatter;
-        this.drctMatterRegistDt = drctMatterRegistDt;
+    public void updateDrctMatter(String instrCn, String instrRegDt) {
+        this.instrCn = instrCn;
+        this.instrRegDt = instrRegDt;
     }
 }

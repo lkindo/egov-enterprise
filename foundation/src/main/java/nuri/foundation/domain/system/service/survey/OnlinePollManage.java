@@ -33,16 +33,16 @@ public class OnlinePollManage extends BaseEntity {
     private String pollId;
 
     @Column(name = "POLL_NM", length = 255, nullable = false)
-    private String pollNm;
+    private String pollTtl;
 
     @Column(name = "POLL_BGNG_YMD", length = 10)
-    private String pollBeginDe;
+    private String pollBgngYmd;
 
     @Column(name = "POLL_END_YMD", length = 10)
-    private String pollEndDe;
+    private String pollEndYmd;
 
     @Column(name = "POLL_KND", length = 20)
-    private String pollKindCode;
+    private String pollTypeCd;
 
     @Column(name = "POLL_DSUSE_YN", length = 1)
     @Builder.Default
@@ -56,12 +56,12 @@ public class OnlinePollManage extends BaseEntity {
     @Builder.Default
     private List<OnlinePollItem> pollItems = new ArrayList<>();
 
-    public void update(String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode,
+    public void update(String pollTtl, String pollBgngYmd, String pollEndYmd, String pollTypeCd,
             String pollDsuseYn, String pollAutoDsuseYn) {
-        this.pollNm = pollNm;
-        this.pollBeginDe = pollBeginDe;
-        this.pollEndDe = pollEndDe;
-        this.pollKindCode = pollKindCode;
+        this.pollTtl = pollTtl;
+        this.pollBgngYmd = pollBgngYmd;
+        this.pollEndYmd = pollEndYmd;
+        this.pollTypeCd = pollTypeCd;
         this.pollDsuseYn = pollDsuseYn;
         this.pollAutoDsuseYn = pollAutoDsuseYn;
     }

@@ -17,10 +17,10 @@ public interface EgovScheduleService {
     List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate);
 
     // New methods for scoped access (Personal / Dept)
-    Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId,
+    Page<ScheduleDto> getScheduleList(String schdlSeCd, String ownerId,
             @org.springframework.lang.NonNull Pageable pageable);
 
-    List<ScheduleDto> getScheduleListByDateRange(String schdulSe, String ownerId, String startDate, String endDate);
+    List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate, String endDate);
 
     ScheduleDto getSchedule(String id);
 

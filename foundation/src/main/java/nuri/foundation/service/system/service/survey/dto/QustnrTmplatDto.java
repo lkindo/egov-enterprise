@@ -16,16 +16,16 @@ import java.time.LocalDateTime;
 public class QustnrTmplatDto {
 
     @Schema(description = "설문템플릿아이디")
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
-    @Schema(description = "설문템플릿유형")
-    private String qustnrTmplatTy;
+    @Schema(description = "설문템플릿유형코드")
+    private String srvyTmplatTypeCd;
 
     @Schema(description = "설문템플릿이미지경로")
-    private String qustnrTmplatImagepathnm;
+    private String srvyTmplatImgPath;
 
     @Schema(description = "설문템플릿내용")
-    private String qustnrTmplatCn;
+    private String srvyTmplatCn;
 
     @Schema(description = "등록자")
     private String createdBy;
@@ -36,10 +36,10 @@ public class QustnrTmplatDto {
     public static QustnrTmplatDto from(QustnrTmplat entity) {
         if (entity == null) return null;
         return QustnrTmplatDto.builder()
-                .qustnrTmplatId(entity.getQustnrTmplatId())
-                .qustnrTmplatTy(entity.getQustnrTmplatTy())
-                .qustnrTmplatImagepathnm(entity.getQustnrTmplatImagepathnm())
-                .qustnrTmplatCn(entity.getQustnrTmplatCn())
+                .srvyTmplatId(entity.getSrvyTmplatId())
+                .srvyTmplatTypeCd(entity.getSrvyTmplatTypeCd())
+                .srvyTmplatImgPath(entity.getSrvyTmplatImgPath())
+                .srvyTmplatCn(entity.getSrvyTmplatCn())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

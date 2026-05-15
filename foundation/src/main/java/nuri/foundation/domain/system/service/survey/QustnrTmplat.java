@@ -19,23 +19,23 @@ public class QustnrTmplat extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
     @Column(name = "SRVY_TMPLT_TYPE", length = 100)
-    private String qustnrTmplatTy;
+    private String srvyTmplatTypeCd;
 
     @Column(name = "QUSTNR_TMPLAT_DC", length = 2000)
-    private String qustnrTmplatCn; // DTO와 맞춤 (Cn)
+    private String srvyTmplatCn;
 
     @Column(name = "QUSTNR_TMPLAT_PATH_NM", length = 100)
-    private String qustnrTmplatImagepathnm; // DTO와 맞춤 (Imagepathnm)
+    private String srvyTmplatImgPath;
 
     @Column(name = "SRVY_TMPLT_IMG_INFO")
-    private byte[] qustnrTmplatImageInfo;
+    private byte[] srvyTmplatImgInfo;
 
-    public void update(String qustnrTmplatTy, String qustnrTmplatImagepathnm, String qustnrTmplatCn) {
-        this.qustnrTmplatTy = qustnrTmplatTy;
-        this.qustnrTmplatImagepathnm = qustnrTmplatImagepathnm;
-        this.qustnrTmplatCn = qustnrTmplatCn;
+    public void update(String srvyTmplatTypeCd, String srvyTmplatImgPath, String srvyTmplatCn) {
+        this.srvyTmplatTypeCd = srvyTmplatTypeCd;
+        this.srvyTmplatImgPath = srvyTmplatImgPath;
+        this.srvyTmplatCn = srvyTmplatCn;
     }
 }

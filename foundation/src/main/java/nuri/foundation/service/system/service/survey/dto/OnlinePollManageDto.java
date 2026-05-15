@@ -21,17 +21,17 @@ public class OnlinePollManageDto {
     @Schema(description = "설문 ID")
     private String pollId;
 
-    @Schema(description = "설명 명")
-    private String pollNm;
+    @Schema(description = "설문 제목")
+    private String pollTtl;
 
     @Schema(description = "설문 시작일")
-    private String pollBeginDe;
+    private String pollBgngYmd;
 
     @Schema(description = "설문 종료일")
-    private String pollEndDe;
+    private String pollEndYmd;
 
     @Schema(description = "설문 종류 코드")
-    private String pollKindCode;
+    private String pollTypeCd;
 
     @Schema(description = "설문 폐기 여부")
     private String pollDsuseYn;
@@ -52,10 +52,10 @@ public class OnlinePollManageDto {
         if (entity == null) return null;
         return OnlinePollManageDto.builder()
                 .pollId(entity.getPollId())
-                .pollNm(entity.getPollNm())
-                .pollBeginDe(entity.getPollBeginDe())
-                .pollEndDe(entity.getPollEndDe())
-                .pollKindCode(entity.getPollKindCode())
+                .pollTtl(entity.getPollTtl())
+                .pollBgngYmd(entity.getPollBgngYmd())
+                .pollEndYmd(entity.getPollEndYmd())
+                .pollTypeCd(entity.getPollTypeCd())
                 .pollDsuseYn(entity.getPollDsuseYn())
                 .pollAutoDsuseYn(entity.getPollAutoDsuseYn())
                 .createdBy(entity.getCreatedBy())

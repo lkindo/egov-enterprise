@@ -19,30 +19,30 @@ public class QustnrQesitm extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_QESITM_ID", length = 20)
-    private String qustnrQesitmId;
+    private String srvyQitemId;
 
     @Column(name = "QUSTNR_ID", length = 20)
-    private String qustnrId;
+    private String srvyId;
 
     @Column(name = "QITEM_SN")
-    private Long qestnSn;
+    private Long srvyQitemSn;
 
     @Column(name = "QESTN_TY_CODE", length = 20)
-    private String qestnTyCode;
+    private String srvyQitemTypeCd;
 
     @Column(name = "QESTN_CN", length = 2500)
-    private String qestnCn;
+    private String srvyQitemCn;
 
     @Column(name = "MAX_CHC_CNT")
-    private Integer mxmmChoiseCo;
+    private Integer maxChcCnt;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
-    private String qustnrTmplatId;
+    private String srvyTmplatId;
 
-    public void update(Long qestnSn, String qestnTyCode, String qestnCn, Integer mxmmChoiseCo) {
-        this.qestnSn = qestnSn;
-        this.qestnTyCode = qestnTyCode;
-        this.qestnCn = qestnCn;
-        this.mxmmChoiseCo = mxmmChoiseCo;
+    public void update(Long srvyQitemSn, String srvyQitemTypeCd, String srvyQitemCn, Integer maxChcCnt) {
+        this.srvyQitemSn = srvyQitemSn;
+        this.srvyQitemTypeCd = srvyQitemTypeCd;
+        this.srvyQitemCn = srvyQitemCn;
+        this.maxChcCnt = maxChcCnt;
     }
 }

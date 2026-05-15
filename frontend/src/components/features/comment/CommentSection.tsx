@@ -12,14 +12,14 @@ import { createComment, deleteComment, updateComment } from '@/app/actions/comme
 import { useToast } from '@/app/components/ui/toast';
 
 interface CommentSectionProps {
-  nttId: number;
+  pstId: number;
   bbsId: string;
   initialComments: CommentVO[];
 }
 
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CommentSection({ nttId, bbsId, initialComments }: CommentSectionProps) {
+export default function CommentSection({ pstId, bbsId, initialComments }: CommentSectionProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   
@@ -33,22 +33,22 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
         case 'delete':
           return state.filter(c => c.id !== action.payload);
         case 'update':
-          return state.map(c => c.id === action.payload.id ? { ...c, commentCn: action.payload.commentCn } : c);
+          return state.map(c => c.id === action.payload.id ? { ...c, cmntCn: action.payload.cmntCn } : c);
         default:
           return state;
       }
     }
   );
 
-  const [commentCn, setCommentCn] = useState('');
+  const [cmntCn, setCmntCn] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editCn, setEditCn] = useState('');
 
   const handleCreate = async (formData: FormData) => {
-    const content = formData.get('commentCn') as string;
+    const content = formData.get('cmntCn') as string;
     if (!content.trim()) return;
 
-    setCommentCn(''); // Clear input immediately
+    setCmntCn(''); // Clear input immediately
     
     startTransition(async () => {
       // Add optimistic comment
@@ -57,7 +57,7 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
         type: 'add',
         payload: {
           id: tempId,
-          commentCn: content,
+          cmntCn: content,
           wrterNm: 'User', // Assume current user
           createdDate: new Date().toISOString(),
           isOptimistic: true
@@ -78,9 +78,9 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
       addOptimisticComment({ type: 'delete', payload: id });
       
       const formData = new FormData();
-      formData.append('commentId', id.toString());
+      formData.append('id', id.toString());
       formData.append('bbsId', bbsId);
-      formData.append('nttId', nttId.toString());
+      formData.append('pstId', pstId.toString());
       
       const result = await deleteComment(null, formData);
       if (!result.success) {
@@ -96,13 +96,13 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
     setEditingId(null);
     
     startTransition(async () => {
-      addOptimisticComment({ type: 'update', payload: { id, commentCn: originalContent } });
+      addOptimisticComment({ type: 'update', payload: { id, cmntCn: originalContent } });
       
       const formData = new FormData();
-      formData.append('commentId', id.toString());
-      formData.append('commentCn', originalContent);
+      formData.append('id', id.toString());
+      formData.append('cmntCn', originalContent);
       formData.append('bbsId', bbsId);
-      formData.append('nttId', nttId.toString());
+      formData.append('pstId', pstId.toString());
       
       const result = await updateComment(null, formData);
       if (!result.success) {
@@ -177,7 +177,7 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.id); setEditCn(comment.commentCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.id); setEditCn(comment.cmntCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
                               <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.id)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
                             </>
                           )}
@@ -192,7 +192,7 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
                         />
                       ) : (
                         <p className="text-slate-700 font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
-                          {comment.commentCn}
+                          {comment.cmntCn}
                         </p>
                       )}
                     </div>
@@ -213,7 +213,7 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
         transition={{ delay: 0.2 }}
       >
         <input type="hidden" name="bbsId" value={bbsId} />
-        <input type="hidden" name="nttId" value={nttId} />
+        <input type="hidden" name="pstId" value={pstId} />
         <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-indigo-500/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
         <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
           <CardContent className="p-12 space-y-8">
@@ -222,16 +222,16 @@ export default function CommentSection({ nttId, bbsId, initialComments }: Commen
               <div className="h-[2px] flex-1 bg-slate-100" />
             </div>
             <Textarea
-              name="commentCn"
+              name="cmntCn"
               placeholder="Inject your thoughts into the collective knowledge..."
-              value={commentCn}
-              onChange={(e) => setCommentCn(e.target.value)}
+              value={cmntCn}
+              onChange={(e) => setCmntCn(e.target.value)}
               className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-slate-900 tracking-tighter resize-none p-0 bg-transparent placeholder:text-slate-200 placeholder:uppercase"
             />
             <div className="flex justify-end border-t border-slate-100 pt-8">
               <Button
                 type="submit"
-                disabled={isPending || !commentCn.trim()}
+                disabled={isPending || !cmntCn.trim()}
                 className="h-16 px-12 rounded-[1.5rem] bg-slate-900 hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
                 {isPending ? (

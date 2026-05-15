@@ -12,30 +12,32 @@ interface ActionResponse {
 }
 
 interface BoardArticle {
-  nttSj: string;
-  nttCn: string;
+  pstTtl: string;
+  pstCn: string;
   bbsId: string;
-  replyAt?: string;
-  parntsId?: string;
+  replyYn?: string;
+  parnts?: string;
   eventDate?: string;
   qnaStatus?: string;
   qnaCategory?: string;
   password?: string;
   ntcrNm?: string;
   ntcrId?: string;
+  secretYn?: string;
+  noticeYn?: string;
 }
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const nttId = formData.get('nttId') as string;
-  const parntsId = formData.get('parntsId') as string;
-  const nttSj = formData.get('nttSj') as string;
-  const nttCn = formData.get('nttCn') as string;
+  const pstId = formData.get('pstId') as string;
+  const parnts = formData.get('parnts') as string;
+  const pstTtl = formData.get('pstTtl') as string;
+  const pstCn = formData.get('pstCn') as string;
   const bbsId = formData.get('bbsId') as string;
-  const isEdit = !!nttId && nttId !== '';
-  const isReply = !!parntsId && parntsId !== '' && !isEdit;
+  const isEdit = !!pstId && pstId !== '';
+  const isReply = !!parnts && parnts !== '' && !isEdit;
 
-  if (!nttSj || nttSj.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'nttSj' };
-  if (!nttCn || nttCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'nttCn' };
+  if (!pstTtl || pstTtl.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'pstTtl' };
+  if (!pstCn || pstCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'pstCn' };
 
   const eventDate = formData.get('eventDate') as string;
   const qnaStatus = formData.get('qnaStatus') as string;
@@ -43,6 +45,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const password = formData.get('password') as string;
   const ntcrNm = formData.get('ntcrNm') as string;
   const ntcrId = formData.get('ntcrId') as string;
+  const secretYn = formData.get('secretYn') as string || 'N';
+  const noticeYn = formData.get('noticeYn') as string || 'N';
 
   try {
     const cookieStore = await cookies();
@@ -50,19 +54,21 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const articleData: BoardArticle = { 
-      nttSj, 
-      nttCn, 
+      pstTtl, 
+      pstCn, 
       bbsId, 
       eventDate: eventDate || undefined, 
       qnaStatus: qnaStatus || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'QA01' : undefined), 
       qnaCategory: qnaCategory || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'CAT01' : undefined),
       password: password || '1',
       ntcrNm: ntcrNm || undefined,
-      ntcrId: ntcrId || undefined
+      ntcrId: ntcrId || undefined,
+      secretYn,
+      noticeYn
     };
     if (isReply) {
-      articleData.replyAt = 'Y';
-      articleData.parntsId = parntsId;
+      articleData.replyYn = 'Y';
+      articleData.parnts = parnts;
     }
 
     const apiFormData = new FormData();
@@ -73,7 +79,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     files.forEach(file => { if (file && file.size > 0) apiFormData.append('file', file); });
 
     const response = isEdit 
-      ? await client.put(`/bbs/${bbsId}/${nttId}`, apiFormData, {
+      ? await client.put(`/bbs/${bbsId}/${pstId}`, apiFormData, {
           ...axiosConfig,
           headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
         })
@@ -87,12 +93,12 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     }
 
     revalidatePath(`/admin/community/boards/selectBoardList`);
-    const targetId = isEdit ? nttId : response as string;
+    const targetId = isEdit ? pstId : response as string;
     
     return {
       success: true,
       message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
-      redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}`
+      redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstId=${targetId}`
     };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류가 발생했습니다.';
@@ -102,7 +108,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
 }
 
 export async function deleteBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const nttId = formData.get('nttId') as string;
+  const pstId = formData.get('pstId') as string;
   const bbsId = formData.get('bbsId') as string;
 
   try {
@@ -110,7 +116,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
+    const response = await client.delete(`/bbs/${bbsId}/${pstId}`, axiosConfig);
     
     if (response === null || response === undefined) {
       throw new Error('삭제에 실패했습니다.');
@@ -125,13 +131,13 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
   }
 }
 
-export async function likeBoardArticle(bbsId: string, nttId: string): Promise<{ success: boolean; count?: number }> {
+export async function likeBoardArticle(bbsId: string, pstId: string): Promise<{ success: boolean; count?: number }> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response = await client.patch<number>(`/boards/${bbsId}/posts/${nttId}/like`, null, axiosConfig);
+    const response = await client.patch<number>(`/bbs/${bbsId}/${pstId}/like`, null, axiosConfig);
 
     if (response) {
       return { success: true, count: response };

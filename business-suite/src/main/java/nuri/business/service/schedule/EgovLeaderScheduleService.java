@@ -9,13 +9,13 @@ public interface EgovLeaderScheduleService {
 
     Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, Pageable pageable);
 
-    LeaderScheduleDto getLeaderSchedule(String scheduleId);
+    LeaderScheduleDto getLeaderSchedule(String schdlId);
 
     String createLeaderSchedule(String userId, LeaderScheduleDto dto);
 
-    void updateLeaderSchedule(String scheduleId, String userId, LeaderScheduleDto dto);
+    void updateLeaderSchedule(String schdlId, String userId, LeaderScheduleDto dto);
 
-    void deleteLeaderSchedule(String scheduleId);
+    void deleteLeaderSchedule(String schdlId);
 
     // 간부 상태 관리
     Page<LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable);

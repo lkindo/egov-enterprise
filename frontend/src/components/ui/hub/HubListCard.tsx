@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils';
 
 export interface HubListItem {
   id?: string | number;
-  nttId?: string | number;
+  pstId?: string | number;
   title?: string;
-  nttSj?: string;
+  pstTtl?: string;
   date?: string;
   frstRegisterPnttmStr?: string;
   isNew?: boolean;
@@ -78,7 +78,7 @@ export function HubListCard({
           <Link
             href={moreHref}
             className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${title} 더보기`}
+            aria-label={`${title} ?�보�?}
           >
             <ArrowRight size={20} />
           </Link>
@@ -91,7 +91,7 @@ export function HubListCard({
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item, idx) => (
             <motion.div
-              key={`list-item-${title}-${item.id || item.nttId || idx}`}
+              key={`list-item-${title}-${item.id || item.pstId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-lg border border-transparent transition-all cursor-pointer group/item",
@@ -105,14 +105,14 @@ export function HubListCard({
                 <div className="w-1.5 h-1.5 rounded-lg bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
               </div>
               <span className="text-[15px] font-bold text-foreground line-clamp-1 tracking-tight">
-                {item.title || item.nttSj}
+                {item.title || item.pstTtl}
               </span>
             </motion.div>
           ))
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-bold tracking-tight">데이터가 없습니다.</p>
+            <p className="text-sm font-bold tracking-tight">?�이?��? ?�습?�다.</p>
           </div>
         )}
       </div>

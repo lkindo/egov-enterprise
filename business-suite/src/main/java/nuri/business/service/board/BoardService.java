@@ -92,7 +92,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSearchCondition condition = new BoardSearchCondition();
                 condition.setBbsId(bbsId);
-                condition.setUseAt("Y");
+                condition.setUseYn("Y");
                 condition.setSearchCnd(searchCnd);
                 condition.setSearchWrd(searchWrd);
                 condition.setOrderBy(orderBy);
@@ -125,9 +125,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         @Override
         @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
-                long totalArticles = boardRepository.countByBbsIdAndUseAt(bbsId, "Y");
-                long totalViews = boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y");
-                String topContributor = boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y");
+                long totalArticles = boardRepository.countByBbsIdAndUseYn(bbsId, "Y");
+                long totalViews = boardRepository.sumInqireCoByBbsIdAndUseYn(bbsId, "Y");
+                String topContributor = boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y");
 
                 // Logic derived from frontend: (count * 2) + 70, capped at 100
                 int intelligenceScore = (int) Math.min(100, (totalArticles * 2) + 70);
@@ -172,14 +172,14 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         Board board = boardMapper.toEntity(request, master.getBbsId(), ntcrId, ntcrNm, sortOrdr);
 
 
-                        Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                        Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
-                                        .getNttId();
+                                        .getPstId();
 
                         // 이벤트 발행 (통계 동기화 등)
-                        eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
+                        eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
 
-                        return nttId;
+                        return pstId;
                 } finally {
                         sample.stop(meterRegistry.timer("egov.board.create.post", "bbsId", request.bbsId()));
                 }
@@ -196,10 +196,10 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
-                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
+                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return createPost(userId, newRequest);
         }
@@ -229,21 +229,21 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
                 }
 
-                Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
+                Long pstSn = boardRepository.findMaxPstSn(master.getBbsId(), parent.getSortOrdr()) + 1;
 
                 String ntcrId = userId;
                 String ntcrNm = author != null ? author.getUserNm() : "익명";
 
-                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), ntcrId, ntcrNm, parent.getSortOrdr(), nttNo, parentId, parent.getReplyLc() + 1);
+                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), ntcrId, ntcrNm, parent.getSortOrdr(), pstSn, parentId, parent.getReplyLc() + 1);
 
 
-                Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
-                                .getNttId();
+                                .getPstId();
 
-                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
+                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
 
-                return nttId;
+                return pstId;
         }
 
         @Override
@@ -257,31 +257,31 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
-                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
+                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return replyPost(userId, parentId, newRequest);
         }
 
         @Override
         @Transactional
-        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId) {
-                BoardDetailResult detail = boardRepository.findArticleDetail(nttId)
+        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstId) {
+                BoardDetailResult detail = boardRepository.findArticleDetail(pstId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // Redis 기반 쓰기 지연 처리
-                viewCountService.increaseViewCount(nttId);
+                viewCountService.increaseViewCount(pstId);
 
                 return boardMapper.toDto(detail);
         }
 
         @Override
         @Transactional
-        public void updatePost(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request) {
+        public void updatePost(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
-                                .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
+                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
@@ -302,19 +302,19 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
                 }
 
-                board.update(request.nttSj(), request.nttCn(), 
+                board.update(request.pstTtl(), request.pstCn(), 
                                 request.ntcrId() != null ? request.ntcrId() : board.getNtcrId(), 
                                 request.ntcrNm() != null ? request.ntcrNm() : board.getNtcrNm(),
                                 request.password() != null ? request.password() : board.getPassword(), 
-                                request.ntceBgnde(), request.ntceEndde(),
+                                request.ntceBgnyYmd(), request.ntceEndYmd(),
                                 request.atchFileId(), eventDate,
                                 request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(),
-                                request.qnaCategory(), request.secretAt());
+                                request.qnaCategory(), request.secretYn());
         }
 
         @Override
         @Transactional
-        public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request,
+        public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
@@ -328,20 +328,20 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
-                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
+                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
-                updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(nttId, "nttId 는 null 일 수 없습니다"),
+                updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstId, "pstId 는 null 일 수 없습니다"),
                                 newRequest);
         }
 
         @Override
         @Transactional
-        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {
+        public void deletePost(@NonNull String bbsId, @NonNull Long pstId, String authorId) {
                 Board board = boardRepository
-                                .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
+                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
@@ -358,9 +358,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Integer incrementLike(@NonNull String bbsId, @NonNull Long nttId) {
+        public Integer incrementLike(@NonNull String bbsId, @NonNull Long pstId) {
                 Board board = boardRepository
-                                .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
+                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 board.increaseLikeCo();
