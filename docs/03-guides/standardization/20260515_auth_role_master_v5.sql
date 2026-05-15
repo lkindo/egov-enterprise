@@ -7,14 +7,13 @@
 BEGIN;
 
 -- 1. tb_author_info
-ALTER TABLE tb_author_info 
-    RENAME COLUMN author_code TO authrt_cd,
-    ALTER COLUMN authrt_cd TYPE VARCHAR(12),
-    RENAME COLUMN author_nm TO authrt_nm,
-    ALTER COLUMN authrt_nm TYPE VARCHAR(300),
-    RENAME COLUMN author_dc TO authrt_expln,
-    ALTER COLUMN authrt_expln TYPE VARCHAR(4000),
-    RENAME COLUMN creat_dt TO crt_dt;
+-- author_code -> authrt_cd (이미 변경됨)
+ALTER TABLE tb_author_info ALTER COLUMN authrt_cd TYPE VARCHAR(30);
+ALTER TABLE tb_author_info RENAME COLUMN author_nm TO authrt_nm;
+ALTER TABLE tb_author_info ALTER COLUMN authrt_nm TYPE VARCHAR(300);
+ALTER TABLE tb_author_info RENAME COLUMN author_dc TO authrt_expln;
+ALTER TABLE tb_author_info ALTER COLUMN authrt_expln TYPE VARCHAR(4000);
+ALTER TABLE tb_author_info RENAME COLUMN creat_dt TO crt_dt;
 
 COMMENT ON COLUMN tb_author_info.authrt_cd IS '권한코드';
 COMMENT ON COLUMN tb_author_info.authrt_nm IS '권한명';
@@ -22,16 +21,15 @@ COMMENT ON COLUMN tb_author_info.authrt_expln IS '권한설명';
 COMMENT ON COLUMN tb_author_info.crt_dt IS '생성일시';
 
 -- 2. tb_role_info
-ALTER TABLE tb_role_info 
-    RENAME COLUMN role_code TO role_cd,
-    ALTER COLUMN role_cd TYPE VARCHAR(12),
-    RENAME COLUMN role_nm TO role_nm,
-    ALTER COLUMN role_nm TYPE VARCHAR(300),
-    RENAME COLUMN role_dc TO role_expln,
-    ALTER COLUMN role_expln TYPE VARCHAR(4000),
-    RENAME COLUMN role_ty TO role_type_cd,
-    ALTER COLUMN role_type_cd TYPE VARCHAR(12),
-    RENAME COLUMN creat_dt TO crt_dt;
+ALTER TABLE tb_role_info RENAME COLUMN role_code TO role_cd;
+ALTER TABLE tb_role_info ALTER COLUMN role_cd TYPE VARCHAR(30);
+ALTER TABLE tb_role_info RENAME COLUMN role_nm TO role_nm;
+ALTER TABLE tb_role_info ALTER COLUMN role_nm TYPE VARCHAR(300);
+ALTER TABLE tb_role_info RENAME COLUMN role_dc TO role_expln;
+ALTER TABLE tb_role_info ALTER COLUMN role_expln TYPE VARCHAR(4000);
+ALTER TABLE tb_role_info RENAME COLUMN role_ty TO role_type_cd;
+ALTER TABLE tb_role_info ALTER COLUMN role_type_cd TYPE VARCHAR(30);
+ALTER TABLE tb_role_info RENAME COLUMN creat_dt TO crt_dt;
 
 COMMENT ON COLUMN tb_role_info.role_cd IS '역할아이디';
 COMMENT ON COLUMN tb_role_info.role_nm IS '역할명';

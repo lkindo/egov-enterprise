@@ -8,29 +8,26 @@
 BEGIN;
 
 -- 1. tb_user_info (사용자 기본 정보 - 실체 기반 교정)
-ALTER TABLE tb_user_info 
-    -- user_id, user_nm, eml_addr, zip 등은 물리 실체 유지하며 타입만 강제
-    ALTER COLUMN user_id TYPE VARCHAR(12),
-    ALTER COLUMN user_nm TYPE VARCHAR(300),
-    RENAME COLUMN password TO pswd,
-    ALTER COLUMN pswd TYPE VARCHAR(300),
-    ALTER COLUMN eml_addr TYPE VARCHAR(300),
-    RENAME COLUMN mbtlnum TO mbl_telno,
-    ALTER COLUMN mbl_telno TYPE VARCHAR(11), 
-    RENAME COLUMN fxnum TO fax_no,
-    ALTER COLUMN fax_no TYPE VARCHAR(20),
-    ALTER COLUMN zip TYPE CHAR(5),
-    -- 비표준 컬럼 RENAME 및 타입 강제
-    RENAME COLUMN status_code TO user_stts_cd,
-    ALTER COLUMN user_stts_cd TYPE VARCHAR(12),
-    RENAME COLUMN sexdstn_code TO gndr_cd,
-    ALTER COLUMN gndr_cd TYPE VARCHAR(12),
-    RENAME COLUMN brthdy TO brth_ymd,
-    ALTER COLUMN brth_ymd TYPE CHAR(8),
-    RENAME COLUMN offm_telno TO office_telno,
-    RENAME COLUMN lock_yn TO lck_yn,
-    ALTER COLUMN lck_yn TYPE CHAR(1),
-    RENAME COLUMN creat_dt TO crt_dt;
+ALTER TABLE tb_user_info ALTER COLUMN user_id TYPE VARCHAR(30);
+ALTER TABLE tb_user_info ALTER COLUMN user_nm TYPE VARCHAR(300);
+ALTER TABLE tb_user_info RENAME COLUMN password TO pswd;
+ALTER TABLE tb_user_info ALTER COLUMN pswd TYPE VARCHAR(300);
+ALTER TABLE tb_user_info ALTER COLUMN eml_addr TYPE VARCHAR(300);
+ALTER TABLE tb_user_info RENAME COLUMN mbtlnum TO mbl_telno;
+ALTER TABLE tb_user_info ALTER COLUMN mbl_telno TYPE VARCHAR(11); 
+ALTER TABLE tb_user_info RENAME COLUMN fxnum TO fax_no;
+ALTER TABLE tb_user_info ALTER COLUMN fax_no TYPE VARCHAR(20);
+ALTER TABLE tb_user_info ALTER COLUMN zip TYPE CHAR(5);
+ALTER TABLE tb_user_info RENAME COLUMN status_code TO user_stts_cd;
+ALTER TABLE tb_user_info ALTER COLUMN user_stts_cd TYPE VARCHAR(30);
+ALTER TABLE tb_user_info RENAME COLUMN sexdstn_code TO gndr_cd;
+ALTER TABLE tb_user_info ALTER COLUMN gndr_cd TYPE VARCHAR(30);
+ALTER TABLE tb_user_info RENAME COLUMN brthdy TO brth_ymd;
+ALTER TABLE tb_user_info ALTER COLUMN brth_ymd TYPE CHAR(8);
+ALTER TABLE tb_user_info RENAME COLUMN offm_telno TO office_telno;
+ALTER TABLE tb_user_info RENAME COLUMN lock_yn TO lck_yn;
+ALTER TABLE tb_user_info ALTER COLUMN lck_yn TYPE CHAR(1);
+ALTER TABLE tb_user_info RENAME COLUMN creat_dt TO crt_dt;
 
 COMMENT ON COLUMN tb_user_info.user_id IS '사용자아이디';
 COMMENT ON COLUMN tb_user_info.user_nm IS '사용자명';
@@ -47,16 +44,15 @@ COMMENT ON COLUMN tb_user_info.lck_yn IS '잠금여부';
 COMMENT ON COLUMN tb_user_info.crt_dt IS '생성일시';
 
 -- 2. tb_user_info_chg_dtls (사용자 정보 변경 내역)
-ALTER TABLE tb_user_info_chg_dtls 
-    RENAME COLUMN emplyr_id TO user_id,
-    ALTER COLUMN user_id TYPE VARCHAR(12),
-    RENAME COLUMN change_de TO chg_ymd,
-    ALTER COLUMN chg_ymd TYPE CHAR(8),
-    RENAME COLUMN change_rsn_cn TO chg_rsn_cn,
-    ALTER COLUMN chg_rsn_cn TYPE VARCHAR(4000),
-    RENAME COLUMN change_time TO chg_tm,
-    ALTER COLUMN chg_tm TYPE CHAR(6),
-    RENAME COLUMN creat_dt TO crt_dt;
+ALTER TABLE tb_user_info_chg_dtls RENAME COLUMN emplyr_id TO user_id;
+ALTER TABLE tb_user_info_chg_dtls ALTER COLUMN user_id TYPE VARCHAR(30);
+ALTER TABLE tb_user_info_chg_dtls RENAME COLUMN change_de TO chg_ymd;
+ALTER TABLE tb_user_info_chg_dtls ALTER COLUMN chg_ymd TYPE CHAR(8);
+ALTER TABLE tb_user_info_chg_dtls RENAME COLUMN change_rsn_cn TO chg_rsn_cn;
+ALTER TABLE tb_user_info_chg_dtls ALTER COLUMN chg_rsn_cn TYPE VARCHAR(4000);
+ALTER TABLE tb_user_info_chg_dtls RENAME COLUMN change_time TO chg_tm;
+ALTER TABLE tb_user_info_chg_dtls ALTER COLUMN chg_tm TYPE CHAR(6);
+ALTER TABLE tb_user_info_chg_dtls RENAME COLUMN creat_dt TO crt_dt;
 
 COMMENT ON COLUMN tb_user_info_chg_dtls.user_id IS '사용자아이디';
 COMMENT ON COLUMN tb_user_info_chg_dtls.chg_ymd IS '변경일자';

@@ -37,7 +37,8 @@ async function run() {
         await client.connect();
         
         // Support multiple statements
-        const statements = query.split(';').map(s => s.trim()).filter(s => s.length > 0);
+        const isRaw = process.argv.includes('--raw');
+        const statements = isRaw ? [query] : query.split(';').map(s => s.trim()).filter(s => s.length > 0);
         
         for (const statement of statements) {
             try {
