@@ -197,7 +197,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
@@ -258,7 +258,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
@@ -306,7 +306,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.ntcrId() != null ? request.ntcrId() : board.getNtcrId(), 
                                 request.ntcrNm() != null ? request.ntcrNm() : board.getNtcrNm(),
                                 request.password() != null ? request.password() : board.getPassword(), 
-                                request.ntceBgnyYmd(), request.ntceEndYmd(),
+                                request.ntceBgngYmd(), request.ntceEndYmd(),
                                 request.atchFileId(), eventDate,
                                 request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(),
                                 request.qnaCategory(), request.secretYn());
@@ -329,7 +329,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
+                                request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 

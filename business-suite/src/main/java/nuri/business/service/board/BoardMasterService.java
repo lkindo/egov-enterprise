@@ -91,7 +91,7 @@ public class BoardMasterService extends BaseAbstractService {
                 .bbsTtl(projection.getBbsTtl())
                 .bbsTypeCd(projection.getBbsTypeCd())
                 .bbsAttrCd(projection.getBbsAttrCd())
-                .tmplatId(projection.getTmpltId())
+                .tmplatId(projection.getTmplatId())
                 .useYn(projection.getUseYn())
                 .frstRegisterPnttm(projection.getCreatedDate())
                 .build();

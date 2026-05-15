@@ -35,7 +35,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("게시판 목록 조회 성공")
     void getBoardMasters_Success() throws Exception {
-        Page<BoardMasterDto> page = new PageImpl<>(List.of(BoardMasterDto.builder().bbsId("BBS_001").bbsNm("Test Board").build()));
+        Page<BoardMasterDto> page = new PageImpl<>(List.of(BoardMasterDto.builder().bbsId("BBS_001").bbsTtl("Test Board").build()));
         given(boardMasterService.getBoardMasterList(any(), any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/board-masters")
@@ -64,7 +64,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(post("/api/v1/admin/system/board-masters")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsNm\":\"New Board\", \"bbsIntrcn\":\"Description\"}")
+                .content("{\"bbsTtl\":\"New Board\", \"bbsExpln\":\"Description\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -76,7 +76,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     void updateBoardMaster_Success() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/board-masters/BBS_001")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsNm\":\"Updated Board\"}")
+                .content("{\"bbsTtl\":\"Updated Board\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

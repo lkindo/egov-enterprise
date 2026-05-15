@@ -52,40 +52,40 @@ class BoardMasterServiceLogicTest {
   void setUp() {
     mockBoardMaster = BoardMaster.builder()
         .bbsId("BBS_0000000001")
-        .bbsNm("사용자게시판")
-        .bbsIntrcn("게시판성공")
-        .bbsTyCode("BBST01")
-        .bbsAttrbCode("BBSA01")
-        .replyPosblAt("Y")
-        .fileAtchPosblAt("Y")
-        .atchPosblFileNumber(3)
+        .bbsTtl("사용자게시판")
+        .bbsExpln("게시판성공")
+        .bbsTypeCd("BBST01")
+        .bbsAttrCd("BBSA01")
+        .replyPsblYn("Y")
+        .fileAtchPsblYn("Y")
+        .atchPsblFileCnt(3)
         .atchPosblFileSize(1024L * 1024L * 5L) // 5MB
         .tmplatId("TMPL01")
         .useYn("Y")
         .createdBy("USER001")
         .lastModifiedBy("USER001")
         .blogAt("N")
-        .commentAt("Y")
-        .stsfdgAt("Y")
+        .commentYn("Y")
+        .stsfdgYn("Y")
         .build();
 
     boardMasterDto = BoardMasterDto.builder()
         .bbsId("BBS_0000000001")
-        .bbsNm("사용자게시판")
-        .bbsIntrcn("게시판성공")
-        .bbsTyCode("BBST01")
-        .bbsAttrbCode("BBSA01")
-        .replyPosblAt("Y")
-        .fileAtchPosblAt("Y")
-        .atchPosblFileNumber(3)
+        .bbsTtl("사용자게시판")
+        .bbsExpln("게시판성공")
+        .bbsTypeCd("BBST01")
+        .bbsAttrCd("BBSA01")
+        .replyPsblYn("Y")
+        .fileAtchPsblYn("Y")
+        .atchPsblFileCnt(3)
         .atchPosblFileSize(1024L * 1024L * 5L) // 5MB
         .tmplatId("TMPL01")
         .useYn("Y")
         .frstRegisterId("USER001")
         .lastUpdusrId("USER001")
         .blogAt("N")
-        .commentAt("Y")
-        .stsfdgAt("Y")
+        .commentYn("Y")
+        .stsfdgYn("Y")
         .build();
   }
 
@@ -97,13 +97,13 @@ class BoardMasterServiceLogicTest {
     when(boardMasterRepository.save(any(BoardMaster.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     BoardMasterDto newBoardMasterDto = BoardMasterDto.builder()
-        .bbsNm("신규 게시판")
-        .bbsIntrcn("신규 게시판성공")
-        .bbsTyCode("BBST01")
-        .bbsAttrbCode("BBSA01")
-        .replyPosblAt("Y")
-        .fileAtchPosblAt("Y")
-        .atchPosblFileNumber(3)
+        .bbsTtl("신규 게시판")
+        .bbsExpln("신규 게시판성공")
+        .bbsTypeCd("BBST01")
+        .bbsAttrCd("BBSA01")
+        .replyPsblYn("Y")
+        .fileAtchPsblYn("Y")
+        .atchPsblFileCnt(3)
         .atchPosblFileSize(1024L * 1024L * 5L)
         .tmplatId("TMPL01")
         .frstRegisterId("USER001")
@@ -118,7 +118,7 @@ class BoardMasterServiceLogicTest {
 
     BoardMaster savedEntity = captor.getValue();
     assertThat(savedEntity.getBbsId()).isEqualTo("BBS_NEW0000001");
-    assertThat(savedEntity.getBbsNm()).isEqualTo("신규 게시판");
+    assertThat(savedEntity.getBbsTtl()).isEqualTo("신규 게시판");
     assertThat(savedEntity.getUseYn()).isEqualTo("Y"); // Default value
     assertThat(savedEntity.getCreatedBy()).isEqualTo("USER001");
   }
@@ -143,8 +143,8 @@ class BoardMasterServiceLogicTest {
 
     BoardMasterDto updateDto = BoardMasterDto.builder()
         .bbsId("BBS_0000000001")
-        .bbsNm("사용자게시판")
-        .bbsIntrcn("사용자성공")
+        .bbsTtl("사용자게시판")
+        .bbsExpln("사용자성공")
         .lastUpdusrId("USER002")
         .build();
 
@@ -153,8 +153,8 @@ class BoardMasterServiceLogicTest {
 
     // Then
     verify(boardMasterRepository).findById("BBS_0000000001");
-    assertThat(mockBoardMaster.getBbsNm()).isEqualTo("사용자게시판");
-    assertThat(mockBoardMaster.getBbsIntrcn()).isEqualTo("사용자성공");
+    assertThat(mockBoardMaster.getBbsTtl()).isEqualTo("사용자게시판");
+    assertThat(mockBoardMaster.getBbsExpln()).isEqualTo("사용자성공");
   }
 
   @Test
@@ -213,7 +213,7 @@ class BoardMasterServiceLogicTest {
     // Given
     BoardMaster inactiveBoard = BoardMaster.builder()
         .bbsId("BBS_0000000002")
-        .stsfdgAt("N") // Not enabled
+        .stsfdgYn("N") // Not enabled
         .build();
     when(boardMasterRepository.findById("BBS_0000000002")).thenReturn(Optional.of(inactiveBoard));
 
@@ -257,9 +257,9 @@ class BoardMasterServiceLogicTest {
     List<BoardMasterSearchResult> searchResults = Arrays.asList(
         BoardMasterSearchResult.builder()
             .bbsId("BBS_0000000001")
-            .bbsNm("사용자게시판")
-            .bbsTyCode("BBST01")
-            .bbsAttrbCode("BBSA01")
+            .bbsTtl("사용자게시판")
+            .bbsTypeCd("BBST01")
+            .bbsAttrCd("BBSA01")
             .tmplatId("TMPL01")
             .useYn("Y")
             .build());
@@ -275,7 +275,7 @@ class BoardMasterServiceLogicTest {
     // Then
     assertThat(result).hasSize(1);
     assertThat(result.getContent().get(0).getBbsId()).isEqualTo("BBS_0000000001");
-    assertThat(result.getContent().get(0).getBbsNm()).isEqualTo("사용자게시판");
+    assertThat(result.getContent().get(0).getBbsTtl()).isEqualTo("사용자게시판");
   }
 
   @Test
@@ -289,7 +289,7 @@ class BoardMasterServiceLogicTest {
 
     // Then
     assertThat(result.getBbsId()).isEqualTo("BBS_0000000001");
-    assertThat(result.getBbsNm()).isEqualTo("사용자게시판");
+    assertThat(result.getBbsTtl()).isEqualTo("사용자게시판");
     assertThat(result.getUseYn()).isEqualTo("Y");
   }
 

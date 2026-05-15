@@ -22,9 +22,9 @@ public class NoteDto {
     private String atchFileId;
 
     @Schema(description = "쪽지 발신 ID")
-    private String noteTrnsmitId;
+    private String noteDsptchId;
     @Schema(description = "발신자 ID")
-    private String trnsmiterId;
+    private String dsptchUserId;
     @Schema(description = "발신자 명")
     private String trnsmiterNm;
 
@@ -45,7 +45,7 @@ public class NoteDto {
     @Schema(description = "최초 등록 일시")
     private LocalDateTime frstRegisterPnttm;
 
-    public String getTrnsmitterId() { return trnsmiterId; }
+    public String getTrnsmitterId() { return dsptchUserId; }
     public String getTrnsmitterNm() { return trnsmiterNm; }
     public LocalDateTime getSendDt() { return regDate; }
 

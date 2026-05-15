@@ -110,10 +110,10 @@ public interface BoardMapper {
     }
 
     @Named("calculateExpired")
-    default String calculateExpired(String ntceEndde) {
-        if (ntceEndde == null || ntceEndde.isEmpty()) return "N";
+    default String calculateExpired(String ntceEndYmd) {
+        if (ntceEndYmd == null || ntceEndYmd.isEmpty()) return "N";
         String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return ntceEndde.compareTo(today) < 0 ? "Y" : "N";
+        return ntceEndYmd.compareTo(today) < 0 ? "Y" : "N";
     }
 
     @Named("parseDateTime")

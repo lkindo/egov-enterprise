@@ -90,7 +90,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        BoardSearchResult resultItem = BoardSearchResult.builder().nttId(1L).build();
+        BoardSearchResult resultItem = BoardSearchResult.builder().pstId(1L).build();
         Page<BoardSearchResult> page = new PageImpl<>(Collections.singletonList(resultItem));
         BoardDto dto = BoardDto.builder().id(1L).build();
 
@@ -134,7 +134,7 @@ class BoardServiceTest {
                 null, null, null, "Y", null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board board = Board.builder().nttId(1L).build();
+        Board board = Board.builder().pstId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(user);
@@ -143,10 +143,10 @@ class BoardServiceTest {
         given(boardRepository.save(board)).willReturn(board);
 
         // when
-        Long nttId = boardService.createPost(userId, request);
+        Long pstId = boardService.createPost(userId, request);
 
         // then
-        assertThat(nttId).isEqualTo(1L);
+        assertThat(pstId).isEqualTo(1L);
         verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
     }
 
@@ -159,9 +159,9 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null,
                 null, null, null, "Y", null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board reply = Board.builder().nttId(2L).build();
+        Board reply = Board.builder().pstId(2L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
@@ -171,10 +171,10 @@ class BoardServiceTest {
         given(boardRepository.save(reply)).willReturn(reply);
 
         // when
-        Long nttId = boardService.replyPost(userId, parentId, request);
+        Long pstId = boardService.replyPost(userId, parentId, request);
 
         // then
-        assertThat(nttId).isEqualTo(2L);
+        assertThat(pstId).isEqualTo(2L);
     }
 
     @Test
@@ -182,19 +182,19 @@ class BoardServiceTest {
     void getPostDetail() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         BoardDetailResult detail = mock(BoardDetailResult.class);
-        BoardDto dto = BoardDto.builder().id(nttId).build();
+        BoardDto dto = BoardDto.builder().id(pstId).build();
 
-        given(boardRepository.findArticleDetail(nttId)).willReturn(Optional.of(detail));
+        given(boardRepository.findArticleDetail(pstId)).willReturn(Optional.of(detail));
         given(boardMapper.toDto(detail)).willReturn(dto);
 
         // when
-        BoardDto result = boardService.getPostDetail(bbsId, nttId);
+        BoardDto result = boardService.getPostDetail(bbsId, pstId);
 
         // then
-        assertThat(result.getId()).isEqualTo(nttId);
-        verify(viewCountService).increaseViewCount(nttId);
+        assertThat(result.getId()).isEqualTo(pstId);
+        verify(viewCountService).increaseViewCount(pstId);
     }
 
     @Test
@@ -202,20 +202,20 @@ class BoardServiceTest {
     void updatePost() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null,
                 null, null, "Y", null, null, null);
-        Board board = Board.builder().nttId(nttId).nttSj("Old").ntcrId(userId).build();
+        Board board = Board.builder().pstId(pstId).pstTtl("Old").ntcrId(userId).build();
 
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, nttId, request);
+        boardService.updatePost(bbsId, pstId, request);
 
         // then
-        assertThat(board.getNttSj()).isEqualTo("Updated");
+        assertThat(board.getPstTtl()).isEqualTo("Updated");
     }
 
     @Test
@@ -223,15 +223,15 @@ class BoardServiceTest {
     void deletePost() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         String userId = "user1";
-        Board board = Board.builder().nttId(nttId).useYn("Y").ntcrId(userId).build();
+        Board board = Board.builder().pstId(pstId).useYn("Y").ntcrId(userId).build();
 
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.deletePost(bbsId, nttId, "user1");
+        boardService.deletePost(bbsId, pstId, "user1");
 
         // then
         assertThat(board.getUseYn()).isEqualTo("N");
@@ -242,13 +242,13 @@ class BoardServiceTest {
     void incrementLike() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
-        Board board = Board.builder().nttId(nttId).likeCo(0).build();
+        Long pstId = 1L;
+        Board board = Board.builder().pstId(pstId).likeCo(0).build();
 
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
 
         // when
-        Integer result = boardService.incrementLike(bbsId, nttId);
+        Integer result = boardService.incrementLike(bbsId, pstId);
 
         // then
         assertThat(result).isEqualTo(1);
@@ -299,7 +299,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
                 null, null, "Y", null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().nttId(1L).build();
+        Board board = Board.builder().pstId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -308,10 +308,10 @@ class BoardServiceTest {
         given(boardRepository.save(any())).willReturn(board);
 
         // when
-        Long nttId = boardService.createPost(userId, request);
+        Long pstId = boardService.createPost(userId, request);
 
         // then
-        assertThat(nttId).isEqualTo(1L);
+        assertThat(pstId).isEqualTo(1L);
         verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
     }
 
@@ -323,7 +323,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
                 null, null, "Y", null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().nttId(1L).build();
+        Board board = Board.builder().pstId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
@@ -332,10 +332,10 @@ class BoardServiceTest {
         given(boardRepository.save(any())).willReturn(board);
 
         // when
-        Long nttId = boardService.createPost(userId, request);
+        Long pstId = boardService.createPost(userId, request);
 
         // then
-        assertThat(nttId).isEqualTo(1L);
+        assertThat(pstId).isEqualTo(1L);
         verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
     }
 
@@ -347,7 +347,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
                 null, null, "Y", "customId", "customNm", null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().nttId(1L).build();
+        Board board = Board.builder().pstId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
@@ -376,8 +376,8 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().nttId(1L).build());
-        given(boardRepository.save(any())).willReturn(Board.builder().nttId(1L).build());
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().pstId(1L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().pstId(1L).build());
 
         // when
         boardService.createPostWithFiles(userId, request, files);
@@ -396,8 +396,8 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null,
                 null, null, "Y", null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
-        Board reply = Board.builder().nttId(2L).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board reply = Board.builder().pstId(2L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
@@ -427,13 +427,13 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(Board.builder().nttId(2L).build());
-        given(boardRepository.save(any())).willReturn(Board.builder().nttId(2L).build());
+                .willReturn(Board.builder().pstId(2L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().pstId(2L).build());
 
         // when
         boardService.replyPostWithFiles(userId, parentId, request, files);
@@ -447,17 +447,17 @@ class BoardServiceTest {
     void updatePost_WithEventDate() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr,
                 null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().nttId(nttId).ntcrId(userId).build());
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        Board board = spy(Board.builder().pstId(pstId).ntcrId(userId).build());
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, nttId, request);
+        boardService.updatePost(bbsId, pstId, request);
 
         // then
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(),
@@ -469,16 +469,16 @@ class BoardServiceTest {
     void updatePost_InvalidEventDate() {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date",
                 null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().nttId(nttId).ntcrId(userId).build());
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        Board board = spy(Board.builder().pstId(pstId).ntcrId(userId).build());
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, nttId, request);
+        boardService.updatePost(bbsId, pstId, request);
 
         // then
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(), isNull(), any(), any(), any());
@@ -489,7 +489,7 @@ class BoardServiceTest {
     void updatePostWithFiles_NewFiles() throws IOException {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
                 null, "Y", null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
@@ -497,13 +497,13 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().nttId(nttId).ntcrId("user1").build();
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        Board board = Board.builder().pstId(pstId).ntcrId("user1").build();
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
 
         // when
-        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+        boardService.updatePostWithFiles(bbsId, pstId, request, files);
 
         // then
         verify(fileService).uploadFiles(files);
@@ -515,7 +515,7 @@ class BoardServiceTest {
     void updatePostWithFiles_ExistingFiles() throws IOException {
         // given
         String bbsId = "BBS_01";
-        Long nttId = 1L;
+        Long pstId = 1L;
         String atchFileId = "OLD_ATCH_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null,
                 null, null, "Y", null, null, null);
@@ -524,12 +524,12 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().nttId(nttId).ntcrId("user1").build();
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        Board board = Board.builder().pstId(pstId).ntcrId("user1").build();
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
 
         // when
-        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+        boardService.updatePostWithFiles(bbsId, pstId, request, files);
 
         // then
         verify(fileService).updateFiles(eq(atchFileId), eq(files));

@@ -121,7 +121,7 @@ class AddressBookServiceTest {
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("USER_1");
         
         nuri.business.service.addressbook.dto.AddressBookUserDto userDto = 
-            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().emplyrId("EMP_1").nm("User").build();
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("EMP_1").nm("User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkNm("New").adbkMan(List.of(userDto)).build();
 
         // When
@@ -152,12 +152,12 @@ class AddressBookServiceTest {
         given(addressBookRepository.findById(adbkId)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().emplyrId("REMOVE_ME").adbkId(adbkId).build();
+            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").adbkId(adbkId).build();
         given(addressBookUserRepository.findByAdbkId(adbkId)).willReturn(List.of(existingUser));
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("NEW_USER_ID");
 
         nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto = 
-            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().emplyrId("ADD_ME").nm("New User").build();
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").nm("New User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkId(adbkId).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 
         // When
@@ -174,7 +174,7 @@ class AddressBookServiceTest {
     void searchUsers_Success() {
         // Given
         nuri.business.domain.addressbook.AddressBookUserSearchResult view = mock(nuri.business.domain.addressbook.AddressBookUserSearchResult.class);
-        given(view.getEmplyrId()).willReturn("EMP_1");
+        given(view.getUserId()).willReturn("EMP_1");
         given(view.getNm()).willReturn("Name");
         Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> page = new PageImpl<>(List.of(view));
         given(addressBookRepository.searchAddressBookUsers(any(), any(Pageable.class))).willReturn(page);

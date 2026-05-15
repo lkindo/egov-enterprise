@@ -15,7 +15,7 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Post Content") @NotBlank(message = "Content is required.") @Size(max = 4000) @NonNull String pstCn,
 
-                @Schema(description = "Notice Start Date") @Size(max = 10) String ntceBgnyYmd,
+                @Schema(description = "Notice Start Date") @Size(max = 10) String ntceBgngYmd,
 
                 @Schema(description = "Notice End Date") @Size(max = 10) String ntceEndYmd,
 

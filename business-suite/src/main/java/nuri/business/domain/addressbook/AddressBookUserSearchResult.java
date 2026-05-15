@@ -23,9 +23,9 @@ public class AddressBookUserSearchResult {
     private String faxNo;
 
     // Compatibility getters
-    public String getEmplyrId() { return userId; }
-    public String getEmailAdres() { return emlAddr; }
-    public String getMoblphonNo() { return mblTelno; }
-    public String getOffmTelno() { return officeTelno; }
-    public String getFxnum() { return faxNo; }
+    public String getUserId() { return userId; }
+    public String getEmlAddr() { return emlAddr; }
+    public String getMblTelno() { return mblTelno; }
+    public String getOfficeTelno() { return officeTelno; }
+    public String getFaxNo() { return faxNo; }
 }

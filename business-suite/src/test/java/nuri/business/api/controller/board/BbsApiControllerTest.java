@@ -43,7 +43,7 @@ class BbsApiControllerTest {
     @DisplayName("게시판 목록 조회 성공")
     void getBoardList_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).nttSj("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
@@ -60,7 +60,7 @@ class BbsApiControllerTest {
     @DisplayName("게시글 상세 조회 성공")
     void getBoardDetail_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().id(1L).nttSj("Subject").build());
+        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().id(1L).pstTtl("Subject").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1/1")
@@ -76,7 +76,7 @@ class BbsApiControllerTest {
         // Given
         given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn(1L);
 
-        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"Subject\", \"nttCn\":\"Content\"}".getBytes());
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\"}".getBytes());
 
         // When & Then
         mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1")
@@ -105,7 +105,7 @@ class BbsApiControllerTest {
     void createBoard_WithFiles_Success() throws Exception {
         given(boardService.createPostWithFiles(anyString(), any(BoardSaveRequest.class), anyList())).willReturn(1L);
 
-        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"S\", \"pstCn\":\"C\"}".getBytes());
         MockMultipartFile filePart = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
 
         mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1")
@@ -118,7 +118,7 @@ class BbsApiControllerTest {
     @Test
     @DisplayName("게시글 수정 성공")
     void updateBoard_Success() throws Exception {
-        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"S\", \"pstCn\":\"C\"}".getBytes());
 
         mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1/1")
                 .file(boardPart)
@@ -146,7 +146,7 @@ class BbsApiControllerTest {
 
         given(boardService.createPost(eq("user01"), any(BoardSaveRequest.class))).willReturn(1L);
 
-        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"S\", \"pstCn\":\"C\"}".getBytes());
 
         mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1")
                 .file(boardPart)

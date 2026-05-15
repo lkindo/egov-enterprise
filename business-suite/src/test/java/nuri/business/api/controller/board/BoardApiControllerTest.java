@@ -39,7 +39,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 목록 조회 성공")
     void getPosts_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).nttSj("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -74,7 +74,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(post("/api/v1/boards/posts")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsId\":\"BBS_001\", \"nttSj\":\"Subject\", \"nttCn\":\"Content\"}")
+                .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

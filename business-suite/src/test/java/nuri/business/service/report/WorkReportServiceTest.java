@@ -35,8 +35,8 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 등록 테스트")
     void registerWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .reportId("REPO_001")
-                .reportSubject("주간보고")
+                .reprtId("REPO_001")
+                .reprtTtl("주간보고")
                 .reportContent("내용")
                 .writerId("user01")
                 .build();
@@ -50,14 +50,14 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 수정 테스트")
     void updateWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .reportId("REPO_001")
-                .reportSubject("수정보고")
+                .reprtId("REPO_001")
+                .reprtTtl("수정보고")
                 .writerId("user01")
                 .build();
 
         WorkReport report = WorkReport.builder()
-                .reportId("REPO_001")
-                .reportSubject("주간보고")
+                .reprtId("REPO_001")
+                .reprtTtl("주간보고")
                 .writerId("user01")
                 .build();
 
@@ -65,7 +65,7 @@ class WorkReportServiceTest {
 
         workReportService.updateWorkReport(dto);
 
-        assertEquals("수정보고", report.getReportSubject());
+        assertEquals("수정보고", report.getReprtTtl());
     }
 
     @Test
@@ -80,8 +80,8 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 상세 조회 테스트")
     void getWorkReportTest() {
         WorkReport report = WorkReport.builder()
-                .reportId("REPO_001")
-                .reportSubject("주간보고")
+                .reprtId("REPO_001")
+                .reprtTtl("주간보고")
                 .reportContent("내용")
                 .writerId("user01")
                 .build();
@@ -91,8 +91,8 @@ class WorkReportServiceTest {
         WorkReportDto result = workReportService.getWorkReport("REPO_001");
 
         assertNotNull(result);
-        assertEquals("REPO_001", result.getReportId());
-        assertEquals("주간보고", result.getReportSubject());
+        assertEquals("REPO_001", result.getReprtId());
+        assertEquals("주간보고", result.getReprtTtl());
     }
 
     @Test

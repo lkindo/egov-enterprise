@@ -67,7 +67,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).get("emplyrId")).isEqualTo("user1");
+        assertThat(result.get(0).get("userId")).isEqualTo("user1");
     }
 
     @Test
@@ -76,7 +76,7 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         Pageable pageable = PageRequest.of(0, 10);
-        Schedule schedule = Schedule.builder().schdulId("SCH_1").schdulNm("Test").build();
+        Schedule schedule = Schedule.builder().schdlId("SCH_1").schdlTtl("Test").build();
         Page<Schedule> page = new PageImpl<>(Collections.singletonList(schedule));
 
         given(scheduleRepository.findByFrstRegisterId(userId, pageable)).willReturn(page);
@@ -94,7 +94,7 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         String yearMonth = "202405";
-        Schedule schedule = Schedule.builder().schdulId("SCH_1").schdulNm("Test").build();
+        Schedule schedule = Schedule.builder().schdlId("SCH_1").schdlTtl("Test").build();
 
         given(scheduleRepository.findOverlappingSchedules(anyString(), anyString())).willReturn(Collections.singletonList(schedule));
 
@@ -110,14 +110,14 @@ class ScheduleServiceTest {
     void getSchedule() {
         // given
         String id = "SCH_1";
-        Schedule schedule = Schedule.builder().schdulId(id).schdulNm("Test").build();
+        Schedule schedule = Schedule.builder().schdlId(id).schdlTtl("Test").build();
         given(scheduleRepository.findById(id)).willReturn(Optional.of(schedule));
 
         // when
         ScheduleDto result = scheduleService.getSchedule(id);
 
         // then
-        assertThat(result.getSchdulId()).isEqualTo(id);
+        assertThat(result.getSchdlId()).isEqualTo(id);
     }
 
     @Test
@@ -126,7 +126,7 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdulNm("New Schedule")
+                .schdlTtl("New Schedule")
                 .build();
 
         // when
@@ -143,9 +143,9 @@ class ScheduleServiceTest {
         // given
         String id = "SCH_1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdulNm("Updated")
+                .schdlTtl("Updated")
                 .build();
-        Schedule schedule = Schedule.builder().schdulId(id).schdulNm("Old").build();
+        Schedule schedule = Schedule.builder().schdlId(id).schdlTtl("Old").build();
 
         given(scheduleRepository.findById(id)).willReturn(Optional.of(schedule));
 
@@ -153,7 +153,7 @@ class ScheduleServiceTest {
         scheduleService.updateSchedule(id, "user1", dto);
 
         // then
-        assertThat(schedule.getSchdulNm()).isEqualTo("Updated");
+        assertThat(schedule.getSchdlTtl()).isEqualTo("Updated");
     }
 
     @Test
@@ -161,7 +161,7 @@ class ScheduleServiceTest {
     void deleteSchedule() {
         // given
         String id = "SCH_1";
-        Schedule schedule = Schedule.builder().schdulId(id).build();
+        Schedule schedule = Schedule.builder().schdlId(id).build();
 
         given(scheduleRepository.findById(id)).willReturn(Optional.of(schedule));
 

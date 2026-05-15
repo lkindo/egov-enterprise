@@ -8,7 +8,7 @@ import java.util.List;
 public interface AddressBookUserRepository extends JpaRepository<AddressBookUser, String> {
     List<AddressBookUser> findByAdbkId(String adbkId);
 
-    void deleteByAdbkIdAndEmplyrId(String adbkId, String emplyrId);
+    void deleteByAdbkIdAndEmplyrId(String adbkId, String userId);
 
     void deleteByAdbkId(String adbkId);
 }

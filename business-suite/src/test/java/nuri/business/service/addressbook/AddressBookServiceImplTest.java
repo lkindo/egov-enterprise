@@ -94,13 +94,13 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Old").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser existingUser = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").emplyrId("E1").build();
+        AddressBookUser existingUser = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").userId("E1").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(existingUser));
 
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkId("A1")
                 .adbkNm("New")
-                .adbkMan(List.of(AddressBookUserDto.builder().emplyrId("E2").nm("NewUser").build())) // Add new user, remove E1
+                .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").nm("NewUser").build())) // Add new user, remove E1
                 .build();
         
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("AU2");
@@ -129,7 +129,7 @@ class AddressBookServiceImplTest {
         Pageable pageable = PageRequest.of(0, 10);
         // Repository returns a Projection usually, but here we can return mock or implementation
         AddressBookUserSearchResult proj = mock(AddressBookUserSearchResult.class);
-        given(proj.getEmplyrId()).willReturn("E1");
+        given(proj.getUserId()).willReturn("E1");
         given(proj.getNm()).willReturn("User1");
         
         given(addressBookRepository.searchAddressBookUsers(anyString(), eq(pageable)))
@@ -138,6 +138,6 @@ class AddressBookServiceImplTest {
         Page<AddressBookUserDto> result = addressBookService.searchUsers("keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getEmplyrId()).isEqualTo("E1");
+        assertThat(result.getContent().get(0).getUserId()).isEqualTo("E1");
     }
 }

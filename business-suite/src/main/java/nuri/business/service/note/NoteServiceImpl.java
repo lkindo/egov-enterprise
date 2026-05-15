@@ -117,17 +117,17 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
 
     private NoteDto convertToDto(NoteTrnsmit entity) {
         return NoteDto.builder()
-                .noteTrnsmitId(entity.getNoteDsptchId())
+                .noteDsptchId(entity.getNoteDsptchId())
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteSj() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
-                .trnsmiterId(entity.getDsptchUserId())
+                .dsptchUserId(entity.getDsptchUserId())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .build();
     }
 
     private NoteDto convertToDto(NoteRecptn entity) {
         return NoteDto.builder()
-                .noteTrnsmitId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteDsptchId() : null)
+                .noteDsptchId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteDsptchId() : null)
                 .noteRecptnId(entity.getNoteRecptnId())
                 .rcverId(entity.getRcverId())
                 .openYn(entity.getOpenYn())

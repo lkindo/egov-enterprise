@@ -24,12 +24,12 @@ public class BoardSearchResult {
     private Integer replyLc;
     private String useYn;
     private String atchFileId;
-    private String ntceBgnyYmd;
+    private String ntceBgngYmd;
     private String ntceEndYmd;
     private String sjBoldYn;
     private String noticeYn;
     private String secretYn;
-    private Integer commentCo; // Integer로 변경
+    private Integer commentCnt; // Integer로 변경
     private LocalDateTime eventDate;
     private String qnaStatus;
     private String qnaCategory;

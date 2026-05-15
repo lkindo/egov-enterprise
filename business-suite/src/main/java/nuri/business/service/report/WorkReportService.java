@@ -48,13 +48,13 @@ public class WorkReportService implements EgovWorkReportService {
 
     @Override
     @Transactional
-    public void deleteWorkReport(String reportId) {
-        workReportRepository.deleteById(Objects.requireNonNull(reportId));
+    public void deleteWorkReport(String reprtId) {
+        workReportRepository.deleteById(Objects.requireNonNull(reprtId));
     }
 
     @Override
-    public WorkReportDto getWorkReport(String reportId) {
-        return workReportRepository.findById(Objects.requireNonNull(reportId))
+    public WorkReportDto getWorkReport(String reprtId) {
+        return workReportRepository.findById(Objects.requireNonNull(reprtId))
                 .map(r -> Objects.requireNonNull(WorkReportDto.builder()
                         .rptId(r.getRptId())
                         .rptTtl(r.getRptTtl())

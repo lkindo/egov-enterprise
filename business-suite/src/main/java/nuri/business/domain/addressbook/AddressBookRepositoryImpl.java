@@ -70,10 +70,10 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
                 List<AddressBookUserSearchResult> results = queryFactory
                                 .select(Projections.fields(AddressBookUserSearchResult.class,
-                                                user.userId.as("emplyrId"),
+                                                user.userId.as("userId"),
                                                 user.userNm.as("nm"),
-                                                user.emailAdres,
-                                                user.moblphonNo))
+                                                user.emlAddr,
+                                                user.mblTelno))
                                 .from(user)
                                 .where(searchPredicate)
                                 .offset(pageable.getOffset())

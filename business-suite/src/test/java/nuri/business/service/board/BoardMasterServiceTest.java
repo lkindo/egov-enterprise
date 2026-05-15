@@ -51,13 +51,13 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("게시판 마스터 단건 조회 - 성공")
     void getBoardMaster_Success() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Test Board").build();
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsTtl("Test Board").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
         BoardMasterDto result = boardMasterService.getBoardMaster("BBS_01");
 
         assertThat(result).isNotNull();
-        assertThat(result.getBbsNm()).isEqualTo("Test Board");
+        assertThat(result.getBbsTtl()).isEqualTo("Test Board");
     }
 
     @Test
@@ -81,15 +81,15 @@ class BoardMasterServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBbsNm()).isEqualTo("Test Board");
+        assertThat(result.getContent().get(0).getBbsTtl()).isEqualTo("Test Board");
     }
     
-    private BoardMasterSearchResult mockSearchResult(String bbsId, String bbsNm) {
+    private BoardMasterSearchResult mockSearchResult(String bbsId, String bbsTtl) {
         return new BoardMasterSearchResult() {
             @Override public String getBbsId() { return bbsId; }
-            @Override public String getBbsNm() { return bbsNm; }
-            @Override public String getBbsTyCode() { return "TY01"; }
-            @Override public String getBbsAttrbCode() { return "AT01"; }
+            @Override public String getBbsTtl() { return bbsTtl; }
+            @Override public String getBbsTypeCd() { return "TY01"; }
+            @Override public String getBbsAttrCd() { return "AT01"; }
             @Override public String getTmplatId() { return "TMP_01"; }
             @Override public String getUseAt() { return "Y"; }
         };
@@ -101,7 +101,7 @@ class BoardMasterServiceTest {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(idgenService.getNextStringId()).willReturn("BBS_01");
-            BoardMasterDto dto = BoardMasterDto.builder().bbsNm("New Board").build();
+            BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("New Board").build();
 
             String bbsId = boardMasterService.createBoardMaster(dto);
 
@@ -115,13 +115,13 @@ class BoardMasterServiceTest {
     void updateBoardMaster() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Old Board").build();
+            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsTtl("Old Board").build();
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-            BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsNm("Updated Board").build();
+            BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsTtl("Updated Board").build();
             boardMasterService.updateBoardMaster(dto);
 
-            assertThat(master.getBbsNm()).isEqualTo("Updated Board");
+            assertThat(master.getBbsTtl()).isEqualTo("Updated Board");
         }
     }
 
@@ -142,7 +142,7 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("만족도 및 댓글 사용 가능 여부 확인")
     void canUseSatisfactionAndComment() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgAt("Y").commentAt("N").build();
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgYn("Y").commentYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
         assertThat(boardMasterService.canUseSatisfaction("BBS_01")).isTrue();
@@ -193,7 +193,7 @@ class BoardMasterServiceTest {
     @DisplayName("ID 생성 실패 시 예외 발생")
     void createBoardMaster_IdGenError() throws Exception {
         given(idgenService.getNextStringId()).willThrow(new RuntimeException("ID Gen Error"));
-        BoardMasterDto dto = BoardMasterDto.builder().bbsNm("Error Board").build();
+        BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("Error Board").build();
 
         assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster(dto));
     }
@@ -205,16 +205,16 @@ class BoardMasterServiceTest {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(idgenService.getNextStringId()).willReturn("BBS_02");
             BoardMasterDto dto = BoardMasterDto.builder()
-                    .bbsNm("Full Board")
+                    .bbsTtl("Full Board")
                     .blogAt("Y")
-                    .commentAt("Y")
-                    .stsfdgAt("Y")
+                    .commentYn("Y")
+                    .stsfdgYn("Y")
                     .build();
 
             boardMasterService.createBoardMaster(dto);
 
             verify(boardMasterRepository).save(argThat(bm -> 
-                "Y".equals(bm.getBlogAt()) && "Y".equals(bm.getCommentAt()) && "Y".equals(bm.getStsfdgAt())
+                "Y".equals(bm.getBlogAt()) && "Y".equals(bm.getCommentYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
     }

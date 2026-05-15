@@ -59,7 +59,7 @@ public class Board extends BaseEntity implements Serializable {
     private String useYn = "Y";
 
     @Column(name = "PST_BGN_YMD", length = 20)
-    private String ntceBgnyYmd;
+    private String ntceBgngYmd;
 
     @Column(name = "PST_END_YMD", length = 20)
     private String ntceEndYmd;
@@ -96,14 +96,14 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer likeCo = 0;
 
-    public void update(String pstTtl, String pstCn, String ntcrId, String ntcrNm, String password, String ntceBgnyYmd,
+    public void update(String pstTtl, String pstCn, String ntcrId, String ntcrNm, String password, String ntceBgngYmd,
             String ntceEndYmd, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretYn) {
         this.pstTtl = pstTtl;
         this.pstCn = pstCn;
         this.ntcrId = ntcrId;
         this.ntcrNm = ntcrNm;
         this.password = password;
-        this.ntceBgnyYmd = ntceBgnyYmd;
+        this.ntceBgngYmd = ntceBgngYmd;
         this.ntceEndYmd = ntceEndYmd;
         this.atchFileId = atchFileId;
         this.eventDate = eventDate;

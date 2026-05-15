@@ -17,5 +17,5 @@ public class FileDto {
     private String fileExtsn;
     private Long fileMg;
     private String fileCn;
-    private String creatDt;
+    private String createdDate;
 }

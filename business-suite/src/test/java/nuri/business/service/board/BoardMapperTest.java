@@ -20,8 +20,8 @@ class BoardMapperTest {
     @DisplayName("Entity -> DTO 변환 테스트")
     void toDtoTest() {
         Board board = Board.builder()
-                .nttId(1L)
-                .nttSj("제목")
+                .pstId(1L)
+                .pstTtl("제목")
                 .createdDate(LocalDateTime.of(2026, 5, 3, 10, 0))
                 .blogId("BLOG1")
                 .build();

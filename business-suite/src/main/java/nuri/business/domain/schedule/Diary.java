@@ -28,7 +28,7 @@ public class Diary extends BaseEntity implements Serializable {
     private String diaryId;
 
     @Column(name = "SCHDUL_ID", length = 20)
-    private String schdulId;
+    private String schdlId;
 
     @Column(name = "DIARY_PROGRS_RT")
     private Integer diaryProcsPte;

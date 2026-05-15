@@ -88,8 +88,8 @@ class NoteServiceImplTest {
         
         Note note = Note.builder().noteId("N_2").noteSj("Subject 2").build();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                .noteTrnsmitId("NT_1")
-                .trnsmiterId(userId)
+                .noteDsptchId("NT_1")
+                .dsptchUserId(userId)
                 .note(note)
                 .build();
                 
@@ -103,7 +103,7 @@ class NoteServiceImplTest {
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getNoteId()).isEqualTo("N_2");
-        assertThat(result.getContent().get(0).getNoteTrnsmitId()).isEqualTo("NT_1");
+        assertThat(result.getContent().get(0).getNoteDsptchId()).isEqualTo("NT_1");
     }
 
     @Test

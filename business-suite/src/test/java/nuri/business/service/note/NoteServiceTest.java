@@ -75,13 +75,13 @@ class NoteServiceTest {
     void getSentNotes_NoSearch() {
         Pageable pageable = PageRequest.of(0, 10);
         Note note = Note.builder().noteId("N1").noteSj("S1").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteTrnsmitId("T1").note(note).build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteDsptchId("T1").note(note).build();
         given(noteTrnsmitRepository.findByTrnsmiterId("user1", pageable)).willReturn(new PageImpl<>(List.of(trnsmit)));
 
         Page<NoteDto> result = noteService.getSentNotes("user1", "", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getNoteTrnsmitId()).isEqualTo("T1");
+        assertThat(result.getContent().get(0).getNoteDsptchId()).isEqualTo("T1");
     }
 
     @Test
@@ -113,13 +113,13 @@ class NoteServiceTest {
     @DisplayName("쪽지 상세 조회 - 발신 타입")
     void getNoteDetail_Sent() {
         Note note = Note.builder().noteId("N1").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteTrnsmitId("T1").trnsmiterId("user1").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteDsptchId("T1").dsptchUserId("user1").build();
         given(noteRepository.findById("N1")).willReturn(Optional.of(note));
         given(noteTrnsmitRepository.findById("T1")).willReturn(Optional.of(trnsmit));
 
         NoteDto dto = noteService.getNoteDetail("N1", "sent", "T1");
 
-        assertThat(dto.getNoteTrnsmitId()).isEqualTo("T1");
+        assertThat(dto.getNoteDsptchId()).isEqualTo("T1");
     }
 
     @Test

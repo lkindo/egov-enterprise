@@ -13,13 +13,13 @@ class BoardTest {
     void builderTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .nttSj("Title")
-                .nttCn("Content")
+                .pstTtl("Title")
+                .pstCn("Content")
                 .build();
 
         assertThat(board.getBbsId()).isEqualTo("BBS_001");
-        assertThat(board.getNttSj()).isEqualTo("Title");
-        assertThat(board.getNttCn()).isEqualTo("Content");
+        assertThat(board.getPstTtl()).isEqualTo("Title");
+        assertThat(board.getPstCn()).isEqualTo("Content");
         assertThat(board.getInqireCo()).isEqualTo(0);
         assertThat(board.getUseYn()).isEqualTo("Y");
     }
@@ -29,19 +29,19 @@ class BoardTest {
     void updateTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .nttSj("Old Title")
-                .nttCn("Old Content")
+                .pstTtl("Old Title")
+                .pstCn("Old Content")
                 .build();
 
         board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", "FILE_001", null, null, null, "N");
 
-        assertThat(board.getNttSj()).isEqualTo("New Title");
-        assertThat(board.getNttCn()).isEqualTo("New Content");
+        assertThat(board.getPstTtl()).isEqualTo("New Title");
+        assertThat(board.getPstCn()).isEqualTo("New Content");
         assertThat(board.getNtcrId()).isEqualTo("user01");
         assertThat(board.getNtcrNm()).isEqualTo("User 01");
         assertThat(board.getPassword()).isEqualTo("pass");
-        assertThat(board.getNtceBgnde()).isEqualTo("20240101");
-        assertThat(board.getNtceEndde()).isEqualTo("20241231");
+        assertThat(board.getNtceBgngYmd()).isEqualTo("20240101");
+        assertThat(board.getNtceEndYmd()).isEqualTo("20241231");
         assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
     }
 
@@ -89,12 +89,12 @@ class BoardTest {
     void updateReplyOrderTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .nttNo(1L)
+                .pstSn(1L)
                 .build();
 
         board.updateReplyOrder(2L);
 
-        assertThat(board.getNttNo()).isEqualTo(2L);
+        assertThat(board.getPstSn()).isEqualTo(2L);
     }
 
     @Test
@@ -107,7 +107,7 @@ class BoardTest {
         board.updateCommentCount(5);
         board.updateFileCount(3);
 
-        assertThat(board.getCommentCo()).isEqualTo(5);
-        assertThat(board.getFileCo()).isEqualTo(3);
+        assertThat(board.getCommentCnt()).isEqualTo(5);
+        assertThat(board.getFileCnt()).isEqualTo(3);
     }
 }

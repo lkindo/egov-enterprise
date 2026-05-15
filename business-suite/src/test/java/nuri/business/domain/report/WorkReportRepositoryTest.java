@@ -43,16 +43,16 @@ class WorkReportRepositoryTest {
     @BeforeEach
     void setUp() {
         WorkReport report1 = WorkReport.builder()
-                .reportId("REP001")
-                .reportSubject("Monthly Report")
+                .reprtId("REP001")
+                .reprtTtl("Monthly Report")
                 .reportContent("Details...")
                 .writerId("USER1")
                 .reportType("1")
                 .build();
         
         WorkReport report2 = WorkReport.builder()
-                .reportId("REP002")
-                .reportSubject("Weekly Status")
+                .reprtId("REP002")
+                .reprtTtl("Weekly Status")
                 .reportContent("Progress...")
                 .writerId("USER2")
                 .reportType("2")
@@ -80,7 +80,7 @@ class WorkReportRepositoryTest {
                 "USER1", null, null, null, null, null, null, null, PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getReportId()).isEqualTo("REP001");
+        assertThat(result.getContent().get(0).getReprtId()).isEqualTo("REP001");
     }
 
     @Test
@@ -90,7 +90,7 @@ class WorkReportRepositoryTest {
                 null, null, null, null, null, null, null, "2", PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getReportId()).isEqualTo("REP002");
+        assertThat(result.getContent().get(0).getReprtId()).isEqualTo("REP002");
     }
 
     @Test
@@ -109,6 +109,6 @@ class WorkReportRepositoryTest {
                 null, null, null, null, "0", "Monthly", null, null, PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getReportId()).isEqualTo("REP001");
+        assertThat(result.getContent().get(0).getReprtId()).isEqualTo("REP001");
     }
 }

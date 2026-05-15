@@ -25,7 +25,7 @@ public class BoardDetailResult {
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
-    private String ntceBgnyYmd;
+    private String ntceBgngYmd;
     private String ntceEndYmd;
     private Integer inqireCo;
     private Integer likeCo;
@@ -38,7 +38,7 @@ public class BoardDetailResult {
     private String sjBoldYn;
     private String noticeYn;
     private String secretYn;
-    private Integer commentCo;
+    private Integer commentCnt;
     private LocalDateTime eventDate;
     private String qnaStatus;
     private String qnaCategory;

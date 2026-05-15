@@ -47,7 +47,7 @@ class NoteDomainTest {
     @DisplayName("NoteTrnsmit 생명주기(onCreate) 테스트")
     void noteTrnsmit_lifecycle_test() throws Exception {
         NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                .noteTrnsmitId("T1")
+                .noteDsptchId("T1")
                 .build();
         
         assertNull(trnsmit.getDeleteAt());

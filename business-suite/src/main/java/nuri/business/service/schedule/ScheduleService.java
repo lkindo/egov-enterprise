@@ -35,10 +35,10 @@ public class ScheduleService implements EgovScheduleService {
 
         return users.getContent().stream().map(user -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("emplyrId", user.getUserId());
+            map.put("userId", user.getUserId());
             map.put("userNm", user.getUserNm());
             map.put("esntlId", user.getEsntlId());
-            map.put("offmTelno", user.getOffmTelno());
+            map.put("officeTelno", user.getOfficeTelno());
             map.put("homeadres", user.getHomeadres());
             map.put("detailAdres", user.getDetailAdres());
             return map;

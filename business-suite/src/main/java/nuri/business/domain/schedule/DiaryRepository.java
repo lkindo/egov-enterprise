@@ -12,7 +12,7 @@ public interface DiaryRepository extends JpaRepository<Diary, String> {
 
     @Query("""
             SELECT d FROM Diary d
-            WHERE (:searchCondition = 'SCHDUL_ID' AND d.schdulId = :searchKeyword)
+            WHERE (:searchCondition = 'SCHDUL_ID' AND d.schdlId = :searchKeyword)
                OR (:searchCondition = 'DIARY_NM' AND d.diaryNm LIKE '%' || :searchKeyword || '%')
                OR (:searchCondition = 'DRCT_MATTER' AND d.drctMatter LIKE '%' || :searchKeyword || '%')
                OR (:searchCondition = 'PARTCLR_MATTER' AND d.partclrMatter LIKE '%' || :searchKeyword || '%')

@@ -13,19 +13,19 @@ class BoardMasterTest {
     void builderTest() {
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_001")
-                .bbsNm("Notice")
-                .bbsTyCode("BBST01")
-                .bbsAttrbCode("BBSA01")
+                .bbsTtl("Notice")
+                .bbsTypeCd("BBST01")
+                .bbsAttrCd("BBSA01")
                 .build();
 
         assertThat(master.getBbsId()).isEqualTo("BBS_001");
-        assertThat(master.getBbsNm()).isEqualTo("Notice");
-        assertThat(master.getBbsTyCode()).isEqualTo("BBST01");
-        assertThat(master.getBbsAttrbCode()).isEqualTo("BBSA01");
+        assertThat(master.getBbsTtl()).isEqualTo("Notice");
+        assertThat(master.getBbsTypeCd()).isEqualTo("BBST01");
+        assertThat(master.getBbsAttrCd()).isEqualTo("BBSA01");
         assertThat(master.getUseYn()).isEqualTo("Y");
-        assertThat(master.getReplyPosblAt()).isEqualTo("N");
-        assertThat(master.getFileAtchPosblAt()).isEqualTo("N");
-        assertThat(master.getAtchPosblFileNumber()).isEqualTo(0);
+        assertThat(master.getReplyPsblYn()).isEqualTo("N");
+        assertThat(master.getFileAtchPsblYn()).isEqualTo("N");
+        assertThat(master.getAtchPsblFileCnt()).isEqualTo(0);
     }
 
     @Test
@@ -33,20 +33,20 @@ class BoardMasterTest {
     void updateTest() {
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_001")
-                .bbsNm("Old Name")
+                .bbsTtl("Old Name")
                 .build();
 
         master.update("New Name", "New Description", "Y", "Y", 5, 1024L, "TMP_01", "Y", "Y", "Y");
 
-        assertThat(master.getBbsNm()).isEqualTo("New Name");
-        assertThat(master.getBbsIntrcn()).isEqualTo("New Description");
-        assertThat(master.getReplyPosblAt()).isEqualTo("Y");
-        assertThat(master.getFileAtchPosblAt()).isEqualTo("Y");
-        assertThat(master.getAtchPosblFileNumber()).isEqualTo(5);
+        assertThat(master.getBbsTtl()).isEqualTo("New Name");
+        assertThat(master.getBbsExpln()).isEqualTo("New Description");
+        assertThat(master.getReplyPsblYn()).isEqualTo("Y");
+        assertThat(master.getFileAtchPsblYn()).isEqualTo("Y");
+        assertThat(master.getAtchPsblFileCnt()).isEqualTo(5);
         assertThat(master.getAtchPosblFileSize()).isEqualTo(1024L);
         assertThat(master.getTmplatId()).isEqualTo("TMP_01");
-        assertThat(master.getCommentAt()).isEqualTo("Y");
-        assertThat(master.getStsfdgAt()).isEqualTo("Y");
+        assertThat(master.getCommentYn()).isEqualTo("Y");
+        assertThat(master.getStsfdgYn()).isEqualTo("Y");
     }
 
     @Test

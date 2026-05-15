@@ -14,13 +14,13 @@ class CommentDomainTest {
         Comment comment = Comment.builder()
                 .id(1L)
                 .bbsId("BBS1")
-                .commentCn("Old Content")
+                .cmntCn("Old Content")
                 .useYn("Y")
                 .build();
         
         // When - update
         comment.update("New Content");
-        assertEquals("New Content", comment.getCommentCn());
+        assertEquals("New Content", comment.getCmntCn());
 
         // When - delete
         comment.delete();

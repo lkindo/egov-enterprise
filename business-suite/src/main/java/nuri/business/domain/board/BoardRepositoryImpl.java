@@ -38,7 +38,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.createdBy.as("frstRegisterId"),
                                                 QUser.user.userNm.coalesce(QBoard.board.ntcrNm).as("frstRegisterNm"),
                                                 QBoard.board.createdDate,
-                                                QBoard.board.ntceBgnyYmd,
+                                                QBoard.board.ntceBgngYmd,
                                                 QBoard.board.ntceEndYmd,
                                                 QBoard.board.inqireCo,
                                                 QBoard.board.likeCo,

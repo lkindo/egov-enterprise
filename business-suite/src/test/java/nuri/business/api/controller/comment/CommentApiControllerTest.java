@@ -72,12 +72,12 @@ class CommentApiControllerTest {
     @DisplayName("댓글 목록 조회 성공")
     void getComments_Success() throws Exception {
         // Given
-        Page<CommentDto> page = new PageImpl<>(List.of(CommentDto.builder().id(1L).commentCn("Comment").build()));
+        Page<CommentDto> page = new PageImpl<>(List.of(CommentDto.builder().id(1L).cmntCn("Comment").build()));
         given(commentService.getComments(anyLong(), anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/comments")
-                .param("nttId", "1")
+                .param("pstId", "1")
                 .param("bbsId", "BBS_001")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -96,7 +96,7 @@ class CommentApiControllerTest {
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nttId\":1, \"bbsId\":\"BBS_001\", \"commentCn\":\"Content\"}")
+                .content("{\"pstId\":1, \"bbsId\":\"BBS_001\", \"cmntCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())

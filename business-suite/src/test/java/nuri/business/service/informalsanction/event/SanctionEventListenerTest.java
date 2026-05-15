@@ -47,8 +47,8 @@ class SanctionEventListenerTest {
         UserDto userDto = UserDto.builder()
                 .userId("USER_001")
                 .userNm("홍길동")
-                .moblphonNo("01011112222")
-                .emailAdres("hong@egov.com")
+                .mblTelno("01011112222")
+                .emlAddr("hong@egov.com")
                 .build();
 
         given(userService.getUserById("USER_001")).willReturn(userDto);
@@ -88,8 +88,8 @@ class SanctionEventListenerTest {
         UserDto userDto = UserDto.builder()
                 .userId("USER_001")
                 .userNm("홍길동")
-                .moblphonNo("") // 휴대폰 없음
-                .emailAdres(null) // 이메일 없음
+                .mblTelno("") // 휴대폰 없음
+                .emlAddr(null) // 이메일 없음
                 .build();
 
         given(userService.getUserById("USER_001")).willReturn(userDto);

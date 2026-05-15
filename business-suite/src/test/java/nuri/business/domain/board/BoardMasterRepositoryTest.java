@@ -56,9 +56,9 @@ class BoardMasterRepositoryTest {
         // Given
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_TEST_001")
-                .bbsNm("Test Board")
-                .bbsTyCode("COM004")
-                .bbsAttrbCode("COM009")
+                .bbsTtl("Test Board")
+                .bbsTypeCd("COM004")
+                .bbsAttrCd("COM009")
                 .useYn("Y")
                 .build();
 
@@ -70,7 +70,7 @@ class BoardMasterRepositoryTest {
 
         // Then
         assertThat(found).isPresent();
-        assertThat(found.get().getBbsNm()).isEqualTo("Test Board");
+        assertThat(found.get().getBbsTtl()).isEqualTo("Test Board");
     }
 
     @Test
@@ -79,9 +79,9 @@ class BoardMasterRepositoryTest {
         // Given
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_TEST_002")
-                .bbsNm("Searchable Board")
-                .bbsTyCode("BBST01")
-                .bbsAttrbCode("BBSA01")
+                .bbsTtl("Searchable Board")
+                .bbsTypeCd("BBST01")
+                .bbsAttrCd("BBSA01")
                 .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
@@ -100,10 +100,10 @@ class BoardMasterRepositoryTest {
         // 1. Name search
         BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
         condition.setSearchWrd("Searchable");
-        condition.setSearchCnd("0"); // bbsNm
+        condition.setSearchCnd("0"); // bbsTtl
         Page<BoardMasterSearchResult> results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).isNotEmpty();
-        assertThat(results.getContent().get(0).getBbsNm()).contains("Searchable");
+        assertThat(results.getContent().get(0).getBbsTtl()).contains("Searchable");
 
         // 2. Type search
         condition.setSearchWrd("General");
@@ -119,9 +119,9 @@ class BoardMasterRepositoryTest {
         // Given
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_DETAIL_001")
-                .bbsNm("Detail Board")
-                .bbsTyCode("T1")
-                .bbsAttrbCode("A1")
+                .bbsTtl("Detail Board")
+                .bbsTypeCd("T1")
+                .bbsAttrCd("A1")
                 .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
@@ -141,7 +141,7 @@ class BoardMasterRepositoryTest {
 
         // Then
         assertThat(result).isPresent();
-        assertThat(result.get().getBbsNm()).isEqualTo("Detail Board");
+        assertThat(result.get().getBbsTtl()).isEqualTo("Detail Board");
         assertThat(result.get().getAuthFlag()).isEqualTo("Y");
     }
 
@@ -149,8 +149,8 @@ class BoardMasterRepositoryTest {
     @DisplayName("미사용 보드 검색 테스트 (notUsedOnly)")
     void searchNotUsedTest() {
         // Given
-        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsNm("Used").bbsTyCode("T1").bbsAttrbCode("A1").useYn("Y").build();
-        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsNm("Not Used").bbsTyCode("T1").bbsAttrbCode("A1").useYn("Y").build();
+        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsTtl("Used").bbsTypeCd("T1").bbsAttrCd("A1").useYn("Y").build();
+        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsTtl("Not Used").bbsTypeCd("T1").bbsAttrCd("A1").useYn("Y").build();
         boardMasterRepository.save(masterUsed);
         boardMasterRepository.save(masterNotUsed);
 

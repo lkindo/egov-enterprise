@@ -57,7 +57,7 @@ public class BoardDto {
     private final Integer replyLc;
 
     @Schema(description = "게시 시작일")
-    private final String ntceBgnyYmd;
+    private final String ntceBgngYmd;
 
     @Schema(description = "게시 종료일")
     private final String ntceEndYmd;
@@ -94,7 +94,7 @@ public class BoardDto {
     private final String blogYn;
 
     @Schema(description = "댓글 수")
-    private final Integer commentCo;
+    private final Integer commentCnt;
 
     @Schema(description = "게시판 명")
     private final String bbsTtl;
@@ -131,7 +131,7 @@ public class BoardDto {
 
     // Compatibility getters for legacy JSP
 
-    public Long getNttId() {
+    public Long getPstId() {
         return pstId;
     }
 
