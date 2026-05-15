@@ -97,12 +97,12 @@ async function cleanup() {
       });
       const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
       const testPolls = polls.filter((p: any) => 
-        p.(pollTtl || pollNm)?.startsWith('E2E Poll') || 
-        p.(pollTtl || pollNm)?.startsWith('E2E Duplicate Test') ||
-        p.(pollTtl || pollNm)?.startsWith('Debug')
+        (p.pollTtl || p.pollNm)?.startsWith('E2E Poll') || 
+        (p.pollTtl || p.pollNm)?.startsWith('E2E Duplicate Test') ||
+        (p.pollTtl || p.pollNm)?.startsWith('Debug')
       );
       for (const poll of testPolls) {
-        process.stdout.write(`  - Deleting Poll: ${poll.(pollTtl || pollNm)} (${poll.pollId})... `);
+        process.stdout.write(`  - Deleting Poll: ${(poll.pollTtl || poll.pollNm)} (${poll.pollId})... `);
         await axios.delete(`${API_BASE}/polls/${poll.pollId}`, { headers });
         console.log('DONE');
       }

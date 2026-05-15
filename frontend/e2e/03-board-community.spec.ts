@@ -58,8 +58,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 const responseHandler = async (response: import('@playwright/test').Response) => {
                     const url = response.url();
                     const method = response.request().method();
-                    // Actual backend URL: /api/v1/bbs/{bbsId}
-                    if (method === 'POST' && url.includes('/api/v1/bbs/')) {
+                    // Actual backend URL: /api/v1/boards/posts
+                    if (method === 'POST' && url.includes('/api/v1/boards/posts')) {
                         try {
                             const body = await response.json();
                             // Backend ApiResponse format: { success: true, data: pstId }
