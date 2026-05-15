@@ -13,12 +13,10 @@ import org.springframework.stereotype.Repository;
 @Repository("noteTrnsmitDomainRepository")
 public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {
 
-    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.trnsmiterId = :trnsmiterId AND (n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.deleteAt = 'N'")
-    Page<NoteTrnsmit> searchSentNotes(@Param("trnsmiterId") String trnsmiterId, @Param("searchWrd") String searchWrd,
-            Pageable pageable);
+    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.deleteAt = 'N'")
+    Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
+            @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 
-    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.trnsmiterId = :trnsmiterId AND t.deleteAt = 'N'")
-    Page<NoteTrnsmit> findByTrnsmiterId(@Param("trnsmiterId") String trnsmiterId, Pageable pageable);
-
-    Page<NoteTrnsmit> findByTrnsmiterIdAndDeleteAt(String trnsmiterId, String deleteAt, Pageable pageable);
+    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND t.deleteAt = 'N'")
+    Page<NoteTrnsmit> findByDsptchUserId(@Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 }

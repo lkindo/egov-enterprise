@@ -1,161 +1,138 @@
 package nuri.business.service.note;
 
-import nuri.business.domain.note.*;
+import nuri.business.domain.note.Note;
+import nuri.business.domain.note.NoteDomainRepository;
+import nuri.business.domain.note.NoteRecptn;
+import nuri.business.domain.note.NoteRecptnDomainRepository;
+import nuri.business.domain.note.NoteTrnsmit;
+import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
-import nuri.business.service.note.dto.NoteRecipientDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
-/**
- * 쪽지 관리를 위한 서비스 구현 클래스
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class NoteServiceImpl implements NoteService {
+public class NoteServiceImpl extends BaseAbstractService implements NoteService {
 
     private final NoteDomainRepository noteRepository;
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
     private final NoteRecptnDomainRepository noteRecptnRepository;
 
-    private final EgovIdGnrService egovNoteManageIdGnrService;
-    private final EgovIdGnrService egovNoteTrnsmitIdGnrService;
-    private final EgovIdGnrService egovNoteRecptnIdGnrService;
+    @org.springframework.beans.factory.annotation.Qualifier("egovNoteIdGnrService")
+    private final EgovIdGnrService egovNoteIdGnrService;
 
     @Override
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
-        if (searchWrd == null || searchWrd.isEmpty()) {
-            return noteRecptnRepository.findByRcverId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
-                    .map(this::convertToDto);
-        }
-        return noteRecptnRepository.searchReceivedNotes(userId, searchWrd, Objects.requireNonNull(pageable))
+        return noteRecptnRepository
+                .searchNoteRecptns(null, searchWrd, userId, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
     public Page<NoteDto> getSentNotes(String userId, String searchWrd, Pageable pageable) {
-        if (searchWrd == null || searchWrd.isEmpty()) {
-            return noteTrnsmitRepository
-                    .findByTrnsmiterId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
-                    .map(this::convertToDto);
-        }
-        return noteTrnsmitRepository.searchSentNotes(userId, searchWrd, Objects.requireNonNull(pageable))
+        return noteTrnsmitRepository
+                .searchNoteTrnsmits(null, searchWrd, userId, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
     public NoteDto getNoteDetail(String noteId, String type, String relationId) {
-        Note note = noteRepository.findById(Objects.requireNonNull(noteId))
-                .orElseThrow(() -> new IllegalArgumentException("Note not found: " + noteId));
-
-        NoteDto dto = NoteDto.builder()
-                .noteId(note.getNoteId())
-                .noteSj(note.getNoteSj())
-                .noteCn(note.getNoteCn())
-                .atchFileId(note.getAtchFileId())
-                .regDate(note.getFrstRegisterPnttm())
-                .build();
-
-        if ("recv".equals(type)) {
-            NoteRecptn recptn = noteRecptnRepository.findById(Objects.requireNonNull(relationId)).orElse(null);
-            if (recptn != null) {
-                dto.setNoteRecptnId(recptn.getNoteRecptnId());
-                dto.setRcverId(recptn.getRcverId());
-                dto.setOpenYn(recptn.getOpenYn());
-                // 열람 여부 업데이트 (필요시)
-            }
-        } else if ("sent".equals(type)) {
-            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(Objects.requireNonNull(relationId)).orElse(null);
-            if (trnsmit != null) {
-                dto.setNoteTrnsmitId(trnsmit.getNoteTrnsmitId());
-                dto.setTrnsmiterId(trnsmit.getTrnsmiterId());
-            }
+        if ("sent".equals(type)) {
+            return noteTrnsmitRepository.findById(relationId)
+                    .map(this::convertToDto)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        } else {
+            return noteRecptnRepository.findById(relationId)
+                    .map(this::convertToDto)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         }
-
-        return dto;
     }
 
     @Override
     @Transactional
-    public void sendNote(String userId, NoteDto dto) {
+    public void sendNote(String dsptchUserId, NoteDto dto) {
         try {
-            String noteId = egovNoteManageIdGnrService.getNextStringId();
+            String noteId = egovNoteIdGnrService.getNextStringId();
             Note note = Note.builder()
                     .noteId(noteId)
                     .noteSj(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
-                    .atchFileId(dto.getAtchFileId())
-                    .createdBy(userId)
+                    .createdBy(dsptchUserId)
                     .build();
-            noteRepository.save(Objects.requireNonNull(note));
+            noteRepository.save(note);
 
-            String trnsmitId = egovNoteTrnsmitIdGnrService.getNextStringId();
+            String trnsmitId = egovNoteIdGnrService.getNextStringId();
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                    .noteTrnsmitId(trnsmitId)
+                    .noteDsptchId(trnsmitId)
                     .note(note)
-                    .trnsmiterId(userId)
-                    .deleteAt("N")
-                    .createdBy(userId)
+                    .dsptchUserId(dsptchUserId)
+                    .createdBy(dsptchUserId)
                     .build();
-            noteTrnsmitRepository.save(Objects.requireNonNull(trnsmit));
+            noteTrnsmitRepository.save(trnsmit);
 
-            if (dto.getRecipients() != null) {
-                for (NoteRecipientDto rDto : dto.getRecipients()) {
-                    String recptnId = egovNoteRecptnIdGnrService.getNextStringId();
+            if (dto.getRcverId() != null) {
+                String[] rcverIds = dto.getRcverId().split(",");
+                for (String rcverId : rcverIds) {
                     NoteRecptn recptn = NoteRecptn.builder()
-                            .noteRecptnId(recptnId)
+                            .noteRecptnId(egovNoteIdGnrService.getNextStringId())
                             .note(note)
-                            .noteTrnsmit(trnsmit)
-                            .rcverId(rDto.getRcverId())
+                            .noteDsptch(trnsmit)
+                            .rcverId(rcverId.trim())
                             .openYn("N")
-                            .recptnSe(rDto.getRecptnSe())
-                            .createdBy(userId)
+                            .recptnSeCd("0")
+                            .createdBy(dsptchUserId)
                             .build();
-                    noteRecptnRepository.save(Objects.requireNonNull(recptn));
+                    noteRecptnRepository.save(recptn);
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send note", e);
+            log.error("Failed to send note", e);
+            throw new BusinessException("쪽지 발송 중 오류가 발생했습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Override
     @Transactional
     public void deleteNote(String relationId, String type) {
-        if ("recv".equals(type)) {
-            noteRecptnRepository.deleteById(Objects.requireNonNull(relationId));
+        if ("sent".equals(type)) {
+            noteTrnsmitRepository.deleteById(relationId);
         } else {
-            noteTrnsmitRepository.findById(Objects.requireNonNull(relationId)).ifPresent(t -> {
-                noteTrnsmitRepository.delete(Objects.requireNonNull(t));
-            });
+            noteRecptnRepository.deleteById(relationId);
         }
     }
 
-    private NoteDto convertToDto(NoteRecptn entity) {
-        Note note = Objects.requireNonNull(entity.getNote());
+    private NoteDto convertToDto(NoteTrnsmit entity) {
         return NoteDto.builder()
-                .noteId(note.getNoteId())
-                .noteSj(note.getNoteSj())
-                .noteRecptnId(entity.getNoteRecptnId())
-                .rcverId(entity.getRcverId())
-                .openYn(entity.getOpenYn())
-                .regDate(entity.getFrstRegisterPnttm())
+                .noteTrnsmitId(entity.getNoteDsptchId())
+                .noteSj(entity.getNote() != null ? entity.getNote().getNoteSj() : null)
+                .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
+                .trnsmiterId(entity.getDsptchUserId())
+                .frstRegisterPnttm(entity.getCreatedDate())
                 .build();
     }
 
-    private NoteDto convertToDto(NoteTrnsmit entity) {
-        Note note = Objects.requireNonNull(entity.getNote());
+    private NoteDto convertToDto(NoteRecptn entity) {
         return NoteDto.builder()
-                .noteId(note.getNoteId())
-                .noteSj(note.getNoteSj())
-                .noteTrnsmitId(entity.getNoteTrnsmitId())
-                .trnsmiterId(entity.getTrnsmiterId())
-                .regDate(entity.getFrstRegisterPnttm())
+                .noteTrnsmitId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteDsptchId() : null)
+                .noteRecptnId(entity.getNoteRecptnId())
+                .rcverId(entity.getRcverId())
+                .openYn(entity.getOpenYn())
+                .recptnSe(entity.getRecptnSeCd())
+                .frstRegisterPnttm(entity.getCreatedDate())
                 .build();
     }
 }

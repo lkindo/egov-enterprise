@@ -41,7 +41,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("그룹별 코드 목록 조회 테스트")
     void getCodesByGroupTest() {
-        given(commonCodeRepository.findByCodeGroupIdAndUseAt(anyString(), anyString()))
+        given(commonCodeRepository.findByCodeGroupIdAndUseYn(anyString(), anyString()))
                 .willReturn(List.of(CommonCode.builder()
                         .codeGroupId("GRP1")
                         .code("CODE1")

@@ -17,7 +17,12 @@ public class BoardMasterSearchResult {
     private String bbsAttrCd;
     private String bbsAttrCdNm;
     private String bbsTtl;
+    private String bbsExpln;
     private String tmplatId;
     private String useYn;
     private LocalDateTime createdDate;
+
+    // Compatibility getters
+    public String getTmpltId() { return tmplatId; }
+    public String getBbsIntroCn() { return bbsExpln; }
 }

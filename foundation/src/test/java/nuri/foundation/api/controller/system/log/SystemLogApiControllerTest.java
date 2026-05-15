@@ -62,7 +62,7 @@ class SystemLogApiControllerTest {
     void testGetSysLog() throws Exception {
         SysLogDto dto = new SysLogDto();
         dto.setDmndId("REQ_001");
-        when(logManageService.selectSysLogDetail("REQ_001")).thenReturn(dto);
+        when(logManageService.selectSysLogDetail(any(SysLogDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/logs/system/REQ_001"))
                 .andExpect(status().isOk())

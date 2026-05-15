@@ -14,11 +14,18 @@ import lombok.Builder;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddressBookUserSearchResult {
-    private String emplyrId;
+    private String userId;
     private String nm;
-    private String emailAdres;
+    private String emlAddr;
     private String homeTelno;
-    private String moblphonNo;
-    private String offmTelno;
-    private String fxnum;
+    private String mblTelno;
+    private String officeTelno;
+    private String faxNo;
+
+    // Compatibility getters
+    public String getEmplyrId() { return userId; }
+    public String getEmailAdres() { return emlAddr; }
+    public String getMoblphonNo() { return mblTelno; }
+    public String getOffmTelno() { return officeTelno; }
+    public String getFxnum() { return faxNo; }
 }

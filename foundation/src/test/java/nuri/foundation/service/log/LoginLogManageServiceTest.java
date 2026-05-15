@@ -94,7 +94,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(logId);
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(any(LoginLogDto.class));
 
             // Then
             assertNotNull(result);
@@ -110,7 +110,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.findById(logId)).thenReturn(Optional.empty());
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(logId);
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(any(LoginLogDto.class));
 
             // Then
             assertNull(result);

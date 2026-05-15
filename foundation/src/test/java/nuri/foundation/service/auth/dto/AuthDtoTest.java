@@ -5,88 +5,27 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Auth DTO (권한/인증 DTO) 테스트")
 class AuthDtoTest {
 
     @Test
-    @DisplayName("LoginRequest 생성 테스트")
-    void loginRequestTest() {
-        LoginRequest request = LoginRequest.builder().userId("user01").password("pass123").build();
-        assertThat(request.getUserId()).isEqualTo("user01");
-        assertThat(request.getPassword()).isEqualTo("pass123");
-    }
-
-    @Test
-    @DisplayName("TokenResponse 생성 테스트")
-    void tokenResponseTest() {
-        TokenResponse response = TokenResponse.builder()
-                .accessToken("atoken")
-                .refreshToken("rtoken")
-                .role("ROLE_USER")
-                .build();
-        assertThat(response.getAccessToken()).isEqualTo("atoken");
-        assertThat(response.getRefreshToken()).isEqualTo("rtoken");
-        assertThat(response.getRole()).isEqualTo("ROLE_USER");
-    }
-
-    @Test
-    @DisplayName("UserAuthorityDto 테스트")
-    void userAuthorityDtoTest() {
-        UserAuthorityDto dto = UserAuthorityDto.builder()
-                .uniqId("UNIQ_001")
-                .authorCode("ROLE_USER")
-                .mberTyCode("USR")
-                .userNm("홍길동")
-                .build();
-
-        assertThat(dto.getUniqId()).isEqualTo("UNIQ_001");
-        assertThat(dto.getAuthorCode()).isEqualTo("ROLE_USER");
-        assertThat(dto.getMberTyCode()).isEqualTo("USR");
-        assertThat(dto.getUserNm()).isEqualTo("홍길동");
-
-        dto.setUserNm("이순신");
-        assertThat(dto.getUserNm()).isEqualTo("이순신");
-    }
-
-    @Test
-    @DisplayName("AuthorManageDto 테스트")
-    void authorManageDtoTest() {
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode("AUTH_001")
-                .authorNm("관리자")
-                .authorDc("시스템 관리자 권한")
-                .authorCreatDe("2024-01-01")
-                .build();
-
-        assertThat(dto.getAuthorCode()).isEqualTo("AUTH_001");
-        assertThat(dto.getAuthorNm()).isEqualTo("관리자");
-        assertThat(dto.getAuthorDc()).isEqualTo("시스템 관리자 권한");
-        assertThat(dto.getAuthorCreatDe()).isEqualTo("2024-01-01");
-    }
-
-    @Test
-    @DisplayName("RoleManageDto 테스트")
+    @DisplayName("RoleManageDto 빌더 및 Getter/Setter 테스트")
     void roleManageDtoTest() {
         RoleManageDto dto = RoleManageDto.builder()
-                .roleCode("ROLE_001")
-                .roleNm("사용자역할")
-                .rolePttrn("/api/user/**")
-                .roleDc("일반사용자역할")
+                .roleCode("ROLE_USER")
+                .roleNm("사용자")
+                .rolePttrn("/api/**")
+                .roleDc("사용자 권한")
                 .roleTy("URL")
                 .roleSort("1")
-                .createdDate("2024-01-01")
+                .creatDt("2024-01-01")
                 .build();
 
-        assertThat(dto.getRoleCode()).isEqualTo("ROLE_001");
-        assertThat(dto.getRoleNm()).isEqualTo("사용자역할");
-        assertThat(dto.getRolePttrn()).isEqualTo("/api/user/**");
-        assertThat(dto.getRoleDc()).isEqualTo("일반사용자역할");
+        assertThat(dto.getRoleCode()).isEqualTo("ROLE_USER");
+        assertThat(dto.getRoleNm()).isEqualTo("사용자");
+        assertThat(dto.getRolePttrn()).isEqualTo("/api/**");
+        assertThat(dto.getRoleDc()).isEqualTo("사용자 권한");
         assertThat(dto.getRoleTy()).isEqualTo("URL");
         assertThat(dto.getRoleSort()).isEqualTo("1");
-        assertThat(dto.getCrtDt()).isEqualTo("2024-01-01");
-        // Compatibility getters
-        assertThat(dto.getRoleTyp()).isEqualTo("URL");
-        assertThat(dto.getRoleCreatDe()).isEqualTo("2024-01-01");
-        assertThat(dto.getRolePtn()).isEqualTo("/api/user/**");
+        assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
     }
 }

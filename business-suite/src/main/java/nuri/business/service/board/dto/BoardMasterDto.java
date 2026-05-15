@@ -15,7 +15,7 @@ public class BoardMasterDto {
 
     private String bbsId;
     private String bbsTtl;
-    private String bbsIntroCn;
+    private String bbsExpln;
     private String bbsTypeCd;
     private String bbsAttrCd;
     private String replyPsblYn;
@@ -38,13 +38,17 @@ public class BoardMasterDto {
     private String authFlag;
     private String tmplatCours;
 
+    // Compatibility getters
+    public String getBbsIntroCn() { return bbsExpln; }
+    public void setBbsIntroCn(String bbsIntroCn) { this.bbsExpln = bbsIntroCn; }
+
     public static BoardMasterDto from(BoardMaster entity) {
         if (entity == null)
             return null;
         return BoardMasterDto.builder()
                 .bbsId(entity.getBbsId())
                 .bbsTtl(entity.getBbsTtl())
-                .bbsIntroCn(entity.getBbsIntroCn())
+                .bbsExpln(entity.getBbsExpln())
                 .bbsTypeCd(entity.getBbsTypeCd())
                 .bbsAttrCd(entity.getBbsAttrCd())
                 .replyPsblYn(entity.getReplyPsblYn())

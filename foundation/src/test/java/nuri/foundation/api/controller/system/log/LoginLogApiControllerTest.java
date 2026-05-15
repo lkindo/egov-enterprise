@@ -61,7 +61,7 @@ class LoginLogApiControllerTest {
     void testGetLoginLog() throws Exception {
         LoginLogDto dto = new LoginLogDto();
         dto.setLogId("LOG_001");
-        when(loginLogManageService.selectLoginLogDetail("LOG_001")).thenReturn(dto);
+        when(loginLogManageService.selectLoginLogDetail(any(LoginLogDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/logs/login/LOG_001"))
                 .andExpect(status().isOk())

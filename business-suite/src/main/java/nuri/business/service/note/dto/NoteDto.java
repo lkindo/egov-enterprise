@@ -42,6 +42,9 @@ public class NoteDto {
     @Schema(description = "등록 일시")
     private LocalDateTime regDate;
 
+    @Schema(description = "최초 등록 일시")
+    private LocalDateTime frstRegisterPnttm;
+
     public String getTrnsmitterId() { return trnsmiterId; }
     public String getTrnsmitterNm() { return trnsmiterNm; }
     public LocalDateTime getSendDt() { return regDate; }

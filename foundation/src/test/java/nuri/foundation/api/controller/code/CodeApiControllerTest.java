@@ -1,83 +1,81 @@
 package nuri.foundation.api.controller.code;
 
-import nuri.foundation.domain.common.BaseSearchDto;
-import nuri.foundation.service.code.AdministCodeService;
+import nuri.foundation.service.code.EgovCodeService;
+import nuri.foundation.service.code.EgovCommonCodeService;
 import nuri.foundation.service.code.InstitutionCodeService;
-import nuri.foundation.service.code.CommonCodeService;
-import nuri.foundation.service.code.dto.CmmnCodeDto;
-
-import nuri.foundation.service.code.dto.AdministCodeDto;
+import nuri.foundation.service.code.dto.CodeDto;
 import nuri.foundation.service.code.dto.InstitutionCodeDto;
-import com.querydsl.jpa.impl.JPAQueryFactory;
+import nuri.foundation.domain.common.BaseSearchDto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({CommonCodeApiController.class, AdministCodeApiController.class, InstitutionCodeApiController.class})
-@DisplayName("Code API Controllers 단위 테스트")
+@DisplayName("CodeApiController 단위 테스트")
 class CodeApiControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private CommonCodeService commonCodeService;
+    @Mock
+    private EgovCodeService codeService;
 
-    @MockitoBean
-    private AdministCodeService administCodeService;
+    @Mock
+    private EgovCommonCodeService commonCodeService;
 
-    @MockitoBean
+    @Mock
     private InstitutionCodeService institutionCodeService;
 
-    @MockitoBean
-    private JPAQueryFactory jpaQueryFactory;
+    @InjectMocks
+    private CommonCodeApiController codeApiController;
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("공통코드 목록 조회 테스트")
-    void getCmmnCodeListTest() throws Exception {
-        given(commonCodeService.selectCmmnCodeList(any())).willReturn(List.of(new CmmnCodeDto()));
-        mockMvc.perform(get("/api/v1/admin/system/codes/cmmn"))
-                .andExpect(status().isOk());
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(codeApiController).build();
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("행정코드 목록 조회 테스트")
-    void getAdministCodeListTest() throws Exception {
-        Page<AdministCodeDto> page = new PageImpl<>(List.of(new AdministCodeDto()));
-        given(administCodeService.getAdministCodeList(any(), any())).willReturn(page);
+    @DisplayName("특정 그룹의 코드 목록 조회")
+    void getCodesByGroup() throws Exception {
+        CodeDto dto = CodeDto.builder().code("C1").codeNm("Code 1").build();
+        given(codeService.getDetailCodeList(anyString())).willReturn(List.of(dto));
 
-        mockMvc.perform(get("/api/v1/admin/system/codes/administ")
-                        .param("pageIndex", "1")
-                        .param("pageUnit", "10"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/codes/COM001")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].code").value("C1"));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("기관코드 목록 조회 테스트")
-    void getInstitutionCodeListTest() throws Exception {
-        Page<InstitutionCodeDto> page = new PageImpl<>(List.of(new InstitutionCodeDto()));
-        given(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).willReturn(page);
+    @DisplayName("기관코드 목록 조회")
+    void getInstitutionCodeList() throws Exception {
+        InstitutionCodeDto dto = InstitutionCodeDto.builder().insttCode("INST1").allInsttNm("Inst 1").build();
+        List<InstitutionCodeDto> list = List.of(dto);
+        given(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).willReturn(list);
+        given(institutionCodeService.selectInstitutionCodeListTotCnt(any(BaseSearchDto.class))).willReturn(1);
 
-        mockMvc.perform(get("/api/v1/admin/system/codes/institution")
-                        .param("pageIndex", "1")
-                        .param("pageUnit", "10"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/codes/institutions")
+                .param("pageIndex", "1")
+                .param("pageUnit", "10")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].insttCode").value("INST1"));
     }
 }

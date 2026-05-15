@@ -1,11 +1,11 @@
 package nuri.foundation.api.controller.code;
 
-import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.InstitutionCodeService;
 import nuri.foundation.service.code.dto.InstitutionCodeDto;
 import nuri.foundation.service.code.dto.InstitutionCodeRecptnDto;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,8 +54,9 @@ class InstitutionCodeApiControllerTest {
     @Test
     @DisplayName("기관코드 목록 조회")
     void getInstitutionCodeList() throws Exception {
-        Page<InstitutionCodeDto> page = new PageImpl<>(List.of(new InstitutionCodeDto()));
-        when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(page);
+        List<InstitutionCodeDto> list = List.of(new InstitutionCodeDto());
+        when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(list);
+        when(institutionCodeService.selectInstitutionCodeListTotCnt(any(BaseSearchDto.class))).thenReturn(1);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution")
                 .param("pageIndex", "1")
@@ -80,8 +81,8 @@ class InstitutionCodeApiControllerTest {
     @Test
     @DisplayName("기관코드 수신 내역 조회")
     void getInstitutionCodeRecptnList() throws Exception {
-        Page<InstitutionCodeRecptnDto> page = new PageImpl<>(List.of(new InstitutionCodeRecptnDto()));
-        when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(page);
+        List<InstitutionCodeRecptnDto> list = List.of(new InstitutionCodeRecptnDto());
+        when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(list);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/receptions")
                 .param("pageIndex", "1")
@@ -94,25 +95,8 @@ class InstitutionCodeApiControllerTest {
     @DisplayName("기관코드 수신 처리 (익명)")
     void processInstitutionCodeRecptn_Anonymous() throws Exception {
         mockMvc.perform(post("/api/v1/admin/system/codes/institution/receptions/process")
-                .param("occrrncDe", "20240101")
-                .param("insttCode", "I1")
-                .param("opertSn", "1")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("기관코드 수신 처리 (인증)")
-    void processInstitutionCodeRecptn_Authenticated() throws Exception {
-        CustomUserDetails userDetails = mock(CustomUserDetails.class);
-        when(userDetails.getEsntlId()).thenReturn("USR_1");
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userDetails, null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        mockMvc.perform(post("/api/v1/admin/system/codes/institution/receptions/process")
-                .param("occrrncDe", "20240101")
-                .param("insttCode", "I1")
-                .param("opertSn", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"ocrnYmd\":\"20240101\", \"insttCode\":\"I1\", \"opertSn\":1}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

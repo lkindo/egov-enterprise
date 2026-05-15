@@ -9,8 +9,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class UserLogId implements Serializable {
-    private String occrrncDe;
-    private String rqesterId;
+    private String ocrnYmd;
+    private String dmndUserId;
     private String srvcNm;
     private String methodNm;
 }

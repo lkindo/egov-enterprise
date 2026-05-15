@@ -77,13 +77,13 @@ public class AddressBookServiceImpl implements AddressBookService {
                     AddressBookUser userEntity = AddressBookUser.builder()
                             .adbkUserId(adbkUserId)
                             .adbkId(adbkId)
-                            .emplyrId(userDto.getEmplyrId())
+                            .userId(userDto.getUserId())
                             .nm(userDto.getNm())
-                            .emailAdres(userDto.getEmailAdres())
+                            .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())
-                            .moblphonNo(userDto.getMoblphonNo())
-                            .offmTelno(userDto.getOffmTelno())
-                            .fxnum(userDto.getFxnum())
+                            .mblTelno(userDto.getMblTelno())
+                            .officeTelno(userDto.getOfficeTelno())
+                            .faxNo(userDto.getFaxNo())
                             .build();
                     addressBookUserRepository.save(userEntity);
                 }
@@ -112,7 +112,7 @@ public class AddressBookServiceImpl implements AddressBookService {
 
         for (AddressBookUser existing : existingUsers) {
             boolean remains = dto.getAdbkMan().stream()
-                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(existing.getEmplyrId())));
+                    .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(existing.getUserId())));
             if (!remains) {
                 addressBookUserRepository.delete(existing);
             }
@@ -120,20 +120,20 @@ public class AddressBookServiceImpl implements AddressBookService {
 
         for (AddressBookUserDto userDto : dto.getAdbkMan()) {
             boolean exists = existingUsers.stream()
-                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(userDto.getEmplyrId())));
+                    .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(userDto.getUserId())));
             if (!exists) {
                 try {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
                     AddressBookUser newUser = AddressBookUser.builder()
                             .adbkUserId(adbkUserId)
                             .adbkId(dto.getAdbkId())
-                            .emplyrId(userDto.getEmplyrId())
+                            .userId(userDto.getUserId())
                             .nm(userDto.getNm())
-                            .emailAdres(userDto.getEmailAdres())
+                            .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())
-                            .moblphonNo(userDto.getMoblphonNo())
-                            .offmTelno(userDto.getOffmTelno())
-                            .fxnum(userDto.getFxnum())
+                            .mblTelno(userDto.getMblTelno())
+                            .officeTelno(userDto.getOfficeTelno())
+                            .faxNo(userDto.getFaxNo())
                             .build();
                     addressBookUserRepository.save(newUser);
                 } catch (Exception e) {
@@ -156,11 +156,11 @@ public class AddressBookServiceImpl implements AddressBookService {
     public Page<AddressBookUserDto> searchUsers(String searchWrd, @NonNull Pageable pageable) {
         return addressBookRepository.searchAddressBookUsers(searchWrd, Objects.requireNonNull(pageable))
                 .map(res -> AddressBookUserDto.builder()
-                        .emplyrId(res.getEmplyrId())
+                        .userId(res.getUserId())
                         .nm(res.getNm())
-                        .emailAdres(res.getEmailAdres())
-                        .moblphonNo(res.getMoblphonNo())
-                        .offmTelno(res.getOffmTelno())
+                        .emlAddr(res.getEmlAddr())
+                        .mblTelno(res.getMblTelno())
+                        .officeTelno(res.getOfficeTelno())
                         .homeTelno(res.getHomeTelno())
                         .build());
     }
@@ -191,13 +191,13 @@ public class AddressBookServiceImpl implements AddressBookService {
         return AddressBookUserDto.builder()
                 .adbkUserId(entity.getAdbkUserId())
                 .adbkId(entity.getAdbkId())
-                .emplyrId(entity.getEmplyrId())
+                .userId(entity.getUserId())
                 .nm(entity.getNm())
-                .emailAdres(entity.getEmailAdres())
+                .emlAddr(entity.getEmlAddr())
                 .homeTelno(entity.getHomeTelno())
-                .moblphonNo(entity.getMoblphonNo())
-                .offmTelno(entity.getOffmTelno())
-                .fxnum(entity.getFxnum())
+                .mblTelno(entity.getMblTelno())
+                .officeTelno(entity.getOfficeTelno())
+                .faxNo(entity.getFaxNo())
                 .build();
     }
 }

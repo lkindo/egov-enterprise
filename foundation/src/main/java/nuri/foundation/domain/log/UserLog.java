@@ -29,19 +29,19 @@ import jakarta.persistence.ManyToOne;
 public class UserLog extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "RQESTER_ID", referencedColumnName = "ESNTL_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "DMND_USER_ID", referencedColumnName = "ESNTL_ID", insertable = false, updatable = false)
     private User vnUserMaster;
 
     @Id
-    @Column(name = "OCCRRNC_DE", length = 20)
-    private String occrrncDe;
+    @Column(name = "OCRN_YMD", length = 20)
+    private String ocrnYmd;
 
     @Id
-    @Column(name = "RQESTER_ID", length = 20)
-    private String rqesterId;
+    @Column(name = "DMND_USER_ID", length = 20)
+    private String dmndUserId;
 
     @Id
-    @Column(name = "SVC_NM", length = 255)
+    @Column(name = "SRVC_NM", length = 255)
     private String srvcNm;
 
     @Id
@@ -66,11 +66,11 @@ public class UserLog extends BaseEntity {
     @Column(name = "ERR_CNT")
     private Integer errorCo;
 
-    public UserLog(String occrrncDe, String rqesterId, String srvcNm, String methodNm,
+    public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String methodNm,
             Integer creatCo, Integer updtCo, Integer rdCnt, Integer deleteCo,
             Integer outptCo, Integer errorCo) {
-        this.occrrncDe = occrrncDe;
-        this.rqesterId = rqesterId;
+        this.ocrnYmd = ocrnYmd;
+        this.dmndUserId = dmndUserId;
         this.srvcNm = srvcNm;
         this.methodNm = methodNm;
         this.creatCo = creatCo;

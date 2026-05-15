@@ -10,49 +10,18 @@ import lombok.*;
 public class AddressBookUserDto {
     private String adbkUserId;
     private String adbkId;
-    private String emplyrId;
+    private String userId;
     private String nm;
-    private String emailAdres;
+    private String emlAddr;
     private String homeTelno;
-    private String moblphonNo;
-    private String offmTelno;
-    private String fxnum;
+    private String mblTelno;
+    private String officeTelno;
+    private String faxNo;
 
-    // Manual getters to test
-    public String getAdbkUserId() {
-        return adbkUserId;
-    }
-
-    public String getAdbkId() {
-        return adbkId;
-    }
-
-    public String getEmplyrId() {
-        return emplyrId;
-    }
-
-
-    public String getNm() {
-        return nm;
-    }
-
-    public String getEmailAdres() {
-        return emailAdres;
-    }
-
-    public String getHomeTelno() {
-        return homeTelno;
-    }
-
-    public String getMoblphonNo() {
-        return moblphonNo;
-    }
-
-    public String getOffmTelno() {
-        return offmTelno;
-    }
-
-    public String getFxnum() {
-        return fxnum;
-    }
+    // Compatibility getters
+    public String getEmplyrId() { return userId; }
+    public String getEmailAdres() { return emlAddr; }
+    public String getMoblphonNo() { return mblTelno; }
+    public String getOffmTelno() { return officeTelno; }
+    public String getFxnum() { return faxNo; }
 }
