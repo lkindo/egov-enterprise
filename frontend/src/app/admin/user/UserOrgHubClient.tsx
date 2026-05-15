@@ -2,28 +2,22 @@
 
 import React, { useState, useMemo, use, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import {
   Users,
   Network,
   UserMinus,
   ShieldCheck,
   Search,
-  Plus,
   Pencil,
   UserPlus,
   Building2,
-  FileCheck,
   Activity,
   ChevronRight,
-  Lock,
   Settings,
   UserCog,
   MapPin,
@@ -36,11 +30,8 @@ import {
   SearchCode,
   ShieldAlert,
   Database,
-  ArrowUpRight,
   CloudLightning,
   Contact2,
-  Layers,
-  Tag,
   SearchSlash,
   Save
 } from 'lucide-react';
@@ -57,7 +48,6 @@ import { deptAdminService, Department } from '@/services/foundation/system/DeptA
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PagePagination } from '@/components/common/PagePagination';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
@@ -68,10 +58,7 @@ import {
   bulkUpdateUserRoleAction
 } from '@/app/actions/userActions';
 
-import { z } from 'zod';
-import { useAppForm } from '@/hooks/useAppForm';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { FormField } from '@/app/components/ui/standard-form';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
@@ -85,9 +72,6 @@ import {
     useSensors,
     DragOverlay,
     defaultDropAnimationSideEffects,
-    DragStartEvent,
-    DragOverEvent,
-    DragEndEvent,
     MeasuringStrategy,
     DropAnimation,
 } from '@dnd-kit/core';
@@ -223,7 +207,7 @@ export default function UserOrgHubClient({
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
 
   const [userPage, setUserPage] = useState(1);
-  const [deptPage, setDeptPage] = useState(1);
+  const [deptPage] = useState(1);
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -238,7 +222,7 @@ export default function UserOrgHubClient({
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetRole, setTargetRole] = useState('USER');
 
-  const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
+  const { data: usersData, isLoading: isUsersLoading, error: _usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
     queryFn: () => userAdminService.getUserList({ pageNo: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
@@ -249,7 +233,7 @@ export default function UserOrgHubClient({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
 
-  const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
+  const { data: deptsData, isLoading: isDeptsLoading, error: _deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
     queryFn: () => deptAdminService.getDeptList({ pageNo: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS',
@@ -290,7 +274,7 @@ export default function UserOrgHubClient({
       }
       refetchUsers();
       setIsUserModalOpen(false);
-    } catch (error) {
+    } catch (_error) {
       toast('사용자 저장 중 오류가 발생했습니다.', 'error');
     }
   };
@@ -306,7 +290,7 @@ export default function UserOrgHubClient({
       }
       refetchDepts();
       setIsDeptModalOpen(false);
-    } catch (error) {
+    } catch (_error) {
       toast('부서 저장 중 오류가 발생했습니다.', 'error');
     }
   };
@@ -327,7 +311,7 @@ export default function UserOrgHubClient({
         toast('아이덴티티가 성공적으로 말소되었습니다.', 'success');
         setSelectedItemId(null);
         refetchUsers();
-      } catch (error) {
+      } catch (_error) {
         toast('말소 프로세스 중 오류가 발생했습니다.', 'error');
       }
     }
@@ -387,17 +371,17 @@ export default function UserOrgHubClient({
 
   // --- Resilience Monitoring: Global Error Feedback ---
   React.useEffect(() => {
-    if (usersError) {
-      const msg = (usersError as any)?.response?.data?.message || '사용자 데이터를 불러오는데 오류가 발생했습니다.';
+    if (_usersError) {
+      const msg = (_usersError as any)?.response?.data?.message || '사용자 데이터를 불러오는데 오류가 발생했습니다.';
       toast(msg, 'error');
     }
-  }, [usersError, toast]);
+  }, [_usersError, toast]);
 
   React.useEffect(() => {
-    if (deptsError) {
+    if (_deptsError) {
       toast('부서 데이터를 불러오는데 실패했습니다.', 'error');
     }
-  }, [deptsError, toast]);
+  }, [_deptsError, toast]);
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -422,28 +406,6 @@ export default function UserOrgHubClient({
               {user.userNm}
             </h4>
             <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === user.esntlId ? "text-white/80" : "text-slate-400")}>{user.userId}</p>
-          </div>
-        </div>
-      )
-    }
-  ];
-
-  const deptColumns: Column<Department>[] = [
-    {
-      header: '부서 정보',
-      accessor: (dept) => (
-        <div className="flex items-center gap-4 py-1">
-          <div className={cn(
-            "w-12 h-10 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:rotate-6",
-            selectedItemId === dept.orgnztId ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-500"
-          )}>
-            <Building2 size={20} />
-          </div>
-          <div className="space-y-0.5">
-            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
-              {dept.orgnztNm}
-            </h4>
-            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === dept.orgnztId ? "text-white/80" : "text-slate-400")}>{dept.orgnztId}</p>
           </div>
         </div>
       )
@@ -639,8 +601,8 @@ export default function UserOrgHubClient({
                                       } else {
                                         toast(res.message, 'error');
                                       }
-                                    } catch (err) {
-                                      console.error(err);
+                                    } catch (_err) {
+                                      console.error(_err);
                                       toast('구조 저장 중 오류 발생', 'error');
                                     } finally {
                                       setIsSaving(false);
@@ -899,7 +861,7 @@ export default function UserOrgHubClient({
                   } else {
                     toast(res.message, 'error');
                   }
-                } catch (err) {
+                } catch (_err) {
                   toast('상태 변경 중 오류 발생', 'error');
                 } finally {
                   setIsSaving(false);
@@ -975,7 +937,7 @@ export default function UserOrgHubClient({
                   } else {
                     toast(res.message, 'error');
                   }
-                } catch (err) {
+                } catch (_err) {
                   toast('부서 이동 중 오류 발생', 'error');
                 } finally {
                   setIsSaving(false);
@@ -1052,7 +1014,7 @@ export default function UserOrgHubClient({
                   } else {
                     toast(res.message, 'error');
                   }
-                } catch (err) {
+                } catch (_err) {
                   toast('권한 변경 중 오류 발생', 'error');
                 } finally {
                   setIsSaving(false);

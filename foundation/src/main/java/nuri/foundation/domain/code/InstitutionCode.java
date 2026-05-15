@@ -20,13 +20,13 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "INST_CD", length = 10)
     private String insttCode;
 
-    @Column(name = "ALL_INSTT_NM", length = 180)
+    @Column(name = "ALL_INST_NM", length = 300)
     private String allInsttNm;
 
     @Column(name = "LOWEST_INSTT_NM", length = 180)
     private String lowestInsttNm;
 
-    @Column(name = "INSTT_ABRV_NM", length = 180)
+    @Column(name = "INST_ABBR_NM", length = 300)
     private String insttAbrvNm;
 
     @Column(name = "ODR", length = 2)
@@ -38,7 +38,7 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "INST_SEQ", length = 2)
     private String insttOdr;
 
-    @Column(name = "BEST_INSTT_CODE", length = 10)
+    @Column(name = "BEST_INST_CD", length = 30)
     private String bestInsttCode;
 
     @Column(name = "UP_INST_CD", length = 10)

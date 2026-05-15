@@ -23,26 +23,30 @@ import java.time.LocalDateTime;
 public class WebLog extends BaseEntity {
 
     @Id
-    @Column(name = "REQUST_ID", length = 20)
-    private String requstId;
+    @Column(name = "DMND_ID", length = 20)
+    private String dmndId;
 
     @Column(name = "URL", length = 200)
     private String url;
 
-    @Column(name = "RQESTER_ID", length = 20)
-    private String rqesterId;
+    @Column(name = "DMND_USER_ID", length = 20)
+    private String dmndUserId;
 
     @Column(name = "RQESTER_IP", length = 23)
     private String rqesterIp;
 
-    @Column(name = "OCCRRNC_DE")
-    private LocalDateTime occrrncDe;
+    @Column(name = "OCRN_YMD")
+    private LocalDateTime ocrnYmd;
 
-    public WebLog(String requstId, String url, String rqesterId, String rqesterIp, LocalDateTime occrrncDe) {
-        this.requstId = requstId;
+    @Column(name = "PRCS_TM")
+    private Long prcsTm;
+
+    public WebLog(String dmndId, String url, String dmndUserId, String rqesterIp, LocalDateTime ocrnYmd, Long prcsTm) {
+        this.dmndId = dmndId;
         this.url = url;
-        this.rqesterId = rqesterId;
+        this.dmndUserId = dmndUserId;
         this.rqesterIp = rqesterIp;
-        this.occrrncDe = occrrncDe;
+        this.ocrnYmd = ocrnYmd;
+        this.prcsTm = prcsTm;
     }
 }

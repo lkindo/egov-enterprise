@@ -42,7 +42,7 @@ public class BkmkMenu extends BaseEntity {
         @Column(name = "MENU_ID")
         private Long menuId;
 
-        @Column(name = "EMPLYR_ID", length = 20)
+        @Column(name = "USER_ID", length = 20)
         private String userId;
     }
 }

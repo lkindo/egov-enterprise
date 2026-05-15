@@ -25,30 +25,33 @@ import lombok.NoArgsConstructor;
 public class AddressBookUser extends BaseEntity {
 
     @Id
-    @Column(name = "adbk_constnt_id", length = 20)
+    @Column(name = "ADBK_CONSTNT_ID", length = 20)
     private String adbkUserId;
 
-    @Column(name = "adbk_id", length = 20, nullable = false)
+    @Column(name = "ADBK_ID", length = 20, nullable = false)
     private String adbkId;
 
-    @Column(name = "emplyr_id", length = 20)
-    private String emplyrId;
+    @Column(name = "USER_ID", length = 30)
+    private String userId;
 
-    @Column(name = "nm", length = 50)
+    @Column(name = "RLS_SCP_CD", length = 30)
+    private String rlsScpCd;
+
+    @Column(name = "NM", length = 50)
     private String nm;
 
-    @Column(name = "EML_ADDR", length = 50)
-    private String emailAdres;
+    @Column(name = "EML_ADDR", length = 300)
+    private String emlAddr;
 
     @Column(name = "HOME_TELNO", length = 20)
     private String homeTelno;
 
     @Column(name = "MBL_TELNO", length = 20)
-    private String moblphonNo;
+    private String mblTelno;
 
     @Column(name = "OFC_TELNO", length = 20)
-    private String offmTelno;
+    private String officeTelno;
 
-    @Column(name = "FXNO", length = 20)
-    private String fxnum;
+    @Column(name = "FAX_NO", length = 20)
+    private String faxNo;
 }

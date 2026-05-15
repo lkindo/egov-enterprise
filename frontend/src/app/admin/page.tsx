@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
  timestamp: String(log.frstRegisterPnttm || log.occrrncDe || new Date().toISOString()),
  ipAddress: String(log.sysNm || log.rqesterIp || 'Unknown'),
  severity: (safeContent.includes('오류') || safeContent.includes('실패') || safeContent.includes('삭제') || safeContent.includes('error')) ? 'high' :
- (safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security')) ? 'medium' : ('low' as 'low')
+ (safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security')) ? 'medium' : ('low' as const)
  });
  }
  return results;

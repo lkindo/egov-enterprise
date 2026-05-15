@@ -42,7 +42,7 @@ public class Satisfaction extends BaseEntity {
     @Column(name = "DGSTFN_SCR", nullable = false)
     private Integer stsfdgLevel;
 
-    @Column(name = "STSFDG_CN", length = 2500)
+    @Column(name = "DGSTFN_CN", length = 2500)
     private String stsfdgCn;
 
     @Builder.Default

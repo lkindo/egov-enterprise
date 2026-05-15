@@ -35,7 +35,7 @@ const InsertDeptJobPage = () => {
         alert(response.data.message || '성공적으로 등록되었습니다.');
         router.push('/smart-toolkit/dept-job/selectDeptJobList');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       alert(error.response?.data?.message || '등록에 실패하였습니다.');
     } finally {
       setLoading(false);

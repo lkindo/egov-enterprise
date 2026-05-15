@@ -45,7 +45,7 @@ export const getInitialBoardData = cache(async (params: {
       totalPage: listResponse.totalPage || 0,
       masterInfo: masterResponse || null
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 401 오류는 인증이 필요한 상태이므로 시스템 에러 대신 로그인 페이지로 리다이렉트
     if (error.response?.status === 401) {
       const { redirect } = require('next/navigation');

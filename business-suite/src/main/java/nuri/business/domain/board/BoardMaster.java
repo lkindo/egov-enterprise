@@ -32,8 +32,8 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "BBS_TTL", nullable = false, length = 100)
     private String bbsTtl;
 
-    @Column(name = "BBS_INTRO_CN", length = 4000)
-    private String bbsIntroCn;
+    @Column(name = "BBS_EXPLN", length = 4000)
+    private String bbsExpln;
 
     @Column(name = "BBS_TYPE_CD", length = 12, nullable = false)
     private String bbsTypeCd;
@@ -112,11 +112,11 @@ public class BoardMaster extends BaseEntity {
         this.optnLastUpdtPnttm = LocalDateTime.now();
     }
 
-    public void update(String bbsTtl, String bbsIntroCn, String replyPsblYn, String fileAtchPsblYn,
+    public void update(String bbsTtl, String bbsExpln, String replyPsblYn, String fileAtchPsblYn,
             Integer atchPsblFileCnt, Long atchPsblFileSize, String tmplatId, String useYn,
             String commentYn, String stsfdgYn) {
         this.bbsTtl = bbsTtl;
-        this.bbsIntroCn = bbsIntroCn;
+        this.bbsExpln = bbsExpln;
         this.replyPsblYn = replyPsblYn;
         this.fileAtchPsblYn = fileAtchPsblYn;
         this.atchPsblFileCnt = atchPsblFileCnt;
@@ -128,7 +128,7 @@ public class BoardMaster extends BaseEntity {
     }
 
     public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
-    public void updateBbsIntroCn(String bbsIntroCn) { this.bbsIntroCn = bbsIntroCn; }
+    public void updateBbsExpln(String bbsExpln) { this.bbsExpln = bbsExpln; }
     public void updateReplyPsblYn(String replyPsblYn) { this.replyPsblYn = replyPsblYn; }
     public void updateFileAtchPsblYn(String fileAtchPsblYn) { this.fileAtchPsblYn = fileAtchPsblYn; }
     public void updateAtchPsblFileCnt(Integer atchPsblFileCnt) { this.atchPsblFileCnt = atchPsblFileCnt; }

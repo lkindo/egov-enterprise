@@ -2,48 +2,28 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
  RefreshCcw,
- Mail,
  Inbox,
  Bookmark,
  Search,
  Plus,
- Trash2,
  Users,
  Zap,
  Share2,
- ChevronRight,
- ArrowUpRight,
- User,
- Clock,
- Phone,
- Globe,
- Star,
- Sparkles,
- Layers,
- Send,
- MessageSquare,
- Loader2,
- ShieldCheck,
  Activity,
  MoreVertical
 } from 'lucide-react';
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
 import { noteService } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
-import { motion, AnimatePresence } from 'framer-motion';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
@@ -55,7 +35,6 @@ type CollaborationTab = 'MESSAGES' | 'ADDRESS_BOOK' | 'SCRAPS';
 export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any) {
  const router = useRouter();
  const queryClient = useQueryClient();
- const { toast } = useToast();
  const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
  const [searchKeyword, setSearchKeyword] = useState('');
 

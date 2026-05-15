@@ -59,7 +59,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                     .atStartOfDay();
             LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                     .atTime(LocalTime.MAX);
-            return QWebLog.webLog.occrrncDe.between(start, end);
+            return QWebLog.webLog.ocrnYmd.between(start, end);
         } catch (Exception e) {
             return null;
         }

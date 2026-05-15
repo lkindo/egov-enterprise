@@ -32,16 +32,16 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "POLL_ID", length = 20)
     private String pollId;
 
-    @Column(name = "POLL_NM", length = 255, nullable = false)
+    @Column(name = "POLL_TTL", length = 300, nullable = false)
     private String pollTtl;
 
-    @Column(name = "POLL_BGNG_YMD", length = 10)
+    @Column(name = "POLL_BGNG_YMD", length = 8)
     private String pollBgngYmd;
 
-    @Column(name = "POLL_END_YMD", length = 10)
+    @Column(name = "POLL_END_YMD", length = 8)
     private String pollEndYmd;
 
-    @Column(name = "POLL_KND", length = 20)
+    @Column(name = "POLL_KND_CD", length = 30)
     private String pollTypeCd;
 
     @Column(name = "POLL_DSUSE_YN", length = 1)

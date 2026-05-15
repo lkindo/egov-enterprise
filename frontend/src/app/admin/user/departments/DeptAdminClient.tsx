@@ -292,7 +292,7 @@ export default function DeptAdminClient({
 
  // Initialize data and simulate hierarchy if needed
  useEffect(() => {
- let list = initialDepts.list || [];
+ const list = initialDepts.list || [];
  
  // Simulate hierarchy for demo/modernization purpose if all are roots
  // In a real app, this would come from the backend upperOrgnztId

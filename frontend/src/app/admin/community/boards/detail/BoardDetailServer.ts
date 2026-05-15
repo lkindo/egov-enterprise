@@ -27,7 +27,7 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstId: stri
       masterInfo, 
       initialComments: commentResult.list || [] 
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 401 오류는 세션 만료 → 로그인 페이지로 우아하게 리다이렉트
     if (error.response?.status === 401) {
       const { redirect } = require('next/navigation');

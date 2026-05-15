@@ -28,7 +28,7 @@ public class SentMail extends BaseEntity {
     @Column(name = "SJ", length = 255, nullable = false)
     private String sj;
 
-    @Column(name = "EMAIL_CN", length = 4000)
+    @Column(name = "EML_CN", length = 4000)
     private String emailCn;
 
     @Column(name = "SNDR", length = 100)
@@ -37,7 +37,7 @@ public class SentMail extends BaseEntity {
     @Column(name = "RCVER", length = 100)
     private String recptnPerson;
 
-    @Column(name = "SNDNG_RESULT_CODE", length = 20)
+    @Column(name = "DSPTCH_RSLT_CD", length = 30)
     private String sndngResultCode;
 
     @Column(name = "DSPTCH_DT", length = 20)

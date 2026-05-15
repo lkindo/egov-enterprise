@@ -95,7 +95,7 @@ export default function OnlinePollParticipateClient() {
  const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollId!);
  setPollItems(updatedItems);
  setViewMode('result');
- } catch (error: any) {
+ } catch (error: unknown) {
  const msg = error.response?.data?.message || '투표 처리 중 오류가 발생했습니다.';
  toast.error(msg);
  if (msg.includes('이미 참여')) {

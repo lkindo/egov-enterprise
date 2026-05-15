@@ -155,8 +155,8 @@ class UserRepositoryTest extends PersistenceTestSupport {
         result = userRepository.searchUsers(null, "0", "test", PageRequest.of(0, 10));
         assertThat(result.getContent()).isNotEmpty();
 
-        // 조건 EMPLYR_ID
-        result = userRepository.searchUsers(null, "EMPLYR_ID", "test", PageRequest.of(0, 10));
+        // 조건 USER_ID
+        result = userRepository.searchUsers(null, "USER_ID", "test", PageRequest.of(0, 10));
         assertThat(result.getContent()).isNotEmpty();
 
         // 조건 OFFM_TELNO

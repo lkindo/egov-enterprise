@@ -32,7 +32,7 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     @Column(name = "TRGET_ID", length = 20)
     private String trgetId;
 
-    @Column(name = "REGIST_SE_CODE", length = 6)
+    @Column(name = "REG_SE_CD", length = 6)
     private String registSeCode;
 
     @Column(name = "USE_YN", length = 1)

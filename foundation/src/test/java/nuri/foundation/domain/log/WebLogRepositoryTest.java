@@ -28,8 +28,8 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
     void searchWebLogs() {
         // given
         WebLog log = WebLog.builder()
-                .requstId("REQ_001")
-                .occrrncDe(LocalDateTime.of(2024, 1, 3, 10, 0))
+                .dmndId("REQ_001")
+                .ocrnYmd(LocalDateTime.of(2024, 1, 3, 10, 0))
                 .url("/test/url")
                 .rqesterIp("127.0.0.1")
                 .build();
@@ -40,7 +40,7 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getRequstId()).isEqualTo("REQ_001");
+        assertThat(result.getContent().get(0).getDmndId()).isEqualTo("REQ_001");
     }
 
     @Test
@@ -48,8 +48,8 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
     void deleteOldLogs() {
         // given
         WebLog oldLog = WebLog.builder()
-                .requstId("REQ_OLD")
-                .occrrncDe(LocalDateTime.of(2020, 1, 1, 10, 0))
+                .dmndId("REQ_OLD")
+                .ocrnYmd(LocalDateTime.of(2020, 1, 1, 10, 0))
                 .build();
         webLogRepository.save(oldLog);
         entityManager.flush();

@@ -21,15 +21,15 @@ import org.hibernate.annotations.DynamicUpdate;
 public class NoteTrnsmit extends BaseEntity {
 
     @Id
-    @Column(name = "NOTE_TRNSMIT_ID", length = 20)
-    private String noteTrnsmitId;
+    @Column(name = "NOTE_DSPTCH_ID", length = 20)
+    private String noteDsptchId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "NOTE_ID")
     private Note note;
 
-    @Column(name = "TRNSMITER_ID", length = 20)
-    private String trnsmiterId;
+    @Column(name = "DSPTCH_USER_ID", length = 20)
+    private String dsptchUserId;
 
     @Column(name = "DELETE_AT", length = 1)
     private String deleteAt;

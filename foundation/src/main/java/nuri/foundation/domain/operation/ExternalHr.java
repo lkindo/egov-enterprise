@@ -23,7 +23,7 @@ public class ExternalHr {
     @Column(name = "EXTRL_HR_ID", length = 20)
     private String extrlHrId;
 
-    @Column(name = "SEXDSTN_CODE", length = 1)
+    @Column(name = "GNDR_CD", length = 1)
     private String sexdstnCode;
 
     @Column(name = "EXTRL_HR_NM", length = 60)
@@ -35,7 +35,7 @@ public class ExternalHr {
     @Column(name = "PSITN_INSTT_NM", length = 100)
     private String psitnInsttNm;
 
-    @Column(name = "BRTHDY", length = 20)
+    @Column(name = "BRTH_YMD", length = 20)
     private String brthdy;
 
     @Column(name = "AREA_NO", length = 4)
@@ -47,10 +47,10 @@ public class ExternalHr {
     @Column(name = "END_TELNO", length = 4)
     private String endTelno;
 
-    @Column(name = "EML_ADDR", length = 50)
+    @Column(name = "EML_ADDR", length = 300)
     private String emailAdres;
 
-    @Column(name = "CREAT_DT")
+    @Column(name = "CRT_DT")
     private LocalDateTime frstRegistPnttm;
 
     @Column(name = "FRST_RGTR_ID", length = 20)

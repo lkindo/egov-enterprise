@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class QustnrQesitm extends BaseEntity {
 
     @Id
-    @Column(name = "SRVY_QSTN_ID", length = 20)
+    @Column(name = "SRVY_QITEM_ID", length = 20)
     private String srvyQitemId;
 
     @Column(name = "SRVY_ID", length = 20)
@@ -30,7 +30,7 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "QSTN_TYPE_CD", length = 20)
     private String srvyQitemTypeCd;
 
-    @Column(name = "QSTN_CN", length = 2500)
+    @Column(name = "SRVY_QITEM_CN", length = 2500)
     private String srvyQitemCn;
 
     @Column(name = "MAX_CHC_CNT")

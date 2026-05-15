@@ -100,7 +100,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
       redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstId=${targetId}`
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류가 발생했습니다.';
     console.error('Save Action Error:', error);
     return { success: false, message: errorMessage };
@@ -124,7 +124,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
 
     revalidatePath(`/admin/community/boards/selectBoardList`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';
     console.error('Delete Action Error:', error);
     return { success: false, message: errorMessage };

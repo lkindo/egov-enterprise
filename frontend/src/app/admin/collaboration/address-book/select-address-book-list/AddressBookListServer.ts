@@ -19,7 +19,7 @@ export async function getInitialAddressBookData(params: { pageNo: number; pageUn
       total: data.total || 0,
       totalPage: data.totalPage || 0
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 401 오류는 세션 만료 → 로그인 페이지로 우아하게 리다이렉트
     if (error.response?.status === 401) {
       const { redirect } = require('next/navigation');

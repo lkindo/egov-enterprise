@@ -29,8 +29,8 @@ public class NoteRecptn extends BaseEntity {
     private Note note;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "NOTE_TRNSMIT_ID")
-    private NoteTrnsmit noteTrnsmit;
+    @JoinColumn(name = "NOTE_DSPTCH_ID")
+    private NoteTrnsmit noteDsptch;
 
     @Column(name = "RCVER_ID", length = 20)
     private String rcverId;
@@ -38,8 +38,8 @@ public class NoteRecptn extends BaseEntity {
     @Column(name = "OPEN_YN", length = 1)
     private String openYn;
 
-    @Column(name = "RECPTN_SE", length = 1)
-    private String recptnSe;
+    @Column(name = "RCPTN_SE_CD", length = 1)
+    private String recptnSeCd;
 
     @PrePersist
     protected void onCreate() {

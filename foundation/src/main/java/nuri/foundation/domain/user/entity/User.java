@@ -159,7 +159,7 @@ public class User extends BaseEntity implements Serializable {
 
     // ■ 상태 및 감사
     @Builder.Default
-    @Column(name = "USER_STTS_CD", length = 15)
+    @Column(name = "USER_STTS_CD", length = 30)
     private String statusCode = "P";
 
     @Column(name = "SBSCRB_YMD", updatable = false, length = 8)

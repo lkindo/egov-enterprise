@@ -16,7 +16,7 @@ import lombok.*;
 public class UserAbsence extends BaseEntity {
 
     @Id
-    @Column(name = "EMPLYR_ID", length = 20)
+    @Column(name = "USER_ID", length = 20)
     private String emplyrId;
 
     @Column(name = "USER_ABSNCE_YN", length = 1, nullable = false)

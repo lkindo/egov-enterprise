@@ -32,7 +32,7 @@ export default async function ProgramAdminPage({
         size: 10, 
         searchWrd 
     }, axiosConfig);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.response?.status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/programs');
     }
