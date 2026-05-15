@@ -23,20 +23,20 @@ public class CommonCode extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "CODE_ID", length = 18)
+    @Column(name = "CD_ID", length = 18)
     @NonNull
     private String codeGroupId; // eGovFrame 기준 CODE_ID
 
     @Id
-    @Column(name = "CODE", length = 45)
+    @Column(name = "DTL_CD", length = 45)
     @NonNull
     private String code; // 상세코드
 
-    @Column(name = "CODE_NM", length = 180)
+    @Column(name = "DTL_CD_NM", length = 180)
     @NonNull
     private String codeNm; // 상세코드명
 
-    @Column(name = "CODE_DC", length = 600)
+    @Column(name = "DTL_CD_EXPLN", length = 600)
     private String codeDc; // 상세코드설명
 
     @Column(name = "USE_YN", length = 1)

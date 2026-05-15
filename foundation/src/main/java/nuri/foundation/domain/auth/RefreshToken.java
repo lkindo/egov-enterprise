@@ -18,10 +18,10 @@ public class RefreshToken {
     @Column(name = "USER_ID", nullable = false, length = 20)
     private String userId;
 
-    @Column(name = "TK_VAL", nullable = false, unique = true, length = 255)
+    @Column(name = "RFSH_TKN", nullable = false, unique = true, length = 255)
     private String token;
 
-    @Column(name = "EXPR_DT", nullable = false)
+    @Column(name = "EXPRTN_DT", nullable = false)
     private Instant expiryDate;
 
     public void updateToken(String token, Instant expiryDate) {
