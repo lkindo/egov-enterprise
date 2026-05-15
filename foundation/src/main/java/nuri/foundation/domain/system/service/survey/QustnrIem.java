@@ -18,13 +18,13 @@ import lombok.experimental.SuperBuilder;
 public class QustnrIem extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_IEM_ID", length = 20)
+    @Column(name = "SRVY_ARTCL_ID", length = 20)
     private String srvyItemId;
 
-    @Column(name = "QUSTNR_QESITM_ID", length = 20)
+    @Column(name = "SRVY_QSTN_ID", length = 20)
     private String srvyQitemId;
 
-    @Column(name = "QUSTNR_ID", length = 20)
+    @Column(name = "SRVY_ID", length = 20)
     private String srvyId;
 
     @Column(name = "ARTCL_SN")
@@ -33,10 +33,10 @@ public class QustnrIem extends BaseEntity {
     @Column(name = "ARTCL_CN", length = 2500)
     private String srvyItemCn;
 
-    @Column(name = "ETC_ANSWER_YN", length = 1)
+    @Column(name = "ETC_ANS_YN", length = 1)
     private String etcAnsYn;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
+    @Column(name = "SRVY_TMPLT_ID", length = 20)
     private String srvyTmplatId;
 
     public void update(Long srvyItemSn, String srvyItemCn, String etcAnsYn) {

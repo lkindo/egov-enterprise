@@ -42,19 +42,19 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
         public List<MenuProjection> selectMainMenuHead(String uniqId) {
                 return queryFactory
                                 .select(Projections.bean(MenuProjection.class,
-                                                menu.id.as("menuNo"),
-                                                menu.menuOrdr.as("menuOrdr"),
-                                                menu.menuNm.as("menuNm"),
-                                                menu.upperMenuNo.as("upperMenuId"),
-                                                menu.menuDc.as("menuDc"),
-                                                menu.relateImagePath.as("relateImagePath"),
-                                                menu.relateImageNm.as("relateImageNm"),
-                                                menu.progrmFileNm.as("progrmFileNm"),
-                                                program.url.as("chkURL")))
+                                                 menu.id.as("menuNo"),
+                                                 menu.menuOrdr.as("menuOrdr"),
+                                                 menu.menuNm.as("menuNm"),
+                                                 menu.upperMenuSn.as("upperMenuId"),
+                                                 menu.menuExpln.as("menuDc"),
+                                                 menu.relateImagePath.as("relateImagePath"),
+                                                 menu.relateImageNm.as("relateImageNm"),
+                                                 menu.progrmFileNm.as("progrmFileNm"),
+                                                 program.url.as("chkURL")))
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuNo.eq(menu.id))
                                 .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))
-                                .where(menu.upperMenuNo.eq(0L)
+                                .where(menu.upperMenuSn.eq(0L)
                                                 .and(menuAuthority.id.authorCode.eq(
                                                                 queryFactory.select(userAuthority.authorCode)
                                                                                 .from(userAuthority)
@@ -68,13 +68,13 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
         public List<MenuProjection> selectMainMenuLeft(String uniqId) {
                 return queryFactory
                                 .select(Projections.bean(MenuProjection.class,
-                                                menu.id.as("menuNo"),
-                                                menu.menuOrdr.as("menuOrdr"),
-                                                menu.menuNm.as("menuNm"),
-                                                menu.upperMenuNo.as("upperMenuId"),
-                                                menu.relateImagePath.as("relateImagePath"),
-                                                menu.relateImageNm.as("relateImageNm"),
-                                                program.url.as("chkURL")))
+                                                 menu.id.as("menuNo"),
+                                                 menu.menuOrdr.as("menuOrdr"),
+                                                 menu.menuNm.as("menuNm"),
+                                                 menu.upperMenuSn.as("upperMenuId"),
+                                                 menu.relateImagePath.as("relateImagePath"),
+                                                 menu.relateImageNm.as("relateImageNm"),
+                                                 program.url.as("chkURL")))
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuNo.eq(menu.id))
                                 .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))

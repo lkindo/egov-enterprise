@@ -22,28 +22,28 @@ import lombok.experimental.SuperBuilder;
 public class QustnrInfo extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_ID", length = 20)
+    @Column(name = "SRVY_ID", length = 20)
     private String srvyId;
 
-    @Column(name = "QUSTNR_SJ", length = 255, nullable = false)
+    @Column(name = "SRVY_TTL", length = 255, nullable = false)
     private String srvyTtl;
 
     @Column(name = "SRVY_PRPS", length = 1000)
     private String srvyPrpsCn;
 
-    @Column(name = "QUSTNR_WRITNG_GUIDANCE_CN", length = 2000)
+    @Column(name = "SRVY_WRT_GD_CN", length = 2000)
     private String srvyGuidCn;
 
-    @Column(name = "QUSTNR_BGNDE", length = 10)
+    @Column(name = "SRVY_BGNG_YMD", length = 10)
     private String srvyBgngYmd;
 
-    @Column(name = "QUSTNR_ENDDE", length = 10)
+    @Column(name = "SRVY_END_YMD", length = 10)
     private String srvyEndYmd;
 
     @Column(name = "SRVY_TRGT", length = 1000)
     private String srvyTrgtCn;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    @Column(name = "SRVY_TMPLT_ID", length = 20, nullable = false)
     private String srvyTmplatId;
 
     public void update(String srvyTtl, String srvyPrpsCn, String srvyGuidCn,

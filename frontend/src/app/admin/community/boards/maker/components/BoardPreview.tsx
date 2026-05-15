@@ -27,8 +27,8 @@ import { Card } from '@/components/ui/card';
 
 interface PreviewProps {
  tmplatId: string;
- bbsNm: string;
- bbsIntrcn: string;
+ bbsTtl: string;
+ bbsIntroCn: string;
 }
 
 const MOCK_POSTS = [
@@ -37,7 +37,7 @@ const MOCK_POSTS = [
  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
 ];
 
-export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
+export function BoardPreview({ tmplatId, bbsTtl, bbsIntroCn }: PreviewProps) {
  return (
  <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
  {/* Browser Bar */}
@@ -46,7 +46,7 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
  <div className="w-3 h-3 rounded-lg bg-amber-500" />
  <div className="w-3 h-3 rounded-lg bg-emerald-500" />
  <div className="flex-1 ml-4 bg-white/10 h-7 rounded-lg flex items-center px-4">
- <span className="text-xs font-bold text-white/40 tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsNm || 'UNNAMED'}</span>
+ <span className="text-xs font-bold text-white/40 tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
  </div>
  </div>
 
@@ -55,8 +55,8 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
  <div className="space-y-4 border-b-4 border-slate-900 pb-10">
  <div className="flex justify-between items-end">
  <div className="space-y-2">
- <h1 className="text-4xl font-bold tracking-tighter text-slate-900 uppercase leading-none">{bbsNm || 'PREVIEW_BOARD'}</h1>
- <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsIntrcn || 'Board description placeholder...'}</p>
+ <h1 className="text-4xl font-bold tracking-tighter text-slate-900 uppercase leading-none">{bbsTtl || 'PREVIEW_BOARD'}</h1>
+ <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsIntroCn || 'Board description placeholder...'}</p>
  </div>
  <div className="flex gap-2">
  <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>

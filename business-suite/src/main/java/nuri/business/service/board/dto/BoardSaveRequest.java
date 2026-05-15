@@ -21,9 +21,6 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Attached File ID") @Size(max = 20) String atchFileId,
 
-                @Schema(description = "Notice Flag (Y/N)") @Pattern(regexp = "^[YN]$") String noticeYn,
-
-
                 @Schema(description = "Event Date (ISO-8601)") @Size(max = 20) String eventDate,
 
                 @Schema(description = "Q&A Status (OPEN/SOLVED)") @Size(max = 10) String qnaStatus,

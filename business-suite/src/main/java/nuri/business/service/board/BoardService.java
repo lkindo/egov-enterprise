@@ -198,7 +198,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
-                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return createPost(userId, newRequest);
@@ -234,7 +234,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 String ntcrId = userId;
                 String ntcrNm = author != null ? author.getUserNm() : "익명";
 
-                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), ntcrId, ntcrNm, parent.getSortOrdr(), pstSn, parentId, parent.getReplyLc() + 1);
+                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), ntcrId, ntcrNm, parent.getSortOrdr(), pstSn, parentId, 0);
 
 
                 Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -259,7 +259,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
-                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return replyPost(userId, parentId, newRequest);
@@ -330,7 +330,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.ntceBgnyYmd(), request.ntceEndYmd(), atchFileId,
-                                request.noticeYn(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstId, "pstId 는 null 일 수 없습니다"),

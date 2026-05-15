@@ -117,8 +117,8 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuNo())
-                    .upperMenuId(menu.getUpperMenuNo())
+                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
@@ -148,15 +148,15 @@ public class MenuService {
 
     @Cacheable(value = "allMenus", unless = "#result == null")
     public List<Menu> getAllMenusCached() {
-        return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        return menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
     }
 
     @Cacheable(value = "menuParentMap")
     public Map<Long, Long> getMenuParentMapCached() {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpperMenuNo());
+            parentMap.put(m.getId(), m.getUpperMenuSn());
         }
         return Collections.unmodifiableMap(parentMap);
     }
@@ -178,8 +178,8 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuNo())
-                    .upperMenuId(menu.getUpperMenuNo())
+                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
@@ -284,9 +284,9 @@ public class MenuService {
                 .id(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
                 .progrmFileNm(vo.getProgrmFileNm())
-                .upperMenuNo(vo.getUpperMenuNo())
+                .upperMenuSn(vo.getUpperMenuNo())
                 .menuOrdr(vo.getMenuOrdr())
-                .menuDc(vo.getMenuDc())
+                .menuExpln(vo.getMenuDc())
                 .relateImagePath(vo.getRelateImagePath())
                 .relateImageNm(vo.getRelateImageNm())
                 .modernRoute(vo.getModernRoute())
@@ -353,14 +353,14 @@ public class MenuService {
         if (currentMenu == null)
             return null;
 
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpperMenuNo());
+            parentMap.put(m.getId(), m.getUpperMenuSn());
         }
 
         Long currentId = currentMenu.getId();
-        Long upperId = currentMenu.getUpperMenuNo();
+        Long upperId = currentMenu.getUpperMenuSn();
 
         while (upperId != null && upperId != 0) {
             if (!parentMap.containsKey(upperId))
@@ -400,8 +400,8 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuNo())
-                    .upperMenuId(menu.getUpperMenuNo())
+                    .upperMenuNo(menu.getUpperMenuSn())
+                    .upperMenuId(menu.getUpperMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
@@ -426,8 +426,8 @@ public class MenuService {
                 .menuNo(menu.getId())
                 .menuNm(menu.getMenuNm())
                 .progrmFileNm(menu.getProgrmFileNm())
-                .upperMenuNo(menu.getUpperMenuNo())
-                .upperMenuId(menu.getUpperMenuNo())
+                .upperMenuNo(menu.getUpperMenuSn())
+                .upperMenuId(menu.getUpperMenuSn())
                 .menuOrdr(menu.getMenuOrdr())
                 .chkURL(url)
                 .modernRoute(menu.getModernRoute())

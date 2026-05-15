@@ -128,15 +128,15 @@ const PERMISSIONS = [
 ];
 
 const formSchema = z.object({
- bbsNm: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
- bbsIntrcn: z.string(),
- replyPosblAt: z.boolean(),
- fileAtchPosblAt: z.boolean(),
- atchPosblFileNumber: z.number(),
- atchPosblFileSize: z.number(),
- bbsTyCode: z.string(),
+ bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
+ bbsIntroCn: z.string(),
+ replyPsblYn: z.boolean(),
+ fileAtchPsblYn: z.boolean(),
+ atchPsblFileCnt: z.number(),
+ atchPsblFileSize: z.number(),
+ bbsTypeCd: z.string(),
  tmplatId: z.string(),
- cmmntyId: z.string().optional(),
+ cmntyId: z.string().optional(),
  permissions: z.record(z.string(), z.array(z.string())),
  menuNm: z.string(),
  upperMenuNo: z.string(),
@@ -156,15 +156,15 @@ export function BoardMakerWizard() {
  const { register, handleSubmit, control, formState: { errors }, watch, setValue } = useForm<FormValues>({
  resolver: zodResolver(formSchema),
  defaultValues: {
- bbsNm: '',
- bbsIntrcn: '',
- replyPosblAt: false,
- fileAtchPosblAt: true,
- atchPosblFileNumber: 3,
- atchPosblFileSize: 5242880, // 5MB
- bbsTyCode: 'BBST01',
+ bbsTtl: '',
+ bbsIntroCn: '',
+ replyPsblYn: false,
+ fileAtchPsblYn: true,
+ atchPsblFileCnt: 3,
+ atchPsblFileSize: 5242880, // 5MB
+ bbsTypeCd: 'BBST01',
  tmplatId: 'TMPLT_HUB',
- cmmntyId: '',
+ cmntyId: '',
  permissions: {
  'ROLE_ADMIN': ['list', 'read', 'write', 'comment'],
  'ROLE_USER': ['list', 'read', 'write', 'comment'],
@@ -178,12 +178,12 @@ export function BoardMakerWizard() {
 
  const selectedTemplate = watch('tmplatId');
  const permissions = watch('permissions');
- const bbsNm = watch('bbsNm');
- const bbsIntrcn = watch('bbsIntrcn');
+ const bbsTtl = watch('bbsTtl');
+ const bbsIntroCn = watch('bbsIntroCn');
 
  const nextStep = () => {
  if (currentStep === 1 && !watch('menuNm')) {
- setValue('menuNm', bbsNm);
+ setValue('menuNm', bbsTtl);
  }
  setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
  };
@@ -213,17 +213,17 @@ export function BoardMakerWizard() {
  try {
  // 1. Create Board Master
  const bbsId = await boardAdminService.createBoardMaster({
- bbsNm: data.bbsNm,
- bbsIntrcn: data.bbsIntrcn,
- bbsTyCode: data.bbsTyCode,
- bbsAttrbCode: 'BBSA01', // Missing field causing 500 error
- replyPosblAt: data.replyPosblAt ? 'Y' : 'N',
- fileAtchPosblAt: data.fileAtchPosblAt ? 'Y' : 'N',
- atchPosblFileNumber: Number(data.atchPosblFileNumber),
- atchPosblFileSize: Number(data.atchPosblFileSize),
+ bbsTtl: data.bbsTtl,
+ bbsIntroCn: data.bbsIntroCn,
+ bbsTypeCd: data.bbsTypeCd,
+ bbsAttrCd: 'BBSA01', // Missing field causing 500 error
+ replyPsblYn: data.replyPsblYn ? 'Y' : 'N',
+ fileAtchPsblYn: data.fileAtchPsblYn ? 'Y' : 'N',
+ atchPsblFileCnt: Number(data.atchPsblFileCnt),
+ atchPsblFileSize: Number(data.atchPsblFileSize),
  tmplatId: data.tmplatId,
- blogAt: 'N',
- useAt: 'Y'
+ blogYn: 'N',
+ useYn: 'Y'
  } as any);
 
  if (!bbsId) throw new Error("Failed to get bbsId");
@@ -232,12 +232,12 @@ export function BoardMakerWizard() {
 
  await menuAdminService.createMenu({
  menuNo: generatedMenuNo,
- menuNm: data.menuNm || data.bbsNm,
+ menuNm: data.menuNm || data.bbsTtl,
  upperMenuNo: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
  progrmFileNm: 'EgovBBSMaster',
  modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
- menuDc: `Auto-generated menu for board ${data.bbsNm}`
+ menuDc: `Auto-generated menu for board ${data.bbsTtl}`
  } as any);
 
  setStatus("Provisioning Complete. Refreshing Graph...");
@@ -352,33 +352,33 @@ export function BoardMakerWizard() {
  {currentStep === 1 && (
  <div className="space-y-10 text-left">
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsNm" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
+ <Label htmlFor="bbsTtl" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-primary rounded-lg inline-block" />
  게시판 명칭
  </Label>
  <Input
- id="bbsNm"
+ id="bbsTtl"
  autoFocus
  placeholder="예) 사내 소식 공유 게시판"
  className={cn(
  "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-white dark:bg-slate-950",
- errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-200 dark:border-slate-800"
+ errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-slate-200 dark:border-slate-800"
  )}
- {...register('bbsNm')}
+ {...register('bbsTtl')}
  />
- {errors.bbsNm && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsNm.message}</p>}
+ {errors.bbsTtl && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
  </div>
 
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsIntrcn" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
+ <Label htmlFor="bbsIntroCn" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-slate-200 dark:bg-slate-700 rounded-lg inline-block" />
  게시판 소개
  </Label>
  <Textarea
- id="bbsIntrcn"
+ id="bbsIntroCn"
  placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
  className="min-h-[140px] text-lg rounded-lg border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
- {...register('bbsIntrcn')}
+ {...register('bbsIntroCn')}
  />
  </div>
 
@@ -392,8 +392,8 @@ export function BoardMakerWizard() {
  <p className="text-xs text-slate-400 font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
  </div>
  <Switch
- checked={watch('replyPosblAt')}
- onCheckedChange={(checked) => setValue('replyPosblAt', checked)}
+ checked={watch('replyPsblYn')}
+ onCheckedChange={(checked) => setValue('replyPsblYn', checked)}
  className="data-[state=checked]:bg-primary scale-125"
  />
  </div>
@@ -407,8 +407,8 @@ export function BoardMakerWizard() {
  <p className="text-xs text-slate-400 font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
  </div>
  <Switch
- checked={watch('fileAtchPosblAt')}
- onCheckedChange={(checked) => setValue('fileAtchPosblAt', checked)}
+ checked={watch('fileAtchPsblYn')}
+ onCheckedChange={(checked) => setValue('fileAtchPsblYn', checked)}
  className="data-[state=checked]:bg-primary scale-125 transition-colors"
  />
  </div>
@@ -433,7 +433,7 @@ export function BoardMakerWizard() {
  key={tpl.id}
  onClick={() => {
  setValue('tmplatId', tpl.id);
- setValue('bbsTyCode', tpl.typeCode);
+ setValue('bbsTypeCd', tpl.typeCode);
  }}
  className={cn(
  "group relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
@@ -479,8 +479,8 @@ export function BoardMakerWizard() {
  </div>
  <BoardPreview
  tmplatId={selectedTemplate}
- bbsNm={bbsNm}
- bbsIntrcn={bbsIntrcn}
+ bbsTtl={bbsTtl}
+ bbsIntroCn={bbsIntroCn}
  />
  </div>
  </div>

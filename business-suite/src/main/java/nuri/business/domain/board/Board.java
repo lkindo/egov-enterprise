@@ -41,14 +41,8 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "PST_CN")
     private String pstCn;
 
-    @Column(name = "ANSWER_YN", length = 1)
-    private String replyYn;
-
     @Column(name = "UP_PST_ID")
     private Long parnts;
-
-    @Column(name = "ANSWER_LC")
-    private Integer replyLc;
 
     @Column(name = "SORT_ORDR")
     private Long sortOrdr;
@@ -64,19 +58,19 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "NTCE_BGNDE", length = 20)
+    @Column(name = "PST_BGN_YMD", length = 20)
     private String ntceBgnyYmd;
 
-    @Column(name = "NTCE_ENDDE", length = 20)
+    @Column(name = "PST_END_YMD", length = 20)
     private String ntceEndYmd;
 
-    @Column(name = "NTCR_ID", length = 20)
+    @Column(name = "USER_ID", length = 20)
     private String ntcrId;
 
-    @Column(name = "NTCR_NM", length = 20)
+    @Column(name = "USER_NM", length = 20)
     private String ntcrNm;
 
-    @Column(name = "PASSWORD", length = 200)
+    @Column(name = "PSWD", length = 200)
     private String password;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
@@ -85,32 +79,20 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "SECRET_YN", length = 1)
     private String secretYn;
 
-    @Column(name = "NOTICE_YN", length = 1)
-    private String noticeYn;
-
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
     @Column(name = "EVENT_DATE")
     private java.time.LocalDateTime eventDate;
 
-    @Column(name = "QNA_STATUS", length = 10)
+    @Column(name = "QNA_STTS_CD", length = 10)
     @Builder.Default
     private String qnaStatus = "OPEN";
 
-    @Column(name = "QNA_CATEGORY", length = 50)
+    @Column(name = "QNA_CAT_CD", length = 50)
     private String qnaCategory;
 
-    // 반정규화 필드 (성능 최적화용)
-    @Column(name = "COMMENT_CO")
-    @Builder.Default
-    private Integer commentCo = 0;
-
-    @Column(name = "FILE_CO")
-    @Builder.Default
-    private Integer fileCo = 0;
-
-    @Column(name = "LIKE_CO")
+    @Column(name = "LIKE_CNT")
     @Builder.Default
     private Integer likeCo = 0;
 
@@ -150,14 +132,5 @@ public class Board extends BaseEntity implements Serializable {
             this.likeCo = 0;
         }
         this.likeCo++;
-    }
-
-    // 카운트 업데이트 비즈니스 메서드
-    public void updateCommentCount(int count) {
-        this.commentCo = count;
-    }
-
-    public void updateFileCount(int count) {
-        this.fileCo = count;
     }
 }

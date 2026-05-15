@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/work-reports/{reportId}": {
+    "/api/v1/work-reports/{rptId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{reprtId}": {
+    "/api/v1/memo-reports/{rptId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,7 +188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/leader-schedules/{scheduleId}": {
+    "/api/v1/leader-schedules/{schdlId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -408,7 +408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{id}": {
+    "/api/v1/boards/{bbsId}/posts/{pstId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/bbs/{bbsId}/{nttId}": {
+    "/api/v1/bbs/{bbsId}/{pstId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -545,7 +545,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{qustnrId}/questions/{qesitmId}": {
+    "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -563,7 +563,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{qustnrId}/questions/{qesitmId}": {
+    "/api/v1/surveys/{srvyId}/questions/{srvyQitemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -581,7 +581,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{qustnrId}": {
+    "/api/v1/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -600,7 +600,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{qustnrId}": {
+    "/api/v1/admin/system/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -657,7 +657,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/items/{iemId}": {
+    "/api/v1/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -675,7 +675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/items/{iemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1122,7 +1122,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/community/{cmmntyId}": {
+    "/api/v1/admin/content/community/{cmntyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1618,7 +1618,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmmntyId}/join": {
+    "/api/v1/communities/{cmntyId}/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -1852,7 +1852,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{qustnrId}/questions": {
+    "/api/v1/admin/system/surveys/{srvyId}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1870,7 +1870,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{qustnrId}/questions": {
+    "/api/v1/surveys/{srvyId}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1924,7 +1924,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/{qesitmId}/items": {
+    "/api/v1/admin/system/surveys/questions/{srvyQitemId}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1941,7 +1941,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/{qesitmId}/items": {
+    "/api/v1/surveys/questions/{srvyQitemId}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -2652,7 +2652,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{reprtId}/drct-matter": {
+    "/api/v1/memo-reports/{rptId}/instr-cn": {
         parameters: {
             query?: never;
             header?: never;
@@ -2712,7 +2712,7 @@ export interface paths {
         patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{id}/like": {
+    "/api/v1/boards/{bbsId}/posts/{pstId}/like": {
         parameters: {
             query?: never;
             header?: never;
@@ -3349,7 +3349,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmmntyId}": {
+    "/api/v1/communities/{cmntyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3496,6 +3496,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/statistics/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 사용자 통계 조회 */
+        get: operations["getUserStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/statistics/report": {
         parameters: {
             query?: never;
@@ -3522,6 +3539,23 @@ export interface paths {
         };
         /** 자료이용현황 통계 조회 */
         get: operations["getDataUsageStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/statistics/bbs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 게시물 통계 조회 */
+        get: operations["getBbsStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4145,18 +4179,18 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         WorkReportDto: {
-            reportId?: string;
-            reportSubject?: string;
-            reportContent?: string;
-            reportType?: string;
-            reportDate?: string;
+            rptId?: string;
+            rptTtl?: string;
+            rptCn?: string;
+            rptTypeCd?: string;
+            rptYmd?: string;
             writerId?: string;
-            reportStatus?: string;
+            rptSttsCd?: string;
+            sanctnSttus?: string;
             reportCn?: string;
-            reportNm?: string;
             writngBgnde?: string;
             writngEndde?: string;
-            sanctnSttus?: string;
+            reportNm?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4176,12 +4210,12 @@ export interface components {
             roleName?: string;
             lockAt?: string;
             authorCode?: string;
-            enabled?: boolean;
             username?: string;
+            enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
-            accountNonLocked?: boolean;
             credentialsNonExpired?: boolean;
             accountNonExpired?: boolean;
+            accountNonLocked?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4226,19 +4260,19 @@ export interface components {
             newPassword: string;
         };
         ScheduleDto: {
-            schdulId?: string;
-            schdulSe?: string;
-            schdulDeptId?: string;
-            schdulKindCode?: string;
-            schdulBgnde?: string;
-            schdulEndde?: string;
-            schdulNm?: string;
-            schdulCn?: string;
-            schdulPlace?: string;
-            schdulIpcrCode?: string;
-            schdulChargerId?: string;
+            schdlId?: string;
+            schdlSeCd?: string;
+            schdlDeptId?: string;
+            schdlKindCd?: string;
+            schdlBgngYmd?: string;
+            schdlEndYmd?: string;
+            schdlTtl?: string;
+            schdlCn?: string;
+            schdlPlcNm?: string;
+            schdlIpcrCd?: string;
+            schdlPicId?: string;
             atchFileId?: string;
-            reptitSeCode?: string;
+            reptitSeCd?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             createdDate?: string;
@@ -4271,14 +4305,14 @@ export interface components {
         OnlinePollManageDto: {
             /** @description 설문 ID */
             pollId?: string;
-            /** @description 설명 명 */
-            pollNm?: string;
+            /** @description 설문 제목 */
+            pollTtl?: string;
             /** @description 설문 시작일 */
-            pollBeginDe?: string;
+            pollBgngYmd?: string;
             /** @description 설문 종료일 */
-            pollEndDe?: string;
+            pollEndYmd?: string;
             /** @description 설문 종류 코드 */
-            pollKindCode?: string;
+            pollTypeCd?: string;
             /** @description 설문 폐기 여부 */
             pollDsuseYn?: string;
             /** @description 설문 자동 폐기 여부 */
@@ -4293,45 +4327,45 @@ export interface components {
             /** @description 설문 항목 목록 */
             pollItems?: components["schemas"]["OnlinePollItemDto"][];
         };
-        /** @description Description */
+        /** @description 메모보고 정보 */
         MemoReportDto: {
-            /** @description Description */
-            reprtId?: string;
-            /** @description Description */
-            reprtSj?: string;
-            /** @description Description */
-            reportDe?: string;
-            /** @description Description */
-            wrterId?: string;
-            /** @description Description */
+            /** @description 보고아이디 */
+            rptId?: string;
+            /** @description 보고제목 */
+            rptTtl?: string;
+            /** @description 보고일자 */
+            rptYmd?: string;
+            /** @description 작성자아이디 */
+            writerId?: string;
+            /** @description 작성자명 */
             wrterNm?: string;
-            /** @description Description */
-            reportrId?: string;
-            /** @description Description */
+            /** @description 보고대상자아이디 */
+            rptUserId?: string;
+            /** @description 보고대상자명 */
             reportrNm?: string;
-            /** @description Description */
-            reportCn?: string;
-            /** @description Description */
+            /** @description 보고내용 */
+            rptCn?: string;
+            /** @description 첨부파일아이디 */
             atchFileId?: string;
-            /** @description Description */
-            drctMatter?: string;
-            /** @description Description */
-            drctMatterRegistDt?: string;
-            /** @description Description */
-            reportrInqireDt?: string;
+            /** @description 지시사항내용 */
+            instrCn?: string;
+            /** @description 지시사항등록일시 */
+            instrRegDt?: string;
+            /** @description 보고대상자조회일시 */
+            rptInqDt?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 생성일시
              */
             createdDate?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
-            reprtCn?: string;
-            reprtDe?: string;
-            readAt?: string;
             recptnId?: string;
             recptnNm?: string;
+            readAt?: string;
+            reprtDe?: string;
+            reprtCn?: string;
         };
         /** @description Description */
         MainImageDto: {
@@ -4355,43 +4389,43 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description Description */
+        /** @description 리더 일정 정보 */
         LeaderScheduleDto: {
-            /** @description Description */
-            scheduleId?: string;
-            /** @description Description */
-            scheduleSe?: string;
-            /** @description Description */
-            scheduleNm?: string;
-            /** @description Description */
-            scheduleCn?: string;
-            /** @description Description */
-            schedulePlace?: string;
-            /** @description Description */
+            /** @description 일정아이디 */
+            schdlId?: string;
+            /** @description 일정구분 */
+            schdlSeCd?: string;
+            /** @description 일정명 */
+            schdlTtl?: string;
+            /** @description 일정내용 */
+            schdlCn?: string;
+            /** @description 일정장소 */
+            schdlPlcNm?: string;
+            /** @description 리더아이디 */
             leaderId?: string;
-            /** @description Description */
+            /** @description 리더명 */
             leaderName?: string;
-            /** @description Description */
-            reptitSeCode?: string;
-            /** @description Description */
-            scheduleIpcrCode?: string;
-            /** @description Description */
-            beginDate?: string;
-            /** @description Description */
-            endDate?: string;
-            /** @description Description */
-            chargerId?: string;
-            /** @description Description */
+            /** @description 반복구분코드 */
+            reptitSeCd?: string;
+            /** @description 일정중요도코드 */
+            schdlIpcrCd?: string;
+            /** @description 시작일자 */
+            bgngYmd?: string;
+            /** @description 종료일자 */
+            endYmd?: string;
+            /** @description 담당자아이디 */
+            schdlPicId?: string;
+            /** @description 담당자명 */
             chargerName?: string;
-            /** @description Description */
+            /** @description 생성자아이디 */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 생성일시
              */
             createdDate?: string;
-            importanceCode?: string;
             repeatYn?: string;
+            importanceCode?: string;
             scheduleType?: string;
         };
         /** @description 비정형 결재 DTO */
@@ -4431,9 +4465,9 @@ export interface components {
              */
             createdDate?: string;
             reqstDe?: string;
+            applcntId?: string;
             infrmlSanctnId?: string;
             sancltNm?: string;
-            applcntId?: string;
         };
         /** @description Description */
         OnlineManualDto: {
@@ -4454,9 +4488,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-            mnlId?: string;
             mnlNm?: string;
             mnlDc?: string;
+            mnlId?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -4508,9 +4542,9 @@ export interface components {
              */
             lastUpdusrPnttm?: string;
             /** Format: date-time */
-            lastUpdtPnttm?: string;
-            /** Format: date-time */
             frstRegistPnttm?: string;
+            /** Format: date-time */
+            lastUpdtPnttm?: string;
         };
         DeptJobBoxDto: {
             deptJobbxId?: string;
@@ -4528,9 +4562,9 @@ export interface components {
         };
         CommentSaveRequest: {
             /** Format: int64 */
-            nttId: number;
+            pstId: number;
             bbsId: string;
-            commentCn: string;
+            cmntCn: string;
             password?: string;
         };
         /** @description Board Post Save Request */
@@ -4538,17 +4572,17 @@ export interface components {
             /** @description Board ID */
             bbsId: string;
             /** @description Post Subject */
-            nttSj: string;
+            pstTtl: string;
             /** @description Post Content */
-            nttCn: string;
+            pstCn: string;
             /** @description Notice Start Date */
-            ntceBgnde?: string;
+            ntceBgnyYmd?: string;
             /** @description Notice End Date */
-            ntceEndde?: string;
+            ntceEndYmd?: string;
             /** @description Attached File ID */
             atchFileId?: string;
             /** @description Notice Flag (Y/N) */
-            noticeAt?: string;
+            noticeYn?: string;
             /** @description Event Date (ISO-8601) */
             eventDate?: string;
             /** @description Q&A Status (OPEN/SOLVED) */
@@ -4556,9 +4590,9 @@ export interface components {
             /** @description Q&A Category */
             qnaCategory?: string;
             /** @description Secret Flag (Y/N) */
-            secretAt?: string;
+            secretYn?: string;
             /** @description Use Flag (Y/N) */
-            useAt?: string;
+            useYn?: string;
             /** @description Author ID */
             ntcrId?: string;
             /** @description Author Name */
@@ -4581,22 +4615,22 @@ export interface components {
         /** @description 설문항목 DTO */
         QustnrIemDto: {
             /** @description 설문항목아이디 */
-            qustnrIemId?: string;
+            srvyItemId?: string;
             /** @description 설문문항아이디 */
-            qustnrQesitmId?: string;
+            srvyQitemId?: string;
             /** @description 설문아이디 */
-            qustnrId?: string;
+            srvyId?: string;
             /**
              * Format: int64
              * @description 항목순번
              */
-            iemSn?: number;
+            srvyItemSn?: number;
             /** @description 항목내용 */
-            iemCn?: string;
+            srvyItemCn?: string;
             /** @description 기타답변여부 */
-            etcAnswerAt?: string;
+            etcAnsYn?: string;
             /** @description 설문템플릿아이디 */
-            qustnrTmplatId?: string;
+            srvyTmplatId?: string;
             /** @description 등록자 */
             createdBy?: string;
             /**
@@ -4608,25 +4642,25 @@ export interface components {
         /** @description 설문문항 DTO */
         QustnrQesitmDto: {
             /** @description 설문문항아이디 */
-            qustnrQesitmId?: string;
+            srvyQitemId?: string;
             /** @description 설문아이디 */
-            qustnrId?: string;
+            srvyId?: string;
             /**
              * Format: int64
              * @description 질문순번
              */
-            qestnSn?: number;
+            srvyQitemSn?: number;
             /** @description 질문유형코드 */
-            qestnTyCode?: string;
+            srvyQitemTypeCd?: string;
             /** @description 질문내용 */
-            qestnCn?: string;
+            srvyQitemCn?: string;
             /**
              * Format: int32
              * @description 최대선택수
              */
-            mxmmChoiseCo?: number;
+            maxChcCnt?: number;
             /** @description 설문템플릿아이디 */
-            qustnrTmplatId?: string;
+            srvyTmplatId?: string;
             /** @description 등록자 */
             createdBy?: string;
             /**
@@ -4640,21 +4674,21 @@ export interface components {
         /** @description 설문정보 DTO */
         QustnrInfoDto: {
             /** @description 설문아이디 */
-            qustnrId?: string;
+            srvyId?: string;
             /** @description 설문제목 */
-            qustnrSj?: string;
+            srvyTtl?: string;
             /** @description 설문목적 */
-            qustnrPurps?: string;
+            srvyPrpsCn?: string;
             /** @description 설문작성안내내용 */
-            qustnrWritngGuidanceCn?: string;
+            srvyGuidCn?: string;
             /** @description 설문시작일자 */
-            qustnrBeginDe?: string;
+            srvyBgngYmd?: string;
             /** @description 설문종료일자 */
-            qustnrEndDe?: string;
+            srvyEndYmd?: string;
             /** @description 설문대상 */
-            qustnrTrget?: string;
+            srvyTrgtCn?: string;
             /** @description 설문템플릿아이디 */
-            qustnrTmplatId?: string;
+            srvyTmplatId?: string;
             /** @description 등록자 */
             createdBy?: string;
             /**
@@ -4666,13 +4700,13 @@ export interface components {
         /** @description 설문템플릿 DTO */
         QustnrTmplatDto: {
             /** @description 설문템플릿아이디 */
-            qustnrTmplatId?: string;
-            /** @description 설문템플릿유형 */
-            qustnrTmplatTy?: string;
+            srvyTmplatId?: string;
+            /** @description 설문템플릿유형코드 */
+            srvyTmplatTypeCd?: string;
             /** @description 설문템플릿이미지경로 */
-            qustnrTmplatImagepathnm?: string;
+            srvyTmplatImgPath?: string;
             /** @description 설문템플릿내용 */
-            qustnrTmplatCn?: string;
+            srvyTmplatCn?: string;
             /** @description 등록자 */
             createdBy?: string;
             /**
@@ -4735,17 +4769,17 @@ export interface components {
              */
             createdDate?: string;
             frstRegisterId?: string;
-            ntceBgnde?: string;
-            ntceEndde?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
-            ntceAt?: string;
-            popupHSize?: string;
-            popupTitleNm?: string;
+            ntceEndde?: string;
             popupWlc?: string;
-            popupHlc?: string;
-            stopVewAt?: string;
+            popupTitleNm?: string;
             popupWSize?: string;
+            popupHlc?: string;
+            popupHSize?: string;
+            stopVewAt?: string;
+            ntceBgnde?: string;
+            ntceAt?: string;
         };
         /** @description 메뉴 정보 DTO */
         MenuDto: {
@@ -4835,8 +4869,8 @@ export interface components {
             frstRegisterId?: string;
             lastUpdusrId?: string;
             ipAdres?: string;
-            dplctLoginAt?: string;
             lastUpdtPntTM?: string;
+            dplctLoginAt?: string;
         };
         InternetSvcGuidanceDto: {
             intnetSvcId?: string;
@@ -4939,16 +4973,16 @@ export interface components {
         };
         BoardMasterDto: {
             bbsId?: string;
-            bbsNm?: string;
-            bbsIntrcn?: string;
-            bbsTyCode?: string;
-            bbsAttrbCode?: string;
-            replyPosblAt?: string;
-            fileAtchPosblAt?: string;
+            bbsTtl?: string;
+            bbsIntroCn?: string;
+            bbsTypeCd?: string;
+            bbsAttrCd?: string;
+            replyPsblYn?: string;
+            fileAtchPsblYn?: string;
             /** Format: int32 */
-            atchPosblFileNumber?: number;
+            atchPsblFileCnt?: number;
             /** Format: int64 */
-            atchPosblFileSize?: number;
+            atchPsblFileSize?: number;
             tmplatId?: string;
             frstRegisterId?: string;
             /** Format: date-time */
@@ -4956,12 +4990,12 @@ export interface components {
             lastUpdusrId?: string;
             /** Format: date-time */
             lastUpdusrPnttm?: string;
-            useAt?: string;
-            cmmntyId?: string;
+            useYn?: string;
+            cmntyId?: string;
             blogId?: string;
-            blogAt?: string;
-            commentAt?: string;
-            stsfdgAt?: string;
+            blogYn?: string;
+            commentYn?: string;
+            stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
         };
@@ -5024,14 +5058,14 @@ export interface components {
             rceptEndDe?: string;
         };
         CommunityDto: {
-            cmmntyId?: string;
-            cmmntyNm?: string;
-            cmmntyIntrcn?: string;
-            registSeCode?: string;
-            registSeCodeNm?: string;
+            cmntyId?: string;
+            cmntyTtl?: string;
+            cmntyIntroCn?: string;
+            regTypeCd?: string;
+            regTypeCdNm?: string;
             tmplatId?: string;
             tmplatNm?: string;
-            useAt?: string;
+            useYn?: string;
             frstRegisterId?: string;
             frstRegisterNm?: string;
             frstRegisterPnttm?: string;
@@ -5112,11 +5146,11 @@ export interface components {
             scrapId?: string;
             bbsId?: string;
             /** Format: int64 */
-            nttId?: number;
+            pstId?: number;
             scrapNm?: string;
             scrapUrl?: string;
             scrapDc?: string;
-            useAt?: string;
+            useYn?: string;
             uniqId?: string;
             frstRegisterId?: string;
             /** Format: date-time */
@@ -5138,6 +5172,7 @@ export interface components {
             ntfcNo?: string;
             ntfcSj?: string;
             ntfcCn?: string;
+            /** Format: date-time */
             ntfcTime?: string;
             bhNtfcIntrvl?: string;
             receiverId?: string;
@@ -5182,10 +5217,10 @@ export interface components {
             regDate?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
+            trnsmitterId?: string;
+            trnsmitterNm?: string;
             /** Format: date-time */
             sendDt?: string;
-            trnsmitterNm?: string;
-            trnsmitterId?: string;
         };
         /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
@@ -5293,14 +5328,14 @@ export interface components {
             lastModifiedDate?: string;
             createdBy?: string;
             lastModifiedBy?: string;
-            frstRegisterId?: string;
             lastUpdusrId?: string;
+            frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
             /** Format: date-time */
-            lastUpdtPnttm?: string;
-            /** Format: date-time */
             frstRegistPnttm?: string;
+            /** Format: date-time */
+            lastUpdtPnttm?: string;
             /** Format: date-time */
             lastUpdusrPnttm?: string;
         };
@@ -5387,9 +5422,9 @@ export interface components {
             searchCondition?: string;
             /** @description 검색어 */
             searchWrd?: string;
+            frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
-            frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
@@ -6113,18 +6148,16 @@ export interface components {
             /** Format: int64 */
             id?: number;
             /** Format: int64 */
-            nttId?: number;
+            pstId?: number;
             bbsId?: string;
-            wrterId?: string;
-            wrterNm?: string;
-            commentCn?: string;
-            useAt?: string;
+            writerId?: string;
+            writerNm?: string;
+            cmntCn?: string;
+            useYn?: string;
             /** Format: date-time */
             createdDate?: string;
             /** Format: date-time */
             modifiedDate?: string;
-            /** Format: int64 */
-            commentNo?: number;
         };
         PageResponseCommentDto: {
             list?: components["schemas"]["CommentDto"][];
@@ -6154,16 +6187,16 @@ export interface components {
              * @description 게시물 ID
              * @example 1001
              */
-            id?: number;
+            pstId?: number;
             /**
              * @description 게시판 ID
              * @example BBS_000000000001
              */
             bbsId?: string;
             /** @description 게시물 제목 */
-            nttSj?: string;
+            pstTtl?: string;
             /** @description 게시물 내용 */
-            nttCn?: string;
+            pstCn?: string;
             /** @description 작성자 이름 */
             ntcrNm?: string;
             /**
@@ -6187,7 +6220,7 @@ export interface components {
              * Format: int64
              * @description 게시물 번호
              */
-            nttNo?: number;
+            pstSn?: number;
             /**
              * Format: int64
              * @description 정렬 순서
@@ -6199,21 +6232,21 @@ export interface components {
              * @description 답글 여부
              * @example N
              */
-            replyAt?: string;
+            replyYn?: string;
             /**
              * Format: int32
              * @description 답글 레벨
              */
             replyLc?: number;
             /** @description 게시 시작일 */
-            ntceBgnde?: string;
+            ntceBgnyYmd?: string;
             /** @description 게시 종료일 */
-            ntceEndde?: string;
+            ntceEndYmd?: string;
             /**
              * @description 사용 여부
              * @example Y
              */
-            useAt?: string;
+            useYn?: string;
             /**
              * @description 만료 여부
              * @example N
@@ -6233,16 +6266,16 @@ export interface components {
              */
             lastUpdtPnttm?: string;
             /** @description 비밀 게시글 여부 */
-            secretAt?: string;
+            secretYn?: string;
             /** @description 블로그 게시글 여부 */
-            blogAt?: string;
+            blogYn?: string;
             /**
              * Format: int32
              * @description 댓글 수
              */
             commentCo?: number;
             /** @description 게시판 명 */
-            bbsNm?: string;
+            bbsTtl?: string;
             /**
              * Format: date-time
              * @description 행사 일시
@@ -6256,7 +6289,7 @@ export interface components {
             /** @description QNA 카테고리 */
             qnaCategory?: string;
             /** @description 공지사항 여부 */
-            noticeAt?: string;
+            noticeYn?: string;
             /** @description 별칭 ID (레거시 호환) */
             knoId?: string;
             /** @description 별칭 제목 (레거시 호환) */
@@ -6269,11 +6302,11 @@ export interface components {
             categoryCd?: string;
             /** @description 행사 일시 (문자열) */
             eventDateStr?: string;
+            /** Format: int64 */
+            nttId?: number;
             /** Format: date-time */
             createdDate?: string;
             frstRegisterNm?: string;
-            /** Format: int64 */
-            nttId?: number;
             commentCoLegacy?: string;
         };
         PageResponseBoardDto: {
@@ -6849,8 +6882,8 @@ export interface components {
             errOccrrAt?: string;
             errorCode?: string;
             creatDt?: string;
-            errorOccrrAt?: string;
             loginDt?: string;
+            errorOccrrAt?: string;
         };
         PageResponseLoginLogDto: {
             list?: components["schemas"]["LoginLogDto"][];
@@ -7581,7 +7614,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 보고 ID */
-                reportId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -7603,7 +7636,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                reportId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -7629,7 +7662,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                reportId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -7867,7 +7900,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 보고 ID */
-                reprtId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -7889,7 +7922,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                reprtId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -7915,7 +7948,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                reprtId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -8009,7 +8042,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 일정 ID */
-                scheduleId: string;
+                schdlId: string;
             };
             cookie?: never;
         };
@@ -8031,7 +8064,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scheduleId: string;
+                schdlId: string;
             };
             cookie?: never;
         };
@@ -8057,7 +8090,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scheduleId: string;
+                schdlId: string;
             };
             cookie?: never;
         };
@@ -8571,7 +8604,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                id: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8594,7 +8627,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                id: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8629,7 +8662,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                id: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8652,7 +8685,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                nttId: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8675,7 +8708,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                nttId: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8705,7 +8738,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                nttId: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -8923,8 +8956,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
-                qesitmId: string;
+                srvyId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -8950,7 +8983,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qesitmId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -8972,8 +9005,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
-                qesitmId: string;
+                srvyId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -8999,7 +9032,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qesitmId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -9021,7 +9054,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9043,7 +9076,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9069,7 +9102,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9091,7 +9124,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9113,7 +9146,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9139,7 +9172,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -9301,7 +9334,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                iemId: string;
+                srvyItemId: string;
             };
             cookie?: never;
         };
@@ -9327,7 +9360,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                iemId: string;
+                srvyItemId: string;
             };
             cookie?: never;
         };
@@ -9349,7 +9382,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                iemId: string;
+                srvyItemId: string;
             };
             cookie?: never;
         };
@@ -9375,7 +9408,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                iemId: string;
+                srvyItemId: string;
             };
             cookie?: never;
         };
@@ -10607,7 +10640,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 커뮤니티 ID */
-                cmmntyId: string;
+                cmntyId: string;
             };
             cookie?: never;
         };
@@ -10630,7 +10663,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 커뮤니티 ID */
-                cmmntyId: string;
+                cmntyId: string;
             };
             cookie?: never;
         };
@@ -10657,7 +10690,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 커뮤니티 ID */
-                cmmntyId: string;
+                cmntyId: string;
             };
             cookie?: never;
         };
@@ -11008,7 +11041,9 @@ export interface operations {
     };
     createNotification: {
         parameters: {
-            query?: never;
+            query: {
+                userDetails: components["schemas"]["CustomUserDetails"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11562,7 +11597,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                cmmntyId: string;
+                cmntyId: string;
             };
             cookie?: never;
         };
@@ -11582,7 +11617,7 @@ export interface operations {
     getComments: {
         parameters: {
             query: {
-                nttId: number;
+                pstId: number;
                 bbsId: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -12009,7 +12044,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -12031,7 +12066,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -12057,7 +12092,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -12079,7 +12114,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qustnrId: string;
+                srvyId: string;
             };
             cookie?: never;
         };
@@ -12199,7 +12234,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qesitmId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -12225,7 +12260,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                qesitmId: string;
+                srvyQitemId: string;
             };
             cookie?: never;
         };
@@ -13722,7 +13757,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                reprtId: string;
+                rptId: string;
             };
             cookie?: never;
         };
@@ -13801,7 +13836,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                id: number;
+                pstId: number;
             };
             cookie?: never;
         };
@@ -14207,7 +14242,9 @@ export interface operations {
     };
     getUnreadCount: {
         parameters: {
-            query?: never;
+            query: {
+                userDetails: components["schemas"]["CustomUserDetails"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14587,7 +14624,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 커뮤니티 ID */
-                cmmntyId: string;
+                cmntyId: string;
             };
             cookie?: never;
         };
@@ -14773,6 +14810,29 @@ export interface operations {
             };
         };
     };
+    getUserStats: {
+        parameters: {
+            query?: {
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                };
+            };
+        };
+    };
     getReportStats: {
         parameters: {
             query?: {
@@ -14797,6 +14857,29 @@ export interface operations {
         };
     };
     getDataUsageStats: {
+        parameters: {
+            query?: {
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                };
+            };
+        };
+    };
+    getBbsStats: {
         parameters: {
             query?: {
                 fromDate?: string;

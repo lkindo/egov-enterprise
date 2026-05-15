@@ -24,28 +24,28 @@ import java.time.LocalDateTime;
 public class Menu extends BaseEntity {
 
     @Id
-    @Column(name = "MENU_NO")
+    @Column(name = "MENU_SN")
     private Long id;
 
     @Column(name = "MENU_NM", nullable = false, length = 60)
     private String menuNm;
 
-    @Column(name = "PROGRM_FILE_NM", length = 60)
+    @Column(name = "PRGRM_FILE_NM", length = 60)
     private String progrmFileNm;
 
-    @Column(name = "UP_MENU_NO")
-    private Long upperMenuNo;
+    @Column(name = "UP_MENU_SN")
+    private Long upperMenuSn;
 
     @Column(name = "MENU_ORDR", nullable = false)
     private Integer menuOrdr;
 
-    @Column(name = "MENU_DC", length = 250)
-    private String menuDc;
+    @Column(name = "MENU_EXPLN", length = 250)
+    private String menuExpln;
 
-    @Column(name = "RELATE_IMAGE_PATH", length = 100)
+    @Column(name = "REL_IMG_PATH", length = 100)
     private String relateImagePath;
 
-    @Column(name = "RELATE_IMAGE_NM", length = 60) // Sync: 100 -> 60
+    @Column(name = "REL_IMG_NM", length = 60)
     private String relateImageNm;
 
     /**
@@ -54,20 +54,19 @@ public class Menu extends BaseEntity {
     @Column(name = "MODERN_ROUTE", length = 500)
     private String modernRoute;
 
-    @UpdateTimestamp
-    @Column(name = "ROUTE_UPDATED_YN")
-    private LocalDateTime routeUpdatedAt;
+    @Column(name = "ROUTE_MDFCN_YN", length = 1)
+    private String routeMdfcnYn;
 
     /**
      * 메뉴 정보 수정
      */
-    public void update(String menuNm, String progrmFileNm, Long upperMenuNo, Integer menuOrdr, String menuDc,
+    public void update(String menuNm, String progrmFileNm, Long upperMenuSn, Integer menuOrdr, String menuExpln,
                        String relateImagePath, String relateImageNm) {
         this.menuNm = menuNm;
         this.progrmFileNm = progrmFileNm;
-        this.upperMenuNo = upperMenuNo;
+        this.upperMenuSn = upperMenuSn;
         this.menuOrdr = menuOrdr;
-        this.menuDc = menuDc;
+        this.menuExpln = menuExpln;
         this.relateImagePath = relateImagePath;
         this.relateImageNm = relateImageNm;
     }
@@ -82,9 +81,9 @@ public class Menu extends BaseEntity {
     /**
      * 메뉴 정보 수정 (modern_route 포함)
      */
-    public void updateWithModernRoute(String menuNm, String progrmFileNm, Long upperMenuNo, Integer menuOrdr,
-                                       String menuDc, String relateImagePath, String relateImageNm, String modernRoute) {
-        this.update(menuNm, progrmFileNm, upperMenuNo, menuOrdr, menuDc, relateImagePath, relateImageNm);
+    public void updateWithModernRoute(String menuNm, String progrmFileNm, Long upperMenuSn, Integer menuOrdr,
+                                       String menuExpln, String relateImagePath, String relateImageNm, String modernRoute) {
+        this.update(menuNm, progrmFileNm, upperMenuSn, menuOrdr, menuExpln, relateImagePath, relateImageNm);
         this.modernRoute = modernRoute;
     }
 }

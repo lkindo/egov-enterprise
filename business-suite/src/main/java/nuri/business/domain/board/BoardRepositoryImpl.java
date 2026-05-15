@@ -45,11 +45,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.useYn,
                                                 QBoard.board.atchFileId,
                                                 QBoard.board.parnts,
-                                                QBoard.board.replyYn,
-                                                QBoard.board.replyLc,
                                                 QBoard.board.sortOrdr,
                                                 QBoard.board.sjBoldYn,
-                                                QBoard.board.noticeYn,
                                                 QBoard.board.secretYn,
                                                 QBoard.board.eventDate,
                                                 QBoard.board.qnaStatus,
@@ -80,9 +77,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 case "views":
                                         orderSpecifier = QBoard.board.inqireCo.desc();
                                         break;
-                                case "comments":
-                                        orderSpecifier = QBoard.board.commentCo.desc(); 
-                                        break;
+
                                 case "date":
                                         orderSpecifier = QBoard.board.createdDate.desc();        
                                         break;
@@ -98,14 +93,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.createdDate,
                                                 QBoard.board.inqireCo,
                                                 QBoard.board.likeCo,
-                                                QBoard.board.replyYn,
                                                 QBoard.board.parnts,
-                                                QBoard.board.replyLc,
                                                 QBoard.board.sortOrdr,
                                                 QBoard.board.pstSn,
-                                                QBoard.board.noticeYn,
                                                 QBoard.board.secretYn,
-                                                QBoard.board.commentCo,
                                                 QBoard.board.eventDate,
                                                 QBoard.board.qnaStatus,
                                                 QBoard.board.qnaCategory))

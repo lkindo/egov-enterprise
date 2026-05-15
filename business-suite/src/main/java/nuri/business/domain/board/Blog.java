@@ -30,7 +30,7 @@ public class Blog extends BaseEntity {
     @Column(name = "REG_SE_CD", length = 12)
     private String regTypeCd;
 
-    @Column(name = "TMPLAT_ID", length = 20)
+    @Column(name = "TMPLT_ID", length = 20)
     private String tmplatId;
 
     @Column(name = "USE_YN", length = 1)

@@ -20,7 +20,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             await boardMasterPage.fillStep1(boardName, 'E2E Optimized Board Description');
 
             console.log('>>> Step 3: Phase 2 - Template Choice');
-            await boardMasterPage.fillStep2('지???�브');
+            await boardMasterPage.fillStep2('지???�브');
 
             console.log('>>> Step 4: Phase 3 - ACL Permissions');
             await boardMasterPage.fillStep3();
@@ -88,7 +88,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await expect(editor).toBeVisible({ timeout: 15000 });
                 await editor.fill('Initial E2E test content.');
 
-                const commitBtn = page.locator('button:has-text("Commit Knowledge"), button[aria-label="게시글 ?�??]').first();
+                const commitBtn = page.locator('button:has-text("Commit Knowledge"), button[aria-label="게시글 ?�??]').first();
                 await commitBtn.click();
 
                 // Wait for navigation AWAY from the insert page
@@ -135,7 +135,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 });
 
                 console.log('\n>>> Step 3: Updating Article');
-                const editBtn = page.getByLabel('게시글 ?�정').first();
+                const editBtn = page.getByLabel('게시글 ?�정').first();
                 await editBtn.waitFor({ state: 'visible', timeout: 10000 });
                 await editBtn.click();
                 
@@ -158,7 +158,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 console.log('>>> Clicking Save Button');
                 await saveButton.click();
                 
-                await expect(page.getByText(/?�공?�으�?(?�정|?�록)?�었?�니???�?�되?�습?�다/)).toBeVisible({ timeout: 15000 });
+                await expect(page.locator("text=/성공적으로|완료되었습니다/").first()).toBeVisible({ timeout: 15000 });
                 console.log('>>> Save success toast detected');
                 await page.waitForURL(/\/admin\/community\/boards/, { timeout: 30000 });
 
@@ -178,7 +178,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 });
 
                 console.log('>>> Step 4: Deleting Article');
-                const deleteBtn = page.getByLabel('게시글 ??��').first();
+                const deleteBtn = page.getByLabel('게시글 ??��').first();
                 await deleteBtn.click();
                 await expect(page).toHaveURL(/\/admin\/community\/boards(\/selectBoardList)?/, { timeout: 20000 });
                 console.log('>>> Successfully deleted and returned to list.');

@@ -18,18 +18,18 @@ public class Authority extends BaseEntity implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "AUTHOR_CODE", length = 30)
+    @Column(name = "AUTHRT_CD", length = 30)
     @NonNull
     private String authorCode;
 
-    @Column(name = "AUTHOR_NM", nullable = false, length = 60)
+    @Column(name = "AUTHRT_NM", nullable = false, length = 60)
     @NonNull
     private String authorNm;
 
-    @Column(name = "AUTHOR_DC", length = 200)
+    @Column(name = "AUTHRT_EXPLN", length = 200)
     private String authorDc;
 
-    @Column(name = "AUTHOR_CREAT_DE")
+    @Column(name = "AUTHRT_CRT_YMD")
     @Builder.Default
     private LocalDateTime authorCreatDe = LocalDateTime.now();
 

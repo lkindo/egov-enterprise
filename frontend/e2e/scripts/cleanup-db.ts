@@ -74,13 +74,13 @@ async function cleanup() {
     
     const boards = boardsRes.data.data?.list || boardsRes.data.data?.content || [];
     const testBoards = boards.filter((b: any) => 
-      b.bbsNm.startsWith('E2E Test Board') || 
-      b.bbsNm.startsWith('E2E_Wizard_') ||
-      b.bbsNm.startsWith('E2E ')
+      (b.bbsTtl || b.bbsNm || "").startsWith('E2E Test Board') || 
+      (b.bbsTtl || b.bbsNm || "").startsWith('E2E_Wizard_') ||
+      (b.bbsTtl || b.bbsNm || "").startsWith('E2E ')
     );
     
     for (const board of testBoards) {
-      process.stdout.write(`  - Deleting Board: ${board.bbsNm} (${board.bbsId})... `);
+      process.stdout.write(`  - Deleting Board: ${(board.bbsTtl || board.bbsNm)} (${board.bbsId})... `);
       await axios.delete(`${API_BASE}/admin/system/board-masters/${board.bbsId}`, { 
         headers,
         params: { userId: ADMIN_ID }
@@ -97,12 +97,12 @@ async function cleanup() {
       });
       const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
       const testPolls = polls.filter((p: any) => 
-        p.pollNm?.startsWith('E2E Poll') || 
-        p.pollNm?.startsWith('E2E Duplicate Test') ||
-        p.pollNm?.startsWith('Debug')
+        p.(pollTtl || pollNm)?.startsWith('E2E Poll') || 
+        p.(pollTtl || pollNm)?.startsWith('E2E Duplicate Test') ||
+        p.(pollTtl || pollNm)?.startsWith('Debug')
       );
       for (const poll of testPolls) {
-        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollId})... `);
+        process.stdout.write(`  - Deleting Poll: ${poll.(pollTtl || pollNm)} (${poll.pollId})... `);
         await axios.delete(`${API_BASE}/polls/${poll.pollId}`, { headers });
         console.log('DONE');
       }

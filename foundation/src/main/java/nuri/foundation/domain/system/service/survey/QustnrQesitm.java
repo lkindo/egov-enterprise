@@ -18,25 +18,25 @@ import lombok.experimental.SuperBuilder;
 public class QustnrQesitm extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_QESITM_ID", length = 20)
+    @Column(name = "SRVY_QSTN_ID", length = 20)
     private String srvyQitemId;
 
-    @Column(name = "QUSTNR_ID", length = 20)
+    @Column(name = "SRVY_ID", length = 20)
     private String srvyId;
 
-    @Column(name = "QITEM_SN")
+    @Column(name = "QSTN_SN")
     private Long srvyQitemSn;
 
-    @Column(name = "QESTN_TY_CODE", length = 20)
+    @Column(name = "QSTN_TYPE_CD", length = 20)
     private String srvyQitemTypeCd;
 
-    @Column(name = "QESTN_CN", length = 2500)
+    @Column(name = "QSTN_CN", length = 2500)
     private String srvyQitemCn;
 
     @Column(name = "MAX_CHC_CNT")
     private Integer maxChcCnt;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
+    @Column(name = "SRVY_TMPLT_ID", length = 20)
     private String srvyTmplatId;
 
     public void update(Long srvyQitemSn, String srvyQitemTypeCd, String srvyQitemCn, Integer maxChcCnt) {

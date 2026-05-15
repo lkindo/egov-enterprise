@@ -15,14 +15,14 @@ class ScrapService extends ApiService {
  }
 
  /**
- * ?˜ì˜ ½ºÅ©·¦¸ñ·Ï Á¶È¸
+ * ë‚˜ì˜ ìŠ¤í¬ë©ëª©ë¡ ì¡°íšŒ
  */
  async getMyScraps(params: { page?: number; size?: number }): Promise<PageResponse<Scrap>> {
  return this.get<PageResponse<Scrap>>('', { params });
  }
 
  /**
- * ½ºÅ©·¦´Ô œ
+ * ìŠ¤í¬ë© ì‚­ì œ
  */
  async deleteScrap(id: string): Promise<void> {
  return this.delete<void>(`/${id}`);

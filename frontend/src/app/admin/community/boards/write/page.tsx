@@ -50,7 +50,7 @@ export default function BoardWritePage() {
  ntceEndde: '',
  noticeAt: 'N' as 'Y' | 'N',
  secretAt: 'N' as 'Y' | 'N',
- useAt: 'Y' as 'Y' | 'N',
+ useYn: 'Y' as 'Y' | 'N',
  eventDate: ''
  }
  });

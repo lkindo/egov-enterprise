@@ -14,8 +14,8 @@ export class BoardMasterPage {
       hasText: /NEW BOARD WIZARD|마법사|Wizard|Maker|Create/i 
     }).or(page.locator('button:has(svg.lucide-rocket), button:has(.lucide-rocket)')).first();
     
-    this.bbsNmInput = page.locator('#bbsNm').first();
-    this.bbsIntrcnInput = page.locator('#bbsIntrcn').first();
+    this.bbsNmInput = page.locator('#bbsTtl').first();
+    this.bbsIntrcnInput = page.locator('#bbsIntroCn').first();
     this.nextButton = page.locator('button').filter({ hasText: /다음 단계로|Next/i }).first();
     this.deployButton = page.locator('button').filter({ hasText: /게시판 생성|Deploy|Create/i }).first();
   }
@@ -154,17 +154,17 @@ export class BoardMasterPage {
     console.log('>>> Settings modal is visible');
   }
 
-  async updateSettings(data: { name?: string; description?: string; useAt?: 'Y' | 'N' }) {
+  async updateSettings(data: { name?: string; description?: string; useYn?: 'Y' | 'N' }) {
     if (data.name) {
       await this.page.locator('#modal-bbs-name').fill(data.name);
     }
     if (data.description) {
       await this.page.locator('#modal-bbs-description').fill(data.description);
     }
-    if (data.useAt) {
+    if (data.useYn) {
       const switchEl = this.page.locator('#modal-bbs-use-at');
       const isChecked = await switchEl.getAttribute('aria-checked') === 'true';
-      if ((data.useAt === 'Y' && !isChecked) || (data.useAt === 'N' && isChecked)) {
+      if ((data.useYn === 'Y' && !isChecked) || (data.useYn === 'N' && isChecked)) {
         await switchEl.click();
       }
     }

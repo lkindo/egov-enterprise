@@ -295,7 +295,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <DynamicBreadcrumb 
  customItems={[
  { name: pathname?.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
- { name: masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판') }
+ { name: masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판') }
  ]}
  />
 
@@ -308,7 +308,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  >
  <div className={cn("w-2 h-10 rounded-full shadow-lg", tmplatId === 'TMPLT_HUB' ? "bg-gradient-to-b from-indigo-500 to-purple-500" : "bg-gradient-to-b from-primary to-primary/60")} />
  <h2 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
- {masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
+ {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </h2>
  {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
  </motion.div>
@@ -318,7 +318,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    transition={{ delay: 0.1 }}
    className="text-slate-500 font-bold ml-5 text-lg"
  >
- {masterInfo?.bbsIntrcn || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
+ {masterInfo?.bbsIntroCn || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
  </motion.p>
  </div>
 
@@ -350,7 +350,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    </div>
  )}
  <span className="bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">
-   {masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
+   {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </span>
  </CardTitle>
  <p className="text-slate-400 font-bold text-lg ml-1">총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 소중한 이야기가 담겨있습니다.</p>

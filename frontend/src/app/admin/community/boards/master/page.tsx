@@ -93,9 +93,9 @@ export default function BoardMasterListPage() {
   const handleEdit = (board: BoardMaster) => {
     setSelectedBoard(board);
     setEditData({
-      bbsNm: board.bbsNm,
-      bbsIntrcn: board.bbsIntrcn,
-      useAt: board.useAt
+      bbsTtl: board.bbsTtl,
+      bbsIntroCn: board.bbsIntroCn,
+      useYn: board.useYn
     });
     setIsModalOpen(true);
   };
@@ -115,7 +115,7 @@ export default function BoardMasterListPage() {
   const handleDelete = async (board: BoardMaster) => {
     const isConfirmed = await confirm({
       title: '게시판 완전 삭제',
-      message: `[${board.bbsNm}] 게시판을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+      message: `[${board.bbsTtl}] 게시판을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
       confirmText: '삭제',
       variant: 'destructive'
     });
@@ -137,7 +137,7 @@ export default function BoardMasterListPage() {
       accessor: (board: BoardMaster) => (
         <div className="flex items-center group">
           <div className="space-y-1 text-left min-w-0 flex-1 overflow-hidden">
-            <p className="text-base font-bold text-foreground tracking-tight leading-none truncate">{board.bbsNm}</p>
+            <p className="text-base font-bold text-foreground tracking-tight leading-none truncate">{board.bbsTtl}</p>
             <p className="text-[10px] font-bold text-muted-foreground/40 uppercase leading-none tracking-widest truncate">{board.bbsId}</p>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function BoardMasterListPage() {
       header: '메타 정보',
       accessor: (board: BoardMaster) => (
         <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
-          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsIntrcn}</p>
+          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsIntroCn}</p>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
               {board.bbsTyCodeNm}
@@ -163,9 +163,9 @@ export default function BoardMasterListPage() {
         <div className="flex justify-center">
           <Badge className={cn(
             "px-4 py-1.5 rounded-lg font-bold text-xs uppercase border-none tracking-widest shadow-sm",
-            board.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+            board.useYn === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
           )}>
-            {board.useAt === 'Y' ? '활성' : '대기'}
+            {board.useYn === 'Y' ? '활성' : '대기'}
           </Badge>
         </div>
       ),
@@ -323,8 +323,8 @@ export default function BoardMasterListPage() {
               <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시판 명칭</Label>
               <Input 
                 id="modal-bbs-name"
-                value={editData.bbsNm || ''} 
-                onChange={(e) => setEditData({...editData, bbsNm: e.target.value})}
+                value={editData.bbsTtl || ''} 
+                onChange={(e) => setEditData({...editData, bbsTtl: e.target.value})}
                 className="h-11 rounded-lg border-2 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all"
               />
             </div>
@@ -333,8 +333,8 @@ export default function BoardMasterListPage() {
               <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
-                value={editData.bbsIntrcn || ''} 
-                onChange={(e) => setEditData({...editData, bbsIntrcn: e.target.value})}
+                value={editData.bbsIntroCn || ''} 
+                onChange={(e) => setEditData({...editData, bbsIntroCn: e.target.value})}
                 className="h-11 rounded-lg border-2 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
               />
             </div>
@@ -346,8 +346,8 @@ export default function BoardMasterListPage() {
               </div>
               <Switch 
                 id="modal-bbs-use-at"
-                checked={editData.useAt === 'Y'} 
-                onCheckedChange={(checked) => setEditData({...editData, useAt: checked ? 'Y' : 'N'})}
+                checked={editData.useYn === 'Y'} 
+                onCheckedChange={(checked) => setEditData({...editData, useYn: checked ? 'Y' : 'N'})}
                 className="scale-125"
               />
             </div>

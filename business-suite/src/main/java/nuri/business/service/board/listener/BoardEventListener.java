@@ -43,8 +43,8 @@ public class BoardEventListener {
         long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
         
         boardRepository.findById(pstId).ifPresent(board -> {
-            board.updateCommentCount((int) count);
-            log.info(">>> Updated Board(pstId={}) comment count to {}", pstId, count);
+            // board.updateCommentCount((int) count); // Removed in v5
+            log.info(">>> Comment count updated (pstId={}), but denormalized field removed in v5", pstId);
         });
     }
 }
