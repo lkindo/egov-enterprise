@@ -20,7 +20,7 @@ import lombok.Builder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "TB_CNSLT_LIST")
+@Table(name = "TB_DSCSN_LIST")
 @SuperBuilder
 public class CnsltManage extends BaseEntity {
 

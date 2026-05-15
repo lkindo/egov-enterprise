@@ -13,7 +13,7 @@ import lombok.Builder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_STSFDG_INFO")
+@Table(name = "TB_DGSTFN_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

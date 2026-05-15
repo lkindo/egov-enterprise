@@ -37,21 +37,21 @@ public class User extends BaseEntity implements Serializable {
     private String userId;
 
     @Builder.Default
-    @Column(name = "USER_TYPE", nullable = false, length = 10)
+    @Column(name = "USER_TYPE_CD", nullable = false, length = 10)
     private String userType = "EMP";
 
     @Column(name = "USER_NM", nullable = false, length = 60)
     @NonNull
     private String userNm;
 
-    @Column(name = "PASSWORD", nullable = false, length = 600)
+    @Column(name = "PSWD", nullable = false, length = 600)
     @NonNull
     private String password;
 
-    @Column(name = "PASSWORD_HINT", length = 300)
+    @Column(name = "PSWD_HINT", length = 300)
     private String passwordHint;
 
-    @Column(name = "PASSWORD_CNSR", length = 300)
+    @Column(name = "PSWD_CNSR", length = 300)
     private String passwordCnsr;
 
     @Column(name = "CHG_PWD_LAST_PNTTM", columnDefinition = "TIMESTAMP")
@@ -77,29 +77,29 @@ public class User extends BaseEntity implements Serializable {
     private String subDn;
 
     // ■ 개인 정보
-    @Column(name = "IHIDNUM", length = 600)
+    @Column(name = "RRNO", length = 600)
     private String ihidnum;
 
-    @Column(name = "SEXDSTN_CODE", length = 1)
+    @Column(name = "GNDR_CD", length = 1)
     private String sexdstnCode;
 
-    @Column(name = "BRTHDY", length = 20)
+    @Column(name = "BRTH_YMD", length = 20)
     private String brth;
 
     @Column(name = "EML_ADDR", length = 50)
     private String emailAdres;
 
-    @Column(name = "MBTLNUM", length = 20)
+    @Column(name = "MBL_TEL_NO", length = 20)
     private String moblphonNo;
 
     // ■ 주소 정보
     @Column(name = "ZIP", length = 6)
     private String zip;
 
-    @Column(name = "ADRES", length = 300)
+    @Column(name = "BASE_ADDR", length = 300)
     private String homeadres;
 
-    @Column(name = "DETAIL_ADRES", length = 300)
+    @Column(name = "DTL_ADDR", length = 300)
     private String detailAdres;
 
     @Column(name = "AREA_NO", length = 4)
@@ -111,7 +111,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "END_TELNO", length = 4)
     private String homeendTelno;
 
-    @Column(name = "FXNUM", length = 20)
+    @Column(name = "FAX_NO", length = 20)
     private String fxnum;
 
     @Column(name = "OFFM_TELNO", length = 20)
@@ -121,10 +121,10 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "GROUP_ID", length = 20)
     private String groupId;
 
-    @Column(name = "ORGNZT_ID", length = 20)
+    @Column(name = "OGNZ_ID", length = 20)
     private String orgnztId;
 
-    @Column(name = "PSTINST_CODE", length = 8)
+    @Column(name = "PSTINST_CD", length = 8)
     private String insttCode;
 
     @Column(name = "EMPL_NO", length = 20)
@@ -139,32 +139,31 @@ public class User extends BaseEntity implements Serializable {
     private Role role = Role.USER;
 
     // ■ 기업 전용 (nullable)
-    @Column(name = "BIZRNO", length = 10)
+    @Column(name = "BIZR_NO", length = 10)
     private String bizrno;
 
-    @Column(name = "JURIRNO", length = 13)
+    @Column(name = "JURIR_NO", length = 13)
     private String jurirno;
 
     @Column(name = "CMPNY_NM", length = 50)
     private String cmpnyNm;
 
-    @Column(name = "CXFC", length = 50)
+    @Column(name = "RPRSV_NM", length = 50)
     private String cxfc;
 
-    @Column(name = "INDUTY_CODE", length = 15)
+    @Column(name = "INDUTY_CD", length = 15)
     private String indutyCode;
 
-    @Column(name = "ENTRPRS_SE_CODE", length = 15)
+    @Column(name = "ENT_SE_CD", length = 15)
     private String entrprsSeCode;
 
     // ■ 상태 및 감사
     @Builder.Default
-    @Column(name = "STATUS_CODE", length = 15)
+    @Column(name = "USER_STTS_CD", length = 15)
     private String statusCode = "P";
 
-    @CreatedDate
-    @Column(name = "SBSCRB_DE", updatable = false)
-    private LocalDateTime sbscrbDe;
+    @Column(name = "SBSCRB_YMD", updatable = false, length = 8)
+    private String sbscrbYmd;
 
     public void update(String userNm, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth,

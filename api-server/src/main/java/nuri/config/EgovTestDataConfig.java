@@ -50,14 +50,14 @@ public class EgovTestDataConfig {
             log.info(">>> Creating test board: {} ({})", bbsNm, bbsId);
             BoardMaster board = BoardMaster.builder()
                     .bbsId(bbsId)
-                    .bbsNm(bbsNm)
-                    .bbsIntrcn(bbsNm + " 설명")
-                    .bbsTyCode(tyCode)
-                    .bbsAttrbCode("BBSA01")
+                    .bbsTtl(bbsNm)
+                    .bbsIntroCn(bbsNm + " 설명")
+                    .bbsTypeCd(tyCode)
+                    .bbsAttrCd("BBSA01")
                     .useYn("Y")
-                    .replyPosblYn("Y")
-                    .fileAtchPosblYn("Y")
-                    .atchPosblFileNumber(3)
+                    .replyPsblYn("Y")
+                    .fileAtchPsblYn("Y")
+                    .atchPsblFileCnt(3)
                     .optnFrstRegisterId("webmaster")
                     .build();
             boardMasterRepository.save(board);
@@ -85,7 +85,7 @@ public class EgovTestDataConfig {
                     .homemiddleTelno("0000")
                     .zip("000000")
                     .statusCode("A")
-                    .sbscrbDe(LocalDateTime.now())
+                    .sbscrbYmd(LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
                     .build();
 
             userRepository.save(user);

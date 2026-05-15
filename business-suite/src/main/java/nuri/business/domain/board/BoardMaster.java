@@ -29,38 +29,38 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
 
-    @Column(name = "BBS_NM", nullable = false, length = 765)
+    @Column(name = "BBS_TTL", nullable = false, length = 100)
     private String bbsTtl;
 
-    @Column(name = "BBS_INTRCN", length = 7200)
+    @Column(name = "BBS_INTRO_CN", length = 4000)
     private String bbsIntroCn;
 
-    @Column(name = "BBS_TY_CODE", length = 6, nullable = false)
+    @Column(name = "BBS_TYPE_CD", length = 12, nullable = false)
     private String bbsTypeCd;
 
-    @Column(name = "BBS_ATTRB_CODE", length = 6, nullable = false)
+    @Column(name = "BBS_ATRB_CD", length = 12, nullable = false)
     private String bbsAttrCd;
 
-    @Column(name = "REPLY_POSBL_YN", length = 1)
+    @Column(name = "ANS_PSBLTY_YN", length = 1)
     @Builder.Default
     private String replyPsblYn = "N";
 
-    @Column(name = "FILE_ATCH_POSBL_YN", length = 1, nullable = false)
+    @Column(name = "FILE_ATCH_PSBLTY_YN", length = 1, nullable = false)
     @Builder.Default
     private String fileAtchPsblYn = "N";
 
-    @Column(name = "ATCH_POSBL_FILE_NUMBER", nullable = false)
+    @Column(name = "ATCH_PSBLTY_FILE_QTY", nullable = false)
     @Builder.Default
     private Integer atchPsblFileCnt = 0;
 
-    @Column(name = "ATCH_POSBL_FILE_SIZE")
+    @Column(name = "ATCH_PSBLTY_FILE_SZ")
     private Long atchPsblFileSize;
 
     @Column(name = "USE_YN", nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "TMPLAT_ID", length = 20)
+    @Column(name = "TMPLT_ID", length = 20)
     private String tmplatId;
 
     @Column(name = "BLOG_ID", length = 20)
@@ -73,7 +73,7 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "CMNTY_ID", length = 20)
     private String cmntyId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "ANSWER_YN", length = 1)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "ANS_YN", length = 1)
     @Builder.Default
     private String commentYn = "N";
 
@@ -85,7 +85,7 @@ public class BoardMaster extends BaseEntity {
     @Column(table = "TB_BBS_MASTER_OPTN", name = "FRST_RGTR_ID", length = 20, updatable = false)
     private String optnFrstRegisterId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "CREAT_DT", updatable = false)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "CRT_DT", updatable = false)
     private LocalDateTime optnFrstRegistPnttm;
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "LAST_MDFR_ID", length = 20)

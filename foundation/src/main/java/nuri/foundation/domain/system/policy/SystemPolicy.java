@@ -19,7 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_POLICY_MANAGE")
+@Table(name = "TB_PLCY_MANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

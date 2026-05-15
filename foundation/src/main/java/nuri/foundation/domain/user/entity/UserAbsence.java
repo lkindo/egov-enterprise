@@ -8,7 +8,7 @@ import lombok.*;
  * 사용자 부재 정보 엔티티
  */
 @Entity
-@Table(name = "TB_USER_ABSENCE")
+@Table(name = "TB_USER_ABSN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

@@ -27,25 +27,25 @@ import lombok.experimental.SuperBuilder;
 public class LoginPolicy extends BaseEntity {
 
     @Id
-    @Column(name = "EMPLYR_ID", length = 20)
+    @Column(name = "USER_ID", length = 20)
     private String emplyrId;
 
-    @Column(name = "IP_INFO", length = 23)
+    @Column(name = "IP_ADDR", length = 30)
     private String ipInfo;
 
-    @Column(name = "DPLCT_PERM_YN", length = 1)
+    @Column(name = "DPCN_PRM_YN", length = 1)
     private String dplctPermAt;
 
-    @Column(name = "LMTT_YN", length = 1)
+    @Column(name = "LMT_YN", length = 1)
     private String lmttAt;
 
-    @Column(name = "STRT_TM", length = 5)
-    private String startTime; // HH:mm
+    @Column(name = "BGNG_TM", length = 6)
+    private String startTime; // HHmmss
 
-    @Column(name = "END_TM", length = 5)
-    private String endTime; // HH:mm
+    @Column(name = "END_TM", length = 6)
+    private String endTime; // HHmmss
 
-    @Column(name = "OTP_ENABLED_YN", length = 1)
+    @Column(name = "OTP_USE_YN", length = 1)
     private String otpEnabledAt;
 
     public void update(String ipInfo, String dplctPermAt, String lmttAt, String startTime, String endTime, String otpEnabledAt) {

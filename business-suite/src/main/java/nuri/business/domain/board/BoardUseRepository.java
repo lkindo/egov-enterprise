@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface BoardUseRepository extends JpaRepository<BoardUse, BoardUseId> {
 
-    @Query("SELECT bu FROM BoardUse bu WHERE bu.trgetId = :trgetId AND bu.useAt = 'Y'")
-    List<BoardUse> findByTrgetIdAndUseAtY(@Param("trgetId") String trgetId);
+    @Query("SELECT bu FROM BoardUse bu WHERE bu.trgetId = :trgetId AND bu.useYn = 'Y'")
+    List<BoardUse> findByTrgetIdAndUseYnY(@Param("trgetId") String trgetId);
 
-    @Query("SELECT bu FROM BoardUse bu WHERE bu.useAt = 'Y'")
+    @Query("SELECT bu FROM BoardUse bu WHERE bu.useYn = 'Y'")
     Page<BoardUse> findAllActive(Pageable pageable);
 
     void deleteByBbsId(String bbsId);
