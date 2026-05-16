@@ -18,7 +18,7 @@ public interface TemplateRepository extends JpaRepository<Template, String> {
 
     List<Template> findByTmplatSeCode(String tmplatSeCode);
 
-    List<Template> findByUseAt(String useAt);
+    List<Template> findByUseYn(String useYn);
 
-    List<Template> findByTmplatSeCodeAndUseAt(String tmplatSeCode, String useAt);
+    List<Template> findByTmplatSeCodeAndUseYn(String tmplatSeCode, String useYn);
 }

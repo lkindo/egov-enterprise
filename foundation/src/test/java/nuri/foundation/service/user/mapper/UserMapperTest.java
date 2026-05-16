@@ -19,7 +19,7 @@ public class UserMapperTest {
     public void testToDto_NullCheck() {
         assertNull(mapper.toDto(null));
         
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").role(null).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
         UserDto dto = mapper.toDto(user);
         assertNotNull(dto);
         assertEquals("user1", dto.getUserId());
@@ -29,7 +29,7 @@ public class UserMapperTest {
     @Test
     @DisplayName("toDto - with role")
     public void testToDto_WithRole() {
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").role(Role.ADMIN).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(Role.ADMIN).build();
         UserDto dto = mapper.toDto(user);
         assertEquals("ADMIN", dto.getRole());
     }
@@ -43,7 +43,7 @@ public class UserMapperTest {
     @Test
     @DisplayName("toDtoWithAuthority - null authority, user with role")
     public void testToDtoWithAuthority_NullAuthority() {
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").role(Role.ADMIN).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(Role.ADMIN).build();
         UserDto dto = mapper.toDtoWithAuthority(user, null);
         assertNotNull(dto);
         assertEquals("ROLE_ADMIN", dto.getRole());
@@ -53,7 +53,7 @@ public class UserMapperTest {
     @Test
     @DisplayName("toDtoWithAuthority - null authority, user without role")
     public void testToDtoWithAuthority_NullAuthority_NullRole() {
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").role(null).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
         UserDto dto = mapper.toDtoWithAuthority(user, null);
         assertNotNull(dto);
         assertEquals("ROLE_USER", dto.getRole());
@@ -63,7 +63,7 @@ public class UserMapperTest {
     @Test
     @DisplayName("toDtoWithAuthority - with authority")
     public void testToDtoWithAuthority_WithAuthority() {
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
         UserAuthority auth = UserAuthority.builder().uniqId("esntl1").authorCode("ROLE_SYS").mberTyCode("USR").build();
         UserDto dto = mapper.toDtoWithAuthority(user, auth);
         assertNotNull(dto);
@@ -83,7 +83,7 @@ public class UserMapperTest {
     @DisplayName("toResponse - basic mapping")
     public void testToResponse() {
         assertNull(mapper.toResponse(null));
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").password("1234").build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
         UserResponse response = mapper.toResponse(user);
         assertNotNull(response);
         assertEquals("user1", response.getUserId());

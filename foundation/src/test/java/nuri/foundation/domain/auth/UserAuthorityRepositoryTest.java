@@ -39,7 +39,7 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
                 .userId("testUser")
                 .esntlId("USR_AUTH_001")
                 .userNm("권한테스트")
-                .password("password")
+                .pswd("password")
                 .role(Role.USER)
                 .groupId("GROUP_01")
                 .build();

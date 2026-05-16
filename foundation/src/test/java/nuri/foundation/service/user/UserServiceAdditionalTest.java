@@ -50,7 +50,7 @@ class UserServiceAdditionalTest {
                 .userId(userId)
                 .esntlId("ESNTL_" + userId)
                 .userNm("Name_" + userId)
-                .password("password");
+                .pswd("password");
     }
 
     private UserDto.UserDtoBuilder createBaseUserDto(String userId) {
@@ -118,7 +118,7 @@ class UserServiceAdditionalTest {
         String encodedNewPassword = "encodedNewPassword";
 
         User user = createBaseUser(userId)
-                .password(encodedOldPassword)
+                .pswd(encodedOldPassword)
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -129,7 +129,7 @@ class UserServiceAdditionalTest {
         userService.changePassword(userId, oldPassword, newPassword);
 
         // Then
-        assertThat(user.getPassword()).isEqualTo(encodedNewPassword);
+        assertThat(user.getPswd()).isEqualTo(encodedNewPassword);
         verify(passwordEncoder).encode(newPassword);
     }
 
@@ -143,7 +143,7 @@ class UserServiceAdditionalTest {
         String encodedOldPassword = "encodedOldPassword";
 
         User user = createBaseUser(userId)
-                .password(encodedOldPassword)
+                .pswd(encodedOldPassword)
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));

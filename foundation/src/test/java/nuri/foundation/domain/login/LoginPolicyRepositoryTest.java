@@ -50,7 +50,7 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
                 .userId("tester01")
                 .userNm("홍길동")
                 .esntlId("USR_001")
-                .password("pass")
+                .pswd("pass")
                 .build();
         userRepository.save(user1);
 
@@ -81,7 +81,7 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
                 .userId("tester02")
                 .userNm("이순신")
                 .esntlId("USR_002")
-                .password("pass")
+                .pswd("pass")
                 .build();
         userRepository.save(user1);
 

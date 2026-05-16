@@ -15,15 +15,17 @@ import lombok.Builder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddressBookUserSearchResult {
     private String userId;
-    private String nm;
+    private String userNm;
     private String emlAddr;
     private String homeTelno;
     private String mblTelno;
     private String officeTelno;
     private String faxNo;
 
-    // Compatibility getters
-    public String getUserId() { return userId; }
+    // ----- [Legacy Aliases] -----
+    public String getNm() { return userNm; }
+    public void setNm(String v) { this.userNm = v; }
+
     public String getEmlAddr() { return emlAddr; }
     public String getMblTelno() { return mblTelno; }
     public String getOfficeTelno() { return officeTelno; }

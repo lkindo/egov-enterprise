@@ -133,20 +133,20 @@ class TemplateServiceTest {
     @Test
     @DisplayName("사용 중인 템플릿 목록 조회")
     void getActiveTemplates() {
-        given(templateRepository.findByUseAt("Y")).willReturn(List.of());
+        given(templateRepository.findByUseYn("Y")).willReturn(List.of());
 
         templateService.getActiveTemplates();
 
-        verify(templateRepository).findByUseAt("Y");
+        verify(templateRepository).findByUseYn("Y");
     }
 
     @Test
     @DisplayName("유형별 사용 중인 템플릿 목록 조회")
     void getActiveTemplatesByType() {
-        given(templateRepository.findByTmplatSeCodeAndUseAt("T1", "Y")).willReturn(List.of());
+        given(templateRepository.findByTmplatSeCodeAndUseYn("T1", "Y")).willReturn(List.of());
 
         templateService.getActiveTemplatesByType("T1");
 
-        verify(templateRepository).findByTmplatSeCodeAndUseAt("T1", "Y");
+        verify(templateRepository).findByTmplatSeCodeAndUseYn("T1", "Y");
     }
 }

@@ -24,11 +24,11 @@ class UserValidatorTest {
   void validateUserSignupRequest_fail_withNullUserId() {
     UserSignupRequest request = UserSignupRequest.builder()
         .userId(null)
-        .password("password123!")
+        .pswd("password123!")
         .userNm("테스트사용자")
         .role("USER")
-        .passwordHint("hint")
-        .passwordCnsr("answer")
+        .pswdHint("hint")
+        .pswdCrans("answer")
         .build();
 
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -41,11 +41,11 @@ class UserValidatorTest {
   void validateUserSignupRequest_fail_withInvalidPassword() {
     UserSignupRequest request = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("short")
+        .pswd("short")
         .userNm("테스트사용자")
         .role("USER")
-        .passwordHint("hint")
-        .passwordCnsr("answer")
+        .pswdHint("hint")
+        .pswdCrans("answer")
         .build();
 
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -81,7 +81,7 @@ class UserValidatorTest {
   void validateUserSignupRequest_fail_withNullUserNm() {
     UserSignupRequest request = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("password123!")
+        .pswd("password123!")
         .userNm(null)
         .build();
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -94,7 +94,7 @@ class UserValidatorTest {
   void validateUserSignupRequest_fail_withInvalidUserNm() {
     UserSignupRequest request = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("password123!")
+        .pswd("password123!")
         .userNm("a") // 너무 짧음
         .build();
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -109,9 +109,9 @@ class UserValidatorTest {
     
     UserSignupRequest request1 = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("password123!")
+        .pswd("password123!")
         .userNm("홍길동")
-        .passwordHint(longString)
+        .pswdHint(longString)
         .build();
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request1))
         .isInstanceOf(IllegalArgumentException.class)
@@ -119,10 +119,10 @@ class UserValidatorTest {
 
     UserSignupRequest request2 = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("password123!")
+        .pswd("password123!")
         .userNm("홍길동")
-        .passwordHint("hint")
-        .passwordCnsr(longString)
+        .pswdHint("hint")
+        .pswdCrans(longString)
         .build();
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request2))
         .isInstanceOf(IllegalArgumentException.class)
@@ -134,7 +134,7 @@ class UserValidatorTest {
   void validateUserSignupRequest_success() {
     UserSignupRequest request = UserSignupRequest.builder()
         .userId("validUserId")
-        .password("password123!")
+        .pswd("password123!")
         .userNm("홍길동")
         .build();
     UserValidator.validateUserSignupRequest(request);
@@ -147,23 +147,23 @@ class UserValidatorTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User cannot be null");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("").esntlId("").userNm("홍길동").password("1234").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("").esntlId("").userNm("홍길동").pswd("1234").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User ID cannot be null or empty");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("a").esntlId("esntl1").userNm("홍길동").password("1234").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("a").esntlId("esntl1").userNm("홍길동").pswd("1234").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User ID must be 4-20 alphanumeric characters");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("").password("1234").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("").pswd("1234").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User name cannot be null or empty");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("a").password("1234").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("a").pswd("1234").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User name contains invalid characters");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("홍길동").password("1234").emlAddr("invalid").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("홍길동").pswd("1234").emlAddr("invalid").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid email format");
   }
@@ -175,7 +175,7 @@ class UserValidatorTest {
         .userId("user1")
         .esntlId("esntl1")
         .userNm("홍길동")
-        .password("1234")
+        .pswd("1234")
         .emlAddr("test@example.com")
         .build();
     UserValidator.validateUser(user);

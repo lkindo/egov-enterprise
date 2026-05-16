@@ -13,7 +13,7 @@ class UserTest {
         User user = User.builder()
                 .userId("user01")
                 .userNm("홍길동")
-                .password("pwd123")
+                .pswd("pwd123")
                 .esntlId("ESNTL_01")
                 .build();
  

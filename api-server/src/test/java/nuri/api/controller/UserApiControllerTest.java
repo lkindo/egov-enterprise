@@ -30,11 +30,11 @@ public class UserApiControllerTest extends BaseControllerTest {
         // Invalid request: empty userId, short password, empty userNm
         UserSignupRequest request = UserSignupRequest.builder()
                 .userId("")
-                .password("123")
+                .pswd("123")
                 .userNm("")
                 .role("USER")
-                .passwordHint("hint")
-                .passwordCnsr("123")
+                .pswdHint("hint")
+                .pswdCrans("123")
                 .build();
 
         mockMvc.perform(post("/api/v1/users/signup")
@@ -48,11 +48,11 @@ public class UserApiControllerTest extends BaseControllerTest {
         // Valid request
         UserSignupRequest request = UserSignupRequest.builder()
                 .userId("validUser")
-                .password("ValidPass123!")
+                .pswd("ValidPass123!")
                 .userNm("Valid Name")
                 .role("USER")
-                .passwordHint("hint")
-                .passwordCnsr("ValidPass123!")
+                .pswdHint("hint")
+                .pswdCrans("ValidPass123!")
                 .build();
 
         UserResponse response = UserResponse.builder()

@@ -37,13 +37,13 @@ public class UserDto {
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
-    private String password;
+    private String pswd;
 
     @Size(max = 100, message = "비밀번호 힌트는 최대 100 자입니다")
-    private String passwordHint;
+    private String pswdHint;
 
     @Size(max = 100, message = "비밀번호 정답은 최대 100 자입니다")
-    private String passwordCnsr;
+    private String pswdCrans;
     
     @Size(max = 50, message = "권한명은 최대 50 자입니다")
     private String role;
@@ -82,10 +82,10 @@ public class UserDto {
     private String groupId;
 
     @Size(max = 300, message = "주소는 최대 300 자입니다")
-    private String homeadres;
+    private String homeAddr;
 
     @Size(max = 300, message = "상세주소는 최대 300 자입니다")
-    private String detailAdres;
+    private String daddr;
 
     @Size(max = 5, message = "우편번호는 5자입니다")
     private String zip;
@@ -117,6 +117,11 @@ public class UserDto {
     private LocalDateTime createdDate;
 
     // ----- [Legacy Aliases] -----
+    public String getPassword() { return pswd; }
+    public String getPasswordHint() { return pswdHint; }
+    public String getPasswordCnsr() { return pswdCrans; }
+    public String getHomeadres() { return homeAddr; }
+    public String getDetailAdres() { return daddr; }
     public String getSexdstnCode() { return gndrCd; }
     public String getBrth() { return brthYmd; }
     public String getFxnum() { return faxNo; }
@@ -126,6 +131,11 @@ public class UserDto {
     public String getUserSttusCode() { return userSttsCd; }
     public String getLockAt() { return lckYn; }
 
+    public void setPassword(String v) { this.pswd = v; }
+    public void setPasswordHint(String v) { this.pswdHint = v; }
+    public void setPasswordCnsr(String v) { this.pswdCrans = v; }
+    public void setHomeadres(String v) { this.homeAddr = v; }
+    public void setDetailAdres(String v) { this.daddr = v; }
     public void setSexdstnCode(String v) { this.gndrCd = v; }
     public void setBrth(String v) { this.brthYmd = v; }
     public void setFxnum(String v) { this.faxNo = v; }
@@ -143,6 +153,9 @@ public class UserDto {
                 .userNm(Objects.requireNonNull(user.getUserNm()))
                 .esntlId(user.getEsntlId())
                 .role(user.getRole() != null ? user.getRole().name() : null)
+                .pswd(user.getPswd())
+                .pswdHint(user.getPswdHint())
+                .pswdCrans(user.getPswdCrans())
                 .emplNo(user.getEmplNo())
                 .gndrCd(user.getGndrCd())
                 .brthYmd(user.getBrthYmd())
@@ -153,8 +166,8 @@ public class UserDto {
                 .insttCode(user.getInsttCode())
                 .orgnztId(user.getOrgnztId())
                 .groupId(user.getGroupId())
-                .homeadres(user.getHomeadres())
-                .detailAdres(user.getDetailAdres())
+                .homeAddr(user.getHomeAddr())
+                .daddr(user.getDaddr())
                 .zip(user.getZip())
                 .officeTelno(user.getOfficeTelno())
                 .mblTelno(user.getMblTelno())

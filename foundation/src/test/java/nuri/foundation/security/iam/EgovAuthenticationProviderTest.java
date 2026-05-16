@@ -50,7 +50,7 @@ class EgovAuthenticationProviderTest {
         testUser = User.builder()
                 .userId("testuser")
                 .esntlId("USR_0000000000001")
-                .password("{egov}hashedPassword")
+                .pswd("{egov}hashedPassword")
                 .userNm("Test User")
                 .lckYn("N")
                 .build();

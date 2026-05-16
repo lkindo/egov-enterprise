@@ -85,14 +85,14 @@ public class TemplateService implements EgovTemplateService {
 
     @Override
     public List<TemplateDto> getActiveTemplates() {
-        return templateRepository.findByUseAt("Y").stream()
+        return templateRepository.findByUseYn("Y").stream()
                 .map(TemplateDto::from)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TemplateDto> getActiveTemplatesByType(String tmplatSeCode) {
-        return templateRepository.findByTmplatSeCodeAndUseAt(tmplatSeCode, "Y").stream()
+        return templateRepository.findByTmplatSeCodeAndUseYn(tmplatSeCode, "Y").stream()
                 .map(TemplateDto::from)
                 .collect(Collectors.toList());
     }

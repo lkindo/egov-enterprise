@@ -18,7 +18,7 @@ class UserDtoTest {
                 .userId("tester")
                 .userNm("테스터")
                 .esntlId("USR_0000000000001")
-                .password("password") // Fixed: Add required field
+                .pswd("password") // Fixed: Add required field
                 .role(Role.ADMIN)
                 .emplNo("12345")
                 .ofcpsNm("과장")
@@ -48,19 +48,19 @@ class UserDtoTest {
         // Given & When
         UserSignupRequest request = UserSignupRequest.builder()
                 .userId("signupUser")
-                .password("password123!")
+                .pswd("password123!")
                 .userNm("가입자")
                 .role("USER")
-                .passwordHint("Hint")
-                .passwordCnsr("Answer")
+                .pswdHint("Hint")
+                .pswdCrans("Answer")
                 .build();
 
         // Then
         assertThat(request.getUserId()).isEqualTo("signupUser");
-        assertThat(request.getPassword()).isEqualTo("password123!");
+        assertThat(request.getPswd()).isEqualTo("password123!");
         assertThat(request.getUserNm()).isEqualTo("가입자");
         assertThat(request.getRole()).isEqualTo("USER");
-        assertThat(request.getPasswordHint()).isEqualTo("Hint");
-        assertThat(request.getPasswordCnsr()).isEqualTo("Answer");
+        assertThat(request.getPswdHint()).isEqualTo("Hint");
+        assertThat(request.getPswdCrans()).isEqualTo("Answer");
     }
 }

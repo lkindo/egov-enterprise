@@ -46,7 +46,7 @@ class AuthenticationControllerIntegrationTest {
 
         User testUser = User.builder()
                 .userId("testuser")
-                .password(passwordEncoder.encode("password123!"))
+                .pswd(passwordEncoder.encode("password123!"))
                 .userNm("Test User")
                 .esntlId("USR_0000000000001")
                 .userSttsCd("A")

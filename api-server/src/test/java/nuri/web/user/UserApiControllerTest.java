@@ -67,7 +67,7 @@ class UserApiControllerTest extends BaseControllerTest {
         return UserDto.builder()
                 .userId(TEST_USER_ID)
                 .userNm("testNm")
-                .password("password123!") // Add password
+                .pswd("password123!") // Add password
                 .esntlId("esntl-123")
                 .role("USER")
                 .build();

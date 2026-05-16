@@ -81,7 +81,7 @@ class DeptJobServiceTest {
 
         User user = User.builder()
                 .userId("TEST")
-                .password("TEST")
+                .pswd("TEST")
                 .esntlId("USER1")
                 .userNm("Test User")
                 .build();

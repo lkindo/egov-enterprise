@@ -62,7 +62,7 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Book").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser user = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").nm("User").build();
+        AddressBookUser user = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").userNm("User").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(user));
 
         AddressBookDto result = addressBookService.getAddressBook("A1");
@@ -76,7 +76,7 @@ class AddressBookServiceImplTest {
     void createAddressBook_Success() throws Exception {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkNm("New Book")
-                .adbkMan(List.of(AddressBookUserDto.builder().nm("User").build()))
+                .adbkMan(List.of(AddressBookUserDto.builder().userNm("User").build()))
                 .build();
         
         given(egovAdbkIdGnrService.getNextStringId()).willReturn("A1");
@@ -100,7 +100,7 @@ class AddressBookServiceImplTest {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkId("A1")
                 .adbkNm("New")
-                .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").nm("NewUser").build())) // Add new user, remove E1
+                .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").userNm("NewUser").build())) // Add new user, remove E1
                 .build();
         
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("AU2");
@@ -130,7 +130,7 @@ class AddressBookServiceImplTest {
         // Repository returns a Projection usually, but here we can return mock or implementation
         AddressBookUserSearchResult proj = mock(AddressBookUserSearchResult.class);
         given(proj.getUserId()).willReturn("E1");
-        given(proj.getNm()).willReturn("User1");
+        given(proj.getUserNm()).willReturn("User1");
         
         given(addressBookRepository.searchAddressBookUsers(anyString(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(proj)));

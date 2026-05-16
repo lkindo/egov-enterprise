@@ -56,16 +56,16 @@ class UserServiceCrudTest {
         .userId("testUser")
         .userNm("테스트사용자")
         .esntlId("USR_1234567890123456")
-        .password("encodedPassword")
+        .pswd("encodedPassword")
         .build();
 
     signupRequest = UserSignupRequest.builder()
         .userId("newUser")
-        .password("password123!")
+        .pswd("password123!")
         .userNm("신규사용자")
         .role("USER")
-        .passwordHint("hint")
-        .passwordCnsr("answer")
+        .pswdHint("hint")
+        .pswdCrans("answer")
         .build();
   }
 
@@ -172,7 +172,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 실패 - null 값 포함")
   void signup_fail_withNullValues() {
-    UserSignupRequest nullRequest = UserSignupRequest.builder().userId(null).password("pw").userNm("name").role("USER").passwordHint("h").passwordCnsr("c").build();
+    UserSignupRequest nullRequest = UserSignupRequest.builder().userId(null).pswd("pw").userNm("name").role("USER").pswdHint("h").pswdCrans("c").build();
 
     assertThatThrownBy(() -> userService.signup(nullRequest))
         .isInstanceOf(IllegalArgumentException.class);

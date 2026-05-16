@@ -113,7 +113,7 @@ class UserServiceTest {
     void changePasswordSuccessTest() {
         User user = mock(User.class);
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
-        given(user.getPassword()).willReturn("oldEncoded");
+        given(user.getPswd()).willReturn("oldEncoded");
         
         given(passwordEncoder.matches("old", "oldEncoded")).willReturn(true);
         given(passwordEncoder.encode("new")).willReturn("newEncoded");
@@ -127,7 +127,7 @@ class UserServiceTest {
     void changePasswordFailTest() {
         User user = mock(User.class);
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
-        given(user.getPassword()).willReturn("oldEncoded");
+        given(user.getPswd()).willReturn("oldEncoded");
         
         given(passwordEncoder.matches("wrong", "oldEncoded")).willReturn(false);
 
@@ -168,7 +168,7 @@ class UserServiceTest {
     void signupTest() {
         UserSignupRequest request = UserSignupRequest.builder()
                 .userId("newuser")
-                .password("password")
+                .pswd("password")
                 .userNm("신규유저")
                 .build();
 

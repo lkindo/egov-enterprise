@@ -44,7 +44,7 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
         User user = User.builder()
                 .userId("user01")
                 .userNm("Tester")
-                .password("password")
+                .pswd("password")
                 .esntlId("ESNTL_01")
                 .build();
         entityManager.persist(user);

@@ -135,10 +135,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
          */
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
-        public String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
-                        String passwordHint, String passwordCnsr, String roleName) {
+        public String registerUser(@NonNull String userId, @NonNull String pswd, @NonNull String userNm,
+                        String pswdHint, String pswdCrans, String roleName) {
                 required(userId, "사용자 ID 는 null 일 수 없습니다");
-                required(password, "비밀번호 는 null 일 수 없습니다");
+                required(pswd, "비밀번호 는 null 일 수 없습니다");
                 required(userNm, "사용자 이름 은 null 일 수 없습니다");
 
                 // [보안] 관리자 권한 확인
@@ -152,7 +152,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
 
                 String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
-                String encodedPassword = passwordEncoder.encode(password);
+                String encodedPassword = passwordEncoder.encode(pswd);
 
                 Role role = Role.USER;
                 if (org.springframework.util.StringUtils.hasText(roleName)) {
@@ -165,11 +165,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 User user = User.builder()
                                 .userId(userId)
-                                .password(encodedPassword)
+                                .pswd(encodedPassword)
                                 .userNm(userNm)
                                 .esntlId(esntlId)
-                                .passwordHint(passwordHint)
-                                .passwordCnsr(passwordCnsr)
+                                .pswdHint(pswdHint)
+                                .pswdCrans(pswdCrans)
                                 .role(role)
                                 .build();
 
@@ -206,22 +206,22 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 user.update(
                                 userDto.getUserNm(),
-                                user.getPasswordHint(),
-                                user.getPasswordCnsr(),
+                                user.getPswdHint(),
+                                user.getPswdCrans(),
                                 userDto.getEmplNo(),
                                 user.getIhidnum(),
-                                user.getSexdstnCode(),
-                                user.getBrth(),
+                                user.getGndrCd(),
+                                user.getBrthYmd(),
                                 user.getAreaNo(),
                                 user.getHomemiddleTelno(),
                                 user.getHomeendTelno(),
-                                user.getFxnum(),
-                                user.getHomeadres(),
-                                user.getDetailAdres(),
-                                user.getZip(),
-                                user.getOffmTelno(),
-                                user.getMoblphonNo(),
-                                user.getEmailAdres(),
+                                user.getFaxNo(),
+                                user.getHomeAddr(),
+                                user.getDaddr(),
+                                userDto.getZip(),
+                                user.getOfficeTelno(),
+                                user.getMblTelno(),
+                                user.getEmlAddr(),
                                 userDto.getOfcpsNm(),
                                 user.getGroupId(),
                                 user.getOrgnztId(),
@@ -241,7 +241,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 
-                if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+                if (!passwordEncoder.matches(oldPassword, user.getPswd())) {
                         throw new BusinessException(ErrorCode.INVALID_PASSWORD);
                 }
 
@@ -288,15 +288,15 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
 
                 String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
-                String encodedPassword = passwordEncoder.encode(request.getPassword());
+                String encodedPassword = passwordEncoder.encode(request.getPswd());
 
                 User user = User.builder()
                                 .userId(request.getUserId())
-                                .password(encodedPassword)
+                                .pswd(encodedPassword)
                                 .userNm(request.getUserNm())
                                 .esntlId(esntlId)
-                                .passwordHint(request.getPasswordHint())
-                                .passwordCnsr(request.getPasswordCnsr())
+                                .pswdHint(request.getPswdHint())
+                                .pswdCrans(request.getPswdCrans())
                                 .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.USER)
                                 .build();
 

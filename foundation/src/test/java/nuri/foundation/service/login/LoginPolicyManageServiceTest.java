@@ -47,8 +47,8 @@ class LoginPolicyManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
 
-        User user1 = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").password("pass").build();
-        User user2 = User.builder().userId("USER2").esntlId("USR2").userNm("Name2").password("pass").build();
+        User user1 = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
+        User user2 = User.builder().userId("USER2").esntlId("USR2").userNm("Name2").pswd("pass").build();
         
         given(userRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(user1, user2)));
         
@@ -66,7 +66,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 상세 조회 테스트 - 정책 있음")
     void selectLoginPolicyPresentTest() {
-        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").password("pass").build();
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
         given(userRepository.findById("USER1")).willReturn(Optional.of(user));
         
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
@@ -82,7 +82,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 상세 조회 테스트 - 정책 없음")
     void selectLoginPolicyEmptyTest() {
-        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").password("pass").build();
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
         given(userRepository.findById("USER1")).willReturn(Optional.of(user));
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.empty());
 

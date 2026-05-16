@@ -28,7 +28,7 @@ public class UserValidator {
             throw new IllegalArgumentException("User ID must be 4-20 alphanumeric characters");
         }
 
-        if (!StringUtils.hasText(request.getPassword()) || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+        if (!StringUtils.hasText(request.getPswd()) || !PASSWORD_PATTERN.matcher(request.getPswd()).matches()) {
             throw new IllegalArgumentException(
                     "Password must be at least 8 characters with letters, numbers, and special characters");
         }
@@ -41,11 +41,11 @@ public class UserValidator {
             throw new IllegalArgumentException("User name contains invalid characters");
         }
 
-        if (request.getPasswordHint() != null && request.getPasswordHint().length() > 300) {
+        if (request.getPswdHint() != null && request.getPswdHint().length() > 300) {
             throw new IllegalArgumentException("Password hint is too long");
         }
 
-        if (request.getPasswordCnsr() != null && request.getPasswordCnsr().length() > 300) {
+        if (request.getPswdCrans() != null && request.getPswdCrans().length() > 300) {
             throw new IllegalArgumentException("Password answer is too long");
         }
     }
@@ -83,7 +83,7 @@ public class UserValidator {
             throw new IllegalArgumentException("User name contains invalid characters");
         }
 
-        if (user.getEmailAdres() != null && !EMAIL_PATTERN.matcher(user.getEmailAdres()).matches()) {
+        if (user.getEmlAddr() != null && !EMAIL_PATTERN.matcher(user.getEmlAddr()).matches()) {
             throw new IllegalArgumentException("Invalid email format");
         }
     }

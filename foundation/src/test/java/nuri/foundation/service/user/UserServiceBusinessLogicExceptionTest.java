@@ -53,11 +53,11 @@ class UserServiceBusinessLogicExceptionTest {
         void setUp() {
                 signupRequest = UserSignupRequest.builder()
                                 .userId("newUser")
-                                .password("password123!")
+                                .pswd("password123!")
                                 .userNm("테스트사용자")
                                 .role("USER")
-                                .passwordHint("hint")
-                                .passwordCnsr("answer")
+                                .pswdHint("hint")
+                                .pswdCrans("answer")
                                 .build();
         }
 

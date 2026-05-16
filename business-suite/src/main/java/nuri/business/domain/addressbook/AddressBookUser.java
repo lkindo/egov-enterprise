@@ -38,7 +38,7 @@ public class AddressBookUser extends BaseEntity {
     private String rlsScpCd;
 
     @Column(name = "NM", length = 50)
-    private String nm;
+    private String userNm;
 
     @Column(name = "EML_ADDR", length = 300)
     private String emlAddr;

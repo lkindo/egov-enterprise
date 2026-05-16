@@ -44,13 +44,13 @@ public class User extends BaseEntity implements Serializable {
 
     @Column(name = "PSWD", nullable = false, length = 300)
     @NonNull
-    private String password;
+    private String pswd;
 
     @Column(name = "PSWD_HINT", length = 300)
-    private String passwordHint;
+    private String pswdHint;
 
     @Column(name = "PSWD_CNSR", length = 300)
-    private String passwordCnsr;
+    private String pswdCrans;
 
     @Column(name = "CHG_PWD_LAST_PNTTM")
     private LocalDateTime passwordUpdateDate;
@@ -95,10 +95,10 @@ public class User extends BaseEntity implements Serializable {
     private String zip;
 
     @Column(name = "BASE_ADDR", length = 300)
-    private String homeadres;
+    private String homeAddr;
 
     @Column(name = "DTL_ADDR", length = 300)
-    private String detailAdres;
+    private String daddr;
 
     @Column(name = "AREA_NO", length = 4)
     private String areaNo;
@@ -163,16 +163,16 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "SBSCRB_YMD", updatable = false, length = 8)
     private String sbscrbYmd;
 
-    public void update(String userNm, String passwordHint, String passwordCnsr,
+    public void update(String userNm, String pswdHint, String pswdCrans,
             String emplNo, String ihidnum, String gndrCd, String brthYmd,
             String areaNo, String homemiddleTelno, String homeendTelno,
-            String faxNo, String homeadres, String detailAdres, String zip,
+            String faxNo, String homeAddr, String daddr, String zip,
             String officeTelno, String mblTelno, String emlAddr, String ofcpsNm,
             String groupId, String orgnztId, String insttCode, Role role, String subDn) {
         if (userNm != null)
             this.userNm = userNm;
-        this.passwordHint = passwordHint;
-        this.passwordCnsr = passwordCnsr;
+        this.pswdHint = pswdHint;
+        this.pswdCrans = pswdCrans;
         this.emplNo = emplNo;
         this.ihidnum = ihidnum;
         this.gndrCd = gndrCd;
@@ -181,8 +181,8 @@ public class User extends BaseEntity implements Serializable {
         this.homemiddleTelno = homemiddleTelno;
         this.homeendTelno = homeendTelno;
         this.faxNo = faxNo;
-        this.homeadres = homeadres;
-        this.detailAdres = detailAdres;
+        this.homeAddr = homeAddr;
+        this.daddr = daddr;
         this.zip = zip;
         this.officeTelno = officeTelno;
         this.mblTelno = mblTelno;
@@ -196,8 +196,8 @@ public class User extends BaseEntity implements Serializable {
         this.subDn = subDn;
     }
 
-    public void updatePassword(String password) {
-        this.password = Objects.requireNonNull(password);
+    public void updatePassword(String pswd) {
+        this.pswd = Objects.requireNonNull(pswd);
         this.passwordUpdateDate = LocalDateTime.now();
     }
 
@@ -245,6 +245,11 @@ public class User extends BaseEntity implements Serializable {
     }
 
     // ----- [Legacy Aliases] -----
+    public String getPassword() { return pswd; }
+    public String getPasswordHint() { return pswdHint; }
+    public String getPasswordCnsr() { return pswdCrans; }
+    public String getHomeadres() { return homeAddr; }
+    public String getDetailAdres() { return daddr; }
     public String getMoblphonNo() { return mblTelno; }
     public String getEmailAdres() { return emlAddr; }
     public String getOffmTelno() { return officeTelno; }
@@ -254,6 +259,11 @@ public class User extends BaseEntity implements Serializable {
     public String getLockAt() { return lckYn; }
     public String getStatusCode() { return userSttsCd; }
     
+    public void setPassword(String v) { this.pswd = v; }
+    public void setPasswordHint(String v) { this.pswdHint = v; }
+    public void setPasswordCnsr(String v) { this.pswdCrans = v; }
+    public void setHomeadres(String v) { this.homeAddr = v; }
+    public void setDetailAdres(String v) { this.daddr = v; }
     public void setMoblphonNo(String v) { this.mblTelno = v; }
     public void setEmailAdres(String v) { this.emlAddr = v; }
     public void setOffmTelno(String v) { this.officeTelno = v; }

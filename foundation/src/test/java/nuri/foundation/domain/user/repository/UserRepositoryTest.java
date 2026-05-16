@@ -34,7 +34,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .userId("testUser")
                 .esntlId("USR_000000000001")
                 .userNm("테스트유저")
-                .password("password")
+                .pswd("password")
                 .emlAddr("test@example.com")
                 .role(Role.USER)
                 .build();
@@ -65,7 +65,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .userId("adminUser")
                 .esntlId("USR_000000000002")
                 .userNm("관리자")
-                .password("password")
+                .pswd("password")
                 .role(Role.ADMIN)
                 .build();
         userRepository.save(adminUser);
@@ -93,7 +93,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .userId("entUser")
                 .esntlId("ENT_001")
                 .userNm("기업회원")
-                .password("password")
+                .pswd("password")
                 .userType("ENT")
                 .role(Role.USER)
                 .build();
@@ -103,7 +103,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .userId("genUser")
                 .esntlId("GEN_001")
                 .userNm("일반회원")
-                .password("password")
+                .pswd("password")
                 .userType("GNR")
                 .role(Role.USER)
                 .build();

@@ -56,10 +56,10 @@ class ApiSpecificationComplianceTest {
     String validUserSignupRequest = """
         {
           "userId": "testUser123",
-          "password": "Password123!",
+          "pswd": "Password123!",
           "userNm": "테스트사용자",
-          "passwordHint": "password hint",
-          "passwordCnsr": "password answer",
+          "pswdHint": "password hint",
+          "pswdCrans": "password answer",
           "role": "USER"
         }
         """;
@@ -81,7 +81,7 @@ class ApiSpecificationComplianceTest {
     String invalidRequest = """
         {
           "userId": "a",
-          "password": "123",
+          "pswd": "123",
           "userNm": ""
         }
         """;

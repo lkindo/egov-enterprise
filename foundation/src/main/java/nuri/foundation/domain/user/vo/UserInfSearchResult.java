@@ -14,8 +14,8 @@ public class UserInfSearchResult {
     private String userId;
     private String userNm;
     private String userZip;
-    private String userAdres;
-    private String userEmail;
-    private String useAt;
+    private String userAddr;
+    private String emlAddr;
+    private String useYn;
     private String trgetId;
 }
