@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "BoardMaster", description = "게시판 마스터 관리 API (Admin)")
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin/system/boards")
+@RequestMapping("/api/v1/admin/system/board-masters")
 @RequiredArgsConstructor
 public class BoardMasterApiController {
 

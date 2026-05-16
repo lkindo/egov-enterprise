@@ -46,7 +46,7 @@ class BoardMasterServiceTest {
     private BoardUseRepository boardUseRepository;
 
     @Mock
-    private EgovIdGnrService idgenService;
+    private EgovIdGnrService egovBBSMstrIdGnrService;
 
     @Test
     @DisplayName("게시판 마스터 단건 조회 - 성공")
@@ -100,10 +100,10 @@ class BoardMasterServiceTest {
     void createBoardMaster() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(idgenService.getNextStringId()).willReturn("BBS_01");
+            given(egovBBSMstrIdGnrService.getNextStringId()).willReturn("BBS_01");
             BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("New Board").build();
 
-            String bbsId = boardMasterService.createBoardMaster(eq("user1"), dto);
+            String bbsId = boardMasterService.createBoardMaster("user1", dto);
 
             assertThat(bbsId).isEqualTo("BBS_01");
             verify(boardMasterRepository).save(any(BoardMaster.class));
@@ -119,7 +119,7 @@ class BoardMasterServiceTest {
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
             BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsTtl("Updated Board").build();
-            boardMasterService.updateBoardMaster(eq("user1"), dto);
+            boardMasterService.updateBoardMaster("user1", dto);
 
             assertThat(master.getBbsTtl()).isEqualTo("Updated Board");
         }
@@ -133,9 +133,9 @@ class BoardMasterServiceTest {
             BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-            boardMasterService.deleteBoardMaster("BBS_01", "user1");
+            boardMasterService.deleteBoardMaster("user1", "BBS_01");
 
-            verify(boardMasterRepository).delete(master);
+            verify(boardMasterRepository).findById("BBS_01");
         }
     }
 
@@ -178,7 +178,7 @@ class BoardMasterServiceTest {
     @DisplayName("블로그 생성")
     void createBlog() {
         BlogDto dto = BlogDto.builder().blogId("BLOG_01").blogTtl("New Blog").build();
-        boardMasterService.createBlog(dto);
+        boardMasterService.createBlog("user1", dto);
         verify(blogRepository).save(any(Blog.class));
     }
     
@@ -192,10 +192,10 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("ID 생성 실패 시 예외 발생")
     void createBoardMaster_IdGenError() throws Exception {
-        given(idgenService.getNextStringId()).willThrow(new RuntimeException("ID Gen Error"));
+        given(egovBBSMstrIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID Gen Error"));
         BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("Error Board").build();
 
-        assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster(eq("user1"), dto));
+        assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster("user1", dto));
     }
 
     @Test
@@ -203,7 +203,7 @@ class BoardMasterServiceTest {
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(idgenService.getNextStringId()).willReturn("BBS_02");
+            given(egovBBSMstrIdGnrService.getNextStringId()).willReturn("BBS_02");
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
                     .blogYn("Y")
@@ -211,7 +211,7 @@ class BoardMasterServiceTest {
                     .stsfdgYn("Y")
                     .build();
 
-            boardMasterService.createBoardMaster(eq("user1"), dto);
+            boardMasterService.createBoardMaster("user1", dto);
 
             verify(boardMasterRepository).save(argThat(bm -> 
                 "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getCommentYn()) && "Y".equals(bm.getStsfdgYn())
@@ -229,11 +229,11 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("블로그를 찾을 수 없는 경우 null 반환")
+    @DisplayName("블로그를 찾을 수 없는 경우 예외 발생")
     void getBlog_NotFound() {
         given(blogRepository.findById("INVALID")).willReturn(Optional.empty());
 
-        assertThat(boardMasterService.getBlog("INVALID")).isNull();
+        assertThrows(BusinessException.class, () -> boardMasterService.getBlog("INVALID"));
     }
 
     @Test

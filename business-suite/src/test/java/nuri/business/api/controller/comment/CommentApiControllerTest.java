@@ -72,7 +72,7 @@ class CommentApiControllerTest {
     @DisplayName("댓글 목록 조회 성공")
     void getComments_Success() throws Exception {
         // Given
-        Page<CommentDto> page = new PageImpl<>(List.of(CommentDto.builder().nttId(1L).cmntCn("Comment").build()));
+        Page<CommentDto> page = new PageImpl<>(List.of(CommentDto.builder().id(1L).nttId(1L).cmntCn("Comment").build()));
         given(commentService.getComments(anyLong(), anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then

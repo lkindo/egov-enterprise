@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -37,7 +38,7 @@ class MemoTodoServiceTest {
         // Given
         PageRequest pageable = PageRequest.of(0, 10);
         MemoTodo entity = MemoTodo.builder().todoId("T1").todoNm("Task1").build();
-        given(memoTodoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(memoTodoRepository.findByWrterId(eq("user1"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // When
         Page<MemoTodoDto> result = memoTodoService.getMemoTodoList("user1", pageable);

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -38,13 +39,13 @@ class NotificationApiControllerTest extends BaseControllerTest {
         HandlerMethodArgumentResolver userDetailsResolver = new HandlerMethodArgumentResolver() {
             @Override
             public boolean supportsParameter(MethodParameter parameter) {
-                return parameter.getParameterType().equals(UserDetails.class);
+                return parameter.getParameterType().equals(CustomUserDetails.class);
             }
 
             @Override
             public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                          NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
-                UserDetails user = mock(UserDetails.class);
+                CustomUserDetails user = mock(CustomUserDetails.class);
                 when(user.getUsername()).thenReturn("testUser");
                 return user;
             }

@@ -109,7 +109,7 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("지시사항 업데이트 - 성공")
     void updateDrctMatter_success() throws Exception {
-        mockMvc.perform(patch("/api/v1/memo-reports/R1/drct-matter")
+        mockMvc.perform(patch("/api/v1/memo-reports/R1/instr-cn")
                 .contentType(MediaType.TEXT_PLAIN)
                 .content("Do it now"))
                 .andExpect(status().isOk());

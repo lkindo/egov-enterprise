@@ -64,8 +64,7 @@ public class MemoTodoService implements EgovMemoTodoService {
 
     @Override
     public Page<MemoTodoDto> getMemoTodoList(String writerId, Pageable pageable) {
-        // [TODO] writerId 필터링 필요 (Repository 확장 반영 예정)
-        return memoTodoRepository.findAll(Objects.requireNonNull(pageable))
+        return memoTodoRepository.findByWrterId(Objects.requireNonNull(writerId), Objects.requireNonNull(pageable))
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
                         .todoNm(t.getTodoNm())

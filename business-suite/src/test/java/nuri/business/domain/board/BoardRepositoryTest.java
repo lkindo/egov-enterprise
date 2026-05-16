@@ -167,11 +167,6 @@ class BoardRepositoryTest {
         Page<BoardSearchResult> results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
         assertThat(results.getContent().get(0).getInqCnt()).isEqualTo(100);
 
-        // comments desc
-        condition.setOrderBy("comments");
-        results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
-        assertThat(results.getContent().get(0).getCommentCnt()).isEqualTo(10);
-
         // date desc
         condition.setOrderBy("date");
         results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));

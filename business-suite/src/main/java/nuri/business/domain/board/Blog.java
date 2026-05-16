@@ -59,9 +59,4 @@ public class Blog extends BaseEntity {
     public String getBlogIntrcn() { return blogIntroCn; }
     public void setBlogIntrcn(String v) { this.blogIntroCn = v; }
 
-    // builder compatibility
-    public abstract static class BlogBuilder<C extends Blog, B extends BlogBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B blogNm(String blogNm) { this.blogTtl = blogNm; return self(); }
-        public B blogIntrcn(String blogIntrcn) { this.blogIntroCn = blogIntrcn; return self(); }
-    }
 }

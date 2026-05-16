@@ -3,12 +3,17 @@ package nuri.business.service.board;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardMasterSearchResult;
+import nuri.business.domain.board.Blog;
+import nuri.business.domain.board.BlogUser;
+import nuri.business.domain.board.BlogRepository;
+import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BlogDto;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.service.BaseAbstractService;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +31,7 @@ import java.util.stream.Collectors;
 public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
+    private final EgovIdGnrService egovBBSMstrIdGnrService;
 
     public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
@@ -48,8 +54,17 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     @Transactional
     public String createBoardMaster(String userId, BoardMasterDto dto) {
+        String bbsId = dto.getBbsId();
+        if (bbsId == null || bbsId.isEmpty()) {
+            try {
+                bbsId = egovBBSMstrIdGnrService.getNextStringId();
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate BBS ID");
+            }
+        }
+
         BoardMaster entity = BoardMaster.builder()
-                .bbsId(dto.getBbsId())
+                .bbsId(bbsId)
                 .bbsTtl(dto.getBbsTtl())
                 .bbsExpln(dto.getBbsExpln())
                 .bbsTypeCd(dto.getBbsTypeCd())
@@ -104,12 +119,52 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .orElse(false);
     }
 
-    public Page<BlogDto> getBlogList(Object o1, Object o2, Pageable pageable) { return Page.empty(); }
-    public BlogDto getBlog(String id) { return null; }
-    public void createBlog(Object dto) {}
-    public void joinBlog(String s1, String s2, String s3) {}
-    public boolean checkBlogUser(String userId) { return false; }
-    public List<BlogDto> getBlogListPortlet() { return List.of(); }
+    private final BlogRepository blogRepository;
+    private final BlogUserRepository blogUserRepository;
+
+    public Page<BlogDto> getBlogList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
+        return blogRepository.findAll(pageable).map(BlogDto::from);
+    }
+
+    public BlogDto getBlog(@NonNull String blogId) {
+        return blogRepository.findById(blogId)
+                .map(BlogDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Transactional
+    public void createBlog(String userId, BlogDto dto) {
+        Blog entity = Blog.builder()
+                .blogId(dto.getBlogId())
+                .blogTtl(dto.getBlogTtl())
+                .blogIntroCn(dto.getBlogIntroCn())
+                .useYn("Y")
+                .createdBy(userId)
+                .build();
+        blogRepository.save(entity);
+    }
+
+    @Transactional
+    public void joinBlog(String blogId, String userId, String mngrYn) {
+        BlogUser entity = BlogUser.builder()
+                .blogId(blogId)
+                .userId(userId)
+                .mngrYn(mngrYn)
+                .useYn("Y")
+                .createdBy(userId)
+                .build();
+        blogUserRepository.save(entity);
+    }
+
+    public boolean checkBlogUser(String userId) {
+        return blogRepository.existsByCreatedBy(userId);
+    }
+
+    public List<BlogDto> getBlogListPortlet() {
+        return blogRepository.findAll(PageRequest.of(0, 10)).getContent().stream()
+                .map(BlogDto::from)
+                .collect(Collectors.toList());
+    }
 
     private BoardMasterDto toDto(BoardMasterSearchResult projection) {
         return BoardMasterDto.builder()

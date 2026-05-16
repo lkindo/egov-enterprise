@@ -11,6 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,7 +38,7 @@ class ScrapApiControllerTest {
     void getMyScrapList_Success() throws Exception {
         // Given
         Page<ScrapDto> page = new PageImpl<>(List.of(ScrapDto.builder().scrapId("SCR1").scrapNm("Scrap").build()));
-        given(egovScrapService.getScrapList(anyString(), any(PageRequest.class))).willReturn(page);
+        given(egovScrapService.getMyScrapList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/scraps")

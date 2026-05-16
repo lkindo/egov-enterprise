@@ -441,7 +441,7 @@ class BoardServiceTest {
         Long pstId = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));

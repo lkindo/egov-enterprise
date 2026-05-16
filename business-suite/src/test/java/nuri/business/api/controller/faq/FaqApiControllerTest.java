@@ -62,7 +62,7 @@ class FaqApiControllerTest {
 
         // When & Then
         mockMvc.perform(get("/api/v1/faqs")
-                .param("keyword", "keyword")
+                .param("searchKeyword", "keyword")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].faqId").value("FAQ1"))

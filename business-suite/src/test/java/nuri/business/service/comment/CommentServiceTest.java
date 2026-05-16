@@ -131,7 +131,7 @@ class CommentServiceTest {
                 .password("1234")
                 .build();
         Comment savedComment = Comment.builder()
-                .nttId(1L)
+                .answerNo(1L)
                 .nttId(request.getNttId())
                 .bbsId(request.getBbsId())
                 .cmntCn(request.getCmntCn())

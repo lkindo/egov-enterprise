@@ -97,6 +97,7 @@ public class CommentServiceImpl implements CommentService {
 
     private CommentDto convertToDto(Comment entity) {
         return CommentDto.builder()
+                .id(entity.getAnswerNo())
                 .nttId(entity.getNttId())
                 .bbsId(entity.getBbsId())
                 .writerId(entity.getWriterId())

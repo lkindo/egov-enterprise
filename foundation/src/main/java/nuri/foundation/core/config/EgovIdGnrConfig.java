@@ -171,4 +171,9 @@ public class EgovIdGnrConfig {
     public EgovIdGnrService egovMemoReportIdGnrService() {
         return createIdGnrService("ids", "MEMO_", 15);
     }
+
+    @Bean(name = "egovPopupManageIdGnrService")
+    public EgovIdGnrService egovPopupManageIdGnrService() {
+        return createIdGnrService("ids", "POPUP_", 14);
+    }
 }

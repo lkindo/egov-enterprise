@@ -38,20 +38,23 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
 
     @Override
     public List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth) {
-        // [TODO] Implement yearMonth filtering
-        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+        return scheduleRepository.findMonthlySchedules(userId, yearMonth).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
-        // [TODO] Implement date range filtering
-        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+        return scheduleRepository.findSchedulesByDateRange(userId, startDate, endDate).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate, String endDate) {
-        // [TODO] Implement date range filtering
-        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+        return scheduleRepository.findSchedulesByDateRange(schdlSeCd, ownerId, startDate, endDate).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override

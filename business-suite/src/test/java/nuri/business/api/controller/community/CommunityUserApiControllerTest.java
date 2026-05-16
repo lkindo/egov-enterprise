@@ -44,7 +44,7 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].cmmntyId").value("CMM_001"));
+                .andExpect(jsonPath("$.data.list[0].cmntyId").value("CMM_001"));
     }
 
     @Test

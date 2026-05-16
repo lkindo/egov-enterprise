@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @DisplayName("MemoReportService 단위 테스트")
 class MemoReportServiceTest {
@@ -51,7 +53,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.searchMemoReports(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<MemoReportDto> result = memoReportService.getMemoReportList(null, null, pageable);
+        Page<MemoReportDto> result = memoReportService.getMemoReportList(null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -67,7 +69,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.findByWriterId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<MemoReportDto> result = memoReportService.getMemoReportListByWriter(writerId, pageable);
+        Page<MemoReportDto> result = memoReportService.getMyReportList(writerId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -83,7 +85,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.findByReportrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<MemoReportDto> result = memoReportService.getMemoReportListByReportr(reportrId, pageable);
+        Page<MemoReportDto> result = memoReportService.getReceivedReportList(reportrId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -143,7 +145,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(existingEntity));
 
         // when
-        memoReportService.updateMemoReport(userId, updateDto);
+        memoReportService.updateMemoReport(reprtId, userId, updateDto);
 
         // then
         assertThat(existingEntity.getReportSubject()).isEqualTo("Updated Subject");
@@ -165,15 +167,15 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("메모보고 조회일시 업데이트")
-    void updateInqireDt() {
+    @DisplayName("메모보고 조회")
+    void readMemoReport() {
         // given
-        String reprtId = "R1";
-        MemoReport entity = org.mockito.Mockito.spy(MemoReport.builder().reportId(reprtId).build());
-        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        String reprtId = "MEMO_000000000000001";
+        MemoReport entity = mock(MemoReport.class);
+        when(memoReportRepository.findById(reprtId)).thenReturn(Optional.of(entity));
 
         // when
-        memoReportService.updateInqireDt(reprtId);
+        memoReportService.readMemoReport(reprtId);
 
         // then
         verify(entity).updateInqireDt(anyString());

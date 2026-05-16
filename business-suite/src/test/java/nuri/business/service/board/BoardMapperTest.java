@@ -105,7 +105,7 @@ class BoardMapperTest {
     @DisplayName("Request -> Entity 변환 테스트 (Default Values)")
     void toEntityDefaultTest() {
         BoardSaveRequest request = new BoardSaveRequest(
-                "BBS1", "제목", "내용", null, null, null, "N", null, null, null, "N", "USER1", "Name1", null
+                "BBS1", "제목", "내용", null, null, null, null, null, null, null, null, "USER1", "Name1", null
         );
         
         Board entity = mapper.toEntity(request, "BBS1", "USER1", "Name1", 10L);

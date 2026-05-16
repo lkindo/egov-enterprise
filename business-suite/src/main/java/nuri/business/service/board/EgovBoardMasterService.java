@@ -15,10 +15,10 @@ public interface EgovBoardMasterService {
     
     boolean canUseSatisfaction(String bbsId);
     boolean canUseComment(String bbsId);
-    Page<nuri.business.service.board.dto.BlogDto> getBlogList(Object o1, Object o2, Pageable pageable);
-    java.lang.Object getBlog(String id);
-    void createBlog(Object dto);
-    void joinBlog(String s1, String s2, String s3);
+    Page<nuri.business.service.board.dto.BlogDto> getBlogList(String searchCondition, String searchKeyword, Pageable pageable);
+    nuri.business.service.board.dto.BlogDto getBlog(String blogId);
+    void createBlog(String userId, nuri.business.service.board.dto.BlogDto dto);
+    void joinBlog(String blogId, String userId, String mngrYn);
     boolean checkBlogUser(String userId);
     List<nuri.business.service.board.dto.BlogDto> getBlogListPortlet();
 }

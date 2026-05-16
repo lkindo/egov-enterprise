@@ -1,6 +1,6 @@
 package nuri.business.api.controller.report;
 
-import nuri.business.service.report.WorkReportService;
+import nuri.business.service.report.EgovWorkReportService;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class WorkReportApiController {
 
-    private final WorkReportService workReportService;
+    private final EgovWorkReportService workReportService;
 
     @Operation(summary = "작업보고 목록 조회")
     @GetMapping
