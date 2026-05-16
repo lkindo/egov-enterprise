@@ -65,8 +65,8 @@ public class CommentServiceImpl implements CommentService {
                 .useYn("Y")
                 .build();
 
-        Long commentId = Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))   
-                .getNttId();
+        comment = commentRepository.save(comment);
+        Long commentId = comment.getAnswerNo();
         
         // 이벤트 발행
         eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getNttId()));
@@ -97,7 +97,6 @@ public class CommentServiceImpl implements CommentService {
 
     private CommentDto convertToDto(Comment entity) {
         return CommentDto.builder()
-                .nttId(entity.getNttId())
                 .nttId(entity.getNttId())
                 .bbsId(entity.getBbsId())
                 .writerId(entity.getWriterId())

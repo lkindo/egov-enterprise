@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 public class BoardSearchResult {
     private String bbsId;
-    private Long pstId;
-    private String pstTtl;
+    private Long nttId;
+    private String nttSj;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
@@ -29,9 +29,14 @@ public class BoardSearchResult {
     private String sjBoldYn;
     private String noticeYn;
     private String secretYn;
-    private Integer commentCnt; // Integer로 변경
+    private Integer commentCnt; 
     private LocalDateTime eventDate;
     private String qnaStatus;
     private String qnaCategory;
-    private Long pstSn;
+    private Long nttNo;
+
+    // legacy / aliases
+    public Long getPstId() { return nttId; }
+    public String getPstTtl() { return nttSj; }
+    public Long getPstSn() { return nttNo; }
 }

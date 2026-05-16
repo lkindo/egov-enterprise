@@ -67,4 +67,6 @@ public class Satisfaction extends BaseEntity implements Serializable {
     public void setArticleId(Long v) { this.pstId = v; }
     public Integer getSatisfactionLevel() { return stsfdgLevel; }
     public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
+    public Long getNttId() { return pstId; }
+    public void setNttId(Long v) { this.pstId = v; }
 }

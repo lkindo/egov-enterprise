@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class BoardMasterService extends BaseAbstractService {
+public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
 

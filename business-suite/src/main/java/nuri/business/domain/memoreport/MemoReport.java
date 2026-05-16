@@ -19,10 +19,10 @@ public class MemoReport extends BaseEntity {
 
     @Id
     @Column(name = "REPRT_ID", length = 20)
-    private String reprtId;
+    private String reportId;
 
     @Column(name = "REPRT_SJ", length = 255, nullable = false)
-    private String reprtTtl;
+    private String reportSubject;
 
     @Column(name = "MEMO_RPT_YMD", length = 10)
     private String reprtDe;
@@ -34,7 +34,7 @@ public class MemoReport extends BaseEntity {
     private String reportrId;
 
     @Column(name = "REPORT_CN", columnDefinition = "TEXT")
-    private String reprtCn;
+    private String reportContents;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
@@ -48,13 +48,13 @@ public class MemoReport extends BaseEntity {
     @Column(name = "REPORTR_INQIRE_DT", length = 20)
     private String reportrInqireDt;
 
-    public void update(String reprtTtl, String reprtDe, String writerId, String reportrId,
-                      String reprtCn, String atchFileId) {
-        this.reprtTtl = reprtTtl;
+    public void update(String reportSubject, String reprtDe, String writerId, String reportrId,
+                      String reportContents, String atchFileId) {
+        this.reportSubject = reportSubject;
         this.reprtDe = reprtDe;
         this.writerId = writerId;
         this.reportrId = reportrId;
-        this.reprtCn = reprtCn;
+        this.reportContents = reportContents;
         this.atchFileId = atchFileId;
     }
 
@@ -67,10 +67,15 @@ public class MemoReport extends BaseEntity {
         this.instrRegDt = instrRegDt;
     }
 
+    // standard aliases
+    public String getReprtId() { return reportId; }
+    public String getReprtTtl() { return reportSubject; }
+    public String getReprtCn() { return reportContents; }
+    
     // legacy
-    public String getRptId() { return reprtId; }
-    public String getRptTtl() { return reprtTtl; }
+    public String getRptId() { return reportId; }
+    public String getRptTtl() { return reportSubject; }
     public String getRptYmd() { return reprtDe; }
-    public String getRptCn() { return reprtCn; }
+    public String getRptCn() { return reportContents; }
     public String getRptUserId() { return reportrId; }
 }

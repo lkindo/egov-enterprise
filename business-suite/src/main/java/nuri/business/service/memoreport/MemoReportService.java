@@ -39,8 +39,8 @@ public class MemoReportService extends BaseAbstractService {
                 .map(MemoReportDto::from);
     }
 
-    public MemoReportDto getMemoReport(@NonNull String reprtId) {
-        return memoReportRepository.findById(reprtId)
+    public MemoReportDto getMemoReport(@NonNull String reportId) {
+        return memoReportRepository.findById(reportId)
                 .map(MemoReportDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -72,13 +72,13 @@ public class MemoReportService extends BaseAbstractService {
     }
 
     @Transactional
-    public void deleteMemoReport(@NonNull String reprtId) {
-        memoReportRepository.deleteById(reprtId);
+    public void deleteMemoReport(@NonNull String reportId) {
+        memoReportRepository.deleteById(reportId);
     }
 
     @Transactional
-    public void updateInqireDt(@NonNull String reprtId) {
-        memoReportRepository.findById(reprtId).ifPresent(entity -> {
+    public void updateInqireDt(@NonNull String reportId) {
+        memoReportRepository.findById(reportId).ifPresent(entity -> {
             entity.updateInqireDt(java.time.LocalDateTime.now().toString());
         });
     }

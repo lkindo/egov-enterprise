@@ -8,7 +8,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AddressBookRepository extends JpaRepository<AddressBook, String>, AddressBookRepositoryCustom {
-    List<AddressBook> findByUseAt(String useAt);
+    List<AddressBook> findByUseYn(String useYn);
+
+    // legacy
+    default List<AddressBook> findByUseAt(String useAt) {
+        return findByUseYn(useAt);
+    }
 
     Page<AddressBook> findByWrterId(String wrterId, Pageable pageable);
 

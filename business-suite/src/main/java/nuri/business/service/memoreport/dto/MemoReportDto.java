@@ -58,6 +58,11 @@ public class MemoReportDto {
         return writerId;
     }
 
+    // standard
+    public String getReprtId() { return reportId; }
+    public String getReprtTtl() { return reportSubject; }
+    public String getReprtCn() { return reportContents; }
+
     // legacy
     public String getRptId() { return reportId; }
     public String getRptTtl() { return reportSubject; }
@@ -66,17 +71,12 @@ public class MemoReportDto {
     public String getRptUserId() { return reportrId; }
     public String getRptInqDt() { return reportrInqireDt; }
     
-    public String getReprtId() { return reportId; }
-    public String getReprtTtl() { return reportSubject; }
-    public String getReprtDe() { return reprtDe; }
-    public String getReprtCn() { return reportContents; }
-
     public static MemoReportDto from(MemoReport entity) {
         if (entity == null) return null;
         return MemoReportDto.builder()
                 .reportId(entity.getReportId())
                 .reportSubject(entity.getReportSubject())
-                .reprtDe(entity.getReportrInqireDt()) // Wait, mismatch
+                .reprtDe(entity.getReprtDe()) 
                 .writerId(entity.getWriterId())
                 .reportrId(entity.getReportrId())
                 .reportContents(entity.getReportContents())

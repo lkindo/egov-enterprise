@@ -52,4 +52,7 @@ public class Scrap extends BaseEntity {
         this.scrapDc = scrapDc;
         this.useYn = useYn;
     }
+
+    // legacy
+    public Long getNttId() { return pstId; }
 }

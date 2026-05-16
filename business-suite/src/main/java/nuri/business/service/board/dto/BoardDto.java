@@ -126,6 +126,9 @@ public class BoardDto {
     public void setFileCo(Integer v) { this.fileCnt = v; }
     public String getUseAt() { return useYn; }
     public void setUseAt(String v) { this.useYn = v; }
+    
+    public Long getNttId() { return pstId; }
+    public void setNttId(Long v) { this.pstId = v; }
 
     public String getFrstRegisterNm() {
         return ntcrNm != null ? ntcrNm : frstRegisterNm;
@@ -133,5 +136,13 @@ public class BoardDto {
 
     public LocalDateTime getCreatedDate() {
         return frstRegisterPnttm;
+    }
+
+    public abstract static class BoardDtoBuilder<C extends BoardDto, B extends BoardDtoBuilder<C, B>> {
+        public B nttId(Long nttId) { this.pstId = nttId; return self(); }
+        public B nttSj(String nttSj) { this.pstTtl = nttSj; return self(); }
+        public B nttCn(String nttCn) { this.pstCn = nttCn; return self(); }
+        public B nttNo(Long nttNo) { this.pstSn = nttNo; return self(); }
+        public B id(Long id) { this.pstId = id; return self(); }
     }
 }

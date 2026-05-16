@@ -28,13 +28,15 @@ public class SatisfactionDto {
     public void setArticleId(Long v) { this.pstId = v; }
     public Integer getSatisfactionLevel() { return stsfdgLevel; }
     public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
+    public Long getNttId() { return pstId; }
+    public void setNttId(Long v) { this.pstId = v; }
 
     public static SatisfactionDto from(Satisfaction entity) {
         if (entity == null) return null;
         return SatisfactionDto.builder()
                 .satisfactionId(entity.getStsfdgId())
                 .bbsId(entity.getBbsId())
-                .nttId(entity.getNttId())
+                .pstId(entity.getPstId())
                 .stsfdgCn(entity.getStsfdgCn())
                 .stsfdgLevel(entity.getStsfdgLevel())
                 .writerId(entity.getCreatedBy())

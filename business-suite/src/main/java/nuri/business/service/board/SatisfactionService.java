@@ -25,7 +25,7 @@ public class SatisfactionService extends BaseAbstractService {
     public void createSatisfaction(String userId, SatisfactionDto dto) {
         Satisfaction entity = Satisfaction.builder()
                 .bbsId(dto.getBbsId())
-                .nttId(dto.getNttId())
+                .pstId(dto.getPstId())
                 .stsfdgLevel(dto.getStsfdgLevel())
                 .stsfdgCn(dto.getStsfdgCn())
                 .password(dto.getPassword())
@@ -97,7 +97,7 @@ public class SatisfactionService extends BaseAbstractService {
         return SatisfactionDto.builder()
                 .satisfactionId(satisfaction.getStsfdgId())
                 .bbsId(satisfaction.getBbsId())
-                .nttId(satisfaction.getNttId())
+                .pstId(satisfaction.getPstId())
                 .stsfdgCn(satisfaction.getStsfdgCn())
                 .stsfdgLevel(satisfaction.getStsfdgLevel())
                 .writerId(satisfaction.getCreatedBy())

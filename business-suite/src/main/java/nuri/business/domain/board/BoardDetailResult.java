@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 public class BoardDetailResult {
     // Board fields
     private String bbsId;
-    private Long pstId;
-    private String pstTtl;
+    private Long nttId;
+    private String nttSj;
     private String ntcrId;
     private String ntcrNm;
-    private Long pstSn;
-    private String pstCn;
+    private Long nttNo;
+    private String nttCn;
     private String password;
     private String frstRegisterId;
     private String frstRegisterNm;
@@ -49,4 +49,10 @@ public class BoardDetailResult {
     private String fileAtchPsblYn;
     private Integer atchPsblFileCnt;
     private String bbsTtl;
+
+    // legacy / aliases
+    public Long getPstId() { return nttId; }
+    public String getPstTtl() { return nttSj; }
+    public String getPstCn() { return nttCn; }
+    public Long getPstSn() { return nttNo; }
 }

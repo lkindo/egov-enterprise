@@ -25,20 +25,21 @@ public class ScrapDto {
     private String scrapDc;
     private String useYn;
     private String uniqId;
-    private String userId; // Added
+    private String userId; 
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
-    public LocalDateTime getCreatedDate() {
-        return frstRegisterPnttm;
-    }
+    // legacy
+    public Long getNttId() { return pstId; }
+    public void setNttId(Long v) { this.pstId = v; }
+    public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
 
     public static ScrapDto from(Scrap entity) {
         if (entity == null) return null;
         return ScrapDto.builder()
                 .scrapId(entity.getScrapId())
                 .bbsId(entity.getBbsId())
-                .nttId(entity.getNttId())
+                .pstId(entity.getPstId())
                 .scrapNm(entity.getScrapNm())
                 .scrapUrl(entity.getScrapUrl())
                 .scrapDc(entity.getScrapDc())

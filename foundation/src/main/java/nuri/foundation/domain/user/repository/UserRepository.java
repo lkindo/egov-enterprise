@@ -19,9 +19,9 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     Optional<User> findBySubDn(String subDn);
 
-    Optional<User> findByUserNmAndEmailAdres(String userNm, String emailAdres);
+    Optional<User> findByUserNmAndEmlAddr(String userNm, String emlAddr);
 
-    Optional<User> findByUserIdAndUserNmAndEmailAdres(String userId, String userNm, String emailAdres);
+    Optional<User> findByUserIdAndUserNmAndEmlAddr(String userId, String userNm, String emlAddr);
 
     @Query("SELECT u FROM User u")
     List<User> findAllWithRole();
@@ -46,7 +46,7 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     List<User> findByUserNmContaining(String userNm);
 
-    List<User> findByEmailAdresContaining(String emailAdres);
+    List<User> findByEmlAddrContaining(String emlAddr);
 
     List<User> findByOrgnztId(String orgnztId);
 
@@ -54,5 +54,5 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     List<User> findByOrgnztIdAndRole(String orgnztId, Role role);
 
-    List<User> findByUserNmContainingOrEmailAdresContaining(String userNm, String emailAdres);
+    List<User> findByUserNmContainingOrEmlAddrContaining(String userNm, String emlAddr);
 }

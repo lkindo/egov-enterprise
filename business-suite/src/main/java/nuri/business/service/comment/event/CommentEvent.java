@@ -4,16 +4,19 @@ import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * 댓글 관련 기본 이벤트 (v5 standardized)
+ * 댓글 관련 기본 이벤트 (reverted to nttId for Board Java field compatibility)
  */
 @Getter
 public abstract class CommentEvent extends ApplicationEvent {
     private final String bbsId;
-    private final Long pstId;
+    private final Long nttId;
 
-    public CommentEvent(Object source, String bbsId, Long pstId) {
+    public CommentEvent(Object source, String bbsId, Long nttId) {
         super(source);
         this.bbsId = bbsId;
-        this.pstId = pstId;
+        this.nttId = nttId;
     }
+
+    // legacy alias
+    public Long getPstId() { return nttId; }
 }

@@ -40,7 +40,7 @@ class SatisfactionServiceTest {
         // given
         SatisfactionDto dto = SatisfactionDto.builder()
                 .bbsId("BBS_01")
-                .nttId(1L)
+                .pstId(1L)
                 .stsfdgLevel(5)
                 .stsfdgCn("Good")
                 .build();

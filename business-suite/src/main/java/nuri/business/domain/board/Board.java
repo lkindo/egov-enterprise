@@ -2,13 +2,8 @@ package nuri.business.domain.board;
 
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
@@ -148,7 +143,7 @@ public class Board extends BaseEntity implements Serializable {
         this.likeCo++;
     }
 
-    // aliases for standard names if needed
+    // aliases
     public Long getPstId() { return nttId; }
     public String getPstTtl() { return nttSj; }
     public String getPstCn() { return nttCn; }

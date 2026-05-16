@@ -13,6 +13,7 @@ import org.hibernate.annotations.SQLRestriction;
  * 게시물 댓글 엔티티 (v5 standardized)
  */
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
@@ -26,10 +27,10 @@ public class Comment extends BaseEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answerNoSeq")
     @SequenceGenerator(name = "answerNoSeq", sequenceName = "ANSWER_NO_SEQ", allocationSize = 1)
     @Column(name = "ANSWER_NO")
-    private Long id;
+    private Long answerNo;
 
     @Column(name = "NTT_ID")
-    private Long pstId;
+    private Long nttId;
 
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
@@ -56,4 +57,10 @@ public class Comment extends BaseEntity implements Serializable {
     public void delete() {
         this.useYn = "N";
     }
+
+    // legacy / missing aliases
+    public Long getId() { return answerNo; }
+    public void setId(Long v) { this.answerNo = v; }
+    public Long getPstId() { return nttId; }
+    public void setPstId(Long v) { this.nttId = v; }
 }

@@ -27,16 +27,16 @@ public class BoardEventListener {
     @EventListener
     @Transactional
     public void handleCommentCreated(CommentCreatedEvent event) {
-        log.debug(">>> Handling CommentCreatedEvent for pstId: {}", event.getNttId());
-        updateCommentCount(event.getNttId(), event.getBbsId());
+        log.debug(">>> Handling CommentCreatedEvent for pstId: {}", event.getPstId());
+        updateCommentCount(event.getPstId(), event.getBbsId());
     }
 
     @Async("taskExecutor")
     @EventListener
     @Transactional
     public void handleCommentDeleted(CommentDeletedEvent event) {
-        log.debug(">>> Handling CommentDeletedEvent for pstId: {}", event.getNttId());
-        updateCommentCount(event.getNttId(), event.getBbsId());
+        log.debug(">>> Handling CommentDeletedEvent for pstId: {}", event.getPstId());
+        updateCommentCount(event.getPstId(), event.getBbsId());
     }
 
     private void updateCommentCount(Long pstId, String bbsId) {
