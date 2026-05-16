@@ -142,6 +142,11 @@ public class EgovIdGnrConfig {
         return createIdGnrService("CMMNTY_ID", "CMMNTY_", 13);
     }
 
+    @Bean(name = "egovLeaderSchdlIdGnrService")
+    public EgovIdGnrService egovLeaderSchdlIdGnrService() {
+        return createIdGnrService("ids", "SCHDL_", 20);
+    }
+
     @Bean(name = "egovMenuManageIdGnrService")
     public EgovIdGnrService egovMenuManageIdGnrService() {
         return createIdGnrService("MENU_ID", "MENU_", 10);
@@ -155,5 +160,15 @@ public class EgovIdGnrConfig {
     @Bean(name = "reprtStatsIdGnrService")
     public EgovIdGnrService reprtStatsIdGnrService() {
         return createIdGnrService("REPRT_STATS_ID", "REPRT_", 10);
+    }
+
+    @Bean(name = "egovScrapIdGnrService")
+    public EgovIdGnrService egovScrapIdGnrService() {
+        return createIdGnrService("ids", "SCRAP_", 14);
+    }
+
+    @Bean(name = "egovMemoReportIdGnrService")
+    public EgovIdGnrService egovMemoReportIdGnrService() {
+        return createIdGnrService("ids", "MEMO_", 15);
     }
 }

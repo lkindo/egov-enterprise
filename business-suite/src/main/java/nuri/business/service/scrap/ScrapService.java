@@ -27,7 +27,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     @Override
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
         return scrapRepository
-                .findByCreatedByAndUseAt(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
+                .findByCreatedByAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 

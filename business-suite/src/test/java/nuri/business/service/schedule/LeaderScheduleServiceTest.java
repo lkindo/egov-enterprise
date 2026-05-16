@@ -2,6 +2,8 @@ package nuri.business.service.schedule;
 
 import nuri.business.domain.schedule.LeaderSchedule;
 import nuri.business.domain.schedule.LeaderScheduleRepository;
+import nuri.business.domain.schedule.LeaderStatus;
+import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,9 @@ class LeaderScheduleServiceTest {
     private LeaderScheduleRepository leaderScheduleRepository;
 
     @Mock
+    private LeaderStatusRepository leaderStatusRepository;
+
+    @Mock
     private EgovIdGnrService egovLeaderSchdlIdGnrService;
 
     @InjectMocks
@@ -49,7 +54,7 @@ class LeaderScheduleServiceTest {
         given(leaderScheduleRepository.searchLeaderSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<LeaderScheduleDto> result = leaderScheduleService.getLeaderScheduleList(null, null, pageable);
+        Page<LeaderScheduleDto> result = leaderScheduleService.getLeaderScheduleList(null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -104,7 +109,7 @@ class LeaderScheduleServiceTest {
         given(leaderScheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
 
         // when
-        leaderScheduleService.updateLeaderSchedule(userId, updateDto);
+        leaderScheduleService.updateLeaderSchedule(schdlId, userId, updateDto);
 
         // then
         assertThat(existingEntity.getSchdlTtl()).isEqualTo("New Title");

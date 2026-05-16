@@ -46,7 +46,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.searchSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<ScheduleDto> result = scheduleService.getScheduleList(null, null, pageable);
+        Page<ScheduleDto> result = scheduleService.getScheduleList(null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -101,7 +101,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
 
         // when
-        scheduleService.updateSchedule(userId, updateDto);
+        scheduleService.updateSchedule(schdlId, userId, updateDto);
 
         // then
         assertThat(existingEntity.getSchdlTtl()).isEqualTo("New Title");
@@ -114,7 +114,7 @@ class ScheduleServiceTest {
         String schdlId = "S1";
 
         // when
-        scheduleService.deleteSchedule(schdlId);
+        scheduleService.deleteSchedule(schdlId, "user1");
 
         // then
         verify(scheduleRepository).deleteById(schdlId);

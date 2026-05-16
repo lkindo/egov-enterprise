@@ -20,28 +20,50 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ScheduleService extends BaseAbstractService {
+public class ScheduleService extends BaseAbstractService implements EgovScheduleService {
 
     private final ScheduleRepository scheduleRepository;
 
-    public Page<ScheduleDto> getScheduleList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
-        return scheduleRepository.searchSchedules(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+    @Override
+    public Page<ScheduleDto> getScheduleList(String userId, @NonNull Pageable pageable) {
+        return scheduleRepository.searchSchedules(null, userId, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
-    public List<ScheduleDto> getScheduleList(String searchCondition, String searchKeyword) {
-        return scheduleRepository.searchSchedules(searchCondition, searchKeyword, Pageable.unpaged())
-                .getContent().stream().map(this::convertToDto).collect(Collectors.toList());
+    @Override
+    public Page<ScheduleDto> getScheduleList(String schdlSeCd, String ownerId, @NonNull Pageable pageable) {
+        return scheduleRepository.searchSchedules(schdlSeCd, ownerId, Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
     }
 
+    @Override
+    public List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth) {
+        // [TODO] Implement yearMonth filtering
+        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
+        // [TODO] Implement date range filtering
+        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate, String endDate) {
+        // [TODO] Implement date range filtering
+        return scheduleRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Override
     public ScheduleDto getSchedule(@NonNull String schdlId) {
         return scheduleRepository.findById(schdlId)
                 .map(this::convertToDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    @Override
     @Transactional
-    public void createSchedule(String userId, ScheduleDto dto) {
+    public String createSchedule(String userId, ScheduleDto dto) {
         Schedule entity = Schedule.builder()
                 .schdlId(dto.getSchdlId())
                 .schdlSeCd(dto.getSchdlSeCd())
@@ -60,11 +82,13 @@ public class ScheduleService extends BaseAbstractService {
                 .createdBy(userId)
                 .build();
         scheduleRepository.save(entity);
+        return entity.getSchdlId();
     }
 
+    @Override
     @Transactional
-    public void updateSchedule(String userId, ScheduleDto dto) {
-        Schedule entity = scheduleRepository.findById(Objects.requireNonNull(dto.getSchdlId()))
+    public void updateSchedule(String id, String userId, ScheduleDto dto) {
+        Schedule entity = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.updateAll(
@@ -82,9 +106,16 @@ public class ScheduleService extends BaseAbstractService {
         entity.setLastModifiedBy(userId);
     }
 
+    @Override
     @Transactional
-    public void deleteSchedule(@NonNull String schdlId) {
+    public void deleteSchedule(@NonNull String schdlId, String userId) {
+        // [TODO] Check userId if needed
         scheduleRepository.deleteById(schdlId);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull nuri.foundation.domain.common.BaseSearchDto searchVO) {
+        return java.util.Collections.emptyList();
     }
 
     private ScheduleDto convertToDto(Schedule entity) {

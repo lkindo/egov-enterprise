@@ -2,6 +2,8 @@ package nuri.business.service.schedule;
 
 import nuri.business.domain.schedule.LeaderSchedule;
 import nuri.business.domain.schedule.LeaderScheduleRepository;
+import nuri.business.domain.schedule.LeaderStatus;
+import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
@@ -19,44 +21,54 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class LeaderScheduleService extends BaseAbstractService {
+public class LeaderScheduleService extends BaseAbstractService implements EgovLeaderScheduleService {
 
     private final LeaderScheduleRepository leaderScheduleRepository;
+    private final LeaderStatusRepository leaderStatusRepository;
     private final EgovIdGnrService egovLeaderSchdlIdGnrService;
 
-    public Page<LeaderScheduleDto> getLeaderScheduleList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
-        return leaderScheduleRepository.searchLeaderSchedules(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+    @Override
+    public Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, @NonNull Pageable pageable) {
+        return leaderScheduleRepository.searchLeaderSchedules(null, keyword, Objects.requireNonNull(pageable))
                 .map(this::toDto);
     }
 
+    @Override
     public LeaderScheduleDto getLeaderSchedule(@NonNull String schdlId) {
         return leaderScheduleRepository.findById(schdlId)
                 .map(this::toDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    @Override
     @Transactional
-    public void createLeaderSchedule(String userId, LeaderScheduleDto dto) throws Exception {
-        String schdlId = egovLeaderSchdlIdGnrService.getNextStringId();
-        LeaderSchedule entity = LeaderSchedule.builder()
-                .schdlId(schdlId)
-                .schdlSeCd(dto.getSchdlSeCd())
-                .leaderId(dto.getLeaderId())
-                .schdlTtl(dto.getSchdlTtl())
-                .schdlCn(dto.getSchdlCn())
-                .reptitSeCd(dto.getReptitSeCd())
-                .schdlIpcrCd(dto.getSchdlIpcrCd())
-                .bgngYmd(dto.getBgngYmd())
-                .endYmd(dto.getEndYmd())
-                .schdlPicId(dto.getSchdlPicId())
-                .createdBy(userId)
-                .build();
-        leaderScheduleRepository.save(entity);
+    public String createLeaderSchedule(String userId, LeaderScheduleDto dto) {
+        try {
+            String schdlId = egovLeaderSchdlIdGnrService.getNextStringId();
+            LeaderSchedule entity = LeaderSchedule.builder()
+                    .schdlId(schdlId)
+                    .schdlSeCd(dto.getSchdlSeCd())
+                    .leaderId(dto.getLeaderId())
+                    .schdlTtl(dto.getSchdlTtl())
+                    .schdlCn(dto.getSchdlCn())
+                    .reptitSeCd(dto.getReptitSeCd())
+                    .schdlIpcrCd(dto.getSchdlIpcrCd())
+                    .bgngYmd(dto.getBgngYmd())
+                    .endYmd(dto.getEndYmd())
+                    .schdlPicId(dto.getSchdlPicId())
+                    .createdBy(userId)
+                    .build();
+            leaderScheduleRepository.save(entity);
+            return schdlId;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
+    @Override
     @Transactional
-    public void updateLeaderSchedule(String userId, LeaderScheduleDto dto) {
-        LeaderSchedule entity = leaderScheduleRepository.findById(Objects.requireNonNull(dto.getSchdlId()))
+    public void updateLeaderSchedule(String schdlId, String userId, LeaderScheduleDto dto) {
+        LeaderSchedule entity = leaderScheduleRepository.findById(Objects.requireNonNull(schdlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(
@@ -73,9 +85,32 @@ public class LeaderScheduleService extends BaseAbstractService {
         entity.setLastModifiedBy(userId);
     }
 
+    @Override
     @Transactional
     public void deleteLeaderSchedule(@NonNull String schdlId) {
         leaderScheduleRepository.deleteById(schdlId);
+    }
+
+    @Override
+    public Page<nuri.business.service.schedule.dto.LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable) {
+        // [TODO] searchKeyword filtering
+        return leaderStatusRepository.findAll(pageable)
+                .map(nuri.business.service.schedule.dto.LeaderStatusDto::from);
+    }
+
+    @Override
+    public nuri.business.service.schedule.dto.LeaderStatusDto getLeaderStatus(String leaderId) {
+        return leaderStatusRepository.findById(leaderId)
+                .map(nuri.business.service.schedule.dto.LeaderStatusDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public void updateLeaderStatus(nuri.business.service.schedule.dto.LeaderStatusDto dto) {
+        LeaderStatus entity = leaderStatusRepository.findById(dto.getLeaderId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.updateStatus(dto.getLeaderSttus());
     }
 
     private LeaderScheduleDto toDto(LeaderSchedule entity) {

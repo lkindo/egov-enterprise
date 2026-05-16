@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 @Repository("noteTrnsmitDomainRepository")
 public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {
 
-    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.deleteAt = 'N'")
+    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")
     Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 
@@ -22,7 +22,7 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
         return searchNoteTrnsmits(null, searchWrd, dsptchUserId, pageable);
     }
 
-    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND t.deleteAt = 'N'")
+    @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND t.delYn = 'N'")
     Page<NoteTrnsmit> findByDsptchUserId(@Param("dsptchUserId") String dsptchUserId, Pageable pageable);
     
     // legacy
