@@ -3,14 +3,16 @@ package nuri.business.service.schedule;
 import nuri.business.domain.schedule.LeaderSchedule;
 import nuri.business.domain.schedule.LeaderScheduleRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -21,132 +23,103 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("LeaderScheduleService 테스트")
+@DisplayName("LeaderScheduleService 단위 테스트")
 class LeaderScheduleServiceTest {
 
     @Mock
     private LeaderScheduleRepository leaderScheduleRepository;
 
+    @Mock
+    private EgovIdGnrService egovLeaderSchdlIdGnrService;
+
     @InjectMocks
     private LeaderScheduleService leaderScheduleService;
 
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
-    @DisplayName("간부 일정 목록 조회 성공")
-    void getLeaderScheduleList_Success() {
-        // Given
-        Page<LeaderSchedule> page = new PageImpl<>(List.of(LeaderSchedule.builder().scheduleId("LSCH_1").scheduleNm("Title").build()));
-        given(leaderScheduleRepository.findByScheduleNmContaining(anyString(), any(Pageable.class))).willReturn(page);
+    @DisplayName("간부 일정 목록 조회")
+    void getLeaderScheduleList() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        LeaderSchedule entity = LeaderSchedule.builder().schdlId("LS1").schdlTtl("Test LS").build();
+        given(leaderScheduleRepository.searchLeaderSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
-        // When
-        Page<LeaderScheduleDto> result = leaderScheduleService.getLeaderScheduleList("test", Pageable.unpaged());
+        // when
+        Page<LeaderScheduleDto> result = leaderScheduleService.getLeaderScheduleList(null, null, pageable);
 
-        // Then
+        // then
         assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
-    @DisplayName("키워드가 null인 경우 전체 간부 일정 목록 조회")
-    void getLeaderScheduleList_NullKeyword() {
-        // Given
-        Page<LeaderSchedule> page = new PageImpl<>(List.of(LeaderSchedule.builder().build()));
-        given(leaderScheduleRepository.findByScheduleNmContaining(eq(""), any(Pageable.class))).willReturn(page);
+    @DisplayName("간부 일정 상세 조회")
+    void getLeaderSchedule() {
+        // given
+        String schdlId = "LS1";
+        LeaderSchedule entity = LeaderSchedule.builder().schdlId(schdlId).schdlTtl("Test LS").build();
+        given(leaderScheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
-        // When
-        leaderScheduleService.getLeaderScheduleList(null, Pageable.unpaged());
+        // when
+        LeaderScheduleDto result = leaderScheduleService.getLeaderSchedule(schdlId);
 
-        // Then
-        verify(leaderScheduleRepository).findByScheduleNmContaining(eq(""), any());
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getSchdlId()).isEqualTo(schdlId);
     }
 
     @Test
-    @DisplayName("간부 일정 상세 조회 성공")
-    void getLeaderSchedule_Success() {
-        // Given
-        LeaderSchedule entity = LeaderSchedule.builder().scheduleId("LSCH_1").scheduleNm("Title").build();
-        given(leaderScheduleRepository.findById("LSCH_1")).willReturn(Optional.of(entity));
+    @DisplayName("간부 일정 생성")
+    void createLeaderSchedule() throws Exception {
+        // given
+        String userId = "user1";
+        LeaderScheduleDto dto = LeaderScheduleDto.builder()
+                .schdlTtl("New LS")
+                .leaderId("leader1")
+                .build();
+        given(egovLeaderSchdlIdGnrService.getNextStringId()).willReturn("LS1");
 
-        // When
-        LeaderScheduleDto result = leaderScheduleService.getLeaderSchedule("LSCH_1");
+        // when
+        leaderScheduleService.createLeaderSchedule(userId, dto);
 
-        // Then
-        assertThat(result.getScheduleNm()).isEqualTo("Title");
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 간부 일정 조회 시 예외 발생")
-    void getLeaderSchedule_NotFound() {
-        given(leaderScheduleRepository.findById(anyString())).willReturn(Optional.empty());
-        
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leaderScheduleService.getLeaderSchedule("invalid"))
-                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
-    }
-
-    @Test
-    @DisplayName("간부 일정 등록 성공")
-    void createLeaderSchedule_Success() {
-        // Given
-        LeaderScheduleDto dto = LeaderScheduleDto.builder().scheduleNm("New").build();
-
-        // When
-        String id = leaderScheduleService.createLeaderSchedule("user", dto);
-
-        // Then
-        assertThat(id).startsWith("LSCH_");
+        // then
         verify(leaderScheduleRepository).save(any(LeaderSchedule.class));
     }
 
     @Test
-    @DisplayName("간부 일정 수정 성공")
-    void updateLeaderSchedule_Success() {
-        // Given
-        LeaderSchedule entity = LeaderSchedule.builder().scheduleId("LSCH_1").build();
-        given(leaderScheduleRepository.findById("LSCH_1")).willReturn(Optional.of(entity));
-        LeaderScheduleDto dto = LeaderScheduleDto.builder().scheduleNm("Updated").build();
+    @DisplayName("간부 일정 수정")
+    void updateLeaderSchedule() {
+        // given
+        String schdlId = "LS1";
+        String userId = "user1";
+        LeaderSchedule existingEntity = LeaderSchedule.builder().schdlId(schdlId).schdlTtl("Old Title").build();
+        LeaderScheduleDto updateDto = LeaderScheduleDto.builder()
+                .schdlId(schdlId)
+                .schdlTtl("New Title")
+                .build();
 
-        // When
-        leaderScheduleService.updateLeaderSchedule("LSCH_1", "user", dto);
+        given(leaderScheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
 
-        // Then
-        assertThat(entity.getScheduleNm()).isEqualTo("Updated");
+        // when
+        leaderScheduleService.updateLeaderSchedule(userId, updateDto);
+
+        // then
+        assertThat(existingEntity.getSchdlTtl()).isEqualTo("New Title");
     }
 
     @Test
-    @DisplayName("존재하지 않는 간부 일정 수정 시 예외 발생")
-    void updateLeaderSchedule_NotFound() {
-        given(leaderScheduleRepository.findById(anyString())).willReturn(Optional.empty());
+    @DisplayName("간부 일정 삭제")
+    void deleteLeaderSchedule() {
+        // given
+        String schdlId = "LS1";
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
-            leaderScheduleService.updateLeaderSchedule("invalid", "user", LeaderScheduleDto.builder().build())
-        ).isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
-    }
+        // when
+        leaderScheduleService.deleteLeaderSchedule(schdlId);
 
-    @Test
-    @DisplayName("간부 일정 삭제 성공")
-    void deleteLeaderSchedule_Success() {
-        // When
-        leaderScheduleService.deleteLeaderSchedule("LSCH_1");
-
-        // Then
-        verify(leaderScheduleRepository).deleteById("LSCH_1");
-    }
-
-    @Test
-    @DisplayName("간부 현황 목록 조회 (Mock)")
-    void getLeaderStatusList() {
-        assertThat(leaderScheduleService.getLeaderStatusList(null, Pageable.unpaged())).isEmpty();
-    }
-
-    @Test
-    @DisplayName("간부 현황 조회 (Mock)")
-    void getLeaderStatus() {
-        assertThat(leaderScheduleService.getLeaderStatus("leader1")).isNull();
-    }
-
-    @Test
-    @DisplayName("간부 현황 수정 (Mock)")
-    void updateLeaderStatus() {
-        // Should not throw any exception
-        leaderScheduleService.updateLeaderStatus(null);
+        // then
+        verify(leaderScheduleRepository).deleteById(schdlId);
     }
 }

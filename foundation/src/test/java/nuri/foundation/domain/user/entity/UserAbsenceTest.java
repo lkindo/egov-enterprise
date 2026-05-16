@@ -11,10 +11,10 @@ class UserAbsenceTest {
     @DisplayName("사용자 부재 빌더 확인")
     void testBuilder() {
         UserAbsence absence = UserAbsence.builder()
-                .emplyrId("user01")
+                .userId("user01")
                 .userAbsnceAt("Y")
                 .build();
 
-        assertEquals("user01", absence.getEmplyrId());
+        assertEquals("user01", absence.getUserId());
     }
 }

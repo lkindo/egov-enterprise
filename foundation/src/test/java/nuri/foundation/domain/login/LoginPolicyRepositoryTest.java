@@ -27,10 +27,10 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
     void saveAndFind() {
         // given
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("user01")
-                .ipInfo("127.0.0.1")
-                .dplctPermAt("Y")
-                .lmttAt("N")
+                .userId("user01")
+                .ipAddr("127.0.0.1")
+                .dpcnPrmYn("Y")
+                .lmtYn("N")
                 .build();
 
         // when
@@ -39,7 +39,7 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getIpInfo()).isEqualTo("127.0.0.1");
+        assertThat(result.get().getIpAddr()).isEqualTo("127.0.0.1");
     }
 
     @Test
@@ -55,8 +55,8 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         userRepository.save(user1);
 
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("tester01")
-                .ipInfo("192.168.0.1")
+                .userId("tester01")
+                .ipAddr("192.168.0.1")
                 .build();
         loginPolicyRepository.save(policy);
 
@@ -65,7 +65,7 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         condition.setSearchKeyword("홍길동");
 
         // when
-        Page<LoginPolicySearchResult> result = loginPolicyRepository.search(condition, PageRequest.of(0, 10));
+        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies(condition.getSearchKeyword(), PageRequest.of(0, 10));
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -88,9 +88,9 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
 
         // when
-        Page<LoginPolicySearchResult> result = loginPolicyRepository.search(condition, PageRequest.of(0, 10));
+        Page<LoginPolicySearchResult> result = loginPolicyRepository.searchLoginPolicies(condition.getSearchKeyword(), PageRequest.of(0, 10));
 
         // then
-        assertThat(result.getContent()).anyMatch(r -> r.getEmplyrId().equals("tester02") && r.getRegYn().equals("N"));
+        assertThat(result.getContent()).anyMatch(r -> r.getUserId().equals("tester02") && r.getRegYn().equals("N"));
     }
 }

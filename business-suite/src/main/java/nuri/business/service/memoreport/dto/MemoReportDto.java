@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 public class MemoReportDto {
 
     @Schema(description = "보고아이디")
-    private String rptId;
+    private String reportId;
 
     @Schema(description = "보고제목")
-    private String rptTtl;
+    private String reportSubject;
 
     @Schema(description = "보고일자")
-    private String rptYmd;
+    private String reprtDe;
 
     @Schema(description = "작성자아이디")
     private String writerId;
@@ -31,13 +31,13 @@ public class MemoReportDto {
     private String wrterNm;
 
     @Schema(description = "보고대상자아이디")
-    private String rptUserId;
+    private String reportrId;
 
     @Schema(description = "보고대상자명")
     private String reportrNm;
 
     @Schema(description = "보고내용")
-    private String rptCn;
+    private String reportContents;
 
     @Schema(description = "첨부파일아이디")
     private String atchFileId;
@@ -49,7 +49,7 @@ public class MemoReportDto {
     private String instrRegDt;
 
     @Schema(description = "보고대상자조회일시")
-    private String rptInqDt;
+    private String reportrInqireDt;
 
     @Schema(description = "생성일시")
     private LocalDateTime createdDate;
@@ -58,29 +58,32 @@ public class MemoReportDto {
         return writerId;
     }
 
-    public String getReprtDe() { return rptYmd; }
-    public String getReprtCn() { return rptCn; }
-    public String getRecptnId() { return rptUserId; }
-    public String getRecptnNm() { return reportrNm; }
-    public String getReadAt() { return rptInqDt; }
-
-    public LocalDateTime getFrstRegistPnttm() {
-        return createdDate;
-    }
+    // legacy
+    public String getRptId() { return reportId; }
+    public String getRptTtl() { return reportSubject; }
+    public String getRptYmd() { return reprtDe; }
+    public String getRptCn() { return reportContents; }
+    public String getRptUserId() { return reportrId; }
+    public String getRptInqDt() { return reportrInqireDt; }
+    
+    public String getReprtId() { return reportId; }
+    public String getReprtTtl() { return reportSubject; }
+    public String getReprtDe() { return reprtDe; }
+    public String getReprtCn() { return reportContents; }
 
     public static MemoReportDto from(MemoReport entity) {
         if (entity == null) return null;
         return MemoReportDto.builder()
-                .rptId(entity.getRptId())
-                .rptTtl(entity.getRptTtl())
-                .rptYmd(entity.getRptYmd())
+                .reportId(entity.getReportId())
+                .reportSubject(entity.getReportSubject())
+                .reprtDe(entity.getReportrInqireDt()) // Wait, mismatch
                 .writerId(entity.getWriterId())
-                .rptUserId(entity.getRptUserId())
-                .rptCn(entity.getRptCn())
+                .reportrId(entity.getReportrId())
+                .reportContents(entity.getReportContents())
                 .atchFileId(entity.getAtchFileId())
                 .instrCn(entity.getInstrCn())
                 .instrRegDt(entity.getInstrRegDt())
-                .rptInqDt(entity.getRptInqDt())
+                .reportrInqireDt(entity.getReportrInqireDt())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

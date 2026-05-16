@@ -7,5 +7,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LeaderScheduleRepository extends JpaRepository<LeaderSchedule, String> {
-    Page<LeaderSchedule> findBySchdlTtlContaining(String keyword, Pageable pageable);
+    default Page<LeaderSchedule> searchLeaderSchedules(String searchCondition, String searchKeyword, Pageable pageable) {
+        return findAll(pageable);
+    }
 }

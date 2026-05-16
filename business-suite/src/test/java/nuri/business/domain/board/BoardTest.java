@@ -13,13 +13,13 @@ class BoardTest {
     void builderTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .pstTtl("Title")
-                .pstCn("Content")
+                .nttSj("Title")
+                .nttCn("Content")
                 .build();
 
         assertThat(board.getBbsId()).isEqualTo("BBS_001");
-        assertThat(board.getPstTtl()).isEqualTo("Title");
-        assertThat(board.getPstCn()).isEqualTo("Content");
+        assertThat(board.getNttSj()).isEqualTo("Title");
+        assertThat(board.getNttCn()).isEqualTo("Content");
         assertThat(board.getInqireCo()).isEqualTo(0);
         assertThat(board.getUseYn()).isEqualTo("Y");
     }
@@ -29,14 +29,14 @@ class BoardTest {
     void updateTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .pstTtl("Old Title")
-                .pstCn("Old Content")
+                .nttSj("Old Title")
+                .nttCn("Old Content")
                 .build();
 
         board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", "FILE_001", null, null, null, "N");
 
-        assertThat(board.getPstTtl()).isEqualTo("New Title");
-        assertThat(board.getPstCn()).isEqualTo("New Content");
+        assertThat(board.getNttSj()).isEqualTo("New Title");
+        assertThat(board.getNttCn()).isEqualTo("New Content");
         assertThat(board.getNtcrId()).isEqualTo("user01");
         assertThat(board.getNtcrNm()).isEqualTo("User 01");
         assertThat(board.getPassword()).isEqualTo("pass");
@@ -89,12 +89,12 @@ class BoardTest {
     void updateReplyOrderTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .pstSn(1L)
+                .nttNo(1L)
                 .build();
 
         board.updateReplyOrder(2L);
 
-        assertThat(board.getPstSn()).isEqualTo(2L);
+        assertThat(board.getNttNo()).isEqualTo(2L);
     }
 
     @Test
@@ -104,8 +104,8 @@ class BoardTest {
                 .bbsId("BBS_001")
                 .build();
 
-        board.updateCommentCount(5);
-        board.updateFileCount(3);
+        board.setCommentCnt(5);
+        board.setFileCnt(3);
 
         assertThat(board.getCommentCnt()).isEqualTo(5);
         assertThat(board.getFileCnt()).isEqualTo(3);

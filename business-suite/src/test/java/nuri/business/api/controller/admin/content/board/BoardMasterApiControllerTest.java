@@ -60,7 +60,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("게시판 생성 성공")
     void createBoardMaster_Success() throws Exception {
-        given(boardMasterService.createBoardMaster(any(BoardMasterDto.class))).willReturn("BBS_NEW");
+        given(boardMasterService.createBoardMaster(eq("user1"), any(BoardMasterDto.class))).willReturn("BBS_NEW");
 
         mockMvc.perform(post("/api/v1/admin/system/board-masters")
                 .contentType(MediaType.APPLICATION_JSON)

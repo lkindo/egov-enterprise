@@ -3,79 +3,74 @@ package nuri.business.service.report;
 import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.service.report.dto.WorkReportDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class WorkReportService implements EgovWorkReportService {
+public class WorkReportService extends BaseAbstractService {
 
     private final WorkReportRepository workReportRepository;
 
-    @Override
     @Transactional
-    public void registerWorkReport(WorkReportDto dto) {
-        WorkReport report = WorkReport.builder()
-                .rptId(dto.getRptId())
-                .rptTtl(dto.getRptTtl())
-                .rptCn(dto.getRptCn())
-                .rptTypeCd(dto.getRptTypeCd())
-                .rptYmd(dto.getRptYmd())
-                .writerId(dto.getWriterId())
-                .rptSttsCd(dto.getRptSttsCd())
-                .createdBy(dto.getWriterId())
-                .lastModifiedBy(dto.getWriterId())
+    public void createWorkReport(WorkReportDto dto) {
+        WorkReport entity = WorkReport.builder()
+                .reportId(dto.getReportId())
+                .reportSubject(dto.getReportSubject())
+                .reportContents(dto.getReportContents())
+                .reprtSe(dto.getReprtSe())
+                .wrterId(dto.getWrterId())
+                .atchFileId(dto.getAtchFileId())
+                .createdBy(dto.getWrterId())
+                .lastModifiedBy(dto.getWrterId())
                 .build();
-        workReportRepository.save(Objects.requireNonNull(report));
+        workReportRepository.save(entity);
     }
 
-    @Override
     @Transactional
     public void updateWorkReport(WorkReportDto dto) {
-        workReportRepository.findById(Objects.requireNonNull(dto.getRptId()))
-                .ifPresent(r -> r.update(
-                        dto.getRptTtl(),
-                        dto.getRptCn(),
-                        dto.getRptTypeCd(),
-                        dto.getRptYmd(),
-                        dto.getRptSttsCd()));
+        WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getReportId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        entity.update(dto.getReportSubject(), dto.getReportContents(), dto.getAtchFileId(), dto.getReprtSe());
+        entity.setLastModifiedBy(dto.getWrterId());
     }
 
-    @Override
     @Transactional
-    public void deleteWorkReport(String reprtId) {
-        workReportRepository.deleteById(Objects.requireNonNull(reprtId));
+    public void deleteWorkReport(@NonNull String reportId) {
+        workReportRepository.deleteById(reportId);
     }
 
-    @Override
-    public WorkReportDto getWorkReport(String reprtId) {
-        return workReportRepository.findById(Objects.requireNonNull(reprtId))
-                .map(r -> Objects.requireNonNull(WorkReportDto.builder()
-                        .rptId(r.getRptId())
-                        .rptTtl(r.getRptTtl())
-                        .rptCn(r.getRptCn())
-                        .rptTypeCd(r.getRptTypeCd())
-                        .rptYmd(r.getRptYmd())
-                        .writerId(r.getWriterId())
-                        .rptSttsCd(r.getRptSttsCd())
-                        .build()))
+    public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {
+        return workReportRepository.searchWorkReports(searchId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable))
+                .map(this::toDto);
+    }
+
+    public WorkReportDto getWorkReport(@NonNull String reportId) {
+        return workReportRepository.findById(reportId)
+                .map(this::toDto)
                 .orElse(null);
     }
 
-    @Override
-    public Page<WorkReportDto> getWorkReportList(String writerId, String searchWrd, Pageable pageable) {
-        Objects.requireNonNull(pageable);
-        return workReportRepository.searchWorkReports(null, null, null, null, "0", searchWrd, null, null, pageable)
-                .map(r -> Objects.requireNonNull(WorkReportDto.builder()
-                        .rptId(r.getRptId())
-                        .rptTtl(r.getRptTtl())
-                        .rptYmd(r.getRptYmd())
-                        .rptSttsCd(r.getRptSttsCd())
-                        .build()));
+    private WorkReportDto toDto(WorkReport entity) {
+        return WorkReportDto.builder()
+                .reportId(entity.getReportId())
+                .reportSubject(entity.getReportSubject())
+                .reportContents(entity.getReportContents())
+                .reprtSe(entity.getReprtSe())
+                .wrterId(entity.getWrterId())
+                .atchFileId(entity.getAtchFileId())
+                .build();
     }
 }

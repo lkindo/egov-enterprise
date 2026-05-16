@@ -37,7 +37,7 @@ class ScrapApiControllerTest {
     void getMyScrapList_Success() throws Exception {
         // Given
         Page<ScrapDto> page = new PageImpl<>(List.of(ScrapDto.builder().scrapId("SCR1").scrapNm("Scrap").build()));
-        given(egovScrapService.getMyScrapList(anyString(), any(PageRequest.class))).willReturn(page);
+        given(egovScrapService.getScrapList(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/scraps")

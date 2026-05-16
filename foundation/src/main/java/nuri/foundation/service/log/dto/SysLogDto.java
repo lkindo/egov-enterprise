@@ -32,7 +32,11 @@ public class SysLogDto {
     /** 발생일자 */
     private String ocrnYmd;
 
-    public String getOcrnYmd() {
-        return ocrnYmd;
-    }
+    // legacy
+    public String getOcrnYmd() { return ocrnYmd; }
+    public String getOccrrncDe() { return ocrnYmd; }
+    public String getRequstId() { return dmndId; }
+    public String getProcessSeCode() { return prcsSeCd; }
+    public String getProcessTime() { return prcsTm; }
+    public String getRqesterId() { return dmndUserId; }
 }

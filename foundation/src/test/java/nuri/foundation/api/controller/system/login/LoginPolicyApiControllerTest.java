@@ -68,8 +68,8 @@ class LoginPolicyApiControllerTest {
     void testGetLoginPolicy() throws Exception {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder()
-                .emplyrId("user01")
-                .emplyrNm("사용자1")
+                .userId("user01")
+                .userNm("사용자1")
                 .regYn("Y")
                 .build();
         when(loginPolicyManageService.selectLoginPolicy("user01")).thenReturn(dto);
@@ -77,18 +77,17 @@ class LoginPolicyApiControllerTest {
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/login-policies/user01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.emplyrId").value("user01"));
+                .andExpect(jsonPath("$.data.userId").value("user01"));
     }
 
     @Test
     @DisplayName("로그인 정책 저장 성공 - 신규")
     void testSaveLoginPolicy_New() throws Exception {
         // Given
-        LoginPolicyDto dto = LoginPolicyDto.builder().ipInfo("127.0.0.1").build();
-        when(loginPolicyManageService.selectLoginPolicy("user01")).thenReturn(LoginPolicyDto.builder().regYn("N").build());
+        LoginPolicyDto dto = LoginPolicyDto.builder().ipAddr("127.0.0.1").build();
 
         // When & Then
-        mockMvc.perform(put("/api/v1/admin/system/login-policies/user01")
+        mockMvc.perform(post("/api/v1/admin/system/login-policies/user01")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -100,8 +99,7 @@ class LoginPolicyApiControllerTest {
     @DisplayName("로그인 정책 저장 성공 - 기존 업데이트")
     void testSaveLoginPolicy_Update() throws Exception {
         // Given
-        LoginPolicyDto dto = LoginPolicyDto.builder().ipInfo("127.0.0.1").build();
-        when(loginPolicyManageService.selectLoginPolicy("user01")).thenReturn(LoginPolicyDto.builder().regYn("Y").build());
+        LoginPolicyDto dto = LoginPolicyDto.builder().ipAddr("127.0.0.1").build();
 
         // When & Then
         mockMvc.perform(put("/api/v1/admin/system/login-policies/user01")
@@ -119,6 +117,6 @@ class LoginPolicyApiControllerTest {
         mockMvc.perform(delete("/api/v1/admin/system/login-policies/user01"))
                 .andExpect(status().isOk());
 
-        verify(loginPolicyManageService, times(1)).deleteLoginPolicy("user01");
+        verify(loginPolicyManageService, times(1)).deleteLoginPolicy(any(LoginPolicyDto.class));
     }
 }

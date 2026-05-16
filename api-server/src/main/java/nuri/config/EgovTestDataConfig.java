@@ -51,7 +51,7 @@ public class EgovTestDataConfig {
             BoardMaster board = BoardMaster.builder()
                     .bbsId(bbsId)
                     .bbsTtl(bbsNm)
-                    .bbsIntroCn(bbsNm + " 설명")
+                    .bbsExpln(bbsNm + " 설명")
                     .bbsTypeCd(tyCode)
                     .bbsAttrCd("BBSA01")
                     .useYn("Y")
@@ -83,8 +83,8 @@ public class EgovTestDataConfig {
                     .homeendTelno("0000")
                     .areaNo("02")
                     .homemiddleTelno("0000")
-                    .zip("000000")
-                    .statusCode("A")
+                    .zip("00000")
+                    .userSttsCd("A")
                     .sbscrbYmd(LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
                     .build();
 

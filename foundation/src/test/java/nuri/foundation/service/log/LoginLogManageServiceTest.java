@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,7 +54,7 @@ class LoginLogManageServiceTest {
                     .build();
 
             Page<LoginLog> page = new PageImpl<>(Arrays.asList(log1));
-            when(loginLogRepository.findAll(any(Pageable.class))).thenReturn(page);
+            when(loginLogRepository.searchLoginLogs(any(), any(), any(), any())).thenReturn(page);
 
             // When
             List<LoginLogDto> result = loginLogManageService.selectLoginLogList(searchVO);
@@ -63,21 +64,20 @@ class LoginLogManageServiceTest {
             assertEquals(1, result.size());
             assertEquals("LGN_001", result.get(0).getLogId());
             assertEquals("user01", result.get(0).getLoginId());
-            verify(loginLogRepository, times(1)).findAll(any(Pageable.class));
         }
 
         @Test
         @DisplayName("로그인 로그 총 갯수 조회 성공")
         void testSelectLoginLogListTotCnt_Success() {
             // Given
-            when(loginLogRepository.count()).thenReturn(10L);
+            Page<LoginLog> page = new PageImpl<>(List.of());
+            when(loginLogRepository.searchLoginLogs(any(), any(), any(), any())).thenReturn(page);
 
             // When
             int count = loginLogManageService.selectLoginLogListTotCnt(new BaseSearchDto());
 
             // Then
-            assertEquals(10, count);
-            verify(loginLogRepository, times(1)).count();
+            assertEquals(0, count);
         }
 
         @Test
@@ -94,7 +94,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(any(LoginLogDto.class));
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId).build());
 
             // Then
             assertNotNull(result);
@@ -110,7 +110,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.findById(logId)).thenReturn(Optional.empty());
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(any(LoginLogDto.class));
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId).build());
 
             // Then
             assertNull(result);

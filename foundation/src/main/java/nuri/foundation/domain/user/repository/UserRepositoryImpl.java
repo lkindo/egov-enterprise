@@ -35,9 +35,9 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                         user.esntlId,
                         user.role.stringValue().as("role"),
                         user.emplNo,
-                        user.offmTelno,
-                        user.moblphonNo,
-                        user.emailAdres,
+                        user.officeTelno.as("officeTelno"),
+                        user.mblTelno.as("mblTelno"),
+                        user.emlAddr.as("emlAddr"),
                         user.ofcpsNm,
                         user.createdDate))
                 .from(user)
@@ -110,8 +110,8 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
             return user.userId.contains(searchKeyword);
         } else if ("1".equals(searchCondition) || "USER_NM".equals(searchCondition)) {
             return user.userNm.contains(searchKeyword);
-        } else if ("OFFM_TELNO".equals(searchCondition)) {
-            return user.offmTelno.contains(searchKeyword);
+        } else if ("OFFM_TELNO".equals(searchCondition) || "OFFICE_TELNO".equals(searchCondition)) {
+            return user.officeTelno.contains(searchKeyword);
         }
 
         return null;

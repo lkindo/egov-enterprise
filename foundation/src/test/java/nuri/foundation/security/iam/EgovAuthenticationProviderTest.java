@@ -52,7 +52,7 @@ class EgovAuthenticationProviderTest {
                 .esntlId("USR_0000000000001")
                 .password("{egov}hashedPassword")
                 .userNm("Test User")
-                .lockAt("N")
+                .lckYn("N")
                 .build();
     }
 

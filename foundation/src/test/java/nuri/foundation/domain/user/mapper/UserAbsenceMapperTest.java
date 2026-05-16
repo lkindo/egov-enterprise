@@ -17,7 +17,7 @@ class UserAbsenceMapperTest {
     void toDto() {
         // given
         UserAbsence entity = UserAbsence.builder()
-                .emplyrId("user01")
+                .userId("user01")
                 .userAbsnceAt("Y")
                 .build();
 
@@ -26,7 +26,7 @@ class UserAbsenceMapperTest {
 
         // then
         assertThat(dto).isNotNull();
-        assertThat(dto.getEmplyrId()).isEqualTo("user01");
+        assertThat(dto.getUserId()).isEqualTo("user01");
         assertThat(dto.getUserAbsnceAt()).isEqualTo("Y");
     }
 
@@ -35,7 +35,7 @@ class UserAbsenceMapperTest {
     void toEntity() {
         // given
         UserAbsenceDto dto = UserAbsenceDto.builder()
-                .emplyrId("user02")
+                .userId("user02")
                 .userAbsnceAt("N")
                 .build();
 
@@ -44,7 +44,7 @@ class UserAbsenceMapperTest {
 
         // then
         assertThat(entity).isNotNull();
-        assertThat(entity.getEmplyrId()).isEqualTo("user02");
+        assertThat(entity.getUserId()).isEqualTo("user02");
         assertThat(entity.getUserAbsnceAt()).isEqualTo("N");
     }
 

@@ -20,12 +20,16 @@ public class BlogDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime lastUpdtPnttm;
     private String blogYn;
 
-    public LocalDateTime getCreatedDate() {
-        return frstRegisterPnttm;
-    }
+    // legacy
+    public String getBlogNm() { return blogTtl; }
+    public void setBlogNm(String v) { this.blogTtl = v; }
+    public String getBlogIntrcn() { return blogIntroCn; }
+    public void setBlogIntrcn(String v) { this.blogIntroCn = v; }
+    public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
+    public LocalDateTime getLastUpdusrPnttm() { return lastUpdtPnttm; }
 
     public static BlogDto from(Blog entity) {
         if (entity == null)
@@ -41,7 +45,7 @@ public class BlogDto {
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
-                .lastUpdusrPnttm(entity.getLastModifiedDate())
+                .lastUpdtPnttm(entity.getLastModifiedDate())
                 .blogYn(entity.getBlogYn())
                 .build();
     }

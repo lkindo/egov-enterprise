@@ -49,15 +49,15 @@ class CommentServiceTest {
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         Comment comment = Comment.builder()
-                .id(1L)
-                .pstId(pstId)
+                .nttId(1L)
+                .nttId(pstId)
                 .bbsId(bbsId)
                 .cmntCn("Test Comment")
                 .useYn("Y")
                 .build();
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
-        given(commentRepository.findByBbsIdAndNttId(bbsId, pstId, pageable)).willReturn(page);
+        given(commentRepository.findByBbsIdAndPstId(bbsId, pstId, pageable)).willReturn(page);
 
         // when
         Page<CommentDto> result = commentService.getComments(pstId, bbsId, pageable);
@@ -72,7 +72,7 @@ class CommentServiceTest {
     void getAllComments() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Comment comment = Comment.builder().id(1L).cmntCn("Test").build();
+        Comment comment = Comment.builder().nttId(1L).cmntCn("Test").build();
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
         given(commentRepository.findAll(pageable)).willReturn(page);
@@ -90,10 +90,10 @@ class CommentServiceTest {
         // given
         String keyword = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        Comment comment = Comment.builder().id(1L).cmntCn("Test").build();
+        Comment comment = Comment.builder().nttId(1L).cmntCn("Test").build();
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
-        given(commentRepository.findByCommentCnContaining(keyword, pageable)).willReturn(page);
+        given(commentRepository.findByCmntCnContaining(keyword, pageable)).willReturn(page);
 
         // when
         Page<CommentDto> result = commentService.searchComments(keyword, pageable);
@@ -107,7 +107,7 @@ class CommentServiceTest {
     void getComment() {
         // given
         Long id = 1L;
-        Comment comment = Comment.builder().id(id).cmntCn("Test").build();
+        Comment comment = Comment.builder().nttId(id).cmntCn("Test").build();
         given(commentRepository.findById(id)).willReturn(Optional.of(comment));
 
         // when
@@ -115,7 +115,7 @@ class CommentServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getNttId()).isEqualTo(id);
     }
 
     @Test
@@ -125,14 +125,14 @@ class CommentServiceTest {
         String userId = "user1";
         String userNm = "Tester";
         CommentSaveRequest request = CommentSaveRequest.builder()
-                .pstId(1L)
+                .nttId(1L)
                 .bbsId("BBS_01")
                 .cmntCn("New Comment")
                 .password("1234")
                 .build();
         Comment savedComment = Comment.builder()
-                .id(1L)
-                .pstId(request.getPstId())
+                .nttId(1L)
+                .nttId(request.getNttId())
                 .bbsId(request.getBbsId())
                 .cmntCn(request.getCmntCn())
                 .build();
@@ -157,7 +157,7 @@ class CommentServiceTest {
                 .cmntCn("Updated Comment")
                 .build();
         Comment comment = Comment.builder()
-                .id(id)
+                .nttId(id)
                 .cmntCn("Old Comment")
                 .build();
 
@@ -177,9 +177,9 @@ class CommentServiceTest {
         Long id = 1L;
         String userId = "user1";
         Comment comment = Comment.builder()
-                .id(id)
+                .nttId(id)
                 .bbsId("BBS_01")
-                .pstId(1L)
+                .nttId(1L)
                 .useYn("Y")
                 .build();
 

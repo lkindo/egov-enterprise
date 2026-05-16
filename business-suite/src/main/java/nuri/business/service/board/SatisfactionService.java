@@ -1,105 +1,109 @@
 package nuri.business.service.board;
 
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.board.Satisfaction;
 import nuri.business.domain.board.SatisfactionRepository;
 import nuri.business.service.board.dto.SatisfactionDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Service("egovSatisfactionService")
+@Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SatisfactionService implements EgovSatisfactionService {
+public class SatisfactionService extends BaseAbstractService {
 
     private final SatisfactionRepository satisfactionRepository;
 
-    @Override
     @Transactional
-    public void registerSatisfaction(SatisfactionDto dto) {
-        Satisfaction satisfaction = Satisfaction.builder()
-                .id(dto.getSatisfactionId())
-                .pstId(dto.getPstId())
+    public void createSatisfaction(String userId, SatisfactionDto dto) {
+        Satisfaction entity = Satisfaction.builder()
                 .bbsId(dto.getBbsId())
-                .writerId(dto.getWriterId())
-                .writerNm(dto.getWriterNm())
+                .nttId(dto.getNttId())
                 .stsfdgLevel(dto.getStsfdgLevel())
                 .stsfdgCn(dto.getStsfdgCn())
-                .password(dto.getSatisfactionPassword())
-                .useYn("Y")
-                .createdBy(dto.getWriterId())
+                .password(dto.getPassword())
+                .createdBy(userId)
                 .build();
-        satisfactionRepository.save(Objects.requireNonNull(satisfaction));
+        satisfactionRepository.save(entity);
     }
 
-    @Override
+    // legacy
+    @Transactional
+    public void registerSatisfaction(SatisfactionDto dto) {
+        createSatisfaction("SYSTEM", dto);
+    }
+
+    @Transactional
+    public void updateSatisfaction(String userId, SatisfactionDto dto) {
+        Satisfaction entity = satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        entity.update(dto.getStsfdgLevel(), dto.getStsfdgCn(), dto.getPassword());
+        entity.setLastModifiedBy(userId);
+    }
+
+    // legacy
     @Transactional
     public void updateSatisfaction(SatisfactionDto dto) {
-        satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
-                .ifPresent(s -> s.update(dto.getStsfdgLevel(), dto.getStsfdgCn(),
-                        dto.getSatisfactionPassword()));
+        updateSatisfaction("SYSTEM", dto);
     }
 
-    @Override
     @Transactional
-    public void deleteSatisfaction(@NonNull Long satisfactionId) {
-        satisfactionRepository.deleteById(Objects.requireNonNull(satisfactionId));
+    public void deleteSatisfaction(Long satisfactionId, String userId, String password) {
+        Satisfaction entity = satisfactionRepository.findById(satisfactionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        entity.delete();
+        entity.setLastModifiedBy(userId);
     }
 
-    @Override
-    public List<SatisfactionDto> getSatisfactionList(Long pstId, String bbsId) {
-        return satisfactionRepository
-                .findByPstIdAndBbsIdAndUseYn(Objects.requireNonNull(pstId), Objects.requireNonNull(bbsId),
-                        "Y")
-                .stream()
-                .map(s -> SatisfactionDto.builder()
-                        .satisfactionId(s.getId())
-                        .pstId(s.getPstId())
-                        .bbsId(s.getBbsId())
-                        .writerId(s.getWriterId())
-                        .writerNm(s.getWriterNm())
-                        .stsfdgLevel(s.getStsfdgLevel())
-                        .stsfdgCn(s.getStsfdgCn())
-                        .createdDate(s.getCreatedDate())
-                        .build())
+    // legacy
+    @Transactional
+    public void deleteSatisfaction(Long satisfactionId) {
+        deleteSatisfaction(satisfactionId, "SYSTEM", null);
+    }
+
+    public List<SatisfactionDto> getSatisfactionList(String bbsId, Long pstId) {
+        List<Satisfaction> list = satisfactionRepository.findByPstIdAndBbsIdAndUseYn(pstId, bbsId, "Y");
+        return list.stream()
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public Double getAverageSatisfaction(Long pstId, String bbsId) {
-        return satisfactionRepository.getAverageSatisfaction(Objects.requireNonNull(pstId),
-                Objects.requireNonNull(bbsId));
+    public Double getAverageSatisfaction(String bbsId, Long pstId) {
+        return satisfactionRepository.getAverageSatisfaction(pstId, bbsId);
     }
 
-    @Override
-    public SatisfactionDto getSatisfaction(@NonNull Long satisfactionId) {
-        Satisfaction satisfaction = satisfactionRepository.findById(Objects.requireNonNull(satisfactionId))
+    public SatisfactionDto getSatisfaction(Long satisfactionId) {
+        return satisfactionRepository.findById(satisfactionId)
+                .map(this::convertToDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    public boolean checkPassword(Long satisfactionId, String password) {
+        return satisfactionRepository.findById(satisfactionId)
+                .map(s -> Objects.equals(s.getPassword(), password))
+                .orElse(false);
+    }
+
+    private SatisfactionDto convertToDto(Satisfaction satisfaction) {
         return SatisfactionDto.builder()
-                .satisfactionId(satisfaction.getId())
-                .pstId(satisfaction.getPstId())
+                .satisfactionId(satisfaction.getStsfdgId())
                 .bbsId(satisfaction.getBbsId())
-                .writerId(satisfaction.getWriterId())
-                .writerNm(satisfaction.getWriterNm())
-                .stsfdgLevel(satisfaction.getStsfdgLevel())
+                .nttId(satisfaction.getNttId())
                 .stsfdgCn(satisfaction.getStsfdgCn())
+                .stsfdgLevel(satisfaction.getStsfdgLevel())
+                .writerId(satisfaction.getCreatedBy())
+                .password(satisfaction.getPassword())
                 .useYn(satisfaction.getUseYn())
                 .createdDate(satisfaction.getCreatedDate())
                 .build();
-    }
-
-    @Override
-    public boolean checkPassword(@NonNull Long satisfactionId, String password) {
-        Satisfaction satisfaction = satisfactionRepository.findById(Objects.requireNonNull(satisfactionId))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        if (satisfaction.getPassword() == null)
-            return false;
-        return satisfaction.getPassword().equals(password);
     }
 }

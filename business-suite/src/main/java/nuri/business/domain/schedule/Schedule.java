@@ -1,78 +1,95 @@
 package nuri.business.domain.schedule;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.foundation.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.io.Serializable;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
+import java.io.Serializable;
+
 @Entity
-@Table(name = "TB_SCHDL_INFO")
+@Table(name = "TB_SCHDUL_INFO")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public class Schedule extends BaseEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "SCHDL_ID", length = 20)
+    @Column(name = "SCHDUL_ID", length = 20)
     private String schdlId;
 
-    @Column(name = "SCHDL_SE_CD", length = 1)
-    private String schdlSeCd; // 1: 부서, 2: 개인, 3: 메인화면
+    @Column(name = "SCHDUL_SE", length = 1)
+    private String schdlSeCd;
 
-    @Column(name = "SCHDL_DEPT_ID", length = 20)
-    private String schdlDeptId;
-
-    @Column(name = "SCHDL_KND_CD", length = 1)
-    private String schdlKindCd; // 1: 중요일정, 2: 일반일정
-
-    @Column(name = "SCHDL_BGNG_YMD", length = 20)
-    private String schdlBgngYmd; // 날짜형식(YYYYMMDDHHMM)
-
-    @Column(name = "SCHDL_END_YMD", length = 20)
-    private String schdlEndYmd; // 날짜형식(YYYYMMDDHHMM)
-
-    @Column(name = "SCHDL_NM", length = 255)
+    @Column(name = "SCHDUL_TTL", length = 255, nullable = false)
     private String schdlTtl;
 
-    @Column(name = "SCHDL_CN", columnDefinition = "TEXT")
+    @Column(name = "SCHDUL_CN", columnDefinition = "TEXT")
     private String schdlCn;
 
-    @Column(name = "SCHDL_PLC_NM", length = 255)
-    private String schdlPlcNm;
+    @Column(name = "REPT_ITV_VAL", length = 1)
+    private String reptitSeCd;
 
-    @Column(name = "SCHDL_IMPRT_CD", length = 1)
-    private String schdlIpcrCd; // 중요도(A,B,C)
+    @Column(name = "SCHDUL_BGNG_YMD", length = 20)
+    private String schdlBgngYmd;
 
-    @Column(name = "SCHDL_PIC_ID", length = 20)
+    @Column(name = "SCHDUL_END_YMD", length = 20)
+    private String schdlEndYmd;
+
+    @Column(name = "SCHDUL_IPADDR", length = 20)
+    private String schdlIpAddr;
+
+    @Column(name = "SCHDUL_CHARGER_ID", length = 20)
     private String schdlPicId;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
+    
+    // Additional fields used in service
+    @Column(name = "SCHDUL_DEPT_ID", length = 20)
+    private String schdlDeptId;
+    @Column(name = "SCHDUL_KND_CD", length = 20)
+    private String schdlKindCd;
+    @Column(name = "SCHDUL_PLC_NM", length = 255)
+    private String schdlPlcNm;
+    @Column(name = "SCHDUL_IPCR_CD", length = 20)
+    private String schdlIpcrCd;
 
-    @Column(name = "REPT_SE_CD", length = 1)
-    private String reptitSeCd; // 1:매일, 2:매주, 3:매달
-
-    public void update(String schdlSeCd, String schdlKindCd, String schdlBgngYmd, String schdlEndYmd,
-            String schdlTtl, String schdlCn, String schdlPlcNm, String schdlIpcrCd,
-            String atchFileId, String reptitSeCd) {
+    public void update(String schdlTtl, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
+                       String reptitSeCd, String schdlPicId, String atchFileId) {
+        this.schdlTtl = schdlTtl;
+        this.schdlCn = schdlCn;
+        this.schdlSeCd = schdlSeCd;
+        this.schdlBgngYmd = schdlBgngYmd;
+        this.schdlEndYmd = schdlEndYmd;
+        this.reptitSeCd = reptitSeCd;
+        this.schdlPicId = schdlPicId;
+        this.atchFileId = atchFileId;
+    }
+    
+    public void updateAll(String schdlTtl, String schdlCn, String schdlSeCd, String schdlKindCd, String schdlBgngYmd, String schdlEndYmd,
+                       String schdlPlcNm, String schdlIpcrCd, String schdlPicId, String reptitSeCd) {
+        this.schdlTtl = schdlTtl;
+        this.schdlCn = schdlCn;
         this.schdlSeCd = schdlSeCd;
         this.schdlKindCd = schdlKindCd;
         this.schdlBgngYmd = schdlBgngYmd;
         this.schdlEndYmd = schdlEndYmd;
-        this.schdlTtl = schdlTtl;
-        this.schdlCn = schdlCn;
         this.schdlPlcNm = schdlPlcNm;
         this.schdlIpcrCd = schdlIpcrCd;
-        this.atchFileId = atchFileId;
+        this.schdlPicId = schdlPicId;
         this.reptitSeCd = reptitSeCd;
     }
+
+    // legacy aliases
+    public String getSchdulId() { return schdlId; }
+    public String getSchdulNm() { return schdlTtl; }
+    public String getSchdulCn() { return schdlCn; }
+    public String getSchdulBgnde() { return schdlBgngYmd; }
+    public String getSchdulEndde() { return schdlEndYmd; }
 }

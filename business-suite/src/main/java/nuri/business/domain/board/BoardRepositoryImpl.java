@@ -28,12 +28,12 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
                                                 QBoardMaster.boardMaster.bbsId,
-                                                QBoard.board.pstId,
-                                                QBoard.board.pstTtl,
+                                                QBoard.board.nttId.as("pstId"),
+                                                QBoard.board.nttSj.as("pstTtl"),
                                                 QBoard.board.ntcrId,
                                                 QBoard.board.ntcrNm,
-                                                QBoard.board.pstSn,
-                                                QBoard.board.pstCn,
+                                                QBoard.board.nttNo.as("pstSn"),
+                                                QBoard.board.nttCn.as("pstCn"),
                                                 QBoard.board.password,
                                                 QBoard.board.createdBy.as("frstRegisterId"),
                                                 QUser.user.userNm.coalesce(QBoard.board.ntcrNm).as("frstRegisterNm"),
@@ -60,7 +60,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(QBoard.board.pstId.eq(pstId))
+                                .where(QBoard.board.nttId.eq(pstId))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);
@@ -86,16 +86,16 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
                 List<BoardSearchResult> results = queryFactory
                                 .select(Projections.fields(BoardSearchResult.class,
-                                                QBoard.board.pstId,
+                                                QBoard.board.nttId.as("pstId"),
                                                 QBoard.board.bbsId,
-                                                QBoard.board.pstTtl,
+                                                QBoard.board.nttSj.as("pstTtl"),
                                                 QBoard.board.ntcrNm.as("frstRegisterNm"),
                                                 QBoard.board.createdDate,
                                                 QBoard.board.inqireCo,
                                                 QBoard.board.likeCo,
                                                 QBoard.board.parnts,
                                                 QBoard.board.sortOrdr,
-                                                QBoard.board.pstSn,
+                                                QBoard.board.nttNo.as("pstSn"),
                                                 QBoard.board.secretYn,
                                                 QBoard.board.eventDate,
                                                 QBoard.board.qnaStatus,
@@ -103,7 +103,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)
-                                .orderBy(orderSpecifier, QBoard.board.pstSn.asc())
+                                .orderBy(orderSpecifier, QBoard.board.nttNo.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -126,7 +126,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 List<Board> content = queryFactory
                                 .selectFrom(QBoard.board)
                                 .where(builder)
-                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.pstSn.asc()) 
+                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.nttNo.asc()) 
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -145,7 +145,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         public Optional<Board> findByIdCustom(@NonNull Long pstId) {
                 Board result = queryFactory
                                 .selectFrom(QBoard.board)
-                                .where(QBoard.board.pstId.eq(pstId))
+                                .where(QBoard.board.nttId.eq(pstId))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);

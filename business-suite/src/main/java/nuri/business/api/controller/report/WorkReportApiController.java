@@ -1,78 +1,63 @@
 package nuri.business.api.controller.report;
 
+import nuri.business.service.report.WorkReportService;
+import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.report.EgovWorkReportService;
-import nuri.business.service.report.dto.WorkReportDto;
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.foundation.domain.common.BaseSearchDto;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "WorkReport", description = "주간/월간 보고 API")
+@Tag(name = "WorkReport", description = "작업보고 관리 API")
 @RestController
 @RequestMapping("/api/v1/work-reports")
 @RequiredArgsConstructor
 public class WorkReportApiController {
 
-    private final EgovWorkReportService workReportService;
+    private final WorkReportService workReportService;
 
-    @Operation(summary = "업무보고 목록 조회", description = "업무보고 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "작업보고 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<WorkReportDto>>> getWorkReportList(
-            @RequestParam(required = false) String searchWrd,
-            @PageableDefault(size = 10) Pageable pageable) {
-        String userId = getCurrentUserId();
-        Page<WorkReportDto> result = workReportService.getWorkReportList(userId, searchWrd, pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+            @ModelAttribute BaseSearchDto searchDto) {
+        Pageable pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+        Page<WorkReportDto> page = workReportService.getWorkReportList(
+                searchDto.getSearchKeyword(), null, searchDto.getSearchKeyword(), pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
-    @Operation(summary = "업무보고 상세 조회", description = "업무보고 상세 정보를 조회합니다.")
-    @GetMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(
-            @Parameter(description = "보고 ID") @PathVariable String rptId) {
-        return ResponseEntity.ok(ApiResponse.success(workReportService.getWorkReport(rptId)));
+    @Operation(summary = "작업보고 상세 조회")
+    @GetMapping("/{reportId}")
+    public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(@PathVariable String reportId) {
+        WorkReportDto result = workReportService.getWorkReport(reportId);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @Operation(summary = "업무보고 등록", description = "새로운 업무보고를 등록합니다.")
+    @Operation(summary = "작업보고 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> registerWorkReport(@RequestBody WorkReportDto dto) {
-        String userId = getCurrentUserId();
-        dto.setWriterId(userId);
-        workReportService.registerWorkReport(dto);
+    public ResponseEntity<ApiResponse<Void>> createWorkReport(@RequestBody WorkReportDto dto) {
+        workReportService.createWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "업무보고 수정", description = "업무보고 정보를 수정합니다.")
-    @PutMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> updateWorkReport(
-            @PathVariable String rptId,
-            @RequestBody WorkReportDto dto) {
-        dto.setRptId(rptId);
+    @Operation(summary = "작업보고 수정")
+    @PutMapping("/{reportId}")
+    public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable String reportId, @RequestBody WorkReportDto dto) {
+        dto.setReprtId(reportId);
         workReportService.updateWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "업무보고 삭제", description = "업무보고 정보를 삭제합니다.")
-    @DeleteMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable String rptId) {
-        workReportService.deleteWorkReport(rptId);
+    @Operation(summary = "작업보고 삭제")
+    @DeleteMapping("/{reportId}")
+    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable String reportId) {
+        workReportService.deleteWorkReport(reportId);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    private String getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
-        }
-        return "anonymous";
     }
 }

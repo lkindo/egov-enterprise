@@ -22,7 +22,7 @@ public class AddressBookDto {
     private String othbcScope;
 
     private String trgetOrgnztId;
-    private String useAt;
+    private String useYn;
     private String wrterId;
     @Builder.Default
     private List<AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
@@ -32,6 +32,9 @@ public class AddressBookDto {
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
 
+    // legacy
+    public String getUseAt() { return useYn; }
+    public void setUseAt(String v) { this.useYn = v; }
     public LocalDateTime getCreatedDate() { return frstRegistPnttm; }
     public List<AddressBookUserDto> getNameCards() { return adbkMan; }
 }

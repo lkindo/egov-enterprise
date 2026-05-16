@@ -30,11 +30,8 @@ public class LoginLogDto {
     /** 생성일시 */
     private String creatDt;
 
-    public String getLoginDt() {
-        return creatDt;
-    }
-
-    public String getErrorOccrrAt() {
-        return errOccrrAt;
-    }
+    // legacy
+    public String getLoginDt() { return creatDt; }
+    public String getErrorOccrrAt() { return errOccrrAt; }
+    public String getOccrrncDe() { return creatDt != null && creatDt.length() >= 8 ? creatDt.substring(0, 8) : ""; }
 }

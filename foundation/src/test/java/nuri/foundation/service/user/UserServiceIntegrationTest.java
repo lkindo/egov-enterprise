@@ -68,7 +68,7 @@ class UserServiceIntegrationTest {
                 .userNm(name)
                 .esntlId("ESNTL_" + userId)
                 .password(passwordEncoder.encode("password"))
-                .emailAdres(userId + "@example.com")
+                .emlAddr(userId + "@example.com")
                 .build();
         userRepository.save(user);
     }

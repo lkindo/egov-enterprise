@@ -173,7 +173,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 읽음 처리 - 성공")
     void markAsRead_success() {
-        Notification entity = spy(createMockEntity("NT_1"));
+        Notification entity = org.mockito.Mockito.spy(createMockEntity("NT_1"));
         when(notificationRepository.findById("NT_1")).thenReturn(Optional.of(entity));
 
         notificationService.markAsRead("NT_1");

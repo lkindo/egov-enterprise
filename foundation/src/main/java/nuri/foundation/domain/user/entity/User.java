@@ -4,7 +4,6 @@ import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
@@ -13,8 +12,7 @@ import java.util.Objects;
 
 /**
  * 통합 사용자 정보 엔티티
- * 테이블: NUSERINFO (업무/일반/기업 사용자 통합)
- * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공
+ * 테이블: TB_USER_INFO
  */
 @Entity
 @Table(name = "TB_USER_INFO")
@@ -40,11 +38,11 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "USER_TYPE_CD", nullable = false, length = 10)
     private String userType = "EMP";
 
-    @Column(name = "USER_NM", nullable = false, length = 60)
+    @Column(name = "USER_NM", nullable = false, length = 300)
     @NonNull
     private String userNm;
 
-    @Column(name = "PSWD", nullable = false, length = 600)
+    @Column(name = "PSWD", nullable = false, length = 300)
     @NonNull
     private String password;
 
@@ -54,20 +52,20 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "PSWD_CNSR", length = 300)
     private String passwordCnsr;
 
-    @Column(name = "CHG_PWD_LAST_PNTTM", columnDefinition = "TIMESTAMP")
+    @Column(name = "CHG_PWD_LAST_PNTTM")
     private LocalDateTime passwordUpdateDate;
 
     @Column(name = "CHG_PWD_CNT")
     private Integer changePasswordCount;
 
     @Builder.Default
-    @Column(name = "LOCK_YN", length = 1)
-    private String lockAt = "N";
+    @Column(name = "LCK_YN", length = 1)
+    private String lckYn = "N";
 
-    @Column(name = "LOCK_CNT")
+    @Column(name = "LCK_CNT")
     private Integer lockCount;
 
-    @Column(name = "LOCK_LAST_PNTTM")
+    @Column(name = "LCK_LAST_PNTTM")
     private LocalDateTime lockLastDate;
 
     @Column(name = "OTP_SECRET", length = 32)
@@ -80,20 +78,20 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "RRNO", length = 600)
     private String ihidnum;
 
-    @Column(name = "GNDR_CD", length = 1)
-    private String sexdstnCode;
+    @Column(name = "GNDR_CD", length = 30)
+    private String gndrCd;
 
-    @Column(name = "BRTH_YMD", length = 20)
-    private String brth;
+    @Column(name = "BRTH_YMD", length = 8)
+    private String brthYmd;
 
-    @Column(name = "EML_ADDR", length = 50)
-    private String emailAdres;
+    @Column(name = "EML_ADDR", length = 300)
+    private String emlAddr;
 
-    @Column(name = "MBL_TEL_NO", length = 20)
-    private String moblphonNo;
+    @Column(name = "MBL_TELNO", length = 11)
+    private String mblTelno;
 
     // ■ 주소 정보
-    @Column(name = "ZIP", length = 6)
+    @Column(name = "ZIP", length = 5)
     private String zip;
 
     @Column(name = "BASE_ADDR", length = 300)
@@ -112,10 +110,10 @@ public class User extends BaseEntity implements Serializable {
     private String homeendTelno;
 
     @Column(name = "FAX_NO", length = 20)
-    private String fxnum;
+    private String faxNo;
 
-    @Column(name = "OFFM_TELNO", length = 20)
-    private String offmTelno;
+    @Column(name = "OFFICE_TELNO", length = 20)
+    private String officeTelno;
 
     // ■ 조직 및 권한
     @Column(name = "GROUP_ID", length = 20)
@@ -160,16 +158,16 @@ public class User extends BaseEntity implements Serializable {
     // ■ 상태 및 감사
     @Builder.Default
     @Column(name = "USER_STTS_CD", length = 30)
-    private String statusCode = "P";
+    private String userSttsCd = "P";
 
     @Column(name = "SBSCRB_YMD", updatable = false, length = 8)
     private String sbscrbYmd;
 
     public void update(String userNm, String passwordHint, String passwordCnsr,
-            String emplNo, String ihidnum, String sexdstnCode, String brth,
+            String emplNo, String ihidnum, String gndrCd, String brthYmd,
             String areaNo, String homemiddleTelno, String homeendTelno,
-            String fxnum, String homeadres, String detailAdres, String zip,
-            String offmTelno, String moblphonNo, String emailAdres, String ofcpsNm,
+            String faxNo, String homeadres, String detailAdres, String zip,
+            String officeTelno, String mblTelno, String emlAddr, String ofcpsNm,
             String groupId, String orgnztId, String insttCode, Role role, String subDn) {
         if (userNm != null)
             this.userNm = userNm;
@@ -177,18 +175,18 @@ public class User extends BaseEntity implements Serializable {
         this.passwordCnsr = passwordCnsr;
         this.emplNo = emplNo;
         this.ihidnum = ihidnum;
-        this.sexdstnCode = sexdstnCode;
-        this.brth = brth;
+        this.gndrCd = gndrCd;
+        this.brthYmd = brthYmd;
         this.areaNo = areaNo;
         this.homemiddleTelno = homemiddleTelno;
         this.homeendTelno = homeendTelno;
-        this.fxnum = fxnum;
+        this.faxNo = faxNo;
         this.homeadres = homeadres;
         this.detailAdres = detailAdres;
         this.zip = zip;
-        this.offmTelno = offmTelno;
-        this.moblphonNo = moblphonNo;
-        this.emailAdres = emailAdres;
+        this.officeTelno = officeTelno;
+        this.mblTelno = mblTelno;
+        this.emlAddr = emlAddr;
         this.ofcpsNm = ofcpsNm;
         this.groupId = groupId;
         this.orgnztId = orgnztId;
@@ -204,7 +202,7 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void unlock() {
-        this.lockAt = "N";
+        this.lckYn = "N";
         this.lockCount = 0;
         this.lockLastDate = null;
     }
@@ -213,8 +211,14 @@ public class User extends BaseEntity implements Serializable {
         if (authorCode != null) {
             try {
                 String cleanRole = authorCode.startsWith("ROLE_") ? authorCode.substring(5) : authorCode;
-                this.role = Role.valueOf(cleanRole);
-            } catch (IllegalArgumentException e) {
+                this.role = Role.USER;
+                for (Role r : Role.values()) {
+                    if (r.name().equalsIgnoreCase(cleanRole)) {
+                        this.role = r;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
                 this.role = Role.USER;
             }
         }
@@ -233,10 +237,28 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void updateStatus(String status) {
-        this.statusCode = status;
+        this.userSttsCd = status;
     }
 
     public void updateOrgnztId(String orgnztId) {
         this.orgnztId = orgnztId;
     }
+
+    // ----- [Legacy Aliases] -----
+    public String getMoblphonNo() { return mblTelno; }
+    public String getEmailAdres() { return emlAddr; }
+    public String getOffmTelno() { return officeTelno; }
+    public String getSexdstnCode() { return gndrCd; }
+    public String getBrth() { return brthYmd; }
+    public String getFxnum() { return faxNo; }
+    public String getLockAt() { return lckYn; }
+    public String getStatusCode() { return userSttsCd; }
+    
+    public void setMoblphonNo(String v) { this.mblTelno = v; }
+    public void setEmailAdres(String v) { this.emlAddr = v; }
+    public void setOffmTelno(String v) { this.officeTelno = v; }
+    public void setSexdstnCode(String v) { this.gndrCd = v; }
+    public void setBrth(String v) { this.brthYmd = v; }
+    public void setFxnum(String v) { this.faxNo = v; }
+    public void setLockAt(String v) { this.lckYn = v; }
 }

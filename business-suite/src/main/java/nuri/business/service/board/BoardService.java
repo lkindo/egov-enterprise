@@ -174,7 +174,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                         Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
-                                        .getPstId();
+                                        .getNttId();
 
                         // 이벤트 발행 (통계 동기화 등)
                         eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
@@ -196,7 +196,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
@@ -239,7 +239,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
-                                .getPstId();
+                                .getNttId();
 
                 eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
 
@@ -257,7 +257,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());
@@ -302,7 +302,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
                 }
 
-                board.update(request.pstTtl(), request.pstCn(), 
+                board.update(request.nttSj(), request.nttCn(), 
                                 request.ntcrId() != null ? request.ntcrId() : board.getNtcrId(), 
                                 request.ntcrNm() != null ? request.ntcrNm() : board.getNtcrNm(),
                                 request.password() != null ? request.password() : board.getPassword(), 
@@ -328,7 +328,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
-                                request.bbsId(), request.pstTtl(), request.pstCn(),
+                                request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgngYmd(), request.ntceEndYmd(), atchFileId,
                                 request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
                                 request.secretYn(), request.useYn(), request.ntcrId(), request.ntcrNm(), request.password());

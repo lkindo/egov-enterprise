@@ -14,56 +14,62 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 로그인 정책 관리를 위한 API 컨트롤러
+ * 로그인 정책 관리를 위한 REST API 컨트롤러
  */
-@Tag(name = "Login Policy Management", description = "로그인 정책 관리 API (Admin)")
 @Slf4j
-@RestController
+@Tag(name = "LoginPolicy", description = "로그인 정책 관리 API (Admin)")
+@RestController("systemLoginPolicyApiController")
 @RequestMapping("/api/v1/admin/system/login-policies")
 @RequiredArgsConstructor
 public class LoginPolicyApiController {
 
     private final LoginPolicyManageService loginPolicyManageService;
 
-    @Operation(summary = "로그인 정책 목록 조회", description = "시스템 사용자의 로그인 정책 목록을 페이징 조회합니다.")
+    @Operation(summary = "로그인 정책 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LoginPolicyDto>>> getLoginPolicyList(
             @ModelAttribute BaseSearchDto searchDto) throws Exception {
-        
-        List<LoginPolicyDto> resultList = loginPolicyManageService.selectLoginPolicyList(searchDto);
+
+        List<LoginPolicyDto> list = loginPolicyManageService.selectLoginPolicyList(searchDto);
         int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchDto);
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(resultList, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
     }
 
     @Operation(summary = "로그인 정책 상세 조회")
-    @GetMapping("/{emplyrId}")
+    @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<LoginPolicyDto>> getLoginPolicy(
-            @PathVariable("emplyrId") String emplyrId) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(loginPolicyManageService.selectLoginPolicy(emplyrId)));
+            @PathVariable("userId") String userId) throws Exception {
+        LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy(userId);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @Operation(summary = "로그인 정책 저장", description = "신규 등록 또는 기존 정보를 수정합니다.")
-    @PutMapping("/{emplyrId}")
-    public ResponseEntity<ApiResponse<Void>> saveLoginPolicy(
-            @PathVariable("emplyrId") String emplyrId,
+    @Operation(summary = "로그인 정책 등록")
+    @PostMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> insertLoginPolicy(
+            @PathVariable("userId") String userId,
             @RequestBody LoginPolicyDto loginPolicy) throws Exception {
-        loginPolicy.setEmplyrId(emplyrId);
+        loginPolicy.setUserId(userId);
+        loginPolicyManageService.insertLoginPolicy(loginPolicy);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 
-        LoginPolicyDto existing = loginPolicyManageService.selectLoginPolicy(emplyrId);
-        if (existing != null && "Y".equals(existing.getRegYn())) {
-            loginPolicyManageService.updateLoginPolicy(loginPolicy);
-        } else {
-            loginPolicyManageService.insertLoginPolicy(loginPolicy);
-        }
+    @Operation(summary = "로그인 정책 수정")
+    @PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> updateLoginPolicy(
+            @PathVariable("userId") String userId,
+            @RequestBody LoginPolicyDto loginPolicy) throws Exception {
+        loginPolicy.setUserId(userId);
+        loginPolicyManageService.updateLoginPolicy(loginPolicy);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "로그인 정책 삭제")
-    @DeleteMapping("/{emplyrId}")
+    @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteLoginPolicy(
-            @PathVariable("emplyrId") String emplyrId) throws Exception {
-        loginPolicyManageService.deleteLoginPolicy(emplyrId);
+            @PathVariable("userId") String userId) throws Exception {
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId(userId).build();
+        loginPolicyManageService.deleteLoginPolicy(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

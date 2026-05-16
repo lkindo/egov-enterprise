@@ -37,7 +37,7 @@ class LeaderScheduleApiControllerTest {
     @DisplayName("간부 일정 목록 조회 성공")
     void getLeaderSchedules_Success() throws Exception {
         // Given
-        Page<LeaderScheduleDto> page = new PageImpl<>(List.of(LeaderScheduleDto.builder().scheduleId("L1").build()));
+        Page<LeaderScheduleDto> page = new PageImpl<>(List.of(LeaderScheduleDto.builder().schdlId("L1").build()));
         given(leaderScheduleService.getLeaderScheduleList(any(), any(Pageable.class))).willReturn(page);
 
         // When & Then

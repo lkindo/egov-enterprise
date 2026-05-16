@@ -1,99 +1,85 @@
 package nuri.business.service.memoreport;
 
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.service.memoreport.dto.MemoReportDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+
 import java.util.Objects;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MemoReportService implements EgovMemoReportService {
+public class MemoReportService extends BaseAbstractService {
 
     private final MemoReportRepository memoReportRepository;
+    private final EgovIdGnrService egovMemoReportIdGnrService;
 
-    @Override
-    public Page<MemoReportDto> getMemoReportList(String keyword, Pageable pageable) {
-        Objects.requireNonNull(pageable);
-        return memoReportRepository.findAll(pageable).map(MemoReportDto::from);
-    }
-
-    @Override
-    public Page<MemoReportDto> getMyReportList(String writerId, Pageable pageable) {
-        Objects.requireNonNull(pageable);
-        return memoReportRepository.findByWriterId(Objects.requireNonNull(writerId), pageable).map(MemoReportDto::from);
-    }
-
-    @Override
-    public Page<MemoReportDto> getReceivedReportList(String rptUserId, Pageable pageable) {
-        Objects.requireNonNull(pageable);
-        return memoReportRepository.findByRptUserId(Objects.requireNonNull(rptUserId), pageable)
+    public Page<MemoReportDto> getMemoReportList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
+        return memoReportRepository.searchMemoReports(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
                 .map(MemoReportDto::from);
     }
 
-    @Override
-    public MemoReportDto getMemoReport(String rptId) {
-        return memoReportRepository.findById(Objects.requireNonNull(rptId))
+    public Page<MemoReportDto> getMemoReportListByWriter(String writerId, @NonNull Pageable pageable) {
+        return memoReportRepository.findByWriterId(writerId, Objects.requireNonNull(pageable))
+                .map(MemoReportDto::from);
+    }
+
+    public Page<MemoReportDto> getMemoReportListByReportr(String reportrId, @NonNull Pageable pageable) {
+        return memoReportRepository.findByReportrId(reportrId, Objects.requireNonNull(pageable))
+                .map(MemoReportDto::from);
+    }
+
+    public MemoReportDto getMemoReport(@NonNull String reprtId) {
+        return memoReportRepository.findById(reprtId)
                 .map(MemoReportDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
-    public String createMemoReport(String userId, MemoReportDto dto) {
-        String id = "MRM_" + System.currentTimeMillis();
+    public String createMemoReport(String userId, MemoReportDto dto) throws Exception {
+        String id = egovMemoReportIdGnrService.getNextStringId();
         MemoReport entity = MemoReport.builder()
-                .rptId(id)
-                .rptTtl(dto.getRptTtl())
-                .rptYmd(dto.getRptYmd())
+                .reportId(id)
+                .reportSubject(dto.getReportSubject())
+                .reprtDe(dto.getReprtDe())
                 .writerId(userId)
-                .rptUserId(dto.getRptUserId())
-                .rptCn(dto.getRptCn())
+                .reportrId(dto.getReportrId())
+                .reportContents(dto.getReportContents())
                 .atchFileId(dto.getAtchFileId())
+                .createdBy(userId)
                 .build();
-        memoReportRepository.save(Objects.requireNonNull(entity));
+        memoReportRepository.save(entity);
         return id;
     }
 
-    @Override
     @Transactional
-    public void updateMemoReport(String rptId, String userId, MemoReportDto dto) {
-        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
+    public void updateMemoReport(String userId, MemoReportDto dto) {
+        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(dto.getReportId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        entity.update(dto.getRptTtl(), dto.getRptYmd(), userId, dto.getRptUserId(),
-                dto.getRptCn(), dto.getAtchFileId());
+        entity.update(dto.getReportSubject(), dto.getReprtDe(), entity.getWriterId(), dto.getReportrId(),
+                dto.getReportContents(), dto.getAtchFileId());
+        entity.setLastModifiedBy(userId);
     }
 
-    @Override
     @Transactional
-    public void deleteMemoReport(String rptId) {
-        memoReportRepository.deleteById(Objects.requireNonNull(rptId));
+    public void deleteMemoReport(@NonNull String reprtId) {
+        memoReportRepository.deleteById(reprtId);
     }
 
-    @Override
     @Transactional
-    public void readMemoReport(String rptId) {
-        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.updateInqireDt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-    }
-
-    @Override
-    @Transactional
-    public void updateDrctMatter(String rptId, String instrCn) {
-        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.updateDrctMatter(instrCn,
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    public void updateInqireDt(@NonNull String reprtId) {
+        memoReportRepository.findById(reprtId).ifPresent(entity -> {
+            entity.updateInqireDt(java.time.LocalDateTime.now().toString());
+        });
     }
 }

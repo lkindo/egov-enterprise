@@ -4,6 +4,7 @@ import nuri.business.domain.addressbook.AddressBook;
 import nuri.business.domain.addressbook.AddressBookRepository;
 import nuri.business.domain.addressbook.AddressBookUser;
 import nuri.business.domain.addressbook.AddressBookUserRepository;
+import nuri.business.domain.addressbook.AddressBookUserSearchResult;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -64,7 +65,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .adbkNm(dto.getAdbkNm())
                     .othbcScope(dto.getOthbcScope())
                     .trgetOrgnztId(dto.getTrgetOrgnztId())
-                    .useAt("Y")
+                    .useYn("Y")
                     .wrterId(userId)
                     .createdBy(userId)
                     .build();
@@ -178,7 +179,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .adbkNm(entity.getAdbkNm())
                 .othbcScope(entity.getOthbcScope())
                 .trgetOrgnztId(entity.getTrgetOrgnztId())
-                .useAt(entity.getUseAt())
+                .useYn(entity.getUseYn())
                 .wrterId(entity.getWrterId())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegistPnttm(entity.getCreatedDate())

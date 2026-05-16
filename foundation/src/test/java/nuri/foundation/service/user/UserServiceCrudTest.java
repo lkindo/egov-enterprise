@@ -100,7 +100,7 @@ class UserServiceCrudTest {
     when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
         UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
     when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+        .thenReturn(UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build());
 
     UserDto result = userService.getUserById("testUser");
 
@@ -123,7 +123,7 @@ class UserServiceCrudTest {
   void getUserList_success() {
     when(userRepository.findAllWithAuthorities()).thenReturn(java.util.Collections.singletonList(new Object[]{mockUser, null}));
     when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+        .thenReturn(UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build());
 
     List<UserDto> result = userService.getUserList();
 
@@ -134,7 +134,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("페이지별 사용자 목록 조회 성공")
   void getPagedUserList_success() {
-    UserDto userDto = new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null);
+    UserDto userDto = UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build();
     Page<UserDto> page = new PageImpl<>(List.of(userDto));
     when(userRepository.getPagedUserList(any(), any())).thenReturn(page);
 

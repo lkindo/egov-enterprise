@@ -163,7 +163,7 @@ class UserValidatorTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("User name contains invalid characters");
 
-    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("홍길동").password("1234").emailAdres("invalid").build()))
+    assertThatThrownBy(() -> UserValidator.validateUser(nuri.foundation.domain.user.entity.User.builder().userId("user1").esntlId("esntl1").userNm("홍길동").password("1234").emlAddr("invalid").build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid email format");
   }
@@ -176,7 +176,7 @@ class UserValidatorTest {
         .esntlId("esntl1")
         .userNm("홍길동")
         .password("1234")
-        .emailAdres("test@example.com")
+        .emlAddr("test@example.com")
         .build();
     UserValidator.validateUser(user);
   }

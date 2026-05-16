@@ -12,38 +12,42 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "FAQ 정보")
 public class FaqDto {
 
     @Schema(description = "FAQ ID")
     private String faqId;
 
-    @Schema(description = "Description")
-    private String qestnSj;
+    @Schema(description = "질문제목")
+    private String qestnTtl;
 
-    @Schema(description = "Description")
+    @Schema(description = "질문내용")
     private String qestnCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "답변내용")
     private String answerCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "조회수")
     private Integer inqireCo;
 
-    @Schema(description = "Description")
+    @Schema(description = "첨부파일 ID")
     private String atchFileId;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자 ID")
     private String frstRegisterId;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록일시")
     private LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "Description")
+    @Schema(description = "수정자 ID")
     private String lastUpdusrId;
 
-    @Schema(description = "Description")
+    @Schema(description = "수정일시")
     private LocalDateTime lastUpdusrPnttm;
+
+    // legacy
+    public String getQestnSj() { return qestnTtl; }
+    public void setQestnSj(String v) { this.qestnTtl = v; }
 
     public LocalDateTime getFrstRegistPnttm() {
         return frstRegisterPnttm;
@@ -57,7 +61,7 @@ public class FaqDto {
         if (entity == null) return null;
         return FaqDto.builder()
                 .faqId(entity.getFaqId())
-                .qestnSj(entity.getQestnSj())
+                .qestnTtl(entity.getQestnTtl())
                 .qestnCn(entity.getQestnCn())
                 .answerCn(entity.getAnswerCn())
                 .inqireCo(entity.getInqireCo())

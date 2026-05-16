@@ -1,19 +1,20 @@
 package nuri.business.api.controller.smarttoolkit;
 
-import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.scrap.EgovScrapService;
 import nuri.business.service.scrap.dto.ScrapDto;
+import nuri.foundation.core.response.ApiResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Scrap", description = "스크랩 관리 API")
@@ -25,36 +26,44 @@ public class ScrapApiController {
 
     private final EgovScrapService egovScrapService;
 
-    @Operation(summary = "나의 스크랩 목록 조회", description = "사용자의 스크랩 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "나의 스크랩 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ScrapDto>>> getMyScrapList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
+
         String userId = getCurrentUserId();
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        Pageable pageable = PageRequest.of(pageIndex - 1, pageUnit);
         Page<ScrapDto> pageResult = egovScrapService.getMyScrapList(userId, pageable);
+
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 
-    @Operation(summary = "스크랩 상세 조회", description = "특정 스크랩의 상세 정보를 조회합니다.")
+    @Operation(summary = "스크랩 상세 조회")
     @GetMapping("/{scrapId}")
     public ResponseEntity<ApiResponse<ScrapDto>> getScrap(@PathVariable String scrapId) {
-        ScrapDto dto = egovScrapService.getScrap(scrapId);
-        return ResponseEntity.ok(ApiResponse.success(dto));
+        ScrapDto result = egovScrapService.getScrap(scrapId);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @Operation(summary = "스크랩 등록", description = "새로운 스크랩을 등록합니다.")
+    @Operation(summary = "스크랩 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createScrap(@RequestBody ScrapDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createScrap(@RequestBody ScrapDto dto) throws Exception {
         String userId = getCurrentUserId();
-        if ("anonymous".equals(userId)) {
-            return ResponseEntity.status(401).build();
-        }
-        String newId = egovScrapService.createScrap(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(newId));
+        egovScrapService.createScrap(userId, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "스크랩 삭제", description = "스크랩을 삭제합니다.")
+    @Operation(summary = "스크랩 수정")
+    @PutMapping("/{scrapId}")
+    public ResponseEntity<ApiResponse<Void>> updateScrap(@PathVariable String scrapId, @RequestBody ScrapDto dto) {
+        String userId = getCurrentUserId();
+        dto.setScrapId(scrapId);
+        egovScrapService.updateScrap(userId, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "스크랩 삭제")
     @DeleteMapping("/{scrapId}")
     public ResponseEntity<ApiResponse<Void>> deleteScrap(@PathVariable String scrapId) {
         egovScrapService.deleteScrap(scrapId);

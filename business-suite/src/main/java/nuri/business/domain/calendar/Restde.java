@@ -11,6 +11,7 @@ import lombok.experimental.SuperBuilder;
  * 휴일 정보 엔티티
  */
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
@@ -42,4 +43,9 @@ public class Restde extends BaseEntity {
         this.restdeDc = restdeDc;
         this.restdeSeCode = restdeSeCode;
     }
+
+    // standard aliases
+    public String getRestdeYmd() { return restdeDe; }
+    public String getRestdeExpln() { return restdeDc; }
+    public String getRestdeSeCd() { return restdeSeCode; }
 }

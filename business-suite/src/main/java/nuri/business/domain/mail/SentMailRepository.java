@@ -16,4 +16,9 @@ public interface SentMailRepository extends JpaRepository<SentMail, String>, Sen
     Page<SentMail> findByRecptnPerson(String recptnPerson, Pageable pageable);
 
     Page<SentMail> findBySndngResultCode(String sndngResultCode, Pageable pageable);
+
+    // standard
+    default Page<SentMail> findByDsptchRsltCd(String dsptchRsltCd, Pageable pageable) {
+        return findBySndngResultCode(dsptchRsltCd, pageable);
+    }
 }

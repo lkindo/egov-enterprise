@@ -103,7 +103,7 @@ class BoardMasterServiceTest {
             given(idgenService.getNextStringId()).willReturn("BBS_01");
             BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("New Board").build();
 
-            String bbsId = boardMasterService.createBoardMaster(dto);
+            String bbsId = boardMasterService.createBoardMaster(eq("user1"), dto);
 
             assertThat(bbsId).isEqualTo("BBS_01");
             verify(boardMasterRepository).save(any(BoardMaster.class));
@@ -119,7 +119,7 @@ class BoardMasterServiceTest {
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
             BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsTtl("Updated Board").build();
-            boardMasterService.updateBoardMaster(dto);
+            boardMasterService.updateBoardMaster(eq("user1"), dto);
 
             assertThat(master.getBbsTtl()).isEqualTo("Updated Board");
         }
@@ -153,7 +153,7 @@ class BoardMasterServiceTest {
     @DisplayName("블로그 목록 조회")
     void getBlogList() {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        Blog blog = Blog.builder().blogId("BLOG_01").blogNm("My Blog").build();
+        Blog blog = Blog.builder().blogId("BLOG_01").blogTtl("My Blog").build();
         given(blogRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(blog)));
 
         Page<BlogDto> result = boardMasterService.getBlogList(null, null, pageable);
@@ -165,19 +165,19 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("블로그 단건 조회")
     void getBlog() {
-        Blog blog = Blog.builder().blogId("BLOG_01").blogNm("My Blog").build();
+        Blog blog = Blog.builder().blogId("BLOG_01").blogTtl("My Blog").build();
         given(blogRepository.findById("BLOG_01")).willReturn(Optional.of(blog));
 
         BlogDto result = boardMasterService.getBlog("BLOG_01");
 
         assertThat(result).isNotNull();
-        assertThat(result.getBlogNm()).isEqualTo("My Blog");
+        assertThat(result.getBlogTtl()).isEqualTo("My Blog");
     }
     
     @Test
     @DisplayName("블로그 생성")
     void createBlog() {
-        BlogDto dto = BlogDto.builder().blogId("BLOG_01").blogNm("New Blog").build();
+        BlogDto dto = BlogDto.builder().blogId("BLOG_01").blogTtl("New Blog").build();
         boardMasterService.createBlog(dto);
         verify(blogRepository).save(any(Blog.class));
     }
@@ -195,7 +195,7 @@ class BoardMasterServiceTest {
         given(idgenService.getNextStringId()).willThrow(new RuntimeException("ID Gen Error"));
         BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("Error Board").build();
 
-        assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster(dto));
+        assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster(eq("user1"), dto));
     }
 
     @Test
@@ -206,15 +206,15 @@ class BoardMasterServiceTest {
             given(idgenService.getNextStringId()).willReturn("BBS_02");
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
-                    .blogAt("Y")
+                    .blogYn("Y")
                     .commentYn("Y")
                     .stsfdgYn("Y")
                     .build();
 
-            boardMasterService.createBoardMaster(dto);
+            boardMasterService.createBoardMaster(eq("user1"), dto);
 
             verify(boardMasterRepository).save(argThat(bm -> 
-                "Y".equals(bm.getBlogAt()) && "Y".equals(bm.getCommentYn()) && "Y".equals(bm.getStsfdgYn())
+                "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getCommentYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
     }

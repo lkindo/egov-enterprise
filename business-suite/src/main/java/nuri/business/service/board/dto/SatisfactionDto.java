@@ -1,11 +1,7 @@
 package nuri.business.service.board.dto;
 
+import nuri.business.domain.board.Satisfaction;
 import lombok.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Getter
@@ -15,19 +11,35 @@ import java.time.LocalDateTime;
 @Builder
 public class SatisfactionDto {
     private Long satisfactionId;
-    @NotNull(message = "게시물ID는 필수입니다.")
-    private Long pstId;
-    @NotBlank(message = "게시판ID는 필수입니다.")
     private String bbsId;
+    private Long pstId;
+    private String stsfdgCn;
+    private Integer stsfdgLevel;
     private String writerId;
     private String writerNm;
-    @NotNull(message = "만족도는 필수입니다.")
-    @Min(value = 1, message = "만족도는 1 이상이어야 합니다.")
-    @Max(value = 5, message = "만족도는 5 이하여야 합니다.")
-    private Integer stsfdgLevel;
-    @Size(max = 2000, message = "만족도 의견은 2000자 이내여야 합니다.")
-    private String stsfdgCn;
+    private String password;
     private String useYn;
-    private String satisfactionPassword;
     private LocalDateTime createdDate;
+
+    // legacy
+    public String getBoardId() { return bbsId; }
+    public void setBoardId(String v) { this.bbsId = v; }
+    public Long getArticleId() { return pstId; }
+    public void setArticleId(Long v) { this.pstId = v; }
+    public Integer getSatisfactionLevel() { return stsfdgLevel; }
+    public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
+
+    public static SatisfactionDto from(Satisfaction entity) {
+        if (entity == null) return null;
+        return SatisfactionDto.builder()
+                .satisfactionId(entity.getStsfdgId())
+                .bbsId(entity.getBbsId())
+                .nttId(entity.getNttId())
+                .stsfdgCn(entity.getStsfdgCn())
+                .stsfdgLevel(entity.getStsfdgLevel())
+                .writerId(entity.getCreatedBy())
+                .useYn(entity.getUseYn())
+                .createdDate(entity.getCreatedDate())
+                .build();
+    }
 }

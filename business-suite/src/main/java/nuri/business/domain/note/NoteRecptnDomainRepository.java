@@ -18,6 +18,11 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, St
     Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);
 
+    // legacy
+    default Page<NoteRecptn> searchReceivedNotes(String rcverId, String searchWrd, Pageable pageable) {
+        return searchNoteRecptns(null, searchWrd, rcverId, pageable);
+    }
+
     @Query("SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId")
     Page<NoteRecptn> findByRcverId(@Param("rcverId") String rcverId, Pageable pageable);
 

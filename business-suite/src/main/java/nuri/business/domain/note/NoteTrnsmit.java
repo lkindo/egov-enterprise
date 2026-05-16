@@ -13,6 +13,7 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @Table(name = "TB_NOTE_SNDNG")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
@@ -31,12 +32,16 @@ public class NoteTrnsmit extends BaseEntity {
     @Column(name = "DSPTCH_USER_ID", length = 20)
     private String dsptchUserId;
 
-    @Column(name = "DELETE_AT", length = 1)
-    private String deleteAt;
+    @Column(name = "DEL_YN", length = 1)
+    private String delYn;
 
     @PrePersist
     protected void onCreate() {
-        if (this.deleteAt == null)
-            this.deleteAt = "N";
+        if (this.delYn == null)
+            this.delYn = "N";
     }
+    
+    // legacy
+    public String getDeleteAt() { return delYn; }
+    public void setDeleteAt(String v) { this.delYn = v; }
 }

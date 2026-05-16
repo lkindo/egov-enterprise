@@ -67,7 +67,7 @@ class WorkReportApiControllerTest {
     void getWorkReportList() throws Exception {
         setupSecurityContext();
         Page<WorkReportDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(workReportService.getWorkReportList(anyString(), any(), any())).thenReturn(page);
+        when(workReportService.getWorkReportList(anyString(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/work-reports")
                         .param("searchWrd", "test")
@@ -82,7 +82,7 @@ class WorkReportApiControllerTest {
     void getWorkReportList_Anonymous() throws Exception {
         SecurityContextHolder.clearContext();
         Page<WorkReportDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(workReportService.getWorkReportList(anyString(), any(), any())).thenReturn(page);
+        when(workReportService.getWorkReportList(anyString(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/work-reports"))
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ class WorkReportApiControllerTest {
         setupSecurityContext();
         WorkReportDto dto = new WorkReportDto();
         dto.setReprtTtl("Subject");
-        doNothing().when(workReportService).registerWorkReport(any(WorkReportDto.class));
+        doNothing().when(workReportService).createWorkReport(any(WorkReportDto.class));
 
         mockMvc.perform(post("/api/v1/work-reports")
                         .contentType(MediaType.APPLICATION_JSON)

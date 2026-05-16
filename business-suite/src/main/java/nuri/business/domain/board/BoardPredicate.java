@@ -61,11 +61,11 @@ public class BoardPredicate {
     }
 
     public static BooleanExpression pstTtlContains(String pstTtl) {
-        return QBoard.board.pstTtl.contains(pstTtl);
+        return QBoard.board.nttSj.contains(pstTtl);
     }
 
     public static BooleanExpression pstCnContains(String pstCn) {
-        return QBoard.board.pstCn.contains(pstCn);
+        return QBoard.board.nttCn.contains(pstCn);
     }
 
     public static BooleanExpression ntcrNmContains(String ntcrNm) {

@@ -30,7 +30,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 user.userNm,
                                                 user.zip.as("userZip"),
                                                 user.homeadres.as("userAdres"),
-                                                user.emailAdres.as("userEmail")))
+                                                user.emlAddr.as("userEmail")))
                                 .from(user)
                                 .where(conditionEq(searchCondition, searchKeyword))
                                 .offset(pageable.getOffset())

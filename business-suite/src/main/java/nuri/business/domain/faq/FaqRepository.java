@@ -14,12 +14,12 @@ public interface FaqRepository extends JpaRepository<Faq, String> {
     /**
      * 질문제목 조회
      */
-    Page<Faq> findByQestnSjContaining(String qestnSj, Pageable pageable);
+    Page<Faq> findByQestnTtlContaining(String qestnTtl, Pageable pageable);
 
     /**
      * 키워드조회(질문제목 또는 질문내용)
      */
-    @Query("SELECT f FROM Faq f WHERE f.qestnSj LIKE %:keyword% OR f.qestnCn LIKE %:keyword%")
+    @Query("SELECT f FROM Faq f WHERE f.qestnTtl LIKE %:keyword% OR f.qestnCn LIKE %:keyword%")
     Page<Faq> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     default Page<Faq> searchFaqs(String keyword, Pageable pageable) {

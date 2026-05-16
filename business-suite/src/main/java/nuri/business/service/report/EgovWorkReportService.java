@@ -5,13 +5,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EgovWorkReportService {
-    void registerWorkReport(WorkReportDto dto);
-
+    void createWorkReport(WorkReportDto dto);
     void updateWorkReport(WorkReportDto dto);
+    void deleteWorkReport(String reportId);
+    Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, Pageable pageable);
+    
+    // legacy
+    default Page<WorkReportDto> getWorkReportList(String searchId, String searchWrd, Pageable pageable) {
+        return getWorkReportList(searchId, null, searchWrd, pageable);
+    }
 
-    void deleteWorkReport(String rptId);
-
-    WorkReportDto getWorkReport(String rptId);
-
-    Page<WorkReportDto> getWorkReportList(String writerId, String searchWrd, Pageable pageable);
+    WorkReportDto getWorkReport(String reportId);
 }

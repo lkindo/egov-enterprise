@@ -11,10 +11,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -141,4 +143,17 @@ public class BoardMaster extends BaseEntity {
     public void delete() {
         this.useYn = "N";
     }
+
+    // legacy
+    public String getBbsNm() { return bbsTtl; }
+    public String getBbsTyCode() { return bbsTypeCd; }
+    public String getBbsAttrbCode() { return bbsAttrCd; }
+    public String getReplyPosblAt() { return replyPsblYn; }
+    public String getFileAtchPosblAt() { return fileAtchPsblYn; }
+    public Integer getAtchPosblFileNumber() { return atchPsblFileCnt; }
+    public String getBbsIntrcn() { return bbsExpln; }
+    public String getTmpltId() { return tmplatId; }
+    public Long getAtchPosblFileSize() { return atchPsblFileSize; }
+    public String getCommentAt() { return commentYn; }
+    public String getStsfdgAt() { return stsfdgYn; }
 }

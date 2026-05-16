@@ -57,7 +57,7 @@ class LogManageServiceTest {
         // given
         SysLog log = SysLog.builder().dmndId("REQ_001").build();
         Page<SysLog> page = new PageImpl<>(List.of(log));
-        when(sysLogRepository.searchSysLogs(anyString(), anyString(), anyString(), any())).thenReturn(page);
+        when(sysLogRepository.searchSysLogs(any(), any(), any(), any())).thenReturn(page);
 
         // when
         BaseSearchDto searchDto = new BaseSearchDto();

@@ -42,7 +42,7 @@ class FaqApiControllerTest {
     @DisplayName("FAQ 목록 조회 성공")
     void getFaqs_Success() throws Exception {
         // Given
-        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnSj("Question").build()));
+        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnTtl("Question").build()));
         given(faqService.getFaqList(any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -57,7 +57,7 @@ class FaqApiControllerTest {
     @DisplayName("FAQ 목록 키워드 조회 성공")
     void getFaqs_WithKeyword_Success() throws Exception {
         // Given
-        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnSj("Keyword Question").build()));
+        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnTtl("Keyword Question").build()));
         given(faqService.getFaqList(eq("keyword"), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -73,7 +73,7 @@ class FaqApiControllerTest {
     @DisplayName("FAQ 상세 조회 성공")
     void getFaq_Success() throws Exception {
         // Given
-        given(faqService.getFaq(anyString())).willReturn(FaqDto.builder().faqId("FAQ1").qestnSj("Question").build());
+        given(faqService.getFaq(anyString())).willReturn(FaqDto.builder().faqId("FAQ1").qestnTtl("Question").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/faqs/FAQ1")

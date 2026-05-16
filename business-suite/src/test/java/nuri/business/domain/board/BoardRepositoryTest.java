@@ -66,8 +66,8 @@ class BoardRepositoryTest {
         // Given
         Board article = Board.builder()
                 .bbsId(testMaster.getBbsId())
-                .pstTtl("Detail Test Subject")
-                .pstCn("Detail Test Content")
+                .nttSj("Detail Test Subject")
+                .nttCn("Detail Test Content")
                 .useYn("Y")
                 .ntcrId("USR_001")
                 .ntcrNm("Tester")
@@ -77,11 +77,11 @@ class BoardRepositoryTest {
         em.clear();
 
         // When
-        Optional<BoardDetailResult> result = boardRepository.findArticleDetail(saved.getPstId());
+        Optional<BoardDetailResult> result = boardRepository.findArticleDetail(saved.getNttId());
 
         // Then
         assertThat(result).isPresent();
-        assertThat(result.get().getPstTtl()).isEqualTo("Detail Test Subject");
+        assertThat(result.get().getNttSj()).isEqualTo("Detail Test Subject");
         assertThat(result.get().getBbsTtl()).isEqualTo("Integrated Test Board");
     }
 
@@ -91,15 +91,15 @@ class BoardRepositoryTest {
         // Given
         Board article1 = Board.builder()
                 .bbsId(testMaster.getBbsId())
-                .pstTtl("Search Target 1")
-                .pstCn("Content 1")
+                .nttSj("Search Target 1")
+                .nttCn("Content 1")
                 .ntcrNm("User1")
                 .useYn("Y")
                 .build();
         Board article2 = Board.builder()
                 .bbsId(testMaster.getBbsId())
-                .pstTtl("Other Topic")
-                .pstCn("Special Content")
+                .nttSj("Other Topic")
+                .nttCn("Special Content")
                 .ntcrNm("Manager")
                 .useYn("Y")
                 .build();
@@ -116,14 +116,14 @@ class BoardRepositoryTest {
         condition.setSearchCnd("0");
         Page<BoardSearchResult> results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).hasSize(1);
-        assertThat(results.getContent().get(0).getPstTtl()).contains("Search Target 1");
+        assertThat(results.getContent().get(0).getNttSj()).contains("Search Target 1");
 
         // 2. Content search (1)
         condition.setSearchWrd("Special");
         condition.setSearchCnd("1");
         results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).hasSize(1);
-        assertThat(results.getContent().get(0).getPstTtl()).isEqualTo("Other Topic");
+        assertThat(results.getContent().get(0).getNttSj()).isEqualTo("Other Topic");
 
         // 3. Writer search (2)
         condition.setSearchWrd("Manager");
@@ -139,7 +139,7 @@ class BoardRepositoryTest {
         // Given
         Board articleLow = Board.builder()
                 .bbsId(testMaster.getBbsId())
-                .pstTtl("Low")
+                .nttSj("Low")
                 .inqireCo(10)
                 .commentCnt(1)
                 .useYn("Y")
@@ -150,7 +150,7 @@ class BoardRepositoryTest {
         
         Board articleHigh = Board.builder()
                 .bbsId(testMaster.getBbsId())
-                .pstTtl("High")
+                .nttSj("High")
                 .inqireCo(100)
                 .commentCnt(10)
                 .useYn("Y")
@@ -175,14 +175,14 @@ class BoardRepositoryTest {
         // date desc
         condition.setOrderBy("date");
         results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
-        assertThat(results.getContent().get(0).getPstTtl()).isEqualTo("High"); // saved later
+        assertThat(results.getContent().get(0).getNttSj()).isEqualTo("High"); // saved later
     }
 
     @Test
     @DisplayName("날짜 기간 검색 테스트")
     void searchWithDateRangeTest() {
         // Given
-        Board oldPost = Board.builder().bbsId(testMaster.getBbsId()).pstTtl("Old").useYn("Y").build();
+        Board oldPost = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Old").useYn("Y").build();
         boardRepository.save(oldPost);
         em.flush();
         em.clear();
@@ -203,21 +203,21 @@ class BoardRepositoryTest {
     @DisplayName("기본 search 및 findByIdCustom 테스트")
     void otherCustomMethodsTest() {
         // Given
-        Board article = Board.builder().bbsId(testMaster.getBbsId()).pstTtl("Topic").useYn("Y").build();
+        Board article = Board.builder().bbsId(testMaster.getBbsId()).nttSj("Topic").useYn("Y").build();
         Board saved = boardRepository.save(article);
         em.flush();
         em.clear();
 
         // 1. findByIdCustom
-        Optional<Board> found = boardRepository.findByIdCustom(saved.getPstId());
+        Optional<Board> found = boardRepository.findByIdCustom(saved.getNttId());
         assertThat(found).isPresent();
-        assertThat(found.get().getPstTtl()).isEqualTo("Topic");
+        assertThat(found.get().getNttSj()).isEqualTo("Topic");
 
         // 2. search (returning Board entities)
         BoardSearchCondition condition = new BoardSearchCondition();
         condition.setBbsId(testMaster.getBbsId());
         Page<Board> results = boardRepository.search(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).hasSize(1);
-        assertThat(results.getContent().get(0).getPstTtl()).isEqualTo("Topic");
+        assertThat(results.getContent().get(0).getNttSj()).isEqualTo("Topic");
     }
 }

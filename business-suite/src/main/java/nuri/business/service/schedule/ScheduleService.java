@@ -1,147 +1,108 @@
 package nuri.business.service.schedule;
 
-import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
-import nuri.foundation.domain.user.entity.User;
-import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
-import nuri.foundation.domain.common.BaseSearchDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.HashMap;
+import org.springframework.lang.NonNull;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ScheduleService implements EgovScheduleService {
+public class ScheduleService extends BaseAbstractService {
 
     private final ScheduleRepository scheduleRepository;
-    private final UserRepository userRepository;
 
-    @Override
-    public List<Map<String, Object>> selectEmpLyrPopup(@org.springframework.lang.NonNull BaseSearchDto searchVO) {
-        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize());
-        Page<User> users = userRepository.searchUsers(null, searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
-                Objects.requireNonNull(pageable));
-
-        return users.getContent().stream().map(user -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("userId", user.getUserId());
-            map.put("userNm", user.getUserNm());
-            map.put("esntlId", user.getEsntlId());
-            map.put("officeTelno", user.getOfficeTelno());
-            map.put("homeadres", user.getHomeadres());
-            map.put("detailAdres", user.getDetailAdres());
-            return map;
-        }).collect(Collectors.toList());
+    public Page<ScheduleDto> getScheduleList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
+        return scheduleRepository.searchSchedules(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
     }
 
-    @Override
-    public Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        if (userId == null) {
-            return scheduleRepository.findAll(Objects.requireNonNull(pageable)).map(ScheduleDto::from);
-        }
-        return scheduleRepository.findByFrstRegisterId(userId, Objects.requireNonNull(pageable))
-                .map(ScheduleDto::from);
+    public List<ScheduleDto> getScheduleList(String searchCondition, String searchKeyword) {
+        return scheduleRepository.searchSchedules(searchCondition, searchKeyword, Pageable.unpaged())
+                .getContent().stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    @Override
-    public List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth) {
-        String start = yearMonth + "010000";
-        String end = yearMonth + "312359";
-        return scheduleRepository.findOverlappingSchedules(start, end).stream()
-                .map(ScheduleDto::from)
-                .collect(Collectors.toList());
+    public ScheduleDto getSchedule(@NonNull String schdlId) {
+        return scheduleRepository.findById(schdlId)
+                .map(this::convertToDto)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
-    public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
-        return scheduleRepository.findOverlappingSchedules(startDate, endDate).stream()
-                .map(ScheduleDto::from)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Page<ScheduleDto> getScheduleList(String schdlSeCd, String ownerId,
-            @org.springframework.lang.NonNull Pageable pageable) {
-        return scheduleRepository.findSchedules(schdlSeCd, ownerId, Objects.requireNonNull(pageable))
-                .map(ScheduleDto::from);
-    }
-
-    @Override
-    public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate,
-            String endDate) {
-        return scheduleRepository.findSchedulesByRange(schdlSeCd, ownerId, startDate, endDate).stream()
-                .map(ScheduleDto::from)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public ScheduleDto getSchedule(String id) {
-        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
-        return ScheduleDto.from(schedule);
-    }
-
-    @Override
     @Transactional
-    public String createSchedule(String userId, ScheduleDto dto) {
-        // ID: SCHDUL_ + UUID
-        String id = "SCHDUL_" + java.util.UUID.randomUUID().toString().substring(0, 13);
-
-        Schedule schedule = Schedule.builder()
-                .schdlId(id)
+    public void createSchedule(String userId, ScheduleDto dto) {
+        Schedule entity = Schedule.builder()
+                .schdlId(dto.getSchdlId())
                 .schdlSeCd(dto.getSchdlSeCd())
                 .schdlDeptId(dto.getSchdlDeptId())
                 .schdlKindCd(dto.getSchdlKindCd())
-                .schdlBgngYmd(dto.getSchdlBgngYmd())
-                .schdlEndYmd(dto.getSchdlEndYmd())
                 .schdlTtl(dto.getSchdlTtl())
                 .schdlCn(dto.getSchdlCn())
+                .schdlBgngYmd(dto.getSchdlBgngYmd())
+                .schdlEndYmd(dto.getSchdlEndYmd())
                 .schdlPlcNm(dto.getSchdlPlcNm())
                 .schdlIpcrCd(dto.getSchdlIpcrCd())
                 .schdlPicId(dto.getSchdlPicId())
-                .atchFileId(dto.getAtchFileId())
+                .schdlIpAddr(dto.getSchdulIpAdres())
                 .reptitSeCd(dto.getReptitSeCd())
+                .atchFileId(dto.getAtchFileId())
+                .createdBy(userId)
                 .build();
-
-        scheduleRepository.save(schedule);
-        return id;
+        scheduleRepository.save(entity);
     }
 
-    @Override
     @Transactional
-    public void updateSchedule(String id, String userId, ScheduleDto dto) {
-        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
+    public void updateSchedule(String userId, ScheduleDto dto) {
+        Schedule entity = scheduleRepository.findById(Objects.requireNonNull(dto.getSchdlId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        schedule.update(
+        entity.updateAll(
+                dto.getSchdlTtl(),
+                dto.getSchdlCn(),
                 dto.getSchdlSeCd(),
                 dto.getSchdlKindCd(),
                 dto.getSchdlBgngYmd(),
                 dto.getSchdlEndYmd(),
-                dto.getSchdlTtl(),
-                dto.getSchdlCn(),
                 dto.getSchdlPlcNm(),
                 dto.getSchdlIpcrCd(),
-                dto.getAtchFileId(),
+                dto.getSchdlPicId(),
                 dto.getReptitSeCd());
+        
+        entity.setLastModifiedBy(userId);
     }
 
-    @Override
     @Transactional
-    public void deleteSchedule(String id, String userId) {
-        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
-        scheduleRepository.delete(Objects.requireNonNull(schedule));
+    public void deleteSchedule(@NonNull String schdlId) {
+        scheduleRepository.deleteById(schdlId);
+    }
+
+    private ScheduleDto convertToDto(Schedule entity) {
+        return ScheduleDto.builder()
+                .schdlId(entity.getSchdlId())
+                .schdulSe(entity.getSchdlSeCd())
+                .schdlTtl(entity.getSchdlTtl())
+                .schdlCn(entity.getSchdlCn())
+                .reptitSeCode(entity.getReptitSeCd())
+                .schdlBgngYmd(entity.getSchdlBgngYmd())
+                .schdlEndYmd(entity.getSchdlEndYmd())
+                .schdulIpAdres(entity.getSchdlIpAddr())
+                .schdulChargerId(entity.getSchdlPicId())
+                .atchFileId(entity.getAtchFileId())
+                .frstRegisterId(entity.getCreatedBy())
+                .createdDate(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .modifiedDate(entity.getLastModifiedDate())
+                .build();
     }
 }

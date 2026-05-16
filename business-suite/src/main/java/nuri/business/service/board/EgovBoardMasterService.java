@@ -1,41 +1,24 @@
 package nuri.business.service.board;
 
-import nuri.business.service.board.dto.BlogDto;
 import nuri.business.service.board.dto.BoardMasterDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
 import java.util.List;
 
 public interface EgovBoardMasterService {
-
-    BoardMasterDto getBoardMaster(@NonNull String bbsId);
-
-    Page<BoardMasterDto> getBoardMasterList(String searchCnd, String searchWrd, @NonNull Pageable pageable);
-
-    String createBoardMaster(BoardMasterDto dto);
-
-    void updateBoardMaster(BoardMasterDto dto);
-
-    void deleteBoardMaster(String bbsId, String userId);
-
+    Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, Pageable pageable);
+    List<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword);
+    BoardMasterDto getBoardMaster(String bbsId);
+    String createBoardMaster(String userId, BoardMasterDto dto);
+    void updateBoardMaster(String userId, BoardMasterDto dto);
+    void deleteBoardMaster(String userId, String bbsId);
+    
     boolean canUseSatisfaction(String bbsId);
-
     boolean canUseComment(String bbsId);
-
-    Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable);
-
-    BlogDto getBlog(String blogId);
-
-    boolean checkBlogUser(String frstRegisterId);
-
-    void createBlog(BlogDto dto);
-
-    void joinBlog(String blogId, String userId, String mngrAt);
-
-    List<BlogDto> getBlogListPortlet();
-
-    List<BoardMasterDto> getBoardMasterListPortlet();
-
-    List<BoardMasterDto> getBoardMasterListByCommunity(String cmntyId);
+    Page<java.lang.Object> getBlogList(Object o1, Object o2, Pageable pageable);
+    java.lang.Object getBlog(String id);
+    void createBlog(Object dto);
+    void joinBlog(String s1, String s2, String s3);
+    boolean checkBlogUser(String userId);
+    List<java.lang.Object> getBlogListPortlet();
 }

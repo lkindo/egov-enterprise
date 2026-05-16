@@ -3,6 +3,7 @@ package nuri.foundation.domain.user.entity;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 사용자 부재 정보 엔티티
@@ -10,14 +11,15 @@ import lombok.*;
 @Entity
 @Table(name = "TB_USER_ABSN")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class UserAbsence extends BaseEntity {
 
     @Id
     @Column(name = "USER_ID", length = 20)
-    private String emplyrId;
+    private String userId;
 
     @Column(name = "USER_ABSNCE_YN", length = 1, nullable = false)
     private String userAbsnceAt; // Y: 부재, N: 정상
@@ -25,4 +27,8 @@ public class UserAbsence extends BaseEntity {
     public void updateAbsence(String userAbsnceAt) {
         this.userAbsnceAt = userAbsnceAt;
     }
+
+    // legacy
+    public String getEmplyrId() { return userId; }
+    public void setEmplyrId(String v) { this.userId = v; }
 }

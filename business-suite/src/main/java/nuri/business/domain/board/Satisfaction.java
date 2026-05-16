@@ -1,49 +1,48 @@
 package nuri.business.domain.board;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 
-/**
- * 만족도 조사 엔티티 (v5 standardized)
- */
-@EntityListeners(AuditingEntityListener.class)
-@Entity
-@Table(name = "TB_DGSTFN_INFO")
+import java.io.Serializable;
+
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Entity
+@Table(name = "TB_DGSTFN_INFO")
+@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SuperBuilder
-public class Satisfaction extends BaseEntity {
+public class Satisfaction extends BaseEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "STSFDG_NO")
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stsfdgIdSeq")
+    @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "STSFDG_ID_SEQ", allocationSize = 1)
+    @Column(name = "STSFDG_ID")
+    private Long stsfdgId;
+
+    @Column(name = "BBS_ID", nullable = false)
+    private String bbsId;
 
     @Column(name = "NTT_ID", nullable = false)
     private Long pstId;
-
-    @Column(name = "BBS_ID", length = 20, nullable = false)
-    private String bbsId;
-
-    @Column(name = "WRTER_ID", length = 20)
-    private String writerId;
-
-    @Column(name = "WRTER_NM", length = 20)
-    private String writerNm;
-
-    @Column(name = "PASSWORD", length = 200)
-    private String password;
 
     @Column(name = "DGSTFN_SCR", nullable = false)
     private Integer stsfdgLevel;
 
     @Column(name = "DGSTFN_CN", length = 2500)
     private String stsfdgCn;
+
+    @Column(name = "PSWD", length = 200)
+    private String password;
 
     @Builder.Default
     @Column(name = "USE_YN", length = 1)
@@ -60,4 +59,12 @@ public class Satisfaction extends BaseEntity {
     public void delete() {
         this.useYn = "N";
     }
+    
+    // legacy
+    public String getBoardId() { return bbsId; }
+    public void setBoardId(String v) { this.bbsId = v; }
+    public Long getArticleId() { return pstId; }
+    public void setArticleId(Long v) { this.pstId = v; }
+    public Integer getSatisfactionLevel() { return stsfdgLevel; }
+    public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
 }

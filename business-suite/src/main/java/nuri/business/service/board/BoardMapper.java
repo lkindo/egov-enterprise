@@ -61,8 +61,8 @@ public interface BoardMapper {
     @Mapping(target = "bbsTtl", source = "bbsTtl")
     BoardDto toDto(BoardDetailResult detail);
 
-    @Mapping(target = "pstId", ignore = true)
-    @Mapping(target = "pstSn", constant = "1L")
+    @Mapping(target = "nttId", ignore = true)
+    @Mapping(target = "nttNo", constant = "1L")
     @Mapping(target = "parnts", constant = "0L")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaStatus", source = "request.qnaStatus", defaultValue = "OPEN")
@@ -75,8 +75,8 @@ public interface BoardMapper {
     @Mapping(target = "sortOrdr", source = "sortOrdr")
     Board toEntity(BoardSaveRequest request, String bbsId, String ntcrId, String ntcrNm, Long sortOrdr);
 
-    @Mapping(target = "pstId", ignore = true)
-    @Mapping(target = "pstSn", source = "pstSn")
+    @Mapping(target = "nttId", ignore = true)
+    @Mapping(target = "nttNo", source = "nttNo")
     @Mapping(target = "parnts", source = "parnts")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaStatus", source = "request.qnaStatus", defaultValue = "OPEN")
@@ -87,7 +87,7 @@ public interface BoardMapper {
     @Mapping(target = "ntcrId", source = "ntcrId")
     @Mapping(target = "ntcrNm", source = "ntcrNm")
     @Mapping(target = "sortOrdr", source = "sortOrdr")
-    Board toReplyEntity(BoardSaveRequest request, String bbsId, String ntcrId, String ntcrNm, Long sortOrdr, Long pstSn, Long parnts, Integer replyLc);
+    Board toReplyEntity(BoardSaveRequest request, String bbsId, String ntcrId, String ntcrNm, Long sortOrdr, Long nttNo, Long parnts, Integer replyLc);
 
     @Named("longToString")
     default String longToString(Long value) {

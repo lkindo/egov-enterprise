@@ -6,6 +6,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UserAbsenceDto {
-    private String emplyrId;
+    private String userId;
     private String userAbsnceAt;
+
+    // legacy
+    public String getEmplyrId() { return userId; }
 }

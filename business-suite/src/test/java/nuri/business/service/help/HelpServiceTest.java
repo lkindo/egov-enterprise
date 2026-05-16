@@ -75,7 +75,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 수정 테스트")
     void updateHpcm_Success() {
-        Hpcm entity = spy(Hpcm.builder().hpcmId("ID").build());
+        Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hpcmId("ID").build());
         when(hpcmRepository.findById("ID")).thenReturn(Optional.of(entity));
         HpcmDto dto = HpcmDto.builder().hpcmDf("Updated").build();
 
@@ -131,7 +131,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 수정 테스트")
     void updateOnlineManual_Success() {
-        OnlineManual entity = spy(OnlineManual.builder().onlineMnlId("ID").build());
+        OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlineMnlId("ID").build());
         when(onlineManualRepository.findById("ID")).thenReturn(Optional.of(entity));
         OnlineManualDto dto = OnlineManualDto.builder().onlineMnlNm("Updated").build();
 

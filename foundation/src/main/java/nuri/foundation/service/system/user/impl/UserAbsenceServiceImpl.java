@@ -25,17 +25,17 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     }
 
     @Override
-    public UserAbsenceDto getAbsence(String emplyrId) {
-        UserAbsence absence = userAbsenceRepository.findById(emplyrId)
-                .orElse(UserAbsence.builder().emplyrId(emplyrId).userAbsnceAt("N").build());
+    public UserAbsenceDto getAbsence(String userId) {
+        UserAbsence absence = userAbsenceRepository.findById(userId)
+                .orElse(UserAbsence.builder().userId(userId).userAbsnceAt("N").build());
         return userAbsenceMapper.toDto(absence);
     }
 
     @Override
     @Transactional
-    public void updateAbsence(String emplyrId, UserAbsenceDto dto) {
-        UserAbsence absence = userAbsenceRepository.findById(emplyrId)
-                .orElse(UserAbsence.builder().emplyrId(emplyrId).build());
+    public void updateAbsence(String userId, UserAbsenceDto dto) {
+        UserAbsence absence = userAbsenceRepository.findById(userId)
+                .orElse(UserAbsence.builder().userId(userId).build());
         absence.updateAbsence(dto.getUserAbsnceAt());
         userAbsenceRepository.save(absence);
     }

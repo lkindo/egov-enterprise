@@ -2,19 +2,24 @@ package nuri.business.domain.report;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
+
 import java.util.List;
 import java.util.Objects;
+
 import static nuri.business.domain.report.QWorkReport.workReport;
 
-@RequiredArgsConstructor
 public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    public WorkReportRepositoryImpl(EntityManager em) {
+        this.queryFactory = new JPAQueryFactory(em);
+    }
 
     @Override
     public Page<WorkReport> searchWorkReports(String searchId, String searchDe, String searchBgnDe, String searchEndDe,
@@ -22,25 +27,23 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (StringUtils.hasText(searchId)) {
-            builder.and(workReport.writerId.eq(searchId)); // Simplified for now
+            builder.and(workReport.wrterId.eq(searchId)); 
         }
 
-        if (StringUtils.hasText(searchSe) && !"0".equals(searchSe)) {
-            builder.and(workReport.rptTypeCd.eq(searchSe));
+        if (StringUtils.hasText(searchSe)) {
+            builder.and(workReport.reprtSe.eq(searchSe));
         }
 
         if (StringUtils.hasText(searchWrd)) {
-            if ("0".equals(searchCnd)) {
-                builder.and(workReport.rptTtl.contains(searchWrd));
-            }
+            builder.and(workReport.reportSubject.contains(searchWrd));
         }
 
-        List<WorkReport> content = queryFactory
+        List<WorkReport> results = queryFactory
                 .selectFrom(workReport)
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(workReport.rptId.desc())
+                .orderBy(workReport.reportId.desc())
                 .fetch();
 
         long total = queryFactory
@@ -49,6 +52,6 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
+        return new PageImpl<>(Objects.requireNonNull(results), pageable, total);
     }
 }

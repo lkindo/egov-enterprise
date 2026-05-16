@@ -36,7 +36,7 @@ class UserAbsenceApiControllerTest {
     @Test
     @DisplayName("사용자 부재 정보 목록 조회")
     void getAbsences() throws Exception {
-        UserAbsenceDto dto = UserAbsenceDto.builder().emplyrId("user1").userAbsnceAt("Y").build();
+        UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnceAt("Y").build();
         given(userAbsenceService.getAbsences()).willReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/admin/system/user-absences"))
@@ -47,7 +47,7 @@ class UserAbsenceApiControllerTest {
     @Test
     @DisplayName("사용자 부재 상태 상세 조회")
     void getAbsence() throws Exception {
-        UserAbsenceDto dto = UserAbsenceDto.builder().emplyrId("user1").userAbsnceAt("Y").build();
+        UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnceAt("Y").build();
         given(userAbsenceService.getAbsence("user1")).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/user-absences/user1"))

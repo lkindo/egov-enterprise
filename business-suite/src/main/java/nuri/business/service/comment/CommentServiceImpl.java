@@ -56,7 +56,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public Long createComment(String userId, String userNm, CommentSaveRequest request) {        
         Comment comment = Comment.builder()
-                .pstId(request.getPstId())
+                .nttId(request.getNttId())
                 .bbsId(request.getBbsId())
                 .writerId(userId)
                 .writerNm(userNm)
@@ -66,10 +66,10 @@ public class CommentServiceImpl implements CommentService {
                 .build();
 
         Long commentId = Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))   
-                .getId();
+                .getNttId();
         
         // 이벤트 발행
-        eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getPstId()));
+        eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getNttId()));
         
         return commentId;
     }
@@ -92,13 +92,13 @@ public class CommentServiceImpl implements CommentService {
         comment.delete();
         
         // 이벤트 발행
-        eventPublisher.publishEvent(new CommentDeletedEvent(this, comment.getBbsId(), comment.getPstId()));
+        eventPublisher.publishEvent(new CommentDeletedEvent(this, comment.getBbsId(), comment.getNttId()));
     }
 
     private CommentDto convertToDto(Comment entity) {
         return CommentDto.builder()
-                .id(entity.getId())
-                .pstId(entity.getPstId())
+                .nttId(entity.getNttId())
+                .nttId(entity.getNttId())
                 .bbsId(entity.getBbsId())
                 .writerId(entity.getWriterId())
                 .writerNm(entity.getWriterNm())

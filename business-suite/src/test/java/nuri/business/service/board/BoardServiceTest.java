@@ -90,9 +90,9 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        BoardSearchResult resultItem = BoardSearchResult.builder().pstId(1L).build();
+        BoardSearchResult resultItem = BoardSearchResult.builder().nttId(1L).build();
         Page<BoardSearchResult> page = new PageImpl<>(Collections.singletonList(resultItem));
-        BoardDto dto = BoardDto.builder().id(1L).build();
+        BoardDto dto = BoardDto.builder().nttId(1L).build();
 
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
         given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(page);
@@ -110,9 +110,9 @@ class BoardServiceTest {
     void getBoardStats() {
         // given
         String bbsId = "BBS_01";
-        given(boardRepository.countByBbsIdAndUseAt(bbsId, "Y")).willReturn(10L);
-        given(boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y")).willReturn(100L);
-        given(boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y")).willReturn("user1");
+        given(boardRepository.countByBbsIdAndUseYn(bbsId, "Y")).willReturn(10L);
+        given(boardRepository.sumInqireCoByBbsIdAndUseYn(bbsId, "Y")).willReturn(100L);
+        given(boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y")).willReturn("user1");
 
         // when
         BoardStatsResponse result = boardService.getBoardStats(bbsId);
@@ -130,11 +130,10 @@ class BoardServiceTest {
     void createPost() {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null,
-                null, null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board board = Board.builder().pstId(1L).build();
+        Board board = Board.builder().nttId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(user);
@@ -156,17 +155,16 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null,
-                null, null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board reply = Board.builder().pstId(2L).build();
+        Board reply = Board.builder().nttId(2L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willReturn(user);
-        given(boardRepository.findMaxNttNo("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.findMaxPstSn("BBS_01", 100L)).willReturn(0L);
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
         given(boardRepository.save(reply)).willReturn(reply);
 
@@ -184,7 +182,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         BoardDetailResult detail = mock(BoardDetailResult.class);
-        BoardDto dto = BoardDto.builder().id(pstId).build();
+        BoardDto dto = BoardDto.builder().nttId(pstId).build();
 
         given(boardRepository.findArticleDetail(pstId)).willReturn(Optional.of(detail));
         given(boardMapper.toDto(detail)).willReturn(dto);
@@ -193,7 +191,7 @@ class BoardServiceTest {
         BoardDto result = boardService.getPostDetail(bbsId, pstId);
 
         // then
-        assertThat(result.getId()).isEqualTo(pstId);
+        assertThat(result.getNttId()).isEqualTo(pstId);
         verify(viewCountService).increaseViewCount(pstId);
     }
 
@@ -204,9 +202,8 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
-        Board board = Board.builder().pstId(pstId).pstTtl("Old").ntcrId(userId).build();
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null, null, null);
+        Board board = Board.builder().nttId(pstId).nttSj("Old").ntcrId(userId).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
@@ -215,7 +212,7 @@ class BoardServiceTest {
         boardService.updatePost(bbsId, pstId, request);
 
         // then
-        assertThat(board.getPstTtl()).isEqualTo("Updated");
+        assertThat(board.getNttSj()).isEqualTo("Updated");
     }
 
     @Test
@@ -225,7 +222,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         String userId = "user1";
-        Board board = Board.builder().pstId(pstId).useYn("Y").ntcrId(userId).build();
+        Board board = Board.builder().nttId(pstId).useYn("Y").ntcrId(userId).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
@@ -243,7 +240,7 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         Long pstId = 1L;
-        Board board = Board.builder().pstId(pstId).likeCo(0).build();
+        Board board = Board.builder().nttId(pstId).likeCo(0).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
 
@@ -296,10 +293,9 @@ class BoardServiceTest {
     void createPost_UserNotFound() {
         // given
         String userId = "unknown";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId(1L).build();
+        Board board = Board.builder().nttId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -320,10 +316,9 @@ class BoardServiceTest {
     void createPost_UserError() {
         // given
         String userId = "errorUser";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId(1L).build();
+        Board board = Board.builder().nttId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
@@ -344,10 +339,9 @@ class BoardServiceTest {
     void createPost_CustomNtcr() {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
-                null, null, "Y", "customId", "customNm", null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, "customId", "customNm", null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId(1L).build();
+        Board board = Board.builder().nttId(1L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
@@ -366,8 +360,7 @@ class BoardServiceTest {
     void createPostWithFiles() throws IOException {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -376,8 +369,8 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().pstId(1L).build());
-        given(boardRepository.save(any())).willReturn(Board.builder().pstId(1L).build());
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().nttId(1L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().nttId(1L).build());
 
         // when
         boardService.createPostWithFiles(userId, request, files);
@@ -393,16 +386,15 @@ class BoardServiceTest {
         // given
         String userId = "unknown";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
-        Board reply = Board.builder().pstId(2L).build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board reply = Board.builder().nttId(2L).build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
-        given(boardRepository.findMaxNttNo(any(), any())).willReturn(0L);
+        given(boardRepository.findMaxPstSn(any(), any())).willReturn(0L);
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
         given(boardRepository.save(any())).willReturn(reply);
 
@@ -419,21 +411,20 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(Board.builder().pstId(2L).build());
-        given(boardRepository.save(any())).willReturn(Board.builder().pstId(2L).build());
+                .willReturn(Board.builder().nttId(2L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().nttId(2L).build());
 
         // when
         boardService.replyPostWithFiles(userId, parentId, request, files);
@@ -450,9 +441,8 @@ class BoardServiceTest {
         Long pstId = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr,
-                null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().pstId(pstId).ntcrId(userId).build());
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr, null, null, null, null, null, null);
+        Board board = org.mockito.Mockito.spy(Board.builder().nttId(pstId).ntcrId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
@@ -471,9 +461,8 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date",
-                null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().pstId(pstId).ntcrId(userId).build());
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date", null, null, null, null, null, null);
+        Board board = org.mockito.Mockito.spy(Board.builder().nttId(pstId).ntcrId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
@@ -491,13 +480,13 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
-                null, "Y", null, null, null);
+                null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstId(pstId).ntcrId("user1").build();
+        Board board = Board.builder().nttId(pstId).ntcrId("user1").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
@@ -517,14 +506,13 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstId = 1L;
         String atchFileId = "OLD_ATCH_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null,
-                null, null, "Y", null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstId(pstId).ntcrId("user1").build();
+        Board board = Board.builder().nttId(pstId).ntcrId("user1").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
 
@@ -540,9 +528,9 @@ class BoardServiceTest {
     void getBoardStats_SystemContributor() {
         // given
         String bbsId = "BBS_01";
-        given(boardRepository.countByBbsIdAndUseAt(bbsId, "Y")).willReturn(0L);
-        given(boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y")).willReturn(0L);
-        given(boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y")).willReturn(null);
+        given(boardRepository.countByBbsIdAndUseYn(bbsId, "Y")).willReturn(0L);
+        given(boardRepository.sumInqireCoByBbsIdAndUseYn(bbsId, "Y")).willReturn(0L);
+        given(boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y")).willReturn(null);
 
         // when
         BoardStatsResponse result = boardService.getBoardStats(bbsId);

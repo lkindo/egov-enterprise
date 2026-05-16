@@ -14,7 +14,6 @@ import java.util.Objects;
 
 /**
  * 사용자 관리 DTO
- * - XSS 방지를 위한 입력 검증 포함
  */
 @Getter
 @Setter
@@ -33,14 +32,12 @@ public class UserDto {
     @Pattern(regexp = "^[a-zA-Z0-9가-힣\\s]{2,50}$", message = "사용자명은 2~50자의 영문, 숫자, 한글만 가능합니다")
     private String userNm;
 
-
     private String esntlId;
 
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
     private String password;
-
 
     @Size(max = 100, message = "비밀번호 힌트는 최대 100 자입니다")
     private String passwordHint;
@@ -54,11 +51,11 @@ public class UserDto {
     @Size(max = 20, message = "사번은 최대 20 자입니다")
     private String emplNo;
 
-    @Size(max = 10, message = "성별 코드는 최대 10 자입니다")
-    private String sexdstnCode;
+    @Size(max = 30, message = "성별 코드는 최대 30 자입니다")
+    private String gndrCd;
 
-    @Size(max = 20, message = "생년월일은 최대 20 자입니다")
-    private String brth;
+    @Size(max = 8, message = "생년월일은 8자입니다")
+    private String brthYmd;
 
     @Size(max = 4, message = "지역번호는 최대 4 자입니다")
     private String areaNo;
@@ -73,7 +70,7 @@ public class UserDto {
     private String mberTyCode;
 
     @Size(max = 20, message = "팩스 번호는 최대 20 자입니다")
-    private String fxnum;
+    private String faxNo;
 
     @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
     private String insttCode;
@@ -84,24 +81,24 @@ public class UserDto {
     @Size(max = 20, message = "그룹 ID 는 최대 20 자입니다")
     private String groupId;
 
-    @Size(max = 100, message = "주소는 최대 100 자입니다")
+    @Size(max = 300, message = "주소는 최대 300 자입니다")
     private String homeadres;
 
-    @Size(max = 100, message = "상세주소는 최대 100 자입니다")
+    @Size(max = 300, message = "상세주소는 최대 300 자입니다")
     private String detailAdres;
 
-    @Size(max = 10, message = "우편번호는 최대 10 자입니다")
+    @Size(max = 5, message = "우편번호는 5자입니다")
     private String zip;
 
     @Size(max = 20, message = "사무실 전화번호는 최대 20 자입니다")
-    private String offmTelno;
+    private String officeTelno;
 
-    @Size(max = 20, message = "휴대폰 번호는 최대 20 자입니다")
-    private String moblphonNo;
+    @Size(max = 11, message = "휴대폰 번호는 최대 11 자입니다")
+    private String mblTelno;
 
-    @Size(max = 100, message = "이메일은 최대 100 자입니다")
+    @Size(max = 300, message = "이메일은 최대 300 자입니다")
     @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
-    private String emailAdres;
+    private String emlAddr;
 
     @Size(max = 60, message = "직함은 최대 60 자입니다")
     private String ofcpsNm;
@@ -112,21 +109,31 @@ public class UserDto {
     @Size(max = 10, message = "사용자 구분은 최대 10 자입니다")
     private String userSe;
 
-    @Size(max = 10, message = "사용자 상태 코드는 최대 10 자입니다")
-    private String userSttusCode;
+    @Size(max = 30, message = "사용자 상태 코드는 최대 30 자입니다")
+    private String userSttsCd;
+    
+    private String lckYn;
+
     private LocalDateTime createdDate;
 
-    // 레거시 테스트 호환용 생성자
-    public UserDto(String userId, String userNm, String esntlId, String role, String emplNo, String ofcpsNm,
-            LocalDateTime createdDate) {
-        this.userId = userId;
-        this.userNm = userNm;
-        this.esntlId = esntlId;
-        this.role = role;
-        this.emplNo = emplNo;
-        this.ofcpsNm = ofcpsNm;
-        this.createdDate = createdDate;
-    }
+    // ----- [Legacy Aliases] -----
+    public String getSexdstnCode() { return gndrCd; }
+    public String getBrth() { return brthYmd; }
+    public String getFxnum() { return faxNo; }
+    public String getOffmTelno() { return officeTelno; }
+    public String getMoblphonNo() { return mblTelno; }
+    public String getEmailAdres() { return emlAddr; }
+    public String getUserSttusCode() { return userSttsCd; }
+    public String getLockAt() { return lckYn; }
+
+    public void setSexdstnCode(String v) { this.gndrCd = v; }
+    public void setBrth(String v) { this.brthYmd = v; }
+    public void setFxnum(String v) { this.faxNo = v; }
+    public void setOffmTelno(String v) { this.officeTelno = v; }
+    public void setMoblphonNo(String v) { this.mblTelno = v; }
+    public void setEmailAdres(String v) { this.emlAddr = v; }
+    public void setUserSttusCode(String v) { this.userSttsCd = v; }
+    public void setLockAt(String v) { this.lckYn = v; }
 
     public static UserDto from(nuri.foundation.domain.user.entity.User user) {
         if (user == null)
@@ -137,24 +144,25 @@ public class UserDto {
                 .esntlId(user.getEsntlId())
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .emplNo(user.getEmplNo())
-                .sexdstnCode(user.getSexdstnCode())
-                .brth(user.getBrth())
+                .gndrCd(user.getGndrCd())
+                .brthYmd(user.getBrthYmd())
                 .areaNo(user.getAreaNo())
                 .homemiddleTelno(user.getHomemiddleTelno())
                 .homeendTelno(user.getHomeendTelno())
-                .fxnum(user.getFxnum())
+                .faxNo(user.getFaxNo())
                 .insttCode(user.getInsttCode())
                 .orgnztId(user.getOrgnztId())
                 .groupId(user.getGroupId())
                 .homeadres(user.getHomeadres())
                 .detailAdres(user.getDetailAdres())
                 .zip(user.getZip())
-                .offmTelno(user.getOffmTelno())
-                .moblphonNo(user.getMoblphonNo())
-                .emailAdres(user.getEmailAdres())
+                .officeTelno(user.getOfficeTelno())
+                .mblTelno(user.getMblTelno())
+                .emlAddr(user.getEmlAddr())
                 .ofcpsNm(user.getOfcpsNm())
                 .subDn(user.getSubDn())
-                .userSttusCode(user.getStatusCode())
+                .userSttsCd(user.getUserSttsCd())
+                .lckYn(user.getLckYn())
                 .createdDate(user.getCreatedDate())
                 .build();
     }

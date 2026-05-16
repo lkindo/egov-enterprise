@@ -66,6 +66,6 @@ class SystemLogApiControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/logs/system/REQ_001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.requstId").value("REQ_001"));
+                .andExpect(jsonPath("$.data.dmndId").value("REQ_001"));
     }
 }

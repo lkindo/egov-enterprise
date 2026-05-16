@@ -12,7 +12,7 @@ class CommentDomainTest {
     void comment_test() {
         // Given
         Comment comment = Comment.builder()
-                .id(1L)
+                .nttId(1L)
                 .bbsId("BBS1")
                 .cmntCn("Old Content")
                 .useYn("Y")
@@ -32,8 +32,8 @@ class CommentDomainTest {
     void commentPredicate_test() {
         // Just call them to cover the lines
         assertNotNull(CommentPredicate.bbsIdEq("BBS1"));
-        assertNotNull(CommentPredicate.nttIdEq(10L));
-        assertNotNull(CommentPredicate.bbsIdAndNttIdEq("BBS1", 10L));
-        assertNotNull(CommentPredicate.bbsIdAndNttIdEq(Expressions.asString("BBS1"), Expressions.asNumber(10L)));
+        assertNotNull(CommentPredicate.pstIdEq(10L));
+        assertNotNull(CommentPredicate.bbsIdAndPstIdEq("BBS1", 10L));
+        assertNotNull(CommentPredicate.bbsIdAndPstIdEq(Expressions.asString("BBS1"), Expressions.asNumber(10L)));
     }
 }

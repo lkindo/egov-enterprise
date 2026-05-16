@@ -52,7 +52,7 @@ class LoginPolicyManageServiceTest {
         
         given(userRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(user1, user2)));
         
-        LoginPolicy policy1 = LoginPolicy.builder().emplyrId("USER1").ipInfo("127.0.0.1").build();
+        LoginPolicy policy1 = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy1));
         given(loginPolicyRepository.findById("USER2")).willReturn(Optional.empty());
 
@@ -69,14 +69,14 @@ class LoginPolicyManageServiceTest {
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").password("pass").build();
         given(userRepository.findById("USER1")).willReturn(Optional.of(user));
         
-        LoginPolicy policy = LoginPolicy.builder().emplyrId("USER1").ipInfo("127.0.0.1").build();
+        LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("USER1");
 
         assertNotNull(result);
         assertEquals("Y", result.getRegYn());
-        assertEquals("127.0.0.1", result.getIpInfo());
+        assertEquals("127.0.0.1", result.getIpAddr());
     }
 
     @Test
@@ -102,7 +102,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 제한 여부 Y")
     void validateLoginPolicyLimitedTest() {
-        LoginPolicy policy = LoginPolicy.builder().emplyrId("USER1").lmttAt("Y").build();
+        LoginPolicy policy = LoginPolicy.builder().userId("USER1").lmtYn("Y").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
         BusinessException ex = assertThrows(BusinessException.class, 
@@ -113,7 +113,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - IP 불일치")
     void validateLoginPolicyIpMismatchTest() {
-        LoginPolicy policy = LoginPolicy.builder().emplyrId("USER1").ipInfo("192.168.0.1").lmttAt("N").build();
+        LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("192.168.0.1").lmtYn("N").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
         BusinessException ex = assertThrows(BusinessException.class, 
@@ -129,10 +129,10 @@ class LoginPolicyManageServiceTest {
         String end = now.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"));
 
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("USER1")
-                .lmttAt("N")
-                .startTime(start)
-                .endTime(end)
+                .userId("USER1")
+                .lmtYn("N")
+                .bgngTm(start)
+                .endTm(end)
                 .build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
@@ -149,11 +149,11 @@ class LoginPolicyManageServiceTest {
         String end = now.plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"));
 
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("USER1")
-                .lmttAt("N")
-                .ipInfo("127.0.0.1")
-                .startTime(start)
-                .endTime(end)
+                .userId("USER1")
+                .lmtYn("N")
+                .ipAddr("127.0.0.1")
+                .bgngTm(start)
+                .endTm(end)
                 .build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
@@ -164,8 +164,8 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 수정 테스트 - 성공")
     void updateLoginPolicySuccessTest() {
         LoginPolicyDto dto = new LoginPolicyDto();
-        dto.setEmplyrId("USER1");
-        dto.setIpInfo("1.1.1.1");
+        dto.setUserId("USER1");
+        dto.setIpAddr("1.1.1.1");
 
         LoginPolicy entity = mock(LoginPolicy.class);
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
@@ -179,7 +179,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 등록 테스트")
     void insertLoginPolicyTest() {
         LoginPolicyDto dto = new LoginPolicyDto();
-        dto.setEmplyrId("USER1");
+        dto.setUserId("USER1");
         
         loginPolicyManageService.insertLoginPolicy(dto);
         

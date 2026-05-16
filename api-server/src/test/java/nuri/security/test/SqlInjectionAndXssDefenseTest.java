@@ -106,7 +106,7 @@ class SqlInjectionAndXssDefenseTest extends BaseSecurityTest {
         String safeUserId = "normalUser";
         String maliciousUserName = "&lt;script&gt;alert('XSS')&lt;/script&gt;"; // Service layer returned escaped value
 
-        UserDto userDto = new UserDto(safeUserId, maliciousUserName, "USR00001", null, null, null, null);
+        UserDto userDto = UserDto.builder().userId(safeUserId).userNm(maliciousUserName).esntlId("USR00001").build();
 
         when(userService.getUserById(safeUserId)).thenReturn(userDto);
 

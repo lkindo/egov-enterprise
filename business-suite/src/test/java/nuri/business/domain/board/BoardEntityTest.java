@@ -11,14 +11,14 @@ class BoardEntityTest {
     @DisplayName("게시글 수정 테스트")
     void updateTest() {
         Board board = Board.builder()
-                .pstTtl("Old Title")
-                .pstCn("Old Content")
+                .nttSj("Old Title")
+                .nttCn("Old Content")
                 .build();
         
         board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", "FILE_001", null, null, null, "N");
         
-        assertThat(board.getPstTtl()).isEqualTo("New Title");
-        assertThat(board.getPstCn()).isEqualTo("New Content");
+        assertThat(board.getNttSj()).isEqualTo("New Title");
+        assertThat(board.getNttCn()).isEqualTo("New Content");
         assertThat(board.getNtcrId()).isEqualTo("user01");
         assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
     }
@@ -48,10 +48,10 @@ class BoardEntityTest {
     void countUpdateTest() {
         Board board = Board.builder().commentCnt(0).fileCnt(0).build();
         
-        board.updateCommentCount(5);
+        board.setCommentCnt(5);
         assertThat(board.getCommentCnt()).isEqualTo(5);
         
-        board.updateFileCount(3);
+        board.setFileCnt(3);
         assertThat(board.getFileCnt()).isEqualTo(3);
     }
 }

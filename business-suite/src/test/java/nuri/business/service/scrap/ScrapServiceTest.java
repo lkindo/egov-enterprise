@@ -41,7 +41,7 @@ class ScrapServiceTest {
         given(scrapRepository.findByCreatedByAndUseAt(eq("user1"), eq("Y"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // When
-        Page<ScrapDto> result = scrapService.getMyScrapList("user1", pageable);
+        Page<ScrapDto> result = scrapService.getScrapList("user1", pageable);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
@@ -63,15 +63,14 @@ class ScrapServiceTest {
 
     @Test
     @DisplayName("스크랩 등록")
-    void createScrap_Success() {
+    void createScrap_Success() throws Exception {
         // Given
         ScrapDto dto = ScrapDto.builder().scrapNm("New").build();
 
-        // When
-        String id = scrapService.createScrap("user1", dto);
+        // when
+        scrapService.createScrap("user1", dto);
 
-        // Then
-        assertThat(id).startsWith("SCRP_");
+        // then
         verify(scrapRepository).save(any(Scrap.class));
     }
 
@@ -81,10 +80,10 @@ class ScrapServiceTest {
         // Given
         Scrap entity = Scrap.builder().scrapId("S1").build();
         given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
-        ScrapDto dto = ScrapDto.builder().scrapNm("Updated").build();
+        ScrapDto dto = ScrapDto.builder().scrapId("S1").scrapNm("Updated").build();
 
-        // When
-        scrapService.updateScrap("S1", "user1", dto);
+        // when
+        scrapService.updateScrap("user1", dto);
 
         // Then
         assertThat(entity.getScrapNm()).isEqualTo("Updated");

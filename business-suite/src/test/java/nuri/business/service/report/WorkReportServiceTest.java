@@ -35,13 +35,13 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 등록 테스트")
     void registerWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .reprtId("REPO_001")
-                .reprtTtl("주간보고")
-                .reportContent("내용")
-                .writerId("user01")
+                .reportId("REPO_001")
+                .reportSubject("주간보고")
+                .reportContents("내용")
+                .wrterId("user01")
                 .build();
 
-        workReportService.registerWorkReport(dto);
+        workReportService.createWorkReport(dto);
 
         verify(workReportRepository, times(1)).save(any(WorkReport.class));
     }
@@ -50,22 +50,22 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 수정 테스트")
     void updateWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .reprtId("REPO_001")
-                .reprtTtl("수정보고")
-                .writerId("user01")
+                .reportId("REPO_001")
+                .reportSubject("수정보고")
+                .wrterId("user01")
                 .build();
 
         WorkReport report = WorkReport.builder()
-                .reprtId("REPO_001")
-                .reprtTtl("주간보고")
-                .writerId("user01")
+                .reportId("REPO_001")
+                .reportSubject("주간보고")
+                .wrterId("user01")
                 .build();
 
         when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));
 
         workReportService.updateWorkReport(dto);
 
-        assertEquals("수정보고", report.getReprtTtl());
+        assertEquals("수정보고", report.getReportSubject());
     }
 
     @Test
@@ -80,10 +80,10 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 상세 조회 테스트")
     void getWorkReportTest() {
         WorkReport report = WorkReport.builder()
-                .reprtId("REPO_001")
-                .reprtTtl("주간보고")
-                .reportContent("내용")
-                .writerId("user01")
+                .reportId("REPO_001")
+                .reportSubject("주간보고")
+                .reportContents("내용")
+                .wrterId("user01")
                 .build();
 
         when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));
@@ -91,8 +91,8 @@ class WorkReportServiceTest {
         WorkReportDto result = workReportService.getWorkReport("REPO_001");
 
         assertNotNull(result);
-        assertEquals("REPO_001", result.getReprtId());
-        assertEquals("주간보고", result.getReprtTtl());
+        assertEquals("REPO_001", result.getReportId());
+        assertEquals("주간보고", result.getReportSubject());
     }
 
     @Test
@@ -103,7 +103,7 @@ class WorkReportServiceTest {
 
         when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).thenReturn(page);
 
-        Page<WorkReportDto> result = workReportService.getWorkReportList("user01", "", pageable);
+        Page<WorkReportDto> result = workReportService.getWorkReportList("user01", null, "", pageable);
 
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());

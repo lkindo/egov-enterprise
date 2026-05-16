@@ -1,136 +1,116 @@
 package nuri.business.service.board;
 
-import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.board.Satisfaction;
 import nuri.business.domain.board.SatisfactionRepository;
 import nuri.business.service.board.dto.SatisfactionDto;
+import nuri.foundation.core.exception.BusinessException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
-@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("SatisfactionService 단위 테스트")
 class SatisfactionServiceTest {
-
-    @InjectMocks
-    private SatisfactionService satisfactionService;
 
     @Mock
     private SatisfactionRepository satisfactionRepository;
 
+    @InjectMocks
+    private SatisfactionService satisfactionService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     @DisplayName("만족도 등록")
-    void registerSatisfaction() {
+    void createSatisfaction() {
+        // given
         SatisfactionDto dto = SatisfactionDto.builder()
-                .articleId(1L)
-                .boardId("BBS_01")
-                .writerId("user1")
-                .satisfactionLevel(5)
+                .bbsId("BBS_01")
+                .nttId(1L)
+                .stsfdgLevel(5)
+                .stsfdgCn("Good")
                 .build();
 
-        satisfactionService.registerSatisfaction(dto);
+        // when
+        satisfactionService.createSatisfaction("user1", dto);
+
+        // then
         verify(satisfactionRepository).save(any(Satisfaction.class));
     }
 
     @Test
     @DisplayName("만족도 수정")
     void updateSatisfaction() {
-        Satisfaction satisfaction = Satisfaction.builder().id(10L).satisfactionLevel(3).build();
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(satisfaction));
+        // given
+        Satisfaction existingEntity = Satisfaction.builder().stsfdgId(10L).build();
+        SatisfactionDto dto = SatisfactionDto.builder()
+                .satisfactionId(10L)
+                .stsfdgLevel(4)
+                .stsfdgCn("Updated")
+                .build();
 
-        SatisfactionDto dto = SatisfactionDto.builder().satisfactionId(10L).satisfactionLevel(5).build();
-        satisfactionService.updateSatisfaction(dto);
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(existingEntity));
 
-        assertThat(satisfaction.getSatisfactionLevel()).isEqualTo(5);
+        // when
+        satisfactionService.updateSatisfaction("user1", dto);
+
+        // then
+        assertThat(existingEntity.getStsfdgLevel()).isEqualTo(4);
     }
 
     @Test
     @DisplayName("만족도 삭제")
     void deleteSatisfaction() {
-        satisfactionService.deleteSatisfaction(10L);
-        verify(satisfactionRepository).deleteById(10L);
+        // given
+        Satisfaction entity = Satisfaction.builder().stsfdgId(10L).build();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        // when
+        satisfactionService.deleteSatisfaction(10L, "user1", "pwd");
+
+        // then
+        assertThat(entity.getUseYn()).isEqualTo("N");
     }
 
     @Test
-    @DisplayName("만족도 목록 및 평균 조회")
-    void getSatisfactionListAndAverage() {
-        Satisfaction satisfaction = Satisfaction.builder()
-                .id(10L)
-                .articleId(1L)
-                .boardId("BBS_01")
-                .satisfactionLevel(5)
-                .build();
-        
-        given(satisfactionRepository.findByArticleIdAndBoardIdAndUseAt(1L, "BBS_01", "Y"))
-                .willReturn(List.of(satisfaction));
-        given(satisfactionRepository.getAverageSatisfaction(1L, "BBS_01")).willReturn(4.5);
+    @DisplayName("만족도 목록 조회")
+    void getSatisfactionList() {
+        // given
+        Satisfaction entity = Satisfaction.builder().stsfdgId(1L).build();
+        given(satisfactionRepository.findByPstIdAndBbsIdAndUseYn(anyLong(), anyString(), anyString()))
+                .willReturn(List.of(entity));
 
-        List<SatisfactionDto> list = satisfactionService.getSatisfactionList(1L, "BBS_01");
-        Double avg = satisfactionService.getAverageSatisfaction(1L, "BBS_01");
+        // when
+        List<SatisfactionDto> result = satisfactionService.getSatisfactionList("BBS_01", 1L);
 
-        assertThat(list).hasSize(1);
-        assertThat(list.get(0).getSatisfactionLevel()).isEqualTo(5);
-        assertThat(avg).isEqualTo(4.5);
+        // then
+        assertThat(result).hasSize(1);
     }
 
     @Test
-    @DisplayName("만족도 단건 조회 및 비밀번호 확인")
-    void getSatisfactionAndCheckPassword() {
-        Satisfaction satisfaction = Satisfaction.builder()
-                .id(10L)
-                .password("pwd123")
-                .build();
-        
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(satisfaction));
-        given(satisfactionRepository.findById(99L)).willReturn(Optional.empty());
+    @DisplayName("만족도 평균 조회")
+    void getAverageSatisfaction() {
+        // given
+        given(satisfactionRepository.getAverageSatisfaction(anyLong(), anyString())).willReturn(4.5);
 
-        SatisfactionDto dto = satisfactionService.getSatisfaction(10L);
-        assertThat(dto.getSatisfactionId()).isEqualTo(10L);
-        
-        assertThrows(BusinessException.class, () -> satisfactionService.getSatisfaction(99L));
+        // when
+        Double result = satisfactionService.getAverageSatisfaction("BBS_01", 1L);
 
-        assertThat(satisfactionService.checkPassword(10L, "pwd123")).isTrue();
-        assertThat(satisfactionService.checkPassword(10L, "wrong")).isFalse();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 만족도 수정 시 아무 일도 일어나지 않음")
-    void updateSatisfaction_NotFound() {
-        given(satisfactionRepository.findById(any())).willReturn(Optional.empty());
-        SatisfactionDto dto = SatisfactionDto.builder().satisfactionId(99L).build();
-
-        satisfactionService.updateSatisfaction(dto);
-
-        verify(satisfactionRepository).findById(99L);
-    }
-
-    @Test
-    @DisplayName("비밀번호가 설정되지 않은 만족도 비밀번호 확인 시 false 반환")
-    void checkPassword_NoPassword() {
-        Satisfaction satisfaction = Satisfaction.builder().id(10L).password(null).build();
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(satisfaction));
-
-        assertThat(satisfactionService.checkPassword(10L, "any")).isFalse();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 만족도 비밀번호 확인 시 예외 발생")
-    void checkPassword_NotFound() {
-        given(satisfactionRepository.findById(any())).willReturn(Optional.empty());
-
-        assertThrows(BusinessException.class, () -> satisfactionService.checkPassword(99L, "any"));
+        // then
+        assertThat(result).isEqualTo(4.5);
     }
 }

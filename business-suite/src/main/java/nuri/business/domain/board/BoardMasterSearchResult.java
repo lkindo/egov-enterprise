@@ -23,6 +23,12 @@ public class BoardMasterSearchResult {
     private LocalDateTime createdDate;
 
     // Compatibility getters
-    public String getTmplatId() { return tmplatId; }
+    public String getTmpltId() { return tmplatId; }
     public String getBbsIntroCn() { return bbsExpln; }
+    public String getBbsNm() { return bbsTtl; }
+    public String getBbsTyCode() { return bbsTypeCd; }
+    public String getBbsTyCodeNm() { return bbsTypeCdNm; }
+    public String getBbsAttrbCode() { return bbsAttrCd; }
+    public String getBbsAttrbCodeNm() { return bbsAttrCdNm; }
+    public String getUseAt() { return useYn; }
 }

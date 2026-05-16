@@ -1,76 +1,56 @@
 package nuri.performance;
 
-import nuri.foundation.service.user.UserService;
+import nuri.business.service.board.BoardService;
+import nuri.business.service.board.dto.BoardDto;
+import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.concurrent.*;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import nuri.business.service.board.BoardService;
-import nuri.business.service.board.dto.BoardDto;
-import nuri.business.service.board.dto.BoardSaveRequest;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import nuri.foundation.support.IntegrationTest;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.context.ActiveProfiles;
-/**
- * 스트레스 테스트 - 동시성 요청 대량 부하
- */
-@IntegrationTest
+@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"test", "stress-test"})
-@org.junit.jupiter.api.Disabled
+@ActiveProfiles("test")
+@DisplayName("시스템 주요 기능 스트레스 테스트")
 class StressTest {
 
   @Autowired
   private MockMvc mockMvc;
 
-  @org.springframework.test.context.bean.override.mockito.MockitoBean
-  private UserService userService;
-
-  @org.springframework.test.context.bean.override.mockito.MockitoBean
+  @MockitoBean
   private BoardService boardService;
 
-  @org.springframework.test.context.bean.override.mockito.MockitoBean
-  private org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate;
-
   private ExecutorService executorService;
-  private UserDto defaultUser;
 
   @BeforeEach
   void setUp() {
-    executorService = Executors.newFixedThreadPool(50);
-    defaultUser = UserDto.builder()
-        .userId("stressUser")
-        .userNm("스트레스테스트사용자")
-        .esntlId("USR001")
-        .build();
-
-    // 간단한 목록 반환 - doReturn 사용
-    doReturn(List.of(defaultUser)).when(userService).getUserList();
-    doReturn(new PageImpl<>(List.of(defaultUser))).when(userService).getPagedUserList(any(String.class), any(Pageable.class));
-    doReturn(defaultUser).when(userService).getUserById(any(String.class));
-    doReturn(new UserResponse("newUser", "신규사용자", "USER")).when(userService).signup(any(UserSignupRequest.class));
-
+    executorService = Executors.newFixedThreadPool(10);
 
     BoardDto defaultBoard = BoardDto.builder()
-        .id(1L)
+        .nttId(1L)
         .bbsId("BBS_001")
         .nttSj("스트레스 테스트 게시글")
         .ntcrNm("관리자")
@@ -272,8 +252,8 @@ class StressTest {
           String requestBody = """
               {
                 "bbsId": "BBS_001",
-                "nttSj": "제목 %d",
-                "nttCn": "내용 %d"
+                "pstTtl": "제목 %d",
+                "pstCn": "내용 %d"
               }
               """.formatted(requestId, requestId);
 

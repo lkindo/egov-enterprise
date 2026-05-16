@@ -38,9 +38,25 @@ public class BoardMasterDto {
     private String authFlag;
     private String tmplatCours;
 
-    // Compatibility getters
+    // Compatibility getters for UI
+    public String getBbsNm() { return bbsTtl; }
+    public void setBbsNm(String v) { this.bbsTtl = v; }
+    public String getBbsTyCode() { return bbsTypeCd; }
+    public void setBbsTyCode(String v) { this.bbsTypeCd = v; }
+    public String getBbsAttrbCode() { return bbsAttrCd; }
+    public void setBbsAttrbCode(String v) { this.bbsAttrCd = v; }
+    public String getBbsIntrcn() { return bbsExpln; }
+    public void setBbsIntrcn(String v) { this.bbsExpln = v; }
     public String getBbsIntroCn() { return bbsExpln; }
     public void setBbsIntroCn(String bbsIntroCn) { this.bbsExpln = bbsIntroCn; }
+    public String getReplyPosblAt() { return replyPsblYn; }
+    public void setReplyPosblAt(String v) { this.replyPsblYn = v; }
+    public String getFileAtchPosblAt() { return fileAtchPsblYn; }
+    public void setFileAtchPosblAt(String v) { this.fileAtchPsblYn = v; }
+    public String getUseAt() { return useYn; }
+    public void setUseAt(String v) { this.useYn = v; }
+    public String getTmpltId() { return tmplatId; }
+    public void setTmpltId(String v) { this.tmplatId = v; }
 
     public static BoardMasterDto from(BoardMaster entity) {
         if (entity == null)

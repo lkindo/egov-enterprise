@@ -36,25 +36,25 @@ class UserAbsenceServiceImplTest {
     @DisplayName("부재 목록 조회 성공")
     void getAbsences_Success() {
         // given
-        UserAbsence absence = UserAbsence.builder().emplyrId("user1").build();
+        UserAbsence absence = UserAbsence.builder().userId("user1").build();
         given(userAbsenceRepository.findAll()).willReturn(List.of(absence));
-        given(userAbsenceMapper.toDtoList(any())).willReturn(List.of(UserAbsenceDto.builder().emplyrId("user1").build()));
+        given(userAbsenceMapper.toDtoList(any())).willReturn(List.of(UserAbsenceDto.builder().userId("user1").build()));
 
         // when
         List<UserAbsenceDto> result = userAbsenceService.getAbsences();
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getEmplyrId()).isEqualTo("user1");
+        assertThat(result.get(0).getUserId()).isEqualTo("user1");
     }
 
     @Test
     @DisplayName("부재 정보 상세 조회 성공 - 데이터 있음")
     void getAbsence_Found() {
         // given
-        UserAbsence absence = UserAbsence.builder().emplyrId("user1").userAbsnceAt("Y").build();
+        UserAbsence absence = UserAbsence.builder().userId("user1").userAbsnceAt("Y").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
-        given(userAbsenceMapper.toDto(any())).willReturn(UserAbsenceDto.builder().emplyrId("user1").userAbsnceAt("Y").build());
+        given(userAbsenceMapper.toDto(any())).willReturn(UserAbsenceDto.builder().userId("user1").userAbsnceAt("Y").build());
 
         // when
         UserAbsenceDto result = userAbsenceService.getAbsence("user1");
@@ -70,7 +70,7 @@ class UserAbsenceServiceImplTest {
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.empty());
         given(userAbsenceMapper.toDto(any())).willAnswer(inv -> {
             UserAbsence a = inv.getArgument(0);
-            return UserAbsenceDto.builder().emplyrId(a.getEmplyrId()).userAbsnceAt(a.getUserAbsnceAt()).build();
+            return UserAbsenceDto.builder().userId(a.getUserId()).userAbsnceAt(a.getUserAbsnceAt()).build();
         });
 
         // when
@@ -84,7 +84,7 @@ class UserAbsenceServiceImplTest {
     @DisplayName("부재 정보 수정 성공")
     void updateAbsence_Success() {
         // given
-        UserAbsence absence = UserAbsence.builder().emplyrId("user1").build();
+        UserAbsence absence = UserAbsence.builder().userId("user1").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
         UserAbsenceDto dto = UserAbsenceDto.builder().userAbsnceAt("Y").build();
 

@@ -60,7 +60,7 @@ class NoteDomainTest {
         assertEquals("N", trnsmit.getDeleteAt());
         
         // Value present
-        trnsmit = NoteTrnsmit.builder().deleteAt("Y").build();
+        trnsmit = NoteTrnsmit.builder().delYn("Y").build();
         onCreate.invoke(trnsmit);
         assertEquals("Y", trnsmit.getDeleteAt());
     }

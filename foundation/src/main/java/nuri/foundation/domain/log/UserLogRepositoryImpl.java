@@ -41,11 +41,11 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {
             String fromDe = searchBgnDe.replace("-", "");
             String toDe = searchEndDe.replace("-", "");
-            predicates.add(cb.between(root.get("occrrncDe"), fromDe, toDe));
+            predicates.add(cb.between(root.get("ocrnYmd"), fromDe, toDe));
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
-        cq.orderBy(cb.desc(root.get("occrrncDe")));
+        cq.orderBy(cb.desc(root.get("ocrnYmd")));
 
         TypedQuery<UserLog> query = entityManager.createQuery(cq);
         query.setFirstResult((int) pageable.getOffset());
@@ -65,7 +65,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {
             String fromDe = searchBgnDe.replace("-", "");
             String toDe = searchEndDe.replace("-", "");
-            countPredicates.add(cb.between(countRoot.get("occrrncDe"), fromDe, toDe));
+            countPredicates.add(cb.between(countRoot.get("ocrnYmd"), fromDe, toDe));
         }
 
         countCq.where(countPredicates.toArray(new Predicate[0]));
@@ -80,7 +80,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_USER_LOG WHERE OCCRRNC_DE < :targetDe";
+        String sql = "DELETE FROM TB_USER_LOG WHERE OCRN_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

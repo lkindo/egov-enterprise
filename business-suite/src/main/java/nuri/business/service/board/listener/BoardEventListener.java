@@ -27,23 +27,23 @@ public class BoardEventListener {
     @EventListener
     @Transactional
     public void handleCommentCreated(CommentCreatedEvent event) {
-        log.debug(">>> Handling CommentCreatedEvent for pstId: {}", event.getPstId());
-        updateCommentCount(event.getPstId(), event.getBbsId());
+        log.debug(">>> Handling CommentCreatedEvent for pstId: {}", event.getNttId());
+        updateCommentCount(event.getNttId(), event.getBbsId());
     }
 
     @Async("taskExecutor")
     @EventListener
     @Transactional
     public void handleCommentDeleted(CommentDeletedEvent event) {
-        log.debug(">>> Handling CommentDeletedEvent for pstId: {}", event.getPstId());
-        updateCommentCount(event.getPstId(), event.getBbsId());
+        log.debug(">>> Handling CommentDeletedEvent for pstId: {}", event.getNttId());
+        updateCommentCount(event.getNttId(), event.getBbsId());
     }
 
     private void updateCommentCount(Long pstId, String bbsId) {
         long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
         
         boardRepository.findById(pstId).ifPresent(board -> {
-            // board.updateCommentCount((int) count); // Removed in v5
+            // boardboard.setCommentCnt((int) count); // Removed in v5
             log.info(">>> Comment count updated (pstId={}), but denormalized field removed in v5", pstId);
         });
     }

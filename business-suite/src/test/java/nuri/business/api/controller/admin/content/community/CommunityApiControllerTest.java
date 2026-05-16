@@ -83,7 +83,7 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 상세 조회")
     void getCommunity() throws Exception {
         CommunityDto dto = new CommunityDto();
-        dto.setCmmntyId("C1");
+        dto.setCmntyId("C1");
         when(communityService.getCommunity("C1")).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/content/community/C1"))
@@ -95,10 +95,10 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 생성")
     void createCommunity() throws Exception {
         CommunityDto requestDto = new CommunityDto();
-        requestDto.setCmmntyNm("New Community");
+        requestDto.setCmntyTtl("New Community");
         
         CommunityDto responseDto = new CommunityDto();
-        responseDto.setCmmntyId("C1");
+        responseDto.setCmntyId("C1");
         
         when(communityService.createCommunity(eq("user"), any(CommunityDto.class))).thenReturn(responseDto);
 
@@ -108,14 +108,14 @@ class CommunityApiControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.cmmntyId").value("C1"));
+                .andExpect(jsonPath("$.data.cmntyId").value("C1"));
     }
 
     @Test
     @DisplayName("커뮤니티 수정")
     void updateCommunity() throws Exception {
         CommunityDto dto = new CommunityDto();
-        dto.setCmmntyNm("Updated Community");
+        dto.setCmntyTtl("Updated Community");
 
         doNothing().when(communityService).updateCommunity(eq("user"), any(CommunityDto.class));
 

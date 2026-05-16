@@ -16,21 +16,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LoginPolicyDto {
     /** 사용자 ID */
-    private String emplyrId;
+    private String userId;
     /** 사용자명 */
-    private String emplyrNm;
-    /** IP 정보 */
-    private String ipInfo;
+    private String userNm;
+    /** IP 주소 */
+    private String ipAddr;
     /** 중복 로그인 허용 여부 */
-    private String dplctPermAt;
+    private String dpcnPrmYn;
     /** 제한 여부 */
-    private String lmttAt;
+    private String lmtYn;
     /** 접속 시작 시간 (HH:mm) */
-    private String startTime;
+    private String bgngTm;
     /** 접속 종료 시간 (HH:mm) */
-    private String endTime;
+    private String endTm;
     /** OTP 사용 여부 */
-    private String otpEnabledAt;
+    private String otpUseYn;
     /** 등록 여부 */
     private String regYn;
     /** 등록자 ID */
@@ -38,16 +38,16 @@ public class LoginPolicyDto {
     /** 수정자 ID */
     private String lastUpdusrId;
 
-    // Compatibility getters for legacy JSP
-    public String getIpAdres() {
-        return ipInfo;
-    }
-
-    public String getDplctLoginAt() {
-        return dplctPermAt;
-    }
-
-    public String getLastUpdtPntTM() {
-        return "";
-    } // Placeholder as it might be from BaseTimeEntity or separate field
+    // Compatibility getters
+    public String getEmplyrId() { return userId; }
+    public String getEmplyrNm() { return userNm; }
+    public String getIpInfo() { return ipAddr; }
+    public String getDplctPermAt() { return dpcnPrmYn; }
+    public String getLmttAt() { return lmtYn; }
+    public String getStartTime() { return bgngTm; }
+    public String getEndTime() { return endTm; }
+    public String getOtpEnabledAt() { return otpUseYn; }
+    
+    public String getIpAdres() { return ipAddr; }
+    public String getDplctLoginAt() { return dpcnPrmYn; }
 }

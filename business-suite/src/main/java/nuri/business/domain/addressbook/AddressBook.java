@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * 주소록 정보 JPA Entity
- * 테이블명: nadbkmanage (기존: COMTNADBKINFO)
+ * 테이블명: TB_ADBK_MANAGE
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -42,14 +42,18 @@ public class AddressBook extends BaseEntity {
     private String trgetOrgnztId;
 
     @Column(name = "use_yn", length = 1)
-    private String useAt;
+    private String useYn;
 
     @Column(name = "wrter_id", length = 20)
     private String wrterId;
 
-    public void update(String adbkNm, String othbcScope, String useAt) {
+    public void update(String adbkNm, String othbcScope, String useYn) {
         this.adbkNm = adbkNm;
         this.othbcScope = othbcScope;
-        this.useAt = useAt;
+        this.useYn = useYn;
     }
+
+    // legacy
+    public String getUseAt() { return useYn; }
+    public void setUseAt(String v) { this.useYn = v; }
 }

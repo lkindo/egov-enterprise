@@ -11,9 +11,9 @@ import org.springframework.lang.NonNull;
 public record BoardSaveRequest(
                 @Schema(description = "Board ID") @NotBlank(message = "Board ID is required.") @Size(max = 20) @NonNull String bbsId,
 
-                @Schema(description = "Post Subject") @NotBlank(message = "Subject is required.") @Size(min = 1, max = 100, message = "Subject must be between 1 and 100 characters.") @NonNull String pstTtl,
+                @Schema(description = "Post Subject") @NotBlank(message = "Subject is required.") @Size(min = 1, max = 100, message = "Subject must be between 1 and 100 characters.") @NonNull String nttSj,
 
-                @Schema(description = "Post Content") @NotBlank(message = "Content is required.") @Size(max = 4000) @NonNull String pstCn,
+                @Schema(description = "Post Content") @NotBlank(message = "Content is required.") @Size(max = 4000) @NonNull String nttCn,
 
                 @Schema(description = "Notice Start Date") @Size(max = 10) String ntceBgngYmd,
 

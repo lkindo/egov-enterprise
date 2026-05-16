@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 import org.hibernate.annotations.SQLRestriction;
@@ -13,6 +14,7 @@ import org.hibernate.annotations.SQLRestriction;
 import java.io.Serializable;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
@@ -27,19 +29,19 @@ public class Board extends BaseEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pstIdSeq")
     @SequenceGenerator(name = "pstIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
     @Column(name = "PST_ID")
-    private Long pstId;
+    private Long nttId;
 
     @Column(name = "BBS_ID", nullable = false)
     private String bbsId;
 
     @Column(name = "REPLY_SN")
-    private Long pstSn;
+    private Long nttNo;
 
     @Column(name = "PST_TTL", length = 2000)
-    private String pstTtl;
+    private String nttSj;
 
     @Column(name = "PST_CN")
-    private String pstCn;
+    private String nttCn;
 
     @Column(name = "UP_PST_ID")
     private Long parnts;
@@ -49,6 +51,10 @@ public class Board extends BaseEntity implements Serializable {
 
     @Column(name = "SJ_BOLD_YN", length = 1)
     private String sjBoldYn;
+
+    @Column(name = "REPLY_LC")
+    @Builder.Default
+    private Integer replyLc = 0;
 
     @Column(name = "INQ_CNT")
     @Builder.Default
@@ -95,11 +101,19 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "LIKE_CNT")
     @Builder.Default
     private Integer likeCo = 0;
+    
+    @Transient
+    @Builder.Default
+    private Integer commentCnt = 0;
+    
+    @Transient
+    @Builder.Default
+    private Integer fileCnt = 0;
 
-    public void update(String pstTtl, String pstCn, String ntcrId, String ntcrNm, String password, String ntceBgngYmd,
+    public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgngYmd,
             String ntceEndYmd, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretYn) {
-        this.pstTtl = pstTtl;
-        this.pstCn = pstCn;
+        this.nttSj = nttSj;
+        this.nttCn = nttCn;
         this.ntcrId = ntcrId;
         this.ntcrNm = ntcrNm;
         this.password = password;
@@ -123,8 +137,8 @@ public class Board extends BaseEntity implements Serializable {
         this.inqireCo++;
     }
 
-    public void updateReplyOrder(Long pstSn) {
-        this.pstSn = pstSn;
+    public void updateReplyOrder(Long nttNo) {
+        this.nttNo = nttNo;
     }
 
     public void increaseLikeCo() {
@@ -133,4 +147,10 @@ public class Board extends BaseEntity implements Serializable {
         }
         this.likeCo++;
     }
+
+    // aliases for standard names if needed
+    public Long getPstId() { return nttId; }
+    public String getPstTtl() { return nttSj; }
+    public String getPstCn() { return nttCn; }
+    public Long getPstSn() { return nttNo; }
 }

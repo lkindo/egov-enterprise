@@ -17,6 +17,16 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
     Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 
+    // legacy
+    default Page<NoteTrnsmit> searchSentNotes(String dsptchUserId, String searchWrd, Pageable pageable) {
+        return searchNoteTrnsmits(null, searchWrd, dsptchUserId, pageable);
+    }
+
     @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND t.deleteAt = 'N'")
     Page<NoteTrnsmit> findByDsptchUserId(@Param("dsptchUserId") String dsptchUserId, Pageable pageable);
+    
+    // legacy
+    default Page<NoteTrnsmit> findByTrnsmiterId(String dsptchUserId, Pageable pageable) {
+        return findByDsptchUserId(dsptchUserId, pageable);
+    }
 }

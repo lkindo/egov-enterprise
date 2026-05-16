@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * FAQ 정보 Entity
- * 매핑 테이블: NFAQINFO
+ * 매핑 테이블: TB_FAQ_INFO
  */
 @Entity
 @Table(name = "TB_FAQ_INFO")
@@ -26,7 +26,7 @@ public class Faq extends BaseEntity {
     private String faqId;
 
     @Column(name = "QESTN_SJ", length = 255, nullable = false)
-    private String qestnSj;
+    private String qestnTtl;
 
     @Column(name = "QESTN_CN", columnDefinition = "TEXT")
     private String qestnCn;
@@ -41,8 +41,8 @@ public class Faq extends BaseEntity {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    public void update(String qestnSj, String qestnCn, String answerCn, String atchFileId) {
-        this.qestnSj = qestnSj;
+    public void update(String qestnTtl, String qestnCn, String answerCn, String atchFileId) {
+        this.qestnTtl = qestnTtl;
         this.qestnCn = qestnCn;
         this.answerCn = answerCn;
         this.atchFileId = atchFileId;
@@ -55,4 +55,8 @@ public class Faq extends BaseEntity {
     public void increaseViewCount() {
         this.increaseInqireCo();
     }
+
+    // legacy
+    public String getQestnSj() { return qestnTtl; }
+    public void setQestnSj(String v) { this.qestnTtl = v; }
 }

@@ -11,10 +11,10 @@ class LoginPolicyTest {
     @DisplayName("LoginPolicy 빌더 확인")
     void testBuilder() {
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("user01")
-                .ipInfo("127.0.0.1")
+                .userId("user01")
+                .ipAddr("127.0.0.1")
                 .build();
 
-        assertEquals("user01", policy.getEmplyrId());
+        assertEquals("user01", policy.getUserId());
     }
 }

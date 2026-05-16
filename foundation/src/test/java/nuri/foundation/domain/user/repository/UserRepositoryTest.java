@@ -35,7 +35,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .esntlId("USR_000000000001")
                 .userNm("테스트유저")
                 .password("password")
-                .emailAdres("test@example.com")
+                .emlAddr("test@example.com")
                 .role(Role.USER)
                 .build();
         userRepository.save(testUser);
