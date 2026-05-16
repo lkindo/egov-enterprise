@@ -33,7 +33,7 @@ public class BoardPredicate {
             } else if ("1".equals(condition.getSearchCnd())) { // Content
                 builder.and(pstCnContains(searchWrd));
             } else if ("2".equals(condition.getSearchCnd())) { // Writer
-                builder.and(ntcrNmContains(searchWrd));
+                builder.and(userNmContains(searchWrd));
             }
         }
 
@@ -46,11 +46,11 @@ public class BoardPredicate {
         }
 
         if (StringUtils.hasText(condition.getQnaStatus())) {
-            builder.and(QBoard.board.qnaStatus.eq(condition.getQnaStatus()));
+            builder.and(QBoard.board.qnaSttsCd.eq(condition.getQnaStatus()));
         }
 
         if (StringUtils.hasText(condition.getQnaCategory())) {
-            builder.and(QBoard.board.qnaCategory.eq(condition.getQnaCategory()));
+            builder.and(QBoard.board.qnaCatCd.eq(condition.getQnaCategory()));
         }
 
         return builder;
@@ -61,14 +61,14 @@ public class BoardPredicate {
     }
 
     public static BooleanExpression pstTtlContains(String pstTtl) {
-        return QBoard.board.nttSj.contains(pstTtl);
+        return QBoard.board.pstTtl.contains(pstTtl);
     }
 
     public static BooleanExpression pstCnContains(String pstCn) {
-        return QBoard.board.nttCn.contains(pstCn);
+        return QBoard.board.pstCn.contains(pstCn);
     }
 
-    public static BooleanExpression ntcrNmContains(String ntcrNm) {
-        return QBoard.board.ntcrNm.contains(ntcrNm);
+    public static BooleanExpression userNmContains(String userNm) {
+        return QBoard.board.userNm.contains(userNm);
     }
 }

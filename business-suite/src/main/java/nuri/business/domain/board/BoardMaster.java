@@ -41,11 +41,11 @@ public class BoardMaster extends BaseEntity {
     private String bbsTypeCd;
 
     @Column(name = "BBS_ATRB_CD", length = 12, nullable = false)
-    private String bbsAttrCd;
+    private String bbsAtrbCd;
 
     @Column(name = "ANS_PSBLTY_YN", length = 1)
     @Builder.Default
-    private String replyPsblYn = "N";
+    private String ansPsblYn = "N";
 
     @Column(name = "FILE_ATCH_PSBLTY_YN", length = 1, nullable = false)
     @Builder.Default
@@ -114,12 +114,12 @@ public class BoardMaster extends BaseEntity {
         this.optnLastUpdtPnttm = LocalDateTime.now();
     }
 
-    public void update(String bbsTtl, String bbsExpln, String replyPsblYn, String fileAtchPsblYn,
+    public void update(String bbsTtl, String bbsExpln, String ansPsblYn, String fileAtchPsblYn,
             Integer atchPsblFileCnt, Long atchPsblFileSize, String tmplatId, String useYn,
             String commentYn, String stsfdgYn) {
         this.bbsTtl = bbsTtl;
         this.bbsExpln = bbsExpln;
-        this.replyPsblYn = replyPsblYn;
+        this.ansPsblYn = ansPsblYn;
         this.fileAtchPsblYn = fileAtchPsblYn;
         this.atchPsblFileCnt = atchPsblFileCnt;
         this.atchPsblFileSize = atchPsblFileSize;
@@ -131,7 +131,7 @@ public class BoardMaster extends BaseEntity {
 
     public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
     public void updateBbsExpln(String bbsExpln) { this.bbsExpln = bbsExpln; }
-    public void updateReplyPsblYn(String replyPsblYn) { this.replyPsblYn = replyPsblYn; }
+    public void updateAnsPsblYn(String ansPsblYn) { this.ansPsblYn = ansPsblYn; }
     public void updateFileAtchPsblYn(String fileAtchPsblYn) { this.fileAtchPsblYn = fileAtchPsblYn; }
     public void updateAtchPsblFileCnt(Integer atchPsblFileCnt) { this.atchPsblFileCnt = atchPsblFileCnt; }
     public void updateAtchPsblFileSize(Long atchPsblFileSize) { this.atchPsblFileSize = atchPsblFileSize; }
@@ -147,8 +147,8 @@ public class BoardMaster extends BaseEntity {
     // legacy
     public String getBbsNm() { return bbsTtl; }
     public String getBbsTyCode() { return bbsTypeCd; }
-    public String getBbsAttrbCode() { return bbsAttrCd; }
-    public String getReplyPosblAt() { return replyPsblYn; }
+    public String getBbsAttrbCode() { return bbsAtrbCd; }
+    public String getReplyPosblAt() { return ansPsblYn; }
     public String getFileAtchPosblAt() { return fileAtchPsblYn; }
     public Integer getAtchPosblFileNumber() { return atchPsblFileCnt; }
     public String getBbsIntrcn() { return bbsExpln; }
@@ -156,4 +156,6 @@ public class BoardMaster extends BaseEntity {
     public Long getAtchPosblFileSize() { return atchPsblFileSize; }
     public String getCommentAt() { return commentYn; }
     public String getStsfdgAt() { return stsfdgYn; }
+    public String getBbsAttrCd() { return bbsAtrbCd; }
+    public String getReplyPsblYn() { return ansPsblYn; }
 }

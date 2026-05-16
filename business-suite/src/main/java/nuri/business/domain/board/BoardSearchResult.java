@@ -12,31 +12,43 @@ import java.time.LocalDateTime;
 @Builder
 public class BoardSearchResult {
     private String bbsId;
-    private Long nttId;
-    private String nttSj;
+    private Long pstId;
+    private String pstTtl;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
-    private Integer inqireCo;
-    private Integer likeCo;
-    private Long parnts;
+    private Integer inqCnt;
+    private Integer likeCnt;
+    private Long upPstId;
     private String replyYn;
     private Integer replyLc;
     private String useYn;
     private String atchFileId;
-    private String ntceBgngYmd;
-    private String ntceEndYmd;
-    private String sjBoldYn;
+    private String bgngYmd;
+    private String endYmd;
+    private String ttlBoldYn;
     private String noticeYn;
     private String secretYn;
     private Integer commentCnt; 
     private LocalDateTime eventDate;
-    private String qnaStatus;
-    private String qnaCategory;
-    private Long nttNo;
+    private String qnaSttsCd;
+    private String qnaCatCd;
+    private Long pstSn;
 
     // legacy / aliases
-    public Long getPstId() { return nttId; }
-    public String getPstTtl() { return nttSj; }
-    public Long getPstSn() { return nttNo; }
+    public Long getNttId() { return pstId; }
+    public String getNttSj() { return pstTtl; }
+    public Long getNttNo() { return pstSn; }
+    public Integer getInqireCo() { return inqCnt; }
+    public Integer getLikeCo() { return likeCnt; }
+    public Long getParnts() { return upPstId; }
+    public String getNtceBgngYmd() { return bgngYmd; }
+    public String getNtceEndYmd() { return endYmd; }
+    public String getSjBoldYn() { return ttlBoldYn; }
+    public String getQnaStatus() { return qnaSttsCd; }
+    public String getQnaCategory() { return qnaCatCd; }
+
+    public Long getPstId() { return pstId; }
+    public String getPstTtl() { return pstTtl; }
+    public Long getPstSn() { return pstSn; }
 }

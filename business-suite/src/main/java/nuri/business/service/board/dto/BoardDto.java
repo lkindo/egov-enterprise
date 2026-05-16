@@ -32,34 +32,34 @@ public class BoardDto {
     private String pstCn;
 
     @Schema(description = "상위 게시글 ID")
-    private Long parnts;
+    private Long upPstId;
 
     @Schema(description = "정렬 순서")
     private Long sortOrdr;
 
     @Schema(description = "제목 굵게 표시 여부")
-    private String sjBoldYn;
+    private String ttlBoldYn;
 
     @Schema(description = "조회수")
-    private Integer inqireCo;
+    private Integer inqCnt;
 
     @Schema(description = "사용 여부")
     private String useYn;
 
     @Schema(description = "게시 시작일")
-    private String ntceBgngYmd;
+    private String bgngYmd;
 
     @Schema(description = "게시 종료일")
-    private String ntceEndYmd;
+    private String endYmd;
 
     @Schema(description = "작성자 ID")
-    private String ntcrId;
+    private String userId;
 
     @Schema(description = "작성자명")
-    private String ntcrNm;
+    private String userNm;
 
     @Schema(description = "비밀번호")
-    private String password;
+    private String pswd;
 
     @Schema(description = "첨부파일 ID")
     private String atchFileId;
@@ -74,13 +74,13 @@ public class BoardDto {
     private LocalDateTime eventDate;
 
     @Schema(description = "QNA 상태")
-    private String qnaStatus;
+    private String qnaSttsCd;
 
     @Schema(description = "QNA 카테고리")
-    private String qnaCategory;
+    private String qnaCatCd;
 
     @Schema(description = "좋아요수")
-    private Integer likeCo;
+    private Integer likeCnt;
 
     @Schema(description = "댓글수")
     private Integer commentCnt;
@@ -131,12 +131,36 @@ public class BoardDto {
     public void setNttId(Long v) { this.pstId = v; }
 
     public String getFrstRegisterNm() {
-        return ntcrNm != null ? ntcrNm : frstRegisterNm;
+        return userNm != null ? userNm : frstRegisterNm;
     }
 
     public LocalDateTime getCreatedDate() {
         return frstRegisterPnttm;
     }
+
+    public String getNtcrId() { return userId; }
+    public String getNtcrNm() { return userNm; }
+    public String getPassword() { return pswd; }
+    public String getNtceBgngYmd() { return bgngYmd; }
+    public String getNtceEndYmd() { return endYmd; }
+    public Integer getInqireCo() { return inqCnt; }
+    public Integer getLikeCo() { return likeCnt; }
+    public String getQnaStatus() { return qnaSttsCd; }
+    public String getQnaCategory() { return qnaCatCd; }
+    public String getSjBoldYn() { return ttlBoldYn; }
+    public Long getParnts() { return upPstId; }
+
+    public void setNtcrId(String v) { this.userId = v; }
+    public void setNtcrNm(String v) { this.userNm = v; }
+    public void setPassword(String v) { this.pswd = v; }
+    public void setNtceBgngYmd(String v) { this.bgngYmd = v; }
+    public void setNtceEndYmd(String v) { this.endYmd = v; }
+    public void setInqireCo(Integer v) { this.inqCnt = v; }
+    public void setLikeCo(Integer v) { this.likeCnt = v; }
+    public void setQnaStatus(String v) { this.qnaSttsCd = v; }
+    public void setQnaCategory(String v) { this.qnaCatCd = v; }
+    public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
+    public void setParnts(Long v) { this.upPstId = v; }
 
     public abstract static class BoardDtoBuilder<C extends BoardDto, B extends BoardDtoBuilder<C, B>> {
         public B nttId(Long nttId) { this.pstId = nttId; return self(); }
@@ -144,5 +168,12 @@ public class BoardDto {
         public B nttCn(String nttCn) { this.pstCn = nttCn; return self(); }
         public B nttNo(Long nttNo) { this.pstSn = nttNo; return self(); }
         public B id(Long id) { this.pstId = id; return self(); }
+        public B ntcrId(String ntcrId) { this.userId = ntcrId; return self(); }
+        public B ntcrNm(String ntcrNm) { this.userNm = ntcrNm; return self(); }
+        public B password(String password) { this.pswd = password; return self(); }
+        public B inqireCo(Integer inqireCo) { this.inqCnt = inqireCo; return self(); }
+        public B likeCo(Integer likeCo) { this.likeCnt = likeCo; return self(); }
+        public B qnaStatus(String qnaStatus) { this.qnaSttsCd = qnaStatus; return self(); }
+        public B qnaCategory(String qnaCategory) { this.qnaCatCd = qnaCategory; return self(); }
     }
 }

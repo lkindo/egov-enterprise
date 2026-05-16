@@ -64,7 +64,7 @@ public class BoardViewCountService {
                     int increment = views.get();
                     boardRepository.findById(pstId).ifPresent(board -> {
                         for (int i = 0; i < increment; i++) {
-                            board.increaseInqireCo();
+                            board.increaseInqCnt();
                         }
                         boardRepository.save(board);
                     });

@@ -27,40 +27,40 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         public Optional<BoardDetailResult> findArticleDetail(@NonNull Long pstId) {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
-                                                QBoardMaster.boardMaster.bbsId,
-                                                QBoard.board.nttId.as("pstId"),
-                                                QBoard.board.nttSj.as("pstTtl"),
-                                                QBoard.board.ntcrId,
-                                                QBoard.board.ntcrNm,
-                                                QBoard.board.nttNo.as("pstSn"),
-                                                QBoard.board.nttCn.as("pstCn"),
-                                                QBoard.board.password,
-                                                QBoard.board.createdBy.as("frstRegisterId"),
-                                                QUser.user.userNm.coalesce(QBoard.board.ntcrNm).as("frstRegisterNm"),
-                                                QBoard.board.createdDate,
-                                                QBoard.board.ntceBgngYmd,
-                                                QBoard.board.ntceEndYmd,
-                                                QBoard.board.inqireCo,
-                                                QBoard.board.likeCo,
-                                                QBoard.board.useYn,
-                                                QBoard.board.atchFileId,
-                                                QBoard.board.parnts,
-                                                QBoard.board.sortOrdr,
-                                                QBoard.board.sjBoldYn,
-                                                QBoard.board.secretYn,
-                                                QBoard.board.eventDate,
-                                                QBoard.board.qnaStatus,
-                                                QBoard.board.qnaCategory,
-                                                QBoardMaster.boardMaster.bbsTypeCd.as("bbsTypeCd"),
-                                                QBoardMaster.boardMaster.replyPsblYn.as("replyPsblYn"),
-                                                QBoardMaster.boardMaster.fileAtchPsblYn.as("fileAtchPsblYn"),
-                                                QBoardMaster.boardMaster.atchPsblFileCnt.as("atchPsblFileCnt"),
-                                                QBoardMaster.boardMaster.bbsTtl.as("bbsTtl")))
+                                                 QBoardMaster.boardMaster.bbsId,
+                                                 QBoard.board.pstId,
+                                                 QBoard.board.pstTtl,
+                                                 QBoard.board.userId,
+                                                 QBoard.board.userNm,
+                                                 QBoard.board.pstSn,
+                                                 QBoard.board.pstCn,
+                                                 QBoard.board.pswd,
+                                                 QBoard.board.createdBy.as("frstRegisterId"),
+                                                 QUser.user.userNm.coalesce(QBoard.board.userNm).as("frstRegisterNm"),
+                                                 QBoard.board.createdDate,
+                                                 QBoard.board.bgngYmd,
+                                                 QBoard.board.endYmd,
+                                                 QBoard.board.inqCnt,
+                                                 QBoard.board.likeCnt,
+                                                 QBoard.board.useYn,
+                                                 QBoard.board.atchFileId,
+                                                 QBoard.board.upPstId,
+                                                 QBoard.board.sortOrdr,
+                                                 QBoard.board.ttlBoldYn,
+                                                 QBoard.board.secretYn,
+                                                 QBoard.board.eventDate,
+                                                 QBoard.board.qnaSttsCd,
+                                                 QBoard.board.qnaCatCd,
+                                                 QBoardMaster.boardMaster.bbsTypeCd.as("bbsTypeCd"),
+                                                 QBoardMaster.boardMaster.ansPsblYn.as("ansPsblYn"),
+                                                 QBoardMaster.boardMaster.fileAtchPsblYn.as("fileAtchPsblYn"),
+                                                 QBoardMaster.boardMaster.atchPsblFileCnt.as("atchPsblFileCnt"),
+                                                 QBoardMaster.boardMaster.bbsTtl.as("bbsTtl")))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(QBoard.board.nttId.eq(pstId))
+                                .where(QBoard.board.pstId.eq(pstId))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);
@@ -75,35 +75,35 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 if (StringUtils.hasText(condition.getOrderBy())) {
                         switch (condition.getOrderBy()) {
                                 case "views":
-                                        orderSpecifier = QBoard.board.inqireCo.desc();
+                                        orderSpecifier = QBoard.board.inqCnt.desc();
                                         break;
-
+ 
                                 case "date":
                                         orderSpecifier = QBoard.board.createdDate.desc();        
                                         break;
                         }
                 }
-
+ 
                 List<BoardSearchResult> results = queryFactory
                                 .select(Projections.fields(BoardSearchResult.class,
-                                                QBoard.board.nttId.as("pstId"),
-                                                QBoard.board.bbsId,
-                                                QBoard.board.nttSj.as("pstTtl"),
-                                                QBoard.board.ntcrNm.as("frstRegisterNm"),
-                                                QBoard.board.createdDate,
-                                                QBoard.board.inqireCo,
-                                                QBoard.board.likeCo,
-                                                QBoard.board.parnts,
-                                                QBoard.board.sortOrdr,
-                                                QBoard.board.nttNo.as("pstSn"),
-                                                QBoard.board.secretYn,
-                                                QBoard.board.eventDate,
-                                                QBoard.board.qnaStatus,
-                                                QBoard.board.qnaCategory))
+                                                 QBoard.board.pstId,
+                                                 QBoard.board.bbsId,
+                                                 QBoard.board.pstTtl,
+                                                 QBoard.board.userNm.as("frstRegisterNm"),
+                                                 QBoard.board.createdDate,
+                                                 QBoard.board.inqCnt,
+                                                 QBoard.board.likeCnt,
+                                                 QBoard.board.upPstId,
+                                                 QBoard.board.sortOrdr,
+                                                 QBoard.board.pstSn,
+                                                 QBoard.board.secretYn,
+                                                 QBoard.board.eventDate,
+                                                 QBoard.board.qnaSttsCd,
+                                                 QBoard.board.qnaCatCd))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)
-                                .orderBy(orderSpecifier, QBoard.board.nttNo.asc())
+                                .orderBy(orderSpecifier, QBoard.board.pstSn.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -126,7 +126,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 List<Board> content = queryFactory
                                 .selectFrom(QBoard.board)
                                 .where(builder)
-                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.nttNo.asc()) 
+                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.pstSn.asc()) 
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -145,7 +145,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         public Optional<Board> findByIdCustom(@NonNull Long pstId) {
                 Board result = queryFactory
                                 .selectFrom(QBoard.board)
-                                .where(QBoard.board.nttId.eq(pstId))
+                                .where(QBoard.board.pstId.eq(pstId))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);

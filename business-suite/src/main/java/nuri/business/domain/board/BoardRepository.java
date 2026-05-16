@@ -27,11 +27,14 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         @Query("SELECT COALESCE(MAX(b.pstId), 0L) FROM Board b")
         Long findMaxPstId();
 
+        @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
+        Optional<Board> findByPstId(@Param("pstId") Long pstId);
+
         long countByBbsIdAndUseYn(String bbsId, String useYn);
 
-        @Query("SELECT COALESCE(SUM(b.inqireCo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
-        long sumInqireCoByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
+        @Query("SELECT COALESCE(SUM(b.inqCnt), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
+        long sumInqCntByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 
-        @Query("SELECT b.ntcrNm FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn GROUP BY b.ntcrNm ORDER BY COUNT(b) DESC LIMIT 1")
+        @Query("SELECT b.userNm FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn GROUP BY b.userNm ORDER BY COUNT(b) DESC LIMIT 1")
         String findTopContributorByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 }

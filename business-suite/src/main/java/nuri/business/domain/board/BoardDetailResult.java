@@ -15,44 +15,61 @@ import java.time.LocalDateTime;
 public class BoardDetailResult {
     // Board fields
     private String bbsId;
-    private Long nttId;
-    private String nttSj;
-    private String ntcrId;
-    private String ntcrNm;
-    private Long nttNo;
-    private String nttCn;
-    private String password;
+    private Long pstId;
+    private String pstTtl;
+    private String userId;
+    private String userNm;
+    private Long pstSn;
+    private String pstCn;
+    private String pswd;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
-    private String ntceBgngYmd;
-    private String ntceEndYmd;
-    private Integer inqireCo;
-    private Integer likeCo;
+    private String bgngYmd;
+    private String endYmd;
+    private Integer inqCnt;
+    private Integer likeCnt;
     private String useYn;
     private String atchFileId;
-    private Long parnts;
+    private Long upPstId;
     private String replyYn;
     private Integer replyLc;
     private Long sortOrdr;
-    private String sjBoldYn;
+    private String ttlBoldYn;
     private String noticeYn;
     private String secretYn;
     private Integer commentCnt;
     private LocalDateTime eventDate;
-    private String qnaStatus;
-    private String qnaCategory;
+    private String qnaSttsCd;
+    private String qnaCatCd;
 
     // BoardMaster fields
     private String bbsTypeCd;
-    private String replyPsblYn;
+    private String ansPsblYn;
     private String fileAtchPsblYn;
     private Integer atchPsblFileCnt;
     private String bbsTtl;
 
     // legacy / aliases
-    public Long getPstId() { return nttId; }
-    public String getPstTtl() { return nttSj; }
-    public String getPstCn() { return nttCn; }
-    public Long getPstSn() { return nttNo; }
+    public Long getNttId() { return pstId; }
+    public String getNttSj() { return pstTtl; }
+    public String getNtcrId() { return userId; }
+    public String getNtcrNm() { return userNm; }
+    public Long getNttNo() { return pstSn; }
+    public String getNttCn() { return pstCn; }
+    public String getPassword() { return pswd; }
+    public String getNtceBgngYmd() { return bgngYmd; }
+    public String getNtceEndYmd() { return endYmd; }
+    public Integer getInqireCo() { return inqCnt; }
+    public Integer getLikeCo() { return likeCnt; }
+    public Long getParnts() { return upPstId; }
+    public String getReplyPsblYn() { return ansPsblYn; }
+    public String getQnaStatus() { return qnaSttsCd; }
+    public String getQnaCategory() { return qnaCatCd; }
+    public String getSjBoldYn() { return ttlBoldYn; }
+
+    public Long getPstId() { return pstId; }
+    public String getPstTtl() { return pstTtl; }
+    public String getPstCn() { return pstCn; }
+    public Long getPstSn() { return pstSn; }
 }
