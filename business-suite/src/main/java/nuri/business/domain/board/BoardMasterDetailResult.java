@@ -8,9 +8,9 @@ public class BoardMasterDetailResult {
     private String bbsId;
     private String bbsTypeCd;
     private String bbsTypeCdNm;
-    private String bbsIntroCn;
-    private String bbsAttrCd;
-    private String bbsAttrCdNm;
+    private String bbsExpln;
+    private String bbsAtrbCd;
+    private String bbsAtrbCdNm;
     private String bbsTtl;
     private String tmplatId;
     private String tmplatNm;
@@ -18,7 +18,7 @@ public class BoardMasterDetailResult {
     private String fileAtchPsblYn;
     private Integer atchPsblFileCnt;
     private Long atchPsblFileSize;
-    private String replyPsblYn;
+    private String ansPsblYn;
     private String frstRegisterId;
     private String frstRegisterNm;
     private String useYn;
@@ -28,11 +28,14 @@ public class BoardMasterDetailResult {
     // legacy
     public String getBbsNm() { return bbsTtl; }
     public String getBbsTyCode() { return bbsTypeCd; }
-    public String getBbsAttrbCode() { return bbsAttrCd; }
-    public String getReplyPosblAt() { return replyPsblYn; }
+    public String getBbsAttrbCode() { return bbsAtrbCd; }
+    public String getBbsAttrCd() { return bbsAtrbCd; }
+    public String getReplyPosblAt() { return ansPsblYn; }
+    public String getReplyPsblYn() { return ansPsblYn; }
     public String getFileAtchPosblAt() { return fileAtchPsblYn; }
     public Integer getAtchPosblFileNumber() { return atchPsblFileCnt; }
-    public String getBbsIntrcn() { return bbsIntroCn; }
+    public String getBbsIntrcn() { return bbsExpln; }
+    public String getBbsIntroCn() { return bbsExpln; }
     public String getTmpltId() { return tmplatId; }
     public Long getAtchPosblFileSize() { return atchPsblFileSize; }
     public String getUseAt() { return useYn; }

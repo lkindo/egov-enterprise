@@ -14,8 +14,8 @@ public class BoardMasterSearchResult {
     private String bbsId;
     private String bbsTypeCd;
     private String bbsTypeCdNm;
-    private String bbsAttrCd;
-    private String bbsAttrCdNm;
+    private String bbsAtrbCd;
+    private String bbsAtrbCdNm;
     private String bbsTtl;
     private String bbsExpln;
     private String tmplatId;
@@ -28,7 +28,9 @@ public class BoardMasterSearchResult {
     public String getBbsNm() { return bbsTtl; }
     public String getBbsTyCode() { return bbsTypeCd; }
     public String getBbsTyCodeNm() { return bbsTypeCdNm; }
-    public String getBbsAttrbCode() { return bbsAttrCd; }
-    public String getBbsAttrbCodeNm() { return bbsAttrCdNm; }
+    public String getBbsAttrbCode() { return bbsAtrbCd; }
+    public String getBbsAttrbCodeNm() { return bbsAtrbCdNm; }
+    public String getBbsAttrCd() { return bbsAtrbCd; }
+    public String getBbsAttrCdNm() { return bbsAtrbCdNm; }
     public String getUseAt() { return useYn; }
 }

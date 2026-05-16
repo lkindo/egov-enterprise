@@ -20,8 +20,8 @@ class BoardMapperTest {
     @DisplayName("Entity -> DTO 변환 테스트")
     void toDtoTest() {
         Board board = Board.builder()
-                .nttId(1L)
-                .nttSj("제목")
+                .pstId(1L)
+                .pstTtl("제목")
                 .createdDate(LocalDateTime.of(2026, 5, 3, 10, 0))
                 .blogId("BLOG1")
                 .build();
@@ -29,7 +29,7 @@ class BoardMapperTest {
         BoardDto dto = mapper.toDto(board);
 
         assertNotNull(dto);
-        assertEquals(1L, dto.getNttId());
+        assertEquals(1L, dto.getPstId());
         assertEquals("1", dto.getKnoId());
         assertEquals("제목", dto.getKnoNm());
         assertEquals("2026-05-03", dto.getFrstRegisterPnttmStr());
@@ -112,7 +112,7 @@ class BoardMapperTest {
         
         assertNotNull(entity);
         assertEquals("Y", entity.getUseYn());
-        assertEquals("OPEN", entity.getQnaStatus());
+        assertEquals("OPEN", entity.getQnaSttsCd());
         assertNull(entity.getEventDate());
     }
 }

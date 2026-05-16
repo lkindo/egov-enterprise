@@ -41,7 +41,7 @@ class BoardMasterServiceLogicTest {
                 .bbsId("BBS_0000000001")
                 .bbsTtl("Test Board")
                 .bbsTypeCd("BBST01")
-                .bbsAttrCd("BBSA01")
+                .bbsAtrbCd("BBSA01")
                 .build();
 
         // when

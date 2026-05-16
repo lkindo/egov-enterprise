@@ -11,15 +11,15 @@ class BoardEntityTest {
     @DisplayName("게시글 수정 테스트")
     void updateTest() {
         Board board = Board.builder()
-                .nttSj("Old Title")
-                .nttCn("Old Content")
+                .pstTtl("Old Title")
+                .pstCn("Old Content")
                 .build();
         
         board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", "FILE_001", null, null, null, "N");
         
-        assertThat(board.getNttSj()).isEqualTo("New Title");
-        assertThat(board.getNttCn()).isEqualTo("New Content");
-        assertThat(board.getNtcrId()).isEqualTo("user01");
+        assertThat(board.getPstTtl()).isEqualTo("New Title");
+        assertThat(board.getPstCn()).isEqualTo("New Content");
+        assertThat(board.getUserId()).isEqualTo("user01");
         assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
     }
 
@@ -33,14 +33,14 @@ class BoardEntityTest {
 
     @Test
     @DisplayName("조회수 증가 테스트")
-    void increaseInqireCoTest() {
-        Board board = Board.builder().inqireCo(10).build();
-        board.increaseInqireCo();
-        assertThat(board.getInqireCo()).isEqualTo(11);
+    void increaseInqCntTest() {
+        Board board = Board.builder().inqCnt(10).build();
+        board.increaseInqCnt();
+        assertThat(board.getInqCnt()).isEqualTo(11);
         
-        Board boardNull = Board.builder().inqireCo(null).build();
-        boardNull.increaseInqireCo();
-        assertThat(boardNull.getInqireCo()).isEqualTo(1);
+        Board boardNull = Board.builder().inqCnt(null).build();
+        boardNull.increaseInqCnt();
+        assertThat(boardNull.getInqCnt()).isEqualTo(1);
     }
 
     @Test

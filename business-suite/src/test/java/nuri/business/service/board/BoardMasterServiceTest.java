@@ -85,14 +85,14 @@ class BoardMasterServiceTest {
     }
     
     private BoardMasterSearchResult mockSearchResult(String bbsId, String bbsTtl) {
-        return new BoardMasterSearchResult() {
-            @Override public String getBbsId() { return bbsId; }
-            @Override public String getBbsTtl() { return bbsTtl; }
-            @Override public String getBbsTypeCd() { return "TY01"; }
-            @Override public String getBbsAttrCd() { return "AT01"; }
-            @Override public String getTmplatId() { return "TMP_01"; }
-            @Override public String getUseAt() { return "Y"; }
-        };
+        return BoardMasterSearchResult.builder()
+                .bbsId(bbsId)
+                .bbsTtl(bbsTtl)
+                .bbsTypeCd("TY01")
+                .bbsAtrbCd("AT01")
+                .tmplatId("TMP_01")
+                .useYn("Y")
+                .build();
     }
 
     @Test

@@ -17,8 +17,8 @@ public class BoardMasterDto {
     private String bbsTtl;
     private String bbsExpln;
     private String bbsTypeCd;
-    private String bbsAttrCd;
-    private String replyPsblYn;
+    private String bbsAtrbCd;
+    private String ansPsblYn;
     private String fileAtchPsblYn;
     private Integer atchPsblFileCnt;
     private Long atchPsblFileSize;
@@ -43,14 +43,18 @@ public class BoardMasterDto {
     public void setBbsNm(String v) { this.bbsTtl = v; }
     public String getBbsTyCode() { return bbsTypeCd; }
     public void setBbsTyCode(String v) { this.bbsTypeCd = v; }
-    public String getBbsAttrbCode() { return bbsAttrCd; }
-    public void setBbsAttrbCode(String v) { this.bbsAttrCd = v; }
+    public String getBbsAttrbCode() { return bbsAtrbCd; }
+    public void setBbsAttrbCode(String v) { this.bbsAtrbCd = v; }
+    public String getBbsAttrCd() { return bbsAtrbCd; }
+    public void setBbsAttrCd(String v) { this.bbsAtrbCd = v; }
     public String getBbsIntrcn() { return bbsExpln; }
     public void setBbsIntrcn(String v) { this.bbsExpln = v; }
     public String getBbsIntroCn() { return bbsExpln; }
     public void setBbsIntroCn(String bbsIntroCn) { this.bbsExpln = bbsIntroCn; }
-    public String getReplyPosblAt() { return replyPsblYn; }
-    public void setReplyPosblAt(String v) { this.replyPsblYn = v; }
+    public String getReplyPosblAt() { return ansPsblYn; }
+    public void setReplyPosblAt(String v) { this.ansPsblYn = v; }
+    public String getReplyPsblYn() { return ansPsblYn; }
+    public void setReplyPsblYn(String v) { this.ansPsblYn = v; }
     public String getFileAtchPosblAt() { return fileAtchPsblYn; }
     public void setFileAtchPosblAt(String v) { this.fileAtchPsblYn = v; }
     public String getUseAt() { return useYn; }
@@ -66,8 +70,8 @@ public class BoardMasterDto {
                 .bbsTtl(entity.getBbsTtl())
                 .bbsExpln(entity.getBbsExpln())
                 .bbsTypeCd(entity.getBbsTypeCd())
-                .bbsAttrCd(entity.getBbsAttrCd())
-                .replyPsblYn(entity.getReplyPsblYn())
+                .bbsAtrbCd(entity.getBbsAtrbCd())
+                .ansPsblYn(entity.getAnsPsblYn())
                 .fileAtchPsblYn(entity.getFileAtchPsblYn())
                 .atchPsblFileCnt(entity.getAtchPsblFileCnt())
                 .atchPsblFileSize(entity.getAtchPsblFileSize())

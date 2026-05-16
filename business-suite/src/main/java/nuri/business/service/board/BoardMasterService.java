@@ -116,7 +116,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .bbsId(projection.getBbsId())
                 .bbsTtl(projection.getBbsTtl())
                 .bbsTypeCd(projection.getBbsTypeCd())
-                .bbsAttrCd(projection.getBbsAttrCd())
+                .bbsAtrbCd(projection.getBbsAttrCd())
                 .tmplatId(projection.getTmpltId())
                 .useYn(projection.getUseYn())
                 .frstRegisterPnttm(projection.getCreatedDate())

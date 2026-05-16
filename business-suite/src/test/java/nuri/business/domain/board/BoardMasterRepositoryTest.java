@@ -58,7 +58,7 @@ class BoardMasterRepositoryTest {
                 .bbsId("BBS_TEST_001")
                 .bbsTtl("Test Board")
                 .bbsTypeCd("COM004")
-                .bbsAttrCd("COM009")
+                .bbsAtrbCd("COM009")
                 .useYn("Y")
                 .build();
 
@@ -81,7 +81,7 @@ class BoardMasterRepositoryTest {
                 .bbsId("BBS_TEST_002")
                 .bbsTtl("Searchable Board")
                 .bbsTypeCd("BBST01")
-                .bbsAttrCd("BBSA01")
+                .bbsAtrbCd("BBSA01")
                 .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
@@ -121,7 +121,7 @@ class BoardMasterRepositoryTest {
                 .bbsId("BBS_DETAIL_001")
                 .bbsTtl("Detail Board")
                 .bbsTypeCd("T1")
-                .bbsAttrCd("A1")
+                .bbsAtrbCd("A1")
                 .useYn("Y")
                 .build();
         boardMasterRepository.save(master);
@@ -149,8 +149,8 @@ class BoardMasterRepositoryTest {
     @DisplayName("미사용 보드 검색 테스트 (notUsedOnly)")
     void searchNotUsedTest() {
         // Given
-        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsTtl("Used").bbsTypeCd("T1").bbsAttrCd("A1").useYn("Y").build();
-        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsTtl("Not Used").bbsTypeCd("T1").bbsAttrCd("A1").useYn("Y").build();
+        BoardMaster masterUsed = BoardMaster.builder().bbsId("BBS_USED").bbsTtl("Used").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build();
+        BoardMaster masterNotUsed = BoardMaster.builder().bbsId("BBS_NOT_USED").bbsTtl("Not Used").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build();
         boardMasterRepository.save(masterUsed);
         boardMasterRepository.save(masterNotUsed);
 

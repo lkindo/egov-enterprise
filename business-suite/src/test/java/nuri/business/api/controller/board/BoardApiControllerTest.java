@@ -39,7 +39,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 목록 조회 성공")
     void getPosts_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().nttId(1L).nttSj("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId(1L).pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -54,7 +54,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 상세 조회 성공")
     void getPost_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().nttId(1L).build());
+        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().pstId(1L).build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/boards/BBS_001/posts/1")

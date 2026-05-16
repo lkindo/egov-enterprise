@@ -43,7 +43,7 @@ class BbsApiControllerTest {
     @DisplayName("게시판 목록 조회 성공")
     void getBoardList_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().nttId(1L).nttSj("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId(1L).pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
@@ -60,7 +60,7 @@ class BbsApiControllerTest {
     @DisplayName("게시글 상세 조회 성공")
     void getBoardDetail_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().nttId(1L).nttSj("Subject").build());
+        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().pstId(1L).pstTtl("Subject").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1/1")
@@ -90,7 +90,7 @@ class BbsApiControllerTest {
     @Test
     @DisplayName("게시판 목록 조회 성공 (검색어 포함)")
     void getBoardList_WithSearch_Success() throws Exception {
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().nttId(1L).build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId(1L).build()));
         given(boardService.getBoardPosts(anyString(), anyString(), anyString(), any(PageRequest.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1")
