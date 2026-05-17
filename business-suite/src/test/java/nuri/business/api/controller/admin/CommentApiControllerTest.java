@@ -47,27 +47,14 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("전체 댓글 목록 조회 - 키워드 없음")
-    void getComments_NoKeyword() throws Exception {
+    @DisplayName("댓글 목록 조회")
+    void getComments() throws Exception {
         Page<CommentDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(commentService.getAllComments(any())).thenReturn(page);
+        when(commentService.getComments(eq("1"), eq("BBS_001"), any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/admin/system/comments")
-                        .param("pageIndex", "1")
-                        .param("searchKeyword", ""))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @DisplayName("전체 댓글 목록 조회 - 키워드 있음")
-    void getComments_WithKeyword() throws Exception {
-        Page<CommentDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(commentService.searchComments(eq("test"), any())).thenReturn(page);
-
-        mockMvc.perform(get("/api/v1/admin/system/comments")
-                        .param("pageIndex", "1")
-                        .param("searchKeyword", "test"))
+        mockMvc.perform(get("/api/v1/admin/comments")
+                        .param("pstId", "1")
+                        .param("bbsId", "BBS_001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -75,9 +62,9 @@ class CommentApiControllerTest {
     @Test
     @DisplayName("댓글 삭제")
     void deleteComment() throws Exception {
-        doNothing().when(commentService).deleteComment(1L, "SYSTEM");
+        doNothing().when(commentService).deleteComment(1L);
 
-        mockMvc.perform(delete("/api/v1/admin/system/comments/1"))
+        mockMvc.perform(delete("/api/v1/admin/comments/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

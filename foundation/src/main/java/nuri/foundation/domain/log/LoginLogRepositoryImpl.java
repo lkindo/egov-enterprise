@@ -69,7 +69,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_LOGIN_LOG WHERE TO_CHAR(CREAT_DT, 'YYYYMMDD') < :targetDe";
+        String sql = "DELETE FROM TB_LOGIN_LOG WHERE TO_CHAR(CRT_DT, 'YYYYMMDD') < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

@@ -56,8 +56,9 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         LoginPolicyDto dto = LoginPolicyDto.builder()
-                .userId(user.getEsntlId()) // Should use EsntlId for DB search? Entity uses USER_ID as PK but some logic might vary.
+                .userId(user.getEsntlId())
                 .userNm(user.getUserNm())
+                .regYn("N")
                 .build();
 
         loginPolicyRepository.findById(user.getUserId()).ifPresent(policy -> {
@@ -107,11 +108,33 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
     public void validateLoginPolicy(String userId, String clientIp) {
         loginPolicyRepository.findById(userId).ifPresent(policy -> {
             if ("Y".equals(policy.getLmtYn())) {
-                // IP Check
-                if (policy.getIpAddr() != null && !policy.getIpAddr().isEmpty() && !policy.getIpAddr().equals(clientIp)) {
-                    throw new BusinessException("허용되지 않은 IP에서의 접속입니다.", ErrorCode.INVALID_INPUT_VALUE);
+                throw new BusinessException("접속이 제한된 계정입니다.", ErrorCode.LOGIN_POLICY_LIMITED);
+            }
+            if (policy.getIpAddr() != null && !policy.getIpAddr().isEmpty() && !policy.getIpAddr().equals(clientIp)) {
+                throw new BusinessException("허용되지 않은 IP에서의 접속입니다.", ErrorCode.LOGIN_POLICY_IP_MISMATCH);
+            }
+            if (policy.getBgngTm() != null && !policy.getBgngTm().isEmpty() && policy.getEndTm() != null && !policy.getEndTm().isEmpty()) {
+                try {
+                    java.time.LocalTime now = java.time.LocalTime.now();
+                    String bgng = policy.getBgngTm();
+                    String end = policy.getEndTm();
+                    if (!bgng.contains(":") && bgng.length() >= 4) {
+                        bgng = bgng.substring(0, 2) + ":" + bgng.substring(2, 4);
+                    }
+                    if (!end.contains(":") && end.length() >= 4) {
+                        end = end.substring(0, 2) + ":" + end.substring(2, 4);
+                    }
+                    
+                    java.time.LocalTime startTime = java.time.LocalTime.parse(bgng, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                    java.time.LocalTime endTime = java.time.LocalTime.parse(end, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                    if (now.isBefore(startTime) || now.isAfter(endTime)) {
+                        throw new BusinessException("제한된 접속 시간입니다.", ErrorCode.LOGIN_POLICY_TIME_RESTRICTED);
+                    }
+                } catch (BusinessException ex) {
+                    throw ex;
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                // Time Check can be added here
             }
         });
     }

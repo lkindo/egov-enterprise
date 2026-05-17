@@ -12,9 +12,9 @@ class CommentDomainTest {
     void comment_test() {
         // Given
         Comment comment = Comment.builder()
-                .nttId(1L)
+                .pstId("1")
                 .bbsId("BBS1")
-                .cmntCn("Old Content")
+                .ansCn("Old Content")
                 .useYn("Y")
                 .build();
         
@@ -32,8 +32,9 @@ class CommentDomainTest {
     void commentPredicate_test() {
         // Just call them to cover the lines
         assertNotNull(CommentPredicate.bbsIdEq("BBS1"));
-        assertNotNull(CommentPredicate.pstIdEq(10L));
-        assertNotNull(CommentPredicate.bbsIdAndPstIdEq("BBS1", 10L));
-        assertNotNull(CommentPredicate.bbsIdAndPstIdEq(Expressions.asString("BBS1"), Expressions.asNumber(10L)));
+        assertNotNull(CommentPredicate.nttIdEq("10"));
+        assertNotNull(CommentPredicate.pstIdEq("10"));
+        assertNotNull(CommentPredicate.bbsIdAndPstIdEq("BBS1", "10"));
+        assertNotNull(CommentPredicate.bbsIdAndPstIdEq(Expressions.asString("BBS1"), QComment.comment.pstId));
     }
 }

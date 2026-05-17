@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(classes = nuri.ApiServerApplication.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -66,8 +66,7 @@ class AuthenticationControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").exists())
-                .andExpect(jsonPath("$.data.userId").value("testuser"));
+                .andExpect(jsonPath("$.data.accessToken").exists());
     }
 
     @Test

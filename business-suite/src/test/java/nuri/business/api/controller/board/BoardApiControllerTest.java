@@ -39,7 +39,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 목록 조회 성공")
     void getPosts_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId(1L).pstTtl("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId("1").pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -47,21 +47,21 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].id").value(1));
+                .andExpect(jsonPath("$.data.list[0].id").value("1"));
     }
 
     @Test
     @DisplayName("게시글 상세 조회 성공")
     void getPost_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), anyLong())).willReturn(BoardDto.builder().pstId(1L).build());
+        given(boardService.getPostDetail(anyString(), anyString())).willReturn(BoardDto.builder().pstId("1").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/boards/BBS_001/posts/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.pstId").value(1));
+                .andExpect(jsonPath("$.data.pstId").value("1"));
     }
 
     @Test
@@ -69,7 +69,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 생성 성공")
     void createPost_Success() throws Exception {
         // Given
-        given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn(1L);
+        given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn("1");
 
         // When & Then
         mockMvc.perform(post("/api/v1/boards/posts")
@@ -78,6 +78,6 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value(1));
+                .andExpect(jsonPath("$.data").value("1"));
     }
 }

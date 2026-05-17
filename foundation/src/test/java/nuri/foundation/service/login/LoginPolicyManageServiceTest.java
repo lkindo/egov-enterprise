@@ -47,14 +47,12 @@ class LoginPolicyManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
 
-        User user1 = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
-        User user2 = User.builder().userId("USER2").esntlId("USR2").userNm("Name2").pswd("pass").build();
+        nuri.foundation.domain.login.LoginPolicySearchResult res1 = nuri.foundation.domain.login.LoginPolicySearchResult.builder()
+                .userId("USER1").userNm("Name1").regYn("Y").build();
+        nuri.foundation.domain.login.LoginPolicySearchResult res2 = nuri.foundation.domain.login.LoginPolicySearchResult.builder()
+                .userId("USER2").userNm("Name2").regYn("N").build();
         
-        given(userRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(user1, user2)));
-        
-        LoginPolicy policy1 = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy1));
-        given(loginPolicyRepository.findById("USER2")).willReturn(Optional.empty());
+        given(loginPolicyRepository.searchLoginPolicies(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(res1, res2)));
 
         List<LoginPolicyDto> result = loginPolicyManageService.selectLoginPolicyList(searchVO);
 
@@ -67,7 +65,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 상세 조회 테스트 - 정책 있음")
     void selectLoginPolicyPresentTest() {
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
-        given(userRepository.findById("USER1")).willReturn(Optional.of(user));
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
         
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
@@ -83,7 +81,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 상세 조회 테스트 - 정책 없음")
     void selectLoginPolicyEmptyTest() {
         User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
-        given(userRepository.findById("USER1")).willReturn(Optional.of(user));
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.empty());
 
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("USER1");

@@ -31,8 +31,8 @@ class RealTimeDashboardServiceTest {
     @Test
     @DisplayName("게시글 작성 이벤트 처리 확인")
     void handlePostCreated_IncrementsCount() {
-        // PostCreatedEvent(Object source, String bbsId, Long nttId, String userId)
-        PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", 1L, "user01");
+        // PostCreatedEvent(Object source, String bbsId, String nttId, String userId)
+        PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", "1", "user01");
         realTimeDashboardService.handlePostCreated(event);
         realTimeDashboardService.broadcastRealTimeStats();
         verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), argThat((Map<String, Object> m) -> (Integer)m.get("newPosts") == 1));

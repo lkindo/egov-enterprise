@@ -47,7 +47,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 키워드 없음")
     void getPollList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
@@ -59,13 +59,13 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 키워드 있음")
     void getPollList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
-        given(pollManageRepository.findByPollTtlContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(pollManageRepository).findByPollTtlContaining(eq("Keyword"), eq(pageable));
+        verify(pollManageRepository).findByPollNmContaining(eq("Keyword"), eq(pageable));
     }
 
     @Test
@@ -83,7 +83,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 상세 조회 - 성공")
     void getPoll_Success() {
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollTtl("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         
         OnlinePollItem item = OnlinePollItem.builder().pollIemId("I1").pollManage(entity).pollIemNm("Item 1").build();
@@ -109,7 +109,7 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollItemDto itemDto = OnlinePollItemDto.builder().pollIemNm("Item").build();
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                    .pollTtl("New Poll")
+                    .pollNm("New Poll")
                     .pollItems(List.of(itemDto))
                     .build();
 
@@ -126,20 +126,20 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollManage entity = OnlinePollManage.builder()
                     .pollId("P1")
-                    .pollTtl("Old")
+                    .pollNm("Old")
                     .pollItems(new ArrayList<>())
                     .build();
             given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollId("P1")
-                    .pollTtl("New")
+                    .pollNm("New")
                     .pollItems(List.of(OnlinePollItemDto.builder().pollIemNm("New Item").build()))
                     .build();
 
             onlinePollService.updatePoll(dto);
 
-            assertThat(entity.getPollTtl()).isEqualTo("New");
+            assertThat(entity.getPollNm()).isEqualTo("New");
             assertThat(entity.getPollItems()).hasSize(1);
         }
     }

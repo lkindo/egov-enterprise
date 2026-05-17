@@ -20,7 +20,7 @@ class BoardMapperTest {
     @DisplayName("Entity -> DTO 변환 테스트")
     void toDtoTest() {
         Board board = Board.builder()
-                .pstId(1L)
+                .pstId("1")
                 .pstTtl("제목")
                 .createdDate(LocalDateTime.of(2026, 5, 3, 10, 0))
                 .blogId("BLOG1")
@@ -29,18 +29,11 @@ class BoardMapperTest {
         BoardDto dto = mapper.toDto(board);
 
         assertNotNull(dto);
-        assertEquals(1L, dto.getPstId());
+        assertEquals("1", dto.getPstId());
         assertEquals("1", dto.getKnoId());
         assertEquals("제목", dto.getKnoNm());
         assertEquals("2026-05-03", dto.getFrstRegisterPnttmStr());
         assertEquals("Y", dto.getBlogYn());
-    }
-
-    @Test
-    @DisplayName("디폴트 메서드 테스트 - longToString")
-    void longToStringTest() {
-        assertEquals("123", mapper.longToString(123L));
-        assertNull(mapper.longToString(null));
     }
 
     @Test

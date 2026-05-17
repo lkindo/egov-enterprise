@@ -29,11 +29,19 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         // given
         LoginLog log = LoginLog.builder()
                 .logId("LOG_001")
-                .createdDate(LocalDateTime.of(2024, 1, 1, 10, 0))
                 .loginMthd("LOGIN")
                 .loginIp("127.0.0.1")
                 .build();
         loginLogRepository.save(log);
+        entityManager.flush();
+
+        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LOG_ID = :logId")
+                .setParameter("createdDate", LocalDateTime.of(2024, 1, 1, 10, 0))
+                .setParameter("logId", "LOG_001")
+                .executeUpdate();
+
+        entityManager.flush();
+        entityManager.clear();
 
         // when
         Page<LoginLog> result = loginLogRepository.searchLoginLogs("LOG", "20240101", "20240131", PageRequest.of(0, 10));
@@ -49,9 +57,15 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         // given
         LoginLog oldLog = LoginLog.builder()
                 .logId("LOG_OLD")
-                .createdDate(LocalDateTime.of(2020, 1, 1, 10, 0))
                 .build();
         loginLogRepository.save(oldLog);
+        entityManager.flush();
+
+        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LOG_ID = :logId")
+                .setParameter("createdDate", LocalDateTime.of(2020, 1, 1, 10, 0))
+                .setParameter("logId", "LOG_OLD")
+                .executeUpdate();
+
         entityManager.flush();
         entityManager.clear();
 

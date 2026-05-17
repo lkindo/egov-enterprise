@@ -59,7 +59,7 @@ class PopupServiceImplTest {
     void getActivePopups() {
         // given
         Popup popup = Popup.builder().popupId("POP1").build();
-        given(popupRepository.findActivePopups(any(LocalDate.class))).willReturn(List.of(popup));
+        given(popupRepository.findActivePopups(any(String.class))).willReturn(List.of(popup));
 
         // when
         List<PopupDto> result = popupService.getActivePopups();
