@@ -6,10 +6,13 @@ import { CommunityPage } from './pages/CommunityPage';
  */
 
 test.describe('Tier 3: Board & Community (Business Flow)', () => {
+    // 3. 병렬 실행 최적화: 워커 간 독립 실행 보장
+    test.describe.configure({ mode: 'parallel' });
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test.describe('Board Master Wizard Flow', () => {
-        const boardName = `E2E_Wizard_Board_${Date.now()}`;
+        const workerId = process.env.TEST_WORKER_INDEX || '0';
+        const boardName = `E2E_Wizard_Board_${workerId}_${Date.now()}`;
         const menuName = `Menu_${boardName}`;
 
         test('End-to-End Board Creation and Deployment', async ({ boardMasterPage }) => {
@@ -49,7 +52,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     await dialog.accept();
                 });
                 
-                const articleTitle = `E2E Article ${Date.now()}`;
+                const workerId = process.env.TEST_WORKER_INDEX || '0';
+                const articleTitle = `E2E Article W${workerId} ${Date.now()}`;
                 let createdpstId: string | null = null;
 
                 const responseHandler = async (response: import('@playwright/test').Response) => {
@@ -106,14 +110,18 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                         await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
                     }
                     
-                    if (createdpstId) {
-                        await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
-                    } else {
-                        const firstArticleLink = page.locator('a[href*="pstId="], a.group\\/link').first();
-                        await firstArticleLink.waitFor({ state: 'visible', timeout: 20000 });
-                        await firstArticleLink.click();
-                    }
-                    await expect(page.getByText(articleTitle).first()).toBeVisible({ timeout: 20000 });
+                    // 2. Anti-flaky: 스마트 재시도 로직 (데이터가 나타날 때까지 주기적으로 새로고침 및 확인)
+                    await expect(async () => {
+                        if (createdpstId) {
+                            await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
+                        } else {
+                            await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                            const firstArticleLink = page.locator('a[href*="pstId="], a.group\\/link').first();
+                            await firstArticleLink.waitFor({ state: 'visible', timeout: 5000 });
+                            await firstArticleLink.click();
+                        }
+                        await expect(page.getByText(articleTitle).first()).toBeVisible({ timeout: 5000 });
+                    }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 });
 
                 console.log('\n>>> Step 3: Updating Article');
@@ -127,12 +135,15 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node|저장/ }).first();
                 await saveButton.click();
                 
-                await page.waitForSelector('text=/성공|수정|완료/', { timeout: 20000 });
+                await page.waitForURL(/\/admin\/community\/boards\/selectBoardList/, { timeout: 30000 });
                 console.log('>>> Update complete.');
 
                 await test.step('User: Verify Updated Article', async () => {
-                    await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
-                    await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeVisible({ timeout: 20000 });
+                    // 2. Anti-flaky: 스마트 재시도 로직 (revalidatePath 반영 지연 방어)
+                    await expect(async () => {
+                        await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                        await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeVisible({ timeout: 5000 });
+                    }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 });
 
                 console.log('>>> Step 4: Deleting Article');
@@ -143,7 +154,12 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await deleteBtn.click();
                 
-                await page.waitForURL(/\/admin\/community\/boards/, { timeout: 30000 });
+                // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
+                await expect(async () => {
+                    await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                    await expect(page.locator(`text=${articleTitle} [Updated]`).first()).toBeHidden({ timeout: 5000 });
+                }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
+                
                 console.log('>>> Successfully deleted.');
             });
         }

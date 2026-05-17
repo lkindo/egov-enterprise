@@ -111,7 +111,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       const result = await saveBoardArticle(null, formData);
       
       if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ['boardList'] });
+        queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
         clearDraft();
         toast(result.message || '저장되었습니다.', 'success');
         router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);

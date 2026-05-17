@@ -2,7 +2,7 @@
 
 import React, { use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Edit3, Trash2,
   Download,
@@ -39,6 +39,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
   const pstId = searchParams.get('pstId');
+  const queryClient = useQueryClient();
 
   // React Query for revalidation/stale handling, seeded with initialData
   const { data: masterInfo } = useQuery({
@@ -146,6 +147,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             const res = await deleteBoardArticle(null, formData);
             if (res.success) {
               toast('지식 노드가 성공적으로 제거되었습니다.', 'success');
+              queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
               router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
             }
           }}>

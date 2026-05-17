@@ -3,7 +3,7 @@
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api/client';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -36,6 +36,7 @@ const BBSDetailClient = () => {
   const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
   const [state, formAction, isPending] = useActionState(saveBoardArticle, null);
+  const queryClient = useQueryClient();
 
   // 마스터 정보 조회 (템플릿 확인용)
   const { data: masterInfo } = useQuery({
@@ -52,13 +53,15 @@ const BBSDetailClient = () => {
   useEffect(() => {
     if (state?.success) {
       toast(state.message, 'success');
+      queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+      queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId] });
       if (state.redirect) {
         router.push(state.redirect);
       }
     } else if (state && !state.success) {
       toast(state.message, 'error');
     }
-  }, [state, router, toast]);
+  }, [state, router, toast, queryClient, bbsId]);
 
   const [attachedFiles, setFiles] = useState<File[]>([]);
 
