@@ -13,5 +13,5 @@ public interface PopupDomainRepository extends JpaRepository<Popup, String> {
     Page<Popup> findByPopupTitleNameContaining(String popupTitleName, Pageable pageable);
 
     @Query("SELECT p FROM PopupDomain p WHERE p.isNotice = 'Y' AND :now BETWEEN p.noticeBeginDate AND p.noticeEndDate")
-    List<Popup> findActivePopups(@Param("now") String now);
+    List<Popup> findActivePopups(@Param("now") java.time.LocalDate now);
 }

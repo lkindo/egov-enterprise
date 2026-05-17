@@ -29,7 +29,7 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
         // given
         WebLog log = WebLog.builder()
                 .dmndId("REQ_001")
-                .ocrnYmd(LocalDateTime.of(2024, 1, 3, 10, 0))
+                .ocrnYmd("20240103")
                 .url("/test/url")
                 .rqesterIp("127.0.0.1")
                 .build();
@@ -49,7 +49,7 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
         // given
         WebLog oldLog = WebLog.builder()
                 .dmndId("REQ_OLD")
-                .ocrnYmd(LocalDateTime.of(2020, 1, 1, 10, 0))
+                .ocrnYmd("20200101")
                 .build();
         webLogRepository.save(oldLog);
         entityManager.flush();

@@ -14,11 +14,12 @@ export interface BoardListParams {
 }
 
 export const useBoardList = (params: BoardListParams, initialData?: { list: BoardPost[]; total: number; totalPage: number }) => {
+  const { bbsId } = params;
   return useQuery({
-    queryKey: ['boardList', params],
+    queryKey: ['boardList', bbsId, params],
     initialData,
     queryFn: async () => {
-      const { bbsId, page, pageUnit, searchWrd, searchCnd } = params;
+      const { page, pageUnit, searchWrd, searchCnd } = params;
       
       const data = await boardUserService.getPosts(bbsId, {
         page: page, // Passing 0-based page, ApiService will handle pageIndex

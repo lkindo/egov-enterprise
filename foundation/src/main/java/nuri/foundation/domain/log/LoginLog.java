@@ -26,19 +26,19 @@ public class LoginLog extends BaseEntity {
     @Column(name = "LOG_ID", length = 20)
     private String logId;
 
-    @Column(name = "CONECT_ID", length = 20)
+    @Column(name = "USER_ID", length = 20)
     private String loginId;
 
-    @Column(name = "CONECT_IP", length = 23)
+    @Column(name = "LGN_IP_ADDR", length = 30)
     private String loginIp;
 
-    @Column(name = "CONN_MTHD_CD", length = 10)
+    @Column(name = "CNTN_MTHD_CD", length = 10)
     private String loginMthd;
 
-    @Column(name = "ERROR_OCCRRNC_YN", length = 1)
+    @Column(name = "ERR_OCRN_YN", length = 1)
     private String errOccrrAt;
 
-    @Column(name = "ERROR_CODE", length = 3)
+    @Column(name = "ERR_CD", length = 3)
     private String errorCode;
 
     public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,

@@ -37,7 +37,7 @@ public class PopupServiceImpl implements PopupService {
 
     @Override
     public List<PopupDto> getActivePopups() {
-        return popupRepository.findActivePopups(LocalDate.now().toString()).stream()
+        return popupRepository.findActivePopups(LocalDate.now()).stream()
                 .map(PopupDto::from)
                 .collect(Collectors.toList());
     }
@@ -62,8 +62,8 @@ public class PopupServiceImpl implements PopupService {
                     .popupHeightLocation(dto.getPopupHeightLocation())
                     .popupHeightSize(dto.getPopupHeightSize())
                     .popupWidthSize(dto.getPopupWidthSize())
-                    .noticeBeginDate(dto.getNoticeBeginDate())
-                    .noticeEndDate(dto.getNoticeEndDate())
+                    .noticeBeginDate(dto.getNoticeBeginDate() != null ? LocalDate.parse(dto.getNoticeBeginDate()) : null)
+                    .noticeEndDate(dto.getNoticeEndDate() != null ? LocalDate.parse(dto.getNoticeEndDate()) : null)
                     .isStopView(dto.getIsStopView())
                     .isNotice(dto.getIsNotice())
                     .build();
@@ -83,7 +83,9 @@ public class PopupServiceImpl implements PopupService {
 
         popup.update(dto.getPopupTitleName(), dto.getFileUrl(), dto.getPopupWidthLocation(),
                 dto.getPopupHeightLocation(),
-                dto.getPopupHeightSize(), dto.getPopupWidthSize(), dto.getNoticeBeginDate(), dto.getNoticeEndDate(),
+                dto.getPopupHeightSize(), dto.getPopupWidthSize(),
+                dto.getNoticeBeginDate() != null ? LocalDate.parse(dto.getNoticeBeginDate()) : null,
+                dto.getNoticeEndDate() != null ? LocalDate.parse(dto.getNoticeEndDate()) : null,
                 dto.getIsStopView(), dto.getIsNotice());
         popup.setLastUpdusrId(userId);
     }

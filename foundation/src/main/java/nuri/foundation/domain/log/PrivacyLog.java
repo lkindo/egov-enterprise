@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public class PrivacyLog extends BaseEntity {
 
     @Id
-    @Column(name = "REQUST_ID", length = 20)
+    @Column(name = "DMND_ID", length = 20)
     private String requestId;
 
     @Column(name = "INQIRE_DT")
@@ -31,12 +31,12 @@ public class PrivacyLog extends BaseEntity {
     @Column(name = "SRVC_NM", length = 255)
     private String serviceName;
 
-    @Column(name = "INQIRE_INFO", length = 255)
+    @Column(name = "INQ_INFO", length = 255)
     private String inquiryInfo;
 
-    @Column(name = "RQESTER_ID", length = 20)
+    @Column(name = "DMND_USER_ID", length = 20)
     private String requesterId;
 
-    @Column(name = "RQESTER_IP", length = 23)
+    @Column(name = "DMND_USER_IP_ADDR", length = 30)
     private String requesterIp;
 }

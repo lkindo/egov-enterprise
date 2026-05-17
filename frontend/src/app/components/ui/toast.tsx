@@ -85,7 +85,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {t.type === 'loading' ? <Loader2 size={18} className="animate-spin" /> : null}
               <span className="text-sm font-medium">{t.message}</span>
             </div>
-            <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100">
+            <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100" aria-label="닫기">
               <X size={16} />
             </button>
           </div>

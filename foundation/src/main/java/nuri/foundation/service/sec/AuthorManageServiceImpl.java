@@ -157,13 +157,18 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     private AuthorDto toAuthorDto(Authority authority) {
+        String createdDe = authority.getAuthorCreatDe();
+        if (createdDe != null) {
+            createdDe = createdDe.trim();
+            if (createdDe.length() == 8 && !createdDe.contains("-")) {
+                createdDe = createdDe.substring(0, 4) + "-" + createdDe.substring(4, 6) + "-" + createdDe.substring(6, 8);
+            }
+        }
         return AuthorDto.builder()
                 .authorCode(Objects.requireNonNull(authority.getAuthorCode()))
                 .authorNm(Objects.requireNonNull(authority.getAuthorNm()))
                 .authorDc(authority.getAuthorDc())
-                .authorCreatDe(authority.getAuthorCreatDe() != null
-                        ? authority.getAuthorCreatDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : null)
+                .authorCreatDe(createdDe)
                 .build();
     }
 

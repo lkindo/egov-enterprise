@@ -44,11 +44,11 @@ public class Popup extends BaseEntity {
     @Column(name = "POPUP_WDTH_SZ", length = 20)
     private String popupWidthSize;
 
-    @Column(name = "NTCE_BGNDE", length = 10)
-    private String noticeBeginDate;
+    @Column(name = "NTCE_BGNDE")
+    private LocalDate noticeBeginDate;
 
-    @Column(name = "NTCE_ENDDE", length = 10)
-    private String noticeEndDate;
+    @Column(name = "NTCE_ENDDE")
+    private LocalDate noticeEndDate;
 
     @Column(name = "STOPVEW_SETUP_YN", length = 1)
     private String isStopView;
@@ -58,7 +58,7 @@ public class Popup extends BaseEntity {
 
     public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
             String popupHeightLocation, String popupHeightSize, String popupWidthSize,
-            String noticeBeginDate, String noticeEndDate, String isStopView, String isNotice) {
+            LocalDate noticeBeginDate, LocalDate noticeEndDate, String isStopView, String isNotice) {
         this.popupId = popupId;
         this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;
@@ -73,7 +73,7 @@ public class Popup extends BaseEntity {
     }
 
     public void update(String popupTitleName, String fileUrl, String popupWidthLocation, String popupHeightLocation,
-            String popupHeightSize, String popupWidthSize, String noticeBeginDate, String noticeEndDate,
+            String popupHeightSize, String popupWidthSize, LocalDate noticeBeginDate, LocalDate noticeEndDate,
             String isStopView, String isNotice) {
         this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;

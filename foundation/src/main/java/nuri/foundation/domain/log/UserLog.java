@@ -45,7 +45,7 @@ public class UserLog extends BaseEntity {
     private String srvcNm;
 
     @Id
-    @Column(name = "METHOD_NM", length = 60)
+    @Column(name = "MTHD_NM", length = 60)
     private String methodNm;
 
     @Column(name = "CRT_CNT")

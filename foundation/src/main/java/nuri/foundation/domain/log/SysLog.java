@@ -28,7 +28,7 @@ public class SysLog extends BaseEntity {
     @Column(name = "SRVC_NM", length = 255)
     private String srvcNm;
 
-    @Column(name = "METHOD_NM", length = 60)
+    @Column(name = "MTHD_NM", length = 100)
     private String methodNm;
 
     @Column(name = "PRCS_SE_CD", length = 3)
@@ -40,7 +40,7 @@ public class SysLog extends BaseEntity {
     @Column(name = "DMND_USER_ID", length = 20)
     private String dmndUserId;
 
-    @Column(name = "RQESTER_IP", length = 23)
+    @Column(name = "DMND_USER_IP_ADDR", length = 30)
     private String rqesterIp;
 
     @Column(name = "OCRN_YMD", length = 20)

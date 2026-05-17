@@ -1,14 +1,14 @@
-import { test, expect } from './fixtures/base-test';
+﻿import { test, expect } from './fixtures/base-test';
 import { AxeBuilder } from '@axe-core/playwright';
 
 /**
  * [Tier 4] Quality & Resilience: Security, UX, A11y, Visual
  * 
- * ?�스?�의 비기?�적 ?�질�??�복?�을 검증합?�다.
+ * 테스트의 비기능적 품질과 회복탄력성을 검증합니다.
  * 1. 보안 (RBAC, CSRF, XSS)
- * 2. UX (?��????�데?�트, ?�동 ?�??
- * 3. ?�근??(WCAG 2.1) �??�각???��?
- * 4. 관측성 (감사 로그, 콘솔 가??
+ * 2. UX (실시간 업데이트, 자동 저장)
+ * 3. 접근성 (WCAG 2.1) 및 시각적 회귀
+ * 4. 관측성 (감사 로그, 콘솔 가드)
  */
 
 test.describe('Tier 4: Quality & Resilience', () => {
@@ -30,7 +30,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     console.log(`>>> Access successfully denied for ${path} (Redirected)`);
                 } else {
                     const bodyText = await page.innerText('body');
-                    expect(bodyText).toMatch(/권한|?�근|Deny|Unauthorized|Forbidden/i);
+                    expect(bodyText).toMatch(/권한|접근|Deny|Unauthorized|Forbidden/i);
                 }
             }
         });
@@ -52,7 +52,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
             await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=1108`); // Existing post
             
-            const likeBtn = page.locator('button').filter({ hasText: /추천|좋아??Like/i }).first();
+            const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();
             if (await likeBtn.isVisible()) {
                 const initialCount = await likeBtn.innerText();
                 await likeBtn.click();
@@ -121,7 +121,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
             console.log('>>> Verifying recent system activities');
             
             const auditTimestamp = page.locator('span:text-matches("\\d{4}-\\d{2}-\\d{2}")').first();
-            const noResults = page.getByText(/검??결과가 ?�습?�다|No results/i);
+            const noResults = page.getByText(/검색 결과가 없습니다|No results/i);
             
             // Wait for either the data or the empty state message
             await expect(auditTimestamp.or(noResults)).toBeVisible({ timeout: 20000 });

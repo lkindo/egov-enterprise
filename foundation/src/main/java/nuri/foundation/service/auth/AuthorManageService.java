@@ -96,13 +96,18 @@ public class AuthorManageService {
     }
 
     private AuthorManageDto toDto(@NonNull Authority entity) {
+        String createdDe = entity.getAuthorCreatDe();
+        if (createdDe != null) {
+            createdDe = createdDe.trim();
+            if (createdDe.length() == 8 && !createdDe.contains("-")) {
+                createdDe = createdDe.substring(0, 4) + "-" + createdDe.substring(4, 6) + "-" + createdDe.substring(6, 8);
+            }
+        }
         return AuthorManageDto.builder()
                 .authorCode(entity.getAuthorCode())
                 .authorNm(entity.getAuthorNm())
                 .authorDc(entity.getAuthorDc())
-                .authorCreatDe(entity.getAuthorCreatDe() != null
-                        ? entity.getAuthorCreatDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : null)
+                .authorCreatDe(createdDe)
                 .build();
     }
 }

@@ -32,16 +32,16 @@ public class WebLog extends BaseEntity {
     @Column(name = "DMND_USER_ID", length = 20)
     private String dmndUserId;
 
-    @Column(name = "RQESTER_IP", length = 23)
+    @Column(name = "DMND_USER_IP_ADDR", length = 30)
     private String rqesterIp;
 
-    @Column(name = "OCRN_YMD")
-    private LocalDateTime ocrnYmd;
+    @Column(name = "OCCR_YMD", length = 8)
+    private String ocrnYmd;
 
-    @Column(name = "PRCS_TM")
+    @jakarta.persistence.Transient
     private Long prcsTm;
 
-    public WebLog(String dmndId, String url, String dmndUserId, String rqesterIp, LocalDateTime ocrnYmd, Long prcsTm) {
+    public WebLog(String dmndId, String url, String dmndUserId, String rqesterIp, String ocrnYmd, Long prcsTm) {
         this.dmndId = dmndId;
         this.url = url;
         this.dmndUserId = dmndUserId;

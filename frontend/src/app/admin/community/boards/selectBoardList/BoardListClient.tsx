@@ -142,7 +142,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   startDate: queryStartDate || undefined,
   endDate: queryEndDate || undefined
   };
-  const queryKey = ['boardList', currentParams];
+  const queryKey = ['boardList', bbsId, currentParams];
 
   // 진행 중인 쿼리 취소
   await queryClient.cancelQueries({ queryKey });
@@ -165,7 +165,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   },
   onError: (err, pstId, context) => {
   // 실패 시 롤백
-  queryClient.setQueryData(['boardList', bbsId, queryPage, querySearchWrd, queryOrderBy], context?.previousData);
+  queryClient.setQueryData(queryKey, context?.previousData);
   },
   onSettled: () => {
   // 최종적으로 서버 데이터와 동기화

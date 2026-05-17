@@ -33,7 +33,11 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstId: stri
       const { redirect } = require('next/navigation');
       redirect('/login');
     }
-    console.error('BoardDetailServer: Failed to fetch board detail', error);
+    if (error.response?.status === 404) {
+      console.warn('BoardDetailServer: Article not found (possibly deleted):', error.message || error);
+    } else {
+      console.error('BoardDetailServer: Failed to fetch board detail', error);
+    }
     return { article: null, masterInfo: null, initialComments: [] };
   }
 });

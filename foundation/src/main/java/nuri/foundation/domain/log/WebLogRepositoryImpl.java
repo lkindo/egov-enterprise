@@ -54,22 +54,16 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        try {
-            LocalDateTime start = LocalDate.parse(searchBgnDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    .atStartOfDay();
-            LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    .atTime(LocalTime.MAX);
-            return QWebLog.webLog.ocrnYmd.between(start, end);
-        } catch (Exception e) {
-            return null;
-        }
+        String start = searchBgnDe.replace("-", "");
+        String end = searchEndDe.replace("-", "");
+        return QWebLog.webLog.ocrnYmd.trim().between(start, end);
     }
 
     @Override
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_WEB_LOG WHERE TO_CHAR(OCRN_YMD, 'YYYYMMDD') < :targetDe";
+        String sql = "DELETE FROM TB_WEB_LOG WHERE OCCR_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

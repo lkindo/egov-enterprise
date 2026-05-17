@@ -26,6 +26,8 @@ export class ConsoleErrorGuard {
     // Ignore non-fatal WebSocket closure warnings common in dev environments
     /WebSocket connection to 'ws:\/\/.*' failed: WebSocket is closed before the connection is established\./,
     /WebSocket connection to 'ws:\/\/.*' failed: Error in connection establishment/,
+    /Article not found \(possibly deleted\)/i,
+    /Article Not Found/i,
   ];
 
   constructor(page: Page) {
