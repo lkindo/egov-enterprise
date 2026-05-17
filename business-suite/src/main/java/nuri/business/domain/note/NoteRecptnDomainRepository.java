@@ -14,7 +14,8 @@ import java.util.Optional;
 @Repository("noteRecptnDomainRepository")
 public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {
 
-    @Query("SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)")
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (cast(:searchWrd as string) IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
+           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId AND (cast(:searchWrd as string) IS NULL OR r.note.noteSj LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
     Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);
 
@@ -23,7 +24,8 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, St
         return searchNoteRecptns(null, searchWrd, rcverId, pageable);
     }
 
-    @Query("SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId")
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId",
+           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId")
     Page<NoteRecptn> findByRcverId(@Param("rcverId") String rcverId, Pageable pageable);
 
     Optional<NoteRecptn> findByNoteNoteIdAndRcverId(String noteId, String rcverId);

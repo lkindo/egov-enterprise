@@ -22,8 +22,8 @@ export class KnowledgePage {
         console.log(`>>> Creating FAQ: ${question}`);
         
         // Wait for title input
-        await this.page.locator('input[name="nttSj"]').waitFor({ state: 'visible' });
-        await this.page.locator('input[name="nttSj"]').fill(question);
+        await this.page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').waitFor({ state: 'visible' });
+        await this.page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').fill(question);
         
         // Wait for RichTextEditor (Tiptap) or fallback textarea
         const editor = this.page.locator('.tiptap[contenteditable="true"], .toastui-editor-contents[contenteditable="true"], .ProseMirror, [contenteditable="true"], textarea').last();
@@ -33,7 +33,7 @@ export class KnowledgePage {
         await this.page.keyboard.type(answer, { delay: 10 });
         
         // Blur to trigger onChange if necessary
-        await this.page.locator('input[name="nttSj"]').click();
+        await this.page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').click();
         
         const submitBtn = this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).last();
         await submitBtn.scrollIntoViewIfNeeded();

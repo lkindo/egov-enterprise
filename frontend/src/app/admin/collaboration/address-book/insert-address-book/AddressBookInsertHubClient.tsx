@@ -54,8 +54,8 @@ export default function AddressBookInsertHubClient() {
  adbkMan: [
  {
  nm: form.adbkNm,
- emailAdres: form.email,
- moblphonNo: form.telNo
+ emlAddr: form.email,
+ mblTelno: form.telNo
  }
  ]
  };

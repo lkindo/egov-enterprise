@@ -70,8 +70,8 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                         user.emlAddr,
                         user.mblTelno))
                 .from(user)
-                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId))
-                .where(addressBook.useYn.eq("Y"), searchPredicate)
+                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId).and(addressBook.useYn.eq("Y")))
+                .where(searchPredicate)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -79,8 +79,8 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
         Long total = queryFactory
                 .select(user.count())
                 .from(user)
-                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId))
-                .where(addressBook.useYn.eq("Y"), searchPredicate)
+                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId).and(addressBook.useYn.eq("Y")))
+                .where(searchPredicate)
                 .fetchOne();
 
         return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable),
