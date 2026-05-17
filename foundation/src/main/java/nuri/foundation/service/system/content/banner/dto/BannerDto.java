@@ -2,48 +2,41 @@ package nuri.foundation.service.system.content.banner.dto;
 
 import nuri.foundation.domain.system.content.banner.Banner;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Builder
+@Schema(description = "배너 정보")
 public class BannerDto {
-
-    @Schema(description = "Description")
+    @Schema(description = "배너 ID")
     private String bannerId;
-
-    @Schema(description = "Description")
+    @Schema(description = "배너 명칭")
     private String bannerNm;
-
-    @Schema(description = "Description")
+    @Schema(description = "링크 URL")
     private String linkUrl;
-
-    @Schema(description = "Description")
+    @Schema(description = "배너 이미지 경로")
     private String bannerImage;
-
-    @Schema(description = "Description")
+    @Schema(description = "배너 설명")
     private String bannerDc;
-
-    @Schema(description = "Description")
+    @Schema(description = "정렬 순서")
     private Integer sortOrdr;
-
-    @Schema(description = "Description")
+    @Schema(description = "반영 여부")
     private String reflctAt;
-
-    @Schema(description = "Description")
+    @Schema(description = "배너 이미지 파일 ID")
     private String bannerImageFile;
-
-    @Schema(description = "Description")
+    @Schema(description = "생성자 ID")
     private String createdBy;
-
-    @Schema(description = "Description")
+    @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
+
+    public String getBnrId() { return bannerId; }
+    public String getBnrNm() { return bannerNm; }
+    public String getBnrImgNm() { return bannerImage; }
+    public String getBnrExpln() { return bannerDc; }
 
     public static BannerDto from(Banner entity) {
         if (entity == null) return null;

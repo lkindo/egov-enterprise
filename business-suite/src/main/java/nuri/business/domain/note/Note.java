@@ -24,7 +24,7 @@ public class Note extends BaseEntity {
     @Column(name = "NOTE_ID", length = 20)
     private String noteId;
 
-    @Column(name = "NOTE_SJ", length = 255)
+    @Column(name = "NOTE_TTL", length = 255)
     private String noteSj;
 
     @Column(name = "NOTE_CN", columnDefinition = "TEXT")

@@ -24,12 +24,12 @@ import lombok.experimental.SuperBuilder;
 public class OnlinePollResult extends BaseEntity {
 
     @Id
-    @Column(name = "POLL_RESULT_ID", length = 20)
+    @Column(name = "POLL_RSLT_ID", length = 20)
     private String pollResultId;
 
     @Column(name = "POLL_ID", length = 20, nullable = false)
     private String pollId;
 
-    @Column(name = "POLL_IEM_ID", length = 20, nullable = false)
+    @Column(name = "POLL_ARTCL_ID", length = 20, nullable = false)
     private String pollIemId;
 }

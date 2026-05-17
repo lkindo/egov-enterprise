@@ -29,7 +29,7 @@ public class NoteRecptn extends BaseEntity {
     private Note note;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "NOTE_DSPTCH_ID")
+    @JoinColumn(name = "NOTE_SNDNG_ID")
     private NoteTrnsmit noteDsptch;
 
     @Column(name = "RCVER_ID", length = 20)

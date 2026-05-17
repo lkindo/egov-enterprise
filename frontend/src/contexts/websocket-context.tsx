@@ -1,4 +1,4 @@
-﻿
+
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -43,6 +43,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     }
   }, [toast, success]);
 
+  const handleNoticeRef = useRef(handleNotice);
+  const handleNotificationRef = useRef(handleNotification);
+
+  useEffect(() => {
+    handleNoticeRef.current = handleNotice;
+    handleNotificationRef.current = handleNotification;
+  }, [handleNotice, handleNotification]);
+
   useEffect(() => {
     if (!user) {
       if (stompClient.current?.active) {
@@ -77,8 +85,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Connected to WebSocket');
       setIsConnected(true);
       isConnecting.current = false;
-      client.subscribe('/topic/notices', handleNotice);
-      client.subscribe('/user/queue/notifications', handleNotification);
+      client.subscribe('/topic/notices', (msg) => handleNoticeRef.current(msg));
+      client.subscribe('/user/queue/notifications', (msg) => handleNotificationRef.current(msg));
     };
 
     client.onStompError = (frame) => {
@@ -104,7 +112,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(false);
       isConnecting.current = false;
     };
-  }, [user, handleNotice, handleNotification]);
+  }, [user]);
 
   return (
     <WebSocketContext.Provider value={{ client: stompClient.current, isConnected }}>

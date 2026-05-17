@@ -4,15 +4,15 @@ export class SearchPage {
     constructor(private page: Page) {}
 
     async navigate() {
-        await this.page.goto('/search');
-        await this.page.waitForLoadState('networkidle');
+        await this.page.goto('/search', { waitUntil: 'domcontentloaded' });
+        await expect(this.page.getByPlaceholder(/검색어를 입력하고 지식을 발견하세요/)).toBeVisible();
     }
 
     async performSearch(query: string) {
-        const input = this.page.getByPlaceholder('검색어를 입력하고 지식을 발견하세요...');
+        const input = this.page.getByPlaceholder(/검색어를 입력하고 지식을 발견하세요/);
         await input.fill(query);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForTimeout(1500);
     }
 
     async verifyResultsVisible() {

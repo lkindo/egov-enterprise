@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
@@ -69,31 +70,38 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         
-        validatePollDates(dto.getPollBgngYmd(), dto.getPollEndYmd());
-        if (dto.getPollId() == null || dto.getPollId().isEmpty()) {
-            dto.setPollId("P" + System.currentTimeMillis());
-        }
+        String beginDe = normalizeDate(dto.getPollBgngYmd());
+        String endDe = normalizeDate(dto.getPollEndYmd());
+        validatePollDates(beginDe, endDe);
+        
+        // Use UUID to guarantee uniqueness in parallel worker environment
+        String pollId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         
         OnlinePollManage pollManage = OnlinePollManage.builder()
-                .pollId(dto.getPollId())
-                .pollNm(dto.getPollNm())
-                .pollBgngYmd(dto.getPollBgngYmd())
-                .pollEndYmd(dto.getPollEndYmd())
-                .pollTypeCd(dto.getPollTypeCd())
+                .pollId(pollId)
+                .pollNm(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm())
+                .pollBgngYmd(beginDe)
+                .pollEndYmd(endDe)
+                .pollTypeCd(dto.getPollTypeCd() != null && dto.getPollTypeCd().length() > 12 ? dto.getPollTypeCd().substring(0, 12) : dto.getPollTypeCd())
                 .pollDsuseYn(dto.getPollDsuseYn() != null ? dto.getPollDsuseYn() : "N")
                 .pollAutoDsuseYn(dto.getPollAutoDsuseYn() != null ? dto.getPollAutoDsuseYn() : "N")
                 .pollItems(new ArrayList<>())
                 .build();
 
+        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
+        pollManage.setFrstRegisterId(currentUserId);
+
         if (dto.getPollItems() != null) {
-            long timestamp = System.currentTimeMillis();
-            int index = 0;
             for (OnlinePollItemDto itemDto : dto.getPollItems()) {
+                String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+                
                 OnlinePollItem item = OnlinePollItem.builder()
-                        .pollIemId("PI" + timestamp + (index++))
+                        .pollIemId(iemId)
                         .pollManage(pollManage)
-                        .pollIemNm(itemDto.getPollIemNm())
+                        .pollIemNm(itemDto.getPollIemNm().length() > 100 ? itemDto.getPollIemNm().substring(0, 100) : itemDto.getPollIemNm())
                         .build();
+                item.setFrstRegisterId(currentUserId);
                 pollManage.getPollItems().add(item);
             }
         }
@@ -108,23 +116,33 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
-        validatePollDates(dto.getPollBgngYmd(), dto.getPollEndYmd());
+        String beginDe = normalizeDate(dto.getPollBgngYmd());
+        String endDe = normalizeDate(dto.getPollEndYmd());
+        validatePollDates(beginDe, endDe);
+
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
-        entity.update(dto.getPollNm(), dto.getPollBgngYmd(), dto.getPollEndYmd(),
-                dto.getPollTypeCd(), dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
+        entity.update(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm(), 
+                beginDe, endDe,
+                dto.getPollTypeCd() != null && dto.getPollTypeCd().length() > 12 ? dto.getPollTypeCd().substring(0, 12) : dto.getPollTypeCd(), 
+                dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
         
+        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
+        entity.setLastUpdusrId(currentUserId);
+
         if (dto.getPollItems() != null) {
             entity.getPollItems().clear();
-            long timestamp = System.currentTimeMillis();
-            int index = 0;
             for (OnlinePollItemDto itemDto : dto.getPollItems()) {
+                String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+
                 OnlinePollItem item = OnlinePollItem.builder()
-                        .pollIemId("PI" + timestamp + (index++))
+                        .pollIemId(iemId)
                         .pollManage(entity)
-                        .pollIemNm(itemDto.getPollIemNm())
+                        .pollIemNm(itemDto.getPollIemNm().length() > 100 ? itemDto.getPollIemNm().substring(0, 100) : itemDto.getPollIemNm())
                         .build();
+                item.setFrstRegisterId(currentUserId);
                 entity.getPollItems().add(item);
             }
         }
@@ -157,12 +175,19 @@ public class OnlinePollService implements EgovOnlinePollService {
         OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
-        String id = "PI" + System.currentTimeMillis();
-        pollItemRepository.save(Objects.requireNonNull(OnlinePollItem.builder()
-                .pollIemId(id)
+        String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+
+        OnlinePollItem item = OnlinePollItem.builder()
+                .pollIemId(iemId)
                 .pollManage(pollManage)
-                .pollIemNm(dto.getPollIemNm())
-                .build()));
+                .pollIemNm(dto.getPollIemNm().length() > 100 ? dto.getPollIemNm().substring(0, 100) : dto.getPollIemNm())
+                .build();
+        
+        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
+        item.setFrstRegisterId(currentUserId);
+        
+        pollItemRepository.save(Objects.requireNonNull(item));
     }
 
     @Override
@@ -170,7 +195,11 @@ public class OnlinePollService implements EgovOnlinePollService {
     public void updatePollItem(OnlinePollItemDto dto) {
         OnlinePollItem entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollIemId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getPollIemNm());
+        entity.update(dto.getPollIemNm().length() > 100 ? dto.getPollIemNm().substring(0, 100) : dto.getPollIemNm());
+        
+        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
+        entity.setLastUpdusrId(currentUserId);
     }
 
     @Override
@@ -189,11 +218,11 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException("종료되었거나 폐기된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        String today = java.time.LocalDate.now().toString();
-        if (poll.getPollBgngYmd().compareTo(today) > 0) {
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        if (poll.getPollBgngYmd() != null && poll.getPollBgngYmd().compareTo(today) > 0) {
             throw new BusinessException("설문 시작 전입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
-        if (poll.getPollEndYmd().compareTo(today) < 0) {
+        if (poll.getPollEndYmd() != null && poll.getPollEndYmd().compareTo(today) < 0) {
             throw new BusinessException("이미 종료된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
 
@@ -201,13 +230,19 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException("이미 참여하신 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        String id = "POLRES_" + System.currentTimeMillis();
-        pollResultRepository.save(Objects.requireNonNull(OnlinePollResult.builder()
-                .pollResultId(id)
+        String resId = "PR" + UUID.randomUUID().toString().replace("-", "").substring(0, 18);
+
+        OnlinePollResult result = OnlinePollResult.builder()
+                .pollResultId(resId)
                 .pollId(pollId)
                 .pollIemId(pollIemId)
-                .createdBy(userId)
-                .build()));
+                .build();
+        
+        String currentUserId = userId;
+        if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
+        result.setFrstRegisterId(currentUserId);
+        
+        pollResultRepository.save(Objects.requireNonNull(result));
     }
 
     private void validatePollDates(String beginDe, String endDe) {
@@ -216,5 +251,10 @@ public class OnlinePollService implements EgovOnlinePollService {
                 throw new BusinessException("설문 시작일은 종료일보다 빨라야 합니다.", ErrorCode.INVALID_INPUT_VALUE);
             }
         }
+    }
+
+    private String normalizeDate(String date) {
+        if (date == null) return null;
+        return date.replace("-", "").replace(".", "").replace("/", "");
     }
 }

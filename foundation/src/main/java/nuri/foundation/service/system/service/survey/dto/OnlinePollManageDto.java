@@ -30,8 +30,18 @@ public class OnlinePollManageDto {
     @Schema(description = "설문 종료일")
     private String pollEndYmd;
 
+    // legacy aliases for E2E / Frontend
+    public String getPollBeginDe() { return pollBgngYmd; }
+    public void setPollBeginDe(String v) { this.pollBgngYmd = v; }
+    public String getPollEndDe() { return pollEndYmd; }
+    public void setPollEndDe(String v) { this.pollEndYmd = v; }
+
     @Schema(description = "설문 종류 코드")
     private String pollTypeCd;
+
+    // legacy aliases for E2E / Frontend
+    public String getPollKindCode() { return pollTypeCd; }
+    public void setPollKindCode(String v) { this.pollTypeCd = v; }
 
     @Schema(description = "설문 폐기 여부")
     private String pollDsuseYn;
