@@ -44,7 +44,7 @@ function CommunityDetailContent() {
                 });
                 setData(res.list || []);
                 setTotal(res.total || 0);
-            } catch (error) {
+            } catch (error: any) {
                 toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
             } finally {
                 setLoading(false);
@@ -57,9 +57,9 @@ function CommunityDetailContent() {
         {
             header: '번호',
             accessor: (item: BoardPost) => (
-                item.noticeAt === 'Y' ?
+                item.noticeYn === 'Y' ?
                     <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
-                    item.nttId
+                    item.pstId
             ),
             className: 'w-20'
         },
@@ -67,15 +67,15 @@ function CommunityDetailContent() {
             header: '제목',
             accessor: (item: BoardPost) => (
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
-                    {item.nttCn ? <span className="text-xs text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span> : null}
+                    <span className="font-bold text-foreground hover:text-primary transition-colors">{item.pstTtl}</span>
+                    {item.pstCn ? <span className="text-xs text-muted-foreground line-clamp-1">{item.pstCn.substring(0, 50)}</span> : null}
                 </div>
             ),
             className: 'min-w-[300px]'
         },
         { 
             header: '작성자', 
-            accessor: (item: BoardPost) => item.frstRegisterNm 
+            accessor: (item: BoardPost) => item.frstRegisterNm || item.ntcrNm 
         },
         { 
             header: '날짜', 
@@ -138,7 +138,7 @@ function CommunityDetailContent() {
                 columns={columns}
                 data={data}
                 loading={loading}
-                onRowClick={(item) => router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`)}
+                onRowClick={(item) => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`)}
                 emptyMessage="게시글이 존재하지 않습니다."
             />
 

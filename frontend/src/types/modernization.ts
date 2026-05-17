@@ -48,24 +48,37 @@ export interface CommunityDto {
 export interface BoardMasterDto {
   bbsId?: string;
   bbsNm?: string;
+  bbsTtl?: string;
   bbsIntrcn?: string;
+  bbsIntroCn?: string;
+  bbsExpln?: string;
   bbsTyCode?: string;
+  bbsTypeCd?: string;
   bbsAttrbCode?: string;
+  bbsAtrbCd?: string;
   replyPosblAt?: string;
+  ansPsblYn?: string;
   fileAtchPosblAt?: string;
+  fileAtchPsblYn?: string;
   atchPosblFileNumber?: number;
+  atchPsblFileCnt?: number;
   atchPosblFileSize?: number;
+  atchPsblFileSizeLong?: number;
   tmplatId?: string;
   frstRegisterId?: string;
   frstRegisterPnttm?: string;
   lastUpdusrId?: string;
   lastUpdusrPnttm?: string;
   useAt?: string;
+  useYn?: string;
   cmmntyId?: string;
   blogId?: string;
   blogAt?: string;
+  blogYn?: string;
   commentAt?: string;
+  commentYn?: string;
   stsfdgAt?: string;
+  stsfdgYn?: string;
   // UI related fields (often joined in backend but may be missing in core DTO)
   bbsTyCodeNm?: string;
   tmplatNm?: string;

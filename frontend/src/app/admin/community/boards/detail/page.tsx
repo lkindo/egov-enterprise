@@ -24,10 +24,10 @@ export default async function BoardDetailPage({
 }) {
   const params = await searchParams;
   const bbsId = params.bbsId as string;
-  const nttId = params.nttId as string;
+  const pstId = (params.pstId || params.nttId) as string;
 
   // [P1: Waterfall Elimination] Initiate data promise on server
-  const dataPromise = getInitialBoardDetailData(bbsId, nttId);
+  const dataPromise = getInitialBoardDetailData(bbsId, pstId);
 
   return (
     <Suspense fallback={<BoardDetailSkeleton />}>

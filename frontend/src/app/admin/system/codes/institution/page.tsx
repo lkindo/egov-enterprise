@@ -20,7 +20,7 @@ export default async function InstitutionCodePage() {
   try {
     // 변수명 pageNo로 정규화
     initialData = await codeAdminService.getInstitutionCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
-  } catch (error: unknown) {
+  } catch (error: any) {
     if (error.response?.status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/codes/institution');
     }

@@ -39,7 +39,7 @@ export default async function CommonCodePage({
     clCodes = clRes.list || [];
     groups = groupsRes.list || [];
     details = (detailsRes.list || []) as CmmnDetailCode[];
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Server-side fetch common codes failed:', error);
     if (error.response?.status === 401 || !accessToken) {
       redirect('/login?expired=true');

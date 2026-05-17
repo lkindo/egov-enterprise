@@ -8,18 +8,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.nttId = :pstId")
-    Page<Comment> findByBbsIdAndPstId(@Param("bbsId") String bbsId, @Param("pstId") Long pstId, Pageable pageable);
+    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstId = :pstId")
+    Page<Comment> findByBbsIdAndPstId(@Param("bbsId") String bbsId, @Param("pstId") String pstId, Pageable pageable);
 
-    Page<Comment> findByCmntCnContaining(String cmntCn, Pageable pageable);
+    Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
 
-    @Query("SELECT COALESCE(MAX(c.answerNo), 0) FROM Comment c")
+    @Query("SELECT COALESCE(MAX(c.ansSn), 0L) FROM Comment c")
     Long findMaxId();
 
-    long countByBbsIdAndNttIdAndUseYn(String bbsId, Long nttId, String useYn);
-
-    // legacy alias
-    default long countByBbsIdAndPstIdAndUseYn(String bbsId, Long pstId, String useYn) {
-        return countByBbsIdAndNttIdAndUseYn(bbsId, pstId, useYn);
-    }
+    long countByBbsIdAndPstIdAndUseYn(String bbsId, String pstId, String useYn);
 }

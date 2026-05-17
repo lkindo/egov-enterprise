@@ -24,7 +24,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Optional<BoardDetailResult> findArticleDetail(@NonNull Long pstId) {
+        public Optional<BoardDetailResult> findArticleDetail(@NonNull String pstId) {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
                                                  QBoardMaster.boardMaster.bbsId,
@@ -142,7 +142,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Optional<Board> findByIdCustom(@NonNull Long pstId) {
+        public Optional<Board> findByIdCustom(@NonNull String pstId) {
                 Board result = queryFactory
                                 .selectFrom(QBoard.board)
                                 .where(QBoard.board.pstId.eq(pstId))

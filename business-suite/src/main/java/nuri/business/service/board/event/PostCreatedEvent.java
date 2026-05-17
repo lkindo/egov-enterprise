@@ -4,15 +4,16 @@ import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * 게시글 작성 완료 시 발생하는 이벤트
+ * 게시글 생성 이벤트
  */
 @Getter
 public class PostCreatedEvent extends ApplicationEvent {
+
     private final String bbsId;
-    private final Long pstId;
+    private final String pstId;
     private final String userId;
 
-    public PostCreatedEvent(Object source, String bbsId, Long pstId, String userId) {
+    public PostCreatedEvent(Object source, String bbsId, String pstId, String userId) {
         super(source);
         this.bbsId = bbsId;
         this.pstId = pstId;

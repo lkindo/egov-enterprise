@@ -1,19 +1,18 @@
 package nuri.business.service.board;
 
+import nuri.business.domain.board.BoardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nuri.business.domain.board.BoardRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 인메모리 기반 게시글 조회수 쓰기 지연(Write-behind) 서비스
- * - Redis 서버 없이 애플리케이션 메모리에서 조회수를 버퍼링한다.
+ * 게시글 조회수 관리 서비스
+ * - Redis를 활용한 쓰기 지연(Write-Back) 전략 구현 (여기서는 메모리 맵으로 단순화)
  */
 @Slf4j
 @Service
@@ -21,63 +20,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BoardViewCountService {
 
     private final BoardRepository boardRepository;
-    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+    
+    // In-memory buffer for view counts (Production should use Redis)
+    private final Map<String, Integer> viewCountBuffer = new ConcurrentHashMap<>();
 
-    // 인메모리 버퍼: pstId -> 조회수 증가량
-    private final Map<Long, AtomicInteger> viewCountBuffer = new ConcurrentHashMap<>();
-
-    @jakarta.annotation.PostConstruct
-    public void init() {
-        // 버퍼 사이즈 모니터링을 위한 Gauge 등록
-        io.micrometer.core.instrument.Gauge.builder("board.viewcount.buffer.size", viewCountBuffer, Map::size)
-                .description("Number of articles pending view count synchronization")
-                .register(meterRegistry);
+    /**
+     * 조회수 증가 요청 (버퍼에 저장)
+     */
+    public void increaseViewCount(String pstId) {
+        viewCountBuffer.merge(pstId, 1, Integer::sum);
     }
 
     /**
-     * 조회수 증가 (인메모리 버퍼)
+     * 주기적으로 버퍼의 내용을 DB에 반영 (1분마다)
      */
-    public void increaseViewCount(Long pstId) {
-        viewCountBuffer.computeIfAbsent(pstId, k -> new AtomicInteger(0))
-                .incrementAndGet();
-    }
-
-    /**
-     * 버퍼링된 조회수를 DB로 동기화 (5분마다 실행)
-     */
-    @Scheduled(fixedDelay = 300000) // 5 minutes
+    @Scheduled(fixedDelay = 60000)
     @Transactional
-    public void syncViewCounts() {
+    public void syncViewCountsToDb() {
         if (viewCountBuffer.isEmpty()) {
             return;
         }
 
-        log.info("Starting view count synchronization from memory to DB...");
-        
-        int count = 0;
-        // 동기화를 위해 현재 버퍼의 키셋을 순회
-        for (Long pstId : viewCountBuffer.keySet()) {
+        log.info(">>> Syncing view counts to DB: {} articles", viewCountBuffer.size());
+
+        Map<String, Integer> snapshot = new ConcurrentHashMap<>(viewCountBuffer);
+        viewCountBuffer.clear();
+
+        snapshot.forEach((pstId, count) -> {
             try {
-                // 현재 누적된 조회수를 가져오고 버퍼에서 0으로 초기화 (또는 제거)
-                AtomicInteger views = viewCountBuffer.remove(pstId);
-                if (views != null && views.get() > 0) {
-                    int increment = views.get();
-                    boardRepository.findById(pstId).ifPresent(board -> {
-                        for (int i = 0; i < increment; i++) {
-                            board.increaseInqCnt();
-                        }
-                        boardRepository.save(board);
-                    });
-                    count++;
-                }
+                boardRepository.findById(pstId).ifPresent(board -> {
+                    int currentCnt = board.getInqCnt() != null ? board.getInqCnt() : 0;
+                    board.setInqCnt(currentCnt + count);
+                    boardRepository.save(board);
+                });
             } catch (Exception e) {
-                log.error("Failed to sync view count for ID: {}", pstId, e);
+                log.error("Failed to sync view count for pstId {}: {}", pstId, e.getMessage());
+                // Rollback to buffer on failure
+                viewCountBuffer.merge(pstId, count, Integer::sum);
             }
-        }
-        
-        // 동기화 성공 메트릭 기록
-        meterRegistry.counter("board.viewcount.sync.total").increment(count);
-        
-        log.info("Finished view count synchronization. Updated {} articles.", count);
+        });
     }
 }

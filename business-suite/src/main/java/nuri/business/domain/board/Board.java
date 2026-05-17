@@ -8,6 +8,10 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
 
+/**
+ * 게시물 엔티티 (v5 standardized)
+ * - DB Schema Sync: TB_BBS_ITEM (pst_id as VARCHAR)
+ */
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -21,10 +25,8 @@ public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pstIdSeq")
-    @SequenceGenerator(name = "pstIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
-    @Column(name = "PST_ID")
-    private Long pstId;
+    @Column(name = "PST_ID", length = 20)
+    private String pstId;
 
     @Column(name = "BBS_ID", nullable = false)
     private String bbsId;
@@ -38,8 +40,8 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "PST_CN")
     private String pstCn;
 
-    @Column(name = "UP_PST_ID")
-    private Long upPstId;
+    @Column(name = "UP_PST_ID", length = 20)
+    private String upPstId;
 
     @Column(name = "SORT_ORDR")
     private Long sortOrdr;
@@ -144,14 +146,10 @@ public class Board extends BaseEntity implements Serializable {
     }
 
     // aliases
-    public Long getNttId() { return pstId; }
+    public String getNttId() { return pstId; }
     public String getNttSj() { return pstTtl; }
     public String getNttCn() { return pstCn; }
     public Long getNttNo() { return pstSn; }
-    public Long getPstId() { return pstId; }
-    public String getPstTtl() { return pstTtl; }
-    public String getPstCn() { return pstCn; }
-    public Long getPstSn() { return pstSn; }
     public String getNtcrId() { return userId; }
     public String getNtcrNm() { return userNm; }
     public String getPassword() { return pswd; }
@@ -162,9 +160,9 @@ public class Board extends BaseEntity implements Serializable {
     public String getQnaStatus() { return qnaSttsCd; }
     public String getQnaCategory() { return qnaCatCd; }
     public String getSjBoldYn() { return ttlBoldYn; }
-    public Long getParnts() { return upPstId; }
+    public String getParnts() { return upPstId; }
 
-    public void setNttId(Long v) { this.pstId = v; }
+    public void setNttId(String v) { this.pstId = v; }
     public void setNttSj(String v) { this.pstTtl = v; }
     public void setNttCn(String v) { this.pstCn = v; }
     public void setNttNo(Long v) { this.pstSn = v; }
@@ -178,5 +176,5 @@ public class Board extends BaseEntity implements Serializable {
     public void setQnaStatus(String v) { this.qnaSttsCd = v; }
     public void setQnaCategory(String v) { this.qnaCatCd = v; }
     public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
-    public void setParnts(Long v) { this.upPstId = v; }
+    public void setParnts(String v) { this.upPstId = v; }
 }

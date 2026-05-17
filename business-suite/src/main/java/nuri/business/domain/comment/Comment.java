@@ -11,6 +11,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 /**
  * 게시물 댓글 엔티티 (v5 standardized)
+ * - DB Schema Sync: TB_BBS_COMMENT (ans_sn, pst_id, bbs_id, wrter_id, wrter_nm, pswd, ans_cn, use_yn)
  */
 @Getter
 @Setter
@@ -26,11 +27,11 @@ public class Comment extends BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answerNoSeq")
     @SequenceGenerator(name = "answerNoSeq", sequenceName = "ANSWER_NO_SEQ", allocationSize = 1)
-    @Column(name = "ANSWER_NO")
-    private Long answerNo;
+    @Column(name = "ANS_SN")
+    private Long ansSn;
 
-    @Column(name = "NTT_ID")
-    private Long nttId;
+    @Column(name = "PST_ID", length = 20)
+    private String pstId;
 
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
@@ -41,26 +42,32 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(name = "WRTER_NM", length = 20)
     private String writerNm;
 
-    @Column(name = "PASSWORD", length = 200)
+    @Column(name = "PSWD", length = 200)
     private String password;
 
-    @Column(name = "ANSWER", columnDefinition = "TEXT")
-    private String cmntCn;
+    @Column(name = "ANS_CN", columnDefinition = "TEXT")
+    private String ansCn;
 
-    @Column(name = "USE_AT", length = 1)
-    private String useYn;
+    @Column(name = "USE_YN", length = 1)
+    @Builder.Default
+    private String useYn = "Y";
 
-    public void update(String cmntCn) {
-        this.cmntCn = cmntCn;
+    public void update(String ansCn) {
+        this.ansCn = ansCn;
     }
 
     public void delete() {
         this.useYn = "N";
     }
 
-    // legacy / missing aliases
-    public Long getId() { return answerNo; }
-    public void setId(Long v) { this.answerNo = v; }
-    public Long getPstId() { return nttId; }
-    public void setPstId(Long v) { this.nttId = v; }
+    // aliases for backward compatibility and mapping
+    public Long getAnswerNo() { return ansSn; }
+    public void setAnswerNo(Long v) { this.ansSn = v; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
+    public String getCmntCn() { return ansCn; }
+    public void setCmntCn(String v) { this.ansCn = v; }
+
+    public Long getId() { return ansSn; }
+    public void setId(Long v) { this.ansSn = v; }
 }

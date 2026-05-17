@@ -51,7 +51,7 @@ export const BoardTemplateWiki = ({ list, bbsId, querySearchWrd }: BoardTemplate
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h4>
               </Link>
-              <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.nttCn}</p>
+              <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.pstCn}</p>
               <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Author</span>

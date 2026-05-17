@@ -43,7 +43,7 @@ const InsertScrapPage = () => {
       await axios.post('/scraps', formData);
       alert('등록되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert(error.response?.data?.message || '등록에 실패했습니다.');
     } finally {
       setLoading(false);

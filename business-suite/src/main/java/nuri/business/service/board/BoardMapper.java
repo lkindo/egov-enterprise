@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 public interface BoardMapper {
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "knoId", source = "pstId", qualifiedByName = "longToString")
+    @Mapping(target = "knoId", source = "pstId")
     @Mapping(target = "knoNm", source = "pstTtl")
     @Mapping(target = "knoCn", source = "pstCn")
     @Mapping(target = "statusCd", source = "qnaSttsCd")
@@ -33,7 +33,7 @@ public interface BoardMapper {
     BoardDto toDto(Board entity);
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "knoId", source = "pstId", qualifiedByName = "longToString")
+    @Mapping(target = "knoId", source = "pstId")
     @Mapping(target = "knoNm", source = "pstTtl")
     @Mapping(target = "statusCd", source = "qnaSttsCd")
     @Mapping(target = "categoryCd", source = "qnaCatCd")
@@ -47,7 +47,7 @@ public interface BoardMapper {
     BoardDto toDto(BoardSearchResult result);
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "knoId", source = "pstId", qualifiedByName = "longToString")
+    @Mapping(target = "knoId", source = "pstId")
     @Mapping(target = "knoNm", source = "pstTtl")
     @Mapping(target = "knoCn", source = "pstCn")
     @Mapping(target = "statusCd", source = "qnaSttsCd")
@@ -63,7 +63,7 @@ public interface BoardMapper {
 
     @Mapping(target = "pstId", ignore = true)
     @Mapping(target = "pstSn", constant = "1L")
-    @Mapping(target = "upPstId", constant = "0L")
+    @Mapping(target = "upPstId", constant = "0")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaSttsCd", source = "request.qnaSttsCd", defaultValue = "OPEN")
     @Mapping(target = "eventDate", source = "request.eventDate", qualifiedByName = "parseDateTime")
@@ -87,12 +87,7 @@ public interface BoardMapper {
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "userNm", source = "userNm")
     @Mapping(target = "sortOrdr", source = "sortOrdr")
-    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long pstSn, Long upPstId, Integer replyLc);
-
-    @Named("longToString")
-    default String longToString(Long value) {
-        return value != null ? String.valueOf(value) : null;
-    }
+    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long pstSn, String upPstId, Integer replyLc);
 
     @Named("formatDate")
     default String formatDate(LocalDateTime date) {

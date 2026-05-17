@@ -9,13 +9,13 @@ interface PageProps {
 export default async function InsertBoardArticlePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const bbsId = (params.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA';
-  const nttId = (params.nttId as string) || undefined;
+  const pstId = (params.pstId as string) || undefined;
   const parntsId = (params.parntsId as string) || undefined;
 
   let initialData = null;
-  if (nttId) {
+  if (pstId) {
     try {
-      initialData = await knowledgeService.getArticle(bbsId, nttId);
+      initialData = await knowledgeService.getArticle(bbsId, pstId);
     } catch (error) {
       console.error('Failed to fetch initial article data:', error);
     }
@@ -25,8 +25,8 @@ export default async function InsertBoardArticlePage({ searchParams }: PageProps
     <BoardRegistClient 
       initialData={initialData} 
       bbsId={bbsId} 
-      nttId={nttId} 
-      parntsId={parntsId} 
+      pstId={pstId} 
+      parnts={parntsId} 
     />
   );
 }

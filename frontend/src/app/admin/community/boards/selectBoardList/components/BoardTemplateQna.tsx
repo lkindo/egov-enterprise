@@ -61,7 +61,7 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
             </div>
             <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h4 className="text-2xl font-bold text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase ">
-                <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
               </h4>
             </Link>
             <div className="flex flex-wrap items-center gap-6 pt-2">
@@ -81,7 +81,7 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
                 data-testid="like-button"
                 onClick={(e) => onLike(e, String(item.pstId))}
                 className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-bold text-xs transition-all active:scale-110"
-                aria-label="좋아??
+                aria-label="좋아요"
               >
                 <ThumbsUp size={14} className={cn("opacity-30", isLikePending && "animate-bounce")} />
                 <span data-testid="like-count">{item.likeCo || 0} Likes</span>

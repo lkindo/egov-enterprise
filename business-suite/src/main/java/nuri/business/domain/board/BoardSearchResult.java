@@ -12,14 +12,14 @@ import java.time.LocalDateTime;
 @Builder
 public class BoardSearchResult {
     private String bbsId;
-    private Long pstId;
+    private String pstId;
     private String pstTtl;
     private String frstRegisterId;
     private String frstRegisterNm;
     private LocalDateTime createdDate;
     private Integer inqCnt;
     private Integer likeCnt;
-    private Long upPstId;
+    private String upPstId;
     private String replyYn;
     private Integer replyLc;
     private String useYn;
@@ -36,19 +36,19 @@ public class BoardSearchResult {
     private Long pstSn;
 
     // legacy / aliases
-    public Long getNttId() { return pstId; }
+    public String getNttId() { return pstId; }
     public String getNttSj() { return pstTtl; }
     public Long getNttNo() { return pstSn; }
     public Integer getInqireCo() { return inqCnt; }
     public Integer getLikeCo() { return likeCnt; }
-    public Long getParnts() { return upPstId; }
+    public String getParnts() { return upPstId; }
     public String getNtceBgngYmd() { return bgngYmd; }
     public String getNtceEndYmd() { return endYmd; }
     public String getSjBoldYn() { return ttlBoldYn; }
     public String getQnaStatus() { return qnaSttsCd; }
     public String getQnaCategory() { return qnaCatCd; }
 
-    public Long getPstId() { return pstId; }
+    public String getPstId() { return pstId; }
     public String getPstTtl() { return pstTtl; }
     public Long getPstSn() { return pstSn; }
 }

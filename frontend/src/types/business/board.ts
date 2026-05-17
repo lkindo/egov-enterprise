@@ -1,5 +1,5 @@
 export interface BoardPost {
-  pstId: number;
+  pstId: string;
   bbsId: string;
   pstTtl: string;
   pstCn: string;

@@ -176,7 +176,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 hover:text-primary hover:border-primary/30 transition-all"
-                    aria-label="좋아??
+                    aria-label="좋아요"
                   >
                     <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} />
                     <span className="text-sm font-black text-slate-900">{item.likeCo || 0}</span>
@@ -252,7 +252,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => handleLike(e, String(item.pstId))}
                   className="flex items-center gap-2.5 text-slate-400 hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
-                  aria-label="좋아??
+                  aria-label="좋아요"
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
                   <span>{item.likeCo || 0} Appreciations</span>
@@ -314,7 +314,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
             variant="outline" 
             onClick={onPrevMonth}
             className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-slate-900 rounded-2xl transition-all"
-            aria-label="?�전 ??
+            aria-label="이전 달"
           >
             <ChevronRight className="rotate-180" size={24} />
           </Button>
@@ -322,7 +322,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
             variant="outline" 
             onClick={onNextMonth}
             className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-slate-900 rounded-2xl transition-all"
-            aria-label="?�음 ??
+            aria-label="다음 달"
           >
             <ChevronRight size={24} />
           </Button>
@@ -545,9 +545,9 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
         <TableHeader className="bg-slate-50/50">
           <TableRow className="hover:bg-transparent border-b-2 border-slate-100">
             <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-wider text-[11px] py-6">번호</TableHead>
-            <TableHead className="font-black text-slate-900 tracking-wider text-[11px] py-6 px-8">?�목</TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">?�성??/TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">?�록??/TableHead>
+            <TableHead className="font-black text-slate-900 tracking-wider text-[11px] py-6 px-8">제목</TableHead>
+            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">작성자</TableHead>
+            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">등록일</TableHead>
             <TableHead className="w-[160px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">조회/추천</TableHead>
           </TableRow>
         </TableHeader>
@@ -588,7 +588,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
                     className="font-bold text-[10px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-100 shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
-                    aria-label="좋아??
+                    aria-label="좋아요"
                   >
                     <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
                     <span>{item.likeCo || 0}</span>

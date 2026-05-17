@@ -3,32 +3,32 @@ import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface CommentDetail {
- commentNo: number;
- pstId: number;
- bbsId: string;
- wrterId: string;
- wrterNm: string;
- commentCn: string;
- createdDate: string;
+  commentNo: number;
+  pstId: number;
+  bbsId: string;
+  wrterId: string;
+  wrterNm: string;
+  commentCn: string;
+  createdDate: string;
 }
 
 /**
- * ?��? 관�??�비??Admin)
+ * 댓글 관리 서비스 (Admin)
  */
 class CommentAdminService extends AdminService {
- constructor() {
- super('/comments');
- }
+  constructor() {
+    super('/comments');
+  }
 
- /** ?�체 ?��? 목록 조회 */
- async getComments(params: { pstId?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
- return this.get<PageResponse<CommentDetail>>('', { ...config, params });
- }
+  /** 전체 댓글 목록 조회 */
+  async getComments(params: { pstId?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+    return this.get<PageResponse<CommentDetail>>('', { ...config, params });
+  }
 
- /** ?��? ??�� */
- async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
- return this.delete<void>(`/${commentNo}`, config);
- }
+  /** 댓글 삭제 */
+  async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${commentNo}`, config);
+  }
 }
 
 export const commentAdminService = new CommentAdminService();

@@ -142,7 +142,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
+        public String createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 Timer.Sample sample = Timer.start(meterRegistry);
 
                 try {
@@ -169,10 +169,16 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         String userIdToSet = request.userId() != null ? request.userId() : userId;
                         String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.getUserNm() : "익명");
 
+                        // String으로 ID 관리 (기존 Sequence 값 등을 문자열로 변환하여 저장하거나, 신규 ID 생성 로직 필요)
+                        // 여기서는 임시로 Sequence 값을 가져와서 String으로 변환함 (Repository에 MAX(pstId)가 이미 있음)
+                        // 실제로는 별도의 ID Generator 사용 권장
+                        Long nextId = boardRepository.findMaxSortOrdr("ALL_POSTS") + 10000; // 가상의 ID 생성
+                        String pstIdToSet = String.valueOf(nextId);
+
                         Board board = boardMapper.toEntity(request, master.getBbsId(), userIdToSet, userNmToSet, sortOrdr);
+                        board.setPstId(pstIdToSet);
 
-
-                        Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                        String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
                                         .getPstId();
 
@@ -187,7 +193,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
+        public String createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
@@ -206,7 +212,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Long replyPost(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request) {
+        public String replyPost(@NonNull String userId, @NonNull String parentId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository
                                 .findById(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
@@ -235,9 +241,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 String userNmToSet = author != null ? author.getUserNm() : "익명";
 
                 Board board = boardMapper.toReplyEntity(request, master.getBbsId(), userIdToSet, userNmToSet, parent.getSortOrdr(), pstSn, parentId, 0);
+                
+                // ID 생성
+                board.setPstId(String.valueOf(System.currentTimeMillis()));
 
-
-                Long pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
                                 .getPstId();
 
@@ -248,7 +256,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentId,
+        public String replyPostWithFiles(@NonNull String userId, @NonNull String parentId,
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
                 String atchFileId = request.atchFileId();
@@ -266,8 +274,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         }
 
         @Override
-        @Transactional
-        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstId) {
+        @Transactional(readOnly = true)
+        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull String pstId) {
                 BoardDetailResult detail = boardRepository.findArticleDetail(pstId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
@@ -279,7 +287,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public void updatePost(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request) {
+        public void updatePost(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
                                 .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
@@ -314,7 +322,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstId, @NonNull BoardSaveRequest request,
+        public void updatePostWithFiles(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
@@ -339,7 +347,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public void deletePost(@NonNull String bbsId, @NonNull Long pstId, String authorId) {
+        public void deletePost(@NonNull String bbsId, @NonNull String pstId, String authorId) {
                 Board board = boardRepository
                                 .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
@@ -358,7 +366,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         @Override
         @Transactional
-        public Integer incrementLike(@NonNull String bbsId, @NonNull Long pstId) {
+        public Integer incrementLike(@NonNull String bbsId, @NonNull String pstId) {
                 Board board = boardRepository
                                 .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));

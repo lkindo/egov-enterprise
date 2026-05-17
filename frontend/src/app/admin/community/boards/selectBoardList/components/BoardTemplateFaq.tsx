@@ -40,7 +40,7 @@ function FAQItem({ item }: { item: BoardPost }) {
             "text-xl font-bold tracking-tighter transition-colors",
             isOpen ? "text-purple-600" : "text-slate-800"
           )}>
-            {item.nttSj}
+            {item.pstTtl}
           </h4>
         </div>
         <div className={cn(
@@ -64,7 +64,7 @@ function FAQItem({ item }: { item: BoardPost }) {
                 <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-emerald-500/20">A</div>
                 <div className="space-y-4">
                   <p className="text-slate-600 font-medium leading-relaxed text-lg whitespace-pre-wrap">
-                    {item.nttCn}
+                    {item.pstCn}
                   </p>
                   <div className="flex items-center gap-4 text-xs font-bold text-slate-300 uppercase tracking-widest pt-4">
                     <span>Last Updated: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>

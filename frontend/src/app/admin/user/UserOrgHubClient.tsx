@@ -630,7 +630,7 @@ export default function UserOrgHubClient({
                             columns={userColumns as Column<UserManage>[]}
                             data={users}
                             loading={isUsersLoading}
-                            error={usersError as Error | null}
+                            error={_usersError as Error | null}
                             onRetry={() => refetchUsers()}
                             onRowClick={(item) => {
                                 if (item.userId) setSelectedItemId(item.userId);

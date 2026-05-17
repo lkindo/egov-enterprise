@@ -46,7 +46,7 @@ function CommunityBoardContent() {
  const totalCount = boardData?.total || 0;
 
  const handleRowClick = (item: BoardPost) => {
- router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId || bbsId}`);
+ router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || bbsId}&pstId=${item.pstId}`);
  };
 
  return (
@@ -71,12 +71,12 @@ function CommunityBoardContent() {
  </p>
  </div>
  <div className="flex items-center gap-4">
- <Button 
+ <button 
  onClick={() => router.push('/admin/community/boards/write')}
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Create New Node
- </Button>
+ </button>
  </div>
  </motion.div>
 
@@ -134,21 +134,21 @@ function CommunityBoardContent() {
  <div className="space-y-4">
  {posts.map((item, idx) => (
  <motion.div
- key={item.nttId}
+ key={item.pstId}
  initial={{ opacity: 0, x: -20 }}
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}
  onClick={() => handleRowClick(item)}
  className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-slate-50 rounded-lg hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
  role="button"
- aria-label={`${item.nttSj} 게시글 보기`}
+ aria-label={`${item.pstTtl} 게시글 보기`}
  >
  <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000 grayscale group-hover:grayscale-0 group-hover:opacity-10 pointer-events-none">
  <MessageSquare size={120} className="text-primary" />
  </div>
  <div className="flex gap-8 items-start md:items-center relative z-10 flex-1">
  <div className="w-16 h-11 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shrink-0">
- {item.noticeAt === 'Y' ? (
+ {item.noticeYn === 'Y' ? (
  <Megaphone size={24} className="text-primary animate-bounce" />
  ) : (
  <>
@@ -159,14 +159,14 @@ function CommunityBoardContent() {
  </div>
  <div className="space-y-3 flex-1">
  <div className="flex items-center gap-3">
- {item.noticeAt === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
+ {item.noticeYn === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
  <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.frstRegisterPnttm?.split(' ')[0]}</span>
  </div>
  <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors ">
- {item.nttSj}
+ {item.pstTtl}
  </h3>
  <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-500 uppercase tracking-tight">
- <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg"><User size={12} className="text-primary" /> {item.frstRegisterNm}</span>
+ <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg"><User size={12} className="text-primary" /> {item.frstRegisterNm || item.ntcrNm}</span>
  <span className="flex items-center gap-2"><Eye size={12} /> {item.inqireCo} Interactions</span>
  <span className="flex items-center gap-2"><Clock size={12} /> Access Granted</span>
  </div>
@@ -228,4 +228,3 @@ export default function CommunityBoardPage() {
  </Suspense>
  );
 }
-

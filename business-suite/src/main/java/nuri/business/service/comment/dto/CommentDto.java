@@ -1,27 +1,21 @@
 package nuri.business.service.comment.dto;
 
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CommentDto {
-    private Long id;
-    private Long nttId;
+    private Long commentNo;
+    private String pstId;
     private String bbsId;
     private String writerId;
     private String writerNm;
-    private String cmntCn;
-    private String useYn;
-    private LocalDateTime createdDate;
-    private LocalDateTime modifiedDate;
-
-    // legacy / aliases
-    public Long getPstId() { return nttId; }
-    public void setPstId(Long v) { this.nttId = v; }
-    public Long getAnswerNo() { return id; }
-    public void setAnswerNo(Long v) { this.id = v; }
+    private String password;
+    private String commentCn;
+    private String createdDate;
 }

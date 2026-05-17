@@ -20,7 +20,7 @@ export async function createUserAction(prevState: unknown, formData: UserManage)
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 등록되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : '등록 중 오류 발생';
     console.error('Create User Error:', error);
     return { success: false, message: errorMessage };
@@ -37,7 +37,7 @@ export async function updateUserAction(prevState: unknown, formData: UserManage)
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자 정보가 수정되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : '수정 중 오류 발생';
     console.error('Update User Error:', error);
     return { success: false, message: errorMessage };
@@ -54,7 +54,7 @@ export async function deleteUserAction(prevState: unknown, userId: string): Prom
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 삭제되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
     console.error('Delete User Error:', error);
     return { success: false, message: errorMessage };
@@ -71,7 +71,7 @@ export async function bulkUpdateUserStatusAction(userIds: string[], status: stri
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자 상태가 변경되었습니다.` };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Bulk Update Status Error:', error);
     return { success: false, message: '상태 변경 중 오류 발생' };
   }
@@ -87,7 +87,7 @@ export async function bulkMoveUserDeptAction(userIds: string[], orgnztId: string
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자가 부서 이동되었습니다.` };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Bulk Move Dept Error:', error);
     return { success: false, message: '부서 이동 중 오류 발생' };
   }
@@ -103,7 +103,7 @@ export async function bulkDeleteUsersAction(userIds: string[]): Promise<ActionRe
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자가 삭제되었습니다.` };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Bulk Delete Users Error:', error);
     return { success: false, message: '일괄 삭제 중 오류 발생' };
   }
@@ -119,7 +119,7 @@ export async function bulkUpdateUserRoleAction(userIds: string[], role: string):
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자 권한이 변경되었습니다.` };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Bulk Update Role Error:', error);
     return { success: false, message: '권한 변경 중 오류 발생' };
   }

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BoardDetailResult {
     // Board fields
     private String bbsId;
-    private Long pstId;
+    private String pstId;
     private String pstTtl;
     private String userId;
     private String userNm;
@@ -31,7 +31,7 @@ public class BoardDetailResult {
     private Integer likeCnt;
     private String useYn;
     private String atchFileId;
-    private Long upPstId;
+    private String upPstId;
     private String replyYn;
     private Integer replyLc;
     private Long sortOrdr;
@@ -51,7 +51,7 @@ public class BoardDetailResult {
     private String bbsTtl;
 
     // legacy / aliases
-    public Long getNttId() { return pstId; }
+    public String getNttId() { return pstId; }
     public String getNttSj() { return pstTtl; }
     public String getNtcrId() { return userId; }
     public String getNtcrNm() { return userNm; }
@@ -62,13 +62,13 @@ public class BoardDetailResult {
     public String getNtceEndYmd() { return endYmd; }
     public Integer getInqireCo() { return inqCnt; }
     public Integer getLikeCo() { return likeCnt; }
-    public Long getParnts() { return upPstId; }
+    public String getParnts() { return upPstId; }
     public String getReplyPsblYn() { return ansPsblYn; }
     public String getQnaStatus() { return qnaSttsCd; }
     public String getQnaCategory() { return qnaCatCd; }
     public String getSjBoldYn() { return ttlBoldYn; }
 
-    public Long getPstId() { return pstId; }
+    public String getPstId() { return pstId; }
     public String getPstTtl() { return pstTtl; }
     public String getPstCn() { return pstCn; }
     public Long getPstSn() { return pstSn; }

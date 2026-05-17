@@ -9,14 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 @Repository
-public interface BoardRepository extends JpaRepository<Board, Long>, BoardRepositoryCustom {
+public interface BoardRepository extends JpaRepository<Board, String>, BoardRepositoryCustom {
         @Override
         @NonNull
-        Optional<Board> findById(@NonNull Long id);
+        Optional<Board> findById(@NonNull String id);
 
         @Override
         @Transactional
-        void deleteById(@NonNull Long id);
+        void deleteById(@NonNull String id);
 
         @Query("SELECT COALESCE(MAX(b.sortOrdr), 0L) FROM Board b WHERE b.bbsId = :bbsId")
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
@@ -24,11 +24,8 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         @Query("SELECT COALESCE(MAX(b.pstSn), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
         Long findMaxPstSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
-        @Query("SELECT COALESCE(MAX(b.pstId), 0L) FROM Board b")
-        Long findMaxPstId();
-
         @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
-        Optional<Board> findByPstId(@Param("pstId") Long pstId);
+        Optional<Board> findByPstId(@Param("pstId") String pstId);
 
         long countByBbsIdAndUseYn(String bbsId, String useYn);
 

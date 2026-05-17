@@ -54,13 +54,13 @@ public class BoardApiController {
     @GetMapping("/{bbsId}/posts/{pstId}")
     public ResponseEntity<ApiResponse<BoardDto>> getPost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstId) {
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable String pstId) {
         return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstId)));
     }
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
     @PostMapping("/posts")
-    public ResponseEntity<ApiResponse<Long>> createPost(
+    public ResponseEntity<ApiResponse<String>> createPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BoardSaveRequest request) {
         return ResponseEntity.ok(ApiResponse.success(boardService.createPost(userDetails.getUsername(), request)));
@@ -71,7 +71,7 @@ public class BoardApiController {
     public ResponseEntity<ApiResponse<Void>> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String bbsId,
-            @PathVariable Long pstId,
+            @PathVariable String pstId,
             @Valid @RequestBody BoardSaveRequest request) {
         boardService.updatePost(bbsId, pstId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -82,7 +82,7 @@ public class BoardApiController {
     public ResponseEntity<ApiResponse<Void>> deletePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
-            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstId) {
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable String pstId) {
         boardService.deletePost(bbsId, pstId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -91,7 +91,7 @@ public class BoardApiController {
     @PatchMapping("/{bbsId}/posts/{pstId}/like")
     public ResponseEntity<ApiResponse<Integer>> likePost(
             @PathVariable String bbsId,
-            @PathVariable Long pstId) {
+            @PathVariable String pstId) {
         // 실제 운영 환경에서는 중복 추천 방지 로직이 필요하나, 여기서는 낙관적 업데이트 시연을 위해 단순 증가 처리
         return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, pstId)));
     }

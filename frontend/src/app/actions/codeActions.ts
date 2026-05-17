@@ -21,7 +21,7 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 저장되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '저장 중 오류 발생';
     console.error('Save Code Detail Error:', error);
     return { success: false, message };
@@ -38,7 +38,7 @@ export async function deleteCodeDetail(prevState: unknown, { codeId, code }: { c
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 삭제되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
     console.error('Delete Code Detail Error:', error);
     return { success: false, message };
@@ -61,7 +61,7 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '분류 코드가 저장되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '저장 중 오류 발생';
     return { success: false, message };
   }
@@ -75,7 +75,7 @@ export async function deleteClCode(prevState: unknown, clCode: string) {
     await codeAdminService.deleteClCode(clCode, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '분류 코드가 삭제되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
     return { success: false, message };
   }
@@ -97,7 +97,7 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통 코드가 저장되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '저장 중 오류 발생';
     return { success: false, message };
   }
@@ -111,7 +111,7 @@ export async function deleteCmmnCode(prevState: unknown, codeId: string) {
     await codeAdminService.deleteCmmnCode(codeId, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통 코드가 삭제되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
     return { success: false, message };
   }
@@ -136,7 +136,7 @@ export async function saveCmmnCodeHierarchyAction(flattenedNodes: any[]): Promis
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통코드 도메인 구조가 동기화되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '계층 구조 저장 중 오류 발생';
     return { success: false, message };
   }

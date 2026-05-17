@@ -78,7 +78,7 @@ export function HubListCard({
           <Link
             href={moreHref}
             className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${title} ?�보�?}
+            aria-label={`${title} 상세보기`}
           >
             <ArrowRight size={20} />
           </Link>
@@ -112,7 +112,7 @@ export function HubListCard({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-bold tracking-tight">?�이?��? ?�습?�다.</p>
+            <p className="text-sm font-bold tracking-tight">데이터가 없습니다.</p>
           </div>
         )}
       </div>

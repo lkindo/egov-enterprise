@@ -58,7 +58,7 @@ const SelectScrapDetailPage = () => {
       await axios.put(`/scraps/${id}`, formData);
       alert('수정되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert(error.response?.data?.message || '수정에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const SelectScrapDetailPage = () => {
       await axios.delete(`/scraps/${id}`);
       alert('삭제되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert(error.response?.data?.message || '삭제에 실패했습니다.');
     } finally {
       setLoading(false);

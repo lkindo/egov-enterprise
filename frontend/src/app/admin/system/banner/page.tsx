@@ -27,7 +27,7 @@ export default async function BannerAdminPage() {
 
     initialBanners = (bannersRes as any)?.content || [];
     initialPopups = (popupsRes as any)?.content || [];
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Server-side fetch banners/popups failed:', error);
     
     // 만약 401 에러(인증 만료)라면 로그인 페이지로 리다이렉트

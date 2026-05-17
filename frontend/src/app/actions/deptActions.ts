@@ -23,7 +23,7 @@ export async function saveDeptAction(prevState: unknown, { mode, data }: { mode:
 
     revalidatePath('/admin/user/departments');
     return { success: true, message: `부서 정보가 ${mode === 'create' ? '배포' : '수정'}되었습니다.` };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '저장 중 오류 발생';
     return { success: false, message };
   }
@@ -39,7 +39,7 @@ export async function deleteDeptAction(prevState: unknown, deptId: string): Prom
 
     revalidatePath('/admin/user/departments');
     return { success: true, message: '부서 정보가 영구 삭제되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
     return { success: false, message };
   }
@@ -64,7 +64,7 @@ export async function saveDeptHierarchyAction(flattenedDepts: any[]): Promise<Ac
 
     revalidatePath('/admin/user/departments');
     return { success: true, message: '조직 아키텍처 구조가 동기화되었습니다.' };
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : '계층 구조 저장 중 오류 발생';
     return { success: false, message };
   }

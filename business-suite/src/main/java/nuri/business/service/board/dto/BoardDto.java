@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class BoardDto {
 
     @Schema(description = "게시글 ID")
-    private Long pstId;
+    private String pstId;
 
     @Schema(description = "게시판 ID")
     private String bbsId;
@@ -32,7 +32,7 @@ public class BoardDto {
     private String pstCn;
 
     @Schema(description = "상위 게시글 ID")
-    private Long upPstId;
+    private String upPstId;
 
     @Schema(description = "정렬 순서")
     private Long sortOrdr;
@@ -112,8 +112,8 @@ public class BoardDto {
     private String bbsTtl;
 
     // --- Legacy Aliases ---
-    public Long getId() { return pstId; }
-    public void setId(Long v) { this.pstId = v; }
+    public String getId() { return pstId; }
+    public void setId(String v) { this.pstId = v; }
     public String getNttSj() { return pstTtl; }
     public void setNttSj(String v) { this.pstTtl = v; }
     public String getNttCn() { return pstCn; }
@@ -127,8 +127,8 @@ public class BoardDto {
     public String getUseAt() { return useYn; }
     public void setUseAt(String v) { this.useYn = v; }
     
-    public Long getNttId() { return pstId; }
-    public void setNttId(Long v) { this.pstId = v; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
 
     public String getFrstRegisterNm() {
         return userNm != null ? userNm : frstRegisterNm;
@@ -148,7 +148,7 @@ public class BoardDto {
     public String getQnaStatus() { return qnaSttsCd; }
     public String getQnaCategory() { return qnaCatCd; }
     public String getSjBoldYn() { return ttlBoldYn; }
-    public Long getParnts() { return upPstId; }
+    public String getParnts() { return upPstId; }
 
     public void setNtcrId(String v) { this.userId = v; }
     public void setNtcrNm(String v) { this.userNm = v; }
@@ -160,14 +160,14 @@ public class BoardDto {
     public void setQnaStatus(String v) { this.qnaSttsCd = v; }
     public void setQnaCategory(String v) { this.qnaCatCd = v; }
     public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
-    public void setParnts(Long v) { this.upPstId = v; }
+    public void setParnts(String v) { this.upPstId = v; }
 
     public abstract static class BoardDtoBuilder<C extends BoardDto, B extends BoardDtoBuilder<C, B>> {
-        public B nttId(Long nttId) { this.pstId = nttId; return self(); }
+        public B nttId(String nttId) { this.pstId = nttId; return self(); }
         public B nttSj(String nttSj) { this.pstTtl = nttSj; return self(); }
         public B nttCn(String nttCn) { this.pstCn = nttCn; return self(); }
         public B nttNo(Long nttNo) { this.pstSn = nttNo; return self(); }
-        public B id(Long id) { this.pstId = id; return self(); }
+        public B id(String id) { this.pstId = id; return self(); }
         public B ntcrId(String ntcrId) { this.userId = ntcrId; return self(); }
         public B ntcrNm(String ntcrNm) { this.userNm = ntcrNm; return self(); }
         public B password(String password) { this.pswd = password; return self(); }

@@ -29,7 +29,7 @@ export async function saveProgramAction(prevState: unknown, { mode, data }: Save
 
         revalidatePath('/admin/system/programs');
         return { success: true, message: `프로그램이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
-    } catch (error: unknown) {
+    } catch (error: any) {
         const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
         console.error('Save Program Error:', error);
         return { success: false, message: errorMessage };
@@ -46,7 +46,7 @@ export async function deleteProgramAction(prevState: unknown, name: string): Pro
 
         revalidatePath('/admin/system/programs');
         return { success: true, message: '프로그램이 삭제되었습니다.' };
-    } catch (error: unknown) {
+    } catch (error: any) {
         const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
         console.error('Delete Program Error:', error);
         return { success: false, message: errorMessage };

@@ -44,7 +44,7 @@ export default function BoardWritePage() {
  const form = useAppForm(boardSchema, {
  defaultValues: {
  bbsId: '',
- nttSj: '',
+ pstTtl: '',
  nttCn: '',
  ntceBgnde: '',
  ntceEndde: '',
@@ -145,7 +145,7 @@ export default function BoardWritePage() {
 
  <FormField
  control={form.control}
- name="nttSj"
+ name="pstTtl"
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -325,4 +325,3 @@ export default function BoardWritePage() {
  </div>
  );
 }
-

@@ -19,19 +19,19 @@ export interface QNA {
   writngPassword?: string;
   wrterNm: string;
   writngDe: string;
-  qnaProcessSttusCode: string; // 1: ?�수, 2: 처리�? 3: ?��??�료
+  qnaProcessSttusCode: string; // 1: 접수, 2: 처리중, 3: 답변완료
 }
 
 /**
- * ?��?�??�터 ?�비??User)
- * - Q&A, FAQ 기능???�합 게시??BBS) ?�진?�로 ?�결
+ * 도움말 데이터 서비스 (User)
+ * - Q&A, FAQ 기능을 통합 게시판(BBS) 엔진으로 연결
  */
 class HelpUserService extends UserService {
   constructor() {
     super('/boards');
   }
 
-  /** FAQ 목록 조회 (?�용 ID: BBSMSTR_AAAAAAAAAAAA) */
+  /** FAQ 목록 조회 (전용 ID: BBSMSTR_AAAAAAAAAAAA) */
   async getFaqs(params: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<FAQ>> {
     const response = await this.get<PageResponse<any>>('/BBSMSTR_AAAAAAAAAAAA', { 
       ...config, 
@@ -55,7 +55,7 @@ class HelpUserService extends UserService {
     return response as PageResponse<FAQ>;
   }
 
-  /** Q&A 목록 조회 (?�이�? */
+  /** Q&A 목록 조회 (페이지) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
     const response = await this.get<PageResponse<any>>('/BBSMSTR_DDDDDDDDDDDD', {
       ...config,
@@ -80,7 +80,7 @@ class HelpUserService extends UserService {
     return response as PageResponse<QNA>;
   }
 
-  /** Q&A ?�록 */
+  /** Q&A 등록 */
   async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
     const boardData = {
       bbsId: 'BBSMSTR_DDDDDDDDDDDD',

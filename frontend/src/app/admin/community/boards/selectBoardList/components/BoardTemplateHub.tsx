@@ -26,7 +26,7 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
             <div className="relative z-10 space-y-6">
               <Badge className="bg-primary hover:bg-primary text-white border-none font-bold tracking-[0.4em] uppercase py-1 px-4 text-xs">FEATURED_KNOWLEDGE</Badge>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
-                <h3 className="text-4xl font-bold tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
+                <h3 className="text-4xl font-bold tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].pstTtl}</h3>
               </Link>
               <div className="flex items-center gap-8 mt-8">
                 <div className="flex items-center gap-3">
@@ -60,7 +60,7 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
               <BookOpen size={60} />
             </div>
             <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
-              <h4 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
+              <h4 className="font-bold text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.pstTtl}</h4>
             </Link>
             <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
               <div className="flex gap-4">

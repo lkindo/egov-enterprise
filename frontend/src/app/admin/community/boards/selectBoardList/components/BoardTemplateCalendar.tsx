@@ -25,7 +25,7 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0: Sun, 6: Sat
   
-  // 게시글???�짜별로 그룹??
+  // 게시글을 날짜별로 그룹화
   const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
     const targetDate = post.eventDate || post.createdDate;
     if (targetDate) {
@@ -53,7 +53,7 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
             variant="outline" 
             onClick={() => onDateChange(new Date(year, month - 1, 1))}
             className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-lg transition-all text-slate-900 dark:text-white"
-            aria-label="?�전 ??
+            aria-label="이전 달"
           >
             <ChevronRight className="rotate-180" size={20} />
           </Button>
@@ -61,7 +61,7 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
             variant="outline" 
             onClick={() => onDateChange(new Date(year, month + 1, 1))}
             className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-lg transition-all text-slate-900 dark:text-white"
-            aria-label="?�음 ??
+            aria-label="다음 달"
           >
             <ChevronRight size={20} />
           </Button>
@@ -105,11 +105,11 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2 text-xs font-bold leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
-                      post.noticeAt === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
+                      post.noticeYn === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
                     )}
-                    title={post.nttSj}
+                    title={post.pstTtl}
                   >
-                    {post.nttSj}
+                    {post.pstTtl}
                   </Link>
                 ))}
               </div>

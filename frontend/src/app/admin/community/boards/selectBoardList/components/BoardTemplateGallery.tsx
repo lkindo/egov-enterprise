@@ -51,7 +51,7 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
           <CardContent className="p-8 space-y-6">
             <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">
-                <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
               </h3>
             </Link>
             <div className="flex items-center justify-between pt-6 border-t border-slate-50">
@@ -69,12 +69,12 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
                   data-testid="like-button"
                   onClick={(e) => onLike(e, String(item.pstId))}
                   className="flex items-center gap-1.5 text-slate-300 hover:text-primary transition-all active:scale-125"
-                  aria-label="좋아??
+                  aria-label="좋아요"
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
                   <span data-testid="like-count" className="text-xs font-bold text-slate-900">{item.likeCo || 0}</span>
                 </button>
-                <div className="flex items-center gap-1.5 text-slate-300" aria-label="공유?�기"><Share2 size={16} /></div>
+                <div className="flex items-center gap-1.5 text-slate-300" aria-label="공유하기"><Share2 size={16} /></div>
               </div>
             </div>
           </CardContent>
