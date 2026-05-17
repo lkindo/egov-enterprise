@@ -67,6 +67,18 @@ public class StatisticsApiController {
         return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
     }
 
+    @Operation(summary = "접속 통계 조회")
+    @GetMapping("/connect")
+    public ResponseEntity<ApiResponse<List<StatsDto>>> getConnectStats(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) String statsKind) throws Exception {
+
+        String[] dates = setDefaultDates(fromDate, toDate);
+        List<Object[]> stats = reportStatsService.getConnectStatsByDate(dates[0], dates[1]);
+        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
+    }
+
 
     private List<StatsDto> convertToStatsDto(List<Object[]> stats) {
         return stats.stream()

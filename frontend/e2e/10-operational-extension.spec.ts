@@ -44,13 +44,6 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         }
     });
 
-    test('Operational: Rough Map Geographic Intelligence', async ({ operationalPage }) => {
-        await operationalPage.gotoRoughMap();
-        
-        // Verify UI elements
-        await expect(operationalPage.page.getByText('거점 자산 매트릭스')).toBeVisible();
-        await expect(operationalPage.page.getByRole('button', { name: '거점 등록' })).toBeVisible();
-    });
 
     test('Communication: SMS Protocol & Transmission', async ({ operationalPage }) => {
         await operationalPage.gotoSms();

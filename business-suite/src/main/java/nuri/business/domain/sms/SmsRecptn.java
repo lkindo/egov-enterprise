@@ -16,10 +16,10 @@ public class SmsRecptn {
     @EmbeddedId
     private SmsRecptnId id;
 
-    @Column(name = "RESULT_CODE", length = 4)
+    @Column(name = "RSLT_CD", length = 4)
     private String resultCode;
 
-    @Column(name = "RESULT_MSSAGE", length = 4000)
+    @Column(name = "RSLT_MSG", length = 4000)
     private String resultMssage;
 
     @Builder

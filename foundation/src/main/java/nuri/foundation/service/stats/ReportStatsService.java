@@ -23,6 +23,7 @@ public class ReportStatsService {
     private final ReprtStatsRepository reprtStatsRepository;
     private final DtaUseStatsRepository dtaUseStatsRepository;
     private final nuri.foundation.domain.log.UserLogRepository userLogRepository;
+    private final nuri.foundation.domain.log.LoginLogRepository loginLogRepository;
 
     @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
     private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
@@ -37,6 +38,16 @@ public class ReportStatsService {
         String to = toDate.replace("-", "");
         // TB_USER_LOG에서 날짜별로 집계
         return userLogRepository.countByDate(from, to);
+    }
+
+    /**
+     * 날짜별 접속(로그인) 통계
+     */
+    public List<Object[]> getConnectStatsByDate(String fromDate, String toDate) {
+        String from = fromDate.replace("-", "");
+        String to = toDate.replace("-", "");
+        // TB_LOGIN_LOG에서 날짜별로 집계
+        return loginLogRepository.countLoginsByDate(from, to);
     }
 
     // ========== 보고서 통계 ==========

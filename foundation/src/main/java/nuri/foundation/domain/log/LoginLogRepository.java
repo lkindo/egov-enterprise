@@ -66,4 +66,19 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         @org.springframework.data.repository.query.Param("fromDate") String fromDate,
                         @org.springframework.data.repository.query.Param("toDate") String toDate,
                         @org.springframework.data.repository.query.Param("detailStatsKind") String detailStatsKind);
+
+        /**
+         * 일별 전체 로그인/접속 통계
+         */
+        @org.springframework.data.jpa.repository.Query(value = """
+                        SELECT SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 7, 2) AS statsDate,
+                               COUNT(LOG_ID) AS statsCo
+                          FROM TB_LOGIN_LOG
+                         WHERE to_char(CRT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
+                         GROUP BY SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 7, 2)
+                         ORDER BY statsDate ASC
+                        """, nativeQuery = true)
+        java.util.List<Object[]> countLoginsByDate(
+                        @org.springframework.data.repository.query.Param("fromDate") String fromDate,
+                        @org.springframework.data.repository.query.Param("toDate") String toDate);
 }

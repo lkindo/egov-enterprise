@@ -22,26 +22,26 @@ import lombok.NoArgsConstructor;
 public class SentMail extends BaseEntity {
 
     @Id
-    @Column(name = "MSSAGE_ID", length = 20)
+    @Column(name = "MSG_ID", length = 20)
     private String mssageId;
 
-    @Column(name = "SJ", length = 255, nullable = false)
+    @Column(name = "EML_TTL", length = 255, nullable = false)
     private String sj;
 
     @Column(name = "EML_CN", length = 4000)
     private String emailCn;
 
-    @Column(name = "SNDR", length = 100)
+    @Column(name = "SNDPTY_NM", length = 100)
     private String dsptchPerson;
 
-    @Column(name = "RCVER", length = 100)
+    @Column(name = "RCVR_NM", length = 100)
     private String recptnPerson;
 
     @Column(name = "DSPTCH_RSLT_CD", length = 30)
     private String sndngResultCode;
 
-    @Column(name = "DSPTCH_DT", length = 20)
-    private String sndngDe;
+    @Column(name = "DSPTCH_DT")
+    private java.time.LocalDateTime sndngDe;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
@@ -54,9 +54,15 @@ public class SentMail extends BaseEntity {
         this.dsptchPerson = dsptchPerson;
         this.recptnPerson = recptnPerson;
         this.sndngResultCode = sndngResultCode;
-        this.sndngDe = java.time.LocalDateTime.now()
-                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        this.sndngDe = java.time.LocalDateTime.now();
         this.atchFileId = atchFileId;
+    }
+
+    @jakarta.persistence.PrePersist
+    protected void onCreate() {
+        if (this.sndngDe == null) {
+            this.sndngDe = java.time.LocalDateTime.now();
+        }
     }
 
     public void updateResult(String sndngResultCode) {

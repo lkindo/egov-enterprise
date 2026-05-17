@@ -13,7 +13,7 @@ export default async function RewardManagePage() {
     const res = await operationAdminService.getRewardList();
     initialData = res.list || [];
   } catch (error) {
-    console.error('Failed to fetch initial reward info');
+    console.warn('Failed to fetch initial reward info', error);
   }
 
   return (

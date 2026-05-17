@@ -14,8 +14,8 @@ import java.util.Optional;
 @Repository("noteRecptnDomainRepository")
 public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {
 
-    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (cast(:searchWrd as string) IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
-           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId AND (cast(:searchWrd as string) IS NULL OR r.note.noteSj LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
+           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId AND (:searchWrd IS NULL OR r.note.noteSj LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
     Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);
 

@@ -47,7 +47,7 @@ public class SentMailDto {
                 .dsptchPerson(entity.getDsptchPerson())
                 .recptnPerson(entity.getRecptnPerson())
                 .sndngResultCode(entity.getSndngResultCode())
-                .sndngDe(entity.getSndngDe())
+                .sndngDe(entity.getSndngDe() != null ? entity.getSndngDe().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
                 .atchFileId(entity.getAtchFileId())
                 .build();
     }

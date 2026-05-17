@@ -34,8 +34,8 @@ public class AddressBookUser extends BaseEntity {
     @Column(name = "USER_ID", length = 30)
     private String userId;
 
-    @Column(name = "RLS_SCP_CD", length = 30)
-    private String rlsScpCd;
+    // @Column(name = "RLS_SCP_CD", length = 30)
+    // private String rlsScpCd;
 
     @Column(name = "NM", length = 50)
     private String userNm;

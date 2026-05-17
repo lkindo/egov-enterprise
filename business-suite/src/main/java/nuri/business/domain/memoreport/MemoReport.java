@@ -18,34 +18,34 @@ import lombok.experimental.SuperBuilder;
 public class MemoReport extends BaseEntity {
 
     @Id
-    @Column(name = "REPRT_ID", length = 20)
+    @Column(name = "RPT_ID", length = 20)
     private String reportId;
 
-    @Column(name = "REPRT_SJ", length = 255, nullable = false)
+    @Column(name = "RPT_TTL", length = 255, nullable = false)
     private String reportSubject;
 
     @Column(name = "MEMO_RPT_YMD", length = 10)
     private String reprtDe;
 
-    @Column(name = "WRTER_ID", length = 20, nullable = false)
+    @Column(name = "USER_ID", length = 20, nullable = false)
     private String writerId;
 
-    @Column(name = "REPORTR_ID", length = 20, nullable = false)
+    @Column(name = "RPTR_ID", length = 20, nullable = false)
     private String reportrId;
 
-    @Column(name = "REPORT_CN", columnDefinition = "TEXT")
+    @Column(name = "RPT_CN", columnDefinition = "TEXT")
     private String reportContents;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "DRCT_MATTER", length = 2000)
+    @Column(name = "DRCTN_MTTR", length = 2000)
     private String instrCn;
 
-    @Column(name = "DRCT_MATTER_REGIST_DT", length = 20)
+    @Column(name = "DRCTN_MTTR_REG_DT", length = 20)
     private String instrRegDt;
 
-    @Column(name = "REPORTR_INQIRE_DT", length = 20)
+    @Column(name = "RPTR_INQ_DT", length = 20)
     private String reportrInqireDt;
 
     public void update(String reportSubject, String reprtDe, String writerId, String reportrId,

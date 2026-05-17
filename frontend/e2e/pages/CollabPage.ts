@@ -61,7 +61,7 @@ export class CollabPage {
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-history/);
     }
 
-    async createContact(name: string, email: string, tel: string = '010-0000-0000') {
+    async createContact(name: string, email: string, tel: string = '01000000000') {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
         await this.switchTab('CONTACTS');
         

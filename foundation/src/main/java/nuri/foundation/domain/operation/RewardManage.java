@@ -22,25 +22,25 @@ import lombok.NoArgsConstructor;
 public class RewardManage extends BaseEntity {
 
     @Id
-    @Column(name = "RWARD_ID", length = 20)
+    @Column(name = "RWRD_ID", length = 20)
     private String rwardId;
 
-    @Column(name = "RWARDWNR_ID", length = 20, nullable = false)
+    @Column(name = "RWRD_USER_ID", length = 20, nullable = false)
     private String rwardwnrId;
 
-    @Column(name = "RWARD_CODE", length = 20, nullable = false)
+    @Column(name = "RWRD_CD", length = 20, nullable = false)
     private String rwardCode;
 
-    @Column(name = "RWARD_DE", length = 20)
+    @Column(name = "RWRD_YMD", length = 20)
     private String rwardDe;
 
-    @Column(name = "RWARD_NM", length = 255)
+    @Column(name = "RWRD_NM", length = 255)
     private String rwardNm;
 
-    @Column(name = "PBLEN_CN", length = 2000)
+    @Column(name = "CNTRB_CN", length = 2000)
     private String pblenCn;
 
-    @Column(name = "SANCTNER_ID", length = 20)
+    @Column(name = "ATRZR_ID", length = 20)
     private String sanctnerId;
 
     @Column(name = "CONFM_YN", length = 1)
@@ -49,13 +49,13 @@ public class RewardManage extends BaseEntity {
     @Column(name = "APRV_DT")
     private java.time.LocalDateTime sanctnDt;
 
-    @Column(name = "RTRN_RSN_CN", length = 1000)
+    @Column(name = "RTN_RSN_CN", length = 1000)
     private String returnResn;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "INFORML_SANCTN_ID", length = 20)
+    @Column(name = "IFML_ATRZ_ID", length = 20)
     private String informlSanctnId;
 
     public void update(String rwardDe, String rwardNm, String pblenCn) {

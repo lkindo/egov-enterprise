@@ -16,32 +16,32 @@ import java.time.LocalDateTime;
 public class ExternalHr {
 
     @Id
-    @Column(name = "EVENT_ID", length = 20)
+    @Column(name = "EVNT_ID", length = 20)
     private String eventId;
 
     @Id
-    @Column(name = "EXTRL_HR_ID", length = 20)
+    @Column(name = "OTSD_HR_ID", length = 20)
     private String extrlHrId;
 
     @Column(name = "GNDR_CD", length = 1)
     private String sexdstnCode;
 
-    @Column(name = "EXTRL_HR_NM", length = 60)
+    @Column(name = "OTSD_HR_NM", length = 60)
     private String extrlHrNm;
 
-    @Column(name = "OCCP_TY_CODE", length = 1)
+    @Column(name = "CR_TYPE_CD", length = 1)
     private String occpTyCode;
 
-    @Column(name = "PSITN_INSTT_NM", length = 100)
+    @Column(name = "OGDP_INST_NM", length = 100)
     private String psitnInsttNm;
 
-    @Column(name = "BRTH_YMD", length = 20)
+    @Column(name = "BRDT_YMD", length = 20)
     private String brthdy;
 
     @Column(name = "AREA_NO", length = 4)
     private String areaNo;
 
-    @Column(name = "MIDDLE_TELNO", length = 4)
+    @Column(name = "MD_TELNO", length = 4)
     private String middleTelno;
 
     @Column(name = "END_TELNO", length = 4)
@@ -63,7 +63,7 @@ public class ExternalHr {
     private String lastUpdusrId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "EVNT_ID", insertable = false, updatable = false)
     private EventInfo event;
 
     @Builder
