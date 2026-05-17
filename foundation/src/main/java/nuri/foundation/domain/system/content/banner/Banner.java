@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * 배너 정보 Entity
- * 매핑 테이블: NBANNER
+ * 매핑 테이블: TB_BNR_INFO
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -24,16 +24,16 @@ import lombok.experimental.SuperBuilder;
 public class Banner extends BaseEntity {
 
     @Id
-    @Column(name = "BANNER_ID", length = 20)
+    @Column(name = "BNR_ID", length = 20)
     private String bannerId;
 
-    @Column(name = "BANNER_NM", length = 100, nullable = false)
+    @Column(name = "BNR_NM", length = 100, nullable = false)
     private String bannerNm;
 
     @Column(name = "LINK_URL", length = 255)
     private String linkUrl;
 
-    @Column(name = "BANNER_IMAGE", length = 100)
+    @Column(name = "BNR_IMG_NM", length = 100)
     private String bannerImage;
 
     @Column(name = "BNR_EXPLN", length = 1000)
@@ -45,7 +45,7 @@ public class Banner extends BaseEntity {
     @Column(name = "REFLCT_YN", length = 1)
     private String reflctAt;
 
-    @Column(name = "BANNER_IMAGE_FILE", length = 20)
+    @Column(name = "ATCH_FILE_ID", length = 20)
     private String bannerImageFile;
 
     public void update(String bannerNm, String linkUrl, String bannerImage,
@@ -58,4 +58,8 @@ public class Banner extends BaseEntity {
         this.reflctAt = reflctAt;
         if (bannerImageFile != null) this.bannerImageFile = bannerImageFile;
     }
+
+    // legacy getters for compatibility
+    public String getBnrId() { return bannerId; }
+    public String getBnrNm() { return bannerNm; }
 }

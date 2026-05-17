@@ -29,9 +29,9 @@ public class PopupDto {
     @Schema(description = "팝업 너비 크기")
     private String popupWidthSize;
     @Schema(description = "게시 시작일")
-    private LocalDate noticeBeginDate;
+    private String noticeBeginDate;
     @Schema(description = "게시 종료일")
-    private LocalDate noticeEndDate;
+    private String noticeEndDate;
     @Schema(description = "그만보기 여부")
     private String isStopView;
     @Schema(description = "게시 여부")
@@ -62,11 +62,11 @@ public class PopupDto {
     }
 
     public String getNtceBgnde() {
-        return noticeBeginDate != null ? noticeBeginDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) : null;
+        return noticeBeginDate;
     }
 
     public String getNtceEndde() {
-        return noticeEndDate != null ? noticeEndDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) : null;
+        return noticeEndDate;
     }
 
     public String getStopVewAt() {

@@ -32,8 +32,8 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "POLL_ID", length = 20)
     private String pollId;
 
-    @Column(name = "POLL_TTL", length = 300, nullable = false)
-    private String pollTtl;
+    @Column(name = "POLL_NM", length = 300, nullable = false)
+    private String pollNm;
 
     @Column(name = "POLL_BGNG_YMD", length = 8)
     private String pollBgngYmd;
@@ -56,9 +56,9 @@ public class OnlinePollManage extends BaseEntity {
     @Builder.Default
     private List<OnlinePollItem> pollItems = new ArrayList<>();
 
-    public void update(String pollTtl, String pollBgngYmd, String pollEndYmd, String pollTypeCd,
+    public void update(String pollNm, String pollBgngYmd, String pollEndYmd, String pollTypeCd,
             String pollDsuseYn, String pollAutoDsuseYn) {
-        this.pollTtl = pollTtl;
+        this.pollNm = pollNm;
         this.pollBgngYmd = pollBgngYmd;
         this.pollEndYmd = pollEndYmd;
         this.pollTypeCd = pollTypeCd;
@@ -67,5 +67,6 @@ public class OnlinePollManage extends BaseEntity {
     }
 
     // legacy
-    public String getPollNm() { return pollTtl; }
+    public String getPollTtl() { return pollNm; }
+    public void setPollTtl(String v) { this.pollNm = v; }
 }

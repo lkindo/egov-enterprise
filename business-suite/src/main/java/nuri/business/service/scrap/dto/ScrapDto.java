@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 public class ScrapDto {
     private String scrapId;
     private String bbsId;
-    private Long pstId;
+    private String pstId;
     private String scrapNm;
     private String scrapUrl;
     private String scrapDc;
@@ -30,8 +30,8 @@ public class ScrapDto {
     private LocalDateTime frstRegisterPnttm;
 
     // legacy
-    public Long getNttId() { return pstId; }
-    public void setNttId(Long v) { this.pstId = v; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
     public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
 
     public static ScrapDto from(Scrap entity) {

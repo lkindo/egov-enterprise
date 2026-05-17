@@ -27,6 +27,9 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
         Optional<Board> findByPstId(@Param("pstId") String pstId);
 
+        @Query(value = "SELECT nextval('ntt_id_seq')", nativeQuery = true)
+        Long getNextNttId();
+
         long countByBbsIdAndUseYn(String bbsId, String useYn);
 
         @Query("SELECT COALESCE(SUM(b.inqCnt), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")

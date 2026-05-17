@@ -37,7 +37,7 @@ public class PopupServiceImpl implements PopupService {
 
     @Override
     public List<PopupDto> getActivePopups() {
-        return popupRepository.findActivePopups(LocalDate.now()).stream()
+        return popupRepository.findActivePopups(LocalDate.now().toString()).stream()
                 .map(PopupDto::from)
                 .collect(Collectors.toList());
     }

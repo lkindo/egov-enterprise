@@ -26,29 +26,29 @@ public class Popup extends BaseEntity {
     @Column(name = "POPUP_ID", length = 20)
     private String popupId;
 
-    @Column(name = "POPUP_SJ_NM", length = 1024, nullable = false)
+    @Column(name = "POPUP_TTL_NM", length = 1024, nullable = false)
     private String popupTitleName;
 
     @Column(name = "FILE_URL", length = 1024)
     private String fileUrl;
 
-    @Column(name = "POPUP_WIDTH_LC", length = 20)
+    @Column(name = "POPUP_WDTH_PSTN", length = 20)
     private String popupWidthLocation;
 
-    @Column(name = "POPUP_VRTICL_LC", length = 20)
+    @Column(name = "POPUP_VRTC_PSTN", length = 20)
     private String popupHeightLocation;
 
-    @Column(name = "POPUP_VRTICL_SIZE", length = 20)
+    @Column(name = "POPUP_VRTC_SZ", length = 20)
     private String popupHeightSize;
 
-    @Column(name = "POPUP_WIDTH_SIZE", length = 20)
+    @Column(name = "POPUP_WDTH_SZ", length = 20)
     private String popupWidthSize;
 
-    @Column(name = "NTCE_BGNDE")
-    private LocalDate noticeBeginDate;
+    @Column(name = "NTCE_BGNDE", length = 10)
+    private String noticeBeginDate;
 
-    @Column(name = "NTCE_ENDDE")
-    private LocalDate noticeEndDate;
+    @Column(name = "NTCE_ENDDE", length = 10)
+    private String noticeEndDate;
 
     @Column(name = "STOPVEW_SETUP_YN", length = 1)
     private String isStopView;
@@ -58,7 +58,7 @@ public class Popup extends BaseEntity {
 
     public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
             String popupHeightLocation, String popupHeightSize, String popupWidthSize,
-            LocalDate noticeBeginDate, LocalDate noticeEndDate, String isStopView, String isNotice) {
+            String noticeBeginDate, String noticeEndDate, String isStopView, String isNotice) {
         this.popupId = popupId;
         this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;
@@ -73,7 +73,7 @@ public class Popup extends BaseEntity {
     }
 
     public void update(String popupTitleName, String fileUrl, String popupWidthLocation, String popupHeightLocation,
-            String popupHeightSize, String popupWidthSize, LocalDate noticeBeginDate, LocalDate noticeEndDate,
+            String popupHeightSize, String popupWidthSize, String noticeBeginDate, String noticeEndDate,
             String isStopView, String isNotice) {
         this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;
@@ -86,4 +86,7 @@ public class Popup extends BaseEntity {
         this.isStopView = isStopView;
         this.isNotice = isNotice;
     }
+
+    // legacy getters for compatibility
+    public String getPopupSjNm() { return popupTitleName; }
 }

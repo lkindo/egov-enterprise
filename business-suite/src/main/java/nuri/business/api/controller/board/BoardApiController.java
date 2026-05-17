@@ -70,8 +70,8 @@ public class BoardApiController {
     @PutMapping("/{bbsId}/posts/{pstId}")
     public ResponseEntity<ApiResponse<Void>> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String bbsId,
-            @PathVariable String pstId,
+            @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable String pstId,
             @Valid @RequestBody BoardSaveRequest request) {
         boardService.updatePost(bbsId, pstId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -90,8 +90,8 @@ public class BoardApiController {
     @Operation(summary = "게시글 좋아요(추천)", description = "게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)")
     @PatchMapping("/{bbsId}/posts/{pstId}/like")
     public ResponseEntity<ApiResponse<Integer>> likePost(
-            @PathVariable String bbsId,
-            @PathVariable String pstId) {
+            @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable String pstId) {
         // 실제 운영 환경에서는 중복 추천 방지 로직이 필요하나, 여기서는 낙관적 업데이트 시연을 위해 단순 증가 처리
         return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, pstId)));
     }

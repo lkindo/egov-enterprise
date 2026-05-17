@@ -44,4 +44,8 @@ public class OnlinePollItemDto {
                 .createdDate(entity.getCreatedDate())
                 .build();
     }
+
+    // legacy getters for compatibility
+    public String getPollArtclId() { return pollIemId; }
+    public String getPollArtclNm() { return pollIemNm; }
 }

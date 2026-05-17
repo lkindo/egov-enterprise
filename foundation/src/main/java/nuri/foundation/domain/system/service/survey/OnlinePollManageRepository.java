@@ -12,6 +12,11 @@ import java.util.List;
 public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, String> {
     List<OnlinePollManage> findByPollDsuseYnAndPollAutoDsuseYn(String dsuseYn, String autoDsuseYn);
 
-    @Query("SELECT p FROM OnlinePollManage p WHERE LOWER(p.pollTtl) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<OnlinePollManage> findByPollTtlContaining(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT p FROM OnlinePollManage p WHERE LOWER(p.pollNm) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<OnlinePollManage> findByPollNmContaining(@Param("keyword") String keyword, Pageable pageable);
+    
+    // legacy support
+    default Page<OnlinePollManage> findByPollTtlContaining(String keyword, Pageable pageable) {
+        return findByPollNmContaining(keyword, pageable);
+    }
 }

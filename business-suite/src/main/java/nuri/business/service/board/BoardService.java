@@ -169,11 +169,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         String userIdToSet = request.userId() != null ? request.userId() : userId;
                         String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.getUserNm() : "익명");
 
-                        // String으로 ID 관리 (기존 Sequence 값 등을 문자열로 변환하여 저장하거나, 신규 ID 생성 로직 필요)
-                        // 여기서는 임시로 Sequence 값을 가져와서 String으로 변환함 (Repository에 MAX(pstId)가 이미 있음)
-                        // 실제로는 별도의 ID Generator 사용 권장
-                        Long nextId = boardRepository.findMaxSortOrdr("ALL_POSTS") + 10000; // 가상의 ID 생성
-                        String pstIdToSet = String.valueOf(nextId);
+                        // DB 시퀀스를 사용하여 유니크한 ID 생성
+                        String pstIdToSet = String.valueOf(boardRepository.getNextNttId());
 
                         Board board = boardMapper.toEntity(request, master.getBbsId(), userIdToSet, userNmToSet, sortOrdr);
                         board.setPstId(pstIdToSet);

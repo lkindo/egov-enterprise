@@ -39,7 +39,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         if (searchKeyword.isEmpty()) {
             entities = pollManageRepository.findAll(pageable);
         } else {
-            entities = pollManageRepository.findByPollTtlContaining(searchKeyword, pageable);
+            entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
         }
 
         return entities.map(entity -> {
@@ -76,7 +76,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         
         OnlinePollManage pollManage = OnlinePollManage.builder()
                 .pollId(dto.getPollId())
-                .pollTtl(dto.getPollTtl())
+                .pollNm(dto.getPollNm())
                 .pollBgngYmd(dto.getPollBgngYmd())
                 .pollEndYmd(dto.getPollEndYmd())
                 .pollTypeCd(dto.getPollTypeCd())
@@ -112,7 +112,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
-        entity.update(dto.getPollTtl(), dto.getPollBgngYmd(), dto.getPollEndYmd(),
+        entity.update(dto.getPollNm(), dto.getPollBgngYmd(), dto.getPollEndYmd(),
                 dto.getPollTypeCd(), dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
         
         if (dto.getPollItems() != null) {

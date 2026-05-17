@@ -22,7 +22,7 @@ public class OnlinePollManageDto {
     private String pollId;
 
     @Schema(description = "설문 제목")
-    private String pollTtl;
+    private String pollNm;
 
     @Schema(description = "설문 시작일")
     private String pollBgngYmd;
@@ -52,7 +52,7 @@ public class OnlinePollManageDto {
         if (entity == null) return null;
         return OnlinePollManageDto.builder()
                 .pollId(entity.getPollId())
-                .pollTtl(entity.getPollTtl())
+                .pollNm(entity.getPollNm())
                 .pollBgngYmd(entity.getPollBgngYmd())
                 .pollEndYmd(entity.getPollEndYmd())
                 .pollTypeCd(entity.getPollTypeCd())
@@ -65,4 +65,8 @@ public class OnlinePollManageDto {
                         Collections.emptyList())
                 .build();
     }
+
+    // legacy
+    public String getPollTtl() { return pollNm; }
+    public void setPollTtl(String v) { this.pollNm = v; }
 }

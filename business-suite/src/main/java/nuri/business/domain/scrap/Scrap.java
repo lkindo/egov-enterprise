@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 스크랩 정보 Entity (v5 standardized)
- * 매핑 테이블: NSCRAP
+ * 매핑 테이블: TB_BBS_SCRAP
  */
 @Entity
 @Table(name = "TB_BBS_SCRAP")
@@ -27,8 +27,8 @@ public class Scrap extends BaseEntity {
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
 
-    @Column(name = "NTT_ID")
-    private Long pstId;
+    @Column(name = "PST_ID", length = 20)
+    private String pstId;
 
     @Column(name = "SCRAP_NM", length = 100)
     private String scrapNm;
@@ -36,11 +36,12 @@ public class Scrap extends BaseEntity {
     @Column(name = "SCRAP_URL", length = 1000)
     private String scrapUrl;
 
-    @Column(name = "SCRAP_DC", length = 2000)
+    @Column(name = "SCRAP_EXPLN", length = 2000)
     private String scrapDc;
 
     @Column(name = "USE_YN", length = 1)
-    private String useYn;
+    @Builder.Default
+    private String useYn = "Y";
 
     public String getUniqId() {
         return getFrstRegisterId();
@@ -54,5 +55,6 @@ public class Scrap extends BaseEntity {
     }
 
     // legacy
-    public Long getNttId() { return pstId; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
 }
