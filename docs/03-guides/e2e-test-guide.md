@@ -1,5 +1,7 @@
 # EGOV Enterprise E2E Testing Guide (v2.0)
 
+> **상위 원칙**: 본 문서는 [테스트 종합 가이드 (testing-guide.md)](./testing-guide.md)의 전략 및 Tier 구조를 상위 규범으로 따르는 **E2E 운영 특화 런북**입니다. 테스트 철학·등급 정의·커버리지 목표는 상위 가이드를 참조하십시오.
+
 본 가이드는 전자정부 프레임워크 현대화 프로젝트의 E2E 테스트 안정성 확보 및 효율적인 데이터 관리를 위한 표준 운영 절차를 제공합니다.
 
 ---
@@ -37,23 +39,23 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 
 | 항목 | 로컬 | CI 환경 |
 |------|------|---------|
-| **Retries** | 1 | 3 (플레이키 테스트 안정화) |
-| **Workers** | 자동 (CPU 기반) | 2 |
-| **Timeout** | 120,000ms | 120,000ms |
-| **Expect Timeout** | 30,000ms | 30,000ms |
+| **Retries** | 2 | 5 (플레이키 테스트 강력 안정화) |
+| **Workers** | 1 (OOM 방지 및 안정성) | 2 |
+| **Timeout** | 300,000ms (5분) | 300,000ms (5분) |
+| **Expect Timeout** | 60,000ms | 60,000ms |
 
 ---
 
 ## 📊 계층형 테스트 구조 (Tiered Architecture)
 
-본 프로젝트의 18-Tier E2E 테스트 아키텍처의 상세 정의(Tier별 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.
+본 프로젝트의 22-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~22 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.
 
 ---
 
 ## 💻 주요 명령어
 
 ```bash
-# 1. 기본 실행 (전체 16 Tier 순차 실행)
+# 1. 기본 실행 (전체 22 Tier 순차 실행)
 npm run test:e2e
 
 # 2. 전체 실행 (클린업 포함: 실행 전/후 가비지 데이터 제거)
@@ -62,8 +64,8 @@ npm run test:e2e:full
 # 3. 특정 계층(Tier)만 실행
 npx playwright test --project=tier-1-core
 npx playwright test --project=tier-5-public
-npx playwright test --project=tier-17-support
-npx playwright test --project=tier-18-business
+npx playwright test --project=tier-20-security
+npx playwright test --project=tier-22-security
 
 # 4. 특정 파일만 실행
 npx playwright test e2e/01-core-base.spec.ts
@@ -86,4 +88,4 @@ npm run test:cleanup
 - **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
 
 ---
-*Last Updated: 2026-05-01 (Updated via Antigravity — Commands & CI Config Synchronized)*
+*Last Updated: 2026-05-18 (Updated via Antigravity — Synchronized with 22-Tier Architecture & Timeout Config)*

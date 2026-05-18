@@ -1,3 +1,6 @@
+> [!CAUTION]
+> **⚠ DEPRECATED (2026-05-18)** — 본 문서는 Next.js 15 / Spring Boot 3.4 기준으로 작성되었으며, 현재 스택(Next.js 16.2.4)과 괴리가 있습니다. 모듈 평가 점수 및 개선 계획은 참고용으로만 활용하고, 최신 상태는 `admin-development-roadmap.md`를 참조하십시오.
+
 # 모듈별 완성도 평가 및 개선 계획 보고서 (2026-05-06)
 
 ## 1. 전체 모듈 목록 및 구성 (Inventory)

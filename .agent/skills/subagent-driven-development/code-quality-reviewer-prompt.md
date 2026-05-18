@@ -1,4 +1,4 @@
-﻿# Code Quality Reviewer Prompt Template
+# Code Quality Reviewer Prompt Template
 
 Use this template when dispatching a code quality reviewer subagent.
 
@@ -7,7 +7,7 @@ Use this template when dispatching a code quality reviewer subagent.
 **Only dispatch after spec compliance review passes.**
 
 ```
-Task tool (superpowers:code-reviewer):
+Task tool (code-reviewer):
   Use template at requesting-code-review/code-reviewer.md
 
   WHAT_WAS_IMPLEMENTED: [from implementer's report]
