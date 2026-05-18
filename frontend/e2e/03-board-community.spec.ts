@@ -129,10 +129,16 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await editBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await editBtn.click();
                 
-                await page.locator('input[name="pstTtl"]').fill(`${articleTitle} [Updated]`);
-                await page.locator('.ProseMirror').first().fill('Updated content.');
+                const updateTitleInput = page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').first();
+                await updateTitleInput.waitFor({ state: 'visible', timeout: 30000 });
+                await updateTitleInput.fill(`${articleTitle} [Updated]`);
+
+                const updateEditor = page.locator('[data-testid="rich-text-editor"] .ProseMirror, .ProseMirror').first();
+                await updateEditor.waitFor({ state: 'visible', timeout: 15000 });
+                await updateEditor.fill('Updated content.');
 
                 const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node|저장/ }).first();
+                await saveButton.waitFor({ state: 'visible', timeout: 15000 });
                 await saveButton.click();
                 
                 // Wait for save action completion (navigation or toast success)
@@ -154,7 +160,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
 
                 console.log('>>> Step 4: Deleting Article');
                 // Navigate to detail for deletion
-                await page.locator(`text=${articleTitle} [Updated]`).first().click();
+                await page.getByText(`${articleTitle} [Updated]`).first().click();
                 
                 const deleteBtn = page.locator('button:has-text("삭제"), [aria-label="게시글 삭제"], button:has-text("Delete")').first();
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
@@ -163,7 +169,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
                     await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
-                    await expect(page.locator(`text=${articleTitle} [Updated]`).first()).toBeHidden({ timeout: 5000 });
+                    await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeHidden({ timeout: 5000 });
                 }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 
                 console.log('>>> Successfully deleted.');

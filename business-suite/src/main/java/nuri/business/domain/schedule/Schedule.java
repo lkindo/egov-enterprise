@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "TB_SCHDUL_INFO")
+@Table(name = "tb_schdl_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,44 +20,44 @@ public class Schedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "SCHDUL_ID", length = 20)
+    @Column(name = "schdl_id", length = 20)
     private String schdlId;
 
-    @Column(name = "SCHDUL_SE", length = 1)
+    @Column(name = "schdl_se_cd", length = 12)
     private String schdlSeCd;
 
-    @Column(name = "SCHDUL_TTL", length = 255, nullable = false)
+    @Column(name = "schdl_nm", length = 100, nullable = false)
     private String schdlTtl;
 
-    @Column(name = "SCHDUL_CN", columnDefinition = "TEXT")
+    @Column(name = "schdl_cn", columnDefinition = "TEXT")
     private String schdlCn;
 
-    @Column(name = "REPT_ITV_VAL", length = 1)
+    @Column(name = "rept_se_cd", length = 12)
     private String reptitSeCd;
 
-    @Column(name = "SCHDUL_BGNG_YMD", length = 20)
+    @Column(name = "schdl_bgng_ymd", length = 20)
     private String schdlBgngYmd;
 
-    @Column(name = "SCHDUL_END_YMD", length = 20)
+    @Column(name = "schdl_end_ymd", length = 20)
     private String schdlEndYmd;
 
-    @Column(name = "SCHDUL_IPADDR", length = 20)
+    @Transient
     private String schdlIpAddr;
 
-    @Column(name = "SCHDUL_CHARGER_ID", length = 20)
+    @Column(name = "schdl_pic_id", length = 20)
     private String schdlPicId;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 30)
     private String atchFileId;
     
     // Additional fields used in service
-    @Column(name = "SCHDUL_DEPT_ID", length = 20)
+    @Column(name = "schdl_dept_id", length = 20)
     private String schdlDeptId;
-    @Column(name = "SCHDUL_KND_CD", length = 20)
+    @Column(name = "schdl_knd_cd", length = 12)
     private String schdlKindCd;
-    @Column(name = "SCHDUL_PLC_NM", length = 255)
+    @Column(name = "schdl_plc_nm", length = 100)
     private String schdlPlcNm;
-    @Column(name = "SCHDUL_IPCR_CD", length = 20)
+    @Column(name = "schdl_imprt_cd", length = 12)
     private String schdlIpcrCd;
 
     public void update(String schdlTtl, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
