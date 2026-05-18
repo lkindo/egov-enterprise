@@ -12,13 +12,13 @@ public interface UserLogRepository extends JpaRepository<UserLog, UserLogId>, Us
      * 날짜별 사용자 활동 통계
      */
     @org.springframework.data.jpa.repository.Query(value = """
-            SELECT OCCRRNC_DE as statsDate,
-                   SUM(CRT_CNT) as creatCo,
-                   SUM(INQ_CNT) as inqireCo
-            FROM TB_USER_LOG
-            WHERE OCCRRNC_DE BETWEEN :fromDate AND :toDate
-            GROUP BY OCCRRNC_DE
-            ORDER BY OCCRRNC_DE ASC
+            SELECT ocrn_ymd as statsDate,
+                   SUM(crt_cnt) as creatCo,
+                   SUM(inq_cnt) as inqireCo
+            FROM tb_user_log
+            WHERE ocrn_ymd BETWEEN :fromDate AND :toDate
+            GROUP BY ocrn_ymd
+            ORDER BY ocrn_ymd ASC
             """, nativeQuery = true)
     List<Object[]> countByDate(@Param("fromDate") String fromDate, @Param("toDate") String toDate);
 }

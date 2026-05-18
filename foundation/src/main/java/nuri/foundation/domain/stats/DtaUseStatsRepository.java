@@ -14,12 +14,12 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
 
   @Query(value = """
       SELECT COUNT(*) AS statsCo,
-             CASE WHEN :pdKind = 'Y' THEN TO_CHAR(A.FRST_REGIST_PNTTM, 'YYYY')
-                  WHEN :pdKind = 'M' THEN TO_CHAR(A.FRST_REGIST_PNTTM, 'YYYY-MM')
-                  ELSE TO_CHAR(A.FRST_REGIST_PNTTM, 'YYYY-MM-DD')
+             CASE WHEN :pdKind = 'Y' THEN TO_CHAR(A.crt_dt, 'YYYY')
+                  WHEN :pdKind = 'M' THEN TO_CHAR(A.crt_dt, 'YYYY-MM')
+                  ELSE TO_CHAR(A.crt_dt, 'YYYY-MM-DD')
              END AS statsDate
-        FROM NDTAUSESTATS A
-       WHERE A.FRST_REGIST_PNTTM BETWEEN :fromDate AND :toDate
+        FROM tb_dta_use_stats A
+       WHERE A.crt_dt BETWEEN :fromDate AND :toDate
        GROUP BY statsDate
        ORDER BY statsDate DESC
       """, nativeQuery = true)
@@ -29,14 +29,14 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
 
   @Query(value = """
       SELECT A.BBS_ID, B.BBS_NM, A.NTT_ID, C.NTT_SJ, A.ATCH_FILE_ID, A.FILE_SN, D.ORIGNL_FILE_NM, COUNT(*) AS statsCo
-        FROM NDTAUSESTATS A
-        JOIN NBBSMASTER B ON A.BBS_ID = B.BBS_ID
-        JOIN NBBS C ON A.BBS_ID = C.BBS_ID AND A.NTT_ID = C.NTT_ID
-        JOIN NFILEDETAIL D ON A.ATCH_FILE_ID = D.ATCH_FILE_ID AND A.FILE_SN = D.FILE_SN
-       WHERE A.FRST_REGIST_PNTTM BETWEEN :fromDate AND :toDate
+        FROM tb_dta_use_stats A
+        JOIN tb_bbs_master B ON A.BBS_ID = B.BBS_ID
+        JOIN tb_bbs_item C ON A.BBS_ID = C.BBS_ID AND A.NTT_ID = C.NTT_ID
+        JOIN tb_file_detail D ON A.ATCH_FILE_ID = D.ATCH_FILE_ID AND A.FILE_SN = D.FILE_SN
+       WHERE A.crt_dt BETWEEN :fromDate AND :toDate
          AND (:searchKeyword IS NULL OR :searchKeyword = '' OR B.BBS_NM LIKE '%' || :searchKeyword || '%')
        GROUP BY A.BBS_ID, B.BBS_NM, A.NTT_ID, C.NTT_SJ, A.ATCH_FILE_ID, A.FILE_SN, D.ORIGNL_FILE_NM
-       ORDER BY statsCo DESC
+        ORDER BY statsCo DESC
       """, nativeQuery = true)
   List<Object[]> selectDtaUseStatsList(@Param("fromDate") LocalDateTime fromDate,
       @Param("toDate") LocalDateTime toDate,
@@ -83,10 +83,10 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
    * 날짜별 데이터 사용 통계
    */
   @Query(value = """
-      SELECT TO_CHAR(d.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
-      FROM ndtausestats d
-      WHERE d.frst_regist_pnttm BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
-      GROUP BY TO_CHAR(d.frst_regist_pnttm, 'YYYY-MM-DD')
+      SELECT TO_CHAR(d.crt_dt, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
+      FROM tb_dta_use_stats d
+      WHERE d.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+      GROUP BY TO_CHAR(d.crt_dt, 'YYYY-MM-DD')
       ORDER BY statsDate DESC
       """, nativeQuery = true)
   List<Object[]> countByDate(
@@ -98,9 +98,9 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
    */
   @Query(value = """
       SELECT b.bbs_nm as bbsNm, COUNT(*) as cnt
-      FROM ndtausestats d
-      JOIN nbbsmaster b ON d.bbs_id = b.bbs_id
-      WHERE d.frst_regist_pnttm BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+      FROM tb_dta_use_stats d
+      JOIN tb_bbs_master b ON d.bbs_id = b.bbs_id
+      WHERE d.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
       GROUP BY b.bbs_nm
       ORDER BY cnt DESC
       """, nativeQuery = true)

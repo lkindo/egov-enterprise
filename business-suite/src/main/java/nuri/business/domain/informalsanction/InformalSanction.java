@@ -24,25 +24,25 @@ import java.time.LocalDateTime;
 public class InformalSanction extends BaseEntity {
 
     @Id
-    @Column(name = "INFRML_SANCTN_ID", length = 20)
+    @Column(name = "IFML_ATRZ_ID", length = 20)
     private String informalSanctionId;
 
-    @Column(name = "JOB_SE_CODE", length = 3, nullable = false)
+    @Column(name = "TASK_SE_CD", length = 3, nullable = false)
     private String jobSeCode;
 
-    @Column(name = "APPLCNT_ID", length = 20, nullable = false)
+    @Column(name = "APLCNT_ID", length = 20, nullable = false)
     private String applicantId;
 
-    @Column(name = "REQST_YMD", length = 10)
+    @Column(name = "REQ_YMD", length = 10)
     private String requestDe;
 
-    @Column(name = "SANCTNER_ID", length = 20, nullable = false)
+    @Column(name = "APRVR_ID", length = 20, nullable = false)
     private String sanctionerId;
 
-    @Column(name = "CONFM_AT", length = 1)
+    @Column(name = "APRV_YN", length = 1)
     private String confmAt;
 
-    @Column(name = "SANCTN_DT")
+    @Column(name = "ATRZ_DT")
     private LocalDateTime sanctionDt;
 
     @Column(name = "RJCT_RSN_CN", length = 1000)

@@ -13,21 +13,21 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "TB_COM_CLSF_CD")
+@Table(name = "tb_com_clsf_cd")
 @SuperBuilder
 public class CommonCodeCategory extends BaseEntity {
 
     @Id
-    @Column(name = "CL_CODE", length = 3)
+    @Column(name = "clsf_cd", length = 3)
     private String clCode;
 
-    @Column(name = "CL_CODE_NM", length = 180)
+    @Column(name = "clsf_cd_nm", length = 180)
     private String clCodeNm;
 
-    @Column(name = "CL_CODE_DC", length = 600)
+    @Column(name = "clsf_cd_expln", length = 600)
     private String clCodeDc;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public CommonCodeCategory(String clCode, String clCodeNm, String clCodeDc, String useYn, String frstRegisterId) {

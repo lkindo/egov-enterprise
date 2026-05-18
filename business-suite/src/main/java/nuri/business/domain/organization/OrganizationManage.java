@@ -9,7 +9,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "TB_ORGNZT_INFO")
+@Table(name = "tb_orgnzt_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -17,12 +17,12 @@ import lombok.experimental.SuperBuilder;
 public class OrganizationManage extends BaseEntity {
 
     @Id
-    @Column(name = "ORGNZT_ID", length = 20)
+    @Column(name = "ognz_id", length = 20)
     private String orgnztId;
 
-    @Column(name = "ORGNZT_NM", length = 20)
+    @Column(name = "ognz_nm", length = 20)
     private String orgnztNm;
 
-    @Column(name = "ORGNZT_DC", length = 100)
+    @Column(name = "ognz_expln", length = 100)
     private String orgnztDc;
 }

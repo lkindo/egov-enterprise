@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NDTAUSESTATS")
+@Table(name = "tb_dta_use_stats")
 @SuperBuilder
 public class DtaUseStats extends BaseEntity {
 

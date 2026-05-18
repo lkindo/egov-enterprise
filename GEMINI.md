@@ -10,12 +10,14 @@
 에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-등급판정-계획-실행** 루틴을 반드시 준수한다.
 
 1.  **Discovery First (`using-superpowers`)**: 모든 응답(단순 질문 포함) 및 탐색 전, 반드시 `using-superpowers` 스킬을 호출하여 현재 태스크에 적용 가능한 최적의 워크플로우/스킬을 식별한다.
-2.  **Task Grading (SOP Mandatory)**: 모든 작업 시작 전, `docs/03-guides/orchestration-protocol.md`의 기준에 따라 **태스크 등급(L0/L1/L2)을 판정**하고 `TASK PROPOSAL` 블록을 최우선으로 출력한다.
-    - **L0 (Fast-Track)**: 사용자 승인 없이 즉시 구현 및 사후 보고.
-    - **L1/L2 (Standard/Strict)**: 반드시 사용자의 명시적 승인(Approved)을 득한 후 진행.
+2.  **Task Grading (SOP Mandatory)**: 모든 작업 시작 전, `docs/03-guides/orchestration-protocol.md` §2의 등급 분류표에 따라 **태스크 등급(L0/L1/L2)을 판정**하고 `TASK PROPOSAL` 블록을 최우선으로 출력한다. 등급별 세부 정의·적용 경로·필수 게이트는 SOP 원문을 참조한다.
 3.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 모든 작업 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다.
 4.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, `brainstorming`으로 요구사항을 분석한 뒤 **반드시 `gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다.
 5.  **Strict Orchestration**: 판정된 등급과 승인된 계획에 따라 `orchestration-protocol.md` 파이프라인을 가동하여 작업을 완수한다.
+6.  **Output Density Control (`caveman` 연계)**: 등급에 따라 보고 밀도를 차등 적용하여 토큰 효율과 정보 정밀도를 균형 있게 유지한다.
+    - **L0**: `caveman` 프로토콜 적용. `[대상] [상태] [증거]` 형식으로만 보고.
+    - **L1**: TASK PROPOSAL은 정식 출력, GStack Review는 3줄 이내, 검증 보고는 테스트 결과 로그만 노출. Root Cause와 Diff는 생략하지 않는다.
+    - **L2**: 제한 없음. 전문 서술형 감사 보고 의무.
 
 ---
 
@@ -44,15 +46,15 @@ graph TD
 - **Core**: Java 21 / Spring Boot 3.4.3 / eGovFrame 5.0.0
 - **Build**: Gradle 9.4.1 (Multi-module: `api-server`, `business-suite`, `foundation`)
 - **Database**: OCI PostgreSQL 17 (Port 5432)
-- **Rules**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 준수
 
 ### Frontend
 - **Framework**: Next.js 16.2.4 (App Router / React 19)
 - **Styling**: Tailwind CSS 4.0, Framer Motion
-- **Rules**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 준수
 
 ### Data Governance
-- **SSOT**: 모든 DB 객체 명명 및 데이터 타입은 [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에 따른 메타 테이블을 진실의 원천으로 삼는다.
+- **SSOT**: 모든 DB 객체 명명 및 데이터 타입은 메타 테이블(`meta_standard_words` 등)을 진실의 원천으로 삼는다.
+
+> 각 레이어의 코딩 규범 및 헌법 원문 링크는 **§3. 코드 아키텍처 컨벤션**을 단일 참조점으로 한다.
 
 ## 3. 코드 아키텍처 컨벤션 (Code Architecture Conventions)
 
@@ -77,15 +79,13 @@ graph TD
 | `npm run analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
 | `pnpm run storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
 | `make coverage` | Root | 백엔드 테스트 커버리지 리포트 생성 |
-| `npm run e2e` | `frontend/` | E2E 테스트 전체 실행 |
+| `npm run test:e2e` | `frontend/` | E2E 테스트 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
 
 ## 6. E2E 테스트 계정 관리 (E2E Credential Management)
 
 - **단일 소스 원칙**: 모든 E2E 테스트 계정 정보는 `frontend/e2e/test-credentials.ts`에서 관리한다.
 - **추정 금지**: 테스트 코드나 `auth.setup.ts`에 계정 정보를 하드코딩하지 않으며, 반드시 위 설정 파일을 참조한다.
-- **계정 정보**:
-    - `admin`: `webmaster` / `1` (기본 관리자)
-    - `user`: `TEST1` / `1` (일반 사용자)
+
 
 ## 7. 확장 가이드 참조 (Extended Guides)
 
@@ -94,10 +94,11 @@ graph TD
 | 가이드 | 경로 | 적용 시점 |
 |--------|------|-----------|
 | Strict Orchestration Protocol | `docs/03-guides/orchestration-protocol.md` | **모든 작업** (등급 판정, 감사, 검증 통합) |
+| 테스트 종합 가이드 (SSOT) | `docs/03-guides/testing-guide.md` | 단위/통합/E2E 테스트 전략 및 Tier 구조 참조 |
+| E2E 운영 Runbook | `docs/03-guides/e2e-test-guide.md` | E2E 환경 설정, CI 최적화, 좀비 프로세스 정리 |
 | 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 고가용성 로직 설계 시 |
 | API 설계 및 문서화 가이드 | `docs/03-guides/api-documentation-guide.md` | 신규 API 생성 및 연동 시 |
 | DB 표준화 이행 지침 | `.agent/knowledge/db-standard-constitution/artifacts/standard_terms.md` | DB 오브젝트 설계 시 |
-| Map-Driven Development | `docs/03-guides/map-driven-development.md` | 대규모 아키텍처 변경 및 지도 기능 개발 시 |
 | 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 및 지식 관리 시 |
 
 ## 8. Database Interaction Rules (via Local Bridge)
@@ -107,5 +108,5 @@ graph TD
 - **보안**: SELECT 위주 수행. INSERT/UPDATE/DELETE는 사용자 승인 필수.
 
 ---
-*Last Updated: 2026-05-14 (Updated via Antigravity)*
+*Last Updated: 2026-05-18 (Updated via Antigravity — SSOT Deduplication & Optimization)*
 

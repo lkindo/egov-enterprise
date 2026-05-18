@@ -84,9 +84,9 @@ test.describe('Tier 21: Advanced Resilience', () => {
         const hugeContent = 'Content '.repeat(500); // ~4000 characters
 
         console.log('>>> Step 1: Filling form with large payload');
-        await page.locator('input[name="nttSj"]').fill(hugeTitle);
-        // Using locator for TipTap/ProseMirror editor
-        const editor = page.locator('.ProseMirror');
+        await page.locator('input[name="pstTtl"], input[name="nttSj"], [data-testid="article-title-input"]').first().fill(hugeTitle);
+        // Using locator for TipTap/ProseMirror editor with robust fallbacks
+        const editor = page.locator('.ProseMirror, textarea[name="pstCn"], textarea[name="nttCn"]').first();
         await editor.fill(hugeContent);
 
         console.log('>>> Step 2: Attempting to submit');

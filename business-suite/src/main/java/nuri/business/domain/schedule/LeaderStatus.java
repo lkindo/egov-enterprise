@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_LEADER_STTS")
+@Table(name = "tb_leader_stts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -26,10 +26,10 @@ import lombok.experimental.SuperBuilder;
 public class LeaderStatus extends BaseEntity {
 
     @Id
-    @Column(name = "LEADER_ID", length = 20)
+    @Column(name = "leader_id", length = 20)
     private String leaderId;
 
-    @Column(name = "LEADER_STTUS", length = 1)
+    @Column(name = "leader_stts_cd", length = 1)
     private String leaderSttus;
 
     public void updateStatus(String leaderSttus) {

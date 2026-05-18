@@ -16,27 +16,27 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "TB_COM_CD")
+@Table(name = "tb_com_cd")
 @SuperBuilder
 public class CommonCodeGroup extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "CODE_ID", length = 18)
+    @Column(name = "cd_id", length = 18)
     @NonNull
     private String codeId;
 
-    @Column(name = "CODE_ID_NM", length = 180)
+    @Column(name = "cd_id_nm", length = 180)
     @NonNull
     private String codeIdNm;
 
-    @Column(name = "CODE_ID_DC", length = 600)
+    @Column(name = "cd_id_expln", length = 600)
     private String codeIdDc;
 
-    @Column(name = "CL_CODE", length = 3)
+    @Column(name = "clsf_cd", length = 3)
     private String clCode;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public CommonCodeGroup(@NonNull String codeId, @NonNull String codeIdNm, String codeIdDc, String clCode,

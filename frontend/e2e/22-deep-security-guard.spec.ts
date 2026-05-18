@@ -3,9 +3,9 @@ import { test, expect } from './fixtures/base-test';
 /**
  * [Tier 22] Deep Security Guard: IDOR, XSS, and URL Manipulation
  * 
- * ?�스?�의 보안 경계�??�층?�으�?검증합?�다.
- * ?�히 권한???�는 ?�용?��? ID�?조작?�여 ?�른 ?�용?�의 ?�이?�에 ?�근?�는 ?�나리오(IDOR)?� 
- * 복합?�인 ?�젝??공격???�??UI/API 방어?�을 체크?�니??
+ * 시스템의 보안 경계를 종합적으로 검증합니다.
+ * 특히 권한이 없는 사용자가 ID를 조작하여 다른 사용자의 데이터에 접근하는 시나리오(IDOR)와
+ * 복합적인 인젝션 공격에 대한 UI/API 방어력을 체크합니다.
  */
 
 test.describe('Tier 22: Deep Security Guard', () => {
@@ -32,7 +32,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 console.log('>>> IDOR access correctly blocked (Redirected)');
             } else {
                 const bodyText = await page.innerText('body');
-                expect(bodyText).toMatch(/권한|?�근|Deny|Unauthorized|Forbidden/i);
+                expect(bodyText).toMatch(/권한|접근|Deny|Unauthorized|Forbidden/i);
                 console.log('>>> IDOR access correctly blocked (Error Message)');
             }
         });
@@ -72,7 +72,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 for (const payload of payloads) {
                     console.log(`>>> Testing Payload: ${payload}`);
                     await commentInput.fill(payload);
-                    await page.locator('button:has-text("?�록"), button:has-text("Comment"), button:has-text("Commit Response")').click();
+                    await page.locator('button:has-text("등록"), button:has-text("Comment"), button:has-text("Commit Response")').click();
                     
                     // Wait for it to appear in the list
                     await page.waitForTimeout(1000);
@@ -109,7 +109,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 
                 // Should show "Not Found" or "Invalid Request" or "Empty State" or a Toast
                 // Crucially, it should NOT show a React Runtime Error (White Screen)
-                const errorState = page.locator('text=?�습?�다, text=not found, text=?�류, text=invalid, .error-container').first();
+                const errorState = page.locator('text=없습니다, text=not found, text=오류, text=invalid, .error-container').first();
                 // Avoid matching __next-route-announcer__ by checking for text content
                 const errorToast = page.getByRole('alert').filter({ hasText: /./ }).first();
                 

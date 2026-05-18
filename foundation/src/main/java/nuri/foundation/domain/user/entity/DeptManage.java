@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NORGNZTINFO
  */
 @Entity
-@Table(name = "TB_ORGNZT_INFO")
+@Table(name = "tb_orgnzt_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,13 +24,13 @@ import lombok.experimental.SuperBuilder;
 public class DeptManage extends BaseEntity {
 
     @Id
-    @Column(name = "ORGNZT_ID", length = 20)
+    @Column(name = "ognz_id", length = 20)
     private String orgnztId;
 
-    @Column(name = "ORGNZT_NM", length = 100, nullable = false)
+    @Column(name = "ognz_nm", length = 100, nullable = false)
     private String orgnztNm;
 
-    @Column(name = "ORGNZT_DC", length = 255)
+    @Column(name = "ognz_expln", length = 255)
     private String orgnztDc;
 
     public void update(String orgnztNm, String orgnztDc) {
