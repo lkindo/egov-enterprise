@@ -1,2 +1,0 @@
-Tier 18 E2E Test (18-business-extension.spec.ts) Passed at 2026-05-13
-Evidence: 8 tests passed in 24.4s.
