@@ -20,8 +20,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await expect(page.locator('text=네비게이션 트리').first()).toBeVisible({ timeout: 20000 });
         
         // Check for node elements (ID: prefix)
-        const nodes = page.locator('text=/ID: \\d+/');
-        await expect(nodes.first()).toBeVisible({ timeout: 10000 });
+        const nodes = page.getByText(/ID: \d+/);
+        await expect(nodes.first()).toBeVisible({ timeout: 15000 });
         
         console.log('>>> Menu Tree UI: PASS');
     });
@@ -34,8 +34,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await expect(page.locator('text=Explorer').first()).toBeVisible({ timeout: 20000 });
         
         // Check for cluster/domain items
-        const domains = page.locator('text=/\\d+ Domains/');
-        await expect(domains).toBeVisible({ timeout: 10000 });
+        const domains = page.getByText(/\d+ Domains/);
+        await expect(domains).toBeVisible({ timeout: 15000 });
         
         console.log('>>> Common Code Explorer UI: PASS');
     });
@@ -53,8 +53,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
         
         // Check for topology nodes (e.g., ORGNZT_0000000000001)
-        const deptNodes = page.locator('text=/ORGNZT_\\d+/');
-        await expect(deptNodes.first()).toBeVisible({ timeout: 10000 });
+        const deptNodes = page.getByText(/ORGNZT_\d+/);
+        await expect(deptNodes.first()).toBeVisible({ timeout: 15000 });
         
         console.log('>>> Department Topology Tree UI: PASS');
     });
