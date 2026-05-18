@@ -50,7 +50,7 @@ export class SecurityAdminPage {
         console.log(`>>> Clicking '신규 그룹 배포' button`);
         await this.page.getByRole('button', { name: /신규 그룹 배포/i }).click({ force: true });
         console.log(`>>> Waiting for success toast`);
-        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i)).toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i).first()).toBeVisible({ timeout: 10000 });
         console.log(`>>> Group Created Successfully`);
     }
 
@@ -77,7 +77,7 @@ export class SecurityAdminPage {
         console.log(`>>> Clicking '롤 아키텍처 배포' button`);
         await this.page.getByRole('button', { name: /롤 아키텍처 배포/i }).click({ force: true });
         console.log(`>>> Waiting for success toast`);
-        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i)).toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i).first()).toBeVisible({ timeout: 10000 });
         console.log(`>>> Role Created Successfully`);
     }
 }

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "TB_ADMIN_DISTRICT_CODE")
+@Table(name = "TB_ADMDST_CD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -33,7 +33,7 @@ public class AdministCode extends BaseEntity {
     @Column(name = "USE_YN", length = 1)
     private String useYn;
 
-    @Column(name = "CREAT_YMD", length = 8)
+    @Column(name = "CRT_YMD", length = 8)
     private String creatDe;
 
     @Column(name = "ABL_YMD", length = 8)

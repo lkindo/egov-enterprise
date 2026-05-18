@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
  * [Audit] BaseEntity 상속
  */
 @Entity
-@Table(name = "TB_INDVDL_PGE_CNTNTS")
+@Table(name = "TB_INDV_PG_CONTS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

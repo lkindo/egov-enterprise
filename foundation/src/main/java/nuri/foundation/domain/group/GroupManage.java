@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_AUTHOR_GROUP_INFO")
+@Table(name = "TB_AUTHRT_GROUP_INFO")
 @SuperBuilder
 public class GroupManage extends BaseEntity {
 
@@ -28,7 +28,7 @@ public class GroupManage extends BaseEntity {
     @Column(name = "GROUP_DC", length = 100)
     private String groupDc;
 
-    @Column(name = "GROUP_CREAT_DE")
+    @Column(name = "GROUP_CRT_YMD")
     @Builder.Default
     private LocalDateTime groupCreatDe = LocalDateTime.now();
 

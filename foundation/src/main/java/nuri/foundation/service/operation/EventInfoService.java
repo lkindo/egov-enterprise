@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDate;
 import java.util.Objects;
  
 @Slf4j
@@ -47,14 +46,14 @@ public class EventInfoService {
                 .bsnsYear(dto.getBsnsYear())
                 .bsnsCode(dto.getBsnsCode())
                 .eventCn(dto.getEventCn())
-                .eventSvcBgnde(dto.getEventSvcBgnde() != null && !dto.getEventSvcBgnde().isEmpty() ? LocalDate.parse(dto.getEventSvcBgnde()) : null)
-                .eventSvcEndde(dto.getEventSvcEndde() != null && !dto.getEventSvcEndde().isEmpty() ? LocalDate.parse(dto.getEventSvcEndde()) : null)
+                .eventSvcBgnde(dto.getEventSvcBgnde())
+                .eventSvcEndde(dto.getEventSvcEndde())
                 .svcUseNmprCo(dto.getSvcUseNmprCo())
                 .chargerNm(dto.getChargerNm())
                 .prparetgCn(dto.getPrparetgCn())
                 .eventTyCode(dto.getEventTyCode())
                 .eventConfmAt(dto.getEventConfmAt())
-                .eventConfmDe(dto.getEventConfmDe() != null && !dto.getEventConfmDe().isEmpty() ? LocalDate.parse(dto.getEventConfmDe()) : null)
+                .eventConfmDe(dto.getEventConfmDe())
                 .createdBy(userId)
                 .lastModifiedBy(userId)
                 .build();
@@ -75,14 +74,14 @@ public class EventInfoService {
                 .bsnsYear(dto.getBsnsYear())
                 .bsnsCode(dto.getBsnsCode())
                 .eventCn(dto.getEventCn())
-                .eventSvcBgnde(dto.getEventSvcBgnde() != null && !dto.getEventSvcBgnde().isEmpty() ? LocalDate.parse(dto.getEventSvcBgnde()) : null)
-                .eventSvcEndde(dto.getEventSvcEndde() != null && !dto.getEventSvcEndde().isEmpty() ? LocalDate.parse(dto.getEventSvcEndde()) : null)
+                .eventSvcBgnde(dto.getEventSvcBgnde())
+                .eventSvcEndde(dto.getEventSvcEndde())
                 .svcUseNmprCo(dto.getSvcUseNmprCo())
                 .chargerNm(dto.getChargerNm())
                 .prparetgCn(dto.getPrparetgCn())
                 .eventTyCode(dto.getEventTyCode())
                 .eventConfmAt(dto.getEventConfmAt())
-                .eventConfmDe(dto.getEventConfmDe() != null && !dto.getEventConfmDe().isEmpty() ? LocalDate.parse(dto.getEventConfmDe()) : null)
+                .eventConfmDe(dto.getEventConfmDe())
                 .createdBy(eventInfo.getCreatedBy())
                 .lastModifiedBy(userId)
                 .build());

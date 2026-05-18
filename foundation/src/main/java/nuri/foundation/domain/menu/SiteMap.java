@@ -15,23 +15,23 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SITEMAP_INFO")
+@Table(name = "TB_STMP_INFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class SiteMap extends BaseEntity {
 
     @Id
-    @Column(name = "MAPNG_CREAT_ID", length = 30)
+    @Column(name = "MPNG_CRT_ID", length = 30)
     private String mapCreatId;
 
-    @Column(name = "CREAT_PERSON_ID", length = 30)
+    @Column(name = "CRTR_ID", length = 30)
     private String creatPersonId;
 
-    @Column(name = "MAPNG_FILE_NM", length = 60)
+    @Column(name = "MPNG_FILE_NM", length = 60)
     private String bndeFileNm;
 
-    @Column(name = "MAPNG_FILE_PATH", length = 100)
+    @Column(name = "MPNG_FILE_PATH", length = 100)
     private String bndeFilePath;
 
     public SiteMap(String mapCreatId, String creatPersonId, String bndeFileNm, String bndeFilePath) {

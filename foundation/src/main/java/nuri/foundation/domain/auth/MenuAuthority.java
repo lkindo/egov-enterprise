@@ -11,7 +11,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_MENU_CREAT_DTLS")
+@Table(name = "TB_MENU_CRT_DTL")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SuperBuilder
 public class MenuAuthority extends BaseEntity {

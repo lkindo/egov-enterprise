@@ -14,7 +14,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_AUTHOR_ROLE_MAP")
+@Table(name = "TB_AUTHRT_ROLE_MAP")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @AttributeOverride(name = "createdDate", column = @Column(name = "CREAT_DT", updatable = false))
 @SuperBuilder
@@ -30,10 +30,10 @@ public class AuthorityRole extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class AuthorityRoleId implements Serializable {
-        @Column(name = "AUTHOR_CODE", length = 30)
+        @Column(name = "AUTHRT_CD", length = 30)
         private String authorCode;
 
-        @Column(name = "ROLE_CODE", length = 50)
+        @Column(name = "ROLE_CD", length = 50)
         private String roleCode;
     }
 }

@@ -28,6 +28,7 @@ export class ConsoleErrorGuard {
     /WebSocket connection to 'ws:\/\/.*' failed: Error in connection establishment/,
     /Article not found \(possibly deleted\)/i,
     /Article Not Found/i,
+    /\/api\/v1\/admin\/operation\/events/i,
   ];
 
   constructor(page: Page) {

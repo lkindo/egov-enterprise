@@ -66,7 +66,7 @@ export class OpsDetailPage {
         
         // Wait for either: success toast OR modal close (either proves submission succeeded)
         await Promise.race([
-            this.page.getByRole('alert').filter({ hasText: /성공|생성되었습니다/i })
+            this.page.getByRole('alert').filter({ hasText: /성공|생성되었습니다/i }).first()
                 .waitFor({ state: 'visible', timeout: 25000 }),
             this.page.getByText(/Dispatch New Event/i)
                 .waitFor({ state: 'hidden', timeout: 25000 })
@@ -114,7 +114,7 @@ export class OpsDetailPage {
         
         await deleteBtn.click();
         
-        await expect(this.page.getByText(/성공|삭제되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/성공|삭제되었습니다/i).first()).toBeVisible({ timeout: 20000 });
         console.log(`>>> [OpsDetail] Event "${name}" deleted successfully.`);
     }
 

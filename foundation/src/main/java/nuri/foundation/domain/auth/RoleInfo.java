@@ -15,25 +15,25 @@ import java.time.LocalDate;
 public class RoleInfo extends BaseEntity {
 
     @Id
-    @Column(name = "ROLE_CODE", length = 50)
+    @Column(name = "ROLE_ID", length = 50)
     private String roleCode;
 
     @Column(name = "ROLE_NM", nullable = false, length = 60)
     private String roleNm;
 
-    @Column(name = "ROLE_PTTRN", length = 300)
+    @Column(name = "ROLE_PATRN", length = 300)
     private String rolePttrn;
 
-    @Column(name = "ROLE_DC", length = 200)
+    @Column(name = "ROLE_EXPLN", length = 200)
     private String roleDc;
 
-    @Column(name = "ROLE_TY", length = 80)
+    @Column(name = "ROLE_TYPE_CD", length = 80)
     private String roleTy;
 
     @Column(name = "ROLE_SORT")
     private Integer roleSort;
 
-    @Column(name = "ROLE_CREAT_DE")
+    @Column(name = "ROLE_CRT_YMD")
     @Builder.Default
     private LocalDate creatDt = LocalDate.now();
 
