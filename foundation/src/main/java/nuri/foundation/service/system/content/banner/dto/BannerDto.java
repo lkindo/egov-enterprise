@@ -4,6 +4,7 @@ import nuri.foundation.domain.system.content.banner.Banner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Setter
@@ -33,9 +34,13 @@ public class BannerDto {
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
+    @JsonIgnore
     public String getBnrId() { return bannerId; }
+    @JsonIgnore
     public String getBnrNm() { return bannerNm; }
+    @JsonIgnore
     public String getBnrImgNm() { return bannerImage; }
+    @JsonIgnore
     public String getBnrExpln() { return bannerDc; }
 
     public static BannerDto from(Banner entity) {

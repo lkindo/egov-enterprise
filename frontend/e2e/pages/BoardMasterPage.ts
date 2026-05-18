@@ -63,9 +63,9 @@ export class BoardMasterPage {
   async fillStep2(templateName: string = '지식 허브') {
     console.log(`>>> Step 2: Selecting template [${templateName}]`);
 
-    // Wait for step 2 content to be ready
-    await this.page.waitForSelector('h4:has-text("Layout strategy select"), .text-slate-900', { timeout: 15000 }).catch(() => {});
-    await this.page.waitForTimeout(1000); // Wait for animation
+    // Wait for step 2 content to be ready (ensure template cards are visible in DOM)
+    await this.page.waitForSelector('.group.relative.p-8, .p-8.rounded-3xl, h4:has-text("Layout strategy select")', { timeout: 25000 }).catch(() => {});
+    await this.page.waitForTimeout(2000); // Wait for animation and mount
 
     const selectors = [
       this.page.getByText(templateName, { exact: true }).first(),

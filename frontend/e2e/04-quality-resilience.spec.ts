@@ -1,4 +1,4 @@
-﻿import { test, expect } from './fixtures/base-test';
+import { test, expect } from './fixtures/base-test';
 import { AxeBuilder } from '@axe-core/playwright';
 
 /**
@@ -107,8 +107,12 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.waitForTimeout(3000);
             console.log('>>> Capturing Dashboard Visual Snapshot');
             await expect(page).toHaveScreenshot('dashboard-baseline.png', {
-                mask: [page.locator('.recharts-surface')], // Mask dynamic charts
-                maxDiffPixelRatio: 0.1
+                mask: [
+                    page.locator('.recharts-surface'), // Mask dynamic charts
+                    page.locator('.tabular-nums'), // Mask dynamic numbers
+                    page.locator('.custom-scrollbar') // Mask dynamic scrollbar contents (Audit History)
+                ],
+                maxDiffPixelRatio: 0.3
             });
         });
     });

@@ -165,7 +165,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 성공")
     void vote_Success() {
-        String today = java.time.LocalDate.now().toString();
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
@@ -190,7 +190,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (기간 전)")
     void vote_Fail_BeforeStart() {
-        String tomorrow = java.time.LocalDate.now().plusDays(1).toString();
+        String tomorrow = java.time.LocalDate.now().plusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
@@ -204,7 +204,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (기간 후)")
     void vote_Fail_AfterEnd() {
-        String yesterday = java.time.LocalDate.now().minusDays(1).toString();
+        String yesterday = java.time.LocalDate.now().minusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")
@@ -218,7 +218,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (중복 투표)")
     void vote_Fail_Duplicate() {
-        String today = java.time.LocalDate.now().toString();
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollId("P1")
                 .pollDsuseYn("N")

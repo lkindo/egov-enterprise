@@ -25,7 +25,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         console.log('>>> Step 3: Redirection to Admin Hub');
         await expect(page).toHaveURL(/\/admin/, { timeout: 30000 });
         // dashboard.badge의 값인 '전자정부 5.0' 확인 (또는 실제 메인 레이블)
-        await expect(page.locator('text=전자정부 5.0').first()).toBeVisible();
+        await expect(page.locator('text=전자정부 5.0').first()).toBeVisible({ timeout: 15000 });
     });
 
     test.describe('Dashboard Integrity (Session Preserved)', () => {

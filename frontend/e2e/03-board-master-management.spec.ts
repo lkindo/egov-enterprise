@@ -51,7 +51,7 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         await boardMasterPage.updateSettings({
             name: updatedName,
             description: updatedDesc,
-            useAt: 'Y'
+            useYn: 'Y'
         });
 
         console.log('\n>>> Step 4: Verifying Update in List');

@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eGov Enterprise - Governance & Harness Atlas</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       1. Core Design System & CSS Variables (Premium Space Dark Theme)
+       ========================================================================== */
+    :root {
+      --font-primary: 'Inter', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+
+      /* Premium Cyberpunk Slate & Space Colors */
+      --bg-main: #02040a;
+      --bg-card: rgba(10, 15, 30, 0.7);
+      --bg-card-hover: rgba(16, 24, 48, 0.85);
+      --border-color: rgba(255, 255, 255, 0.05);
+      --border-color-glow: rgba(139, 92, 246, 0.25);
+      
+      --accent-purple: #a855f7;
+      --accent-pink: #ec4899;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      
+      --sidebar-width: 300px;
+      --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-primary);
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+    }
+
+    /* Ambient Nebulae */
+    .bg-nebula-1 {
+      position: fixed;
+      top: -10%;
+      right: -10%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.03) 50%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(80px);
+      animation: drift 20s infinite alternate;
+    }
+    .bg-nebula-2 {
+      position: fixed;
+      bottom: -10%;
+      left: -10%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, rgba(6, 182, 212, 0.03) 50%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(80px);
+      animation: drift 25s infinite alternate-reverse;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to { transform: translate(40px, 40px) scale(1.1); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-main);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(168, 85, 247, 0.2);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(168, 85, 247, 0.5);
+    }
+
+    /* ==========================================================================
+       2. Layout & Glassmorphic Sidebar
+       ========================================================================== */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: rgba(4, 7, 18, 0.8);
+      backdrop-filter: blur(24px) saturate(180%);
+      border-right: 1px solid var(--border-color);
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      padding: 2.5rem 1.75rem;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink), var(--accent-blue));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+      font-size: 1.5rem;
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.75px;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text span {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .tab-radio {
+      display: none;
+    }
+
+    .nav-label {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      padding: 0.95rem 1.25rem;
+      border-radius: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: var(--transition-smooth);
+      border: 1px solid transparent;
+    }
+
+    .nav-label:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-number {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 3px 7px;
+      border-radius: 6px;
+      color: var(--accent-cyan);
+    }
+
+    /* Active Nav Styling with Neon Gradient Underlay */
+    #tab-welcome:checked ~ .sidebar .nav-label[for="tab-welcome"],
+    #tab-constitution:checked ~ .sidebar .nav-label[for="tab-constitution"],
+    #tab-gemini:checked ~ .sidebar .nav-label[for="tab-gemini"],
+    #tab-sop:checked ~ .sidebar .nav-label[for="tab-sop"],
+    #tab-simulator:checked ~ .sidebar .nav-label[for="tab-simulator"],
+    #tab-skills:checked ~ .sidebar .nav-label[for="tab-skills"],
+    #tab-db:checked ~ .sidebar .nav-label[for="tab-db"],
+    #tab-ralph:checked ~ .sidebar .nav-label[for="tab-ralph"] {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.12) 0%, rgba(59, 130, 246, 0.02) 100%);
+      border-left: 4px solid var(--accent-purple);
+      border-color: rgba(168, 85, 247, 0.25) rgba(255, 255, 255, 0.02) rgba(255, 255, 255, 0.02) var(--accent-purple);
+      box-shadow: inset 10px 0 20px rgba(168, 85, 247, 0.05);
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.75rem;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    /* ==========================================================================
+       3. Main Layout & Tab Engine
+       ========================================================================== */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex-grow: 1;
+      min-height: 100vh;
+      padding: 3.5rem 5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-content {
+      display: none;
+      animation: tabFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes tabFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Tab Display Connections */
+    #tab-welcome:checked ~ .main-content #content-welcome,
+    #tab-constitution:checked ~ .main-content #content-constitution,
+    #tab-gemini:checked ~ .main-content #content-gemini,
+    #tab-sop:checked ~ .main-content #content-sop,
+    #tab-simulator:checked ~ .main-content #content-simulator,
+    #tab-skills:checked ~ .main-content #content-skills,
+    #tab-db:checked ~ .main-content #content-db,
+    #tab-ralph:checked ~ .main-content #content-ralph {
+      display: block;
+    }
+
+    /* ==========================================================================
+       4. Breathtaking UI Components (Cards, Gradients, Glowing Badges)
+       ========================================================================== */
+    h2.section-title {
+      font-family: var(--font-title);
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #ffffff 20%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.section-subtitle {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-color-glow);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5), 
+        0 0 30px rgba(168, 85, 247, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .card-neon-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink), var(--accent-blue));
+    }
+
+    /* Typography Gradients */
+    .gradient-text-purple {
+      background: linear-gradient(135deg, #f59e0b, #ec4899, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+    .gradient-text-cyan {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      border: 1px solid transparent;
+    }
+    .badge-primary { background: rgba(168, 85, 247, 0.1); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.2); }
+    .badge-secondary { background: rgba(59, 130, 246, 0.1); color: #93c5fd; border-color: rgba(59, 130, 246, 0.2); }
+    .badge-cyan { background: rgba(6, 182, 212, 0.1); color: #67e8f9; border-color: rgba(6, 182, 212, 0.2); }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.2); }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: #fde047; border-color: rgba(245, 158, 11, 0.2); }
+    .badge-error { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border-color: rgba(239, 68, 68, 0.2); }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table.premium-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    table.premium-table th {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.2rem 1.5rem;
+      font-family: var(--font-title);
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    table.premium-table td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 1.4rem 1.5rem;
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    table.premium-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.premium-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    pre.code-block {
+      background: #040812;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      overflow-x: auto;
+      color: #34d399;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    pre.code-block::after {
+      content: 'CODE';
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+      font-size: 0.65rem;
+      font-family: var(--font-primary);
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+
+    /* ==========================================================================
+       5. Interactive Prompt Processing Simulator Flowchart
+       ========================================================================== */
+    .sim-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .sim-flow-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+    }
+
+    .sim-flow-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 2.5rem;
+      bottom: 2.5rem;
+      left: 2.25rem;
+      width: 2px;
+      background: linear-gradient(180deg, var(--accent-purple), var(--accent-blue), var(--accent-cyan));
+      z-index: 0;
+    }
+
+    .sim-step {
+      display: flex;
+      gap: 1.5rem;
+      background: rgba(10, 15, 30, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1.75rem;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      transition: var(--transition-smooth);
+    }
+
+    .sim-step:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      background: rgba(16, 24, 48, 0.8);
+      transform: translateX(5px);
+    }
+
+    .sim-step.active {
+      border-color: var(--accent-cyan);
+      background: linear-gradient(90deg, rgba(6, 182, 212, 0.08) 0%, rgba(10, 15, 30, 0.8) 100%);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.1);
+    }
+
+    .sim-step-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      transition: var(--transition-smooth);
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+
+    .sim-step.active .sim-step-icon {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+
+    .sim-step-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .sim-step-title {
+      font-family: var(--font-title);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      transition: var(--transition-smooth);
+    }
+
+    .sim-step.active .sim-step-title {
+      color: var(--accent-cyan);
+    }
+
+    .sim-step-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Diagnostics Monitor Console */
+    .sim-monitor {
+      background: #02050a;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: fit-content;
+      position: sticky;
+      top: 2rem;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .monitor-glow-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    }
+
+    .monitor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 1rem;
+    }
+
+    .monitor-dot-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .monitor-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .monitor-screen {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      padding: 1.25rem;
+      min-height: 220px;
+      max-height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .monitor-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-cyan);
+    }
+
+    .monitor-panel-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .monitor-param {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+      padding-bottom: 0.4rem;
+    }
+
+    .monitor-param-key { color: var(--text-muted); }
+    .monitor-param-val { color: #fff; font-weight: 600; }
+
+    /* Interactive Simulator Control Bar */
+    .sim-bar {
+      display: flex;
+      gap: 1rem;
+      background: rgba(10, 15, 30, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 1.25rem 2rem;
+      border-radius: 16px;
+      margin-bottom: 2.5rem;
+      align-items: center;
+    }
+
+    .sim-select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font-family: var(--font-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      outline: none;
+      flex-grow: 1;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .sim-select:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .sim-btn {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: #fff;
+      font-family: var(--font-primary);
+      font-weight: 700;
+      border: none;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+      transition: var(--transition-smooth);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sim-btn:hover {
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       6. Welcome & Overview Styles
+       ========================================================================== */
+    .welcome-hero {
+      text-align: center;
+      padding: 5rem 2rem;
+      position: relative;
+    }
+    .welcome-title {
+      font-family: var(--font-title);
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: -2.5px;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-purple) 40%, var(--accent-pink) 70%, var(--accent-blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.05;
+    }
+    .welcome-subtitle {
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto 3.5rem auto;
+      font-weight: 300;
+    }
+
+    .stat-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.75rem;
+      margin-bottom: 3.5rem;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: var(--transition-smooth);
+    }
+    .stat-card:hover {
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+      transform: translateY(-2px);
+    }
+    .stat-val {
+      font-family: var(--font-title);
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .stat-lbl {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 0.35rem;
+      font-weight: 600;
+    }
+
+    /* Database Naming Standard Visualization */
+    .db-visual {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 2rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 1.5rem;
+    }
+    .db-visual-left {
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      padding-right: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .db-visual-step {
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+    .db-visual-right {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .db-bubble {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      min-width: 140px;
+    }
+    .db-bubble-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .db-bubble-val {
+      font-family: var(--font-title);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.25rem;
+    }
+    .db-visual-arrow {
+      color: var(--accent-cyan);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Ambience -->
+  <div class="bg-nebula-1"></div>
+  <div class="bg-nebula-2"></div>
+
+  <!-- App Container -->
+  <div class="app-container">
+
+    <!-- Tab Selection Radios (Radio Hack routing) -->
+    <input type="radio" name="tabs" id="tab-welcome" class="tab-radio" checked>
+    <input type="radio" name="tabs" id="tab-constitution" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-gemini" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-sop" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-simulator" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-skills" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-db" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-ralph" class="tab-radio">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="brand-icon">Ω</div>
+        <div class="brand-text">
+          <h1>eGov Enterprise</h1>
+          <span>Antigravity Portal</span>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li>
+          <label for="tab-welcome" class="nav-label">
+            <span class="nav-number">00</span>
+            <span>Welcome Hub</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-constitution" class="nav-label">
+            <span class="nav-number">01</span>
+            <span>3대 기술 헌법</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-gemini" class="nav-label">
+            <span class="nav-number">02</span>
+            <span>GEMINI.md 규칙</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-sop" class="nav-label">
+            <span class="nav-number">03</span>
+            <span>오케스트레이션 SOP</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-simulator" class="nav-label">
+            <span class="nav-number">04</span>
+            <span style="color: var(--accent-cyan);">프롬프트 처리 순서도</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-skills" class="nav-label">
+            <span class="nav-number">05</span>
+            <span>8대 네이티브 엔진</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-db" class="nav-label">
+            <span class="nav-number">06</span>
+            <span style="color: var(--accent-pink);">DB 거버넌스 & 권한</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-ralph" class="nav-label">
+            <span class="nav-number">07</span>
+            <span>자가성찰 Ralph Loop</span>
+          </label>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div>v5.0.0-MODERNIZED</div>
+        <div>OCI PostgreSQL 17 READY</div>
+        <div>2026-05-18</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="main-content">
+
+      <!-- ====================================================================
+           TAB 00: Welcome & Hub
+           ==================================================================== -->
+      <section class="tab-content" id="content-welcome">
+        <div class="welcome-hero">
+          <div class="welcome-title">Enterprise Harness Atlas</div>
+          <div class="welcome-subtitle">전자정부 프레임워크 5.0 현대화 프로젝트의 자율 에이전트 오케스트레이션 및 무결성 제어 인프라 명세서</div>
+          
+          <div class="stat-bar">
+            <div class="stat-card">
+              <div class="stat-val" style="color: var(--accent-cyan);">8</div>
+              <div class="stat-lbl">정예 독점 스킬</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color: var(--accent-purple);">3대</div>
+              <div class="stat-lbl">기술 헌법</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color: var(--accent-pink);">100개</div>
+              <div class="stat-lbl">전체 물리 테이블</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color: var(--color-success);">100%</div>
+              <div class="stat-lbl">자가 복구율</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-neon-glow"></div>
+          <h3 class="flow-title">🛸 eGov Enterprise 거버넌스 철학 (Governance Philosophy)</h3>
+          <p style="color: var(--text-muted); margin-top: 1rem;">
+            eGov Enterprise 프로젝트는 <strong>"도구에 의한 강제성(Harness-driven Constraint)"</strong>을 근간으로 삼습니다. 
+            에이전트가 코드를 작성하거나 수정할 때, 임의의 편의성에 의존하지 않고 사전에 정립된 3대 헌법과 8대 독점 스킬이 상호 맞물려 동작하도록 규율합니다. 
+            본 포털 아틀라스는 에이전트와 엔지니어 모두가 참조하는 단일 진실의 원천(SSOT) 역할을 수행합니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 01: 3대 기술 헌법 (The 3 Constitutions)
+           ==================================================================== -->
+      <section class="tab-content" id="content-constitution">
+        <h2 class="section-title">01. 3대 기술 헌법 (The 3 Constitutions)</h2>
+        <p class="section-subtitle">프로젝트의 아키텍처적 일관성과 안정성을 담보하는 세 가지 불가침 법령</p>
+
+        <div class="grid-3">
+          <div class="glass-card">
+            <div class="card-neon-glow" style="background: linear-gradient(90deg, #ef4444, #f59e0b);"></div>
+            <span class="badge badge-error">Database</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">DB 표준화 헌법 (8조)</h3>
+            <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li>물리 테이블 표준 접두사 필행 (`tb_`)</li>
+              <li>`meta_standard_words` 메타 테이블 준수</li>
+              <li>모든 플래그 컬럼은 `CHAR(1)` 타입 고정</li>
+              <li>인덱스/제약조건 네이밍 표준화 이행</li>
+            </ul>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-neon-glow" style="background: linear-gradient(90deg, #a855f7, #3b82f6);"></div>
+            <span class="badge badge-primary">Backend</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">백엔드 API 헌법 (15조)</h3>
+            <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li>컨트롤러에서 DB 엔티티 반환 절대 금지</li>
+              <li>Unified Response 래퍼 클래스 필수 사용</li>
+              <li>서비스 레이어 내 JWT 기반 2차 인가 검증</li>
+              <li>트랜잭션 격리수준 및 읽기전용 최적화</li>
+            </ul>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-neon-glow" style="background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
+            <span class="badge badge-success">Frontend</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">프론트엔드 UX 헌법 (12조)</h3>
+            <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li>Server Component 우선주의 (SSR 최적화)</li>
+              <li>하드코딩 배제 및 정의된 CSS 디자인 토큰 준수</li>
+              <li>API 호출 시 Next.js App Router 최적 통신</li>
+              <li>반응형 및 프리미엄 글래스모피즘 에스테틱</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">🚨 헌법 불가침 원칙 (Constitutional Absolute Protection)</h3>
+          <p style="color: var(--text-muted); margin-top: 1rem; font-size: 0.9rem;">
+            위 3대 기술 헌법 파일(`constitution.md`)은 사용자의 명시적이고 독점적인 승인 없이는 **에이전트가 단독으로 절대 수정할 수 없습니다.**
+            위반 사례 발견 시 파이프라인 상의 <strong>api-contract-guardian</strong> 및 <strong>owasp-security-auditor</strong>가 빌드 진행을 즉시 중단(Hard-Stop)시킵니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 02: GEMINI.md 규칙 (GEMINI.md Ruleset)
+           ==================================================================== -->
+      <section class="tab-content" id="content-gemini">
+        <h2 class="section-title">02. GEMINI.md 규칙 (GEMINI.md Ruleset)</h2>
+        <p class="section-subtitle">프로젝트 개발 시 에이전트가 최우선으로 참고하는 법령 및 Gotchas</p>
+
+        <div class="glass-card">
+          <h3 class="flow-title">핵심 운영 명령어 매트릭스</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>명령어</th>
+                  <th>위치</th>
+                  <th>목적</th>
+                  <th>관련 스킬</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>npm run dev</code></td>
+                  <td>Root</td>
+                  <td>전체 로컬 개발 서버 동시 구동 (Port 8080 / 3001)</td>
+                  <td><code>resilience-debugger</code></td>
+                </tr>
+                <tr>
+                  <td><code>npm run codegen:ts</code></td>
+                  <td><code>frontend/</code></td>
+                  <td>Swagger OpenAPI 명세 기반 프론트엔드 TS 타입 자동 생성</td>
+                  <td><code>api-contract-guardian</code></td>
+                </tr>
+                <tr>
+                  <td><code>npm run test:e2e</code></td>
+                  <td><code>frontend/</code></td>
+                  <td>Playwright 기반 E2E 전체 Tiers 자동 테스트</td>
+                  <td><code>visual-auditor</code></td>
+                </tr>
+                <tr>
+                  <td><code>make coverage</code></td>
+                  <td>Root</td>
+                  <td>Jacoco 통합 백엔드 테스트 커버리지 리포트 생성</td>
+                  <td><code>mutation-testing-auditor</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="glass-card">
+            <h3 class="flow-title">💡 에이전트 트러블슈팅 매트릭스 (Gotchas)</h3>
+            <ul style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem; list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+              <li>🔒 <strong>인증(401) 장애</strong>: `AuthContext`의 `accessToken`과 브라우저 쿠키의 동기화 상태를 디버깅 시 최우선 확인.</li>
+              <li>⚙️ <strong>타입 에러</strong>: DTO 수정 시 반드시 `npm run codegen:ts`를 자동 선행 가동하여 `generated-api.d.ts`를 갱신.</li>
+              <li>🌀 <strong>컴포넌트 렌더링</strong>: 훅(Hook) 사용 여부에 따라 `'use client'` 필요 위치를 명확히 진단. 기본은 Server Component.</li>
+            </ul>
+          </div>
+
+          <div class="glass-card">
+            <h3 class="flow-title">🧹 로컬 브릿지 및 리소스 위생 규칙</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+              포트 충돌(8080/3001) 발생 시 즉시 백그라운드 좀비 프로세스를 킬(KILL)하고 자가 수리합니다.
+              개발 디바이스의 네트워크 및 프로세스 무결성은 <strong>`resilience-debugger`</strong> 스킬이 독점적으로 통제합니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 03: 오케스트레이션 SOP (Orchestration Protocol)
+           ==================================================================== -->
+      <section class="tab-content" id="content-sop">
+        <h2 class="section-title">03. Strict Orchestration Protocol (SOP)</h2>
+        <p class="section-subtitle">메인 에이전트와 서브에이전트 간의 정형화된 오케스트레이션 파이프라인</p>
+
+        <div class="glass-card">
+          <h3 class="flow-title">태스크 등급 분류 체계 (Task Grading)</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>등급</th>
+                  <th>정의</th>
+                  <th>통과 경로</th>
+                  <th>기동 스킬셋</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-success">L0 (Trivial)</span></td>
+                  <td>단순 오타, 주석 수정, 단순 CSS 스타일 보완</td>
+                  <td><strong>Fast-Track</strong> (사용자 승인 생략 가능)</td>
+                  <td><code>caveman</code></td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">L1 (Standard)</span></td>
+                  <td>단일 로직 수정, 컴포넌트 추가, 버그 패치</td>
+                  <td><strong>Standard Path</strong> (Task Specification 발행 및 감사)</td>
+                  <td><code>gstack-review</code></td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">L2 (Critical)</span></td>
+                  <td>DB 스키마 개정, 아키텍처 개편, 다중 모듈 수정, 보안 로직</td>
+                  <td><strong>Strict SOP Full-Pipeline</strong> (서술형 감사 및 헌법 대조)</td>
+                  <td><code>deep-context-mapper</code>, <code>zero-downtime-migration-planner</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 04: Interactive Flowchart Simulator (Prompt Processing Flow)
+           ==================================================================== -->
+      <section class="tab-content" id="content-simulator">
+        <h2 class="section-title">04. 프롬프트 처리 흐름 순서도 (Prompt Workflow)</h2>
+        <p class="section-subtitle">프롬프트가 입력되었을 때 에이전트가 어떤 순서와 도구를 활용해 무결성을 통제하고 자동 수행하는지 보여주는 역동적 시뮬레이터</p>
+
+        <div class="sim-bar">
+          <span style="font-family: var(--font-title); font-weight: 700; color: #fff;">프롬프트 프리셋 선택:</span>
+          <select id="sim-prompt-select" class="sim-select" onchange="loadPresetPrompt()">
+            <option value="preset-db">DB: "tb_bbs_scrap 테이블의 USE_YN 컬럼 사용여부 필드 명세 수정해줘"</option>
+            <option value="preset-auth">Auth: "인증 401 오류가 나는데 Spring Security 체인이랑 AuthContext 검토해줘"</option>
+            <option value="preset-ui">UI: "게시판 댓글 UI에 글래스모피즘 에스테틱과 마이크로 애니메이션 추가해줘"</option>
+          </select>
+          <button class="sim-btn" onclick="startWorkflowSimulation()">
+            <span>⚡</span> 시뮬레이션 시작
+          </button>
+        </div>
+
+        <div class="sim-container">
+          
+          <!-- Vertical interactive Flow steps -->
+          <div class="sim-flow-wrapper">
+            
+            <div class="sim-step" id="step-node-1" onclick="selectStep(1)">
+              <div class="sim-step-icon">01</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">프롬프트 분석 & 등급 판정 (Grading)</div>
+                <div class="sim-step-desc">사용자 요청을 해석하고 태스크 등급(L0/L1/L2) 판정 및 TASK PROPOSAL 발행</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-2" onclick="selectStep(2)">
+              <div class="sim-step-icon">02</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">3대 기술 헌법 사전 오딧</div>
+                <div class="sim-step-desc">코어 변경 착수 전 backend/frontend/db 헌법에 반하는 행위인지 원천 차단 분석</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-3" onclick="selectStep(3)">
+              <div class="sim-step-icon">03</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">전체 구조 위상 맵 로드 (Deep Context Map)</div>
+                <div class="sim-step-desc">1M+ 대용량 토큰 버퍼에 Gradle 멀티 모듈 및 DB 스키마 맵 적재</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-4" onclick="selectStep(4)">
+              <div class="sim-step-icon">04</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">정밀 샌드박스 구현 (Sandbox Execution)</div>
+                <div class="sim-step-desc">로컬 컴파일러 및 DB Bridge를 이용해 최소 정밀 코드로 분해 구현 수행</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-5" onclick="selectStep(5)">
+              <div class="sim-step-icon">05</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">보안 및 API 계약 실시간 오딧</div>
+                <div class="sim-step-desc">OWASP 취약점 자율 침투 진단 및 OpenAPI 타입 브레이킹 체인지 자동 방어</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-6" onclick="selectStep(6)">
+              <div class="sim-step-icon">06</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">검증 데이터 및 증거 수집 (Visual Audit)</div>
+                <div class="sim-step-desc">Playwright E2E 테스트 및 Jacoco 커버리지 측정, browser_subagent 비디오 녹화</div>
+              </div>
+            </div>
+
+            <div class="sim-step" id="step-node-7" onclick="selectStep(7)">
+              <div class="sim-step-icon">07</div>
+              <div class="sim-step-content">
+                <div class="sim-step-title">문서 자동 갱신 및 결과 배포 (Complete)</div>
+                <div class="sim-step-desc">Docs-as-Code 엔진으로 관련 아키텍처 문서 및 다이어그램 최신화 후 배포</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Diagnostics Monitor console side -->
+          <div class="sim-monitor">
+            <div class="monitor-glow-top"></div>
+            <div class="monitor-header">
+              <div class="monitor-dot-group">
+                <span class="monitor-dot" style="background: var(--color-error);"></span>
+                <span class="monitor-dot" style="background: var(--color-warning);"></span>
+                <span class="monitor-dot" style="background: var(--color-success);"></span>
+              </div>
+              <span class="monitor-label">Harness Diagnostics Monitor</span>
+            </div>
+
+            <div class="monitor-panel-body">
+              <div class="monitor-param">
+                <span class="monitor-param-key">ACTIVE STAGE</span>
+                <span class="monitor-param-val" id="mon-stage" style="color: var(--accent-cyan); font-family: var(--font-mono);">STAGE 1 / 7</span>
+              </div>
+              <div class="monitor-param">
+                <span class="monitor-param-key">TASK GRADE</span>
+                <span class="monitor-param-val" id="mon-grade">-</span>
+              </div>
+              <div class="monitor-param">
+                <span class="monitor-param-key">SKILL DETECTED</span>
+                <span class="monitor-param-val" id="mon-skill">-</span>
+              </div>
+            </div>
+
+            <div class="monitor-screen" id="mon-screen">Waiting for simulator trigger... Choose a preset and click "Run Simulation".</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 05: 8대 네이티브 엔진 (8-Pillar Skills Engine)
+           ==================================================================== -->
+      <section class="tab-content" id="content-skills">
+        <h2 class="section-title">05. 8대 네이티브 고성능 엔진 (8-Pillar Skills Engine)</h2>
+        <p class="section-subtitle">구 프롬프트 방식의 오버헤드를 탈피하여 안티그래비티 런타임에 완벽히 장착된 8가지 고유 독점 스킬</p>
+
+        <div class="grid-2">
+          
+          <div class="glass-card">
+            <span class="badge badge-primary">Skill 01</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Deep Context Mapper</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              1M+ 대용량 토큰 샌드박스를 활용하여 복잡한 다중 Gradle 모듈 및 PostgreSQL 물리 스키마의 상관 위상(Topology) 지도를 구성하여 완벽한 컴파일 안정성을 달성합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-success">Skill 02</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Visual Auditor</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              <code>browser_subagent</code> 네이티브를 연동하여 프론트엔드 픽셀 및 반응형 레이아웃 깨짐을 실시간으로 비교 검증하고 WebP 시각 아티팩트를 자동 수립합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-error">Skill 03</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Resilience Debugger</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              포트 충돌 등 런타임 예외 감지 시 DB Bridge 연동 및 로컬 프로세스 기동성을 자동 복구 및 포트 정리하여 자가 치유(Self-Healing)를 가동합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-warning">Skill 04</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">API Contract Guardian</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              Spring Boot DTO/Controller와 Next.js 타입 간의 Breaking Change를 OpenAPI 명세 대조를 통해 사전에 100% 추론 및 파괴를 완전 방어합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-warning">Skill 05</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">OWASP Security Auditor</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              JWT 설정 및 Spring Security 체인 변경 시 Red Team 공격자 관점에서 취약점 정밀 정적 분석 및 침투 검증 시나리오를 자율 실행합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-primary">Skill 06</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Docs-as-Code Sync</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              로직이 수정될 때마다 아키텍처 문서 및 Mermaid 다이어그램을 코드를 기반으로 자율 역추적하여 최신화하여 문서 노후화를 방지합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-success">Skill 07</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Mutation Testing Auditor</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              테스트의 강건성을 검증하기 위해 실제 비즈니스 코드에 의도적으로 미세한 논리 돌연변이(버그)를 삽입해 테스트 코드가 실패하는지 수학적으로 검증합니다.
+            </p>
+          </div>
+
+          <div class="glass-card">
+            <span class="badge badge-error">Skill 08</span>
+            <h3 class="flow-title" style="margin-top: 0.5rem;">Zero-Downtime Planner</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              PostgreSQL 스키마 변경 시 DDL Lock으로 인한 다운타임을 원천 차단하기 위해 phased 'Expand and Contract' SQL 설계 패턴을 강제 이행시킵니다.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 06: DB 거버넌스 & 권한 제어 구조 (DB Governance)
+           ==================================================================== -->
+      <section class="tab-content" id="content-db">
+        <h2 class="section-title">06. Database Governance & Safety Bridge</h2>
+        <p class="section-subtitle">엄격하게 분리된 물리 스키마 사양과 자율 탐색 기동성을 보장하는 OCI PostgreSQL 17 보안 접근 구조</p>
+
+        <div class="glass-card">
+          <div class="card-neon-glow" style="background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple));"></div>
+          <h3 class="flow-title">📊 물리 데이터베이스 스키마 카탈로그 (Database Physical Inventory)</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+            `egov-enterprise` 프로젝트의 OCI PostgreSQL 17 스키마는 헌법 제2조에 의거하여 아래와 같이 철저히 분류 및 통제됩니다. 
+            임의의 테이블 생성 및 약어 네이밍은 파이프라인에서 원천 거부됩니다.
+          </p>
+
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>테이블 카테고리</th>
+                  <th>테이블 명칭 표준 (Naming Standard)</th>
+                  <th>물리 개수</th>
+                  <th>메타 거버넌스 무결성 보증 규정</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-success">표준 비즈니스 테이블</span></td>
+                  <td><code>tb_[도메인]_[업무주체]</code> (소문자 Snake Case)</td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff;">93개</td>
+                  <td>
+                    [3대 메타 표준 강제 적용] 컬럼명은 반드시 <code>meta_standard_words</code>로 구성하고, 
+                    데이터 타입은 <code>meta_standard_domains</code>에 바인딩된 사양을 100% 동일하게 이행함.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-primary">표준 메타 테이블</span></td>
+                  <td><code>meta_standard_[사전종류]</code></td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff;">3개</td>
+                  <td>
+                    전사 진실의 단일 원천(SSOT). 
+                    <code>meta_standard_words</code>(단어 사전), 
+                    <code>meta_standard_terms</code>(용어 사전), 
+                    <code>meta_standard_domains</code>(도메인 사전)으로 구성됨.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-secondary">인프라 관리용 테이블</span></td>
+                  <td><code>flyway_*</code>, <code>ids</code>, <code>revinfo</code>, <code>ecopseq</code></td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff;">4개</td>
+                  <td>
+                    Flyway 스키마 이력 관리, eGov 프레임워크 표준 ID 제네레이터 및 Hibernate 감사 로그 레코드 인프라 테이블.
+                  </td>
+                </tr>
+                <tr style="background: rgba(168, 85, 247, 0.05); font-weight: bold;">
+                  <td><span style="color: var(--accent-purple);">물리 스키마 총합</span></td>
+                  <td>-</td>
+                  <td style="font-family: var(--font-mono); font-weight: 800; color: var(--accent-purple); font-size: 1.1rem;">100개</td>
+                  <td>
+                    무중단 이행 지침 및 헌법에 따라 형상 관리되는 eGov Enterprise v5 완결 데이터 모델.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">⚖️ OCI PostgreSQL 17 이중 필터 권한 통제 매트릭스</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+            에이전트가 PostgreSQL에 접속 시 실행하는 모든 쿼리는 안전 브릿지에 의해 검증되며, 파괴적인 행위와 단순 조회 행위로 엄격하게 분류됩니다.
+          </p>
+
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>권한 분류</th>
+                  <th>대상 쿼리 / 데이터 조작</th>
+                  <th>권한 등급</th>
+                  <th>보안 메커니즘 및 면책 사유</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-success">면책 특권 (Exemption)</span></td>
+                  <td><code>SELECT ... FROM meta_standard_*</code> 및 스키마 구조 조회</td>
+                  <td style="color: var(--color-success); font-weight: 700;">자율 실행 (무승인)</td>
+                  <td>
+                    거버넌스 정렬을 위해 메타 사전을 조회하는 행위는 탐색의 기동성 및 무결성 조회를 위해 사용자의 사전 개입을 배제하고 무제한 보장함.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-success">진단 특권 (Diagnosis)</span></td>
+                  <td>오류 복구(Ralph Loop 2.0) 중 DB 상태 확인을 위한 단순 <code>SELECT</code></td>
+                  <td style="color: var(--color-success); font-weight: 700;">자율 실행 (무승인)</td>
+                  <td>
+                    자가 치유(Self-Healing) 단계에서 장애 상황을 진단하기 위해 테이블을 읽는 행위는 에이전트 자율성 보장 범위에 포함됨.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">DML 통제 대상</span></td>
+                  <td>실제 업무 데이터에 대한 <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td>
+                  <td style="color: var(--color-error); font-weight: 700;">사전 승인 필수</td>
+                  <td>
+                    운영 및 코어 비즈니스 데이터의 상태를 변조하는 작업은 글로벌 룰셋 §5(파괴적 작업 경계)에 따라 사용자 승인이 강제 통제됨.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">DDL 통제 대상</span></td>
+                  <td>스키마 객체 구조를 변경하는 <code>ALTER</code>, <code>DROP</code>, <code>CREATE</code></td>
+                  <td style="color: var(--color-error); font-weight: 700;">사전 승인 필수</td>
+                  <td>
+                    무중단 스키마 이행 지침(Zero-Downtime Migration Planner) 통과 의무가 있으며 최종 이행 전 무조건 사용자 하드락 승인이 요구됨.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">⛓️ DB 표준화 3단계 강제 바인딩 메커니즘 (Standard Binding Workflow)</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+            에이전트는 신규 테이블 생성 또는 컬럼 추가 시, 추측에 기반한 데이터 모델링을 원천 금지합니다.
+          </p>
+
+          <div class="db-visual">
+            <div class="db-visual-left">
+              <div class="db-visual-step">1단계. 단어 분해</div>
+              <div class="db-visual-step">2단계. 약어 추출</div>
+              <div class="db-visual-step">3단계. 도메인 바인딩</div>
+            </div>
+            <div class="db-visual-right">
+              <div class="db-bubble">
+                <div class="db-bubble-lbl">논리 명칭</div>
+                <div class="db-bubble-val">게시물조회수</div>
+              </div>
+              <span class="db-visual-arrow">➔</span>
+              <div class="db-bubble">
+                <div class="db-bubble-lbl">단어 조합 (Words)</div>
+                <div class="db-bubble-val" style="color: var(--accent-purple);">게시물(BBS) + 조회수(RDCNT)</div>
+              </div>
+              <span class="db-visual-arrow">➔</span>
+              <div class="db-bubble">
+                <div class="db-bubble-lbl">용어 확정 (Terms)</div>
+                <div class="db-bubble-val" style="color: var(--accent-pink);">bbs_rdcnt</div>
+              </div>
+              <span class="db-visual-arrow">➔</span>
+              <div class="db-bubble">
+                <div class="db-bubble-lbl">도메인 강제 (Domains)</div>
+                <div class="db-bubble-val" style="color: var(--accent-cyan);">NUMERIC(10)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">데이터 브릿지 실행 커맨드</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+            에이전트는 OCI PostgreSQL 17에 접근할 때 <code>application.yml</code> 설정을 기반으로 자동 동작하는 아래 백그라운드 브릿지를 활용합니다.
+          </p>
+          <pre class="code-block">node .agent/scripts/db-bridge.js "SELECT * FROM meta_standard_words LIMIT 10" --json</pre>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 07: 자가성찰 Ralph Loop (Ralph Loop 2.0)
+           ==================================================================== -->
+      <section class="tab-content" id="content-ralph">
+        <h2 class="section-title">07. 자가 성찰 오류 복구 프로토콜 (Ralph Loop 2.0)</h2>
+        <p class="section-subtitle">오류 감지 시 무작위 수정을 배제하고 근본적인 물리 원인을 찾아 치유하는 4단계 복구 서클</p>
+
+        <div class="glass-card">
+          <div class="flowchart">
+            
+            <div class="flow-node highlight">
+              <div class="flow-title">1단계: 멈춤 및 가설 수립 (Formulate Hypothesis)</div>
+              <div class="flow-desc">에러 감지 즉시 코드 변경을 중단하고 "어떤 가정이 잘못되었는가?"에 대한 근본 가설 정립</div>
+            </div>
+
+            <div class="flow-node">
+              <div class="flow-title">2단계: 표적 조사 및 증거 수집 (Target Investigation)</div>
+              <div class="flow-desc"><code>resilience-debugger</code> 가동 및 Playwright 스크린샷/WebP 비디오와 JVM 로그 교차 검증 (교차검증 의무)</div>
+            </div>
+
+            <div class="flow-node highlight">
+              <div class="flow-title">3단계: 성찰 리포트 출력 (Report Generation)</div>
+              <div class="flow-desc">수정 개시 전 <code>[SELF-REFLECTION REPORT]</code> 형식의 초정밀 오류 원인 보고 의무 출력</div>
+            </div>
+
+            <div class="flow-node">
+              <div class="flow-title">4단계: 초정밀 수정 및 재검증 (Precision Fix & Re-Verify)</div>
+              <div class="flow-desc">최소 범위의 코드만 정밀 패치하고 빌드/테스트 재실행 (3회 연속 실패 시 인간 에스컬레이션)</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">성찰 보고서 표준 템플릿</h3>
+          <pre class="code-block">
+### 🔍 [SELF-REFLECTION REPORT] ###
+- **오판 진단(False Assumption)**: {내가 맞다고 착각했던 아키텍처적 전제 조건}
+- **근본 원인(Root Cause)**: {수집된 JVM/Playwright 물리 증거에 기반한 진짜 오류 원인}
+- **해결 가설(New Hypothesis)**: {이를 콤팩트하게 파괴하지 않고 우회/교정할 대안}
+- **부작용 검토(Side-Effect Check)**: {이 정밀 패치가 API 계약 및 타 레이어에 미칠 사이드이펙트 분석}
+#################################</pre>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Interactive Workflow Script -->
+  <script>
+    // Preset Prompts & Mock Diagnostic Output data
+    const presets = {
+      'preset-db': {
+        prompt: '"tb_bbs_scrap 테이블의 USE_YN 컬럼 사용여부 필드 명세 수정해줘"',
+        logs: [
+          { stage: 1, grade: "L2 (Critical)", skill: "gstack-review", log: " 분석 개시: 사용자가 DB 테이블 tb_bbs_scrap 수정을 요청하였습니다. DDL/DML에 영향이 감지되어 L2 등급으로 강제 격상합니다." },
+          { stage: 2, grade: "L2 (Critical)", skill: "api-contract-guardian", log: " 헌법 대조: DB 표준화 헌법(제1조/제5조)에 저촉되는지 확인합니다.\n- 표준 단어 사전조회: '사용여부' -> 'USE_YN' 매핑 확인.\n- 데이터 타입 바인딩: meta_standard_domains 에 따라 CHAR(1) 형식이 강제 적용되고 있는지 Java JPA 매핑 컬럼을 정밀 분석합니다." },
+          { stage: 3, grade: "L2 (Critical)", skill: "deep-context-mapper", log: " 위상 맵 로드: Gradle 모듈 business-suite의 ScrapEntity JPA 소스코드와 PostgreSQL 물리 스키마 간의 불일치를 추론합니다." },
+          { stage: 4, grade: "L2 (Critical)", skill: "resilience-debugger", log: " 구현: DB Bridge를 이용하여 tb_bbs_scrap의 USE_YN 타입을 CHAR(1)로 변경하는 DDL 스크립트를 작성하고 샌드박스 컴파일을 수행합니다." },
+          { stage: 5, grade: "L2 (Critical)", skill: "api-contract-guardian", log: " 계약 무결성 감사: DTO 반환 규정(백엔드 헌법 제1조) 위반 여부 확인.\n- generated-api.d.ts의 타입과 Spring Boot Controller의 반환 명세가 OpenAPI에 의해 Breaking Change가 없는지 100% 검증 성공." },
+          { stage: 6, grade: "L2 (Critical)", skill: "visual-auditor", log: " 증거 검증: Playwright E2E E2E Tier 15 (Scrap 연동 테스트)를 2-worker 백그라운드로 실행합니다.\n- 결과: 100% PASS 확인.\n- 브라우저 스냅샷 덤프 수집 완료." },
+          { stage: 7, grade: "L2 (Critical)", skill: "docs-as-code-sync", log: " 동기화 & 배포: DB_COMPLIANCE_TRACKER.md 및 스키마 다이어그램 자율 갱신 후, 작업 완료 리포트를 사용자 스페이스에 영구 배포합니다.\n⚡ [SUCCESS] DB 현대화 태스크 무결성 통과 완료!" }
+        ]
+      },
+      'preset-auth': {
+        prompt: '"인증 401 오류가 나는데 Spring Security 체인이랑 AuthContext 검토해줘"',
+        logs: [
+          { stage: 1, grade: "L2 (Critical)", skill: "gstack-review", log: " 분석 개시: 보안 필터 및 JWT 토큰 처리 로직 수정 요청이 수신되었습니다. 보안 민감 영역으로 L2 등급으로 자동 판정합니다." },
+          { stage: 2, grade: "L2 (Critical)", skill: "owasp-security-auditor", log: " 헌법 대조: 백엔드 API 헌법(제11조 JWT 검증 및 시큐리티 체인 격리) 원칙을 로딩합니다." },
+          { stage: 3, grade: "L2 (Critical)", skill: "deep-context-mapper", log: " 위상 맵 로드: Next.js 미들웨어(middleware.ts) 와 Spring Security Config 및 프론트엔드의 AuthContext 상태 동기화 구조를 맵핑합니다." },
+          { stage: 4, grade: "L2 (Critical)", skill: "resilience-debugger", log: " 구현: AuthContext 의 accessToken 쿠키 세팅이 httpOnly 방식으로 브라우저 보안 헤더와 정확히 매핑되지 않았던 문제를 분석해 정밀 수정합니다." },
+          { stage: 5, grade: "L2 (Critical)", skill: "owasp-security-auditor", log: " 보안 정밀 감사: Red Team 가상 시나리오 구동.\n- JWT 서명 위조 공격 시도 -> 거부 확인.\n- XSS를 통한 accessToken 유출 취약점 자율 분석 -> 100% 보호 규범 통과." },
+          { stage: 6, grade: "L2 (Critical)", skill: "visual-auditor", log: " 증거 검증: Playwright E2E 로그인 인증 시나리오(Tier 1)를 실행하여 비인가 경로 접근 시 401 차단 및 정상 세션 유지 여부 100% 검증." },
+          { stage: 7, grade: "L2 (Critical)", skill: "docs-as-code-sync", log: " 동기화 & 배포: API 명세서 최신화 및 보안 아키텍처 다이어그램 업데이트를 자율 완료하고 리포트를 제출합니다.\n⚡ [SUCCESS] 보안 무결성 통과 완료!" }
+        ]
+      },
+      'preset-ui': {
+        prompt: '"게시판 댓글 UI에 글래스모피즘 에스테틱과 마이크로 애니메이션 추가해줘"',
+        logs: [
+          { stage: 1, grade: "L1 (Standard)", skill: "gstack-review", log: " 분석 개시: 프론트엔드 컴포넌트 댓글창 UI의 시각 디자인 개선 요청입니다. 단일 모듈 레이아웃 수정이므로 L1 등급으로 판정합니다." },
+          { stage: 2, grade: "L1 (Standard)", skill: "visual-auditor", log: " 헌법 대조: 프론트엔드 UX 헌법(제4조 디자인 토큰 준수, 제10조 마이크로 인터랙션 규정)을 로드합니다." },
+          { stage: 3, grid: "L1 (Standard)", skill: "deep-context-mapper", log: " 위상 맵 로드: Next.js App Router 내 Comment Component(Client Side)와 Tailwind 4.0 CSS 토큰 구조의 의존성 확인." },
+          { stage: 4, grade: "L1 (Standard)", skill: "visual-auditor", log: " 구현: 배경 흐림(backdrop-filter) 효과와 미세 테두리 그라디언트, 호버 시 Framer Motion 스프링 바운스 애니메이션을 기입합니다." },
+          { stage: 5, grade: "L1 (Standard)", skill: "api-contract-guardian", log: " 계약 감사: UI 단독 변경이므로 백엔드 DTO 파괴 위협 없음. 정상 패스." },
+          { stage: 6, grade: "L1 (Standard)", skill: "visual-auditor", log: " 시각 오딧: browser_subagent를 띄워 CSS 렌더링 검사 수행.\n- 픽셀 무결성 확인 및 글래스 효과의 투명도가 어두운 배경에 이상적으로 블렌딩되는지 WebP 비주얼 리포트 자동 생성 완료." },
+          { stage: 7, grade: "L1 (Standard)", skill: "docs-as-code-sync", log: " 동기화: 프론트엔드 스타일가이드 컴포넌트 목록에 댓글 UI 추가 완료 후 시각 증거를 브레인 스페이스에 영구 배포합니다.\n⚡ [SUCCESS] 프리미엄 UI 디자인 적용 완료!" }
+        ]
+      }
+    };
+
+    let activeSimulationInterval = null;
+
+    function selectStep(stepNum) {
+      // Clear active style on all steps
+      for (let i = 1; i <= 7; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        if (node) node.classList.remove('active');
+      }
+      
+      // Select step
+      const targetNode = document.getElementById(`step-node-${stepNum}`);
+      if (targetNode) targetNode.classList.add('active');
+
+      // Update monitor
+      const selectedPresetKey = document.getElementById('sim-prompt-select').value;
+      const data = presets[selectedPresetKey];
+      const stageData = data.logs.find(l => l.stage === stepNum);
+
+      if (stageData) {
+        document.getElementById('mon-stage').innerText = `STAGE ${stepNum} / 7`;
+        document.getElementById('mon-grade').innerText = stageData.grade;
+        document.getElementById('mon-skill').innerText = stageData.skill;
+        document.getElementById('mon-screen').innerHTML = `[EXECUTING STAGE ${stepNum}] ➔ ${stageData.skill.toUpperCase()}\n\n${stageData.log}`;
+      }
+    }
+
+    function loadPresetPrompt() {
+      const presetKey = document.getElementById('sim-prompt-select').value;
+      const data = presets[presetKey];
+      document.getElementById('mon-screen').innerHTML = `Preset loaded: ${data.prompt}\n\nClick "Run Simulation" to watch the harness execute step-by-step with real-time logs.`;
+      
+      // Clear all active classes
+      for (let i = 1; i <= 7; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        if (node) node.classList.remove('active');
+      }
+    }
+
+    function startWorkflowSimulation() {
+      // Clear previous simulation running
+      if (activeSimulationInterval) {
+        clearInterval(activeSimulationInterval);
+      }
+
+      const presetKey = document.getElementById('sim-prompt-select').value;
+      const data = presets[presetKey];
+      let currentStep = 1;
+
+      document.getElementById('mon-screen').innerHTML = `🚀 Initializing Strict Harness Workflow Simulation...\nPrompt: ${data.prompt}\n\n`;
+
+      activeSimulationInterval = setInterval(() => {
+        if (currentStep > 7) {
+          clearInterval(activeSimulationInterval);
+          activeSimulationInterval = null;
+          return;
+        }
+
+        selectStep(currentStep);
+        currentStep++;
+      }, 3000); // Trigger next step every 3 seconds
+    }
+
+    // Initialize with first preset preview
+    window.onload = function() {
+      loadPresetPrompt();
+    };
+  </script>
+
+</body>
+</html>

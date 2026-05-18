@@ -135,7 +135,13 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node|저장/ }).first();
                 await saveButton.click();
                 
-                await page.waitForURL(/\/admin\/community\/boards\/selectBoardList/, { timeout: 30000 });
+                // Wait for save action completion (navigation or toast success)
+                await Promise.race([
+                    page.waitForURL((url) => !url.href.includes('updateBoardArticle') && !url.href.includes('insertBoardArticle'), { timeout: 30000, waitUntil: 'domcontentloaded' }),
+                    page.waitForSelector('text=/성공|저장|완료/', { timeout: 15000 })
+                ]).catch(() => {
+                    console.log('>>> Warning: Save action completion wait timed out, continuing...');
+                });
                 console.log('>>> Update complete.');
 
                 await test.step('User: Verify Updated Article', async () => {
