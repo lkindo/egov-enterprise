@@ -98,8 +98,8 @@ public record CommonCodeResponse(
     @Schema(description = "공통코드명", example = "상태 코드")
     String codeNm,
     
-    @Schema(description = "사용 여부", example = "true")
-    Boolean useAt
+    @Schema(description = "사용 여부 (Y/N)", example = "Y")
+    String useYn
 ) {}
 ```
 
@@ -152,13 +152,14 @@ npm run codegen:ts
 
 ## 🔄 CI 연동
 
-### API 문서 자동 내보내기
+### API 문서 자동 내보내기 (정적 추출)
+
+서버를 실행하지 않고 빌드 타임에 OpenAPI Spec을 정적으로 추출하여 CI 안정성을 확보합니다.
 
 ```bash
-# CI 에서 자동 실행
-./gradlew :api-server:bootRun &
-sleep 30
-curl -s http://localhost:8080/v3/api-docs > openapi-generated.json
+# CI 에서 자동 실행 (springdoc-openapi-gradle-plugin 활용)
+./gradlew :api-server:generateOpenApiDocs
+# 추출된 파일 위치: api-server/build/openapi.json
 ```
 
 ### API 변경 감지
@@ -191,6 +192,16 @@ CI 에서 API 관련 파일 변경 시 자동으로 OpenAPI Spec 을 아티팩�
 1. Swagger UI 에서 `Authorize` 클릭
 2. Bearer 를 제외한 토큰만 입력
 3. `Authorize` 클릭 후 `Close`
+
+### 403 Forbidden 또는 CORS 에러 발생 시
+
+프론트엔드 연동 중 CORS 에러나 Swagger UI 접근 시 403 에러가 발생한다면, `SecurityConfig.java`의 필터 체인 인가 누락을 의심해야 합니다.
+
+1. `SecurityFilterChain`에 다음 경로가 `permitAll()`로 열려 있는지 확인:
+   - `/v3/api-docs/**`
+   - `/swagger-ui/**`
+   - `/swagger-ui.html`
+2. WebMvcConfigurer의 CORS 설정(`allowedOrigins`, `allowedMethods`)에 `http://localhost:3001` (Next.js)이 포함되었는지 확인.
 
 ---
 

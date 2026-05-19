@@ -1,7 +1,30 @@
 # Frontend Architecture: eGov Enterprise (Modernized)
 
+> **상위 헌법**: 본 아키텍처는 [프론트엔드 디자인 및 UX 헌법] (15조)의 논리적 지배를 받는다.
+> **시각 규범**: 디자인 토큰 및 컬러 시스템은 [frontend-design-system.md](./frontend-design-system.md)를 참조한다.
+
 ## 🚀 Overview
 본 프로젝트의 프론트엔드는 **Next.js 16.2.4 (App Router)** 기반으로 구축되었으며, **React 19**의 최신 기능(Server Components, Actions, Suspense)을 적극 활용합니다. 시각적 예술성과 기술적 성능의 조화를 목표로 합니다.
+
+## 🗺️ Data Flow Architecture
+
+```mermaid
+graph LR
+    A["Browser (User)"] --> B["Next.js Middleware<br/>(Auth / RBAC)"]
+    B --> C["Server Component<br/>(RSC)"]
+    C --> D["ApiService<br/>(page 0→1 변환)"]
+    D --> E["Spring Boot<br/>Controller (8080)"]
+    
+    E --> F["DTO Response"]
+    F --> D
+    D --> G["TanStack Query v5<br/>(캐시 / 낙관적 업데이트)"]
+    G --> H["Client Component<br/>('use client')"]
+    H --> A
+
+    style A fill:#0055FF,color:#fff
+    style E fill:#6366f1,color:#fff
+    style G fill:#f59e0b,color:#000
+```
 
 ## 🏗️ Core Architecture
 
@@ -41,4 +64,4 @@ src/
 ```
 
 ---
-*Last Updated: 2026-05-14 (Aligned with Frontend UX Constitution)*
+*Last Updated: 2026-05-19 (Mermaid Data Flow & Constitution Reference Added)*

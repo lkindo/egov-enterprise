@@ -82,7 +82,8 @@
 | 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 고가용성 로직 설계 시 |
 | API 설계 및 문서화 가이드 | `docs/03-guides/api-documentation-guide.md` | 신규 API 생성 및 연동 시 |
 | DB 표준화 이행 지침 | `.agent/knowledge/db-standard-constitution/artifacts/standard_terms.md` | DB 오브젝트 설계 시 |
-| 문서 관리 정책 | `docs/03-guides/documentation-policy.md` | 새 문서 생성 및 지식 관리 시 |
+
+> **문서 관리 규칙**: 새 문서 생성 시 경로는 `01-product/`(기획), `02-architecture/`(설계), `03-guides/`(개발 지침), `04-operations/`(운영), `archived/`(구버전 보관)로 분류하며, 파일명은 반드시 **`kebab-case.md`** 형식을 준수한다.
 
 ### 6.1. 안티그래비티 독점 고성능 스킬 (Antigravity Native Skills)
 

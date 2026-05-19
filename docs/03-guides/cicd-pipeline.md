@@ -62,14 +62,14 @@ push/PR
 ### 실행 명령어
 
 ```bash
-./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+./gradlew build jacocoRootReport check :api-server:generateOpenApiDocs
 ```
 
 ### 생성 아티팩트
 
 | 이름 | 경로 | 보존 기간 |
 |------|------|-----------|
-| `openapi-spec` | `api-docs.json` | 30 일 |
+| `openapi-spec` | `api-server/build/openapi.json` | 30 일 |
 | `owasp-security-report` | `**/build/reports/dependency-check-report.*` | 30 일 |
 | `jacoco-report` | `build/reports/jacoco/aggregated` | 30 일 |
 | `quality-reports` | `**/build/reports/checkstyle` | 30 일 |
@@ -128,8 +128,8 @@ strategy:
 
 2. **백엔드 헬스 체크**
    ```bash
-   # 최대 100 초 대기 (5 초 * 20 회)
-   curl http://localhost:8080/actuator/health
+   # CI 호스트 레벨에서 백엔드 포트(8080)가 열릴 때까지 우아하게 차단 대기
+   npx wait-on tcp:8080
    ```
 
 3. **Playwright 테스트 실행**
@@ -147,10 +147,28 @@ strategy:
 
 #### 병합 리포트 생성 (`ci.yml`)
 
+병렬 VM 간 파일 시스템은 격리되어 있으므로, 반드시 각 Shard에서 리포트 파편을 업로드한 후 Merge Job에서 다운로드하여 병합해야 합니다.
+
 ```yaml
+# 1. 각 Shard Job 마지막에 실행
+- name: Upload blob report to GitHub Actions Artifacts
+  uses: actions/upload-artifact@v4
+  with:
+    name: blob-report-${{ matrix.shardIndex }}
+    path: blob-report
+    retention-days: 1
+
+# 2. 독립된 Merge Job에서 실행
+- name: Download all blob reports
+  uses: actions/download-artifact@v4
+  with:
+    path: all-blob-reports
+    pattern: blob-report-*
+    merge-multiple: true
+
 - name: Merge reports
   run: |
-    npx playwright merge-reports --reporter html ./playwright-reports
+    npx playwright merge-reports --reporter html ./all-blob-reports
 ```
 
 ---
@@ -249,6 +267,17 @@ docker-compose up -d db api
 npm run test:e2e:full
 ```
 
+> [!TIP]
+> **외부 클라우드 DB (OCI PostgreSQL 등) 직접 연동 시 (로컬 개발 환경)**
+> 로컬에서 도커(Docker)를 구동하지 않고 외부 클라우드 DB에 직접 연결하여 백엔드를 띄우고 테스트하는 경우, `docker-compose` 관련 기동 명령어(`docker-compose up -d`)는 실행하지 않고 완전히 생략합니다.
+> 
+> ```bash
+> # 1. 백엔드(8080)와 프론트엔드(3001) 서버가 로컬 OCI DB 환경에서 수동 구동 중인지 확인
+> # 2. E2E 테스트만 직접 단독 실행
+> cd frontend
+> npm run test:e2e:full
+> ```
+
 ### JaCoCo 커버리지 확인
 
 ```bash
@@ -304,6 +333,6 @@ export NVD_API_KEY=your-key
 
 ## 관련 문서
 
-- [테스트 가이드](./TESTING_GUIDE.md)
-- [성능 최적화 가이드](./PERFORMANCE_OPTIMIZATION_GUIDE.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [테스트 종합 가이드](./testing-guide.md)
+- [E2E 테스트 운영 런북](./e2e-test-guide.md)
+- [API 문서화 가이드](./api-documentation-guide.md)
