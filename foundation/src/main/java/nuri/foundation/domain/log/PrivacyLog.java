@@ -25,7 +25,7 @@ public class PrivacyLog extends BaseEntity {
     @Column(name = "DMND_ID", length = 20)
     private String requestId;
 
-    @Column(name = "INQIRE_DT")
+    @Column(name = "INQ_DT")
     private LocalDateTime inquiryDatetime;
 
     @Column(name = "SRVC_NM", length = 255)

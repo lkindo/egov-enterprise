@@ -52,7 +52,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "PSWD_CNSR", length = 300)
     private String pswdCrans;
 
-    @Column(name = "CHG_PWD_LAST_PNTTM")
+    @Column(name = "CHG_PSWD_LAST_DT")
     private LocalDateTime passwordUpdateDate;
 
     @Column(name = "CHG_PWD_CNT")

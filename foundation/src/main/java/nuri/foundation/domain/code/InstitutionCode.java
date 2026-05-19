@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "TB_INST_CODE")
+@Table(name = "TB_INST_CD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstitutionCode extends BaseEntity {
@@ -23,7 +23,7 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "ALL_INST_NM", length = 300)
     private String allInsttNm;
 
-    @Column(name = "LOWEST_INSTT_NM", length = 180)
+    @Column(name = "LWTRK_INST_NM", length = 180)
     private String lowestInsttNm;
 
     @Column(name = "INST_ABBR_NM", length = 300)
@@ -35,10 +35,10 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "ORD", length = 3)
     private String ord;
 
-    @Column(name = "INST_SEQ", length = 2)
+    @Column(name = "INST_CYCL", length = 2)
     private String insttOdr;
 
-    @Column(name = "BEST_INST_CD", length = 30)
+    @Column(name = "TOP_INST_CD", length = 30)
     private String bestInsttCode;
 
     @Column(name = "UP_INST_CD", length = 10)
@@ -59,25 +59,25 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "TELNO", length = 20)
     private String telno;
 
-    @Column(name = "FXNO", length = 20)
+    @Column(name = "FAX_NO", length = 20)
     private String fxnum;
 
-    @Column(name = "CREAT_DE", length = 20)
+    @Column(name = "CRT_YMD", length = 20)
     private String creatDe;
 
-    @Column(name = "ABL_DE", length = 20)
+    @Column(name = "ABL_YMD", length = 20)
     private String ablDe;
 
     @Column(name = "ABL_YN", length = 1)
     private String ablEnnc;
 
-    @Column(name = "CHANGE_DE", length = 20)
+    @Column(name = "CHG_YMD", length = 20)
     private String changede;
 
-    @Column(name = "CHANGE_TIME", length = 20)
+    @Column(name = "CHG_TM", length = 20)
     private String changeTime;
 
-    @Column(name = "BSIS_DE", length = 20)
+    @Column(name = "CRTR_YMD", length = 20)
     private String bsisDe;
 
     @Column(name = "SORT_SEQ")

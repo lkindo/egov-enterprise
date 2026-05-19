@@ -31,7 +31,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "BBS_ID", nullable = false)
     private String bbsId;
 
-    @Column(name = "REPLY_SN")
+    @Column(name = "ANS_SN")
     private Long pstSn;
 
     @Column(name = "PST_TTL", length = 2000)
@@ -46,10 +46,10 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "SORT_ORDR")
     private Long sortOrdr;
 
-    @Column(name = "SJ_BOLD_YN", length = 1)
+    @Column(name = "TTL_BOLD_YN", length = 1)
     private String ttlBoldYn;
 
-    @Column(name = "REPLY_LC")
+    @Column(name = "ANS_LVL")
     @Builder.Default
     private Integer replyLc = 0;
 
@@ -61,7 +61,7 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "PST_BGN_YMD", length = 20)
+    @Column(name = "PST_BGNG_YMD", length = 20)
     private String bgngYmd;
 
     @Column(name = "PST_END_YMD", length = 20)
@@ -79,13 +79,13 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "SECRET_YN", length = 1)
+    @Column(name = "SCRT_YN", length = 1)
     private String secretYn;
 
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
-    @Column(name = "EVENT_DATE")
+    @Column(name = "EVNT_DT")
     private java.time.LocalDateTime eventDate;
 
     @Column(name = "QNA_STTS_CD", length = 10)

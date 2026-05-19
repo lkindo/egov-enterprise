@@ -42,7 +42,7 @@ public class Banner extends BaseEntity {
     @Column(name = "SORT_ORDR")
     private Integer sortOrdr;
 
-    @Column(name = "REFLCT_YN", length = 1)
+    @Column(name = "RFLT_YN", length = 1)
     private String reflctAt;
 
     @Column(name = "ATCH_FILE_ID", length = 20)

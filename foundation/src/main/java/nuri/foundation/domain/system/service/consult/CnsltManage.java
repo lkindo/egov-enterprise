@@ -34,7 +34,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "CNSLT_CN", columnDefinition = "TEXT")
     private String cnsltCn;
 
-    @Column(name = "OTHBC_YN", length = 1)
+    @Column(name = "RLS_YN", length = 1)
     private String othbcAt;
 
     @Column(name = "WRITNG_PASSWORD", length = 20)
@@ -84,7 +84,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "PROC_CN", columnDefinition = "TEXT")
     private String managtCn;
 
-    @Column(name = "MANAGT_DE", length = 20)
+    @Column(name = "MNG_YMD", length = 20)
     private String managtDe;
 
     public void update(String cnsltSj, String cnsltCn, String othbcAt, String writngPassword,
