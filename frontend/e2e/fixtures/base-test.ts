@@ -9,6 +9,7 @@ import { OpsDetailPage } from '../pages/OpsDetailPage';
 import { OperationalExtensionPage } from '../pages/OperationalExtensionPage';
 import { BusinessExtensionPage } from '../pages/BusinessExtensionPage';
 import { ConsoleErrorGuard } from './error-detector';
+import { SelfHealingAgent } from './self-healing-agent';
 
 type MyFixtures = {
   bbsPage: BBSPage;
@@ -21,11 +22,17 @@ type MyFixtures = {
   operationalPage: OperationalExtensionPage;
   businessPage: BusinessExtensionPage;
   consoleGuard: ConsoleErrorGuard;
+  healingAgent: SelfHealingAgent;
   adminPage: Page;
   userPage: Page;
 };
 
 export const test = base.extend<MyFixtures>({
+  // 자가 치유 에이전트 Fixture
+  healingAgent: async ({ page }, use) => {
+    await use(new SelfHealingAgent(page));
+  },
+
   // 콘솔 가드 Fixture (auto: true로 설정하여 모든 테스트에서 자동 실행)
   consoleGuard: [async ({ page }, use) => {
     const guard = new ConsoleErrorGuard(page);

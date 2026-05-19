@@ -37,12 +37,14 @@ public class UserApiController {
     // --- [일반 사용자 기능] /api/v1/users ---
 
     @Operation(summary = "내 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회합니다.")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/users/me")
     public ResponseEntity<ApiResponse<UserDto>> getMe(@LoginUser CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userDetails.getUserId())));
     }
 
     @Operation(summary = "내 프로필 수정", description = "현재 로그인한 사용자의 프로필 정보를 수정합니다.")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/users/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(
             @LoginUser CustomUserDetails userDetails,
@@ -52,6 +54,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "비밀번호 변경", description = "현재 로그인한 사용자의 비밀번호를 변경합니다.")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/users/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @LoginUser CustomUserDetails userDetails,
@@ -65,6 +68,7 @@ public class UserApiController {
 
 
     @Operation(summary = "회원가입", description = "새로운 사용자 계정을 생성합니다.")
+    @PreAuthorize("permitAll()")
     @PostMapping("/users/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
         log.info("User signup request: {}", request.getUserId());
@@ -72,6 +76,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "아이디 중복 확인", description = "사용자 아이디가 시스템에 이미 존재하는지 확인합니다.")
+    @PreAuthorize("permitAll()")
     @GetMapping("/users/check-id")
     public ResponseEntity<ApiResponse<Boolean>> checkIdDplct(@RequestParam String userId) {
         return ResponseEntity.ok(ApiResponse.success(userService.checkIdDplct(userId)));

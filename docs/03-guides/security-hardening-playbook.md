@@ -150,5 +150,22 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 - 모든 로그 출력 패턴(Logback 등)에 `%X{traceId}`를 포함시켜, 에러 로그(`Logger.error`)와 PII 마스킹 로그가 동일한 요청 내역 안에서 추적 가능하도록 결속력을 보장한다.
 
 ---
-*Last Updated: 2026-05-19 (Double-Shield Guardrails, Refresh Token, Data Protection Runbook Added)*
-*Governed by: OWASP Hardening & Zero-Trust Security Playbook*
+
+## 5. Spring Security API 권한 제어 유실 방지 하네스 (Auth Role Guardrail)
+
+엔드포인트 수준에서 명시적인 권한 검증 어노테이션이 누락되어 인가 우회가 일어나는 제로데이 취약점을 원천 방지하기 위해 **Auth Role Guardrail 하네스**를 구축하여 빌드 타임에 강제합니다.
+
+### 5.1 작동 메커니즘
+- **타겟 도메인 패키지**: `nuri.api.controller` 하위 패키지에 정의된 모든 REST 컨트롤러.
+- **오딧 검증**: `@RestController` 클래스 내의 모든 HTTP 매핑 메서드(`@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PatchMapping`)에 대하여, `@PreAuthorize` 또는 `@Secured` 어노테이션 선언이 존재하는지 정적으로 전수 조사합니다.
+- **예외 처리 (White-list)**: 비인가 접근이 허용되어야 하는 공개 API(예: 회원가입, 아이디 중복 확인 등)는 `SecurityAuthAnnotationLinterTest`의 `PUBLIC_PATH_WHITELIST` 상수에 등록하여 통과시키거나, `@PreAuthorize("permitAll()")`를 명시적으로 선언하도록 강제합니다.
+- **빌드 하드 스톱(Hard-Stop)**: 만약 권한 제어 어노테이션이 유실된 커스텀 API가 발견되면, JUnit 테스트 단계에서 즉시 빌드를 실패(`Hard-Stop`) 처리하고 위반 엔드포인트 명세를 상세 보고합니다.
+
+### 5.2 검증 수행 명령
+```powershell
+./gradlew :api-server:test --tests "*SecurityAuthAnnotationLinterTest*"
+```
+
+---
+*Last Updated: 2026-05-19 (Double-Shield Guardrails, Refresh Token, Data Protection Runbook & Auth Role Guardrail Linter Integrated)*
+*Governed by: OWASP Hardening & Zero-Trust Security Playbook / Security Auth Linter Harness*

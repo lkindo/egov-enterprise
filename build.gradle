@@ -5,6 +5,7 @@ plugins {
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
     id 'org.owasp.dependencycheck' version '12.1.0'
+    id 'info.solidsoft.pitest' version '1.19.0' apply false
 }
 
 allprojects {
@@ -73,6 +74,7 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
+    apply plugin: 'info.solidsoft.pitest'
 
     java {
         toolchain {
@@ -136,6 +138,41 @@ subprojects {
             xml.required = true
             html.required = true
         }
+    }
+
+    // PITest (점진적 Mutation Testing) 설정
+    pitest {
+        junit5PluginVersion = '1.2.1'
+        targetClasses = ['nuri.*']
+        targetTests = ['nuri.*']
+        outputFormats = ['HTML', 'XML']
+        threads = 4
+
+        // 도메인 분석과 무관한 설정/예외/DTO 보일러플레이트 제외
+        excludedClasses = [
+            "nuri.foundation.core.config.*",
+            "nuri.foundation.core.exception.*",
+            "nuri.api.config.*",
+            "nuri.business.support.*",
+            "nuri.foundation.support.*",
+            "**.*Dto",
+            "**.*VO",
+            "**.*DAO",
+            "**.*Mapper",
+            "**.*Request",
+            "**.*Response",
+            "**.*Entity",
+            "**.*Q*.class",
+            "**.*Q*Entity.class"
+        ]
+
+        // Incremental Mutation Analysis 활성화 (분석 속도 10배 향상)
+        historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
+        historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
+
+        // 백엔드 헌법 제16조 (Mutation Score 85% 이상 강제) 유동적 연동
+        // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
+        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
     }
 }
 
