@@ -381,9 +381,10 @@ class MyTest {
 ```typescript
 // e2e/scripts/cleanup-db.ts
 export default async function cleanup() {
-    // 테스트 데이터 정리
-    await db.deleteFrom('NUSERLOG').execute();
-    await db.deleteFrom('VNUSERMASTER').execute();
+    // ⚠️ [경고] 테스트 데이터 정리 목적의 물리적 DELETE. 
+    // DB 헌법 제8조 2항의 '테스트 환경 예외'에 의해서만 허용되며, 실무 비즈니스 로직에서는 절대 금지(논리삭제 원칙).
+    await db.deleteFrom('tb_user_log').execute();
+    await db.deleteFrom('tb_user_master').execute();
 }
 ```
 

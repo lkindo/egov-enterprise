@@ -47,9 +47,9 @@
 
 본 프로젝트의 모든 코딩 컨벤션은 아래 3대 헌법을 최우위 규범으로 따른다. 상세 조항은 각 헌법 원문을 참조한다.
 
-- **Backend**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (15조)
-- **Frontend**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) (12조)
-- **Database**: [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md) (8조)
+- **Backend**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (18조)
+- **Frontend**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) (15조)
+- **Database**: [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md) (10조)
 
 > **⚠ 헌법 불가침 원칙**: 위 3대 헌법(`constitution.md`) 파일 및 본 `GEMINI.md` 자체는 **사용자의 명시적 승인 없이 에이전트가 단독으로 수정할 수 없다.** 트러블슈팅 패턴, 작업 기록 등 운영성 지식(`.gemini/tasks/`, `docs/`)의 생성·갱신은 자율적으로 허용한다.
 
@@ -91,10 +91,10 @@
 | **Deep Context Mapper** | `.agent/skills/deep-context-mapper/` | 1M+ 토큰 대용량 메모리 기반 다중 모듈 및 PostgreSQL 물리 스키마 위상(Topology) 맵 로딩 |
 | **Visual Auditor** | `.agent/skills/visual-auditor/` | `browser_subagent` 네이티브 픽셀 비교 검증 및 실시간 UI/UX 비주얼 regression 오디팅 |
 | **Resilience Debugger** | `.agent/skills/resilience-debugger/` | DB Bridge 연동, 좀비 포트 정리 및 Ralph Loop 2.0 자가 성찰/자가 치유(Self-Healing) 실행 |
-| **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | 백엔드(Spring Boot)와 프론트엔드(Next.js) 간의 OpenAPI 타입 명세 일치율 검증 및 Breaking Change 방어 |
+| **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | DB 제약조건(SSOT) ➔ BE DTO ➔ FE Zod 스키마로 이어지는 **단방향 연쇄 거울 동기화** 및 OpenAPI 타입 명세 일치율 검증으로 Breaking Change 완벽 방어 |
 | **OWASP Security Auditor** | `.agent/skills/owasp-security-auditor/` | 인증(JWT), Spring Security 필터, Next.js Middleware 변경 시 Red Team 관점의 가상 침투 및 취약점 검증 |
 | **Docs-as-Code Sync** | `.agent/skills/docs-as-code-sync/` | 시스템 아키텍처 및 로직 변경 시 관련 마크다운 문서와 Mermaid 다이어그램 자율 갱신 |
-| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 |
+| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — **Mutation Score 85% 이상 강제** (BE 헌법 제16조) |
 | **Zero-Downtime Planner** | `.agent/skills/zero-downtime-migration-planner/` | DB 스키마 변경 시 Expand-and-Contract 패턴 기반의 무중단 마이그레이션 설계 |
 
 ## 7. Database Interaction Rules (via Local Bridge)
@@ -103,7 +103,7 @@
 - **접속 정보**: `application.yml` 기반 자동 연동 (OCI PostgreSQL 17)
 - **보안 통제 및 자율성**:
   - 운영/코어 데이터의 DML은 글로벌 §5 파괴적 작업 경계 규정에 따라 사전 승인이 **필수**이다.
-  - 단, `test_` 접두사나 명백한 가비지/임시 샌드박스 데이터에 대한 삭제(Cleanup)는 기동성 확보를 위해 AI의 **자율 수행을 허용**한다.
+  - 단, `test_` 접두사나 테스트 환경(`@ActiveProfiles("test")`)의 명백한 가비지 데이터에 대한 삭제(Cleanup)는 **DB 헌법 제8조 2항의 예외 조항**에 의거하여 기동성 확보를 위해 AI의 자율 수행을 허용한다. 실 운영 데이터는 **절대적 논리삭제(Soft Delete)** 원칙을 따른다.
   - **[면책 특권]** `deep-context-mapper` 등을 통해 메타 데이터(`meta_standard_words` 등)나 물리 스키마를 **단순 조회(SELECT)**하는 행위는 사용자 승인 없이 무제한 자율 실행하여 탐색 기동성을 극대화한다.
   - **[진단 특권]** `resilience-debugger`가 §8 자가 성찰 디버그 프로토콜 수행 중 DB 상태를 진단하기 위한 **SELECT 쿼리** 역시 사용자 승인 없이 자율 실행을 허용한다.
 

@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
 export class OperationalExtensionPage {
-    constructor(private page: Page) {}
+    constructor(public page: Page) {}
 
     // Rewards Management
     async gotoRewards() {

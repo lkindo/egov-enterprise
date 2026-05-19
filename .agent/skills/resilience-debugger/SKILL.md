@@ -73,7 +73,7 @@ Before writing a single line of correction, output the mandatory `[SELF-REFLECTI
 If Playwright E2E tests fail under worker execution:
 * Do not keep re-running the test suite. 
 * Dispatch the `browser_subagent` to navigate to the exact failure state or read browser console logs and Playwright debug reports to locate UI elements.
-* Ensure all database states are rolled back using local sandbox cleanup policies.
+* Ensure all database states are rolled back using local sandbox cleanup policies. Physical `DELETE` is permitted only under the **DB Constitution Article 8 test-environment exception**; production data must always use logical deletion (`use_yn = 'N'`).
 
 ---
 *Verified: 2026-05-18 (Ralph Loop 2.0 & DB Bridge Fully Integrated)*

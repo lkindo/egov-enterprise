@@ -35,10 +35,11 @@ graph TD
     E -- No --> G[✅ Contract Guardian Passed]
 ```
 
-### Phase 1: Code-Level DTO Audit
+### Phase 1: Code-Level DTO Audit & Validation Mirroring
 * Analyze the Java DTO fields modified.
-* Compare against the `meta_standard_words` physical schema (via `deep-context-mapper` synergy).
-* Identify if fields were renamed, types were changed (e.g., `String` to `Integer`), or if non-nullable fields became nullable.
+* Compare against the `meta_standard_words` and `meta_standard_domains` physical schemas.
+* **[Backend Constitution Article 16]**: Verify that all DTO validation annotations (`@Size`, `@NotNull`, etc.) mirror the DB physical constraints exactly (100% Mirroring).
+* Identify if fields were renamed, types were changed, or if non-nullable fields became nullable.
 
 ### Phase 2: Codegen Validation (`npm run codegen:ts`)
 If structural API changes are made:
@@ -62,9 +63,10 @@ Evaluate the frontend impact:
 
 ## 3. Synergy with eGov Constitutions
 
-This skill strictly enforces **Article 4 of the Backend API Constitution** (Unified Response Structure):
+This skill strictly enforces **Article 6 of the Backend API Constitution** (Unified Response Structure) and **Article 16** (Validation Mirroring):
 * All API responses must wrap data in the standard `{ status, message, data }` envelop.
-* If a Controller is detected returning a raw String or Entity instead of the `ApiResponse<T>` wrapper, the Guardian must reject the code and automatically refactor it.
+* DTO validations MUST mirror DB constraints and propagate forward to the Frontend Zod schema.
+* If a Controller is detected returning a raw String/Entity, or a DTO lacks mirrored validation, the Guardian must reject the code and automatically refactor it.
 
 ---
 

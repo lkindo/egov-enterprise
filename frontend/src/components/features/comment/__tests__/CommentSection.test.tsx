@@ -10,6 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentSection from '../CommentSection';
 import * as commentActions from '@/app/actions/commentActions';
+import { CommentVO } from '@/types/business/comment';
 
 // Mock dependencies
 vi.mock('@/app/actions/commentActions');
@@ -32,17 +33,17 @@ vi.mock('@/app/components/ui/toast', () => ({
 }));
 
 describe('CommentSection Component', () => {
-  const mockNttId = 1;
+  const mockPstId = 1;
   const mockBbsId = 'BBS_001';
-  const mockComments = [
+  const mockComments: CommentVO[] = [
     {
       id: 101,
-      nttId: mockNttId,
+      pstId: mockPstId,
       bbsId: mockBbsId,
-      wrterId: 'user01',
+      writerId: 'user01',
       wrterNm: 'User One',
-      commentCn: 'First Comment',
-      useAt: 'Y',
+      cmntCn: 'First Comment',
+      useYn: 'Y',
       createdDate: '2024-03-10T12:00:00Z',
     },
   ];
@@ -53,7 +54,7 @@ describe('CommentSection Component', () => {
   });
 
   it('renders comments correctly', async () => {
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
     expect(screen.getByText('User One')).toBeDefined();
@@ -61,15 +62,15 @@ describe('CommentSection Component', () => {
   });
 
   it('handles empty comment list', async () => {
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={[]} />);
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
 
     expect(screen.getByText(/No entries found/i)).toBeDefined();
   });
 
   it('submits a new comment', async () => {
-    vi.mocked(commentActions.createComment).mockResolvedValue({ success: true });
+    vi.mocked(commentActions.createComment).mockResolvedValue({ success: true, message: '성공' });
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={[]} />);
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
 
     const textarea = screen.getByPlaceholderText(/Inject your thoughts/i);
     const submitButton = screen.getByText(/Commit Response/i);
@@ -84,9 +85,9 @@ describe('CommentSection Component', () => {
   });
 
   it('handles comment update', async () => {
-    vi.mocked(commentActions.updateComment).mockResolvedValue({ success: true });
+    vi.mocked(commentActions.updateComment).mockResolvedValue({ success: true, message: '성공' });
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
 
@@ -105,11 +106,11 @@ describe('CommentSection Component', () => {
   });
 
   it('handles comment deletion', async () => {
-    vi.mocked(commentActions.deleteComment).mockResolvedValue({ success: true });
+    vi.mocked(commentActions.deleteComment).mockResolvedValue({ success: true, message: '성공' });
     
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
 

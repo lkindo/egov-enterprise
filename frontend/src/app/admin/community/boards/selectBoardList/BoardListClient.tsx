@@ -116,6 +116,18 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
   
+ const currentParams = {
+  bbsId,
+  page: queryPage,
+  pageUnit: 10,
+  searchWrd: querySearchWrd,
+  searchCnd: querySearchCnd,
+  orderBy: queryOrderBy,
+  startDate: queryStartDate || undefined,
+  endDate: queryEndDate || undefined
+ };
+ const queryKey = ['boardList', bbsId, currentParams];
+
  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
  const { data, isLoading: loading } = useBoardList({
   bbsId,
@@ -132,18 +144,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const likeMutation = useMutation({
   mutationFn: (pstId: string) => likeBoardArticle(bbsId, pstId),
   onMutate: async (pstId: string) => {
-  const currentParams = {
-  bbsId,
-  page: queryPage,
-  pageUnit: 10,
-  searchWrd: querySearchWrd,
-  searchCnd: querySearchCnd,
-  orderBy: queryOrderBy,
-  startDate: queryStartDate || undefined,
-  endDate: queryEndDate || undefined
-  };
-  const queryKey = ['boardList', bbsId, currentParams];
-
+  
   // 진행 중인 쿼리 취소
   await queryClient.cancelQueries({ queryKey });
   

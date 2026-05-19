@@ -18,7 +18,7 @@ In an enterprise environment, `ALTER TABLE` can lock out users and cause systemi
 
 ---
 
-## 2. The Expand-and-Contract Ruleset
+## 2. The Expand-and-Contract Ruleset (Per DB Constitution Article 7)
 
 Never execute destructive DDL (`DROP`, `RENAME`) directly. Follow this phases:
 

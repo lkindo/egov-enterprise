@@ -5,8 +5,6 @@ vi.mock('next/config', () => ({
   }),
 }));
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -54,7 +52,7 @@ describe('CommunityHubClient', () => {
     list: [
       {
         cmmntyId: 'CMM_0001',
-        cmmntyNm: '개발팀 커뮤니티',
+        cmmntyNm: '개발자 커뮤니티',
         cmmntyIntrcn: '개발 관련 논의',
         frstRegisterNm: '테스트님',
         frstRegisterPnttm: '2024-05-01'
@@ -68,7 +66,7 @@ describe('CommunityHubClient', () => {
     renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
     
     await waitFor(() => {
-      expect(screen.getByText('개발팀 커뮤니티')).toBeDefined();
+      expect(screen.getByText('개발자 커뮤니티')).toBeDefined();
     });
   });
 });

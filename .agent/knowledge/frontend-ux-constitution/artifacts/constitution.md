@@ -15,14 +15,14 @@
 사용자에게 시각적 놀라움(WOW)을 주기 위해 다음의 요소를 적극 활용한다.
 1. **Glassmorphism**: 레이어 간의 깊이감을 위해 `backdrop-blur`와 반투명 배경을 적재적소에 사용한다.
 2. **Smooth Gradients**: 단색 배경보다는 미세한 선형/방사형 그라데이션을 활용하여 입체감을 부여한다.
-3. **Micro-interactions**: 버튼 호버, 리스트 전환 시 Framer Motion을 활용한 부드러운 애니메이션을 필수적으로 적용한다.
+3. **Micro-interactions**: 버튼 호버, 리스트 전환 등 인터랙션 지점에 부드러운 전환 애니메이션을 필수적으로 적용한다.
 
 ---
 
 ## 제2장 아키텍처 및 상태 관리 (Frontend Architecture)
 
 ### 제3조 (서버 컴포넌트 우선 원칙)
-1. Next.js 16.2.4 App Router 환경에서 모든 컴포넌트는 기본적으로 **Server Component**로 설계한다.
+1. Next.js App Router 환경에서 모든 컴포넌트는 기본적으로 **Server Component**로 설계한다.
 2. `'use client'` 지시어는 인터랙션이 필요한 최소 단위의 컴포넌트에만 제한적으로 사용한다.
 
 ### 제4조 (상태 관리의 이원화)
@@ -34,8 +34,8 @@
 
 ## 제3장 컴포넌트 및 스타일링 (Component & Styling)
 
-### 제5조 (Tailwind CSS 4 및 반응형 설계)
-1. 모든 스타일링은 **Tailwind CSS 4**의 유틸리티 클래스를 기반으로 한다.
+### 제5조 (Tailwind CSS 및 반응형 설계)
+1. 모든 스타일링은 **Tailwind CSS**의 유틸리티 클래스를 기반으로 한다.
 2. 다양한 디바이스 환경을 지원하기 위해 **Mobile-First** 전략을 취하며, 프로젝트 표준 브레이크포인트(`sm`, `md`, `lg`, `xl`)를 엄격히 준수한다.
 
 ### 제6조 (디자인 토큰 준수)
@@ -51,7 +51,7 @@
 
 ### 제8조 (웹 성능 및 로딩 UX)
 1. **LCP** 최적화를 위해 핵심 이미지는 `next/image`의 `priority` 속성을 사용하며, 고중량 라이브러리는 지연 로딩한다.
-2. `TopologyMap`, `NationalDistributionMap` 등 고중량 시각화 컴포넌트는 반드시 `next/dynamic`을 사용하여 `ssr: false` 옵션으로 Lazy Loading 한다.
+2. 고중량 시각화 컴포넌트는 반드시 `next/dynamic`을 사용하여 `ssr: false` 옵션으로 Lazy Loading 한다.
 3. 데이터 로딩 중에는 사용자가 대기 시간을 인지할 수 있도록 **Skeleton Screen** 또는 **Suspense**를 활용한 부드러운 전환을 제공한다.
 4. 기능 추가 후 `npm run analyze`를 실행하여 특정 패키지가 번들 사이즈에 미치는 영향을 체크한다.
 
@@ -64,11 +64,29 @@
 
 ---
 
-## 제5장 품질 및 부칙 (Quality & Provisions)
+## 제5장 하이브리드 아키텍처 및 렌더링 세이프티 (Hybrid Rendering Safety)
 
-### 제11조 (검증 기반 개발)
+### 제11조 (하이드레이션 안전 및 리프 컴포넌트 격리 정책)
+1. Next.js App Router 렌더링 환경에서 불필요한 번들 크기 팽창과 클라이언트 하이드레이션 병목을 차단하기 위해, 상태나 훅(Hook)을 사용하는 인터랙션 요소는 반드시 **최하단 잎(Leaf) 노드 컴포넌트로 분리 격리**하여 적용한다.
+2. 브라우저 단독 데이터(Date API, localStorage 등) 사용에 따른 서버와 클라이언트 간의 하이드레이션 불일치(Hydration Mismatch) 오류를 방지하기 위해, 해당 로직은 반드시 `useEffect` 내에서 처리하거나 dynamic 임포트를 통해 `ssr: false` 처리를 의무 적용한다.
+
+---
+
+## 제6장 회복탄력성 및 연쇄 동기화 (Resilience & Cross-Validation)
+
+### 제12조 (에러 바운더리 격리 및 복원력)
+1. 클라이언트 컴포넌트 렌더링 오류나 API 통신 장애로 인한 전체 화면 백화현상(White Screen of Death)을 방어하기 위해, 최상단이 아닌 **독립된 기능 및 위젯(Widget) 단위로 세밀한 `Error Boundary`를 설치하여 장애를 부분 격리**한다.
+
+### 제13조 (낙관적 UI 및 Validation 거울 동기화)
+1. TanStack Query를 통한 데이터 변경(Mutation) 시 사용자 체감 속도 향상을 위해 **낙관적 UI(Optimistic Update)**를 구현하되, 통신 실패 시 즉각 롤백하고 서버 상태 캐시를 무효화(Query Invalidation)하는 방어 코드를 필수 작성한다.
+2. Zod 스키마 또는 폼 유효성 검사 규칙은 **백엔드 헌법 제16조** 및 **DB 표준화 헌법 제5조**의 도메인 규격을 최종 원천으로 삼아, 물리적 제약조건 길이/속성과 100% 거울처럼 동기화(Mirroring)되어야 한다.
+
+---
+
+## 제7장 품질 및 부칙 (Quality & Provisions)
+
+### 제14조 (검증 기반 개발)
 1. 모든 핵심 UI 컴포넌트는 **Storybook**을 통해 검증하며, 주요 시나리오는 **Playwright** 기반의 E2E 테스트를 통과해야 한다.
 
-### 제12조 (시행일)
+### 제15조 (시행일)
 본 헌법은 공포된 즉시 효력을 발생하며, 모든 프론트엔드 개발 및 UI 개선 작업의 최상위 지침으로 적용된다.
-

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Content Security Policy: 외부 폰트 연동 허용 및 안전한 격리 보장 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
   <title>eGov Enterprise - Governance & Harness Atlas</title>
   
   <!-- Fonts -->
@@ -213,11 +215,11 @@
       color: var(--accent-cyan);
     }
 
-    /* Active Nav Styling with Neon Gradient Underlay */
     #tab-welcome:checked ~ .sidebar .nav-label[for="tab-welcome"],
     #tab-constitution:checked ~ .sidebar .nav-label[for="tab-constitution"],
     #tab-gemini:checked ~ .sidebar .nav-label[for="tab-gemini"],
     #tab-sop:checked ~ .sidebar .nav-label[for="tab-sop"],
+    #tab-workflow:checked ~ .sidebar .nav-label[for="tab-workflow"],
     #tab-simulator:checked ~ .sidebar .nav-label[for="tab-simulator"],
     #tab-skills:checked ~ .sidebar .nav-label[for="tab-skills"],
     #tab-db:checked ~ .sidebar .nav-label[for="tab-db"],
@@ -270,11 +272,11 @@
       }
     }
 
-    /* Tab Display Connections */
     #tab-welcome:checked ~ .main-content #content-welcome,
     #tab-constitution:checked ~ .main-content #content-constitution,
     #tab-gemini:checked ~ .main-content #content-gemini,
     #tab-sop:checked ~ .main-content #content-sop,
+    #tab-workflow:checked ~ .main-content #content-workflow,
     #tab-simulator:checked ~ .main-content #content-simulator,
     #tab-skills:checked ~ .main-content #content-skills,
     #tab-db:checked ~ .main-content #content-db,
@@ -793,6 +795,220 @@
       color: var(--accent-cyan);
       font-weight: bold;
     }
+
+    /* ==========================================================================
+       7. Strict Mobile-Responsive Styling (Unified Mobile Defense)
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .app-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      .brand-section {
+        margin-bottom: 1.5rem;
+        justify-content: center;
+      }
+      
+      .nav-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        overflow-y: visible;
+      }
+      
+      .nav-label {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        gap: 0.5rem;
+      }
+      
+      .sidebar-footer {
+        display: none; /* 모바일 환경의 사이드바 최적화를 위해 푸터 제거 */
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 2rem 1.5rem;
+      }
+      
+      h2.section-title {
+        font-size: 2rem;
+      }
+      
+      p.section-subtitle {
+        margin-bottom: 2rem;
+        font-size: 1rem;
+      }
+      
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .sim-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .sim-monitor {
+        position: relative;
+        top: 0;
+        min-height: auto;
+      }
+      
+      .db-visual {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+      
+      .db-visual-left {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-right: 0;
+        padding-bottom: 1rem;
+      }
+      
+      .db-visual-right {
+        justify-content: center;
+      }
+      
+      .stat-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+    }
+
+    /* ==========================================================================
+       8. Hyper-Premium Visual Polish Extras (WOW Engine)
+       ========================================================================== */
+    
+    /* Ambient Follow Spotlight overlay for Glass Cards (Readability Shield) */
+    .glass-card {
+      position: relative;
+      overflow: hidden; /* 내부 스포트라이트가 카드를 벗어나지 않게 고정 */
+      background: radial-gradient(
+        600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(0, 85, 255, 0.08),
+        rgba(168, 85, 247, 0.03) 30%,
+        transparent 70%
+      ), rgba(4, 7, 18, 0.8) !important;
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                  border-color 0.3s ease, 
+                  box-shadow 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    .glass-card:hover {
+      transform: translateY(-4px); /* 수평 평면 상태로 가볍게 위로만 4px 띄움 */
+      border-color: rgba(168, 85, 247, 0.35);
+      box-shadow: 0 15px 40px rgba(168, 85, 247, 0.12), 0 0 20px rgba(0, 85, 255, 0.05);
+    }
+    
+    /* 1. Neon Data Pulse line animation */
+    .sim-flow-wrapper {
+      position: relative;
+    }
+    .sim-flow-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 20px;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom,
+        transparent,
+        var(--accent-cyan),
+        #fff,
+        var(--accent-purple),
+        transparent
+      );
+      background-size: 100% 200px;
+      transform: translateX(-50%);
+      z-index: 2;
+      animation: flowPulse 4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes flowPulse {
+      0% { background-position: 0 -200px; }
+      100% { background-position: 0 100%; }
+    }
+    
+    /* 2. CRT & Scanlines Monitor Effect */
+    .sim-monitor {
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 85, 255, 0.05);
+    }
+    .crt-overlay {
+      content: ' ';
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: radial-gradient(circle, rgba(18, 30, 49, 0) 60%, rgba(0, 0, 0, 0.4) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .scanlines {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.15) 50%
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 11;
+      opacity: 0.8;
+    }
+    @keyframes crtFlicker {
+      0% { opacity: 0.985; }
+      50% { opacity: 1; }
+      100% { opacity: 0.985; }
+    }
+    .sim-monitor-console {
+      animation: crtFlicker 0.2s infinite;
+    }
+    .console-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: var(--accent-cyan);
+      margin-left: 4px;
+      animation: cursorBlink 1s step-end infinite;
+      vertical-align: middle;
+    }
+    @keyframes cursorBlink {
+      from, to { background-color: transparent }
+      50% { background-color: var(--accent-cyan) }
+    }
+    
+    /* 5. Sliding tab indicator overlay */
+    .nav-menu {
+      position: relative;
+    }
+    .active-glow-bar {
+      position: absolute;
+      left: 0;
+      width: 4px;
+      background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-purple));
+      border-radius: 2px;
+      transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 0 15px var(--accent-cyan), 0 0 5px var(--accent-purple);
+      z-index: 10;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -800,6 +1016,9 @@
   <!-- Background Ambience -->
   <div class="bg-nebula-1"></div>
   <div class="bg-nebula-2"></div>
+
+  <!-- Canvas for Floating Cosmic Dust Particles -->
+  <canvas id="cosmic-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 0; opacity: 0.7;"></canvas>
 
   <!-- App Container -->
   <div class="app-container">
@@ -809,6 +1028,7 @@
     <input type="radio" name="tabs" id="tab-constitution" class="tab-radio">
     <input type="radio" name="tabs" id="tab-gemini" class="tab-radio">
     <input type="radio" name="tabs" id="tab-sop" class="tab-radio">
+    <input type="radio" name="tabs" id="tab-workflow" class="tab-radio">
     <input type="radio" name="tabs" id="tab-simulator" class="tab-radio">
     <input type="radio" name="tabs" id="tab-skills" class="tab-radio">
     <input type="radio" name="tabs" id="tab-db" class="tab-radio">
@@ -850,26 +1070,32 @@
           </label>
         </li>
         <li>
-          <label for="tab-simulator" class="nav-label">
+          <label for="tab-workflow" class="nav-label">
             <span class="nav-number">04</span>
+            <span style="color: #10b981;">거버넌스 워크플로우</span>
+          </label>
+        </li>
+        <li>
+          <label for="tab-simulator" class="nav-label">
+            <span class="nav-number">05</span>
             <span style="color: var(--accent-cyan);">프롬프트 처리 순서도</span>
           </label>
         </li>
         <li>
           <label for="tab-skills" class="nav-label">
-            <span class="nav-number">05</span>
+            <span class="nav-number">06</span>
             <span>8대 네이티브 엔진</span>
           </label>
         </li>
         <li>
           <label for="tab-db" class="nav-label">
-            <span class="nav-number">06</span>
+            <span class="nav-number">07</span>
             <span style="color: var(--accent-pink);">DB 거버넌스 & 권한</span>
           </label>
         </li>
         <li>
           <label for="tab-ralph" class="nav-label">
-            <span class="nav-number">07</span>
+            <span class="nav-number">08</span>
             <span>자가성찰 Ralph Loop</span>
           </label>
         </li>
@@ -922,6 +1148,56 @@
             본 포털 아틀라스는 에이전트와 엔지니어 모두가 참조하는 단일 진실의 원천(SSOT) 역할을 수행합니다.
           </p>
         </div>
+
+        <!-- NEW: Extended Harness Introduction -->
+        <h2 class="section-title" style="margin-top: 4rem; font-size: 2rem;">Why Harness? (왜 하네스인가?)</h2>
+        <p class="section-subtitle">LLM의 본질적 환각(Hallucination) 한계를 극복하고 엔터프라이즈급 코드 무결성을 담보하기 위한 필연적 선택</p>
+        
+        <div class="grid-3" style="margin-bottom: 3.5rem;">
+          <div class="glass-card" style="margin-bottom: 0;">
+            <span class="badge badge-error">Problem</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">AI의 맹신과 컨텍스트 오염</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              자율 에이전트는 뛰어난 코딩 능력을 가지지만, 때로는 과거의 잘못된 기억에 의존하거나 임의의 로직을 추측하여 작성하는 '환각 현상'이 발생합니다. 이는 곧 치명적인 프로덕션 장애로 이어집니다.
+            </p>
+          </div>
+          <div class="glass-card" style="margin-bottom: 0;">
+            <span class="badge badge-warning">Mechanism</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">도구에 의한 절대적 통제</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              하네스(Harness)는 에이전트에게 코딩 자율성을 주되, 결코 벗어날 수 없는 <strong>'안전 벨트(Safety Guardrails)'</strong>를 채우는 인프라입니다. 모든 수정은 헌법 검증과 스킬 오딧을 강제 통과해야만 허용됩니다.
+            </p>
+          </div>
+          <div class="glass-card" style="margin-bottom: 0;">
+            <span class="badge badge-success">Solution</span>
+            <h3 class="flow-title" style="margin-top: 1rem;">증거 기반 자율 복구</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+              하네스는 에이전트가 "완료했습니다"라는 말을 금지시킵니다. 오직 JVM 에러 로그, Playwright E2E 성공 증거, 픽셀 렌더링 검증 결과만을 진실로 취급하며, 실패 시 <strong>Ralph Loop</strong>를 통해 스스로 치유합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="flow-title">💎 하네스가 제공하는 3대 궁극적 가치 (Core Values)</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <tbody>
+                <tr>
+                  <td style="width: 30%;"><span class="badge badge-cyan">Zero Downtime</span></td>
+                  <td>DB 마이그레이션, 아키텍처 개편 등 위험도 높은 L2 태스크 수행 시 DDL Lock이나 하위 호환성 단절로 인한 <strong>서비스 중단(Downtime)을 100% 원천 차단</strong>합니다.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-primary">Cross-Module Type Safety</span></td>
+                  <td>Next.js 프론트엔드와 Spring Boot 백엔드 간의 느슨한 API 계약을 강력하게 결속시켜, 백엔드 DTO 변경 시 프론트엔드 타입 에러를 <strong>컴파일 타임에 완전 방어</strong>합니다.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-success">Docs-as-Code Sync</span></td>
+                  <td>시스템 로직이 변경되면 관련 아키텍처 다이어그램과 Markdown 사양이 동시에 자율적으로 업데이트되어, <strong>코드와 문서 간의 노후화 및 부채(Drift)를 제로화</strong>합니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- ====================================================================
@@ -935,37 +1211,66 @@
           <div class="glass-card">
             <div class="card-neon-glow" style="background: linear-gradient(90deg, #ef4444, #f59e0b);"></div>
             <span class="badge badge-error">Database</span>
-            <h3 class="flow-title" style="margin-top: 1rem;">DB 표준화 헌법 (8조)</h3>
+            <h3 class="flow-title" style="margin-top: 1rem;">DB 표준화 헌법 (10조)</h3>
             <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
-              <li>물리 테이블 표준 접두사 필행 (`tb_`)</li>
-              <li>`meta_standard_words` 메타 테이블 준수</li>
-              <li>모든 플래그 컬럼은 `CHAR(1)` 타입 고정</li>
-              <li>인덱스/제약조건 네이밍 표준화 이행</li>
+              <li>메타 테이블 SSOT 기반 3단계 설계 프로세스</li>
+              <li>확장 후 축소(Expand-Contract) DDL 무중단 이행</li>
+              <li>Audit 4종 컬럼 필수 및 물리삭제 완전 금지</li>
+              <li>BE 헌법 제14조와 논리삭제 이중 방어 연계</li>
             </ul>
           </div>
 
           <div class="glass-card">
             <div class="card-neon-glow" style="background: linear-gradient(90deg, #a855f7, #3b82f6);"></div>
             <span class="badge badge-primary">Backend</span>
-            <h3 class="flow-title" style="margin-top: 1rem;">백엔드 API 헌법 (15조)</h3>
+            <h3 class="flow-title" style="margin-top: 1rem;">백엔드 API 헌법 (18조)</h3>
             <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
-              <li>컨트롤러에서 DB 엔티티 반환 절대 금지</li>
-              <li>Unified Response 래퍼 클래스 필수 사용</li>
-              <li>서비스 레이어 내 JWT 기반 2차 인가 검증</li>
-              <li>트랜잭션 격리수준 및 읽기전용 최적화</li>
+              <li>N+1 방어(Fetch Join) 및 논리삭제 JPA 필터링</li>
+              <li>서킷 브레이커 + 3초 타임아웃 격리 통합</li>
+              <li>DB→BE→FE 단방향 Validation 연쇄 동기화</li>
+              <li>동시성 락 제어 및 Mutation Score 85%+ 강제</li>
             </ul>
           </div>
 
           <div class="glass-card">
             <div class="card-neon-glow" style="background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
             <span class="badge badge-success">Frontend</span>
-            <h3 class="flow-title" style="margin-top: 1rem;">프론트엔드 UX 헌법 (12조)</h3>
+            <h3 class="flow-title" style="margin-top: 1rem;">프론트엔드 UX 헌법 (15조)</h3>
             <ul style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; list-style-position: inside; display: flex; flex-direction: column; gap: 0.5rem;">
-              <li>Server Component 우선주의 (SSR 최적화)</li>
-              <li>하드코딩 배제 및 정의된 CSS 디자인 토큰 준수</li>
-              <li>API 호출 시 Next.js App Router 최적 통신</li>
-              <li>반응형 및 프리미엄 글래스모피즘 에스테틱</li>
+              <li>Hydration 방어 및 Leaf 컴포넌트 격리</li>
+              <li>위젯 단위 Error Boundary 세밀 격리</li>
+              <li>낙관적 UI + 캐시 무효화 롤백 정책</li>
+              <li>DB/BE 헌법과 Zod 스키마 거울 동기화</li>
             </ul>
+          </div>
+        </div>
+
+        <!-- NEW: Constitutional Key Articles Grid -->
+        <h3 class="flow-title" style="margin-top: 3.5rem; margin-bottom: 1.5rem; font-size: 1.5rem;">⚖️ 헌법별 핵심 통제 조항 해설 (Key Constitutional Articles)</h3>
+        <div class="grid-3" style="margin-bottom: 2rem;">
+          <div class="glass-card" style="margin-bottom: 0;">
+            <div class="card-neon-glow" style="background: var(--accent-pink);"></div>
+            <span class="badge badge-error">DB 제7조 & 제8조</span>
+            <h4 class="flow-title" style="margin-top: 0.5rem; font-size: 1.05rem;">무중단 이행 & 논리삭제 원칙</h4>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.6;">
+              모든 테이블 변경은 <strong>Expand-and-Contract (확장 후 축소)</strong> DDL 단계를 무조건 준수해야 하며, 데이터 삭제는 <code>USE_YN = 'N'</code> 등의 <strong>Soft Delete(논리삭제)</strong>로만 이행됩니다. (단, <code>test_</code> 접두사가 붙은 임시 테스트 데이터 물리 삭제는 예외 허용)
+            </p>
+          </div>
+          <div class="glass-card" style="margin-bottom: 0;">
+            <div class="card-neon-glow" style="background: var(--accent-purple);"></div>
+            <span class="badge badge-primary">BE 제16조 & 제17조</span>
+            <h4 class="flow-title" style="margin-top: 0.5rem; font-size: 1.05rem;">돌연변이 85% & Validation 거울 동기화</h4>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.6;">
+              백엔드 유닛 테스트의 건전성을 보장하기 위해 <strong>돌연변이 테스트(Mutation Testing) Score 85% 이상</strong>을 의무적으로 만족해야 하며, DB 컬럼 제약조건 ➔ BE DTO 어노테이션 ➔ FE Zod 스키마로 이어지는 <strong>Validation 단방향 거울 동기화</strong>를 강제합니다.
+            </p>
+          </div>
+          <div class="glass-card" style="margin-bottom: 0;">
+            <div class="card-neon-glow" style="background: var(--accent-cyan);"></div>
+            <span class="badge badge-success">FE 제1조 & 제4조</span>
+            <h4 class="flow-title" style="margin-top: 0.5rem; font-size: 1.05rem;">Hydration 방어 & 프리미엄 UI</h4>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.6;">
+              서버/클라이언트 간 렌더링 불일치로 인한 Hydration 오류를 100% 방지하기 위해 dynamic loading 및 격리 렌더링을 적용하고, 아틀라스가 정의한 HSL 그라데이션, 글래스모피즘 등의 <strong>프리미엄 디자인 토큰</strong>을 엄격히 준수합니다.
+            </p>
           </div>
         </div>
 
@@ -1034,6 +1339,7 @@
               <li>🔒 <strong>인증(401) 장애</strong>: `AuthContext`의 `accessToken`과 브라우저 쿠키의 동기화 상태를 디버깅 시 최우선 확인.</li>
               <li>⚙️ <strong>타입 에러</strong>: DTO 수정 시 반드시 `npm run codegen:ts`를 자동 선행 가동하여 `generated-api.d.ts`를 갱신.</li>
               <li>🌀 <strong>컴포넌트 렌더링</strong>: 훅(Hook) 사용 여부에 따라 `'use client'` 필요 위치를 명확히 진단. 기본은 Server Component.</li>
+              <li>👁️ <strong>E2E 교차 검증</strong>: Playwright E2E 실패 시 반드시 브라우저 스크린샷/WebP 결과물과 JVM 오류 로그를 교차 대조하여 근본 원인 특정.</li>
             </ul>
           </div>
 
@@ -1041,9 +1347,29 @@
             <h3 class="flow-title">🧹 로컬 브릿지 및 리소스 위생 규칙</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
               포트 충돌(8080/3001) 발생 시 즉시 백그라운드 좀비 프로세스를 킬(KILL)하고 자가 수리합니다.
-              개발 디바이스의 네트워크 및 프로세스 무결성은 <strong>`resilience-debugger`</strong> 스킬이 독점적으로 통제합니다.
+              개발 디바이스의 네트워크 및 프로세스 무결성은 <strong>`resilience-debugger`</strong> 스킬이 독점적으로 통제합니다.<br><br>
+              또한, 철저한 논리삭제 원칙 하에서도 <strong>테스트 환경(`test_` 접두사 등)에서 발생한 가비지 데이터의 클린업(물리 삭제)</strong>은 에이전트의 기동성을 위해 자율 수행이 예외적으로 허용됩니다.
             </p>
           </div>
+        </div>
+
+        <!-- NEW: Gotcha Deep Dive Details -->
+        <div class="glass-card">
+          <h3 class="flow-title">🔑 401 인증 장애 해결을 위한 쿠키-헤더 동기화 매핑 도식</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+            백엔드 Spring Security의 Stateless JWT 필터와 프론트엔드 Next.js 미들웨어 간 쿠키/헤더 위상 매핑 구조입니다. 401 발생 시 이 결속망을 대조합니다.
+          </p>
+          <pre class="code-block" style="color: #60a5fa; line-height: 1.5; font-size: 0.8rem; font-family: var(--font-mono); height: 180px;">
+[Front Client] (Cookie: accessToken)
+      │
+      ▼ (Next.js Middleware: Extract Cookie)
+[Authorization Header] (Bearer eyJhbGciOi...)
+      │
+      ▼ (HTTP API Request Bridge)
+[Spring Security FilterChain]
+      ├── 1. Bearer Token JWT Parse & Validation
+      ├── 2. AuthContext Holder Injection
+      └── 3. Logical/JPA Controller Access (If invalid -> return HTTP 401 Unauthorized)</pre>
         </div>
       </section>
 
@@ -1092,10 +1418,75 @@
       </section>
 
       <!-- ====================================================================
-           TAB 04: Interactive Flowchart Simulator (Prompt Processing Flow)
+           TAB 04: 거버넌스 작동 워크플로우 (Governance Workflow)
+           ==================================================================== -->
+      <section class="tab-content" id="content-workflow">
+        <h2 class="section-title">04. 거버넌스 워크플로우 (Governance Workflow)</h2>
+        <p class="section-subtitle">명령 접수부터 검증 완료까지, 헌법과 스킬이 작동하는 엔터프라이즈 오케스트레이션 파이프라인</p>
+        
+        <div class="glass-card">
+          <div class="card-neon-glow" style="background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
+          <div style="position: relative; padding-left: 2.5rem; border-left: 2px dashed rgba(255, 255, 255, 0.15); margin-left: 1rem; margin-top: 1rem;">
+          
+            <!-- Step 1 -->
+            <div style="position: relative; margin-bottom: 3.5rem;">
+              <div style="position: absolute; left: -3.35rem; top: 0; width: 26px; height: 26px; background: #0f172a; border: 3px solid var(--accent-cyan); border-radius: 50%; box-shadow: 0 0 15px var(--accent-cyan); z-index: 2;"></div>
+              <h3 class="flow-title" style="color: var(--accent-cyan); font-size: 1.25rem;">Step 1. 사용자 명령 수신 및 작업 등급 판정</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.6;">
+                사용자의 요구사항(예: "회원가입 API 개발")을 수신하면, <code>GEMINI.md</code>의 <strong>Task Grading</strong> 규칙에 따라 작업의 위험도를 평가(L0/L1/L2)하고 <code>TASK PROPOSAL</code>을 출력하여 작업의 투명성을 확보합니다.
+              </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div style="position: relative; margin-bottom: 3.5rem;">
+              <div style="position: absolute; left: -3.35rem; top: 0; width: 26px; height: 26px; background: #0f172a; border: 3px solid var(--accent-purple); border-radius: 50%; box-shadow: 0 0 15px var(--accent-purple); z-index: 2;"></div>
+              <h3 class="flow-title" style="color: var(--accent-purple); font-size: 1.25rem;">Step 2. 헌법 준수 모드 (Guardian Mode) 가동</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.6;">
+                <code>.agent/knowledge/</code> 에 위치한 <strong>3대 기술 헌법(DB/BE/FE)</strong>을 사전 조회하여, 논리삭제 여부, 데이터 제약조건, Zod 스키마 명명 규칙 등의 프로젝트 메타 제약조건(SSOT)을 에이전트의 뇌에 장착시킵니다.
+              </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div style="position: relative; margin-bottom: 3.5rem;">
+              <div style="position: absolute; left: -3.35rem; top: 0; width: 26px; height: 26px; background: #0f172a; border: 3px solid var(--accent-pink); border-radius: 50%; box-shadow: 0 0 15px var(--accent-pink); z-index: 2;"></div>
+              <h3 class="flow-title" style="color: var(--accent-pink); font-size: 1.25rem;">Step 3. 도메인 맞춤형 스킬 발동 (Skill Dispatch)</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.6;">
+                분석된 작업 성격에 따라 8대 독점 스킬을 선택적으로 교차 호출하여 코드를 작성합니다.<br>
+                <span style="display: inline-block; margin-top: 0.75rem; padding: 0.75rem 1.25rem; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                  <strong style="color:#fff;">[DB]</strong> <code>Zero-Downtime Planner</code> (무중단 4단계 이행)<br>
+                  <strong style="color:#fff;">[BE]</strong> <code>API Contract Guardian</code> (단방향 거울 동기화 검증)<br>
+                  <strong style="color:#fff;">[FE]</strong> <code>Visual Auditor</code> (픽셀 및 애니메이션 검증)
+                </span>
+              </p>
+            </div>
+
+            <!-- Step 4 -->
+            <div style="position: relative; margin-bottom: 3.5rem;">
+              <div style="position: absolute; left: -3.35rem; top: 0; width: 26px; height: 26px; background: #0f172a; border: 3px solid #f59e0b; border-radius: 50%; box-shadow: 0 0 15px #f59e0b; z-index: 2;"></div>
+              <h3 class="flow-title" style="color: #f59e0b; font-size: 1.25rem;">Step 4. 증명 및 자가 성찰 (Ralph Loop 2.0)</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.6;">
+                코드 구현이 완료되면 즉시 <code>Mutation Testing (85% 검증)</code> 및 <code>Playwright E2E 테스트</code>를 실행합니다. 오류 감지 시 무작위 추측을 엄격히 금지하고, <code>Resilience Debugger</code>를 통해 물리적 증거 기반의 <strong>4단계 자가 복구 루프</strong>를 가동합니다.
+              </p>
+            </div>
+
+            <!-- Step 5 -->
+            <div style="position: relative; margin-bottom: 1rem;">
+              <div style="position: absolute; left: -3.35rem; top: 0; width: 26px; height: 26px; background: #0f172a; border: 3px solid #10b981; border-radius: 50%; box-shadow: 0 0 15px #10b981; z-index: 2;"></div>
+              <h3 class="flow-title" style="color: #10b981; font-size: 1.25rem;">Step 5. 진실의 원천 동기화 (Docs-as-Code Sync)</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.6;">
+                모든 헌법적/수리적 방어막을 100% 무사 통과하면, <code>docs-as-code-sync</code> 엔진이 관련 마크다운 가이드와 아키텍처 다이어그램을 최신 상태로 자율 동기화(Sync)하고, 최종 무결성 증명 리포트를 제출하며 태스크 궤도를 이탈합니다.
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           TAB 05: Interactive Flowchart Simulator (Prompt Processing Flow)
            ==================================================================== -->
       <section class="tab-content" id="content-simulator">
-        <h2 class="section-title">04. 프롬프트 처리 흐름 순서도 (Prompt Workflow)</h2>
+        <h2 class="section-title">05. 프롬프트 처리 흐름 순서도 (Prompt Workflow)</h2>
         <p class="section-subtitle">프롬프트가 입력되었을 때 에이전트가 어떤 순서와 도구를 활용해 무결성을 통제하고 자동 수행하는지 보여주는 역동적 시뮬레이터</p>
 
         <div class="sim-bar">
@@ -1175,6 +1566,8 @@
 
           <!-- Diagnostics Monitor console side -->
           <div class="sim-monitor">
+            <div class="crt-overlay"></div>
+            <div class="scanlines"></div>
             <div class="monitor-glow-top"></div>
             <div class="monitor-header">
               <div class="monitor-dot-group">
@@ -1207,10 +1600,10 @@
       </section>
 
       <!-- ====================================================================
-           TAB 05: 8대 네이티브 엔진 (8-Pillar Skills Engine)
+           TAB 06: 8대 네이티브 엔진 (8-Pillar Skills Engine)
            ==================================================================== -->
       <section class="tab-content" id="content-skills">
-        <h2 class="section-title">05. 8대 네이티브 고성능 엔진 (8-Pillar Skills Engine)</h2>
+        <h2 class="section-title">06. 8대 네이티브 고성능 엔진 (8-Pillar Skills Engine)</h2>
         <p class="section-subtitle">구 프롬프트 방식의 오버헤드를 탈피하여 안티그래비티 런타임에 완벽히 장착된 8가지 고유 독점 스킬</p>
 
         <div class="grid-2">
@@ -1218,75 +1611,107 @@
           <div class="glass-card">
             <span class="badge badge-primary">Skill 01</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Deep Context Mapper</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               1M+ 대용량 토큰 샌드박스를 활용하여 복잡한 다중 Gradle 모듈 및 PostgreSQL 물리 스키마의 상관 위상(Topology) 지도를 구성하여 완벽한 컴파일 안정성을 달성합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> L2 아키텍처/멀티모듈/DB 스키마 변경 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> 1M 토큰 버퍼에 전체 위상 정보 사전 적재 오버레이</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-success">Skill 02</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Visual Auditor</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               <code>browser_subagent</code> 네이티브를 연동하여 프론트엔드 픽셀 및 반응형 레이아웃 깨짐을 실시간으로 비교 검증하고 WebP 시각 아티팩트를 자동 수립합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> 프론트엔드 UI 컴포넌트 마크업/CSS 변경 감지 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> subagent 픽셀 단위 렌더링 오디팅 및 비주얼 녹화</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-error">Skill 03</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Resilience Debugger</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               포트 충돌 등 런타임 예외 감지 시 DB Bridge 연동 및 로컬 프로세스 기동성을 자동 복구 및 포트 정리하여 자가 치유(Self-Healing)를 가동합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> 8080/3001 포트 충돌 및 로컬 런타임 예외 발생 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> 좀비 프로세스 자동 탐색 및 즉시 KILL 처리</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-warning">Skill 04</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">API Contract Guardian</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               Spring Boot DTO/Controller와 Next.js 타입 간의 Breaking Change를 OpenAPI 명세 대조를 통해 사전에 100% 추론 및 파괴를 완전 방어합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> DTO 변동 및 컨트롤러 Request/Response 엔드포인트 수정 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> OpenAPI Spec 파싱 및 codegen:ts 기반 단방향 거울 동기화</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-warning">Skill 05</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">OWASP Security Auditor</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               JWT 설정 및 Spring Security 체인 변경 시 Red Team 공격자 관점에서 취약점 정밀 정적 분석 및 침투 검증 시나리오를 자율 실행합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> Spring Security Config, FilterChain, 미들웨어 변경 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> Red Team 침투 시나리오 정적/동적 취약점 자율 오디팅</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-primary">Skill 06</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Docs-as-Code Sync</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               로직이 수정될 때마다 아키텍처 문서 및 Mermaid 다이어그램을 코드를 기반으로 자율 역추적하여 최신화하여 문서 노후화를 방지합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> L2 마이그레이션 및 주요 비즈니스 모듈의 완료 시점</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> AST 정밀 분석 및 마크다운/Mermaid 다이어그램 자동 패치</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-success">Skill 07</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Mutation Testing Auditor</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               테스트의 강건성을 검증하기 위해 실제 비즈니스 코드에 의도적으로 미세한 논리 돌연변이(버그)를 삽입해 테스트 코드가 실패하는지 수학적으로 검증합니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> 비즈니스 로직 단위 테스트 신규 작성/수정 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> 소스코드 강제 Sabotage 구동 후 Mutation Score 85%+ 검증</div>
+            </div>
           </div>
 
           <div class="glass-card">
             <span class="badge badge-error">Skill 08</span>
             <h3 class="flow-title" style="margin-top: 0.5rem;">Zero-Downtime Planner</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
               PostgreSQL 스키마 변경 시 DDL Lock으로 인한 다운타임을 원천 차단하기 위해 phased 'Expand and Contract' SQL 설계 패턴을 강제 이행시킵니다.
             </p>
+            <div style="font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div><strong style="color: var(--accent-cyan);">트리거 조건:</strong> PostgreSQL 테이블 신규 DDL/DML 생성 및 수정 감지 시</div>
+              <div><strong style="color: var(--accent-purple);">강제 메커니즘:</strong> Expand-and-Contract 4단계 롤백 시나리오 무조건부 명세서 발행</div>
+            </div>
           </div>
 
         </div>
       </section>
 
       <!-- ====================================================================
-           TAB 06: DB 거버넌스 & 권한 제어 구조 (DB Governance)
+           TAB 07: DB 거버넌스 & 권한 제어 구조 (DB Governance)
            ==================================================================== -->
       <section class="tab-content" id="content-db">
-        <h2 class="section-title">06. Database Governance & Safety Bridge</h2>
+        <h2 class="section-title">07. Database Governance & Safety Bridge</h2>
         <p class="section-subtitle">엄격하게 분리된 물리 스키마 사양과 자율 탐색 기동성을 보장하는 OCI PostgreSQL 17 보안 접근 구조</p>
 
         <div class="glass-card">
@@ -1387,7 +1812,8 @@
                   <td>실제 업무 데이터에 대한 <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td>
                   <td style="color: var(--color-error); font-weight: 700;">사전 승인 필수</td>
                   <td>
-                    운영 및 코어 비즈니스 데이터의 상태를 변조하는 작업은 글로벌 룰셋 §5(파괴적 작업 경계)에 따라 사용자 승인이 강제 통제됨.
+                    운영 및 코어 비즈니스 데이터의 상태 변조 작업은 글로벌 룰셋 §5에 따라 사용자 승인이 강제 통제됨.<br>
+                    <strong style="color: var(--color-warning);">[예외 조항]</strong> DB 헌법 제8조 2항에 의거, 테스트 환경(`test_` 등)의 가비지 데이터 클린업 목적의 DELETE 쿼리는 즉각적인 자율 실행이 허용됨.
                   </td>
                 </tr>
                 <tr>
@@ -1439,6 +1865,50 @@
           </div>
         </div>
 
+        <!-- NEW: Database Meta Reference Example Grid -->
+        <h3 class="flow-title" style="margin-top: 3.5rem; margin-bottom: 1.5rem; font-size: 1.5rem;">📐 단방향 연쇄 바인딩 물리 모델 구현 예시</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+          메타 테이블(Words, Terms, Domains)이 실제 물리 필드를 강제 구축하고, Java JPA Entity 및 Frontend Zod validation까지 연쇄되는 흐름의 물리 스펙 데이터 예제입니다.
+        </p>
+        <div class="table-container" style="margin-bottom: 2rem;">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th>물리 레이어</th>
+                <th>객체 / 규칙 예시</th>
+                <th>명세 세부사항 (SSOT Specs)</th>
+                <th>헌법 강제 검증 내용</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-cyan">DB 메타 단어</span></td>
+                <td><code>BBS</code>(게시판), <code>RDCNT</code>(조회수)</td>
+                <td>표준 단어 사전 <code>meta_standard_words</code>에 공식 등록된 약어</td>
+                <td>비표준 단어나 마음대로 축약한 단어는 마이그레이션 빌드 차단</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-primary">DB 메타 도메인</span></td>
+                <td><code>RDCNT_DOM</code> ➔ <code>NUMERIC(10)</code></td>
+                <td>도메인 사전 <code>meta_standard_domains</code>에 바인딩된 속성</td>
+                <td>모든 조회수 컬럼은 반드시 해당 도메인 사양과 100% 데이터 타입 일치</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-success">Backend JPA Entity</span></td>
+                <td><code>@Column(name = "bbs_rdcnt", precision = 10)</code></td>
+                <td>Spring Boot JPA 컬럼 어노테이션에 정밀도 및 명칭 매핑</td>
+                <td>OpenAPI 스펙 생성 시 <code>type: number, minimum: 0</code> 자동 바인딩</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-warning">Frontend Zod Schema</span></td>
+                <td><code>bbsRdcnt: z.number().int().nonnegative()</code></td>
+                <td>Next.js 폼 검증을 위한 Zod Schema 1:1 거울 동기화</td>
+                <td>API 요청 송신 전 클라이언트 폼 단에서 사전 유효성 차단 및 무결성 보호</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="glass-card">
           <h3 class="flow-title">데이터 브릿지 실행 커맨드</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; margin-bottom: 1rem;">
@@ -1449,10 +1919,10 @@
       </section>
 
       <!-- ====================================================================
-           TAB 07: 자가성찰 Ralph Loop (Ralph Loop 2.0)
+           TAB 08: 자가성찰 Ralph Loop (Ralph Loop 2.0)
            ==================================================================== -->
       <section class="tab-content" id="content-ralph">
-        <h2 class="section-title">07. 자가 성찰 오류 복구 프로토콜 (Ralph Loop 2.0)</h2>
+        <h2 class="section-title">08. 자가 성찰 오류 복구 프로토콜 (Ralph Loop 2.0)</h2>
         <p class="section-subtitle">오류 감지 시 무작위 수정을 배제하고 근본적인 물리 원인을 찾아 치유하는 4단계 복구 서클</p>
 
         <div class="glass-card">
@@ -1491,9 +1961,30 @@
 - **부작용 검토(Side-Effect Check)**: {이 정밀 패치가 API 계약 및 타 레이어에 미칠 사이드이펙트 분석}
 #################################</pre>
         </div>
+
+        <!-- NEW: Escalation Protocol Section -->
+        <div class="glass-card" style="border: 1px solid rgba(239, 68, 68, 0.25);">
+          <div class="card-neon-glow" style="background: var(--color-error);"></div>
+          <span class="badge badge-error">Escalation Protocol</span>
+          <h3 class="flow-title" style="margin-top: 1rem;">🚨 3회 연속 자가 복구 실패 시 인간 에스컬레이션 트리</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.6;">
+            에이전트가 동일한 오류 또는 빌드 컴파일 실패에 대해 <strong>3회 연속 성찰 루프</strong>를 돌았음에도 해결하지 못한 경우, 
+            자가 치유 한계를 선언하고 무작위적인 삽질 수정을 영원히 방지하기 위해 즉시 인간 엔지니어에게 **에스컬레이션(보고 및 중단)**을 선언합니다.
+          </p>
+          
+          <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px dashed rgba(239, 68, 68, 0.3);">
+            <strong style="color: #fff; font-size: 0.95rem; display: block; margin-bottom: 0.5rem;">[에스컬레이션 단계별 수행 프로토콜]</strong>
+            <ol style="color: var(--text-muted); font-size: 0.85rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0;">
+              <li><strong>자가 수정 영구 Hard-Stop</strong>: 즉시 소스코드 변경 시도를 영구히 중지합니다.</li>
+              <li><strong>브레인 덤프(Brain Dump) 아카이빙</strong>: 지금까지 거쳐온 3회의 성찰 보고서 히스토리와 오류 메시지를 요약합니다.</li>
+              <li><strong>Playwright 시각적 증거 영구 보존</strong>: artifacts 디렉토리에 실패한 브라우저의 DOM 덤프, 스크린샷 및 WebP 세션 동영상 영구 복사 및 보존.</li>
+              <li><strong>엔지니어 알람</strong>: 사용자 대화창에 <code>[SYSTEM ESCALATION REPORT]</code> 블록을 띄워 트레이드오프 및 인간 개입을 공식적으로 요청합니다.</li>
+            </ol>
+          </div>
+        </div>
       </section>
 
-    </main>
+      </section>
   </div>
 
   <!-- Interactive Workflow Script -->
@@ -1603,6 +2094,146 @@
     // Initialize with first preset preview
     window.onload = function() {
       loadPresetPrompt();
+    };
+
+    // ==========================================================================
+    // Premium Design Interaction Engines
+    // ==========================================================================
+
+    // 1. Ambient Follow Spotlight & Reading focus Engine (No Rotation, High Readability)
+    function initSpotlight() {
+      const cards = document.querySelectorAll('.glass-card');
+      cards.forEach(card => {
+        card.style.setProperty('--mouse-x', `50%`);
+        card.style.setProperty('--mouse-y', `50%`);
+        
+        card.addEventListener('mousemove', e => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          
+          // CSS 커스텀 변수에 마우스의 카드 내 실시간 픽셀 좌표 매핑
+          card.style.setProperty('--mouse-x', `${x}px`);
+          card.style.setProperty('--mouse-y', `${y}px`);
+        });
+        
+        // 마우스가 카드를 나갔을 때 조명을 카드의 정중앙으로 스무스하게 초기화
+        card.addEventListener('mouseleave', () => {
+          card.style.setProperty('--mouse-x', `50%`);
+          card.style.setProperty('--mouse-y', `50%`);
+        });
+      });
+    }
+
+    // 2. HTML5 Cosmic Floating Dust Particles & Parallax Background
+    function initCosmicEngine() {
+      const canvas = document.getElementById('cosmic-canvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+      
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+      
+      const particles = [];
+      const particleColors = [
+        'rgba(168, 85, 247, 0.4)', // Purple
+        'rgba(6, 182, 212, 0.4)',  // Cyan
+        'rgba(244, 63, 94, 0.3)'   // Pink
+      ];
+      
+      // 55개의 무작위 미세 파티클 먼지 생성
+      for (let i = 0; i < 55; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.5 + 0.5,
+          speed: Math.random() * 0.2 + 0.05,
+          color: particleColors[Math.floor(Math.random() * particleColors.length)]
+        });
+      }
+      
+      function renderLoop() {
+        ctx.clearRect(0, 0, width, height);
+        
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = p.r * 2;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+          
+          p.y -= p.speed;
+          // 화면 최상단 도달 시 다시 하단에서 부유
+          if (p.y < -5) {
+            p.y = height + 5;
+            p.x = Math.random() * width;
+          }
+        });
+        
+        requestAnimationFrame(renderLoop);
+      }
+      renderLoop();
+      
+      // 3. Mouse Parallax for Ambient Nebula Background
+      window.addEventListener('mousemove', e => {
+        const x = (e.clientX - window.innerWidth / 2) / 50;
+        const y = (e.clientY - window.innerHeight / 2) / 50;
+        
+        const nebula1 = document.querySelector('.bg-nebula-1');
+        const nebula2 = document.querySelector('.bg-nebula-2');
+        
+        if (nebula1) nebula1.style.transform = `translate(${x}px, ${y}px)`;
+        if (nebula2) nebula2.style.transform = `translate(${-x}px, ${-y}px)`;
+      });
+    }
+
+    // 4. Sliding tab active indicator Engine
+    function initSlidingTabs() {
+      const navMenu = document.querySelector('.nav-menu');
+      if (!navMenu) return;
+      
+      const activeBar = document.createElement('div');
+      activeBar.className = 'active-glow-bar';
+      navMenu.appendChild(activeBar);
+      
+      const labels = document.querySelectorAll('.nav-label');
+      const radios = document.querySelectorAll('.tab-radio');
+      
+      function updateIndicator() {
+        radios.forEach((radio, idx) => {
+          if (radio.checked) {
+            const label = labels[idx];
+            const menuRect = navMenu.getBoundingClientRect();
+            const labelRect = label.getBoundingClientRect();
+            
+            activeBar.style.top = `${labelRect.top - menuRect.top}px`;
+            activeBar.style.height = `${labelRect.height}px`;
+          }
+        });
+      }
+      
+      // 탭 라디오 변경 시 즉시 미끄러져 이동
+      radios.forEach(radio => {
+        radio.addEventListener('change', updateIndicator);
+      });
+      
+      // 초기 렌더링 시점 매핑
+      updateIndicator();
+      window.addEventListener('resize', updateIndicator);
+    }
+
+    // Initialize with first preset preview & trigger design engines
+    window.onload = function() {
+      loadPresetPrompt();
+      initSpotlight();
+      initCosmicEngine();
+      initSlidingTabs();
     };
   </script>
 
