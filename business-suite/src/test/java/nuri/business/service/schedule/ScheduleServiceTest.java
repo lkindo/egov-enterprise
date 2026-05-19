@@ -112,11 +112,29 @@ class ScheduleServiceTest {
     void deleteSchedule() {
         // given
         String schdlId = "S1";
+        String userId = "user1";
+        Schedule entity = Schedule.builder().schdlId(schdlId).createdBy(userId).build();
+        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
         // when
-        scheduleService.deleteSchedule(schdlId, "user1");
+        scheduleService.deleteSchedule(schdlId, userId);
 
         // then
-        verify(scheduleRepository).deleteById(schdlId);
+        verify(scheduleRepository).delete(entity);
+    }
+
+    @Test
+    @DisplayName("일정 삭제 실패 - 작성자가 아님")
+    void deleteSchedule_fail_notCreator() {
+        // given
+        String schdlId = "S1";
+        Schedule entity = Schedule.builder().schdlId(schdlId).createdBy("creator").build();
+        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
+
+        // when & then
+        BusinessException exception = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> 
+            scheduleService.deleteSchedule(schdlId, "otherUser")
+        );
+        assertThat(exception).isNotNull();
     }
 }

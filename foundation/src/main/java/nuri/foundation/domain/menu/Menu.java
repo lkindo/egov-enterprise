@@ -9,8 +9,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
 
 /**
  * 메뉴 정보 엔티티 (NMENUINFO)

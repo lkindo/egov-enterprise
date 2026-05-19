@@ -2,7 +2,6 @@ package nuri.business.service.schedule;
 
 import nuri.business.domain.schedule.LeaderSchedule;
 import nuri.business.domain.schedule.LeaderScheduleRepository;
-import nuri.business.domain.schedule.LeaderStatus;
 import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -126,5 +125,45 @@ class LeaderScheduleServiceTest {
 
         // then
         verify(leaderScheduleRepository).deleteById(schdlId);
+    }
+
+    @Test
+    @DisplayName("간부 상태 목록 조회 - 키워드 없음")
+    void getLeaderStatusList_noKeyword() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        nuri.business.domain.schedule.LeaderStatus entity = nuri.business.domain.schedule.LeaderStatus.builder()
+                .leaderId("leader1")
+                .leaderSttus("1")
+                .build();
+        given(leaderStatusRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+
+        // when
+        Page<nuri.business.service.schedule.dto.LeaderStatusDto> result = leaderScheduleService.getLeaderStatusList(null, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getLeaderId()).isEqualTo("leader1");
+        verify(leaderStatusRepository).findAll(pageable);
+    }
+
+    @Test
+    @DisplayName("간부 상태 목록 조회 - 키워드 매칭")
+    void getLeaderStatusList_withKeyword() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        nuri.business.domain.schedule.LeaderStatus entity = nuri.business.domain.schedule.LeaderStatus.builder()
+                .leaderId("leader1")
+                .leaderSttus("1")
+                .build();
+        given(leaderStatusRepository.findByLeaderIdContaining("leader", pageable)).willReturn(new PageImpl<>(List.of(entity)));
+
+        // when
+        Page<nuri.business.service.schedule.dto.LeaderStatusDto> result = leaderScheduleService.getLeaderStatusList("leader", pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getLeaderId()).isEqualTo("leader1");
+        verify(leaderStatusRepository).findByLeaderIdContaining("leader", pageable);
     }
 }

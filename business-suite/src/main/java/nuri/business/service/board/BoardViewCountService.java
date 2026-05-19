@@ -28,7 +28,7 @@ public class BoardViewCountService {
      * 조회수 증가 요청 (버퍼에 저장)
      */
     public void increaseViewCount(String pstId) {
-        viewCountBuffer.merge(pstId, 1, Integer::sum);
+        viewCountBuffer.merge(pstId, 1, (a, b) -> Integer.sum(a, b));
     }
 
     /**
@@ -56,7 +56,7 @@ public class BoardViewCountService {
             } catch (Exception e) {
                 log.error("Failed to sync view count for pstId {}: {}", pstId, e.getMessage());
                 // Rollback to buffer on failure
-                viewCountBuffer.merge(pstId, count, Integer::sum);
+                viewCountBuffer.merge(pstId, count, (a, b) -> Integer.sum(a, b));
             }
         });
     }

@@ -3,7 +3,6 @@ package nuri.business.service.faq;
 import nuri.business.domain.faq.Faq;
 import nuri.business.domain.faq.FaqRepository;
 import nuri.business.service.faq.dto.FaqDto;
-import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;

@@ -1,26 +1,20 @@
 package nuri.business.service.note;
 
-import nuri.business.domain.note.Note;
 import nuri.business.domain.note.NoteDomainRepository;
-import nuri.business.domain.note.NoteRecptn;
 import nuri.business.domain.note.NoteRecptnDomainRepository;
-import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
-import nuri.business.service.note.dto.NoteDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;

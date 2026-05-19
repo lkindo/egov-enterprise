@@ -1,6 +1,5 @@
 package nuri.business.service.note;
 
-import nuri.business.domain.note.Note;
 import nuri.business.domain.note.NoteDomainRepository;
 import nuri.business.domain.note.NoteRecptn;
 import nuri.business.domain.note.NoteRecptnDomainRepository;
@@ -23,7 +22,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 @DisplayName("NoteServiceImpl 단위 테스트")
 class NoteServiceImplTest {

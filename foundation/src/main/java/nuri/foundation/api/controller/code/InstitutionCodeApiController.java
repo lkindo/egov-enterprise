@@ -3,7 +3,6 @@ package nuri.foundation.api.controller.code;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.domain.common.BaseSearchDto;
-import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.InstitutionCodeService;
 import nuri.foundation.service.code.dto.InstitutionCodeDto;
 import nuri.foundation.service.code.dto.InstitutionCodeRecptnDto;
@@ -11,11 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -69,11 +64,4 @@ public class InstitutionCodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    private String getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
-        }
-        return "anonymous";
-    }
 }

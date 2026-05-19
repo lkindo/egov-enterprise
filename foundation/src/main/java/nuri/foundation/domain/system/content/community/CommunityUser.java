@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity

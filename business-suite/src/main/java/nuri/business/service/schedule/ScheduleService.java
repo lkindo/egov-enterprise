@@ -112,8 +112,14 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     @Override
     @Transactional
     public void deleteSchedule(@NonNull String schdlId, String userId) {
-        // [TODO] Check userId if needed
-        scheduleRepository.deleteById(schdlId);
+        Schedule entity = scheduleRepository.findById(schdlId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (userId != null && !userId.equals(entity.getCreatedBy())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        scheduleRepository.delete(entity);
     }
 
     @Override

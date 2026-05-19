@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity

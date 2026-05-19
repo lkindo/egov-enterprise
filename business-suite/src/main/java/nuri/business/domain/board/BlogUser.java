@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity

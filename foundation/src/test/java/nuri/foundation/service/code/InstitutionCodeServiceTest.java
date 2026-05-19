@@ -15,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +44,6 @@ class InstitutionCodeServiceTest {
     @DisplayName("기관코드 목록 조회")
     void selectInstitutionCodeList() {
         // given
-        PageRequest pageable = PageRequest.of(0, 10);
         InstitutionCode entity = InstitutionCode.builder().insttCode("INST1").allInsttNm("Inst 1").build();
         Page<InstitutionCode> page = new PageImpl<>(List.of(entity));
         when(institutionCodeRepository.searchInstitutionCodes(any(), any(), any())).thenReturn(page);
@@ -108,7 +106,6 @@ class InstitutionCodeServiceTest {
     @DisplayName("기관코드 수신 처리")
     void updateInstitutionCodeRecptn() {
         // given
-        InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLogId("20240101", "I1", 1L);
         InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
         when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.of(logEntity));
 

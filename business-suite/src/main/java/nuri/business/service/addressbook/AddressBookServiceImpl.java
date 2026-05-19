@@ -4,7 +4,6 @@ import nuri.business.domain.addressbook.AddressBook;
 import nuri.business.domain.addressbook.AddressBookRepository;
 import nuri.business.domain.addressbook.AddressBookUser;
 import nuri.business.domain.addressbook.AddressBookUserRepository;
-import nuri.business.domain.addressbook.AddressBookUserSearchResult;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.foundation.core.exception.BusinessException;

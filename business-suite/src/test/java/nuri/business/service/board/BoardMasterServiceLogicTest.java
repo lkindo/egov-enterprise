@@ -4,7 +4,6 @@ import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,21 +50,21 @@ class BoardMasterServiceLogicTest {
         verify(boardMasterRepository, times(1)).save(any(BoardMaster.class));
     }
 
-    @Test
-    @DisplayName("게시판 생성 실패 - 중복 ID")
-    void createBoardMaster_fail_duplicateId() {
-        // given
-        BoardMasterDto boardMasterDto = BoardMasterDto.builder()
-                .bbsId("BBS_0000000001")
-                .build();
-        BoardMaster existingBoardMaster = BoardMaster.builder()
-                .bbsId("BBS_0000000001")
-                .build();
-
-        // when
-        // No duplicate check in createBoardMaster yet, but let's assume it should fail if we add it
-        // Or if the test expects some validation
-    }
+//    @Test
+//    @DisplayName("게시판 생성 실패 - 중복 ID")
+//    void createBoardMaster_fail_duplicateId() {
+//        // given
+//        BoardMasterDto boardMasterDto = BoardMasterDto.builder()
+//                .bbsId("BBS_0000000001")
+//                .build();
+//        BoardMaster existingBoardMaster = BoardMaster.builder()
+//                .bbsId("BBS_0000000001")
+//                .build();
+//
+//        // when
+//        // No duplicate check in createBoardMaster yet, but let's assume it should fail if we add it
+//        // Or if the test expects some validation
+//    }
 
     @Test
     @DisplayName("게시판 수정 성공")

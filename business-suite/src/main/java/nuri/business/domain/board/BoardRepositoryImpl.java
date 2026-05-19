@@ -11,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import nuri.foundation.domain.user.entity.QUser;
 

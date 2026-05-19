@@ -1,10 +1,8 @@
 package nuri.foundation.service.system.service.survey;
 
-import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.system.service.survey.*;
 import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
 import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
 import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;

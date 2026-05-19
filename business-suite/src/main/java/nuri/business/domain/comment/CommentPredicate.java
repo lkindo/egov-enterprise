@@ -1,8 +1,6 @@
 package nuri.business.domain.comment;
 
-import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import org.springframework.util.StringUtils;
 
 public class CommentPredicate {
 

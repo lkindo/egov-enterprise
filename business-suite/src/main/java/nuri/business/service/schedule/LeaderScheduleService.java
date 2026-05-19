@@ -93,7 +93,10 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
 
     @Override
     public Page<nuri.business.service.schedule.dto.LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable) {
-        // [TODO] searchKeyword filtering
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            return leaderStatusRepository.findByLeaderIdContaining(searchKeyword, pageable)
+                    .map(nuri.business.service.schedule.dto.LeaderStatusDto::from);
+        }
         return leaderStatusRepository.findAll(pageable)
                 .map(nuri.business.service.schedule.dto.LeaderStatusDto::from);
     }
