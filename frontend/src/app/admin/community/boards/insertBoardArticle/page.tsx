@@ -10,7 +10,7 @@ export default async function InsertBoardArticlePage({ searchParams }: PageProps
   const params = await searchParams;
   const bbsId = (params.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA';
   const pstId = (params.pstId as string) || undefined;
-  const parntsId = (params.parntsId as string) || undefined;
+  const parntsId = (params.parnts as string) || (params.parntsId as string) || undefined;
 
   let initialData = null;
   if (pstId) {

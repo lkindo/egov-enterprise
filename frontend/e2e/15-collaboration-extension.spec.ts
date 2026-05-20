@@ -40,6 +40,11 @@ test.describe('Tier 15: Collaboration & Knowledge Extension', () => {
         // Create a new knowledge node
         await knowledgePage.createFAQ(question, answer);
         
+        // Navigate back to the FAQ board list explicitly to perform search
+        await page.goto('/admin/community/boards?bbsId=BBSMSTR_AAAAAAAAAAAA');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(1000);
+        
         // Search and verify
         await knowledgePage.searchFAQ(question);
         await expect(page.getByText(question).first()).toBeVisible({ timeout: 15000 });

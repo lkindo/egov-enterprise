@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api/client';
 import { saveBoardArticle } from '@/app/actions/boardActions';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,8 @@ const BBSDetailClient = () => {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
+  const pstId = searchParams.get('pstId') || '';
+  const isEdit = !!pstId;
 
   const [state, formAction, isPending] = useActionState(saveBoardArticle, null);
   const queryClient = useQueryClient();
@@ -45,10 +48,28 @@ const BBSDetailClient = () => {
     enabled: !!bbsId,
   });
 
+  // 수정 모물일 때 게시글 상세 정보 조회
+  const { data: article } = useQuery({
+    queryKey: ['article-detail', bbsId, pstId],
+    queryFn: () => knowledgeService.getArticle(bbsId, pstId),
+    enabled: !!bbsId && !!pstId,
+  });
+
   const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedEventDate, setSelectedEventDate] = useState<string>(new Date().toISOString());
+
+  useEffect(() => {
+    if (article) {
+      if (article.qnaCategory || (article as any).qnaCatCd) {
+        setSelectedCategory(article.qnaCategory || (article as any).qnaCatCd);
+      }
+      if (article.eventDate) {
+        setSelectedEventDate(article.eventDate);
+      }
+    }
+  }, [article]);
 
   useEffect(() => {
     if (state?.success) {
@@ -135,8 +156,11 @@ const BBSDetailClient = () => {
           </div>
         </CardHeader>
 
-        <StandardForm action={formAction}>
+        <StandardForm action={formAction} key={article?.pstId || 'new'}>
           <input type="hidden" name="bbsId" value={bbsId} />
+          <input type="hidden" name="pstId" value={pstId} />
+          <input type="hidden" name="qnaCatCd" value={selectedCategory} />
+          <input type="hidden" name="eventDate" value={selectedEventDate} />
           <CardContent className="pt-20 px-12 md:px-20 space-y-20">
             {/* 제목 입력 */}
             <div className="space-y-6 group">
@@ -152,6 +176,7 @@ const BBSDetailClient = () => {
               <Input
                 id="pstTtl"
                 name="pstTtl"
+                defaultValue={article?.pstTtl || ''}
                 placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
                   "h-11 text-3xl font-bold border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
@@ -221,6 +246,7 @@ const BBSDetailClient = () => {
                 <Textarea
                   id="pstCn"
                   name="pstCn"
+                  defaultValue={article?.pstCn || ''}
                   placeholder={
                     tmplatId === 'TMPLT_QNA' 
                       ? "질문 내용을 자세히 기재해 주시면 더 정확한 답변을 받으실 수 있습니다..."

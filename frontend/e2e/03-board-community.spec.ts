@@ -52,6 +52,10 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     await dialog.accept();
                 });
                 
+                page.on('console', msg => {
+                    console.log(`>>> [Browser Console] [${msg.type()}] ${msg.text()}`);
+                });
+                
                 const workerId = process.env.TEST_WORKER_INDEX || '0';
                 const articleTitle = `E2E Article W${workerId} ${Date.now()}`;
                 let createdpstId: string | null = null;
@@ -76,14 +80,17 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
                 await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
                 
-                // Enhanced wait for title input
+                // Anti-flaky: RichTextEditor(dynamic import) 마운트 완료를 먼저 대기
+                // → 마운트 후 react-hook-form이 defaultValues를 inject하고 나면
+                //   그 이후에 fill()을 실행해야 타이틀 롤백이 발생하지 않음
+                const editor = page.locator('[data-testid="rich-text-editor"] .ProseMirror, .ProseMirror').first();
+                await editor.waitFor({ state: 'visible', timeout: 30000 });
+
                 const titleInput = page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').first();
                 await titleInput.waitFor({ state: 'visible', timeout: 30000 });
-                
+
                 console.log('>>> Step 2: Creating Article');
                 await titleInput.fill(articleTitle);
-                
-                const editor = page.locator('[data-testid="rich-text-editor"] .ProseMirror, .ProseMirror').first();
                 await editor.fill('Initial E2E test content.');
 
                 const commitBtn = page.locator('button:has-text("Commit Knowledge"), button:has-text("게시글 등록"), button:has-text("저장"), button[aria-label="게시글 저장"]').first();
@@ -116,11 +123,13 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                             await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
                         } else {
                             await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
-                            const firstArticleLink = page.locator('a[href*="pstId="], a.group\\/link').first();
-                            await firstArticleLink.waitFor({ state: 'visible', timeout: 5000 });
-                            await firstArticleLink.click();
+                            const targetLink = page.locator('a[href*="pstId="]', { hasText: articleTitle }).first();
+                            await targetLink.waitFor({ state: 'visible', timeout: 5000 });
+                            await targetLink.click();
                         }
-                        await expect(page.getByText(articleTitle).first()).toBeVisible({ timeout: 5000 });
+                        // hasText 옵션을 활용하여 텍스트 분산 렌더링에 안전한 확인 보장
+                        const detailHeader = page.locator('h3, h2, div', { hasText: articleTitle }).first();
+                        await expect(detailHeader).toBeVisible({ timeout: 5000 });
                     }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 });
 
@@ -129,12 +138,19 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await editBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await editBtn.click();
                 
+                // Anti-flaky (확정판): 에디터 visible + form defaultValues 주입 완료를 직접 검증
+                // .ProseMirror visible만으로는 react-hook-form의 비동기 defaultValues 주입
+                // 완료를 보장할 수 없음. toHaveValue(originalTitle)로 주입 완료를 직접 증명한
+                // 뒤 fill()을 실행해야 [Updated] 텍스트 롤백을 완전히 차단할 수 있음.
+                const updateEditor = page.locator('[data-testid="rich-text-editor"] .ProseMirror, .ProseMirror').first();
+                await updateEditor.waitFor({ state: 'visible', timeout: 30000 });
+
                 const updateTitleInput = page.locator('input[data-testid="article-title-input"], input[name="pstTtl"]').first();
                 await updateTitleInput.waitFor({ state: 'visible', timeout: 30000 });
+                // react-hook-form defaultValues 주입 완료 직접 검증
+                // (originalTitle이 input에 실제로 채워져야 re-render가 완료된 것)
+                await expect(updateTitleInput).toHaveValue(articleTitle, { timeout: 15000 });
                 await updateTitleInput.fill(`${articleTitle} [Updated]`);
-
-                const updateEditor = page.locator('[data-testid="rich-text-editor"] .ProseMirror, .ProseMirror').first();
-                await updateEditor.waitFor({ state: 'visible', timeout: 15000 });
                 await updateEditor.fill('Updated content.');
 
                 const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node|저장/ }).first();
@@ -154,13 +170,14 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     // 2. Anti-flaky: 스마트 재시도 로직 (revalidatePath 반영 지연 방어)
                     await expect(async () => {
                         await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
-                        await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeVisible({ timeout: 5000 });
+                        const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
+                        await expect(updatedArticle).toBeVisible({ timeout: 5000 });
                     }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 });
 
                 console.log('>>> Step 4: Deleting Article');
                 // Navigate to detail for deletion
-                await page.getByText(`${articleTitle} [Updated]`).first().click();
+                await page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first().click();
                 
                 const deleteBtn = page.locator('button:has-text("삭제"), [aria-label="게시글 삭제"], button:has-text("Delete")').first();
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
@@ -169,7 +186,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
                     await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
-                    await expect(page.getByText(`${articleTitle} [Updated]`).first()).toBeHidden({ timeout: 5000 });
+                    const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
+                    await expect(updatedArticle).toBeHidden({ timeout: 5000 });
                 }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 
                 console.log('>>> Successfully deleted.');

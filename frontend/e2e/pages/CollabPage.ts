@@ -56,7 +56,7 @@ export class CollabPage {
         await expect(sendBtn).toBeVisible();
         await sendBtn.click();
         
-        await expect(this.page.getByText(/성공|발송되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/성공적으로 발송되었습니다/i)).toBeVisible({ timeout: 20000 });
         
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-history/);
     }
@@ -84,7 +84,7 @@ export class CollabPage {
         await telInput.fill(tel);
         
         await this.page.getByTestId('commit-identity-button').click();
-        await expect(this.page.getByText(/성공|등록되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/등록되었습니다/i)).toBeVisible({ timeout: 20000 });
     }
 
     async verifyIdentityInList(name: string) {

@@ -93,6 +93,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
   }, [hasDraft, restoreDraft, toast, pstId, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
+    console.log('>>> [BoardRegistClient] onSubmit called with:', values);
     if (!values.pstCn || values.pstCn === '<p></p>') {
       toast('내용을 입력해 주세요.', 'error');
       return;
@@ -108,17 +109,25 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         }
       });
 
+      // Props 또는 initialData의 pstId가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
+      const activePstId = pstId || initialData?.pstId;
+      if (activePstId) {
+        formData.append('pstId', activePstId.toString());
+      }
+
       const result = await saveBoardArticle(null, formData);
+      console.log('>>> [BoardRegistClient] saveBoardArticle result:', result);
       
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
         clearDraft();
         toast(result.message || '저장되었습니다.', 'success');
-        router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
+        router.push(result.redirect || `/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
       } else {
         toast(result.message || '저장 중 오류가 발생했습니다.', 'error');
       }
-    } catch {
+    } catch (err) {
+      console.error('>>> [BoardRegistClient] Submit error thrown:', err);
       toast('등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
@@ -166,7 +175,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12 px-4">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log('>>> [BoardRegistClient] Form Validation Errors:', errors))} className="space-y-12 px-4">
           {/* Title Input Area */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
