@@ -41,8 +41,17 @@
 - **명령**: `npm run build` (`frontend/` 디렉토리)
 - **결과**: `Generating static pages (127/127)` 정적 프리렌더링 및 Next.js 프로덕션 빌드 성공.
 
+### 2.3. 통합 테스트 커버리지 측정 (JaCoCo Root Report)
+- **명령**: `.\gradlew jacocoRootReport --no-daemon`
+- **결과**: `BUILD SUCCESSFUL` (SKIPPED 없음, 통합 HTML 리포트 생성 완료)
+- **리포트 물리 경로**: [index.html](file:///D:/project/egov-enterprise/build/reports/jacoco/aggregated/index.html)
+- **원인 규명 및 패치 내역**:
+  - *현상*: 단일 빌드 파이프라인에서 루트의 `:test` 태스크에 대한 명시적 `dependsOn` 없이 `build/jacoco/test.exec`를 입력으로 참조하여 Gradle 9.4.1의 **Implicit Dependency Exception**을 트리거하며 빌드가 무너지는 현상 발견.
+  - *패치*: `jacocoRootReport` 정의부의 `dependsOn` 및 `mustRunAfter`에 루트 `:test` 태스크를 결합(`+ tasks.named('test')`)하여 완벽한 의존 관계(DAG) 수립.
+  - *에이전트 조기 호출 제거*: 하위 모듈 `Test` 태스크 내에서 Gradle 구성 단계(Configuration Phase)에 즉각 `.get()`을 호출해 파일 쓰기를 조용히 차단시키던 수동 오버라이드 블록(`destinationFile.map{}.get()`)을 비활성화하여 JaCoCo 공식 JVM 에이전트의 온전한 수집 복원 성공.
+
 ---
 
 ## 🏁 3. 다음 루프 준비 (Next Steps)
 - 본 문서는 글로벌 §7(Ralph Loop) 규정에 의거하여 작성되었습니다.
-- 모든 E2E 스펙이 100% 그린으로 격파되었으므로, 해당 브랜치는 안전하게 머지 및 배포 준비 상태로 전환 가능합니다.
+- 모든 E2E 스펙 및 백엔드 통합 테스트 커버리지(JaCoCo)까지 100% 그린으로 격파되었으므로, 변경된 빌드 무결성 설정(`build.gradle`)을 포함하여 해당 브랜치는 완벽히 머지 및 릴리즈 준비가 완료되었습니다.

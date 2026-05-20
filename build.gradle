@@ -181,15 +181,15 @@ tasks.register('jacocoRootReport', JacocoReport) {
     description = 'Generates an aggregate report from all subprojects using explicit paths'
     group = 'Verification'
 
-    // 모든 하위 프로젝트의 테스트 태스크에 의존
-    dependsOn subprojects.collect { it.tasks.withType(Test) }
-    mustRunAfter subprojects.collect { it.tasks.withType(Test) }
-
+    // 모든 하위 프로젝트 및 루트 프로젝트의 테스트 태스크에 의존
+    dependsOn subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
+    mustRunAfter subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
+ 
     // 소스 디렉토리 통합 (물리적 경로로 명시)
     sourceDirectories.setFrom(subprojects.collect { 
         file("${it.projectDir}/src/main/java") 
     })
-
+ 
     // 클래스 디렉토리 통합 및 필터링
     classDirectories.setFrom(subprojects.collect { 
         fileTree(dir: "${it.projectDir}/build/classes/java/main", exclude: [
@@ -208,7 +208,7 @@ tasks.register('jacocoRootReport', JacocoReport) {
             "**/*Advice.class"
         ])
     })
-
+ 
     // 실행 데이터(.exec) 통합: 모든 하위 프로젝트가 루트의 단일 파일로 모이는 현상 활용
     executionData.setFrom(file("${rootProject.buildDir}/jacoco/test.exec"))
 
