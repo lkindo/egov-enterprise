@@ -24,13 +24,13 @@
 ## 1. 프로젝트 개요 (Project Overview)
 
 - **이름**: eGov Enterprise (차세대 기업용 표준 프레임워크 기반 서비스)
-- **주요 목표**: 전자정부 표준 프레임워크(eGovFrame)를 최신 기술 스택(Java 21, Spring Boot 3.4.3, Next.js 16.2.4)으로 현대화하여 기업용 엔터프라이즈 환경에 최적화된 아키텍처 제공.
+- **주요 목표**: 전자정부 표준 프레임워크(eGovFrame)를 최신 기술 스택(Java 21, Spring Boot 3.4.1, Next.js 16.2.4)으로 현대화하여 기업용 엔터프라이즈 환경에 최적화된 아키텍처 제공.
 - **아키텍처 흐름**: `User → Next.js Middleware(Auth) → Server Component → ApiService → api-server Controller → business-suite Service → PostgreSQL → DTO Response → Client Component`
 
 ## 2. 기술 스택 (Technology Stack)
 
 ### Backend
-- **Core**: Java 21 / Spring Boot 3.4.3 / eGovFrame 5.0.0
+- **Core**: Java 21 / Spring Boot 3.4.1 / eGovFrame 5.0.0
 - **Build**: Gradle 9.4.1 (Multi-module: `api-server`, `business-suite`, `foundation`)
 - **Database**: OCI PostgreSQL 17 (Port 5432)
 
