@@ -1,26 +1,35 @@
 package nuri.foundation.service.system.content.popup;
 
+import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.system.content.popup.Popup;
 import nuri.foundation.domain.system.content.popup.PopupDomainRepository;
 import nuri.foundation.service.system.content.popup.dto.PopupDto;
-import org.junit.jupiter.api.BeforeEach;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@DisplayName("PopupServiceImpl 단위 테스트")
+@ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@DisplayName("PopupServiceImpl 단위 테스트 (Full Coverage)")
 class PopupServiceImplTest {
 
     @Mock
@@ -32,25 +41,42 @@ class PopupServiceImplTest {
     @InjectMocks
     private PopupServiceImpl popupService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    // ==========================================
+    // 1. 팝업 목록 및 상세 조회 테스트
+    // ==========================================
+
+    @Test
+    @DisplayName("팝업 목록 조회 - 키워드 없음")
+    void getPopupList_NoKeyword() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        Popup popup = Popup.builder().popupId("POP_01").popupTitleName("팝업1").build();
+        given(popupRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(popup)));
+
+        // when
+        Page<PopupDto> result = popupService.getPopupList(null, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getPopupTitleName()).isEqualTo("팝업1");
+        verify(popupRepository, times(1)).findAll(pageable);
     }
 
     @Test
-    @DisplayName("팝업 등록")
-    void createPopup() throws Exception {
+    @DisplayName("팝업 목록 조회 - 키워드 있음")
+    void getPopupList_WithKeyword() {
         // given
-        PopupDto dto = PopupDto.builder().popupTitleName("Test Popup").build();
-        Popup popup = Popup.builder().popupId("POP1").popupTitleName("Test Popup").build();
-        when(egovPopupManageIdGnrService.getNextStringId()).thenReturn("POP1");
-        given(popupRepository.save(any(Popup.class))).willReturn(popup);
+        Pageable pageable = PageRequest.of(0, 10);
+        Popup popup = Popup.builder().popupId("POP_01").popupTitleName("팝업검색").build();
+        given(popupRepository.findByPopupTitleNameContaining(eq("검색"), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(popup)));
 
         // when
-        popupService.createPopup("user1", dto);
+        Page<PopupDto> result = popupService.getPopupList("검색", pageable);
 
         // then
-        verify(popupRepository).save(any(Popup.class));
+        assertThat(result.getContent()).hasSize(1);
+        verify(popupRepository, times(1)).findByPopupTitleNameContaining("검색", pageable);
     }
 
     @Test
@@ -65,5 +91,161 @@ class PopupServiceImplTest {
 
         // then
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("팝업 상세 조회 - 성공")
+    void getPopup_Success() {
+        // given
+        Popup popup = Popup.builder()
+                .popupId("POP1")
+                .popupTitleName("제목")
+                .noticeBeginDate(LocalDate.of(2026, 1, 1))
+                .noticeEndDate(LocalDate.of(2026, 1, 31))
+                .build();
+        given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
+
+        // when
+        PopupDto result = popupService.getPopup("POP1");
+
+        // then
+        assertThat(result.getPopupId()).isEqualTo("POP1");
+        assertThat(result.getPopupTitleName()).isEqualTo("제목");
+        assertThat(result.getNoticeBeginDate()).isEqualTo("2026-01-01");
+        assertThat(result.getNoticeEndDate()).isEqualTo("2026-01-31");
+    }
+
+    @Test
+    @DisplayName("팝업 상세 조회 - 자원 없음 예외")
+    void getPopup_NotFound_ShouldThrowBusinessException() {
+        // given
+        given(popupRepository.findById("POP1")).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> popupService.getPopup("POP1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Resource Not Found");
+    }
+
+    // ==========================================
+    // 2. 팝업 등록, 수정, 삭제 테스트
+    // ==========================================
+
+    @Test
+    @DisplayName("팝업 등록 - 성공")
+    void createPopup_Success() throws Exception {
+        // given
+        PopupDto dto = PopupDto.builder()
+                .popupTitleName("Test Popup")
+                .noticeBeginDate("2026-01-01")
+                .noticeEndDate("2026-01-31")
+                .isStopView("Y")
+                .isNotice("Y")
+                .build();
+        given(egovPopupManageIdGnrService.getNextStringId()).willReturn("POP_99");
+
+        // when
+        String popupId = popupService.createPopup("admin", dto);
+
+        // then
+        assertThat(popupId).isEqualTo("POP_99");
+        verify(popupRepository, times(1)).save(any(Popup.class));
+    }
+
+    @Test
+    @DisplayName("팝업 등록 - ID 생성 실패 시 RuntimeException 발생")
+    void createPopup_IdGnrException_ShouldThrowRuntimeException() throws Exception {
+        // given
+        PopupDto dto = PopupDto.builder().popupTitleName("Test").build();
+        given(egovPopupManageIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID generation fail"));
+
+        // when & then
+        assertThatThrownBy(() -> popupService.createPopup("admin", dto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to generate popup ID");
+    }
+
+    @Test
+    @DisplayName("팝업 수정 - 성공")
+    void updatePopup_Success() {
+        // given
+        Popup popup = Popup.builder()
+                .popupId("POP1")
+                .popupTitleName("OLD")
+                .build();
+        given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
+
+        PopupDto dto = PopupDto.builder()
+                .popupTitleName("NEW")
+                .noticeBeginDate("2026-02-01")
+                .noticeEndDate("2026-02-28")
+                .isStopView("N")
+                .isNotice("N")
+                .build();
+
+        // when
+        popupService.updatePopup("POP1", "updater", dto);
+
+        // then
+        assertThat(popup.getPopupTitleName()).isEqualTo("NEW");
+        assertThat(popup.getNoticeBeginDate()).isEqualTo(LocalDate.of(2026, 2, 1));
+        assertThat(popup.getNoticeEndDate()).isEqualTo(LocalDate.of(2026, 2, 28));
+        assertThat(popup.getLastUpdusrId()).isEqualTo("updater");
+    }
+
+    @Test
+    @DisplayName("팝업 수정 - 자원 없음 예외")
+    void updatePopup_NotFound_ShouldThrowBusinessException() {
+        // given
+        given(popupRepository.findById("POP1")).willReturn(Optional.empty());
+        PopupDto dto = PopupDto.builder().popupTitleName("NEW").build();
+
+        // when & then
+        assertThatThrownBy(() -> popupService.updatePopup("POP1", "updater", dto))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("팝업 삭제 - 성공")
+    void deletePopup_Success() {
+        // given
+        given(popupRepository.existsById("POP1")).willReturn(true);
+
+        // when
+        popupService.deletePopup("POP1");
+
+        // then
+        verify(popupRepository, times(1)).deleteById("POP1");
+    }
+
+    @Test
+    @DisplayName("팝업 삭제 - 자원 없음 예외")
+    void deletePopup_NotFound_ShouldThrowBusinessException() {
+        // given
+        given(popupRepository.existsById("POP1")).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> popupService.deletePopup("POP1"))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    // ==========================================
+    // 3. 화이트리스트 추출 테스트
+    // ==========================================
+
+    @Test
+    @DisplayName("팝업 화이트리스트 추출")
+    void getPopupWhiteList_ShouldReturnUrls() {
+        // given
+        Popup p1 = Popup.builder().popupId("POP1").fileUrl("/page1.html").build();
+        Popup p2 = Popup.builder().popupId("POP2").fileUrl("/page2.html").build();
+        given(popupRepository.findAll()).willReturn(List.of(p1, p2));
+
+        // when
+        List<String> whitelist = popupService.getPopupWhiteList();
+
+        // then
+        assertThat(whitelist).hasSize(2);
+        assertThat(whitelist).containsExactly("/page1.html", "/page2.html");
     }
 }

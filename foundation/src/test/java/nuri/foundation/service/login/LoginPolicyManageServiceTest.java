@@ -143,8 +143,11 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 유효성 검증 - 성공")
     void validateLoginPolicySuccessTest() {
         LocalTime now = LocalTime.now();
-        String start = now.minusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"));
-        String end = now.plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"));
+        LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
+        LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
+
+        String start = startTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
+        String end = endTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
 
         LoginPolicy policy = LoginPolicy.builder()
                 .userId("USER1")

@@ -28,11 +28,15 @@ public abstract class BaseControllerTest {
                 .build();
         
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
-
+        
+        java.util.List<org.springframework.web.method.support.HandlerMethodArgumentResolver> resolvers = new java.util.ArrayList<>();
+        resolvers.add(new org.springframework.data.web.PageableHandlerMethodArgumentResolver());
+        java.util.Collections.addAll(resolvers, getCustomArgumentResolvers());
+        
         mockMvc = MockMvcBuilders.standaloneSetup(getController())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(converter)
-                .setCustomArgumentResolvers(getCustomArgumentResolvers())
+                .setCustomArgumentResolvers(resolvers.toArray(new org.springframework.web.method.support.HandlerMethodArgumentResolver[0]))
                 .addInterceptors(getInterceptors())
                 .build();
     }
