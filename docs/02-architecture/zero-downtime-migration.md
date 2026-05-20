@@ -32,6 +32,7 @@ PostgreSQL 기반의 eGov Enterprise 시스템에서 스키마 변경 시 발생
    - 백그라운드 스크립트 또는 배치로 과거 데이터를 신규 컬럼으로 마이그레이션.
 4. **Phase 4: Contract (수축 및 정리)**
    - 앱에서 기존 컬럼 참조 제거 ➔ 안전하게 구버전 컬럼 `DROP`.
+   - **Linter Ignore**: 이 단계에서 안전하게 `DROP COLUMN` 등을 수행할 경우, 마이그레이션 스크립트 내 해당 SQL 문 위에 `-- linter:ignore` 주석을 추가하여 린터 오탐(False Positive)을 방지(Whitelist)해야 합니다.
 
 ## 4. 모니터링 연동
 이 하네스는 CI 파이프라인(`make coverage`, `./gradlew test`)에 완전히 내장되어 백그라운드에서 상시 기동되며, 위반 감지 시 즉각적으로 빌드를 파괴하고 원인을 콘솔에 보고합니다.

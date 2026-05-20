@@ -11,7 +11,7 @@ public class HibernateQueryCounterInspector implements StatementInspector {
 
     @Override
     public String inspect(String sql) {
-        QueryCountInspector.increment();
+        QueryCountInspector.increment(sql);
         return sql;
     }
 }
