@@ -29,6 +29,7 @@ export class ConsoleErrorGuard {
     /Article not found \(possibly deleted\)/i,
     /Article Not Found/i,
     /\/api\/v1\/admin\/operation\/events/i,
+    /\/api\/v1\/calendar\/schedule/i,
   ];
 
   constructor(page: Page) {

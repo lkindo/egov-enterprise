@@ -19,10 +19,10 @@ import lombok.experimental.SuperBuilder;
 public class DeptJobBox extends BaseEntity {
 
     @Id
-    @Column(name = "DEPT_JOB_BX_ID", length = 20)
+    @Column(name = "dept_task_box_id", length = 20)
     private String deptJobbxId;
 
-    @Column(name = "DEPT_JOB_BX_NM", length = 100)
+    @Column(name = "dept_task_box_nm", length = 100)
     private String deptJobbxNm;
 
     @Column(name = "dept_id", length = 20)

@@ -43,7 +43,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
       order-inserts: true
       order-updates: true
       batch-size: 25

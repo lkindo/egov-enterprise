@@ -115,11 +115,11 @@ export default function UnifiedDashboardClient({
 
         <div className="flex gap-4 w-full lg:w-auto">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => router.push('/admin/community/boards')}
             aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-border/10 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-lg font-bold hover:bg-muted transition-all shadow-lg"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border border-border/60 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-lg font-bold hover:bg-muted transition-all shadow-sm"
           >
             <Plus size={20} /> 새 포스팅
           </motion.button>
@@ -132,7 +132,7 @@ export default function UnifiedDashboardClient({
       </motion.div>
 
       {/* Real-time Insights */}
-      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-lg bg-accent/30 dark:bg-accent/10 shadow-inner">
+      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border border-border/80 rounded-lg bg-card/40 dark:bg-card/20 shadow-sm">
         <RealTimeDashboard />
       </motion.div>
 
@@ -215,7 +215,6 @@ export default function UnifiedDashboardClient({
             variants={hubItemVariants}
             className="hub-card-dark min-h-[500px] group"
           >
-            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/20 rounded-lg blur-[100px]" />
             <h3 className="text-2xl font-bold mb-12 flex items-center gap-4 relative z-10 tracking-tight">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
@@ -233,7 +232,7 @@ export default function UnifiedDashboardClient({
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="hub-label-accent flex items-center gap-3">
-                <div className="w-2 h-2 bg-primary rounded-lg animate-ping" />
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 시스템 활성 지표
               </h3>
             </div>

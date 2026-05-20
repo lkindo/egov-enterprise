@@ -73,14 +73,20 @@ export const test = base.extend<MyFixtures>({
   adminPage: async ({ browser }, use) => {
     const context = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
     const page = await context.newPage();
+    const guard = new ConsoleErrorGuard(page);
+    await guard.install();
     await use(page);
+    await guard.verify();
     await context.close();
   },
 
   userPage: async ({ browser }, use) => {
     const context = await browser.newContext({ storageState: 'playwright/.auth/user.json' });
     const page = await context.newPage();
+    const guard = new ConsoleErrorGuard(page);
+    await guard.install();
     await use(page);
+    await guard.verify();
     await context.close();
   },
 });

@@ -24,8 +24,8 @@ export const hubItemVariants: Variants = {
     opacity: 1,
     transition: {
       type: "spring",
-      stiffness: 100,
-      damping: 15
+      stiffness: 150,
+      damping: 24
     }
   }
 };
@@ -38,8 +38,8 @@ export const hubScaleVariants: Variants = {
     opacity: 1,
     transition: { 
       type: "spring", 
-      stiffness: 120,
-      damping: 12
+      stiffness: 180,
+      damping: 22
     }
   }
 };
@@ -52,8 +52,8 @@ export const hubSlideRightVariants: Variants = {
     opacity: 1,
     transition: {
       type: "spring",
-      stiffness: 100,
-      damping: 18
+      stiffness: 150,
+      damping: 25
     }
   }
 };
