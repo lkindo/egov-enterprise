@@ -4,28 +4,19 @@
  */
 
 export interface paths {
-    "/api/v1/work-reports/{rptId}": {
+    "/api/v1/work-reports/{reportId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 업무보고 상세 조회
-         * @description 업무보고 상세 정보를 조회합니다.
-         */
+        /** 작업보고 상세 조회 */
         get: operations["getWorkReport"];
-        /**
-         * 업무보고 수정
-         * @description 업무보고 정보를 수정합니다.
-         */
+        /** 작업보고 수정 */
         put: operations["updateWorkReport"];
         post?: never;
-        /**
-         * 업무보고 삭제
-         * @description 업무보고 정보를 삭제합니다.
-         */
+        /** 작업보고 삭제 */
         delete: operations["deleteWorkReport"];
         options?: never;
         head?: never;
@@ -71,6 +62,25 @@ export interface paths {
         put: operations["changePassword"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scraps/{scrapId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 스크랩 상세 조회 */
+        get: operations["getScrap"];
+        /** 스크랩 수정 */
+        put: operations["updateScrap"];
+        post?: never;
+        /** 스크랩 삭제 */
+        delete: operations["deleteScrap"];
         options?: never;
         head?: never;
         patch?: never;
@@ -335,21 +345,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * FAQ 상세 조회
-         * @description 특정 FAQ의 상세 정보를 조회합니다.
-         */
+        /** FAQ 상세 조회 */
         get: operations["getFaq"];
-        /**
-         * FAQ 정보 수정
-         * @description 기존 FAQ 정보를 수정합니다.
-         */
+        /** FAQ 수정 */
         put: operations["updateFaq"];
         post?: never;
-        /**
-         * FAQ 삭제
-         * @description FAQ 정보를 삭제합니다.
-         */
+        /** FAQ 삭제 */
         delete: operations["deleteFaq"];
         options?: never;
         head?: never;
@@ -384,7 +385,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/comments/{id}": {
+    "/api/v1/comments/{commentNo}": {
         parameters: {
             query?: never;
             header?: never;
@@ -392,16 +393,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /**
-         * 댓글 수정
-         * @description 기본 댓글 내용을 수정합니다.
-         */
         put: operations["updateComment"];
         post?: never;
-        /**
-         * 댓글 삭제
-         * @description 댓글을 삭제 처리합니다.
-         */
         delete: operations["deleteComment"];
         options?: never;
         head?: never;
@@ -436,29 +429,20 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/bbs/{bbsId}/{pstId}": {
+    "/api/v1/bbs/{bbsId}/posts/{pstId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 게시물 상세 조회
-         * @description 특정 게시물의 상세 정보를 조회합니다.
-         */
-        get: operations["getBoardDetail"];
-        /**
-         * 게시물 수정
-         * @description 기존 게시물을 수정합니다.
-         */
-        put: operations["updateBoard"];
+        /** 게시글 상세 조회 */
+        get: operations["getBbsDetail"];
+        /** 게시글 수정 */
+        put: operations["updateBbsPost"];
         post?: never;
-        /**
-         * 게시물 삭제
-         * @description 게시물을 삭제합니다.
-         */
-        delete: operations["deleteBoard"];
+        /** 게시글 삭제 */
+        delete: operations["deleteBbsPost"];
         options?: never;
         head?: never;
         patch?: never;
@@ -837,7 +821,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/login-policies/{emplyrId}": {
+    "/api/v1/admin/system/login-policies/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -846,12 +830,10 @@ export interface paths {
         };
         /** 로그인 정책 상세 조회 */
         get: operations["getLoginPolicy"];
-        /**
-         * 로그인 정책 저장
-         * @description 신규 등록 또는 기존 정보를 수정합니다.
-         */
-        put: operations["saveLoginPolicy"];
-        post?: never;
+        /** 로그인 정책 수정 */
+        put: operations["updateLoginPolicy"];
+        /** 로그인 정책 등록 */
+        post: operations["insertLoginPolicy"];
         /** 로그인 정책 삭제 */
         delete: operations["deleteLoginPolicy"];
         options?: never;
@@ -1017,21 +999,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 게시판 상세 조회
-         * @description 특정 게시판의 상세 설정을 조회합니다.
-         */
+        /** 게시판 마스터 상세 조회 */
         get: operations["getBoardMaster"];
-        /**
-         * 게시판 설정 수정
-         * @description 기존 게시판 마스터 설정을 수정합니다.
-         */
+        /** 게시판 마스터 수정 */
         put: operations["updateBoardMaster"];
         post?: never;
-        /**
-         * 게시판 삭제
-         * @description 게시판 마스터를 삭제 처리합니다.
-         */
+        /** 게시판 마스터 삭제 */
         delete: operations["deleteBoardMaster"];
         options?: never;
         head?: never;
@@ -1185,17 +1158,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 업무보고 목록 조회
-         * @description 업무보고 목록을 페이징하여 조회합니다.
-         */
+        /** 작업보고 목록 조회 */
         get: operations["getWorkReportList"];
         put?: never;
-        /**
-         * 업무보고 등록
-         * @description 새로운 업무보고를 등록합니다.
-         */
-        post: operations["registerWorkReport"];
+        /** 작업보고 등록 */
+        post: operations["createWorkReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,16 +1196,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 나의 스크랩 목록 조회
-         * @description 사용자의 스크랩 목록을 페이징하여 조회합니다.
-         */
+        /** 나의 스크랩 목록 조회 */
         get: operations["getMyScrapList"];
         put?: never;
-        /**
-         * 스크랩 등록
-         * @description 새로운 스크랩을 등록합니다.
-         */
+        /** 스크랩 등록 */
         post: operations["createScrap"];
         delete?: never;
         options?: never;
@@ -1577,17 +1538,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * FAQ 목록 조회
-         * @description FAQ 목록을 페이징하여 조회합니다.
-         */
-        get: operations["getFaqs"];
+        /** FAQ 목록 조회 */
+        get: operations["getFaqList"];
         put?: never;
-        /**
-         * FAQ 등록
-         * @description 새로운 FAQ를 등록합니다.
-         */
-        post: operations["insertFaq"];
+        /** FAQ 등록 */
+        post: operations["createFaq"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1645,16 +1600,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 댓글 목록 조회
-         * @description 특정 게시물의 댓글 목록을 조회합니다.
-         */
         get: operations["getComments"];
         put?: never;
-        /**
-         * 댓글 등록
-         * @description 새로운 댓글을 등록합니다.
-         */
         post: operations["createComment"];
         delete?: never;
         options?: never;
@@ -1690,16 +1637,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 게시물 목록 조회
-         * @description 게시판의 게시물 목록을 페이징하여 조회합니다.
+         * 게시글 목록 조회
+         * @description 게시판의 게시글 목록을 조회합니다.
          */
-        get: operations["getBoardList"];
+        get: operations["getBbsList"];
         put?: never;
-        /**
-         * 게시물 등록
-         * @description 새로운 게시물을 등록합니다.
-         */
-        post: operations["createBoard"];
+        /** 게시글 등록 */
+        post: operations["createBbsPost"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2351,16 +2295,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 게시판 목록 조회
-         * @description 시스템에 등록된 전체 게시판 마스터 목록을 조회합니다.
-         */
-        get: operations["getBoardMasters"];
+        /** 게시판 마스터 목록 조회 */
+        get: operations["getBoardMasterList"];
         put?: never;
-        /**
-         * 게시판 생성
-         * @description 새로운 게시판 마스터를 생성합니다.
-         */
+        /** 게시판 마스터 등록 */
         post: operations["createBoardMaster"];
         delete?: never;
         options?: never;
@@ -2844,30 +2782,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/scraps/{scrapId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 스크랩 상세 조회
-         * @description 특정 스크랩의 상세 정보를 조회합니다.
-         */
-        get: operations["getScrap"];
-        put?: never;
-        post?: never;
-        /**
-         * 스크랩 삭제
-         * @description 스크랩을 삭제합니다.
-         */
-        delete: operations["deleteScrap"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3547,6 +3461,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/statistics/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 접속 통계 조회 */
+        get: operations["getConnectStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/statistics/bbs": {
         parameters: {
             query?: never;
@@ -3733,10 +3664,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 로그인 정책 목록 조회
-         * @description 시스템 사용자의 로그인 정책 목록을 페이징 조회합니다.
-         */
+        /** 로그인 정책 목록 조회 */
         get: operations["getLoginPolicyList"];
         put?: never;
         post?: never;
@@ -3758,26 +3686,6 @@ export interface paths {
          * @description 특정 부서 내 사용자들의 권한 할당 상태를 조회합니다.
          */
         get: operations["getDeptAuthorities"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 전체 댓글 목록 조회
-         * @description 시스템 내의 모든 댓글 목록을 조회합니다.
-         */
-        get: operations["getComments_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4114,6 +4022,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 댓글 목록 조회 */
+        get: operations["getComments_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/address-books/search-users": {
         parameters: {
             query?: never;
@@ -4154,7 +4079,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/comments/{id}": {
+    "/api/v1/admin/comments/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4164,10 +4089,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * 댓글 삭제
-         * @description 특정 댓글을 삭제(비활성화) 처리합니다
-         */
+        /** 댓글 삭제 */
         delete: operations["deleteComment_1"];
         options?: never;
         head?: never;
@@ -4179,18 +4101,18 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         WorkReportDto: {
-            rptId?: string;
-            rptTtl?: string;
-            rptCn?: string;
-            rptTypeCd?: string;
-            rptYmd?: string;
-            writerId?: string;
+            reportId?: string;
+            reportSubject?: string;
+            reportContents?: string;
+            reprtSe?: string;
+            wrterId?: string;
+            atchFileId?: string;
             rptSttsCd?: string;
-            sanctnSttus?: string;
-            reportCn?: string;
-            writngBgnde?: string;
-            writngEndde?: string;
-            reportNm?: string;
+            rptYmd?: string;
+            rptTypeCd?: string;
+            reprtId?: string;
+            reprtTtl?: string;
+            reprtCn?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4213,9 +4135,9 @@ export interface components {
             username?: string;
             enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
-            credentialsNonExpired?: boolean;
-            accountNonExpired?: boolean;
             accountNonLocked?: boolean;
+            accountNonExpired?: boolean;
+            credentialsNonExpired?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4224,33 +4146,47 @@ export interface components {
             userId: string;
             userNm: string;
             esntlId?: string;
-            password: string;
-            passwordHint?: string;
-            passwordCnsr?: string;
+            pswd: string;
+            pswdHint?: string;
+            pswdCrans?: string;
             role?: string;
             emplNo?: string;
-            sexdstnCode?: string;
-            brth?: string;
+            gndrCd?: string;
+            brthYmd?: string;
             areaNo?: string;
             homemiddleTelno?: string;
             homeendTelno?: string;
             mberTyCode?: string;
-            fxnum?: string;
+            faxNo?: string;
             insttCode?: string;
             orgnztId?: string;
             groupId?: string;
-            homeadres?: string;
-            detailAdres?: string;
+            homeAddr?: string;
+            daddr?: string;
             zip?: string;
-            offmTelno?: string;
-            moblphonNo?: string;
-            emailAdres?: string;
+            officeTelno?: string;
+            mblTelno?: string;
+            emlAddr?: string;
             ofcpsNm?: string;
             subDn?: string;
             userSe?: string;
-            userSttusCode?: string;
+            userSttsCd?: string;
+            lckYn?: string;
             /** Format: date-time */
             createdDate?: string;
+            password?: string;
+            passwordCnsr?: string;
+            passwordHint?: string;
+            emailAdres?: string;
+            lockAt?: string;
+            fxnum?: string;
+            sexdstnCode?: string;
+            brth?: string;
+            moblphonNo?: string;
+            homeadres?: string;
+            offmTelno?: string;
+            detailAdres?: string;
+            userSttusCode?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4259,26 +4195,52 @@ export interface components {
             /** @description 새 비밀번호 */
             newPassword: string;
         };
+        ScrapDto: {
+            scrapId?: string;
+            bbsId?: string;
+            pstId?: string;
+            scrapNm?: string;
+            scrapUrl?: string;
+            scrapDc?: string;
+            useYn?: string;
+            uniqId?: string;
+            userId?: string;
+            frstRegisterId?: string;
+            /** Format: date-time */
+            frstRegisterPnttm?: string;
+            /** Format: date-time */
+            createdDate?: string;
+            nttId?: string;
+        };
         ScheduleDto: {
             schdlId?: string;
-            schdlSeCd?: string;
-            schdlDeptId?: string;
-            schdlKindCd?: string;
-            schdlBgngYmd?: string;
-            schdlEndYmd?: string;
+            schdulSe?: string;
             schdlTtl?: string;
             schdlCn?: string;
-            schdlPlcNm?: string;
-            schdlIpcrCd?: string;
-            schdlPicId?: string;
+            reptitSeCode?: string;
+            schdlBgngYmd?: string;
+            schdlEndYmd?: string;
+            schdulIpAdres?: string;
+            schdulChargerId?: string;
             atchFileId?: string;
-            reptitSeCd?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             createdDate?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
             modifiedDate?: string;
+            schdlDeptId?: string;
+            schdlKindCd?: string;
+            schdlPlcNm?: string;
+            schdlIpcrCd?: string;
+            schdlPicId?: string;
+            reptitSeCd?: string;
+            schdlSeCd?: string;
+            schdulId?: string;
+            schdulNm?: string;
+            schdulCn?: string;
+            schdulBgnde?: string;
+            schdulEndde?: string;
         };
         /** @description 온라인 설문 항목 DTO */
         OnlinePollItemDto: {
@@ -4300,13 +4262,15 @@ export interface components {
              * @description 생성 일시
              */
             createdDate?: string;
+            pollArtclId?: string;
+            pollArtclNm?: string;
         };
         /** @description 온라인 설문 관리 DTO */
         OnlinePollManageDto: {
             /** @description 설문 ID */
             pollId?: string;
             /** @description 설문 제목 */
-            pollTtl?: string;
+            pollNm?: string;
             /** @description 설문 시작일 */
             pollBgngYmd?: string;
             /** @description 설문 종료일 */
@@ -4326,25 +4290,29 @@ export interface components {
             createdDate?: string;
             /** @description 설문 항목 목록 */
             pollItems?: components["schemas"]["OnlinePollItemDto"][];
+            pollTtl?: string;
+            pollBeginDe?: string;
+            pollKindCode?: string;
+            pollEndDe?: string;
         };
         /** @description 메모보고 정보 */
         MemoReportDto: {
             /** @description 보고아이디 */
-            rptId?: string;
+            reportId?: string;
             /** @description 보고제목 */
-            rptTtl?: string;
+            reportSubject?: string;
             /** @description 보고일자 */
-            rptYmd?: string;
+            reprtDe?: string;
             /** @description 작성자아이디 */
             writerId?: string;
             /** @description 작성자명 */
             wrterNm?: string;
             /** @description 보고대상자아이디 */
-            rptUserId?: string;
+            reportrId?: string;
             /** @description 보고대상자명 */
             reportrNm?: string;
             /** @description 보고내용 */
-            rptCn?: string;
+            reportContents?: string;
             /** @description 첨부파일아이디 */
             atchFileId?: string;
             /** @description 지시사항내용 */
@@ -4352,20 +4320,22 @@ export interface components {
             /** @description 지시사항등록일시 */
             instrRegDt?: string;
             /** @description 보고대상자조회일시 */
-            rptInqDt?: string;
+            reportrInqireDt?: string;
             /**
              * Format: date-time
              * @description 생성일시
              */
             createdDate?: string;
             frstRegisterId?: string;
-            /** Format: date-time */
-            frstRegistPnttm?: string;
-            recptnId?: string;
-            recptnNm?: string;
-            readAt?: string;
-            reprtDe?: string;
+            rptUserId?: string;
+            reprtTtl?: string;
+            rptYmd?: string;
+            rptTtl?: string;
             reprtCn?: string;
+            reprtId?: string;
+            rptId?: string;
+            rptCn?: string;
+            rptInqDt?: string;
         };
         /** @description Description */
         MainImageDto: {
@@ -4389,44 +4359,37 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description 리더 일정 정보 */
+        /** @description 간부일정 정보 */
         LeaderScheduleDto: {
             /** @description 일정아이디 */
             schdlId?: string;
-            /** @description 일정구분 */
-            schdlSeCd?: string;
-            /** @description 일정명 */
+            /** @description 간부아이디 */
+            leaderId?: string;
+            /** @description 간부명 */
+            leaderNm?: string;
+            /** @description 일정제목 */
             schdlTtl?: string;
             /** @description 일정내용 */
             schdlCn?: string;
-            /** @description 일정장소 */
-            schdlPlcNm?: string;
-            /** @description 리더아이디 */
-            leaderId?: string;
-            /** @description 리더명 */
-            leaderName?: string;
-            /** @description 반복구분코드 */
-            reptitSeCd?: string;
-            /** @description 일정중요도코드 */
-            schdlIpcrCd?: string;
-            /** @description 시작일자 */
-            bgngYmd?: string;
-            /** @description 종료일자 */
-            endYmd?: string;
-            /** @description 담당자아이디 */
-            schdlPicId?: string;
-            /** @description 담당자명 */
-            chargerName?: string;
-            /** @description 생성자아이디 */
-            createdBy?: string;
+            /** @description 일정시작일시 */
+            schdlBgngYmd?: string;
+            /** @description 일정종료일시 */
+            schdlEndYmd?: string;
             /**
              * Format: date-time
-             * @description 생성일시
+             * @description 등록일시
              */
             createdDate?: string;
-            repeatYn?: string;
-            importanceCode?: string;
-            scheduleType?: string;
+            endYmd?: string;
+            bgngYmd?: string;
+            reptitSeCd?: string;
+            schdlIpcrCd?: string;
+            schdlSeCd?: string;
+            schdlPicId?: string;
+            schdlPlcNm?: string;
+            schdulNm?: string;
+            schdulCn?: string;
+            scheduleId?: string;
         };
         /** @description 비정형 결재 DTO */
         InformalSanctionDto: {
@@ -4464,10 +4427,10 @@ export interface components {
              * @description 등록 일시
              */
             createdDate?: string;
-            reqstDe?: string;
+            sancltNm?: string;
             applcntId?: string;
             infrmlSanctnId?: string;
-            sancltNm?: string;
+            reqstDe?: string;
         };
         /** @description Description */
         OnlineManualDto: {
@@ -4488,9 +4451,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-            mnlNm?: string;
             mnlDc?: string;
             mnlId?: string;
+            mnlNm?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -4510,41 +4473,42 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description Description */
+        /** @description FAQ 정보 */
         FaqDto: {
             /** @description FAQ ID */
             faqId?: string;
-            /** @description Description */
-            qestnSj?: string;
-            /** @description Description */
+            /** @description 질문제목 */
+            qestnTtl?: string;
+            /** @description 질문내용 */
             qestnCn?: string;
-            /** @description Description */
+            /** @description 답변내용 */
             answerCn?: string;
             /**
              * Format: int32
-             * @description Description
+             * @description 조회수
              */
             inqireCo?: number;
-            /** @description Description */
+            /** @description 첨부파일 ID */
             atchFileId?: string;
-            /** @description Description */
+            /** @description 등록자 ID */
             frstRegisterId?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 등록일시
              */
             frstRegisterPnttm?: string;
-            /** @description Description */
+            /** @description 수정자 ID */
             lastUpdusrId?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 수정일시
              */
             lastUpdusrPnttm?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
+            qestnSj?: string;
         };
         DeptJobBoxDto: {
             deptJobbxId?: string;
@@ -4560,12 +4524,16 @@ export interface components {
             /** Format: date-time */
             lastUpdtPnttm?: string;
         };
-        CommentSaveRequest: {
+        CommentDto: {
             /** Format: int64 */
-            pstId: number;
-            bbsId: string;
-            cmntCn: string;
+            commentNo?: number;
+            pstId?: string;
+            bbsId?: string;
+            writerId?: string;
+            writerNm?: string;
             password?: string;
+            commentCn?: string;
+            createdDate?: string;
         };
         /** @description Board Post Save Request */
         BoardSaveRequest: {
@@ -4576,29 +4544,27 @@ export interface components {
             /** @description Post Content */
             pstCn: string;
             /** @description Notice Start Date */
-            ntceBgnyYmd?: string;
+            bgngYmd?: string;
             /** @description Notice End Date */
-            ntceEndYmd?: string;
+            endYmd?: string;
             /** @description Attached File ID */
             atchFileId?: string;
-            /** @description Notice Flag (Y/N) */
-            noticeYn?: string;
             /** @description Event Date (ISO-8601) */
             eventDate?: string;
             /** @description Q&A Status (OPEN/SOLVED) */
-            qnaStatus?: string;
+            qnaSttsCd?: string;
             /** @description Q&A Category */
-            qnaCategory?: string;
+            qnaCatCd?: string;
             /** @description Secret Flag (Y/N) */
             secretYn?: string;
             /** @description Use Flag (Y/N) */
             useYn?: string;
             /** @description Author ID */
-            ntcrId?: string;
+            userId?: string;
             /** @description Author Name */
-            ntcrNm?: string;
+            userNm?: string;
             /** @description Post Password */
-            password?: string;
+            pswd?: string;
         };
         MyPageContentDto: {
             cntntsId?: string;
@@ -4609,8 +4575,9 @@ export interface components {
             cntntsDc?: string;
         };
         UserAbsenceDto: {
-            emplyrId?: string;
+            userId?: string;
             userAbsnceAt?: string;
+            emplyrId?: string;
         };
         /** @description 설문항목 DTO */
         QustnrIemDto: {
@@ -4747,15 +4714,9 @@ export interface components {
             popupHeightSize?: string;
             /** @description 팝업 너비 크기 */
             popupWidthSize?: string;
-            /**
-             * Format: date
-             * @description 게시 시작일
-             */
+            /** @description 게시 시작일 */
             noticeBeginDate?: string;
-            /**
-             * Format: date
-             * @description 게시 종료일
-             */
+            /** @description 게시 종료일 */
             noticeEndDate?: string;
             /** @description 그만보기 여부 */
             isStopView?: string;
@@ -4771,14 +4732,14 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
-            ntceEndde?: string;
             popupWlc?: string;
-            popupTitleNm?: string;
-            popupWSize?: string;
             popupHlc?: string;
             popupHSize?: string;
+            popupWSize?: string;
             stopVewAt?: string;
+            popupTitleNm?: string;
             ntceBgnde?: string;
+            ntceEndde?: string;
             ntceAt?: string;
         };
         /** @description 메뉴 정보 DTO */
@@ -4810,7 +4771,7 @@ export interface components {
              * @description 상위 메뉴 번호
              * @example 0
              */
-            upperMenuNo?: number;
+            upperMenuSn?: number;
             /**
              * Format: int64
              * @description 상위 메뉴 ID
@@ -4832,7 +4793,7 @@ export interface components {
              * @description 메뉴 설명
              * @example 시스템 전반을 관리하는 최상위 메뉴
              */
-            menuDc?: string;
+            menuExpln?: string;
             /**
              * @description 관련 이미지 경로
              * @example /images/menu/
@@ -4857,19 +4818,26 @@ export interface components {
             children?: components["schemas"]["MenuDto"][];
         };
         LoginPolicyDto: {
-            emplyrId?: string;
-            emplyrNm?: string;
-            ipInfo?: string;
-            dplctPermAt?: string;
-            lmttAt?: string;
-            startTime?: string;
-            endTime?: string;
-            otpEnabledAt?: string;
+            userId?: string;
+            userNm?: string;
+            ipAddr?: string;
+            dpcnPrmYn?: string;
+            lmtYn?: string;
+            bgngTm?: string;
+            endTm?: string;
+            otpUseYn?: string;
             regYn?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
+            startTime?: string;
+            otpEnabledAt?: string;
+            dplctPermAt?: string;
+            emplyrId?: string;
+            lmttAt?: string;
+            ipInfo?: string;
+            endTime?: string;
             ipAdres?: string;
-            lastUpdtPntTM?: string;
+            emplyrNm?: string;
             dplctLoginAt?: string;
         };
         InternetSvcGuidanceDto: {
@@ -4916,7 +4884,7 @@ export interface components {
             /** @description Detail Code Description */
             codeDc?: string;
             /** @description Use Y/N */
-            useAt?: string;
+            useYn?: string;
             /** @description First Register ID */
             frstRegisterId?: string;
             /** @description Last Updater ID */
@@ -4935,7 +4903,7 @@ export interface components {
             /** @description Classification Code Name */
             clCodeNm?: string;
             /** @description Use Y/N */
-            useAt?: string;
+            useYn?: string;
             /** @description First Register ID */
             frstRegisterId?: string;
             /** @description Last Updater ID */
@@ -4950,7 +4918,7 @@ export interface components {
             /** @description Classification Code Description */
             clCodeDc?: string;
             /** @description Use Y/N */
-            useAt?: string;
+            useYn?: string;
             /** @description First Register ID */
             frstRegisterId?: string;
             /** @description Last Updater ID */
@@ -4961,7 +4929,7 @@ export interface components {
             administZoneSe?: string;
             administZoneNm?: string;
             upperAdministZoneCode?: string;
-            useAt?: string;
+            useYn?: string;
             creatDe?: string;
             ablDe?: string;
             createdBy?: string;
@@ -4974,10 +4942,10 @@ export interface components {
         BoardMasterDto: {
             bbsId?: string;
             bbsTtl?: string;
-            bbsIntroCn?: string;
+            bbsExpln?: string;
             bbsTypeCd?: string;
-            bbsAttrCd?: string;
-            replyPsblYn?: string;
+            bbsAtrbCd?: string;
+            ansPsblYn?: string;
             fileAtchPsblYn?: string;
             /** Format: int32 */
             atchPsblFileCnt?: number;
@@ -4998,33 +4966,44 @@ export interface components {
             stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
+            useAt?: string;
+            bbsAttrCd?: string;
+            replyPsblYn?: string;
+            tmpltId?: string;
+            bbsTyCode?: string;
+            fileAtchPosblAt?: string;
+            bbsIntrcn?: string;
+            bbsAttrbCode?: string;
+            replyPosblAt?: string;
+            bbsNm?: string;
+            bbsIntroCn?: string;
         };
-        /** @description Description */
+        /** @description 배너 정보 */
         BannerDto: {
-            /** @description Description */
+            /** @description 배너 ID */
             bannerId?: string;
-            /** @description Description */
+            /** @description 배너 명칭 */
             bannerNm?: string;
-            /** @description Description */
+            /** @description 링크 URL */
             linkUrl?: string;
-            /** @description Description */
+            /** @description 배너 이미지 경로 */
             bannerImage?: string;
-            /** @description Description */
+            /** @description 배너 설명 */
             bannerDc?: string;
             /**
              * Format: int32
-             * @description Description
+             * @description 정렬 순서
              */
             sortOrdr?: number;
-            /** @description Description */
+            /** @description 반영 여부 */
             reflctAt?: string;
-            /** @description Description */
+            /** @description 배너 이미지 파일 ID */
             bannerImageFile?: string;
-            /** @description Description */
+            /** @description 생성자 ID */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 생성 일시
              */
             createdDate?: string;
         };
@@ -5075,7 +5054,7 @@ export interface components {
             adbkNm: string;
             othbcScope: string;
             trgetOrgnztId?: string;
-            useAt?: string;
+            useYn?: string;
             wrterId?: string;
             adbkMan?: components["schemas"]["AddressBookUserDto"][];
             frstRegisterId?: string;
@@ -5084,6 +5063,7 @@ export interface components {
             lastUpdusrId?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
+            useAt?: string;
             /** Format: date-time */
             createdDate?: string;
             nameCards?: components["schemas"]["AddressBookUserDto"][];
@@ -5091,13 +5071,14 @@ export interface components {
         AddressBookUserDto: {
             adbkUserId?: string;
             adbkId?: string;
-            emplyrId?: string;
-            nm?: string;
-            emailAdres?: string;
+            userId?: string;
+            userNm?: string;
+            emlAddr?: string;
             homeTelno?: string;
-            moblphonNo?: string;
-            offmTelno?: string;
-            fxnum?: string;
+            mblTelno?: string;
+            officeTelno?: string;
+            faxNo?: string;
+            nm?: string;
         };
         /** @description 회원가입 요청 DTO */
         UserSignupRequest: {
@@ -5110,18 +5091,21 @@ export interface components {
              * @description 비밀번호
              * @example password123!
              */
-            password: string;
+            pswd: string;
             /**
              * @description 사용자 이름
              * @example 홍길동
              */
             userNm: string;
             /** @description 비밀번호 힌트 */
-            passwordHint?: string;
+            pswdHint?: string;
             /** @description 비밀번호 정답 */
-            passwordCnsr?: string;
+            pswdCrans?: string;
             /** @description 사용자 역할 */
             role?: string;
+            password?: string;
+            passwordCnsr?: string;
+            passwordHint?: string;
         };
         ApiResponseUserResponse: {
             success?: boolean;
@@ -5141,22 +5125,6 @@ export interface components {
             userNm?: string;
             /** @description 사용자 역할 */
             role?: string;
-        };
-        ScrapDto: {
-            scrapId?: string;
-            bbsId?: string;
-            /** Format: int64 */
-            pstId?: number;
-            scrapNm?: string;
-            scrapUrl?: string;
-            scrapDc?: string;
-            useYn?: string;
-            uniqId?: string;
-            frstRegisterId?: string;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
-            /** Format: date-time */
-            createdDate?: string;
         };
         ApiResponseString: {
             success?: boolean;
@@ -5195,9 +5163,9 @@ export interface components {
             /** @description 첨부 파일 ID */
             atchFileId?: string;
             /** @description 쪽지 발신 ID */
-            noteTrnsmitId?: string;
+            noteDsptchId?: string;
             /** @description 발신자 ID */
-            trnsmiterId?: string;
+            dsptchUserId?: string;
             /** @description 발신자 명 */
             trnsmiterNm?: string;
             /** @description 쪽지 수신 ID */
@@ -5215,12 +5183,17 @@ export interface components {
              * @description 등록 일시
              */
             regDate?: string;
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
+            frstRegisterPnttm?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
-            trnsmitterId?: string;
-            trnsmitterNm?: string;
             /** Format: date-time */
             sendDt?: string;
+            trnsmitterId?: string;
+            trnsmitterNm?: string;
         };
         /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
@@ -5321,23 +5294,23 @@ export interface components {
             tmplatNm?: string;
             tmplatSeCode?: string;
             tmplatCours?: string;
-            useAt?: string;
+            useYn?: string;
             /** Format: date-time */
             createdDate?: string;
             /** Format: date-time */
             lastModifiedDate?: string;
             createdBy?: string;
             lastModifiedBy?: string;
-            lastUpdusrId?: string;
             frstRegisterId?: string;
+            lastUpdusrId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
+            /** Format: date-time */
+            lastUpdusrPnttm?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
-            /** Format: date-time */
-            lastUpdusrPnttm?: string;
         };
         /** @description 부서별 권한 일괄 할당 요청 */
         DeptAuthorBatchRequest: {
@@ -5358,6 +5331,40 @@ export interface components {
             allMembers?: boolean;
             /** @description allMembers가 false인 경우 적용할 사용자 ID 목록 */
             userIds?: string[];
+        };
+        InstitutionCodeRecptnDto: {
+            ocrnYmd?: string;
+            insttCode?: string;
+            /** Format: int64 */
+            opertSn?: number;
+            changeSeCode?: string;
+            processSe?: string;
+            etcCode?: string;
+            allInsttNm?: string;
+            lowestInsttNm?: string;
+            insttAbrvNm?: string;
+            odr?: string;
+            ord?: string;
+            insttOdr?: string;
+            bestInsttCode?: string;
+            upperInsttCode?: string;
+            reprsntInsttCode?: string;
+            insttTyLclas?: string;
+            insttTyMclas?: string;
+            insttTySclas?: string;
+            telno?: string;
+            fxnum?: string;
+            creatDe?: string;
+            ablDe?: string;
+            ablEnnc?: string;
+            changede?: string;
+            changeTime?: string;
+            bsisDe?: string;
+            /** Format: int32 */
+            sortOrdr?: number;
+            /** Format: date-time */
+            frstRegisterPnttm?: string;
+            frstRegisterId?: string;
         };
         /** @description Consultation Management DTO */
         CnsltManageDto: {
@@ -5422,9 +5429,9 @@ export interface components {
             searchCondition?: string;
             /** @description 검색어 */
             searchWrd?: string;
-            frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
+            frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
@@ -5520,12 +5527,26 @@ export interface components {
             userIds: string[];
             orgnztId: string;
         };
-        Pageable: {
+        BaseSearchDto: {
+            searchCondition?: string;
+            searchKeyword?: string;
+            searchUseYn?: string;
             /** Format: int32 */
-            page?: number;
+            pageIndex?: number;
             /** Format: int32 */
-            size?: number;
-            sort?: string[];
+            pageUnit?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            /** Format: int32 */
+            firstIndex?: number;
+            /** Format: int32 */
+            lastIndex?: number;
+            /** Format: int32 */
+            recordCountPerPage?: number;
+            searchKeywordFrom?: string;
+            searchKeywordTo?: string;
+            searchBgnDe?: string;
+            searchEndDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
@@ -5669,6 +5690,13 @@ export interface components {
             data?: components["schemas"]["PopupDto"][];
             /** Format: date-time */
             timestamp?: string;
+        };
+        Pageable: {
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            sort?: string[];
         };
         ApiResponsePageResponseOnlinePollManageDto: {
             success?: boolean;
@@ -6144,21 +6172,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        CommentDto: {
-            /** Format: int64 */
-            id?: number;
-            /** Format: int64 */
-            pstId?: number;
-            bbsId?: string;
-            writerId?: string;
-            writerNm?: string;
-            cmntCn?: string;
-            useYn?: string;
-            /** Format: date-time */
-            createdDate?: string;
-            /** Format: date-time */
-            modifiedDate?: string;
-        };
         PageResponseCommentDto: {
             list?: components["schemas"]["CommentDto"][];
             /** Format: int64 */
@@ -6180,134 +6193,127 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        /** @description 게시물 정보 DTO */
         BoardDto: {
-            /**
-             * Format: int64
-             * @description 게시물 ID
-             * @example 1001
-             */
-            pstId?: number;
-            /**
-             * @description 게시판 ID
-             * @example BBS_000000000001
-             */
+            /** @description 게시글 ID */
+            pstId?: string;
+            /** @description 게시판 ID */
             bbsId?: string;
-            /** @description 게시물 제목 */
-            pstTtl?: string;
-            /** @description 게시물 내용 */
-            pstCn?: string;
-            /** @description 작성자 이름 */
-            ntcrNm?: string;
-            /**
-             * Format: int32
-             * @description 조회수
-             */
-            inqireCo?: number;
-            /**
-             * Format: int32
-             * @description 추천수
-             */
-            likeCo?: number;
-            /**
-             * Format: date-time
-             * @description 최초 등록 일시
-             */
-            frstRegisterPnttm?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
             /**
              * Format: int64
-             * @description 게시물 번호
+             * @description 답글 번호
              */
             pstSn?: number;
+            /** @description 제목 */
+            pstTtl?: string;
+            /** @description 내용 */
+            pstCn?: string;
+            /** @description 상위 게시글 ID */
+            upPstId?: string;
             /**
              * Format: int64
              * @description 정렬 순서
              */
             sortOrdr?: number;
-            /** @description 부모 게시물 번호 (답글용) */
-            parnts?: string;
-            /**
-             * @description 답글 여부
-             * @example N
-             */
-            replyYn?: string;
+            /** @description 제목 굵게 표시 여부 */
+            ttlBoldYn?: string;
             /**
              * Format: int32
-             * @description 답글 레벨
+             * @description 조회수
              */
-            replyLc?: number;
-            /** @description 게시 시작일 */
-            ntceBgnyYmd?: string;
-            /** @description 게시 종료일 */
-            ntceEndYmd?: string;
-            /**
-             * @description 사용 여부
-             * @example Y
-             */
+            inqCnt?: number;
+            /** @description 사용 여부 */
             useYn?: string;
-            /**
-             * @description 만료 여부
-             * @example N
-             */
-            isExpired?: string;
-            /** @description 최초 등록일 (문자열) */
-            frstRegisterPnttmStr?: string;
+            /** @description 게시 시작일 */
+            bgngYmd?: string;
+            /** @description 게시 종료일 */
+            endYmd?: string;
             /** @description 작성자 ID */
-            ntcrId?: string;
-            /** @description 최초 등록자 ID */
-            frstRegisterId?: string;
-            /** @description 최종 수정자 ID */
-            lastUpdusrId?: string;
-            /**
-             * Format: date-time
-             * @description 최종 수정 일시
-             */
-            lastUpdtPnttm?: string;
-            /** @description 비밀 게시글 여부 */
+            userId?: string;
+            /** @description 작성자명 */
+            userNm?: string;
+            /** @description 비밀번호 */
+            pswd?: string;
+            /** @description 첨부파일 ID */
+            atchFileId?: string;
+            /** @description 비밀글 여부 */
             secretYn?: string;
-            /** @description 블로그 게시글 여부 */
-            blogYn?: string;
-            /**
-             * Format: int32
-             * @description 댓글 수
-             */
-            commentCo?: number;
-            /** @description 게시판 명 */
-            bbsTtl?: string;
+            /** @description 블로그 ID */
+            blogId?: string;
             /**
              * Format: date-time
-             * @description 행사 일시
+             * @description 행사일
              */
             eventDate?: string;
-            /**
-             * @description QNA 상태
-             * @example OPEN
-             */
-            qnaStatus?: string;
+            /** @description QNA 상태 */
+            qnaSttsCd?: string;
             /** @description QNA 카테고리 */
-            qnaCategory?: string;
-            /** @description 공지사항 여부 */
-            noticeYn?: string;
-            /** @description 별칭 ID (레거시 호환) */
+            qnaCatCd?: string;
+            /**
+             * Format: int32
+             * @description 좋아요수
+             */
+            likeCnt?: number;
+            /**
+             * Format: int32
+             * @description 댓글수
+             */
+            commentCnt?: number;
+            /**
+             * Format: int32
+             * @description 파일수
+             */
+            fileCnt?: number;
+            /**
+             * Format: date-time
+             * @description 등록일시
+             */
+            frstRegisterPnttm?: string;
+            /** @description 등록자명 */
+            frstRegisterNm?: string;
+            /**
+             * Format: int32
+             * @description 답글 단계
+             */
+            replyLc?: number;
             knoId?: string;
-            /** @description 별칭 제목 (레거시 호환) */
             knoNm?: string;
-            /** @description 별칭 내용 (레거시 호환) */
             knoCn?: string;
-            /** @description 별칭 상태코드 (레거시 호환) */
             statusCd?: string;
-            /** @description 별칭 카테고리코드 (레거시 호환) */
             categoryCd?: string;
-            /** @description 행사 일시 (문자열) */
+            frstRegisterPnttmStr?: string;
+            frstRegisterId?: string;
+            /** Format: date-time */
+            lastUpdtPnttm?: string;
+            blogYn?: string;
             eventDateStr?: string;
-            /** Format: int64 */
-            nttId?: number;
+            isExpired?: string;
+            bbsTtl?: string;
+            id?: string;
+            password?: string;
+            useAt?: string;
             /** Format: date-time */
             createdDate?: string;
-            frstRegisterNm?: string;
-            commentCoLegacy?: string;
+            qnaStatus?: string;
+            qnaCategory?: string;
+            /** Format: int32 */
+            inqireCo?: number;
+            nttCn?: string;
+            /** Format: int64 */
+            nttNo?: number;
+            nttSj?: string;
+            ntcrNm?: string;
+            nttId?: string;
+            ntcrId?: string;
+            /** Format: int32 */
+            likeCo?: number;
+            parnts?: string;
+            ntceBgngYmd?: string;
+            ntceEndYmd?: string;
+            sjBoldYn?: string;
+            /** Format: int32 */
+            fileCo?: number;
+            /** Format: int32 */
+            commentCo?: number;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -6390,25 +6396,6 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
-        };
-        BaseSearchDto: {
-            searchCondition?: string;
-            searchKeyword?: string;
-            searchUseYn?: string;
-            /** Format: int32 */
-            pageIndex?: number;
-            /** Format: int32 */
-            pageUnit?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
-            firstIndex?: number;
-            /** Format: int32 */
-            lastIndex?: number;
-            /** Format: int32 */
-            recordCountPerPage?: number;
-            searchKeywordFrom?: string;
-            searchKeywordTo?: string;
         };
         ApiResponsePageResponseAuthorGroupProjection: {
             success?: boolean;
@@ -6844,15 +6831,19 @@ export interface components {
             totalPage?: number;
         };
         SysLogDto: {
-            requstId?: string;
+            dmndId?: string;
             srvcNm?: string;
             methodNm?: string;
-            processSeCode?: string;
-            processTime?: string;
-            rqesterId?: string;
+            prcsSeCd?: string;
+            prcsTm?: string;
+            dmndUserId?: string;
             rqesterIp?: string;
+            ocrnYmd?: string;
+            processTime?: string;
+            requstId?: string;
+            processSeCode?: string;
+            rqesterId?: string;
             occrrncDe?: string;
-            occcrrncDe?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -6883,6 +6874,7 @@ export interface components {
             errorCode?: string;
             creatDt?: string;
             loginDt?: string;
+            occrrncDe?: string;
             errorOccrrAt?: string;
         };
         PageResponseLoginLogDto: {
@@ -7089,6 +7081,11 @@ export interface components {
             creatDe?: string;
             ablDe?: string;
             ablEnnc?: string;
+            changede?: string;
+            changeTime?: string;
+            bsisDe?: string;
+            /** Format: int32 */
+            sortOrdr?: number;
         };
         PageResponseInstitutionCodeDto: {
             list?: components["schemas"]["InstitutionCodeDto"][];
@@ -7120,25 +7117,6 @@ export interface components {
             data?: components["schemas"]["PageResponseInstitutionCodeRecptnDto"];
             /** Format: date-time */
             timestamp?: string;
-        };
-        InstitutionCodeRecptnDto: {
-            occrrncDe?: string;
-            insttCode?: string;
-            /** Format: int64 */
-            opertSn?: number;
-            changeSeCode?: string;
-            processSe?: string;
-            etcCode?: string;
-            allInsttNm?: string;
-            lowestInsttNm?: string;
-            telno?: string;
-            fxnum?: string;
-            creatDe?: string;
-            ablDe?: string;
-            ablEnnc?: string;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
-            frstRegisterId?: string;
         };
         PageResponseInstitutionCodeRecptnDto: {
             list?: components["schemas"]["InstitutionCodeRecptnDto"][];
@@ -7504,7 +7482,7 @@ export interface components {
             /** Format: int64 */
             fileMg?: number;
             fileCn?: string;
-            creatDt?: string;
+            createdDate?: string;
         };
         ApiResponsePageResponseEventInfoDto: {
             success?: boolean;
@@ -7613,8 +7591,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 보고 ID */
-                rptId: string;
+                reportId: string;
             };
             cookie?: never;
         };
@@ -7636,7 +7613,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                reportId: string;
             };
             cookie?: never;
         };
@@ -7662,7 +7639,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                reportId: string;
             };
             cookie?: never;
         };
@@ -7741,6 +7718,76 @@ export interface operations {
                 "application/json": components["schemas"]["PasswordChangeRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getScrap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scrapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseScrapDto"];
+                };
+            };
+        };
+    };
+    updateScrap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scrapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScrapDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteScrap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scrapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -8400,7 +8447,6 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description FAQ ID */
                 faqId: string;
             };
             cookie?: never;
@@ -8545,14 +8591,13 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ID */
-                id: number;
+                commentNo: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommentSaveRequest"];
+                "application/json": components["schemas"]["CommentDto"];
             };
         };
         responses: {
@@ -8572,8 +8617,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ID */
-                id: number;
+                commentNo: number;
             };
             cookie?: never;
         };
@@ -8604,7 +8648,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: number;
+                pstId: string;
             };
             cookie?: never;
         };
@@ -8626,8 +8670,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBS_000000000001
+                 */
                 bbsId: string;
-                pstId: number;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
+                pstId: string;
             };
             cookie?: never;
         };
@@ -8662,7 +8714,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: number;
+                pstId: string;
             };
             cookie?: never;
         };
@@ -8679,13 +8731,13 @@ export interface operations {
             };
         };
     };
-    getBoardDetail: {
+    getBbsDetail: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 bbsId: string;
-                pstId: number;
+                pstId: string;
             };
             cookie?: never;
         };
@@ -8702,13 +8754,13 @@ export interface operations {
             };
         };
     };
-    updateBoard: {
+    updateBbsPost: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 bbsId: string;
-                pstId: number;
+                pstId: string;
             };
             cookie?: never;
         };
@@ -8732,13 +8784,13 @@ export interface operations {
             };
         };
     };
-    deleteBoard: {
+    deleteBbsPost: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 bbsId: string;
-                pstId: number;
+                pstId: string;
             };
             cookie?: never;
         };
@@ -9787,7 +9839,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                emplyrId: string;
+                userId: string;
             };
             cookie?: never;
         };
@@ -9804,12 +9856,38 @@ export interface operations {
             };
         };
     };
-    saveLoginPolicy: {
+    updateLoginPolicy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                emplyrId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginPolicyDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    insertLoginPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
             };
             cookie?: never;
         };
@@ -9835,7 +9913,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                emplyrId: string;
+                userId: string;
             };
             cookie?: never;
         };
@@ -10397,9 +10475,7 @@ export interface operations {
     };
     deleteBoardMaster: {
         parameters: {
-            query: {
-                userId: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 bbsId: string;
@@ -10783,8 +10859,7 @@ export interface operations {
     getWorkReportList: {
         parameters: {
             query: {
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -10803,7 +10878,7 @@ export interface operations {
             };
         };
     };
-    registerWorkReport: {
+    createWorkReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -10893,7 +10968,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11494,11 +11569,10 @@ export interface operations {
             };
         };
     };
-    getFaqs: {
+    getFaqList: {
         parameters: {
             query: {
-                keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11517,7 +11591,7 @@ export interface operations {
             };
         };
     };
-    insertFaq: {
+    createFaq: {
         parameters: {
             query?: never;
             header?: never;
@@ -11617,7 +11691,7 @@ export interface operations {
     getComments: {
         parameters: {
             query: {
-                pstId: number;
+                pstId: string;
                 bbsId: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -11647,7 +11721,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommentSaveRequest"];
+                "application/json": components["schemas"]["CommentDto"];
             };
         };
         responses: {
@@ -11681,18 +11755,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLong"];
+                    "*/*": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
-    getBoardList: {
+    getBbsList: {
         parameters: {
-            query?: {
-                page?: number;
-                size?: number;
+            query: {
                 searchCnd?: string;
                 searchWrd?: string;
+                pageable: components["schemas"]["Pageable"];
             };
             header?: never;
             path: {
@@ -11713,7 +11786,7 @@ export interface operations {
             };
         };
     };
-    createBoard: {
+    createBbsPost: {
         parameters: {
             query?: never;
             header?: never;
@@ -11737,7 +11810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLong"];
+                    "*/*": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12894,16 +12967,16 @@ export interface operations {
     };
     processInstitutionCodeRecptn: {
         parameters: {
-            query: {
-                occrrncDe: string;
-                insttCode: string;
-                opertSn: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstitutionCodeRecptnDto"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -13147,12 +13220,10 @@ export interface operations {
             };
         };
     };
-    getBoardMasters: {
+    getBoardMasterList: {
         parameters: {
             query: {
-                searchCnd?: string;
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13835,8 +13906,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBS_000000000001
+                 */
                 bbsId: string;
-                pstId: number;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
+                pstId: string;
             };
             cookie?: never;
         };
@@ -13995,50 +14074,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseBoolean"];
-                };
-            };
-        };
-    };
-    getScrap: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                scrapId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseScrapDto"];
-                };
-            };
-        };
-    };
-    deleteScrap: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                scrapId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14879,6 +14914,30 @@ export interface operations {
             };
         };
     };
+    getConnectStats: {
+        parameters: {
+            query?: {
+                fromDate?: string;
+                toDate?: string;
+                statsKind?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                };
+            };
+        };
+    };
     getBbsStats: {
         parameters: {
             query?: {
@@ -15142,29 +15201,6 @@ export interface operations {
             };
         };
     };
-    getComments_1: {
-        parameters: {
-            query?: {
-                pageIndex?: number;
-                searchKeyword?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommentDto"];
-                };
-            };
-        };
-    };
     getInstitutionCodeList: {
         parameters: {
             query: {
@@ -15213,7 +15249,6 @@ export interface operations {
         parameters: {
             query: {
                 searchDto: components["schemas"]["BaseSearchDto"];
-                processSe?: string;
             };
             header?: never;
             path?: never;
@@ -15538,6 +15573,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListCommunityDto"];
+                };
+            };
+        };
+    };
+    getComments_1: {
+        parameters: {
+            query: {
+                searchKeyword?: string;
+                bbsId?: string;
+                pstId?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCommentDto"];
                 };
             };
         };
