@@ -867,25 +867,24 @@
     /* Architecture Visual Flow Styles */
     .arch-flow-container {
       display: flex;
+      flex-wrap: wrap; /* 화면 너비에 맞추어 유연하게 줄바꿈 */
+      justify-content: center; /* 중앙 정렬로 균형감 확보 */
       align-items: center;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding: 1.5rem 0.85rem;
-      background: rgba(0, 0, 0, 0.2);
+      gap: 0.85rem 0.5rem; /* 행간 격차 및 열간 격차 최적화 */
+      padding: 1.5rem 1.1rem;
+      background: rgba(0, 0, 0, 0.25);
       border-radius: 14px;
       border: 1px solid var(--border-color);
       margin-top: 1rem;
-      scrollbar-width: thin;
     }
     
     .arch-flow-node {
-      flex: 1;
-      min-width: 155px;
+      flex: 0 1 150px; /* 고정 크기 모델링으로 격자 정렬 유지 */
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 1.1rem 0.75rem;
+      padding: 0.95rem 0.65rem; /* 더 콤팩트한 패딩 */
       text-align: center;
       box-shadow: var(--shadow-main);
       transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
@@ -1338,6 +1337,7 @@
             <option value="preset-auth">L1 401 Unauthorized 인증 실패 디버깅 & JWT-쿠키 브릿지 복구</option>
             <option value="preset-ui">L1 댓글 위젯 글래스모피즘 에스테틱 UI 빌드 & Tailwind Token 검증</option>
             <option value="preset-guardrail-auth">L2 Controller PreAuthorize 권한 어노테이션 누락 검출 & Hard-Stop</option>
+            <option value="preset-mapping-refactor">L2 기초/인증 도메인 6대 핵심 엔티티 & DTO ➔ FE UI 4단계 거울 동기화 실증</option>
           </select>
           <button class="sim-btn" onclick="startWorkflowSimulation()">
             ▶ Run Live Simulator
@@ -1618,7 +1618,9 @@
       { layer: "DB 메타 단어", example: "<code>BBS</code>(게시판), <code>RDCNT</code>(조회수)", spec: "표준 단어 사전 <code>meta_standard_words</code>에 공식 등록된 약어", audit: "비표준 단어나 임의로 축약한 단어는 마이그레이션 빌드 차단", badge: "cyan" },
       { layer: "DB 메타 도메인", example: "<code>RDCNT_DOM</code> ➔ <code>NUMERIC(10)</code>", spec: "도메인 사전 <code>meta_standard_domains</code>에 바인딩된 속성", audit: "모든 조회수 컬럼은 반드시 해당 도메인 사양과 100% 데이터 타입 일치", badge: "primary" },
       { layer: "Backend JPA Entity", example: "<code>@Column(name = \"bbs_rdcnt\", precision = 10)</code>", spec: "Spring Boot JPA 컬럼 어노테이션에 정밀도 및 명칭 매핑", audit: "OpenAPI 스펙 생성 시 <code>type: number, minimum: 0</code> 자동 바인딩", badge: "success" },
-      { layer: "Frontend Zod Schema", example: "<code>bbsRdcnt: z.number().int().nonnegative()</code>", spec: "Next.js 폼 검증을 위한 Zod Schema 1:1 거울 동기화", audit: "API 요청 송신 전 클라이언트 폼 단에서 사전 유효성 차단 및 무결성 보호", badge: "warning" }
+      { layer: "Frontend Zod Schema", example: "<code>bbsRdcnt: z.number().int().nonnegative()</code>", spec: "Next.js 폼 검증을 위한 Zod Schema 1:1 거울 동기화", audit: "API 요청 송신 전 클라이언트 폼 단에서 사전 유효성 차단 및 무결성 보호", badge: "warning" },
+      { layer: "[실증1] 일정 테이블 부채 청산", example: "<code>schdul_id</code> ➔ <code>schdl_id</code>", spec: "1단계 일정 도메인 비표준 컬럼명 표준 약어(SCHDL)로 마이그레이션 완료", audit: "물리 DB 컬럼 변경 후 JPA Entity 필드 1:1 거울 정비 성공", badge: "success" },
+      { layer: "[실증2] API 계약 거울 동기화", example: "<code>scrty_dcsn_trgt_id</code> ➔ <code>scrtyDcsnTrgtId</code>", spec: "2단계 기초/인증 도메인 6대 엔티티 및 DTO ➡️ TS Codegen ➡️ UI 폼 상태 일관 적용", audit: "백엔드 DTO 수정 시 <code>api-contract-guardian</code>이 프론트엔드 연쇄 1:1 교정을 강제하여 빌드 통과", badge: "warning" }
     ];
 
     const engines = [
@@ -1930,6 +1932,19 @@
           "[Sandbox Exec] SecurityAuthAnnotationLinterTest가 구동되어 DeptApiController#getDeptInfo 메서드에 인가 락 유실 감지.",
           "[Hard-Stop] JUnit 테스트 빌드 타임에서 즉시 빌드 실패(Hard-Stop) 선언 및 컴파일 진행 완전 차단.",
           "에이전트 자가성찰(Ralph Loop) 작동 ➔ `@PreAuthorize` 명시적으로 보강 완료 ➔ 테스트 재실행 성공 빌드 복구 완료."
+        ]
+      },
+      'preset-mapping-refactor': {
+        grade: 'L2 (Critical)',
+        skill: 'API Contract Guardian & Ralph Loop 2.0',
+        steps: [
+          "사용자 요청: 기초/인증 도메인 6대 엔티티 및 DTO-프론트엔드 연쇄 1:1 거울 동기화 (대안 2번 이행).",
+          "[Grading] 멀티 모듈 및 API 계약 전체 변동이 수반되므로 작업 등급을 L2 (Critical)로 판정.",
+          "[3대 기술 헌법 검증] DB 표준화 헌법(SSOT) 및 백엔드 헌법 제12조(DTO 계약 보호) 뇌에 적재.",
+          "[Sandbox Exec] 6대 핵심 엔티티(Authority, UserAuthority 등) 및 Repositories 필드 일제 정비 수행.",
+          "[자가성찰 복구] DeptAuthorityApiControllerTest 컴파일 실패 직면 ➡️ Ralph Loop 2.0 가동, Mock Assertions 초정밀 수정 복구 완료.",
+          "[Contract Guardian] 스프링 DTO 변경사항에 따라 npm run codegen:ts 실행하여 Next.js TS 타입 정의 자동 동기화.",
+          "SecurityHubClient.tsx 등 UI 컴포넌트 폼 상태 1:1 동기화 완료 ➔ Next.js 127개 전체 라우트 빌드 오류 0건 최종 통과 입증."
         ]
       }
     };
