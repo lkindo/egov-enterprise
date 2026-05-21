@@ -97,10 +97,10 @@ class AuthServiceTest {
         
         nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
                 .userId("user")
-                .token(refreshToken)
-                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .rfshTkn(refreshToken)
+                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
                 .build();
-        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+        when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
         
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
@@ -128,15 +128,15 @@ class AuthServiceTest {
         when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
         
         UserAuthority ua = mock(UserAuthority.class);
-        when(ua.getAuthorCode()).thenReturn("ROLE_ADMIN");
+        when(ua.getAuthrtId()).thenReturn("ROLE_ADMIN");
         when(userAuthorityRepository.findById(esntlId)).thenReturn(java.util.Optional.of(ua));
 
         nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
                 .userId(userId)
-                .token(refreshToken)
-                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .rfshTkn(refreshToken)
+                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
                 .build();
-        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+        when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_ADMIN"))).thenReturn("new_access_token_admin");
 
@@ -169,10 +169,10 @@ class AuthServiceTest {
 
         nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
                 .userId(userId)
-                .token(refreshToken)
-                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .rfshTkn(refreshToken)
+                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
                 .build();
-        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+        when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_USER"))).thenReturn("new_access_token_user");
 
@@ -271,8 +271,8 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
         
         nuri.foundation.domain.auth.RefreshToken rt = mock(nuri.foundation.domain.auth.RefreshToken.class);
-        when(rt.getExpiryDate()).thenReturn(java.time.Instant.now().minusSeconds(10));
-        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+        when(rt.getExprtnDt()).thenReturn(java.time.Instant.now().minusSeconds(10));
+        when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         // When & Then
         BusinessException ex = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));

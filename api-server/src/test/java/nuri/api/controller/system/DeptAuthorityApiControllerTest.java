@@ -40,8 +40,8 @@ public class DeptAuthorityApiControllerTest extends BaseControllerTest {
                 .deptNm("기획부")
                 .userId("user1")
                 .userNm("홍길동")
-                .authorCode("ROLE_USER")
-                .uniqId("USR_0001")
+                .authrtId("ROLE_USER")
+                .scrtyDcsnTrgtId("USR_0001")
                 .regYn("Y")
                 .build();
         Page<DeptAuthorProjection> page = new PageImpl<>(Collections.singletonList(projection), PageRequest.of(0, 10), 1);
@@ -55,14 +55,14 @@ public class DeptAuthorityApiControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].deptCode").value("ORGNZT_0000000000001"))
                 .andExpect(jsonPath("$.data.list[0].userNm").value("홍길동"))
-                .andExpect(jsonPath("$.data.list[0].authorCode").value("ROLE_USER"));
+                .andExpect(jsonPath("$.data.list[0].authrtId").value("ROLE_USER"));
     }
 
     @Test
     public void saveDeptUserAuthorities_ShouldSucceed() throws Exception {
         DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
         request.setDeptId("ORGNZT_0000000000001");
-        request.setAuthorCode("ROLE_ADMIN");
+        request.setAuthrtId("ROLE_ADMIN");
         request.setAllMembers(false);
         request.setUserIds(Arrays.asList("user1", "user2"));
 

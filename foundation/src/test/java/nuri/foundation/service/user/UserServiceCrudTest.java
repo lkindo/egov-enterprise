@@ -98,7 +98,7 @@ class UserServiceCrudTest {
   void getUserById_success_withValidId() {
     when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
     when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
-        UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
+        UserAuthority.builder().scrtyDcsnTrgtId("USR_1234567890123456").authrtId("ROLE_USER").build()));
     when(userMapper.toDtoWithAuthority(any(), any()))
         .thenReturn(UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build());
 

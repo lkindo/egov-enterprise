@@ -46,9 +46,9 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
         userRepository.save(testUser);
 
         testAuthority = UserAuthority.builder()
-                .uniqId("USR_AUTH_001")
-                .authorCode("ROLE_ADMIN")
-                .mberTyCode("USR03")
+                .scrtyDcsnTrgtId("USR_AUTH_001")
+                .authrtId("ROLE_ADMIN")
+                .mbrTypeCd("USR03")
                 .build();
         userAuthorityRepository.save(testAuthority);
         em.flush();
@@ -57,9 +57,9 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
     @Test
     @DisplayName("고유 ID 목록으로 권한 목록 조회")
     void findByUniqIdIn() {
-        List<UserAuthority> result = userAuthorityRepository.findByUniqIdIn(Collections.singletonList("USR_AUTH_001"));
+        List<UserAuthority> result = userAuthorityRepository.findByScrtyDcsnTrgtIdIn(Collections.singletonList("USR_AUTH_001"));
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthorCode()).isEqualTo("ROLE_ADMIN");
+        assertThat(result.get(0).getAuthrtId()).isEqualTo("ROLE_ADMIN");
     }
 
     @Test
@@ -71,7 +71,7 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
-        assertThat(result.getContent().get(0).getAuthorCode()).isEqualTo("ROLE_ADMIN");
+        assertThat(result.getContent().get(0).getAuthrtId()).isEqualTo("ROLE_ADMIN");
 
         // When - 사용자명으로 검색
         result = userAuthorityRepository.searchAuthorGroups("2", "권한", PageRequest.of(0, 10));

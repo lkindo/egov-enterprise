@@ -12,7 +12,7 @@ public class DeptAuthorProjection {
     private String deptNm;
     private String userId;
     private String userNm;
-    private String authorCode;
-    private String uniqId;
+    private String authrtId;
+    private String scrtyDcsnTrgtId;
     private String regYn;
 }

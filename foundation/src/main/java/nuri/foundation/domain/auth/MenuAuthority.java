@@ -20,7 +20,7 @@ public class MenuAuthority extends BaseEntity {
     private MenuAuthorityId id;
 
     @Column(name = "mapng_crt_id", length = 20)
-    private String mapngCreatId;
+    private String mapngCrtId;
 
     @Embeddable
     @Getter
@@ -30,9 +30,9 @@ public class MenuAuthority extends BaseEntity {
     @Builder
     public static class MenuAuthorityId implements Serializable {
         @Column(name = "authrt_cd", length = 12)
-        private String authorCode;
+        private String authrtCd;
 
         @Column(name = "menu_sn")
-        private Long menuNo;
+        private Long menuSn;
     }
 }

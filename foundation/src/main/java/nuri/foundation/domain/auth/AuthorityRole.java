@@ -30,9 +30,9 @@ public class AuthorityRole extends BaseEntity {
     @Builder
     public static class AuthorityRoleId implements Serializable {
         @Column(name = "authrt_cd", length = 30)
-        private String authorCode;
+        private String authrtCd;
 
         @Column(name = "role_cd", length = 12)
-        private String roleCode;
+        private String roleCd;
     }
 }

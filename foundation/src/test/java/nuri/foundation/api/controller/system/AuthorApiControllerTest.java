@@ -50,24 +50,26 @@ class AuthorApiControllerTest extends BaseControllerTest {
     @DisplayName("권한 그룹 상세 조회 성공")
     void testGetAuthor() throws Exception {
         // Given
-        AuthorManageDto dto = new AuthorManageDto();
-        dto.setAuthorCode("ROLE_ADMIN");
-        dto.setAuthorNm("관리자");
+        AuthorManageDto dto = AuthorManageDto.builder()
+                .authrtCd("ROLE_ADMIN")
+                .authrtNm("관리자")
+                .build();
         when(authorManageService.selectAuthor("ROLE_ADMIN")).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/authorities/ROLE_ADMIN"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.authorCode").value("ROLE_ADMIN"));
+                .andExpect(jsonPath("$.data.authrtCd").value("ROLE_ADMIN"));
     }
 
     @Test
     @DisplayName("권한 그룹 등록 성공")
     void testCreateAuthor() throws Exception {
         // Given
-        AuthorManageDto dto = new AuthorManageDto();
-        dto.setAuthorCode("ROLE_NEW");
-        dto.setAuthorNm("신규 권한");
+        AuthorManageDto dto = AuthorManageDto.builder()
+                .authrtCd("ROLE_NEW")
+                .authrtNm("신규 권한")
+                .build();
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/authorities")
@@ -92,8 +94,8 @@ class AuthorApiControllerTest extends BaseControllerTest {
     @DisplayName("권한 그룹 수정 성공")
     void testUpdateAuthor() throws Exception {
         AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode("ROLE_USER")
-                .authorNm("Modified Name")
+                .authrtCd("ROLE_USER")
+                .authrtNm("Modified Name")
                 .build();
         mockMvc.perform(put("/api/v1/admin/system/authorities/ROLE_USER")
                 .contentType(MediaType.APPLICATION_JSON)

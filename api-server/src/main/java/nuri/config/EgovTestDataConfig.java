@@ -91,8 +91,8 @@ public class EgovTestDataConfig {
             userRepository.save(user);
 
             UserAuthority authority = UserAuthority.builder()
-                    .uniqId(esntlId)
-                    .authorCode(role)
+                    .scrtyDcsnTrgtId(esntlId)
+                    .authrtId(role)
                     .build();
 
             userAuthorityRepository.save(authority);

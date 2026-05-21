@@ -14,9 +14,9 @@ import org.springframework.lang.NonNull;
 @Builder
 public class UserAuthorityDto {
     @NonNull
-    private String uniqId;
+    private String scrtyDcsnTrgtId;
     @NonNull
-    private String authorCode;
-    private String mberTyCode;
+    private String authrtId;
+    private String mbrTypeCd;
     private String userNm; // For display purposes if needed
 }

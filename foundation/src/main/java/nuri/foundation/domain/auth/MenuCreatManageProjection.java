@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MenuCreatManageProjection {
-    private String authorCode;
-    private String authorNm;
-    private String authorDc;
-    private LocalDateTime authorCreatDe;
+    private String authrtCd;
+    private String authrtNm;
+    private String authrtExpln;
+    private String authrtCrtYmd;
     private Long chkYeoBu;
 }

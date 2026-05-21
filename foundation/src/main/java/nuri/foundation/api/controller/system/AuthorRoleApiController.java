@@ -21,7 +21,7 @@ import java.util.List;
 @Tag(name = "Authority-Role Mapping", description = "시스템 권한별 롤 할당 관리 API (Admin)")
 @Slf4j
 @RestController("systemAuthorRoleApiController")
-@RequestMapping("/api/v1/admin/system/authorities/{authorCode}/roles")
+@RequestMapping("/api/v1/admin/system/authorities/{authrtCd}/roles")
 @RequiredArgsConstructor
 public class AuthorRoleApiController {
 
@@ -30,10 +30,10 @@ public class AuthorRoleApiController {
     @Operation(summary = "권한별 롤 목록 조회", description = "특정 권한에 할당된 롤 목록 및 전체 롤 상태를 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorRoleProjection>>> getAuthorRoles(
-            @PathVariable String authorCode,
+            @PathVariable String authrtCd,
             @ModelAttribute BaseSearchDto searchDto) {
 
-        Page<AuthorRoleProjection> result = authorRoleManageService.selectAuthorRoleList(authorCode, searchDto);
+        Page<AuthorRoleProjection> result = authorRoleManageService.selectAuthorRoleList(authrtCd, searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 result.getContent(),
@@ -46,10 +46,10 @@ public class AuthorRoleApiController {
     @Operation(summary = "권한별 롤 할당 저장", description = "특정 권한에 대해 선택된 롤들을 할당합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> saveAuthorRoles(
-            @PathVariable String authorCode,
-            @RequestBody List<String> roleCodes) {
+            @PathVariable String authrtCd,
+            @RequestBody List<String> roleCds) {
 
-        authorRoleManageService.insertAuthorRole(authorCode, roleCodes);
+        authorRoleManageService.insertAuthorRole(authrtCd, roleCds);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

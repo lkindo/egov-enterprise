@@ -24,7 +24,7 @@ public class AuthorityRepositoryImpl implements AuthorityRepositoryCustom {
                 .where(conditionEq(searchCondition, searchKeyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(authority.authorCreatDe.desc())
+                .orderBy(authority.authrtCrtYmd.desc())
                 .fetch();
 
         Long total = queryFactory
@@ -43,7 +43,7 @@ public class AuthorityRepositoryImpl implements AuthorityRepositoryCustom {
         }
 
         if ("1".equals(searchCondition)) {
-            return authority.authorNm.contains(searchKeyword);
+            return authority.authrtNm.contains(searchKeyword);
         }
 
         return null;

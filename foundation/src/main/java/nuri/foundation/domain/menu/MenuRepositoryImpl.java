@@ -52,13 +52,13 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                                  menu.progrmFileNm.as("progrmFileNm"),
                                                  program.url.as("chkURL")))
                                 .from(menuAuthority)
-                                .join(menu).on(menuAuthority.id.menuNo.eq(menu.id))
+                                .join(menu).on(menuAuthority.id.menuSn.eq(menu.id))
                                 .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))
                                 .where(menu.upperMenuSn.eq(0L)
-                                                .and(menuAuthority.id.authorCode.eq(
-                                                                queryFactory.select(userAuthority.authorCode)
+                                                .and(menuAuthority.id.authrtCd.eq(
+                                                                queryFactory.select(userAuthority.authrtId)
                                                                                 .from(userAuthority)
-                                                                                .where(userAuthority.uniqId
+                                                                                .where(userAuthority.scrtyDcsnTrgtId
                                                                                                 .eq(uniqId)))))
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
@@ -76,12 +76,12 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                                  menu.relateImageNm.as("relateImageNm"),
                                                  program.url.as("chkURL")))
                                 .from(menuAuthority)
-                                .join(menu).on(menuAuthority.id.menuNo.eq(menu.id))
+                                .join(menu).on(menuAuthority.id.menuSn.eq(menu.id))
                                 .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))
-                                .where(menuAuthority.id.authorCode.eq(
-                                                queryFactory.select(userAuthority.authorCode)
+                                .where(menuAuthority.id.authrtCd.eq(
+                                                queryFactory.select(userAuthority.authrtId)
                                                                 .from(userAuthority)
-                                                                .where(userAuthority.uniqId.eq(uniqId))))
+                                                                .where(userAuthority.scrtyDcsnTrgtId.eq(uniqId))))
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
         }

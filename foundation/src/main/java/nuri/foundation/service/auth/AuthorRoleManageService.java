@@ -28,30 +28,30 @@ public class AuthorRoleManageService {
     /**
      * 특정 권한전체 롤 목록과 할당 여부 조회
      */
-    public Page<AuthorRoleProjection> selectAuthorRoleList(String authorCode, BaseSearchDto searchVO) {
+    public Page<AuthorRoleProjection> selectAuthorRoleList(String authrtCd, BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageSize);
 
-        return authorityRoleRepository.searchAuthorRoles(authorCode, pageable);
+        return authorityRoleRepository.searchAuthorRoles(authrtCd, pageable);
     }
 
     /**
      * 권한에 롤 할당 정보 저장 (기존 정보 삭제 후 재발행)
      */
     @Transactional
-    public void insertAuthorRole(String authorCode, List<String> roleCodes) {
+    public void insertAuthorRole(String authrtCd, List<String> roleCds) {
         // 기존 매핑 정보 삭제
-        authorityRoleRepository.deleteByIdAuthorCode(Objects.requireNonNull(authorCode));
+        authorityRoleRepository.deleteByIdAuthrtCd(Objects.requireNonNull(authrtCd));
 
         // 새로운 매핑 정보 저장
-        if (roleCodes != null && !roleCodes.isEmpty()) {
-            List<AuthorityRole> entities = roleCodes.stream()
+        if (roleCds != null && !roleCds.isEmpty()) {
+            List<AuthorityRole> entities = roleCds.stream()
                     .filter(Objects::nonNull)
-                    .map(roleCode -> AuthorityRole.builder()
+                    .map(roleCd -> AuthorityRole.builder()
                             .id(AuthorityRole.AuthorityRoleId.builder()
-                                    .authorCode(authorCode)
-                                    .roleCode(roleCode)
+                                    .authrtCd(authrtCd)
+                                    .roleCd(roleCd)
                                     .build())
                             .build())
                     .collect(Collectors.toList());

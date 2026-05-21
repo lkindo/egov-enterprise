@@ -11,21 +11,21 @@ import java.util.List;
 
 @Repository
 public interface MemoTodoRepository extends JpaRepository<MemoTodo, String> {
-        Page<MemoTodo> findByWrterId(String wrterId, Pageable pageable);
+        Page<MemoTodo> findByUserId(String userId, Pageable pageable);
 
         @Query("""
                         SELECT m FROM MemoTodo m
-                        WHERE m.wrterId = :wrterId
+                        WHERE m.userId = :userId
                           AND (:searchDe = '1' AND m.createdDate BETWEEN :searchBgnDt AND :searchEndDt
-                               OR :searchDe = '0' AND (SUBSTR(m.todoBeginTime, 1, 10) BETWEEN :searchBgnDe AND :searchEndDe
-                                                    OR SUBSTR(m.todoEndTime, 1, 10) BETWEEN :searchBgnDe AND :searchEndDe)
-                               OR :searchDe IS NULL OR :searchDe = '')
-                          AND (:searchCondition = '0' AND m.todoNm LIKE '%' || :searchWrd || '%'
+                                OR :searchDe = '0' AND (SUBSTR(m.todoBgngTm, 1, 10) BETWEEN :searchBgnDe AND :searchEndDe
+                                                     OR SUBSTR(m.todoEndTm, 1, 10) BETWEEN :searchBgnDe AND :searchEndDe)
+                                OR :searchDe IS NULL OR :searchDe = '')
+                          AND (:searchCondition = '0' AND m.todoTtl LIKE '%' || :searchWrd || '%'
                                OR :searchCondition = '1' AND m.todoCn LIKE '%' || :searchWrd || '%'
                                OR :searchWrd IS NULL OR :searchWrd = '')
-                        ORDER BY m.todoBeginTime DESC
+                        ORDER BY m.todoBgngTm DESC
                         """)
-        Page<MemoTodo> searchMemoTodos(@Param("wrterId") String wrterId,
+        Page<MemoTodo> searchMemoTodos(@Param("userId") String userId,
                         @Param("searchDe") String searchDe,
                         @Param("searchBgnDe") String searchBgnDe,
                         @Param("searchEndDe") String searchEndDe,
@@ -37,12 +37,12 @@ public interface MemoTodoRepository extends JpaRepository<MemoTodo, String> {
 
         @Query("""
                         SELECT m FROM MemoTodo m
-                        WHERE m.wrterId = :wrterId
-                          AND (m.todoBeginTime BETWEEN :searchBgnDe AND :searchEndDe
-                               OR m.todoEndTime BETWEEN :searchBgnDe AND :searchEndDe)
+                        WHERE m.userId = :userId
+                          AND (m.todoBgngTm BETWEEN :searchBgnDe AND :searchEndDe
+                               OR m.todoEndTm BETWEEN :searchBgnDe AND :searchEndDe)
                         ORDER BY m.createdDate DESC
                         """)
-        List<MemoTodo> selectMemoTodoListToday(@Param("wrterId") String wrterId,
+        List<MemoTodo> selectMemoTodoListToday(@Param("userId") String userId,
                         @Param("searchBgnDe") String searchBgnDe,
                         @Param("searchEndDe") String searchEndDe);
 }

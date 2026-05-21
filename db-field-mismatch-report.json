@@ -1,0 +1,3602 @@
+[
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "columnName": "authrt_cd",
+    "expectedCamel": "authrtCd",
+    "actualField": "authorCode",
+    "isId": true,
+    "line": 20
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "columnName": "authrt_nm",
+    "expectedCamel": "authrtNm",
+    "actualField": "authorNm",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+    "columnName": "authrt_expln",
+    "expectedCamel": "authrtExpln",
+    "actualField": "authorDc",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\AuthorityRole.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\AuthorityRole.java",
+    "columnName": "authrt_cd",
+    "expectedCamel": "authrtCd",
+    "actualField": "authorCode",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\AuthorityRole.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\AuthorityRole.java",
+    "columnName": "role_cd",
+    "expectedCamel": "roleCd",
+    "actualField": "roleCode",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "columnName": "mapng_crt_id",
+    "expectedCamel": "mapngCrtId",
+    "actualField": "mapngCreatId",
+    "isId": false,
+    "line": 22
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "columnName": "authrt_cd",
+    "expectedCamel": "authrtCd",
+    "actualField": "authorCode",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+    "columnName": "menu_sn",
+    "expectedCamel": "menuSn",
+    "actualField": "menuNo",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RefreshToken.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RefreshToken.java",
+    "columnName": "rfsh_tkn",
+    "expectedCamel": "rfshTkn",
+    "actualField": "token",
+    "isId": false,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RefreshToken.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RefreshToken.java",
+    "columnName": "exprtn_dt",
+    "expectedCamel": "exprtnDt",
+    "actualField": "expiryDate",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "columnName": "role_id",
+    "expectedCamel": "roleId",
+    "actualField": "roleCode",
+    "isId": true,
+    "line": 18
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "columnName": "role_patrn",
+    "expectedCamel": "rolePatrn",
+    "actualField": "rolePttrn",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "columnName": "role_expln",
+    "expectedCamel": "roleExpln",
+    "actualField": "roleDc",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+    "columnName": "role_type_cd",
+    "expectedCamel": "roleTypeCd",
+    "actualField": "roleTy",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "columnName": "scrty_dcsn_trgt_id",
+    "expectedCamel": "scrtyDcsnTrgtId",
+    "actualField": "uniqId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "columnName": "authrt_id",
+    "expectedCamel": "authrtId",
+    "actualField": "authorCode",
+    "isId": false,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+    "columnName": "mbr_type_cd",
+    "expectedCamel": "mbrTypeCd",
+    "actualField": "mberTyCode",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "admdst_cd",
+    "expectedCamel": "admdstCd",
+    "actualField": "administZoneCode",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "admdst_se_cd",
+    "expectedCamel": "admdstSeCd",
+    "actualField": "administZoneSe",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "admdst_zone_nm",
+    "expectedCamel": "admdstZoneNm",
+    "actualField": "administZoneNm",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "up_admdst_cd",
+    "expectedCamel": "upAdmdstCd",
+    "actualField": "upperAdministZoneCode",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "crt_ymd",
+    "expectedCamel": "crtYmd",
+    "actualField": "creatDe",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+    "columnName": "abl_ymd",
+    "expectedCamel": "ablYmd",
+    "actualField": "ablDe",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "columnName": "cd_id",
+    "expectedCamel": "cdId",
+    "actualField": "codeGroupId",
+    "isId": true,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "columnName": "dtl_cd",
+    "expectedCamel": "dtlCd",
+    "actualField": "code",
+    "isId": true,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "columnName": "dtl_cd_nm",
+    "expectedCamel": "dtlCdNm",
+    "actualField": "codeNm",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+    "columnName": "dtl_cd_expln",
+    "expectedCamel": "dtlCdExpln",
+    "actualField": "codeDc",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "columnName": "clsf_cd",
+    "expectedCamel": "clsfCd",
+    "actualField": "clCode",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "columnName": "clsf_cd_nm",
+    "expectedCamel": "clsfCdNm",
+    "actualField": "clCodeNm",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeCategory.java",
+    "columnName": "clsf_cd_expln",
+    "expectedCamel": "clsfCdExpln",
+    "actualField": "clCodeDc",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "columnName": "cd_id",
+    "expectedCamel": "cdId",
+    "actualField": "codeId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "columnName": "cd_id_nm",
+    "expectedCamel": "cdIdNm",
+    "actualField": "codeIdNm",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "columnName": "cd_id_expln",
+    "expectedCamel": "cdIdExpln",
+    "actualField": "codeIdDc",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCodeGroup.java",
+    "columnName": "clsf_cd",
+    "expectedCamel": "clsfCd",
+    "actualField": "clCode",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_cd",
+    "expectedCamel": "instCd",
+    "actualField": "insttCode",
+    "isId": true,
+    "line": 20
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "all_inst_nm",
+    "expectedCamel": "allInstNm",
+    "actualField": "allInsttNm",
+    "isId": false,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "lwtrk_inst_nm",
+    "expectedCamel": "lwtrkInstNm",
+    "actualField": "lowestInsttNm",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_abbr_nm",
+    "expectedCamel": "instAbbrNm",
+    "actualField": "insttAbrvNm",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_cycl",
+    "expectedCamel": "instCycl",
+    "actualField": "insttOdr",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "top_inst_cd",
+    "expectedCamel": "topInstCd",
+    "actualField": "bestInsttCode",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "up_inst_cd",
+    "expectedCamel": "upInstCd",
+    "actualField": "upperInsttCode",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "rprs_inst_cd",
+    "expectedCamel": "rprsInstCd",
+    "actualField": "reprsntInsttCode",
+    "isId": false,
+    "line": 47
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_type_lclsf",
+    "expectedCamel": "instTypeLclsf",
+    "actualField": "insttTyLclas",
+    "isId": false,
+    "line": 50
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_type_mclsf",
+    "expectedCamel": "instTypeMclsf",
+    "actualField": "insttTyMclas",
+    "isId": false,
+    "line": 53
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "inst_type_sclsf",
+    "expectedCamel": "instTypeSclsf",
+    "actualField": "insttTySclas",
+    "isId": false,
+    "line": 56
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "fax_no",
+    "expectedCamel": "faxNo",
+    "actualField": "fxnum",
+    "isId": false,
+    "line": 62
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "crt_ymd",
+    "expectedCamel": "crtYmd",
+    "actualField": "creatDe",
+    "isId": false,
+    "line": 65
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "abl_ymd",
+    "expectedCamel": "ablYmd",
+    "actualField": "ablDe",
+    "isId": false,
+    "line": 68
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "abl_yn",
+    "expectedCamel": "ablYn",
+    "actualField": "ablEnnc",
+    "isId": false,
+    "line": 71
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "chg_ymd",
+    "expectedCamel": "chgYmd",
+    "actualField": "changede",
+    "isId": false,
+    "line": 74
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "chg_tm",
+    "expectedCamel": "chgTm",
+    "actualField": "changeTime",
+    "isId": false,
+    "line": 77
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "crtr_ymd",
+    "expectedCamel": "crtrYmd",
+    "actualField": "bsisDe",
+    "isId": false,
+    "line": 80
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+    "columnName": "sort_seq",
+    "expectedCamel": "sortSeq",
+    "actualField": "sortOrdr",
+    "isId": false,
+    "line": 83
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "chg_se_cd",
+    "expectedCamel": "chgSeCd",
+    "actualField": "changeSeCode",
+    "isId": false,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "proc_se",
+    "expectedCamel": "procSe",
+    "actualField": "processSe",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "etc_cd",
+    "expectedCamel": "etcCd",
+    "actualField": "etcCode",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "all_inst_nm",
+    "expectedCamel": "allInstNm",
+    "actualField": "allInsttNm",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "lwst_inst_nm",
+    "expectedCamel": "lwstInstNm",
+    "actualField": "lowestInsttNm",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_abbr_nm",
+    "expectedCamel": "instAbbrNm",
+    "actualField": "insttAbrvNm",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_cycl",
+    "expectedCamel": "instCycl",
+    "actualField": "insttOdr",
+    "isId": false,
+    "line": 49
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "top_inst_cd",
+    "expectedCamel": "topInstCd",
+    "actualField": "bestInsttCode",
+    "isId": false,
+    "line": 52
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "upr_inst_cd",
+    "expectedCamel": "uprInstCd",
+    "actualField": "upperInsttCode",
+    "isId": false,
+    "line": 55
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "reprs_inst_cd",
+    "expectedCamel": "reprsInstCd",
+    "actualField": "reprsntInsttCode",
+    "isId": false,
+    "line": 58
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_type_lclsf",
+    "expectedCamel": "instTypeLclsf",
+    "actualField": "insttTyLclas",
+    "isId": false,
+    "line": 61
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_type_mclsf",
+    "expectedCamel": "instTypeMclsf",
+    "actualField": "insttTyMclas",
+    "isId": false,
+    "line": 64
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_type_sclsf",
+    "expectedCamel": "instTypeSclsf",
+    "actualField": "insttTySclas",
+    "isId": false,
+    "line": 67
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "fax_no",
+    "expectedCamel": "faxNo",
+    "actualField": "fxnum",
+    "isId": false,
+    "line": 73
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "crt_ymd",
+    "expectedCamel": "crtYmd",
+    "actualField": "creatDe",
+    "isId": false,
+    "line": 76
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "abl_ymd",
+    "expectedCamel": "ablYmd",
+    "actualField": "ablDe",
+    "isId": false,
+    "line": 79
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "abl_yn",
+    "expectedCamel": "ablYn",
+    "actualField": "ablEnnc",
+    "isId": false,
+    "line": 82
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "chg_ymd",
+    "expectedCamel": "chgYmd",
+    "actualField": "changede",
+    "isId": false,
+    "line": 85
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "chg_tm",
+    "expectedCamel": "chgTm",
+    "actualField": "changeTime",
+    "isId": false,
+    "line": 88
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "crtr_ymd",
+    "expectedCamel": "crtrYmd",
+    "actualField": "bsisDe",
+    "isId": false,
+    "line": 91
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "frstRegisterPnttm",
+    "isId": false,
+    "line": 97
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "frst_rgtr_id",
+    "expectedCamel": "frstRgtrId",
+    "actualField": "frstRegisterId",
+    "isId": false,
+    "line": 100
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "lastUpdtPnttm",
+    "isId": false,
+    "line": 103
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "last_mdfr_id",
+    "expectedCamel": "lastMdfrId",
+    "actualField": "lastUpdusrId",
+    "isId": false,
+    "line": 106
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "inst_cd",
+    "expectedCamel": "instCd",
+    "actualField": "insttCode",
+    "isId": false,
+    "line": 117
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+    "columnName": "job_sn",
+    "expectedCamel": "jobSn",
+    "actualField": "opertSn",
+    "isId": false,
+    "line": 120
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseTimeEntity.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseTimeEntity.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "createdDate",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseTimeEntity.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseTimeEntity.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "lastModifiedDate",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "columnName": "itnt_svc_id",
+    "expectedCamel": "itntSvcId",
+    "actualField": "intnetSvcId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "columnName": "itnt_svc_nm",
+    "expectedCamel": "itntSvcNm",
+    "actualField": "intnetSvcNm",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "columnName": "itnt_svc_expln",
+    "expectedCamel": "itntSvcExpln",
+    "actualField": "intnetSvcDc",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+    "columnName": "rflt_yn",
+    "expectedCamel": "rfltYn",
+    "actualField": "reflctAt",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "columnName": "user_id",
+    "expectedCamel": "userId",
+    "actualField": "loginId",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "columnName": "lgn_ip_addr",
+    "expectedCamel": "lgnIpAddr",
+    "actualField": "loginIp",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "columnName": "cntn_mthd_cd",
+    "expectedCamel": "cntnMthdCd",
+    "actualField": "loginMthd",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "columnName": "err_ocrn_yn",
+    "expectedCamel": "errOcrnYn",
+    "actualField": "errOccrrAt",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+    "columnName": "err_cd",
+    "expectedCamel": "errCd",
+    "actualField": "errorCode",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "dmnd_id",
+    "expectedCamel": "dmndId",
+    "actualField": "requestId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "inq_dt",
+    "expectedCamel": "inqDt",
+    "actualField": "inquiryDatetime",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "srvc_nm",
+    "expectedCamel": "srvcNm",
+    "actualField": "serviceName",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "inq_info",
+    "expectedCamel": "inqInfo",
+    "actualField": "inquiryInfo",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "dmnd_user_id",
+    "expectedCamel": "dmndUserId",
+    "actualField": "requesterId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+    "columnName": "dmnd_user_ip_addr",
+    "expectedCamel": "dmndUserIpAddr",
+    "actualField": "requesterIp",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\SysLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\SysLog.java",
+    "columnName": "mthd_nm",
+    "expectedCamel": "mthdNm",
+    "actualField": "methodNm",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\SysLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\SysLog.java",
+    "columnName": "dmnd_user_ip_addr",
+    "expectedCamel": "dmndUserIpAddr",
+    "actualField": "rqesterIp",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "mthd_nm",
+    "expectedCamel": "mthdNm",
+    "actualField": "methodNm",
+    "isId": true,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "crt_cnt",
+    "expectedCamel": "crtCnt",
+    "actualField": "creatCo",
+    "isId": false,
+    "line": 51
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "mdfcn_cnt",
+    "expectedCamel": "mdfcnCnt",
+    "actualField": "updtCo",
+    "isId": false,
+    "line": 54
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "inq_cnt",
+    "expectedCamel": "inqCnt",
+    "actualField": "rdCnt",
+    "isId": false,
+    "line": 57
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "del_cnt",
+    "expectedCamel": "delCnt",
+    "actualField": "deleteCo",
+    "isId": false,
+    "line": 60
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "otpt_cnt",
+    "expectedCamel": "otptCnt",
+    "actualField": "outptCo",
+    "isId": false,
+    "line": 63
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+    "columnName": "err_cnt",
+    "expectedCamel": "errCnt",
+    "actualField": "errorCo",
+    "isId": false,
+    "line": 66
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\WebLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\WebLog.java",
+    "columnName": "dmnd_user_ip_addr",
+    "expectedCamel": "dmndUserIpAddr",
+    "actualField": "rqesterIp",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\WebLog.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\WebLog.java",
+    "columnName": "occr_ymd",
+    "expectedCamel": "occrYmd",
+    "actualField": "ocrnYmd",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "columnName": "menu_sn",
+    "expectedCamel": "menuSn",
+    "actualField": "id",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "columnName": "prgrm_file_nm",
+    "expectedCamel": "prgrmFileNm",
+    "actualField": "progrmFileNm",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "columnName": "up_menu_sn",
+    "expectedCamel": "upMenuSn",
+    "actualField": "upperMenuSn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "columnName": "rel_img_path",
+    "expectedCamel": "relImgPath",
+    "actualField": "relateImagePath",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+    "columnName": "rel_img_nm",
+    "expectedCamel": "relImgNm",
+    "actualField": "relateImageNm",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "columnName": "mpng_crt_id",
+    "expectedCamel": "mpngCrtId",
+    "actualField": "mapCreatId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "columnName": "crtr_id",
+    "expectedCamel": "crtrId",
+    "actualField": "creatPersonId",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "columnName": "mpng_file_nm",
+    "expectedCamel": "mpngFileNm",
+    "actualField": "bndeFileNm",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+    "columnName": "mpng_file_path",
+    "expectedCamel": "mpngFilePath",
+    "actualField": "bndeFilePath",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_id",
+    "expectedCamel": "evntId",
+    "actualField": "eventId",
+    "isId": true,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "biz_yr",
+    "expectedCamel": "bizYr",
+    "actualField": "bsnsYear",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "biz_cd",
+    "expectedCamel": "bizCd",
+    "actualField": "bsnsCode",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_cn",
+    "expectedCamel": "evntCn",
+    "actualField": "eventCn",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_bgng_ymd",
+    "expectedCamel": "evntBgngYmd",
+    "actualField": "eventSvcBgnde",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_end_ymd",
+    "expectedCamel": "evntEndYmd",
+    "actualField": "eventSvcEndde",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_use_cnt",
+    "expectedCamel": "evntUseCnt",
+    "actualField": "svcUseNmprCo",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "pic_nm",
+    "expectedCamel": "picNm",
+    "actualField": "chargerNm",
+    "isId": false,
+    "line": 47
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "prep_mttr",
+    "expectedCamel": "prepMttr",
+    "actualField": "prparetgCn",
+    "isId": false,
+    "line": 50
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_type_cd",
+    "expectedCamel": "evntTypeCd",
+    "actualField": "eventTyCode",
+    "isId": false,
+    "line": 53
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_aprv_yn",
+    "expectedCamel": "evntAprvYn",
+    "actualField": "eventConfmAt",
+    "isId": false,
+    "line": 56
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+    "columnName": "evnt_aprv_ymd",
+    "expectedCamel": "evntAprvYmd",
+    "actualField": "eventConfmDe",
+    "isId": false,
+    "line": 59
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "evnt_id",
+    "expectedCamel": "evntId",
+    "actualField": "eventId",
+    "isId": true,
+    "line": 19
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "otsd_hr_id",
+    "expectedCamel": "otsdHrId",
+    "actualField": "extrlHrId",
+    "isId": true,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "gndr_cd",
+    "expectedCamel": "gndrCd",
+    "actualField": "sexdstnCode",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "otsd_hr_nm",
+    "expectedCamel": "otsdHrNm",
+    "actualField": "extrlHrNm",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "cr_type_cd",
+    "expectedCamel": "crTypeCd",
+    "actualField": "occpTyCode",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "ogdp_inst_nm",
+    "expectedCamel": "ogdpInstNm",
+    "actualField": "psitnInsttNm",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "brdt_ymd",
+    "expectedCamel": "brdtYmd",
+    "actualField": "brthdy",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "md_telno",
+    "expectedCamel": "mdTelno",
+    "actualField": "middleTelno",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "eml_addr",
+    "expectedCamel": "emlAddr",
+    "actualField": "emailAdres",
+    "isId": false,
+    "line": 50
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "frstRegistPnttm",
+    "isId": false,
+    "line": 53
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "frst_rgtr_id",
+    "expectedCamel": "frstRgtrId",
+    "actualField": "frstRegisterId",
+    "isId": false,
+    "line": 56
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "lastUpdtPnttm",
+    "isId": false,
+    "line": 59
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+    "columnName": "last_mdfr_id",
+    "expectedCamel": "lastMdfrId",
+    "actualField": "lastUpdusrId",
+    "isId": false,
+    "line": 62
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rwrd_id",
+    "expectedCamel": "rwrdId",
+    "actualField": "rwardId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rwrd_user_id",
+    "expectedCamel": "rwrdUserId",
+    "actualField": "rwardwnrId",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rwrd_cd",
+    "expectedCamel": "rwrdCd",
+    "actualField": "rwardCode",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rwrd_ymd",
+    "expectedCamel": "rwrdYmd",
+    "actualField": "rwardDe",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rwrd_nm",
+    "expectedCamel": "rwrdNm",
+    "actualField": "rwardNm",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "cntrb_cn",
+    "expectedCamel": "cntrbCn",
+    "actualField": "pblenCn",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "atrzr_id",
+    "expectedCamel": "atrzrId",
+    "actualField": "sanctnerId",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "confm_yn",
+    "expectedCamel": "confmYn",
+    "actualField": "confmAt",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "aprv_dt",
+    "expectedCamel": "aprvDt",
+    "actualField": "sanctnDt",
+    "isId": false,
+    "line": 49
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "rtn_rsn_cn",
+    "expectedCamel": "rtnRsnCn",
+    "actualField": "returnResn",
+    "isId": false,
+    "line": 52
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+    "columnName": "ifml_atrz_id",
+    "expectedCamel": "ifmlAtrzId",
+    "actualField": "informlSanctnId",
+    "isId": false,
+    "line": 58
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "columnName": "prgrm_file_nm",
+    "expectedCamel": "prgrmFileNm",
+    "actualField": "progrmFileNm",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "columnName": "prgrm_strg_path",
+    "expectedCamel": "prgrmStrgPath",
+    "actualField": "progrmStrePath",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "columnName": "prgrm_korn_nm",
+    "expectedCamel": "prgrmKornNm",
+    "actualField": "progrmKoreanNm",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+    "columnName": "prgrm_expln",
+    "expectedCamel": "prgrmExpln",
+    "actualField": "progrmDc",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "bnr_id",
+    "expectedCamel": "bnrId",
+    "actualField": "bannerId",
+    "isId": true,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "bnr_nm",
+    "expectedCamel": "bnrNm",
+    "actualField": "bannerNm",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "bnr_img_nm",
+    "expectedCamel": "bnrImgNm",
+    "actualField": "bannerImage",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "bnr_expln",
+    "expectedCamel": "bnrExpln",
+    "actualField": "bannerDc",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "rflt_yn",
+    "expectedCamel": "rfltYn",
+    "actualField": "reflctAt",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+    "columnName": "atch_file_id",
+    "expectedCamel": "atchFileId",
+    "actualField": "bannerImageFile",
+    "isId": false,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "columnName": "cmnty_nm",
+    "expectedCamel": "cmntyNm",
+    "actualField": "cmntyTtl",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "columnName": "reg_se_cd",
+    "expectedCamel": "regSeCd",
+    "actualField": "regTypeCd",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUser.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUser.java",
+    "columnName": "whdwl_ymd",
+    "expectedCamel": "whdwlYmd",
+    "actualField": "wdrlYmd",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "popup_ttl_nm",
+    "expectedCamel": "popupTtlNm",
+    "actualField": "popupTitleName",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "popup_wdth_pstn",
+    "expectedCamel": "popupWdthPstn",
+    "actualField": "popupWidthLocation",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "popup_vrtc_pstn",
+    "expectedCamel": "popupVrtcPstn",
+    "actualField": "popupHeightLocation",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "popup_vrtc_sz",
+    "expectedCamel": "popupVrtcSz",
+    "actualField": "popupHeightSize",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "popup_wdth_sz",
+    "expectedCamel": "popupWdthSz",
+    "actualField": "popupWidthSize",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "ntce_bgnde",
+    "expectedCamel": "ntceBgnde",
+    "actualField": "noticeBeginDate",
+    "isId": false,
+    "line": 47
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "ntce_endde",
+    "expectedCamel": "ntceEndde",
+    "actualField": "noticeEndDate",
+    "isId": false,
+    "line": 50
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "stopvew_setup_yn",
+    "expectedCamel": "stopvewSetupYn",
+    "actualField": "isStopView",
+    "isId": false,
+    "line": 53
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+    "columnName": "ntce_yn",
+    "expectedCamel": "ntceYn",
+    "actualField": "isNotice",
+    "isId": false,
+    "line": 56
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "columnName": "plcy_type_cd",
+    "expectedCamel": "plcyTypeCd",
+    "actualField": "policyType",
+    "isId": true,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "columnName": "plcy_ttl",
+    "expectedCamel": "plcyTtl",
+    "actualField": "title",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+    "columnName": "plcy_cn",
+    "expectedCamel": "plcyCn",
+    "actualField": "content",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "dscsn_id",
+    "expectedCamel": "dscsnId",
+    "actualField": "cnsltId",
+    "isId": true,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "dscsn_ttl",
+    "expectedCamel": "dscsnTtl",
+    "actualField": "cnsltSj",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "dscsn_cn",
+    "expectedCamel": "dscsnCn",
+    "actualField": "cnsltCn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "rls_yn",
+    "expectedCamel": "rlsYn",
+    "actualField": "othbcAt",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "wrt_pswd",
+    "expectedCamel": "wrtPswd",
+    "actualField": "writngPassword",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "md_telno",
+    "expectedCamel": "mdTelno",
+    "actualField": "middleTelno",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "mbl_frst_telno",
+    "expectedCamel": "mblFrstTelno",
+    "actualField": "firstMoblphonNo",
+    "isId": false,
+    "line": 52
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "mbl_md_telno",
+    "expectedCamel": "mblMdTelno",
+    "actualField": "middleMbtlnum",
+    "isId": false,
+    "line": 55
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "mbl_end_telno",
+    "expectedCamel": "mblEndTelno",
+    "actualField": "endMbtlnum",
+    "isId": false,
+    "line": 58
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "eml_addr",
+    "expectedCamel": "emlAddr",
+    "actualField": "emailAdres",
+    "isId": false,
+    "line": 61
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "eml_ans_yn",
+    "expectedCamel": "emlAnsYn",
+    "actualField": "emailAnswerAt",
+    "isId": false,
+    "line": 64
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "wrt_ymd",
+    "expectedCamel": "wrtYmd",
+    "actualField": "writngDe",
+    "isId": false,
+    "line": 70
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "qna_proc_stts_cd",
+    "expectedCamel": "qnaProcSttsCd",
+    "actualField": "atchFileId",
+    "isId": false,
+    "line": 77
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "proc_cn",
+    "expectedCamel": "procCn",
+    "actualField": "managtCn",
+    "isId": false,
+    "line": 84
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+    "columnName": "mng_ymd",
+    "expectedCamel": "mngYmd",
+    "actualField": "managtDe",
+    "isId": false,
+    "line": 87
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollItem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollItem.java",
+    "columnName": "poll_artcl_id",
+    "expectedCamel": "pollArtclId",
+    "actualField": "pollIemId",
+    "isId": true,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollItem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollItem.java",
+    "columnName": "poll_artcl_nm",
+    "expectedCamel": "pollArtclNm",
+    "actualField": "pollIemNm",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollManage.java",
+    "columnName": "poll_knd_cd",
+    "expectedCamel": "pollKndCd",
+    "actualField": "pollTypeCd",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollResult.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollResult.java",
+    "columnName": "poll_rslt_id",
+    "expectedCamel": "pollRsltId",
+    "actualField": "pollResultId",
+    "isId": true,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollResult.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollResult.java",
+    "columnName": "poll_artcl_id",
+    "expectedCamel": "pollArtclId",
+    "actualField": "pollIemId",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "columnName": "srvy_artcl_id",
+    "expectedCamel": "srvyArtclId",
+    "actualField": "srvyItemId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "columnName": "srvy_qstn_id",
+    "expectedCamel": "srvyQstnId",
+    "actualField": "srvyQitemId",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "columnName": "artcl_sn",
+    "expectedCamel": "artclSn",
+    "actualField": "srvyItemSn",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "columnName": "artcl_cn",
+    "expectedCamel": "artclCn",
+    "actualField": "srvyItemCn",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "columnName": "srvy_prps",
+    "expectedCamel": "srvyPrps",
+    "actualField": "srvyPrpsCn",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "columnName": "srvy_wrt_gd_cn",
+    "expectedCamel": "srvyWrtGdCn",
+    "actualField": "srvyGuidCn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "columnName": "srvy_trgt",
+    "expectedCamel": "srvyTrgt",
+    "actualField": "srvyTrgtCn",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "columnName": "srvy_qstn_id",
+    "expectedCamel": "srvyQstnId",
+    "actualField": "srvyQitemId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "columnName": "qstn_sn",
+    "expectedCamel": "qstnSn",
+    "actualField": "srvyQitemSn",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "columnName": "qstn_type_cd",
+    "expectedCamel": "qstnTypeCd",
+    "actualField": "srvyQitemTypeCd",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "columnName": "qstn_cn",
+    "expectedCamel": "qstnCn",
+    "actualField": "srvyQitemCn",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "srvy_rspns_id",
+    "expectedCamel": "srvyRspnsId",
+    "actualField": "srvyRspdId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "srvy_qstn_id",
+    "expectedCamel": "srvyQstnId",
+    "actualField": "srvyQitemId",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "srvy_artcl_id",
+    "expectedCamel": "srvyArtclId",
+    "actualField": "srvyItemId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "rspdnt_ans_cn",
+    "expectedCamel": "rspdntAnsCn",
+    "actualField": "rspdAnsCn",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+    "columnName": "rspns_nm",
+    "expectedCamel": "rspnsNm",
+    "actualField": "rspdNm",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "columnName": "srvy_tmplt_type_cd",
+    "expectedCamel": "srvyTmpltTypeCd",
+    "actualField": "srvyTmplatTypeCd",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "columnName": "srvy_tmplt_expln",
+    "expectedCamel": "srvyTmpltExpln",
+    "actualField": "srvyTmplatCn",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "columnName": "srvy_tmplt_path_nm",
+    "expectedCamel": "srvyTmpltPathNm",
+    "actualField": "srvyTmplatImgPath",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+    "columnName": "srvy_tmplt_img_info",
+    "expectedCamel": "srvyTmpltImgInfo",
+    "actualField": "srvyTmplatImgInfo",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "srvy_rspdnt_id",
+    "expectedCamel": "srvyRspdntId",
+    "actualField": "srvyRspdId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "srvy_tmplt_id",
+    "expectedCamel": "srvyTmpltId",
+    "actualField": "srvyTmplatId",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "cr_type_cd",
+    "expectedCamel": "crTypeCd",
+    "actualField": "jobTypeCd",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "rspdnt_nm",
+    "expectedCamel": "rspdntNm",
+    "actualField": "rspdNm",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "brdt",
+    "expectedCamel": "brdt",
+    "actualField": "brthYmd",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+    "columnName": "rgn_telno",
+    "expectedCamel": "rgnTelno",
+    "actualField": "areaTelno",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "columnName": "tmplt_nm",
+    "expectedCamel": "tmpltNm",
+    "actualField": "tmplatNm",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "columnName": "tmplt_se_cd",
+    "expectedCamel": "tmpltSeCd",
+    "actualField": "tmplatSeCode",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+    "columnName": "tmplt_path",
+    "expectedCamel": "tmpltPath",
+    "actualField": "tmplatCours",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "columnName": "ognz_id",
+    "expectedCamel": "ognzId",
+    "actualField": "orgnztId",
+    "isId": true,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "columnName": "ognz_nm",
+    "expectedCamel": "ognzNm",
+    "actualField": "orgnztNm",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\DeptManage.java",
+    "columnName": "ognz_expln",
+    "expectedCamel": "ognzExpln",
+    "actualField": "orgnztDc",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "user_type_cd",
+    "expectedCamel": "userTypeCd",
+    "actualField": "userNm",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "pswd_cnsr",
+    "expectedCamel": "pswdCnsr",
+    "actualField": "pswdCrans",
+    "isId": false,
+    "line": 52
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "chg_pswd_last_dt",
+    "expectedCamel": "chgPswdLastDt",
+    "actualField": "passwordUpdateDate",
+    "isId": false,
+    "line": 55
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "chg_pwd_cnt",
+    "expectedCamel": "chgPwdCnt",
+    "actualField": "changePasswordCount",
+    "isId": false,
+    "line": 58
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "lck_yn",
+    "expectedCamel": "lckYn",
+    "actualField": "lockCount",
+    "isId": false,
+    "line": 62
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "lck_cnt",
+    "expectedCamel": "lckCnt",
+    "actualField": "lockCount",
+    "isId": false,
+    "line": 65
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "lck_last_pnttm",
+    "expectedCamel": "lckLastPnttm",
+    "actualField": "lockLastDate",
+    "isId": false,
+    "line": 68
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "crtfc_dn_value",
+    "expectedCamel": "crtfcDnValue",
+    "actualField": "subDn",
+    "isId": false,
+    "line": 74
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "rrno",
+    "expectedCamel": "rrno",
+    "actualField": "ihidnum",
+    "isId": false,
+    "line": 78
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "base_addr",
+    "expectedCamel": "baseAddr",
+    "actualField": "homeAddr",
+    "isId": false,
+    "line": 97
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "dtl_addr",
+    "expectedCamel": "dtlAddr",
+    "actualField": "daddr",
+    "isId": false,
+    "line": 100
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "middle_telno",
+    "expectedCamel": "middleTelno",
+    "actualField": "homemiddleTelno",
+    "isId": false,
+    "line": 106
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "end_telno",
+    "expectedCamel": "endTelno",
+    "actualField": "homeendTelno",
+    "isId": false,
+    "line": 109
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "ognz_id",
+    "expectedCamel": "ognzId",
+    "actualField": "orgnztId",
+    "isId": false,
+    "line": 122
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "pstinst_cd",
+    "expectedCamel": "pstinstCd",
+    "actualField": "insttCode",
+    "isId": false,
+    "line": 125
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "role",
+    "expectedCamel": "role",
+    "actualField": "bizrno",
+    "isId": false,
+    "line": 136
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "bizr_no",
+    "expectedCamel": "bizrNo",
+    "actualField": "bizrno",
+    "isId": false,
+    "line": 140
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "jurir_no",
+    "expectedCamel": "jurirNo",
+    "actualField": "jurirno",
+    "isId": false,
+    "line": 143
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "rprsv_nm",
+    "expectedCamel": "rprsvNm",
+    "actualField": "cxfc",
+    "isId": false,
+    "line": 149
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "induty_cd",
+    "expectedCamel": "indutyCd",
+    "actualField": "indutyCode",
+    "isId": false,
+    "line": 152
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "ent_se_cd",
+    "expectedCamel": "entSeCd",
+    "actualField": "entrprsSeCode",
+    "isId": false,
+    "line": 155
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+    "columnName": "user_stts_cd",
+    "expectedCamel": "userSttsCd",
+    "actualField": "sbscrbYmd",
+    "isId": false,
+    "line": 160
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\UserAbsence.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\UserAbsence.java",
+    "columnName": "user_absn_yn",
+    "expectedCamel": "userAbsnYn",
+    "actualField": "userAbsnceAt",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\workspace\\MyPageContent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\workspace\\MyPageContent.java",
+    "columnName": "cntnts_use_yn",
+    "expectedCamel": "cntntsUseYn",
+    "actualField": "cntntsUseAt",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "adbkId",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "adbkId",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "columnName": "adbk_constnt_id",
+    "expectedCamel": "adbkConstntId",
+    "actualField": "adbkUserId",
+    "isId": true,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "columnName": "rls_scp_cd",
+    "expectedCamel": "rlsScpCd",
+    "actualField": "userNm",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "columnName": "nm",
+    "expectedCamel": "nm",
+    "actualField": "userNm",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+    "columnName": "ofc_telno",
+    "expectedCamel": "ofcTelno",
+    "actualField": "officeTelno",
+    "isId": false,
+    "line": 52
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java",
+    "columnName": "reg_se_cd",
+    "expectedCamel": "regSeCd",
+    "actualField": "regTypeCd",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java",
+    "columnName": "whdwl_ymd",
+    "expectedCamel": "whdwlYmd",
+    "actualField": "wdrlYmd",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "ans_sn",
+    "expectedCamel": "ansSn",
+    "actualField": "pstSn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "use_yn",
+    "expectedCamel": "useYn",
+    "actualField": "bgngYmd",
+    "isId": false,
+    "line": 60
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "pst_bgng_ymd",
+    "expectedCamel": "pstBgngYmd",
+    "actualField": "bgngYmd",
+    "isId": false,
+    "line": 64
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "pst_end_ymd",
+    "expectedCamel": "pstEndYmd",
+    "actualField": "endYmd",
+    "isId": false,
+    "line": 67
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "scrt_yn",
+    "expectedCamel": "scrtYn",
+    "actualField": "secretYn",
+    "isId": false,
+    "line": 82
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "evnt_dt",
+    "expectedCamel": "evntDt",
+    "actualField": "eventDate",
+    "isId": false,
+    "line": 88
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+    "columnName": "qna_stts_cd",
+    "expectedCamel": "qnaSttsCd",
+    "actualField": "qnaCatCd",
+    "isId": false,
+    "line": 91
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "atch_psblty_file_qty",
+    "expectedCamel": "atchPsbltyFileQty",
+    "actualField": "atchPsblFileSize",
+    "isId": false,
+    "line": 54
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "atch_psblty_file_sz",
+    "expectedCamel": "atchPsbltyFileSz",
+    "actualField": "atchPsblFileSize",
+    "isId": false,
+    "line": 58
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "use_yn",
+    "expectedCamel": "useYn",
+    "actualField": "tmplatId",
+    "isId": false,
+    "line": 61
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": false,
+    "line": 65
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "blog_yn",
+    "expectedCamel": "blogYn",
+    "actualField": "cmntyId",
+    "isId": false,
+    "line": 71
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "stsfdg_yn",
+    "expectedCamel": "stsfdgYn",
+    "actualField": "optnFrstRegisterId",
+    "isId": false,
+    "line": 82
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "frst_rgtr_id",
+    "expectedCamel": "frstRgtrId",
+    "actualField": "optnFrstRegisterId",
+    "isId": false,
+    "line": 87
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "optnFrstRegistPnttm",
+    "isId": false,
+    "line": 90
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "last_mdfr_id",
+    "expectedCamel": "lastMdfrId",
+    "actualField": "optnLastUpdusrId",
+    "isId": false,
+    "line": 93
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "optnLastUpdtPnttm",
+    "isId": false,
+    "line": 96
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java",
+    "columnName": "rgstr_se_cd",
+    "expectedCamel": "rgstrSeCd",
+    "actualField": "registSeCode",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_sn",
+    "expectedCamel": "dgstfnSn",
+    "actualField": "stsfdgId",
+    "isId": true,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "ntt_id",
+    "expectedCamel": "nttId",
+    "actualField": "pstId",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_scr",
+    "expectedCamel": "dgstfnScr",
+    "actualField": "stsfdgLevel",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_cn",
+    "expectedCamel": "dgstfnCn",
+    "actualField": "stsfdgCn",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "pswd",
+    "expectedCamel": "pswd",
+    "actualField": "password",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_nm",
+    "expectedCamel": "tmpltNm",
+    "actualField": "tmplatNm",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_path",
+    "expectedCamel": "tmpltPath",
+    "actualField": "tmplatCours",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "use_yn",
+    "expectedCamel": "useYn",
+    "actualField": "tmplatSeCode",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_se_cd",
+    "expectedCamel": "tmpltSeCd",
+    "actualField": "tmplatSeCode",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_sn",
+    "expectedCamel": "hldySn",
+    "actualField": "restdeNo",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_ymd",
+    "expectedCamel": "hldyYmd",
+    "actualField": "restdeDe",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_nm",
+    "expectedCamel": "hldyNm",
+    "actualField": "restdeNm",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_expln",
+    "expectedCamel": "hldyExpln",
+    "actualField": "restdeDc",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_se_cd",
+    "expectedCamel": "hldySeCd",
+    "actualField": "restdeSeCode",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "wrter_id",
+    "expectedCamel": "wrterId",
+    "actualField": "writerId",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "wrter_nm",
+    "expectedCamel": "wrterNm",
+    "actualField": "writerNm",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "pswd",
+    "expectedCamel": "pswd",
+    "actualField": "password",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_id",
+    "expectedCamel": "deptTaskId",
+    "actualField": "deptJobId",
+    "isId": true,
+    "line": 17
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_box_id",
+    "expectedCamel": "deptTaskBoxId",
+    "actualField": "deptJobbxId",
+    "isId": false,
+    "line": 20
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_nm",
+    "expectedCamel": "deptTaskNm",
+    "actualField": "deptJobNm",
+    "isId": false,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_cn",
+    "expectedCamel": "deptTaskCn",
+    "actualField": "deptJobCn",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "pic_id",
+    "expectedCamel": "picId",
+    "actualField": "chargerId",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "prrty_rnk",
+    "expectedCamel": "prrtyRnk",
+    "actualField": "priort",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "dept_task_box_id",
+    "expectedCamel": "deptTaskBoxId",
+    "actualField": "deptJobbxId",
+    "isId": true,
+    "line": 22
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "dept_task_box_nm",
+    "expectedCamel": "deptTaskBoxNm",
+    "actualField": "deptJobbxNm",
+    "isId": false,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "sort_ordr",
+    "expectedCamel": "sortOrdr",
+    "actualField": "indictOrdr",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "qstn_ttl",
+    "expectedCamel": "qstnTtl",
+    "actualField": "qestnTtl",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "qstn_cn",
+    "expectedCamel": "qstnCn",
+    "actualField": "qestnCn",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "ans_cn",
+    "expectedCamel": "ansCn",
+    "actualField": "answerCn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "inq_cnt",
+    "expectedCamel": "inqCnt",
+    "actualField": "atchFileId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "atch_file_seq",
+    "expectedCamel": "atchFileSeq",
+    "actualField": "fileSn",
+    "isId": true,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_strg_path",
+    "expectedCamel": "fileStrgPath",
+    "actualField": "fileStreCours",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "strg_file_nm",
+    "expectedCamel": "strgFileNm",
+    "actualField": "streFileNm",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "orgnl_file_nm",
+    "expectedCamel": "orgnlFileNm",
+    "actualField": "orignlFileNm",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_estn",
+    "expectedCamel": "fileEstn",
+    "actualField": "fileExtsn",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_sz",
+    "expectedCamel": "fileSz",
+    "actualField": "fileMg",
+    "isId": false,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java",
+    "columnName": "use_yn",
+    "expectedCamel": "useYn",
+    "actualField": "useAt",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_id",
+    "expectedCamel": "hlpId",
+    "actualField": "hpcmId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_se_cd",
+    "expectedCamel": "hlpSeCd",
+    "actualField": "hpcmSeCode",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_dfn",
+    "expectedCamel": "hlpDfn",
+    "actualField": "hpcmDf",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_expln",
+    "expectedCamel": "hlpExpln",
+    "actualField": "hpcmDc",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_id",
+    "expectedCamel": "onlnMnlId",
+    "actualField": "onlineMnlId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_nm",
+    "expectedCamel": "onlnMnlNm",
+    "actualField": "onlineMnlNm",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_se_cd",
+    "expectedCamel": "onlnMnlSeCd",
+    "actualField": "onlineMnlSeCode",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_dfn",
+    "expectedCamel": "onlnMnlDfn",
+    "actualField": "onlineMnlDf",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_expln",
+    "expectedCamel": "onlnMnlExpln",
+    "actualField": "onlineMnlDc",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_id",
+    "expectedCamel": "imgId",
+    "actualField": "imageId",
+    "isId": true,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_nm",
+    "expectedCamel": "imgNm",
+    "actualField": "imageNm",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "main_img_file_path",
+    "expectedCamel": "mainImgFilePath",
+    "actualField": "image",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_file_nm",
+    "expectedCamel": "imgFileNm",
+    "actualField": "imageFile",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "main_img_expln",
+    "expectedCamel": "mainImgExpln",
+    "actualField": "imageDc",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "rflt_yn",
+    "expectedCamel": "rfltYn",
+    "actualField": "reflctAt",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "ifml_atrz_id",
+    "expectedCamel": "ifmlAtrzId",
+    "actualField": "informalSanctionId",
+    "isId": true,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "task_se_cd",
+    "expectedCamel": "taskSeCd",
+    "actualField": "jobSeCode",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "aplcnt_id",
+    "expectedCamel": "aplcntId",
+    "actualField": "applicantId",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "req_ymd",
+    "expectedCamel": "reqYmd",
+    "actualField": "requestDe",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "aprvr_id",
+    "expectedCamel": "aprvrId",
+    "actualField": "sanctionerId",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "aprv_yn",
+    "expectedCamel": "aprvYn",
+    "actualField": "confmAt",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "atrz_dt",
+    "expectedCamel": "atrzDt",
+    "actualField": "sanctionDt",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+    "columnName": "rjct_rsn_cn",
+    "expectedCamel": "rjctRsnCn",
+    "actualField": "returnResn",
+    "isId": false,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "msg_id",
+    "expectedCamel": "msgId",
+    "actualField": "mssageId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "eml_ttl",
+    "expectedCamel": "emlTtl",
+    "actualField": "sj",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "eml_cn",
+    "expectedCamel": "emlCn",
+    "actualField": "emailCn",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "sndpty_nm",
+    "expectedCamel": "sndptyNm",
+    "actualField": "dsptchPerson",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "rcvr_nm",
+    "expectedCamel": "rcvrNm",
+    "actualField": "recptnPerson",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "dsptch_rslt_cd",
+    "expectedCamel": "dsptchRsltCd",
+    "actualField": "sndngResultCode",
+    "isId": false,
+    "line": 40
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+    "columnName": "dsptch_dt",
+    "expectedCamel": "dsptchDt",
+    "actualField": "sndngDe",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "rpt_id",
+    "expectedCamel": "rptId",
+    "actualField": "reportId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "rpt_ttl",
+    "expectedCamel": "rptTtl",
+    "actualField": "reportSubject",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "memo_rpt_ymd",
+    "expectedCamel": "memoRptYmd",
+    "actualField": "reprtDe",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "user_id",
+    "expectedCamel": "userId",
+    "actualField": "writerId",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "rptr_id",
+    "expectedCamel": "rptrId",
+    "actualField": "reportrId",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "rpt_cn",
+    "expectedCamel": "rptCn",
+    "actualField": "reportContents",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "drctn_mttr",
+    "expectedCamel": "drctnMttr",
+    "actualField": "instrCn",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "drctn_mttr_reg_dt",
+    "expectedCamel": "drctnMttrRegDt",
+    "actualField": "instrRegDt",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+    "columnName": "rptr_inq_dt",
+    "expectedCamel": "rptrInqDt",
+    "actualField": "reportrInqireDt",
+    "isId": false,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\Note.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\Note.java",
+    "columnName": "note_ttl",
+    "expectedCamel": "noteTtl",
+    "actualField": "noteSj",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "columnName": "note_rcptn_id",
+    "expectedCamel": "noteRcptnId",
+    "actualField": "noteRecptnId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "columnName": "rcvr_id",
+    "expectedCamel": "rcvrId",
+    "actualField": "rcverId",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+    "columnName": "rcptn_se_cd",
+    "expectedCamel": "rcptnSeCd",
+    "actualField": "recptnSeCd",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java",
+    "columnName": "note_sndng_id",
+    "expectedCamel": "noteSndngId",
+    "actualField": "noteDsptchId",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java",
+    "columnName": "sndr_id",
+    "expectedCamel": "sndrId",
+    "actualField": "dsptchUserId",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "noti_sn",
+    "expectedCamel": "notiSn",
+    "actualField": "ntfcNo",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "noti_ttl_nm",
+    "expectedCamel": "notiTtlNm",
+    "actualField": "ntfcSj",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "noti_cn",
+    "expectedCamel": "notiCn",
+    "actualField": "ntfcCn",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "rcvr_id",
+    "expectedCamel": "rcvrId",
+    "actualField": "receiverId",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "read_yn",
+    "expectedCamel": "readYn",
+    "actualField": "linkUrl",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "noti_dt",
+    "expectedCamel": "notiDt",
+    "actualField": "ntfcTime",
+    "isId": false,
+    "line": 43
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+    "columnName": "noti_ivl_val",
+    "expectedCamel": "notiIvlVal",
+    "actualField": "bhNtfcIntrvl",
+    "isId": false,
+    "line": 46
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "columnName": "ognz_id",
+    "expectedCamel": "ognzId",
+    "actualField": "orgnztId",
+    "isId": true,
+    "line": 20
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "columnName": "ognz_nm",
+    "expectedCamel": "ognzNm",
+    "actualField": "orgnztNm",
+    "isId": false,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java",
+    "columnName": "ognz_expln",
+    "expectedCamel": "ognzExpln",
+    "actualField": "orgnztDc",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "columnName": "rpt_id",
+    "expectedCamel": "rptId",
+    "actualField": "reportId",
+    "isId": true,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "columnName": "rpt_ttl",
+    "expectedCamel": "rptTtl",
+    "actualField": "reportSubject",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "columnName": "rpt_cn",
+    "expectedCamel": "rptCn",
+    "actualField": "reportContents",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "columnName": "rpt_se_cd",
+    "expectedCamel": "rptSeCd",
+    "actualField": "reprtSe",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java",
+    "columnName": "user_id",
+    "expectedCamel": "userId",
+    "actualField": "wrterId",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "columnName": "schdl_nm",
+    "expectedCamel": "schdlNm",
+    "actualField": "schdlTtl",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "columnName": "rept_se_cd",
+    "expectedCamel": "reptSeCd",
+    "actualField": "reptitSeCd",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "columnName": "schdl_imprt_cd",
+    "expectedCamel": "schdlImprtCd",
+    "actualField": "schdlIpcrCd",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "columnName": "schdl_bgng_ymd",
+    "expectedCamel": "schdlBgngYmd",
+    "actualField": "bgngYmd",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java",
+    "columnName": "schdl_end_ymd",
+    "expectedCamel": "schdlEndYmd",
+    "actualField": "endYmd",
+    "isId": false,
+    "line": 47
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderStatus.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderStatus.java",
+    "columnName": "leader_stts_cd",
+    "expectedCamel": "leaderSttsCd",
+    "actualField": "leaderSttus",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "columnName": "schdl_nm",
+    "expectedCamel": "schdlNm",
+    "actualField": "schdlTtl",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "columnName": "rept_se_cd",
+    "expectedCamel": "reptSeCd",
+    "actualField": "reptitSeCd",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "columnName": "schdl_knd_cd",
+    "expectedCamel": "schdlKndCd",
+    "actualField": "schdlKindCd",
+    "isId": false,
+    "line": 56
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java",
+    "columnName": "schdl_imprt_cd",
+    "expectedCamel": "schdlImprtCd",
+    "actualField": "schdlIpcrCd",
+    "isId": false,
+    "line": 60
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\scrap\\Scrap.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\scrap\\Scrap.java",
+    "columnName": "scrap_expln",
+    "expectedCamel": "scrapExpln",
+    "actualField": "scrapDc",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java",
+    "columnName": "sndng_telno",
+    "expectedCamel": "sndngTelno",
+    "actualField": "trnsmitTelno",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java",
+    "columnName": "sndng_cn",
+    "expectedCamel": "sndngCn",
+    "actualField": "trnsmitCn",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java",
+    "columnName": "rslt_cd",
+    "expectedCamel": "rsltCd",
+    "actualField": "resultCode",
+    "isId": false,
+    "line": 19
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java",
+    "columnName": "rslt_msg",
+    "expectedCamel": "rsltMsg",
+    "actualField": "resultMssage",
+    "isId": false,
+    "line": 22
+  }
+]

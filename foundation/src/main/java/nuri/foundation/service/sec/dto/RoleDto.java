@@ -8,11 +8,11 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class RoleDto {
-    private String roleCode;
+    private String roleId;
     private String roleNm;
-    private String rolePtn;
-    private String roleDc;
-    private String roleTyp;
+    private String rolePatrn;
+    private String roleExpln;
+    private String roleTypeCd;
     private String roleSort;
     private String roleCreatDe;
 }

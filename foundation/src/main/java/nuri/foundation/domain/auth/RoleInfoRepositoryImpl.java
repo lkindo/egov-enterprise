@@ -22,18 +22,18 @@ public class RoleInfoRepositoryImpl implements RoleInfoRepositoryCustom {
         public Page<RoleInfoProjection> selectRoleList(String searchKeyword, Pageable pageable) {
                 List<RoleInfoProjection> content = queryFactory
                                 .select(Projections.bean(RoleInfoProjection.class,
-                                                roleInfo.roleCode,
+                                                roleInfo.roleId,
                                                 roleInfo.roleNm,
-                                                roleInfo.rolePttrn,
-                                                roleInfo.roleDc,
-                                                roleInfo.roleTy,
+                                                roleInfo.rolePatrn,
+                                                roleInfo.roleExpln,
+                                                roleInfo.roleTypeCd,
                                                 commonCode.codeNm.as("roleTyNm"),
                                                 roleInfo.roleSort,
                                                 roleInfo.creatDt))
                                 .from(roleInfo)
                                 .leftJoin(commonCode).on(
                                                 commonCode.codeGroupId.eq("COM029")
-                                                                .and(commonCode.code.eq(roleInfo.roleTy)))
+                                                                .and(commonCode.code.eq(roleInfo.roleTypeCd)))
                                 .where(roleNmLike(searchKeyword))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())

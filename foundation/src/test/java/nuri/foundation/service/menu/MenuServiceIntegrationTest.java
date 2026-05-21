@@ -100,12 +100,12 @@ class MenuServiceIntegrationTest {
         menuRepository.save(child);
 
         MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authorCode("ROLE_ADMIN").menuNo(1L).build())
+                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(1L).build())
                 .build();
         menuAuthorityRepository.save(auth);
 
         MenuAuthority auth2 = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authorCode("ROLE_ADMIN").menuNo(2L).build())
+                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(2L).build())
                 .build();
         menuAuthorityRepository.save(auth2);
 

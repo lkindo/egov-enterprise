@@ -22,11 +22,11 @@ public class MemoTodoService implements EgovMemoTodoService {
     public void registerMemoTodo(MemoTodoDto dto) {
         MemoTodo todo = MemoTodo.builder()
                 .todoId(dto.getTodoId())
-                .todoNm(dto.getTodoNm())
+                .todoTtl(dto.getTodoTtl())
                 .todoCn(dto.getTodoCn())
-                .todoBeginTime(dto.getTodoBeginTime())
-                .todoEndTime(dto.getTodoEndTime())
-                .wrterId(dto.getWriterId())
+                .todoBgngTm(dto.getTodoBgngTm())
+                .todoEndTm(dto.getTodoEndTm())
+                .userId(dto.getUserId())
                 .build();
         memoTodoRepository.save(Objects.requireNonNull(todo));
     }
@@ -36,9 +36,9 @@ public class MemoTodoService implements EgovMemoTodoService {
     public void updateMemoTodo(MemoTodoDto dto) {
         memoTodoRepository.findById(Objects.requireNonNull(dto.getTodoId()))
                 .ifPresent(t -> t.update(
-                        dto.getTodoNm(),
-                        dto.getTodoBeginTime(),
-                        dto.getTodoEndTime(),
+                        dto.getTodoTtl(),
+                        dto.getTodoBgngTm(),
+                        dto.getTodoEndTm(),
                         dto.getTodoCn()));
     }
 
@@ -53,23 +53,23 @@ public class MemoTodoService implements EgovMemoTodoService {
         return memoTodoRepository.findById(Objects.requireNonNull(todoId))
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
-                        .todoNm(t.getTodoNm())
+                        .todoTtl(t.getTodoTtl())
                         .todoCn(t.getTodoCn())
-                        .todoBeginTime(t.getTodoBeginTime())
-                        .todoEndTime(t.getTodoEndTime())
-                        .writerId(t.getWrterId())
+                        .todoBgngTm(t.getTodoBgngTm())
+                        .todoEndTm(t.getTodoEndTm())
+                        .userId(t.getUserId())
                         .build())
                 .orElse(null);
     }
 
     @Override
-    public Page<MemoTodoDto> getMemoTodoList(String writerId, Pageable pageable) {
-        return memoTodoRepository.findByWrterId(Objects.requireNonNull(writerId), Objects.requireNonNull(pageable))
+    public Page<MemoTodoDto> getMemoTodoList(String userId, Pageable pageable) {
+        return memoTodoRepository.findByUserId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
-                        .todoNm(t.getTodoNm())
-                        .writerId(t.getWrterId())
-                        .todoBeginTime(t.getTodoBeginTime())
+                        .todoTtl(t.getTodoTtl())
+                        .userId(t.getUserId())
+                        .todoBgngTm(t.getTodoBgngTm())
                         .build());
     }
 }

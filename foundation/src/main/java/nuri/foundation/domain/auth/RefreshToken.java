@@ -19,13 +19,13 @@ public class RefreshToken {
     private String userId;
 
     @Column(name = "rfsh_tkn", nullable = false, unique = true, length = 4000)
-    private String token;
+    private String rfshTkn;
 
     @Column(name = "exprtn_dt", nullable = false)
-    private Instant expiryDate;
+    private Instant exprtnDt;
 
-    public void updateToken(String token, Instant expiryDate) {
-        this.token = token;
-        this.expiryDate = expiryDate;
+    public void updateToken(String rfshTkn, Instant exprtnDt) {
+        this.rfshTkn = rfshTkn;
+        this.exprtnDt = exprtnDt;
     }
 }

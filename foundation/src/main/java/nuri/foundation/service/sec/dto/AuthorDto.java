@@ -9,9 +9,9 @@ import lombok.*;
 @Builder
 public class AuthorDto {
     @org.springframework.lang.NonNull
-    private String authorCode;
+    private String authrtCd;
     @org.springframework.lang.NonNull
-    private String authorNm;
-    private String authorDc;
-    private String authorCreatDe;
+    private String authrtNm;
+    private String authrtExpln;
+    private String authrtCrtYmd;
 }

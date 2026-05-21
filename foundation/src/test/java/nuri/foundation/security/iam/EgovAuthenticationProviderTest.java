@@ -65,8 +65,8 @@ class EgovAuthenticationProviderTest {
         lenient().when(egovPasswordEncoder.encode("password", "testuser")).thenReturn("hashedPassword");
         
         UserAuthority userAuthority = UserAuthority.builder()
-                .uniqId("USR_0000000000001")
-                .authorCode("ROLE_USER")
+                .scrtyDcsnTrgtId("USR_0000000000001")
+                .authrtId("ROLE_USER")
                 .build();
         lenient().when(userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(userAuthority));
 

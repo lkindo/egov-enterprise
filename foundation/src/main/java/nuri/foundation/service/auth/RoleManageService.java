@@ -65,11 +65,11 @@ public class RoleManageService {
         }
 
         RoleInfo entity = RoleInfo.builder()
-                .roleCode(roleCode)
+                .roleId(roleCode)
                 .roleNm(dto.getRoleNm())
-                .rolePttrn(dto.getRolePttrn())
-                .roleDc(dto.getRoleDc())
-                .roleTy(dto.getRoleTy())
+                .rolePatrn(dto.getRolePttrn())
+                .roleExpln(dto.getRoleDc())
+                .roleTypeCd(dto.getRoleTy())
                 .roleSort(dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null)
                 .build();
         roleInfoRepository.save(Objects.requireNonNull(entity));
@@ -105,11 +105,11 @@ public class RoleManageService {
 
     private RoleManageDto toDto(RoleInfo entity) {
         return RoleManageDto.builder()
-                .roleCode(entity.getRoleCode())
+                .roleCode(entity.getRoleId())
                 .roleNm(entity.getRoleNm())
-                .rolePttrn(entity.getRolePttrn())
-                .roleDc(entity.getRoleDc())
-                .roleTy(entity.getRoleTy())
+                .rolePttrn(entity.getRolePatrn())
+                .roleDc(entity.getRoleExpln())
+                .roleTy(entity.getRoleTypeCd())
                 .roleSort(entity.getRoleSort() != null ? entity.getRoleSort().toString() : null)
                 .creatDt(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
                 .build();

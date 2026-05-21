@@ -18,23 +18,23 @@ public class AuthorityRoleRepositoryImpl implements AuthorityRoleRepositoryCusto
         private final JPAQueryFactory queryFactory;
 
         @Override
-        public Page<AuthorRoleProjection> searchAuthorRoles(String authorCode, Pageable pageable) {
+        public Page<AuthorRoleProjection> searchAuthorRoles(String authrtCd, Pageable pageable) {
                 List<AuthorRoleProjection> content = queryFactory
                                 .select(Projections.bean(AuthorRoleProjection.class,
-                                                roleInfo.roleCode.as("roleCode"),
+                                                roleInfo.roleId.as("roleId"),
                                                 roleInfo.roleNm.as("roleNm"),
-                                                roleInfo.rolePttrn.as("rolePtn"),
-                                                roleInfo.roleDc.as("roleDc"),
-                                                roleInfo.roleTy.as("roleTyp"),
+                                                roleInfo.rolePatrn.as("rolePatrn"),
+                                                roleInfo.roleExpln.as("roleExpln"),
+                                                roleInfo.roleTypeCd.as("roleTypeCd"),
                                                 roleInfo.roleSort.as("roleSort"),
-                                                authorityRole.id.authorCode.as("authorCode"),
+                                                authorityRole.id.authrtCd.as("authrtCd"),
                                                 new CaseBuilder()
-                                                                .when(authorityRole.id.authorCode.isNotNull()).then("Y")
+                                                                .when(authorityRole.id.authrtCd.isNotNull()).then("Y")
                                                                 .otherwise("N").as("regYn"),
                                                 authorityRole.createdDate.as("creatDt")))
                                 .from(roleInfo)
-                                .leftJoin(authorityRole).on(roleInfo.roleCode.eq(authorityRole.id.roleCode)
-                                                .and(authorityRole.id.authorCode.eq(authorCode)))
+                                .leftJoin(authorityRole).on(roleInfo.roleId.eq(authorityRole.id.roleCd)
+                                                .and(authorityRole.id.authrtCd.eq(authrtCd)))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .orderBy(roleInfo.roleSort.asc())

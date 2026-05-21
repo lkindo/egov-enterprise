@@ -65,17 +65,17 @@ public class UserAuthorityManageService {
         }
 
         List<UserAuthority> entities = userAuthorities.stream()
-                .filter(dto -> dto.getUniqId() != null && dto.getAuthorCode() != null)
+                .filter(dto -> dto.getScrtyDcsnTrgtId() != null && dto.getAuthrtId() != null)
                 .map(dto -> {
-                    UserAuthority existing = userAuthorityRepository.findById(dto.getUniqId()).orElse(null);
+                    UserAuthority existing = userAuthorityRepository.findById(dto.getScrtyDcsnTrgtId()).orElse(null);
                     if (existing != null) {
-                        existing.update(dto.getAuthorCode(), dto.getMberTyCode());
+                        existing.update(dto.getAuthrtId(), dto.getMbrTypeCd());
                         return existing;
                     } else {
                         return UserAuthority.builder()
-                                .uniqId(dto.getUniqId())
-                                .authorCode(dto.getAuthorCode())
-                                .mberTyCode(dto.getMberTyCode())
+                                .scrtyDcsnTrgtId(dto.getScrtyDcsnTrgtId())
+                                .authrtId(dto.getAuthrtId())
+                                .mbrTypeCd(dto.getMbrTypeCd())
                                 .build();
                     }
                 })
@@ -100,7 +100,7 @@ public class UserAuthorityManageService {
      */
     @Transactional
     public void saveDeptAuthorities(DeptAuthorBatchRequest request) {
-        if (request == null || request.getDeptId() == null || request.getAuthorCode() == null) {
+        if (request == null || request.getDeptId() == null || request.getAuthrtId() == null) {
             return;
         }
 
@@ -122,12 +122,12 @@ public class UserAuthorityManageService {
                 .map(userId -> {
                     UserAuthority existing = userAuthorityRepository.findById(userId).orElse(null);
                     if (existing != null) {
-                        existing.update(request.getAuthorCode(), null); // mberTyCode는 기존 유지 또는 null
+                        existing.update(request.getAuthrtId(), null); // mberTyCode는 기존 유지 또는 null
                         return existing;
                     } else {
                         return UserAuthority.builder()
-                                .uniqId(userId)
-                                .authorCode(request.getAuthorCode())
+                                .scrtyDcsnTrgtId(userId)
+                                .authrtId(request.getAuthrtId())
                                 .build();
                     }
                 })

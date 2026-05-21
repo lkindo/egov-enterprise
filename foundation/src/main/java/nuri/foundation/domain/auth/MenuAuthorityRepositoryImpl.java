@@ -23,19 +23,19 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
         private final JPAQueryFactory queryFactory;
 
         @Override
-        public List<MenuAuthorityProjection> selectMenuCreatList(String authorCode) {
+        public List<MenuAuthorityProjection> selectMenuCreatList(String authrtCd) {
                 return queryFactory
                                 .select(Projections.bean(MenuAuthorityProjection.class,
-                                                menu.id.as("menuNo"),
+                                                menu.id.as("menuSn"),
                                                 menu.menuNm.as("menuNm"),
-                                                menu.upperMenuSn.as("upperMenuNo"),
-                                                Expressions.asString(authorCode).as("authorCode"),
+                                                menu.upperMenuSn.as("upperMenuSn"),
+                                                Expressions.asString(authrtCd).as("authrtCd"),
                                                 new CaseBuilder()
-                                                                .when(menuAuthority.id.authorCode.isNotNull()).then("Y")
+                                                                .when(menuAuthority.id.authrtCd.isNotNull()).then("Y")
                                                                 .otherwise("N").as("regYn")))
                                 .from(menu)
                                 .leftJoin(menuAuthority)
-                                .on(menu.id.eq(menuAuthority.id.menuNo).and(menuAuthority.id.authorCode.eq(authorCode)))
+                                .on(menu.id.eq(menuAuthority.id.menuSn).and(menuAuthority.id.authrtCd.eq(authrtCd)))
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
         }
@@ -44,21 +44,21 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
         public Page<MenuCreatManageProjection> selectMenuCreatManagList(String searchKeyword, Pageable pageable) {
                 List<MenuCreatManageProjection> content = queryFactory
                                 .select(Projections.bean(MenuCreatManageProjection.class,
-                                                authority.authorCode,
-                                                authority.authorNm,
-                                                authority.authorDc,
-                                                authority.authorCreatDe,
+                                                authority.authrtCd,
+                                                authority.authrtNm,
+                                                authority.authrtExpln,
+                                                authority.authrtCrtYmd,
                                                 ExpressionUtils.as(
                                                                 JPAExpressions.select(menuAuthority.count())
                                                                                 .from(menuAuthority)
-                                                                                .where(menuAuthority.id.authorCode.eq(
-                                                                                                authority.authorCode)),
+                                                                                .where(menuAuthority.id.authrtCd.eq(
+                                                                                                authority.authrtCd)),
                                                                 "chkYeoBu")))
                                 .from(authority)
                                 .where(authorNmLike(searchKeyword))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(authority.authorCode.asc())
+                                .orderBy(authority.authrtCd.asc())
                                 .fetch();
 
                 long total = queryFactory
@@ -71,6 +71,6 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
         }
 
         private com.querydsl.core.types.dsl.BooleanExpression authorNmLike(String searchKeyword) {
-                return StringUtils.hasText(searchKeyword) ? authority.authorNm.contains(searchKeyword) : null;
+                return StringUtils.hasText(searchKeyword) ? authority.authrtNm.contains(searchKeyword) : null;
         }
 }

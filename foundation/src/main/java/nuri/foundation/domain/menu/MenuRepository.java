@@ -63,7 +63,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
     @Query("""
                 SELECT m, ma
                 FROM Menu m
-                LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuNo
+                LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuSn
                 ORDER BY m.upperMenuSn ASC, m.menuOrdr ASC
             """)
     List<Object[]> findAllWithAuthorities();

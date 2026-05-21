@@ -107,7 +107,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                     userEntity.getUserId(), userEntity.getEsntlId(), userEntity.getRole());
 
             String authorCodeFromDb = userAuthorityRepository.findById(userEntity.getEsntlId())
-                    .map(ua -> ua.getAuthorCode())
+                    .map(ua -> ua.getAuthrtId())
                     .orElse(null);
 
             log.info(">>> Role from DB table (NEMPLYRSCRTYESTBS): {}", authorCodeFromDb);

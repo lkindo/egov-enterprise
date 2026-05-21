@@ -22,24 +22,24 @@ public class MemoTodo extends BaseEntity {
     private String todoId;
 
     @Column(name = "todo_ttl", length = 100, nullable = false)
-    private String todoNm;
+    private String todoTtl;
 
     @Column(name = "todo_cn", length = 4000)
     private String todoCn;
 
     @Column(name = "todo_bgng_tm", length = 6)
-    private String todoBeginTime;
+    private String todoBgngTm;
 
     @Column(name = "todo_end_tm", length = 6)
-    private String todoEndTime;
+    private String todoEndTm;
 
     @Column(name = "user_id", length = 20, nullable = false)
-    private String wrterId;
+    private String userId;
 
-    public void update(String todoNm, String todoBeginTime, String todoEndTime, String todoCn) {
-        this.todoNm = todoNm;
-        this.todoBeginTime = todoBeginTime;
-        this.todoEndTime = todoEndTime;
+    public void update(String todoTtl, String todoBgngTm, String todoEndTm, String todoCn) {
+        this.todoTtl = todoTtl;
+        this.todoBgngTm = todoBgngTm;
+        this.todoEndTm = todoEndTm;
         this.todoCn = todoCn;
     }
 }

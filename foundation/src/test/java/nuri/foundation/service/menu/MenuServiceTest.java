@@ -94,7 +94,7 @@ class MenuServiceTest {
 
         Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
         MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authorCode("ROLE_ANONYMOUS").menuNo(1L).build())
+                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
                 .build();
 
         List<Object[]> results = new ArrayList<>();
@@ -175,7 +175,7 @@ class MenuServiceTest {
         menuService.insertMenuCreatList("ROLE_USER", "1,2,3");
 
         // then
-        verify(menuAuthorityRepository).deleteByIdAuthorCode("ROLE_USER");
+        verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_USER");
         verify(menuAuthorityRepository).saveAll(any());
     }
 
@@ -186,7 +186,7 @@ class MenuServiceTest {
         menuService.insertMenuCreatList("ROLE_USER", "");
 
         // then
-        verify(menuAuthorityRepository).deleteByIdAuthorCode("ROLE_USER");
+        verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_USER");
         verify(menuAuthorityRepository, never()).saveAll(any());
     }
 

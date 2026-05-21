@@ -37,8 +37,8 @@ class MemoTodoServiceTest {
     void getMemoTodoList_Success() {
         // Given
         PageRequest pageable = PageRequest.of(0, 10);
-        MemoTodo entity = MemoTodo.builder().todoId("T1").todoNm("Task1").build();
-        given(memoTodoRepository.findByWrterId(eq("user1"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        MemoTodo entity = MemoTodo.builder().todoId("T1").todoTtl("Task1").build();
+        given(memoTodoRepository.findByUserId(eq("user1"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // When
         Page<MemoTodoDto> result = memoTodoService.getMemoTodoList("user1", pageable);
@@ -65,7 +65,7 @@ class MemoTodoServiceTest {
     @DisplayName("메모 할일 등록")
     void registerMemoTodo_Success() {
         // Given
-        MemoTodoDto dto = MemoTodoDto.builder().todoId("T1").todoNm("New").build();
+        MemoTodoDto dto = MemoTodoDto.builder().todoId("T1").todoTtl("New").build();
 
         // When
         memoTodoService.registerMemoTodo(dto);
@@ -80,7 +80,7 @@ class MemoTodoServiceTest {
         // Given
         MemoTodo entity = MemoTodo.builder().todoId("T1").build();
         given(memoTodoRepository.findById("T1")).willReturn(Optional.of(entity));
-        MemoTodoDto dto = MemoTodoDto.builder().todoId("T1").todoNm("Updated").build();
+        MemoTodoDto dto = MemoTodoDto.builder().todoId("T1").todoTtl("Updated").build();
 
         // When
         memoTodoService.updateMemoTodo(dto);

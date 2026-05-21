@@ -13,5 +13,5 @@ public interface EgovMemoTodoService {
 
     MemoTodoDto getMemoTodo(String todoId);
 
-    Page<MemoTodoDto> getMemoTodoList(String writerId, Pageable pageable);
+    Page<MemoTodoDto> getMemoTodoList(String userId, Pageable pageable);
 }

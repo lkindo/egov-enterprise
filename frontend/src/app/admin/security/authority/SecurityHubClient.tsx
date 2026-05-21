@@ -127,7 +127,7 @@ export default function SecurityHubClient({
   useEffect(() => {
     if (usersData?.list) {
       const list = Array.isArray(usersData.list) ? usersData.list : [];
-      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.uniqId);
+      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.scrtyDcsnTrgtId);
       setTempUserMappings(new Set(registeredUsers));
     }
   }, [usersData, selectedAuthorCode]);
@@ -184,9 +184,9 @@ export default function SecurityHubClient({
   const saveUserMappingMutation = useMutation({
     mutationFn: async () => {
       const mappings: UserAuthorityDto[] = Array.from(tempUserMappings).map(uid => ({
-        uniqId: uid,
-        authorCode: selectedAuthorCode,
-        mberTyCode: users.find(u => u.uniqId === uid)?.mberTyCode || 'USR'
+        scrtyDcsnTrgtId: uid,
+        authrtId: selectedAuthorCode,
+        mbrTypeCd: users.find(u => u.scrtyDcsnTrgtId === uid)?.mbrTypeCd || 'USR'
       }));
       return userAuthorityAdminService.saveUserAuthorities(mappings);
     },
@@ -259,11 +259,11 @@ export default function SecurityHubClient({
     setSelectedAuthorCode(code);
   };
 
-  const toggleUserMapping = (uniqId: string) => {
+  const toggleUserMapping = (scrtyDcsnTrgtId: string) => {
     setTempUserMappings(prev => {
       const next = new Set(prev);
-      if (next.has(uniqId)) next.delete(uniqId);
-      else next.add(uniqId);
+      if (next.has(scrtyDcsnTrgtId)) next.delete(scrtyDcsnTrgtId);
+      else next.add(scrtyDcsnTrgtId);
       return next;
     });
   };
@@ -329,16 +329,16 @@ export default function SecurityHubClient({
           <div className="flex items-center gap-4 relative z-10">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-              tempUserMappings.has(user.uniqId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+              tempUserMappings.has(user.scrtyDcsnTrgtId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
             )}>
               <Fingerprint size={16} />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight">{user.userNm}</span>
-              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
+              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.scrtyDcsnTrgtId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
             </div>
           </div>
-          {tempUserMappings.has(user.uniqId) ? (
+          {tempUserMappings.has(user.scrtyDcsnTrgtId) ? (
             <CheckCircle2 size={20} className="text-white relative z-10" />
           ) : (
             <UserPlus size={16} className="text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -617,8 +617,8 @@ export default function SecurityHubClient({
                           loading={isUsersLoading}
                           error={usersError as Error | null}
                           onRetry={() => refetchUsers()}
-                          onRowClick={(item) => toggleUserMapping((item as AuthorGroupProjection).uniqId)}
-                          keyField="uniqId"
+                          onRowClick={(item) => toggleUserMapping((item as AuthorGroupProjection).scrtyDcsnTrgtId)}
+                          keyField="scrtyDcsnTrgtId"
                           isPremium={false}
                           className="border-none bg-transparent"
                           pagination={{

@@ -95,7 +95,7 @@ public class MenuService {
         List<Menu> filteredMenus = menuMap.values().stream()
                 .filter(m -> {
                     boolean isAuthorized = authorityMap.getOrDefault(m.getId(), new ArrayList<>()).stream()
-                            .anyMatch(ma -> roles.contains(ma.getId().getAuthorCode()));
+                            .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
                     boolean isAdmin = roles.contains("ROLE_ADMIN");
                     return (isAuthorized || isAdmin) && m.getId() <= 9999999;
                 })
@@ -198,16 +198,16 @@ public class MenuService {
 
     public List<MenuCreateDto> selectMenuCreatManagList(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
-                Sort.by("authorCode").ascending());
+                Sort.by("id.authrtCd").ascending());
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
 
         return menuAuthorityRepository
                 .selectMenuCreatManagList(searchKeyword, Objects.requireNonNull(pageable)).stream()
                 .map(proj -> MenuCreateDto.builder()
-                        .authorCode(proj.getAuthorCode())
-                        .authorNm(proj.getAuthorNm())
-                        .authorDc(proj.getAuthorDc())
-                        .authorCreatDe(proj.getAuthorCreatDe() != null ? proj.getAuthorCreatDe().toString() : "")
+                        .authorCode(proj.getAuthrtCd())
+                        .authorNm(proj.getAuthrtNm())
+                        .authorDc(proj.getAuthrtExpln())
+                        .authorCreatDe(proj.getAuthrtCrtYmd() != null ? proj.getAuthrtCrtYmd().toString() : "")
                         .chkYeoBu(proj.getChkYeoBu().intValue())
                         .build())
                 .collect(Collectors.toList());
@@ -226,12 +226,12 @@ public class MenuService {
         
         return projections.stream()
                 .map(proj -> {
-                    if (proj.getMenuNo() == null) {
-                        log.error(">>> [MenuService] Found projection with NULL menuNo for authorCode: {}", vo.getAuthorCode());
+                    if (proj.getMenuSn() == null) {
+                        log.error(">>> [MenuService] Found projection with NULL menuSn for authorCode: {}", vo.getAuthorCode());
                     }
                     return MenuCreateDto.builder()
-                        .menuNo(proj.getMenuNo() != null ? proj.getMenuNo().intValue() : 0)
-                        .authorCode(proj.getAuthorCode())
+                        .menuNo(proj.getMenuSn() != null ? proj.getMenuSn().intValue() : 0)
+                        .authorCode(proj.getAuthrtCd())
                         .authorNm(proj.getMenuNm())
                         .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)
                         .build();
@@ -242,7 +242,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
-        menuAuthorityRepository.deleteByIdAuthorCode(Objects.requireNonNull(authorCode));
+        menuAuthorityRepository.deleteByIdAuthrtCd(Objects.requireNonNull(authorCode));
 
         if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
             String[] menuNos = checkedMenuNos.split(",");
@@ -253,10 +253,10 @@ public class MenuService {
                 long mNo = Long.parseLong(menuNo);
                 MenuAuthority ma = MenuAuthority.builder()
                         .id(MenuAuthority.MenuAuthorityId.builder()
-                                .authorCode(authorCode)
-                                .menuNo(mNo)
+                                .authrtCd(authorCode)
+                                .menuSn(mNo)
                                 .build())
-                        .mapngCreatId(authorCode)
+                        .mapngCrtId(authorCode)
                         .build();
                 authorities.add(ma);
             }

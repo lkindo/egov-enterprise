@@ -46,9 +46,9 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 상세 조회", description = "특정 권한 그룹의 상세 정보를 조회합니다.")
-    @GetMapping("/{authorCode}")
-    public ResponseEntity<ApiResponse<AuthorManageDto>> getAuthor(@PathVariable String authorCode) {
-        return ResponseEntity.ok(ApiResponse.success(authorManageService.selectAuthor(authorCode)));
+    @GetMapping("/{authrtCd}")
+    public ResponseEntity<ApiResponse<AuthorManageDto>> getAuthor(@PathVariable String authrtCd) {
+        return ResponseEntity.ok(ApiResponse.success(authorManageService.selectAuthor(authrtCd)));
     }
 
     @Operation(summary = "권한 그룹 등록", description = "새로운 시스템 권한 그룹을 등록합니다.")
@@ -59,23 +59,23 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 수정", description = "기존 시스템 권한 그룹 정보를 수정합니다.")
-    @PutMapping("/{authorCode}")
+    @PutMapping("/{authrtCd}")
     public ResponseEntity<ApiResponse<Void>> updateAuthor(
-            @PathVariable String authorCode,
+            @PathVariable String authrtCd,
             @RequestBody AuthorManageDto dto) {
-        dto.setAuthorCode(authorCode);
+        dto.setAuthrtCd(authrtCd);
         authorManageService.updateAuthor(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한 그룹의 접근 가능한 메뉴 목록을 조회합니다.")
-    @GetMapping("/{authorCode}/menus")
+    @GetMapping("/{authrtCd}/menus")
     public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getAuthorMenus(
-            @PathVariable String authorCode) {
-        log.info(">>> [AuthorApiController] getAuthorMenus called for code: {}", authorCode);
+            @PathVariable String authrtCd) {
+        log.info(">>> [AuthorApiController] getAuthorMenus called for code: {}", authrtCd);
 
         MenuCreateDto vo = new MenuCreateDto();
-        vo.setAuthorCode(authorCode);
+        vo.setAuthorCode(authrtCd);
 
         List<MenuCreateDto> list = menuService.selectMenuCreatList(vo);
 
@@ -83,9 +83,9 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 삭제", description = "시스템 권한 그룹 정보를 삭제합니다.")
-    @DeleteMapping("/{authorCode}")
-    public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authorCode) {
-        authorManageService.deleteAuthor(authorCode);
+    @DeleteMapping("/{authrtCd}")
+    public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authrtCd) {
+        authorManageService.deleteAuthor(authrtCd);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

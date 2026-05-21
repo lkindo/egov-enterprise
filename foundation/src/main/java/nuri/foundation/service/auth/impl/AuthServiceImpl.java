@@ -79,8 +79,8 @@ public class AuthServiceImpl implements AuthService {
                 })
                 .orElseGet(() -> nuri.foundation.domain.auth.RefreshToken.builder()
                         .userId(userId)
-                        .token(refreshToken)
-                        .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
+                        .rfshTkn(refreshToken)
+                        .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
                         .build());
         refreshTokenRepository.save(rt);
         
@@ -95,10 +95,10 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // DB에 저장된 토큰과 일치하는지 검증
-        nuri.foundation.domain.auth.RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
+        nuri.foundation.domain.auth.RefreshToken storedToken = refreshTokenRepository.findByRfshTkn(refreshToken)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
 
-        if (storedToken.getExpiryDate().isBefore(java.time.Instant.now())) {
+        if (storedToken.getExprtnDt().isBefore(java.time.Instant.now())) {
             refreshTokenRepository.delete(storedToken);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
@@ -107,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
         
         String authorCode = userRepository.findById(userId)
                 .map(user -> userAuthorityRepository.findById(user.getEsntlId())
-                        .map(ua -> ua.getAuthorCode())
+                        .map(ua -> ua.getAuthrtId())
                         .orElseGet(() -> user.getRole().name()))
                 .orElse("ROLE_USER");
 

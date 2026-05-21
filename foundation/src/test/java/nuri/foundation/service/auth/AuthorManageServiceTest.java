@@ -39,33 +39,33 @@ class AuthorManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
         
-        Page<Authority> page = new PageImpl<>(List.of(Authority.builder().authorCode("ROLE_ADMIN").authorNm("관리자").build()));
+        Page<Authority> page = new PageImpl<>(List.of(Authority.builder().authrtCd("ROLE_ADMIN").authrtNm("관리자").build()));
         given(authorityRepository.findAll(any(Pageable.class))).willReturn(page);
 
         List<AuthorManageDto> result = authorManageService.selectAuthorList(searchVO);
 
         assertEquals(1, result.size());
-        assertEquals("ROLE_ADMIN", result.get(0).getAuthorCode());
+        assertEquals("ROLE_ADMIN", result.get(0).getAuthrtCd());
     }
 
     @Test
     @DisplayName("권한 상세 조회 테스트")
     void selectAuthorTest() {
-        Authority authority = Authority.builder().authorCode("ROLE_ADMIN").authorNm("관리자").build();
+        Authority authority = Authority.builder().authrtCd("ROLE_ADMIN").authrtNm("관리자").build();
         given(authorityRepository.findById("ROLE_ADMIN")).willReturn(Optional.of(authority));
 
         AuthorManageDto result = authorManageService.selectAuthor("ROLE_ADMIN");
 
         assertNotNull(result);
-        assertEquals("ROLE_ADMIN", result.getAuthorCode());
+        assertEquals("ROLE_ADMIN", result.getAuthrtCd());
     }
 
     @Test
     @DisplayName("권한 등록 테스트")
     void insertAuthorTest() {
         AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode("ROLE_NEW")
-                .authorNm("신규권한")
+                .authrtCd("ROLE_NEW")
+                .authrtNm("신규권한")
                 .build();
         
         authorManageService.insertAuthor(dto);
@@ -77,8 +77,8 @@ class AuthorManageServiceTest {
     @DisplayName("권한 수정 테스트")
     void updateAuthorTest() {
         AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode("ROLE_EXIST")
-                .authorNm("수정된이름")
+                .authrtCd("ROLE_EXIST")
+                .authrtNm("수정된이름")
                 .build();
         
         Authority authority = mock(Authority.class);

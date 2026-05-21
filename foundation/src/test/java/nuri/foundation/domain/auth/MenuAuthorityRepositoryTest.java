@@ -28,14 +28,14 @@ class MenuAuthorityRepositoryTest {
     void testFindByIdAuthorCode() {
         // Given
         String authorCode = "ROLE_ADMIN";
-        when(menuAuthorityRepository.findByIdAuthorCode(authorCode)).thenReturn(Collections.emptyList());
+        when(menuAuthorityRepository.findByIdAuthrtCd(authorCode)).thenReturn(Collections.emptyList());
 
         // When
-        List<MenuAuthority> result = menuAuthorityRepository.findByIdAuthorCode(authorCode);
+        List<MenuAuthority> result = menuAuthorityRepository.findByIdAuthrtCd(authorCode);
 
         // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(menuAuthorityRepository, times(1)).findByIdAuthorCode(authorCode);
+        verify(menuAuthorityRepository, times(1)).findByIdAuthrtCd(authorCode);
     }
 }

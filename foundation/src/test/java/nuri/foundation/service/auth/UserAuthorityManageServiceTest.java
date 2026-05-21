@@ -59,8 +59,8 @@ class UserAuthorityManageServiceTest {
     @DisplayName("사용자의 권한 정보 저장 테스트 - 신규 등록")
     void saveUserAuthoritiesNewTest() {
         UserAuthorityDto dto = UserAuthorityDto.builder()
-                .uniqId("USER1")
-                .authorCode("ROLE_ADMIN")
+                .scrtyDcsnTrgtId("USER1")
+                .authrtId("ROLE_ADMIN")
                 .build();
         
         given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
@@ -74,8 +74,8 @@ class UserAuthorityManageServiceTest {
     @DisplayName("사용자의 권한 정보 저장 테스트 - 기존 수정")
     void saveUserAuthoritiesUpdateTest() {
         UserAuthorityDto dto = UserAuthorityDto.builder()
-                .uniqId("USER1")
-                .authorCode("ROLE_USER")
+                .scrtyDcsnTrgtId("USER1")
+                .authrtId("ROLE_USER")
                 .build();
         
         UserAuthority existing = mock(UserAuthority.class);
@@ -102,7 +102,7 @@ class UserAuthorityManageServiceTest {
     void saveDeptAuthoritiesAllMembersTest() {
         DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
         request.setDeptId("DEPT1");
-        request.setAuthorCode("ROLE_DEPT");
+        request.setAuthrtId("ROLE_DEPT");
         request.setAllMembers(true);
         
         User user = mock(User.class);
@@ -120,7 +120,7 @@ class UserAuthorityManageServiceTest {
     void saveDeptAuthoritiesSpecificMembersTest() {
         DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
         request.setDeptId("DEPT1");
-        request.setAuthorCode("ROLE_DEPT");
+        request.setAuthrtId("ROLE_DEPT");
         request.setAllMembers(false);
         request.setUserIds(List.of("USER1"));
         
@@ -147,12 +147,12 @@ class UserAuthorityManageServiceTest {
     @DisplayName("사용자의 권한 정보 저장 테스트 - 필터링")
     void saveUserAuthoritiesFilterTest() {
         UserAuthorityDto dto1 = mock(UserAuthorityDto.class);
-        lenient().when(dto1.getUniqId()).thenReturn(null);
-        lenient().when(dto1.getAuthorCode()).thenReturn("ROLE_USER");
+        lenient().when(dto1.getScrtyDcsnTrgtId()).thenReturn(null);
+        lenient().when(dto1.getAuthrtId()).thenReturn("ROLE_USER");
 
         UserAuthorityDto dto2 = mock(UserAuthorityDto.class);
-        lenient().when(dto2.getUniqId()).thenReturn("USER1");
-        lenient().when(dto2.getAuthorCode()).thenReturn(null);
+        lenient().when(dto2.getScrtyDcsnTrgtId()).thenReturn("USER1");
+        lenient().when(dto2.getAuthrtId()).thenReturn(null);
         
         userAuthorityManageService.saveUserAuthorities(List.of(dto1, dto2));
 
@@ -164,7 +164,7 @@ class UserAuthorityManageServiceTest {
     void saveDeptAuthoritiesEmptyUsersTest() {
         DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
         request.setDeptId("DEPT1");
-        request.setAuthorCode("ROLE_DEPT");
+        request.setAuthrtId("ROLE_DEPT");
         request.setAllMembers(false);
         request.setUserIds(List.of());
 
@@ -178,7 +178,7 @@ class UserAuthorityManageServiceTest {
     void saveDeptAuthoritiesUpdateTest() {
         DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
         request.setDeptId("DEPT1");
-        request.setAuthorCode("ROLE_DEPT");
+        request.setAuthrtId("ROLE_DEPT");
         request.setUserIds(List.of("USER1"));
         
         UserAuthority existing = mock(UserAuthority.class);

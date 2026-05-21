@@ -51,7 +51,7 @@ class AuthorRoleManageServiceTest {
         
         authorRoleManageService.insertAuthorRole("ROLE_ADMIN", roleCodes);
 
-        verify(authorityRoleRepository).deleteByIdAuthorCode("ROLE_ADMIN");
+        verify(authorityRoleRepository).deleteByIdAuthrtCd("ROLE_ADMIN");
         verify(authorityRoleRepository).saveAll(anyList());
     }
 }

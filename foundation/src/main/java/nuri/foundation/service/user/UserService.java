@@ -70,7 +70,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                         userMap.put(user.getEsntlId(), user);
                         if (authority != null) {
-                                authorityMap.put(authority.getUniqId(), authority);
+                                authorityMap.put(authority.getScrtyDcsnTrgtId(), authority);
                         }
                 }
 
@@ -119,12 +119,12 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 String authorCode = userAuthorityRepository
                                 .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
-                                .map(UserAuthority::getAuthorCode)
+                                .map(UserAuthority::getAuthrtId)
                                 .orElse(null);
 
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
-                                .uniqId(required(user.getEsntlId()))
-                                .authorCode(authorCode)
+                                .scrtyDcsnTrgtId(required(user.getEsntlId()))
+                                .authrtId(authorCode)
                                 .build() : null;
 
                 return userMapper.toDtoWithAuthority(user, authority);
@@ -178,9 +178,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 // 권한 정보 저장
                 UserAuthority authority = UserAuthority.builder()
-                                .uniqId(user.getEsntlId())
-                                .authorCode("ROLE_" + user.getRole().name())
-                                .mberTyCode("USR")
+                                .scrtyDcsnTrgtId(user.getEsntlId())
+                                .authrtId("ROLE_" + user.getRole().name())
+                                .mbrTypeCd("USR")
                                 .build();
                 userAuthorityRepository.save(authority);
 
@@ -304,9 +304,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 // 권한 정보 저장
                 UserAuthority authority = UserAuthority.builder()
-                                .uniqId(user.getEsntlId())
-                                .authorCode("ROLE_" + user.getRole().name())
-                                .mberTyCode("USR")
+                                .scrtyDcsnTrgtId(user.getEsntlId())
+                                .authrtId("ROLE_" + user.getRole().name())
+                                .mbrTypeCd("USR")
                                 .build();
                 userAuthorityRepository.save(authority);
 
@@ -412,11 +412,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                         userAuthorityRepository.findById(user.getEsntlId())
                                 .ifPresentOrElse(
-                                        auth -> auth.update(authorCode, auth.getMberTyCode()),
+                                        auth -> auth.update(authorCode, auth.getMbrTypeCd()),
                                         () -> userAuthorityRepository.save(UserAuthority.builder()
-                                                .uniqId(user.getEsntlId())
-                                                .authorCode(authorCode)
-                                                .mberTyCode("USR")
+                                                .scrtyDcsnTrgtId(user.getEsntlId())
+                                                .authrtId(authorCode)
+                                                .mbrTypeCd("USR")
                                                 .build())
                                 );
                 });

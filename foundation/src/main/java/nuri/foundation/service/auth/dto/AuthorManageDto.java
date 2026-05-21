@@ -22,18 +22,18 @@ public class AuthorManageDto {
     @NotBlank(message = "권한코드는 필수 입력 사항입니다.")
     @Size(max = 30)
     @NonNull
-    private String authorCode;
+    private String authrtCd;
 
     /** 권한명 */
     @NotBlank(message = "권한명은 필수 입력 사항입니다.")
     @Size(max = 60)
     @NonNull
-    private String authorNm;
+    private String authrtNm;
 
     /** 권한설명 */
     @Size(max = 200)
-    private String authorDc;
+    private String authrtExpln;
 
     /** 권한생성일 */
-    private String authorCreatDe;
+    private String authrtCrtYmd;
 }

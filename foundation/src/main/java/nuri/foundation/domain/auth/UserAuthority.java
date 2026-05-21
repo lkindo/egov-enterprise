@@ -20,17 +20,17 @@ public class UserAuthority extends BaseEntity implements Serializable {
     @Id
     @Column(name = "scrty_dcsn_trgt_id", length = 20)
     @NonNull
-    private String uniqId;
+    private String scrtyDcsnTrgtId;
 
     @Column(name = "authrt_id", nullable = false, length = 20)
     @NonNull
-    private String authorCode;
+    private String authrtId;
 
     @Column(name = "mbr_type_cd", length = 12)
-    private String mberTyCode;
+    private String mbrTypeCd;
 
-    public void update(@NonNull String authorCode, String mberTyCode) {
-        this.authorCode = Objects.requireNonNull(authorCode);
-        this.mberTyCode = mberTyCode;
+    public void update(@NonNull String authrtId, String mbrTypeCd) {
+        this.authrtId = Objects.requireNonNull(authrtId);
+        this.mbrTypeCd = mbrTypeCd;
     }
 }

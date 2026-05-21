@@ -9,8 +9,8 @@ import java.util.Optional;
 
 public interface UserAuthorityRepository extends JpaRepository<UserAuthority, String>, UserAuthorityRepositoryCustom {
     @NonNull
-    Optional<UserAuthority> findById(@NonNull String uniqId);
+    Optional<UserAuthority> findById(@NonNull String scrtyDcsnTrgtId);
 
-    @Query("SELECT ua FROM UserAuthority ua WHERE ua.uniqId IN :uniqIds")
-    List<UserAuthority> findByUniqIdIn(@Param("uniqIds") List<String> uniqIds);
+    @Query("SELECT ua FROM UserAuthority ua WHERE ua.scrtyDcsnTrgtId IN :scrtyDcsnTrgtIds")
+    List<UserAuthority> findByScrtyDcsnTrgtIdIn(@Param("scrtyDcsnTrgtIds") List<String> scrtyDcsnTrgtIds);
 }

@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthorRoleProjection {
-    private String roleCode;
+    private String roleId;
     private String roleNm;
-    private String rolePtn;
-    private String roleDc;
-    private String roleTyp;
+    private String rolePatrn;
+    private String roleExpln;
+    private String roleTypeCd;
     private String roleSort;
-    private String authorCode;
+    private String authrtCd;
     private String regYn;
     private LocalDateTime creatDt;
 }

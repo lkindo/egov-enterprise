@@ -12,10 +12,10 @@ public interface DiaryRepository extends JpaRepository<Diary, String> {
 
     @Query("""
             SELECT d FROM Diary d
-            WHERE (:searchCondition = 'SCHDUL_ID' AND d.schdlId = :searchKeyword)
+            WHERE (:searchCondition = 'SCHDL_ID' AND d.schdlId = :searchKeyword)
                OR (:searchCondition = 'DIARY_NM' AND d.diaryNm LIKE '%' || :searchKeyword || '%')
-               OR (:searchCondition = 'DRCT_MATTER' AND d.drctMatter LIKE '%' || :searchKeyword || '%')
-               OR (:searchCondition = 'PARTCLR_MATTER' AND d.partclrMatter LIKE '%' || :searchKeyword || '%')
+               OR (:searchCondition = 'DRCT_MATTER' AND d.drctnMttr LIKE '%' || :searchKeyword || '%')
+               OR (:searchCondition = 'PARTCLR_MATTER' AND d.excptnMttr LIKE '%' || :searchKeyword || '%')
                OR (:searchKeyword IS NULL OR :searchKeyword = '')
             """)
     Page<Diary> searchDiaries(@Param("searchCondition") String searchCondition,

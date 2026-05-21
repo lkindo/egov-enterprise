@@ -9,9 +9,9 @@ import lombok.Builder;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MenuAuthorityProjection {
-    private String authorCode;
-    private Long menuNo;
+    private String authrtCd;
+    private Long menuSn;
     private String menuNm;
-    private Long upperMenuNo;
+    private Long upperMenuSn;
     private String regYn;
 }

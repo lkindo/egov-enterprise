@@ -64,7 +64,7 @@ public class UserMapperTest {
     @DisplayName("toDtoWithAuthority - with authority")
     public void testToDtoWithAuthority_WithAuthority() {
         User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
-        UserAuthority auth = UserAuthority.builder().uniqId("esntl1").authorCode("ROLE_SYS").mberTyCode("USR").build();
+        UserAuthority auth = UserAuthority.builder().scrtyDcsnTrgtId("esntl1").authrtId("ROLE_SYS").mbrTypeCd("USR").build();
         UserDto dto = mapper.toDtoWithAuthority(user, auth);
         assertNotNull(dto);
         assertEquals("ROLE_SYS", dto.getRole());
@@ -74,7 +74,7 @@ public class UserMapperTest {
     @Test
     @DisplayName("toDtoWithAuthority - null user, with authority")
     public void testToDtoWithAuthority_NullUser_WithAuthority() {
-        UserAuthority auth = UserAuthority.builder().uniqId("esntl1").authorCode("ROLE_SYS").mberTyCode("USR").build();
+        UserAuthority auth = UserAuthority.builder().scrtyDcsnTrgtId("esntl1").authrtId("ROLE_SYS").mbrTypeCd("USR").build();
         // UserDto has @NonNull on userId and userNm, so building it without user throws NPE
         assertThrows(NullPointerException.class, () -> mapper.toDtoWithAuthority(null, auth));
     }

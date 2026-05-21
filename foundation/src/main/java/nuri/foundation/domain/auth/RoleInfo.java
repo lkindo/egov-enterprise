@@ -16,19 +16,19 @@ public class RoleInfo extends BaseEntity {
 
     @Id
     @Column(name = "role_id", length = 30)
-    private String roleCode;
+    private String roleId;
 
     @Column(name = "role_nm", nullable = false, length = 100)
     private String roleNm;
 
     @Column(name = "role_patrn", length = 300)
-    private String rolePttrn;
+    private String rolePatrn;
 
     @Column(name = "role_expln", length = 4000)
-    private String roleDc;
+    private String roleExpln;
 
     @Column(name = "role_type_cd", length = 12)
-    private String roleTy;
+    private String roleTypeCd;
 
     @Column(name = "role_sort")
     private Integer roleSort;
@@ -40,17 +40,17 @@ public class RoleInfo extends BaseEntity {
     /**
      * Updates the role information.
      *
-     * @param roleNm    Role Name
-     * @param rolePttrn Role Pattern
-     * @param roleDc    Role Description
-     * @param roleTy    Role Type
-     * @param roleSort  Role Sort Order
+     * @param roleNm     Role Name
+     * @param rolePatrn  Role Pattern
+     * @param roleExpln  Role Description
+     * @param roleTypeCd Role Type
+     * @param roleSort   Role Sort Order
      */
-    public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, Integer roleSort) {
+    public void update(String roleNm, String rolePatrn, String roleExpln, String roleTypeCd, Integer roleSort) {
         this.roleNm = roleNm;
-        this.rolePttrn = rolePttrn;
-        this.roleDc = roleDc;
-        this.roleTy = roleTy;
+        this.rolePatrn = rolePatrn;
+        this.roleExpln = roleExpln;
+        this.roleTypeCd = roleTypeCd;
         this.roleSort = roleSort;
     }
 }

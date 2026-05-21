@@ -41,23 +41,23 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("권한 목록 조회 성공")
     void selectAuthorList_Success() {
-        Authority auth = Authority.builder().authorCode("A1").authorNm("N1").build();
+        Authority auth = Authority.builder().authrtCd("A1").authrtNm("N1").build();
         given(authorityRepository.findAll()).willReturn(List.of(auth));
 
         List<AuthorDto> result = authorManageService.selectAuthorList();
         
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthorCode()).isEqualTo("A1");
+        assertThat(result.get(0).getAuthrtCd()).isEqualTo("A1");
     }
 
     @Test
     @DisplayName("권한 상세 조회 성공")
     void selectAuthor_Success() {
-        Authority auth = Authority.builder().authorCode("A1").authorNm("N1").build();
+        Authority auth = Authority.builder().authrtCd("A1").authrtNm("N1").build();
         given(authorityRepository.findById("A1")).willReturn(Optional.of(auth));
 
         AuthorDto result = authorManageService.selectAuthor("A1");
-        assertThat(result.getAuthorCode()).isEqualTo("A1");
+        assertThat(result.getAuthrtCd()).isEqualTo("A1");
     }
 
     @Test
@@ -72,7 +72,7 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("권한 등록 성공")
     void insertAuthor_Success() {
-        AuthorDto dto = AuthorDto.builder().authorCode("A1").authorNm("N1").build();
+        AuthorDto dto = AuthorDto.builder().authrtCd("A1").authrtNm("N1").build();
         authorManageService.insertAuthor(dto);
         verify(authorityRepository).save(any(Authority.class));
     }
@@ -80,13 +80,13 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("권한 수정 성공")
     void updateAuthor_Success() {
-        Authority auth = Authority.builder().authorCode("A1").authorNm("Old").build();
+        Authority auth = Authority.builder().authrtCd("A1").authrtNm("Old").build();
         given(authorityRepository.findById("A1")).willReturn(Optional.of(auth));
 
-        AuthorDto dto = AuthorDto.builder().authorCode("A1").authorNm("New").build();
+        AuthorDto dto = AuthorDto.builder().authrtCd("A1").authrtNm("New").build();
         authorManageService.updateAuthor(dto);
         
-        assertThat(auth.getAuthorNm()).isEqualTo("New");
+        assertThat(auth.getAuthrtNm()).isEqualTo("New");
     }
 
     @Test
@@ -101,22 +101,22 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("롤 목록 조회 성공")
     void selectRoleList_Success() {
-        RoleInfo role = RoleInfo.builder().roleCode("R1").roleNm("RN1").build();
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("RN1").build();
         given(roleInfoRepository.findAll()).willReturn(List.of(role));
 
         List<RoleDto> result = authorManageService.selectRoleList();
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRoleCode()).isEqualTo("R1");
+        assertThat(result.get(0).getRoleId()).isEqualTo("R1");
     }
 
     @Test
     @DisplayName("롤 상세 조회 성공")
     void selectRole_Success() {
-        RoleInfo role = RoleInfo.builder().roleCode("R1").roleNm("RN1").build();
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("RN1").build();
         given(roleInfoRepository.findById("R1")).willReturn(Optional.of(role));
 
         RoleDto result = authorManageService.selectRole("R1");
-        assertThat(result.getRoleCode()).isEqualTo("R1");
+        assertThat(result.getRoleId()).isEqualTo("R1");
     }
 
     @Test
@@ -131,7 +131,7 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("롤 등록 성공")
     void insertRole_Success() {
-        RoleDto dto = RoleDto.builder().roleCode("R1").roleNm("RN1").build();
+        RoleDto dto = RoleDto.builder().roleId("R1").roleNm("RN1").build();
         authorManageService.insertRole(dto);
         verify(roleInfoRepository).save(any(RoleInfo.class));
     }
@@ -139,10 +139,10 @@ class AuthorManageServiceImplTest {
     @Test
     @DisplayName("롤 수정 성공")
     void updateRole_Success() {
-        RoleInfo role = RoleInfo.builder().roleCode("R1").roleNm("Old").build();
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("Old").build();
         given(roleInfoRepository.findById("R1")).willReturn(Optional.of(role));
 
-        RoleDto dto = RoleDto.builder().roleCode("R1").roleNm("New").build();
+        RoleDto dto = RoleDto.builder().roleId("R1").roleNm("New").build();
         authorManageService.updateRole(dto);
         assertThat(role.getRoleNm()).isEqualTo("New");
     }
@@ -163,7 +163,7 @@ class AuthorManageServiceImplTest {
         
         authorManageService.insertAuthorRoleRelate("A1", List.of("R1", "R2"));
         
-        verify(authorityRoleRepository).deleteByIdAuthorCode("A1");
+        verify(authorityRoleRepository).deleteByIdAuthrtCd("A1");
         verify(authorityRoleRepository).saveAll(any());
     }
 
@@ -180,24 +180,24 @@ class AuthorManageServiceImplTest {
     @DisplayName("권한별 롤 목록 조회 성공")
     void selectAuthorRoleList_Success() {
         AuthorityRole.AuthorityRoleId id = AuthorityRole.AuthorityRoleId.builder()
-                .authorCode("A1").roleCode("R1").build();
+                .authrtCd("A1").roleCd("R1").build();
         AuthorityRole relate = AuthorityRole.builder().id(id).build();
         
-        given(authorityRoleRepository.findByIdAuthorCode("A1")).willReturn(List.of(relate));
+        given(authorityRoleRepository.findByIdAuthrtCd("A1")).willReturn(List.of(relate));
         
-        RoleInfo role = RoleInfo.builder().roleCode("R1").roleNm("RN1").build();
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("RN1").build();
         given(roleInfoRepository.findAllById(List.of("R1"))).willReturn(List.of(role));
 
         List<RoleDto> result = authorManageService.selectAuthorRoleList("A1");
         
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRoleCode()).isEqualTo("R1");
+        assertThat(result.get(0).getRoleId()).isEqualTo("R1");
     }
 
     @Test
     @DisplayName("권한별 롤 목록 조회 - 매핑 데이터 없음")
     void selectAuthorRoleList_Empty() {
-        given(authorityRoleRepository.findByIdAuthorCode("A1")).willReturn(Collections.emptyList());
+        given(authorityRoleRepository.findByIdAuthrtCd("A1")).willReturn(Collections.emptyList());
         List<RoleDto> result = authorManageService.selectAuthorRoleList("A1");
         assertThat(result).isEmpty();
     }

@@ -13,12 +13,12 @@ public interface AuthorityRepository extends JpaRepository<Authority, String>, A
 
     @Override
     @NonNull
-    Optional<Authority> findById(@NonNull String authorCode);
+    Optional<Authority> findById(@NonNull String authrtCd);
 
     @Override
     @Transactional
-    void deleteById(@NonNull String authorCode);
+    void deleteById(@NonNull String authrtCd);
 
-    @Query("SELECT a FROM Authority a WHERE a.authorNm LIKE %:searchKeyword% OR a.authorCode LIKE %:searchKeyword%")
+    @Query("SELECT a FROM Authority a WHERE a.authrtNm LIKE %:searchKeyword% OR a.authrtCd LIKE %:searchKeyword%")
     Page<Authority> searchByKeyword(@Param("searchKeyword") @NonNull String searchKeyword, @NonNull Pageable pageable);
 }

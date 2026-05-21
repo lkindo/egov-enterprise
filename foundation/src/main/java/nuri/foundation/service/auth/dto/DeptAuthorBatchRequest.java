@@ -18,7 +18,7 @@ public class DeptAuthorBatchRequest {
     private String deptId;
 
     @Schema(description = "부서에 부여할 권한 코드", example = "ROLE_USER")
-    private String authorCode;
+    private String authrtId;
 
     @Schema(description = "부서 내 모든 사용자에게 적용 여부", example = "true")
     private boolean allMembers;

@@ -27,30 +27,30 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(name = "diary_id", length = 20)
     private String diaryId;
 
-    @Column(name = "schdul_id", length = 20)
+    @Column(name = "schdl_id", length = 20)
     private String schdlId;
 
     @Column(name = "diary_prgrs_rt")
-    private Integer diaryProcsPte;
+    private Integer diaryPrgrsRt;
 
     @Column(name = "diary_nm", length = 100)
     private String diaryNm;
 
     @Column(name = "drctn_mttr", columnDefinition = "TEXT")
-    private String drctMatter;
+    private String drctnMttr;
 
     @Column(name = "excptn_mttr", columnDefinition = "TEXT")
-    private String partclrMatter;
+    private String excptnMttr;
 
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    public void update(Integer diaryProcsPte, String diaryNm, String drctMatter,
-            String partclrMatter, String atchFileId) {
-        this.diaryProcsPte = diaryProcsPte;
+    public void update(Integer diaryPrgrsRt, String diaryNm, String drctnMttr,
+            String excptnMttr, String atchFileId) {
+        this.diaryPrgrsRt = diaryPrgrsRt;
         this.diaryNm = diaryNm;
-        this.drctMatter = drctMatter;
-        this.partclrMatter = partclrMatter;
+        this.drctnMttr = drctnMttr;
+        this.excptnMttr = excptnMttr;
         this.atchFileId = atchFileId;
     }
 }

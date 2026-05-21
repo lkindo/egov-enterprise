@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                                                 "User not found: " + username));
 
                 String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
-                                .map(UserAuthority::getAuthorCode)
+                                .map(UserAuthority::getAuthrtId)
                                 .map(code -> code.startsWith("ROLE_") ? code : "ROLE_" + code)
                                 .orElse("ROLE_USER");
 

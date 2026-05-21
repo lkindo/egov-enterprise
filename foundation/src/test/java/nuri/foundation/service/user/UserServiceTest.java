@@ -51,7 +51,7 @@ class UserServiceTest {
         given(user.getEsntlId()).willReturn("USR1");
         
         UserAuthority authority = mock(UserAuthority.class);
-        given(authority.getUniqId()).willReturn("USR1");
+        given(authority.getScrtyDcsnTrgtId()).willReturn("USR1");
         
         List<Object[]> list = new ArrayList<>();
         list.add(new Object[]{user, authority});

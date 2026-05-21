@@ -32,7 +32,7 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @Query("""
                 SELECT u, ua
                 FROM User u
-                LEFT JOIN UserAuthority ua ON u.esntlId = ua.uniqId
+                LEFT JOIN UserAuthority ua ON u.esntlId = ua.scrtyDcsnTrgtId
                 ORDER BY u.esntlId
             """)
     List<Object[]> findAllWithAuthorities();

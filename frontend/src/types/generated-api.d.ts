@@ -1039,7 +1039,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/authorities/{authorCode}": {
+    "/api/v1/admin/system/authorities/{authrtCd}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2358,7 +2358,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/authorities/{authorCode}/roles": {
+    "/api/v1/admin/system/authorities/{authrtCd}/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -3782,7 +3782,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/authorities/{authorCode}/menus": {
+    "/api/v1/admin/system/authorities/{authrtCd}/menus": {
         parameters: {
             query?: never;
             header?: never;
@@ -4136,8 +4136,8 @@ export interface components {
             enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
             accountNonLocked?: boolean;
-            accountNonExpired?: boolean;
             credentialsNonExpired?: boolean;
+            accountNonExpired?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4175,17 +4175,17 @@ export interface components {
             /** Format: date-time */
             createdDate?: string;
             password?: string;
+            moblphonNo?: string;
+            emailAdres?: string;
+            detailAdres?: string;
+            offmTelno?: string;
+            homeadres?: string;
+            sexdstnCode?: string;
             passwordCnsr?: string;
             passwordHint?: string;
-            emailAdres?: string;
             lockAt?: string;
-            fxnum?: string;
-            sexdstnCode?: string;
             brth?: string;
-            moblphonNo?: string;
-            homeadres?: string;
-            offmTelno?: string;
-            detailAdres?: string;
+            fxnum?: string;
             userSttusCode?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
@@ -4236,11 +4236,11 @@ export interface components {
             schdlPicId?: string;
             reptitSeCd?: string;
             schdlSeCd?: string;
-            schdulId?: string;
-            schdulNm?: string;
-            schdulCn?: string;
             schdulBgnde?: string;
+            schdulId?: string;
+            schdulCn?: string;
             schdulEndde?: string;
+            schdulNm?: string;
         };
         /** @description 온라인 설문 항목 DTO */
         OnlinePollItemDto: {
@@ -4291,8 +4291,8 @@ export interface components {
             /** @description 설문 항목 목록 */
             pollItems?: components["schemas"]["OnlinePollItemDto"][];
             pollTtl?: string;
-            pollBeginDe?: string;
             pollKindCode?: string;
+            pollBeginDe?: string;
             pollEndDe?: string;
         };
         /** @description 메모보고 정보 */
@@ -4327,12 +4327,12 @@ export interface components {
              */
             createdDate?: string;
             frstRegisterId?: string;
-            rptUserId?: string;
             reprtTtl?: string;
-            rptYmd?: string;
-            rptTtl?: string;
+            rptUserId?: string;
             reprtCn?: string;
             reprtId?: string;
+            rptTtl?: string;
+            rptYmd?: string;
             rptId?: string;
             rptCn?: string;
             rptInqDt?: string;
@@ -4383,12 +4383,12 @@ export interface components {
             endYmd?: string;
             bgngYmd?: string;
             reptitSeCd?: string;
-            schdlIpcrCd?: string;
             schdlSeCd?: string;
+            schdlIpcrCd?: string;
             schdlPicId?: string;
             schdlPlcNm?: string;
-            schdulNm?: string;
             schdulCn?: string;
+            schdulNm?: string;
             scheduleId?: string;
         };
         /** @description 비정형 결재 DTO */
@@ -4427,10 +4427,10 @@ export interface components {
              * @description 등록 일시
              */
             createdDate?: string;
-            sancltNm?: string;
-            applcntId?: string;
-            infrmlSanctnId?: string;
             reqstDe?: string;
+            infrmlSanctnId?: string;
+            applcntId?: string;
+            sancltNm?: string;
         };
         /** @description Description */
         OnlineManualDto: {
@@ -4451,8 +4451,8 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-            mnlDc?: string;
             mnlId?: string;
+            mnlDc?: string;
             mnlNm?: string;
         };
         /** @description Description */
@@ -4732,14 +4732,14 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
+            popupTitleNm?: string;
             popupWlc?: string;
+            ntceEndde?: string;
             popupHlc?: string;
             popupHSize?: string;
             popupWSize?: string;
             stopVewAt?: string;
-            popupTitleNm?: string;
             ntceBgnde?: string;
-            ntceEndde?: string;
             ntceAt?: string;
         };
         /** @description 메뉴 정보 DTO */
@@ -4829,16 +4829,16 @@ export interface components {
             regYn?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
-            startTime?: string;
             otpEnabledAt?: string;
+            startTime?: string;
             dplctPermAt?: string;
             emplyrId?: string;
             lmttAt?: string;
-            ipInfo?: string;
             endTime?: string;
-            ipAdres?: string;
+            ipInfo?: string;
             emplyrNm?: string;
             dplctLoginAt?: string;
+            ipAdres?: string;
         };
         InternetSvcGuidanceDto: {
             intnetSvcId?: string;
@@ -4970,12 +4970,12 @@ export interface components {
             bbsAttrCd?: string;
             replyPsblYn?: string;
             tmpltId?: string;
+            bbsNm?: string;
             bbsTyCode?: string;
-            fileAtchPosblAt?: string;
-            bbsIntrcn?: string;
             bbsAttrbCode?: string;
             replyPosblAt?: string;
-            bbsNm?: string;
+            fileAtchPosblAt?: string;
+            bbsIntrcn?: string;
             bbsIntroCn?: string;
         };
         /** @description 배너 정보 */
@@ -5008,10 +5008,10 @@ export interface components {
             createdDate?: string;
         };
         AuthorManageDto: {
-            authorCode: string;
-            authorNm: string;
-            authorDc?: string;
-            authorCreatDe?: string;
+            authrtCd: string;
+            authrtNm: string;
+            authrtExpln?: string;
+            authrtCrtYmd?: string;
         };
         EventInfoDto: {
             eventId?: string;
@@ -5052,7 +5052,7 @@ export interface components {
         AddressBookDto: {
             adbkId?: string;
             adbkNm: string;
-            othbcScope: string;
+            rlsScopeCd: string;
             trgetOrgnztId?: string;
             useYn?: string;
             wrterId?: string;
@@ -5190,10 +5190,10 @@ export interface components {
             frstRegisterPnttm?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
+            trnsmitterNm?: string;
+            trnsmitterId?: string;
             /** Format: date-time */
             sendDt?: string;
-            trnsmitterId?: string;
-            trnsmitterNm?: string;
         };
         /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
@@ -5284,9 +5284,9 @@ export interface components {
             otpCode?: number;
         };
         UserAuthorityDto: {
-            uniqId: string;
-            authorCode: string;
-            mberTyCode?: string;
+            scrtyDcsnTrgtId: string;
+            authrtId: string;
+            mbrTypeCd?: string;
             userNm?: string;
         };
         Template: {
@@ -5304,13 +5304,13 @@ export interface components {
             frstRegisterId?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
-            frstRegisterPnttm?: string;
-            /** Format: date-time */
-            lastUpdusrPnttm?: string;
-            /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegisterPnttm?: string;
+            /** Format: date-time */
+            lastUpdusrPnttm?: string;
         };
         /** @description 부서별 권한 일괄 할당 요청 */
         DeptAuthorBatchRequest: {
@@ -5323,7 +5323,7 @@ export interface components {
              * @description 부서에 부여할 권한 코드
              * @example ROLE_USER
              */
-            authorCode?: string;
+            authrtId?: string;
             /**
              * @description 부서 내 모든 사용자에게 적용 여부
              * @example true
@@ -5429,11 +5429,11 @@ export interface components {
             searchCondition?: string;
             /** @description 검색어 */
             searchWrd?: string;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
+            /** Format: date-time */
+            frstRegisterPnttm?: string;
             /** Format: date-time */
             trnsmitPnttm?: string;
         };
@@ -6288,32 +6288,32 @@ export interface components {
             eventDateStr?: string;
             isExpired?: string;
             bbsTtl?: string;
-            id?: string;
             password?: string;
+            id?: string;
             useAt?: string;
+            /** Format: int32 */
+            commentCo?: number;
+            qnaCategory?: string;
+            qnaStatus?: string;
             /** Format: date-time */
             createdDate?: string;
-            qnaStatus?: string;
-            qnaCategory?: string;
             /** Format: int32 */
             inqireCo?: number;
-            nttCn?: string;
             /** Format: int64 */
             nttNo?: number;
-            nttSj?: string;
-            ntcrNm?: string;
-            nttId?: string;
             ntcrId?: string;
             /** Format: int32 */
             likeCo?: number;
+            nttId?: string;
+            ntcrNm?: string;
+            nttSj?: string;
+            nttCn?: string;
             parnts?: string;
-            ntceBgngYmd?: string;
-            ntceEndYmd?: string;
             sjBoldYn?: string;
+            ntceEndYmd?: string;
+            ntceBgngYmd?: string;
             /** Format: int32 */
             fileCo?: number;
-            /** Format: int32 */
-            commentCo?: number;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -6411,11 +6411,11 @@ export interface components {
             userId?: string;
             userNm?: string;
             groupId?: string;
-            mberTyCode?: string;
+            mbrTypeCd?: string;
             mberTyNm?: string;
-            authorCode?: string;
+            authrtId?: string;
             regYn?: string;
-            uniqId?: string;
+            scrtyDcsnTrgtId?: string;
         };
         PageResponseAuthorGroupProjection: {
             list?: components["schemas"]["AuthorGroupProjection"][];
@@ -6839,11 +6839,11 @@ export interface components {
             dmndUserId?: string;
             rqesterIp?: string;
             ocrnYmd?: string;
-            processTime?: string;
-            requstId?: string;
+            occrrncDe?: string;
             processSeCode?: string;
             rqesterId?: string;
-            occrrncDe?: string;
+            requstId?: string;
+            processTime?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -6873,9 +6873,9 @@ export interface components {
             errOccrrAt?: string;
             errorCode?: string;
             creatDt?: string;
-            loginDt?: string;
-            occrrncDe?: string;
             errorOccrrAt?: string;
+            occrrncDe?: string;
+            loginDt?: string;
         };
         PageResponseLoginLogDto: {
             list?: components["schemas"]["LoginLogDto"][];
@@ -7006,8 +7006,8 @@ export interface components {
             deptNm?: string;
             userId?: string;
             userNm?: string;
-            authorCode?: string;
-            uniqId?: string;
+            authrtId?: string;
+            scrtyDcsnTrgtId?: string;
             regYn?: string;
         };
         PageResponseDeptAuthorProjection: {
@@ -7398,13 +7398,13 @@ export interface components {
             timestamp?: string;
         };
         AuthorRoleProjection: {
-            roleCode?: string;
+            roleId?: string;
             roleNm?: string;
-            rolePtn?: string;
-            roleDc?: string;
-            roleTyp?: string;
+            rolePatrn?: string;
+            roleExpln?: string;
+            roleTypeCd?: string;
             roleSort?: string;
-            authorCode?: string;
+            authrtCd?: string;
             regYn?: string;
             /** Format: date-time */
             creatDt?: string;
@@ -10571,7 +10571,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };
@@ -10593,7 +10593,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };
@@ -10619,7 +10619,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };
@@ -13390,7 +13390,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };
@@ -13412,7 +13412,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };
@@ -15314,7 +15314,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                authorCode: string;
+                authrtCd: string;
             };
             cookie?: never;
         };

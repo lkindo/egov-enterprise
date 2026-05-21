@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface MenuAuthorityRepository
         extends JpaRepository<MenuAuthority, MenuAuthority.MenuAuthorityId>, MenuAuthorityRepositoryCustom {
-    void deleteByIdAuthorCode(String authorCode);
+    void deleteByIdAuthrtCd(String authrtCd);
 
-    List<MenuAuthority> findByIdAuthorCode(String authorCode);
+    List<MenuAuthority> findByIdAuthrtCd(String authrtCd);
 }

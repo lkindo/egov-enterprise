@@ -41,7 +41,7 @@ class RoleManageServiceTest {
         searchVO.setPageUnit(10);
         
         RoleInfo roleInfo = RoleInfo.builder()
-                .roleCode("ROLE_USER")
+                .roleId("ROLE_USER")
                 .roleNm("User Role")
                 .build();
         Page<RoleInfo> page = new PageImpl<>(Collections.singletonList(roleInfo));
@@ -63,7 +63,7 @@ class RoleManageServiceTest {
         // Given
         String roleCode = "ROLE_ADMIN";
         RoleInfo roleInfo = RoleInfo.builder()
-                .roleCode(roleCode)
+                .roleId(roleCode)
                 .roleNm("Admin Role")
                 .build();
         
@@ -153,7 +153,7 @@ class RoleManageServiceTest {
         roleManageService.insertRole(dto);
 
         // Then
-        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleCode().equals("ROLE_SPECIFIC")));
+        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleId().equals("ROLE_SPECIFIC")));
     }
 
     @Test

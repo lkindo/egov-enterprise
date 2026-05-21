@@ -32,14 +32,14 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                         user.userId.as("userId"),
                         user.userNm.as("userNm"),
                         user.groupId.as("groupId"),
-                        new CaseBuilder().when(user.userId.isNotNull()).then("USR03").otherwise("").as("mberTyCode"),
-                        userAuthority.authorCode.as("authorCode"),
+                        new CaseBuilder().when(user.userId.isNotNull()).then("USR03").otherwise("").as("mbrTypeCd"),
+                        userAuthority.authrtId.as("authrtId"),
                         new CaseBuilder()
-                                .when(userAuthority.uniqId.isNotNull()).then("Y")
+                                .when(userAuthority.scrtyDcsnTrgtId.isNotNull()).then("Y")
                                 .otherwise("N").as("regYn"),
-                        user.esntlId.as("uniqId")))
+                        user.esntlId.as("scrtyDcsnTrgtId")))
                 .from(user)
-                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.uniqId))
+                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId))
                 .where(conditionEq(searchCondition, searchKeyword))
                 .orderBy(user.userId.asc());
 
@@ -66,14 +66,14 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                         deptManage.orgnztNm.as("deptNm"),
                         user.userId.as("userId"),
                         user.userNm.as("userNm"),
-                        userAuthority.authorCode.as("authorCode"),
-                        user.esntlId.as("uniqId"),
+                        userAuthority.authrtId.as("authrtId"),
+                        user.esntlId.as("scrtyDcsnTrgtId"),
                         new CaseBuilder()
-                                .when(userAuthority.uniqId.isNotNull()).then("Y")
+                                .when(userAuthority.scrtyDcsnTrgtId.isNotNull()).then("Y")
                                 .otherwise("N").as("regYn")))
                 .from(deptManage)
                 .join(user).on(deptManage.orgnztId.eq(user.orgnztId))
-                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.uniqId))
+                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId))
                 .where(deptManage.orgnztId.eq(deptCode))
                 .orderBy(user.userId.asc());
 

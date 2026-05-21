@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface AuthorityRoleRepository
         extends JpaRepository<AuthorityRole, AuthorityRole.AuthorityRoleId>, AuthorityRoleRepositoryCustom {
-    void deleteByIdAuthorCode(String authorCode);
+    void deleteByIdAuthrtCd(String authrtCd);
 
-    List<AuthorityRole> findByIdAuthorCode(String authorCode);
+    List<AuthorityRole> findByIdAuthrtCd(String authrtCd);
 }

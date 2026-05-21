@@ -8,25 +8,25 @@ import java.util.List;
 public interface AuthorManageService {
     List<AuthorDto> selectAuthorList();
 
-    AuthorDto selectAuthor(@NonNull String authorCode);
+    AuthorDto selectAuthor(@NonNull String authrtCd);
 
     void insertAuthor(@NonNull AuthorDto dto);
 
     void updateAuthor(@NonNull AuthorDto dto);
 
-    void deleteAuthor(@NonNull String authorCode);
+    void deleteAuthor(@NonNull String authrtCd);
 
     List<RoleDto> selectRoleList();
 
-    RoleDto selectRole(@NonNull String roleCode);
+    RoleDto selectRole(@NonNull String roleId);
 
     void insertRole(@NonNull RoleDto dto);
 
     void updateRole(@NonNull RoleDto dto);
 
-    void deleteRole(@NonNull String roleCode);
+    void deleteRole(@NonNull String roleId);
 
-    void insertAuthorRoleRelate(@NonNull String authorCode, @NonNull List<String> roleCodes);
+    void insertAuthorRoleRelate(@NonNull String authrtCd, @NonNull List<String> roleCodes);
 
-    List<RoleDto> selectAuthorRoleList(@NonNull String authorCode);
+    List<RoleDto> selectAuthorRoleList(@NonNull String authrtCd);
 }

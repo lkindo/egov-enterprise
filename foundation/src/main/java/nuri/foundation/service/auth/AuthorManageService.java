@@ -33,7 +33,7 @@ public class AuthorManageService {
     public List<AuthorManageDto> selectAuthorList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit, Sort.by("authorCode").ascending());
+        Pageable pageable = PageRequest.of(pageIndex, pageUnit, Sort.by("authrtCd").ascending());
 
         Page<Authority> page = authorityRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
@@ -49,8 +49,8 @@ public class AuthorManageService {
     /**
      * 권한 상세 조회
      */
-    public AuthorManageDto selectAuthor(@NonNull String authorCode) {
-        return authorityRepository.findById(Objects.requireNonNull(authorCode))
+    public AuthorManageDto selectAuthor(@NonNull String authrtCd) {
+        return authorityRepository.findById(Objects.requireNonNull(authrtCd))
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -61,9 +61,9 @@ public class AuthorManageService {
     @Transactional
     public void insertAuthor(@NonNull AuthorManageDto dto) {
         Authority entity = Authority.builder()
-                .authorCode(Objects.requireNonNull(dto.getAuthorCode()))
-                .authorNm(dto.getAuthorNm())
-                .authorDc(dto.getAuthorDc())
+                .authrtCd(Objects.requireNonNull(dto.getAuthrtCd()))
+                .authrtNm(dto.getAuthrtNm())
+                .authrtExpln(dto.getAuthrtExpln())
                 .build();
         authorityRepository.save(Objects.requireNonNull(entity));
     }
@@ -73,29 +73,29 @@ public class AuthorManageService {
      */
     @Transactional
     public void updateAuthor(@NonNull AuthorManageDto dto) {
-        Authority entity = authorityRepository.findById(Objects.requireNonNull(dto.getAuthorCode()))
-                .orElseThrow(() -> new RuntimeException("Authority not found: " + dto.getAuthorCode()));
-        entity.update(dto.getAuthorNm(), dto.getAuthorDc());
+        Authority entity = authorityRepository.findById(Objects.requireNonNull(dto.getAuthrtCd()))
+                .orElseThrow(() -> new RuntimeException("Authority not found: " + dto.getAuthrtCd()));
+        entity.update(dto.getAuthrtNm(), dto.getAuthrtExpln());
     }
 
     /**
      * 권한 삭제
      */
     @Transactional
-    public void deleteAuthor(@NonNull String authorCode) {
-        authorityRepository.deleteById(Objects.requireNonNull(authorCode));
+    public void deleteAuthor(@NonNull String authrtCd) {
+        authorityRepository.deleteById(Objects.requireNonNull(authrtCd));
     }
 
     /**
      * 권한 일괄 삭제
      */
     @Transactional
-    public void deleteAuthors(@NonNull String[] authorCodes) {
-        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(authorCodes))));
+    public void deleteAuthors(@NonNull String[] authrtCds) {
+        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(authrtCds))));
     }
 
     private AuthorManageDto toDto(@NonNull Authority entity) {
-        String createdDe = entity.getAuthorCreatDe();
+        String createdDe = entity.getAuthrtCrtYmd();
         if (createdDe != null) {
             createdDe = createdDe.trim();
             if (createdDe.length() == 8 && !createdDe.contains("-")) {
@@ -103,10 +103,10 @@ public class AuthorManageService {
             }
         }
         return AuthorManageDto.builder()
-                .authorCode(entity.getAuthorCode())
-                .authorNm(entity.getAuthorNm())
-                .authorDc(entity.getAuthorDc())
-                .authorCreatDe(createdDe)
+                .authrtCd(entity.getAuthrtCd())
+                .authrtNm(entity.getAuthrtNm())
+                .authrtExpln(entity.getAuthrtExpln())
+                .authrtCrtYmd(createdDe)
                 .build();
     }
 }
