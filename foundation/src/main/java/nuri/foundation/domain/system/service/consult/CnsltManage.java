@@ -25,56 +25,56 @@ import lombok.Builder;
 public class CnsltManage extends BaseEntity {
 
     @Id
-    @Column(name = "cnslt_id", length = 20)
+    @Column(name = "dscsn_id", length = 20)
     private String cnsltId;
 
-    @Column(name = "cnslt_sj", length = 255)
+    @Column(name = "dscsn_ttl", length = 255)
     private String cnsltSj;
 
-    @Column(name = "cnslt_cn", columnDefinition = "TEXT")
+    @Column(name = "dscsn_cn", columnDefinition = "TEXT")
     private String cnsltCn;
 
     @Column(name = "rls_yn", length = 1)
     private String othbcAt;
 
-    @Column(name = "writng_password", length = 20)
+    @Column(name = "wrt_pswd", length = 20)
     private String writngPassword;
 
     @Column(name = "area_no", length = 4)
     private String areaNo;
 
-    @Column(name = "middle_telno", length = 4)
+    @Column(name = "md_telno", length = 4)
     private String middleTelno;
 
     @Column(name = "end_telno", length = 4)
     private String endTelno;
 
-    @Column(name = "frst_mbtlnum", length = 4)
+    @Column(name = "mbl_frst_telno", length = 4)
     private String firstMoblphonNo;
 
-    @Column(name = "middle_mbtlnum", length = 4)
+    @Column(name = "mbl_md_telno", length = 4)
     private String middleMbtlnum;
 
-    @Column(name = "end_mbtlnum", length = 4)
+    @Column(name = "mbl_end_telno", length = 4)
     private String endMbtlnum;
 
-    @Column(name = "email_adres", length = 50)
+    @Column(name = "eml_addr", length = 50)
     private String emailAdres;
 
-    @Column(name = "email_answer_yn", length = 1)
+    @Column(name = "eml_ans_yn", length = 1)
     private String emailAnswerAt;
 
     @Column(name = "wrter_nm", length = 20)
     private String wrterNm;
 
-    @Column(name = "writng_de", length = 20)
+    @Column(name = "wrt_ymd", length = 20)
     private String writngDe;
 
     @Column(name = "inq_cnt")
     @Builder.Default
     private Integer inqireCo = 0;
 
-    @Column(name = "qna_process_sttus_code", length = 3)
+    @Column(name = "qna_proc_stts_cd", length = 3)
     @Builder.Default
     private String qnaProcessSttusCode = "1";
 

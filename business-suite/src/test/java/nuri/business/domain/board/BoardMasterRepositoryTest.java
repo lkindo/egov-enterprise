@@ -128,7 +128,7 @@ class BoardMasterRepositoryTest {
 
         BoardUse use = BoardUse.builder()
                 .bbsId("BBS_DETAIL_001")
-                .trgetId("USER_001")
+                .trgtId("USER_001")
                 .useYn("Y")
                 .build();
         boardUseRepository.save(use);
@@ -154,7 +154,7 @@ class BoardMasterRepositoryTest {
         boardMasterRepository.save(masterUsed);
         boardMasterRepository.save(masterNotUsed);
 
-        BoardUse use = BoardUse.builder().bbsId("BBS_USED").trgetId("SYSTEM").useYn("Y").build();
+        BoardUse use = BoardUse.builder().bbsId("BBS_USED").trgtId("SYSTEM").useYn("Y").build();
         boardUseRepository.save(use);
         
         em.flush();

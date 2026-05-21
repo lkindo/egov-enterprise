@@ -28,7 +28,7 @@ public class QustnrInfo extends BaseEntity {
     @Column(name = "srvy_ttl", length = 255, nullable = false)
     private String srvyTtl;
 
-    @Column(name = "srvy_prps_cn", length = 1000)
+    @Column(name = "srvy_prps", length = 1000)
     private String srvyPrpsCn;
 
     @Column(name = "srvy_wrt_gd_cn", length = 2000)

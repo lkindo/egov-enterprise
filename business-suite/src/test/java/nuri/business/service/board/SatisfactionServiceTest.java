@@ -38,7 +38,7 @@ class SatisfactionServiceTest {
         // given
         SatisfactionDto dto = SatisfactionDto.builder()
                 .bbsId("BBS_01")
-                .pstId(1L)
+                .pstId("1")
                 .stsfdgLevel(5)
                 .stsfdgCn("Good")
                 .build();
@@ -89,11 +89,11 @@ class SatisfactionServiceTest {
     void getSatisfactionList() {
         // given
         Satisfaction entity = Satisfaction.builder().stsfdgId(1L).build();
-        given(satisfactionRepository.findByPstIdAndBbsIdAndUseYn(anyLong(), anyString(), anyString()))
+        given(satisfactionRepository.findByPstIdAndBbsIdAndUseYn(anyString(), anyString(), anyString()))
                 .willReturn(List.of(entity));
 
         // when
-        List<SatisfactionDto> result = satisfactionService.getSatisfactionList("BBS_01", 1L);
+        List<SatisfactionDto> result = satisfactionService.getSatisfactionList("BBS_01", "1");
 
         // then
         assertThat(result).hasSize(1);
@@ -103,10 +103,10 @@ class SatisfactionServiceTest {
     @DisplayName("만족도 평균 조회")
     void getAverageSatisfaction() {
         // given
-        given(satisfactionRepository.getAverageSatisfaction(anyLong(), anyString())).willReturn(4.5);
+        given(satisfactionRepository.getAverageSatisfaction(anyString(), anyString())).willReturn(4.5);
 
         // when
-        Double result = satisfactionService.getAverageSatisfaction("BBS_01", 1L);
+        Double result = satisfactionService.getAverageSatisfaction("BBS_01", "1");
 
         // then
         assertThat(result).isEqualTo(4.5);

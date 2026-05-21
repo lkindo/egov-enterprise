@@ -47,8 +47,8 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
             }
         }
 
-        if (StringUtils.hasText(condition.getTrgetId())) {
-            builder.and(boardUse.trgetId.eq(condition.getTrgetId()));
+        if (StringUtils.hasText(condition.getTrgtId())) {
+            builder.and(boardUse.trgtId.eq(condition.getTrgtId()));
             builder.and(boardUse.useYn.eq("Y"));
         }
 
@@ -75,7 +75,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")));
 
-        if (StringUtils.hasText(condition.getTrgetId())) {
+        if (StringUtils.hasText(condition.getTrgtId())) {
             query.join(boardUse).on(boardMaster.bbsId.eq(boardUse.bbsId));
         }
 
@@ -133,7 +133,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
             String authFlag = queryFactory.select(boardUse.useYn)
                     .from(boardUse)
                     .where(boardUse.bbsId.eq(bbsId)
-                            .and(boardUse.trgetId.in(uniqId, "SYSTEM_DEFAULT_BOARD")))
+                            .and(boardUse.trgtId.in(uniqId, "SYSTEM_DEFAULT_BOARD")))
                     .fetchFirst();
             result.setAuthFlag(authFlag != null ? authFlag : "N");
         }

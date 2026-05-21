@@ -30,6 +30,10 @@ async function run() {
         user: process.env.DB_USERNAME || 'egov',
         password: process.env.DB_PASSWORD || 'egov123',
     };
+    
+    if (process.env.DB_SSL === 'true') {
+        config.ssl = { rejectUnauthorized: false };
+    }
 
     const client = new Client(config);
 

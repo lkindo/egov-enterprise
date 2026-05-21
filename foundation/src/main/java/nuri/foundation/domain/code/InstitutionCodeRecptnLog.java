@@ -25,7 +25,7 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "chg_se_cd", length = 1)
     private String changeSeCode;
 
-    @Column(name = "prcs_se_cd", length = 1)
+    @Column(name = "proc_se", length = 1)
     private String processSe;
 
     @Column(name = "etc_cd", length = 45)
@@ -34,7 +34,7 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "all_inst_nm", length = 300)
     private String allInsttNm;
 
-    @Column(name = "lowest_instt_nm", length = 180)
+    @Column(name = "lwst_inst_nm", length = 180)
     private String lowestInsttNm;
 
     @Column(name = "inst_abbr_nm", length = 300)
@@ -46,31 +46,31 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "ord", length = 3)
     private String ord;
 
-    @Column(name = "inst_seq", length = 2)
+    @Column(name = "inst_cycl", length = 2)
     private String insttOdr;
 
-    @Column(name = "best_inst_cd", length = 30)
+    @Column(name = "top_inst_cd", length = 30)
     private String bestInsttCode;
 
-    @Column(name = "up_inst_cd", length = 10)
+    @Column(name = "upr_inst_cd", length = 10)
     private String upperInsttCode;
 
-    @Column(name = "reprsnt_inst_cd", length = 10)
+    @Column(name = "reprs_inst_cd", length = 10)
     private String reprsntInsttCode;
 
-    @Column(name = "inst_ty_lclas_cd", length = 2)
+    @Column(name = "inst_type_lclsf", length = 2)
     private String insttTyLclas;
 
-    @Column(name = "inst_ty_mclas_cd", length = 2)
+    @Column(name = "inst_type_mclsf", length = 2)
     private String insttTyMclas;
 
-    @Column(name = "inst_ty_sclas_cd", length = 2)
+    @Column(name = "inst_type_sclsf", length = 2)
     private String insttTySclas;
 
     @Column(name = "telno", length = 20)
     private String telno;
 
-    @Column(name = "fxno", length = 20)
+    @Column(name = "fax_no", length = 20)
     private String fxnum;
 
     @Column(name = "crt_ymd", length = 8)
@@ -88,10 +88,10 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "chg_tm", length = 20)
     private String changeTime;
 
-    @Column(name = "bsis_ymd", length = 8)
+    @Column(name = "crtr_ymd", length = 8)
     private String bsisDe;
 
-    @Column(name = "sort_seq")
+    @Column(name = "sort_ordr")
     private Integer sortOrdr;
 
     @Column(name = "crt_dt")
@@ -117,7 +117,7 @@ public class InstitutionCodeRecptnLog {
         @Column(name = "inst_cd", length = 10)
         private String insttCode;
 
-        @Column(name = "opert_sn")
+        @Column(name = "job_sn")
         private Long opertSn;
 
         @Builder

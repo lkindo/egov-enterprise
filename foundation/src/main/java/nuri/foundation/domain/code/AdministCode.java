@@ -18,16 +18,16 @@ import lombok.experimental.SuperBuilder;
 public class AdministCode extends BaseEntity {
 
     @Id
-    @Column(name = "admdst_cd", length = 10)
+    @Column(name = "admdst_cd", length = 12)
     private String administZoneCode;
 
-    @Column(name = "admdst_se", length = 1)
+    @Column(name = "admdst_se_cd", length = 12)
     private String administZoneSe;
 
-    @Column(name = "administ_zone_nm", length = 60)
+    @Column(name = "admdst_zone_nm", length = 100)
     private String administZoneNm;
 
-    @Column(name = "up_admdst_cd", length = 10)
+    @Column(name = "up_admdst_cd", length = 12)
     private String upperAdministZoneCode;
 
     @Column(name = "use_yn", length = 1)

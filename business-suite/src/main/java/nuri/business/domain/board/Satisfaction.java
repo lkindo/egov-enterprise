@@ -25,15 +25,15 @@ public class Satisfaction extends BaseEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stsfdgIdSeq")
-    @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "STSFDG_ID_SEQ", allocationSize = 1)
-    @Column(name = "stsfdg_id")
+    @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "sq_dgstfn_sn", allocationSize = 1)
+    @Column(name = "dgstfn_sn")
     private Long stsfdgId;
 
     @Column(name = "bbs_id", nullable = false)
     private String bbsId;
 
     @Column(name = "ntt_id", nullable = false)
-    private Long pstId;
+    private String pstId;
 
     @Column(name = "dgstfn_scr", nullable = false)
     private Integer stsfdgLevel;
@@ -63,10 +63,10 @@ public class Satisfaction extends BaseEntity implements Serializable {
     // legacy
     public String getBoardId() { return bbsId; }
     public void setBoardId(String v) { this.bbsId = v; }
-    public Long getArticleId() { return pstId; }
-    public void setArticleId(Long v) { this.pstId = v; }
+    public String getArticleId() { return pstId; }
+    public void setArticleId(String v) { this.pstId = v; }
     public Integer getSatisfactionLevel() { return stsfdgLevel; }
     public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
-    public Long getNttId() { return pstId; }
-    public void setNttId(Long v) { this.pstId = v; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
 }

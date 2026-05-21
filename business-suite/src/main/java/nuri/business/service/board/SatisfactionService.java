@@ -70,14 +70,14 @@ public class SatisfactionService extends BaseAbstractService {
         deleteSatisfaction(satisfactionId, "SYSTEM", null);
     }
 
-    public List<SatisfactionDto> getSatisfactionList(String bbsId, Long pstId) {
+    public List<SatisfactionDto> getSatisfactionList(String bbsId, String pstId) {
         List<Satisfaction> list = satisfactionRepository.findByPstIdAndBbsIdAndUseYn(pstId, bbsId, "Y");
         return list.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    public Double getAverageSatisfaction(String bbsId, Long pstId) {
+    public Double getAverageSatisfaction(String bbsId, String pstId) {
         return satisfactionRepository.getAverageSatisfaction(pstId, bbsId);
     }
 

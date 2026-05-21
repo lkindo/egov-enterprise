@@ -47,3 +47,18 @@ test {
     useJUnitPlatform()
     exclude '**/ArchitectureTest.class'
 }
+
+// Querydsl generated source directory configuration for better IDE support
+def querydslDir = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main").get().asFile
+
+sourceSets {
+    main.java.srcDirs += [ querydslDir ]
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.getGeneratedSourceOutputDirectory().set(querydslDir)
+}
+
+clean {
+    delete querydslDir
+}

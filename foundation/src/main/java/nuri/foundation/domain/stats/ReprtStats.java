@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "nreprtstats")
+@Table(name = "tb_rptp_stats")
 @SuperBuilder
 public class ReprtStats extends BaseEntity {
 

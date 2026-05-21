@@ -25,16 +25,16 @@ public class Faq extends BaseEntity {
     @Column(name = "faq_id", length = 20)
     private String faqId;
 
-    @Column(name = "qestn_sj", length = 255, nullable = false)
+    @Column(name = "qstn_ttl", length = 255, nullable = false)
     private String qestnTtl;
 
-    @Column(name = "qestn_cn", columnDefinition = "TEXT")
+    @Column(name = "qstn_cn", columnDefinition = "TEXT")
     private String qestnCn;
 
-    @Column(name = "answer_cn", columnDefinition = "TEXT")
+    @Column(name = "ans_cn", columnDefinition = "TEXT")
     private String answerCn;
 
-    @Column(name = "rdcnt")
+    @Column(name = "inq_cnt")
     @Builder.Default
     private Integer inqireCo = 0;
 

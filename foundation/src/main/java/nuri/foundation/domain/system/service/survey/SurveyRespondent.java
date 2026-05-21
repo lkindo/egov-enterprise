@@ -22,22 +22,22 @@ import lombok.experimental.SuperBuilder;
 public class SurveyRespondent extends BaseEntity {
 
     @Id
-    @Column(name = "qustnr_respond_id", length = 20)
+    @Column(name = "srvy_rspdnt_id", length = 20)
     private String srvyRspdId;
 
-    @Column(name = "qestnr_id", length = 20, nullable = false)
+    @Column(name = "srvy_id", length = 20, nullable = false)
     private String srvyId;
 
-    @Column(name = "qustnr_tmplat_id", length = 20, nullable = false)
+    @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
-    @Column(name = "sexdstn_code", length = 1)
+    @Column(name = "gndr_cd", length = 1)
     private String gndrCd;
 
-    @Column(name = "occp_ty_code", length = 1)
+    @Column(name = "cr_type_cd", length = 1)
     private String jobTypeCd;
 
-    @Column(name = "respond_nm", length = 50)
+    @Column(name = "rspdnt_nm", length = 50)
     private String rspdNm;
 
     @Column(name = "brdt", length = 20)

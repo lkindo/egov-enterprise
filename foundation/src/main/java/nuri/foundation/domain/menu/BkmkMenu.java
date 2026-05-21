@@ -11,7 +11,7 @@ import java.io.Serializable;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "nbkmkmenumanageresult")
+@Table(name = "tb_bkmk_menu_mng_rslt")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

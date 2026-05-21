@@ -35,8 +35,8 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
      */
     @Query(value = """
             SELECT r.reprt_ty as reprtTy, COUNT(*) as cnt
-            FROM nreprtstats r
-            WHERE r.frst_regist_pnttm BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+            FROM tb_rptp_stats r
+            WHERE r.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
             GROUP BY r.reprt_ty
             ORDER BY cnt DESC
             """, nativeQuery = true)
@@ -49,8 +49,8 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
      */
     @Query(value = """
             SELECT r.reprt_sttus as reprtSttus, COUNT(*) as cnt
-            FROM nreprtstats r
-            WHERE r.frst_regist_pnttm BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+            FROM tb_rptp_stats r
+            WHERE r.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
             GROUP BY r.reprt_sttus
             ORDER BY cnt DESC
             """, nativeQuery = true)
@@ -62,10 +62,10 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
      * 날짜별 보고서 수 통계
      */
     @Query(value = """
-            SELECT TO_CHAR(r.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
-            FROM nreprtstats r
-            WHERE r.frst_regist_pnttm BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
-            GROUP BY TO_CHAR(r.frst_regist_pnttm, 'YYYY-MM-DD')
+            SELECT TO_CHAR(r.crt_dt, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
+            FROM tb_rptp_stats r
+            WHERE r.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+            GROUP BY TO_CHAR(r.crt_dt, 'YYYY-MM-DD')
             ORDER BY statsDate
             """, nativeQuery = true)
     List<Object[]> countByDate(

@@ -17,5 +17,5 @@ public class UserInfSearchResult {
     private String userAddr;
     private String emlAddr;
     private String useYn;
-    private String trgetId;
+    private String trgtId;
 }

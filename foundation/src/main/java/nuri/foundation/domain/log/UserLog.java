@@ -60,7 +60,7 @@ public class UserLog extends BaseEntity {
     @Column(name = "del_cnt")
     private Integer deleteCo;
 
-    @Column(name = "outpt_cnt")
+    @Column(name = "otpt_cnt")
     private Integer outptCo;
 
     @Column(name = "err_cnt")

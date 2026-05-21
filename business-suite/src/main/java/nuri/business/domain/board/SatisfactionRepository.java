@@ -8,13 +8,13 @@ import java.util.List;
 
 @Repository
 public interface SatisfactionRepository extends JpaRepository<Satisfaction, Long> {
-    List<Satisfaction> findByPstIdAndBbsIdAndUseYn(Long pstId, String bbsId, String useYn);
+    List<Satisfaction> findByPstIdAndBbsIdAndUseYn(String pstId, String bbsId, String useYn);
 
     @Query("SELECT AVG(s.stsfdgLevel) FROM Satisfaction s WHERE s.pstId = :pstId AND s.bbsId = :bbsId AND s.useYn = 'Y'")
-    Double getAverageSatisfaction(@Param("pstId") Long pstId, @Param("bbsId") String bbsId);
+    Double getAverageSatisfaction(@Param("pstId") String pstId, @Param("bbsId") String bbsId);
 
     // legacy
-    default List<Satisfaction> findByArticleIdAndBoardIdAndUseAt(Long articleId, String boardId, String useAt) {
+    default List<Satisfaction> findByArticleIdAndBoardIdAndUseAt(String articleId, String boardId, String useAt) {
         return findByPstIdAndBbsIdAndUseYn(articleId, boardId, useAt);
     }
 }

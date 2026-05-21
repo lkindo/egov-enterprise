@@ -16,7 +16,6 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_authrt_role_map")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@AttributeOverride(name = "createdDate", column = @Column(name = "creat_dt", updatable = false))
 @SuperBuilder
 public class AuthorityRole extends BaseEntity {
 

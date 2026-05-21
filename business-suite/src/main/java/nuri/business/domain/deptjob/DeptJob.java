@@ -14,22 +14,22 @@ import lombok.experimental.SuperBuilder;
 public class DeptJob extends BaseEntity {
 
     @Id
-    @Column(name = "dept_job_id", length = 20)
+    @Column(name = "dept_task_id", length = 20)
     private String deptJobId;
 
-    @Column(name = "dept_jobbx_id", length = 20)
+    @Column(name = "dept_task_box_id", length = 20)
     private String deptJobbxId;
 
-    @Column(name = "dept_job_nm", length = 255)
+    @Column(name = "dept_task_nm", length = 255)
     private String deptJobNm;
 
-    @Column(name = "dept_job_cn", columnDefinition = "TEXT")
+    @Column(name = "dept_task_cn", columnDefinition = "TEXT")
     private String deptJobCn;
 
-    @Column(name = "charger_id", length = 20)
+    @Column(name = "pic_id", length = 20)
     private String chargerId;
 
-    @Column(name = "prord", length = 1)
+    @Column(name = "prrty_rnk", length = 1)
     private String priort; // 1: 높음, 2: 보통, 3: 낮음
 
     @Column(name = "atch_file_id", length = 20)

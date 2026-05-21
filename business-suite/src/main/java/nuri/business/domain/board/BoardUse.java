@@ -29,18 +29,18 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     private String bbsId;
 
     @Id
-    @Column(name = "trget_id", length = 20)
-    private String trgetId;
+    @Column(name = "trgt_id", length = 20)
+    private String trgtId;
 
-    @Column(name = "reg_se_cd", length = 6)
+    @Column(name = "rgstr_se_cd", length = 12)
     private String registSeCode;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    public BoardUse(String bbsId, String trgetId, String registSeCode, String useYn) {
+    public BoardUse(String bbsId, String trgtId, String registSeCode, String useYn) {
         this.bbsId = bbsId;
-        this.trgetId = trgetId;
+        this.trgtId = trgtId;
         this.registSeCode = registSeCode;
         this.useYn = useYn;
     }

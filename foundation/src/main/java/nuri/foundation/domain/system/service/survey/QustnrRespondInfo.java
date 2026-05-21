@@ -22,25 +22,25 @@ import lombok.experimental.SuperBuilder;
 public class QustnrRespondInfo extends BaseEntity {
 
     @Id
-    @Column(name = "qustnr_rspns_id", length = 20)
+    @Column(name = "srvy_rspns_id", length = 20)
     private String srvyRspdId;
 
-    @Column(name = "qestnr_id", length = 20, nullable = false)
+    @Column(name = "srvy_id", length = 20, nullable = false)
     private String srvyId;
 
-    @Column(name = "qustnr_tmplat_id", length = 20, nullable = false)
+    @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
-    @Column(name = "qustnr_qesitm_id", length = 20, nullable = false)
+    @Column(name = "srvy_qstn_id", length = 20, nullable = false)
     private String srvyQitemId;
 
-    @Column(name = "qustnr_iem_id", length = 20, nullable = false)
+    @Column(name = "srvy_artcl_id", length = 20, nullable = false)
     private String srvyItemId;
 
     @Column(name = "rspdnt_ans_cn", length = 1000)
     private String rspdAnsCn;
 
-    @Column(name = "respond_nm", length = 50)
+    @Column(name = "rspns_nm", length = 50)
     private String rspdNm;
 
     @Column(name = "etc_ans_cn", length = 1000)

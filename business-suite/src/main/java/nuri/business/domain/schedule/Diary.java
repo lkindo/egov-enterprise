@@ -30,16 +30,16 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(name = "schdul_id", length = 20)
     private String schdlId;
 
-    @Column(name = "diary_progrs_rt")
+    @Column(name = "diary_prgrs_rt")
     private Integer diaryProcsPte;
 
     @Column(name = "diary_nm", length = 255)
     private String diaryNm;
 
-    @Column(name = "drct_matter", columnDefinition = "TEXT")
+    @Column(name = "drctn_mttr", columnDefinition = "TEXT")
     private String drctMatter;
 
-    @Column(name = "partclr_matter", columnDefinition = "TEXT")
+    @Column(name = "excptn_mttr", columnDefinition = "TEXT")
     private String partclrMatter;
 
     @Column(name = "atch_file_id", length = 20)

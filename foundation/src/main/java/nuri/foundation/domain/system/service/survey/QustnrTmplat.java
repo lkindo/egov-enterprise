@@ -18,16 +18,16 @@ import lombok.experimental.SuperBuilder;
 public class QustnrTmplat extends BaseEntity {
 
     @Id
-    @Column(name = "qustnr_tmplat_id", length = 20)
+    @Column(name = "srvy_tmplt_id", length = 20)
     private String srvyTmplatId;
 
-    @Column(name = "srvy_tmplt_type", length = 100)
+    @Column(name = "srvy_tmplt_type_cd", length = 100)
     private String srvyTmplatTypeCd;
 
-    @Column(name = "qustnr_tmplat_dc", length = 2000)
+    @Column(name = "srvy_tmplt_expln", length = 2000)
     private String srvyTmplatCn;
 
-    @Column(name = "qustnr_tmplat_path_nm", length = 100)
+    @Column(name = "srvy_tmplt_path_nm", length = 100)
     private String srvyTmplatImgPath;
 
     @Column(name = "srvy_tmplt_img_info")

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class SatisfactionDto {
     private Long satisfactionId;
     private String bbsId;
-    private Long pstId;
+    private String pstId;
     private String stsfdgCn;
     private Integer stsfdgLevel;
     private String writerId;
@@ -24,12 +24,12 @@ public class SatisfactionDto {
     // legacy
     public String getBoardId() { return bbsId; }
     public void setBoardId(String v) { this.bbsId = v; }
-    public Long getArticleId() { return pstId; }
-    public void setArticleId(Long v) { this.pstId = v; }
+    public String getArticleId() { return pstId; }
+    public void setArticleId(String v) { this.pstId = v; }
     public Integer getSatisfactionLevel() { return stsfdgLevel; }
     public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
-    public Long getNttId() { return pstId; }
-    public void setNttId(Long v) { this.pstId = v; }
+    public String getNttId() { return pstId; }
+    public void setNttId(String v) { this.pstId = v; }
 
     public static SatisfactionDto from(Satisfaction entity) {
         if (entity == null) return null;

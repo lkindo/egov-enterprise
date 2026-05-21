@@ -22,7 +22,7 @@ public class Restde extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "restde_no")
+    @Column(name = "hldy_sn")
     private Integer restdeNo;
 
     @Column(name = "hldy_ymd", length = 8)

@@ -18,16 +18,16 @@ import lombok.experimental.SuperBuilder;
 public class Template extends BaseEntity {
 
     @Id
-    @Column(name = "tmplat_id", length = 20)
+    @Column(name = "tmplt_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "tmplat_nm", length = 255, nullable = false)
+    @Column(name = "tmplt_nm", length = 255, nullable = false)
     private String tmplatNm;
 
-    @Column(name = "tmplat_se_code", length = 20, nullable = false)
+    @Column(name = "tmplt_se_cd", length = 20, nullable = false)
     private String tmplatSeCode;
 
-    @Column(name = "tmplat_cours", length = 2000)
+    @Column(name = "tmplt_path", length = 2000)
     private String tmplatCours;
 
     @Column(name = "use_yn", length = 1)

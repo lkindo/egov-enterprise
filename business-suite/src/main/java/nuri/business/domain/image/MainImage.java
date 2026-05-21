@@ -26,22 +26,22 @@ import lombok.experimental.SuperBuilder;
 public class MainImage extends BaseEntity {
 
     @Id
-    @Column(name = "image_id", length = 20)
+    @Column(name = "img_id", length = 20)
     private String imageId;
 
-    @Column(name = "image_nm", length = 100, nullable = false)
+    @Column(name = "img_nm", length = 100, nullable = false)
     private String imageNm;
 
     @Column(name = "main_img_file_path", length = 50)
     private String image;
 
-    @Column(name = "image_file", length = 20)
+    @Column(name = "img_file_nm", length = 20)
     private String imageFile;
 
     @Column(name = "main_img_expln", length = 1000)
     private String imageDc;
 
-    @Column(name = "reflct_at", length = 1)
+    @Column(name = "rflt_yn", length = 1)
     private String reflctAt;
 
     public void update(String imageNm, String image, String imageFile, String imageDc, String reflctAt) {

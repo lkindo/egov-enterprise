@@ -16,5 +16,5 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class BoardUseId implements Serializable {
     private String bbsId;
-    private String trgetId;
+    private String trgtId;
 }
