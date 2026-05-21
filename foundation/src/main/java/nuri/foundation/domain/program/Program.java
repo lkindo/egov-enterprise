@@ -18,19 +18,19 @@ import lombok.experimental.SuperBuilder;
 public class Program extends BaseEntity {
 
     @Id
-    @Column(name = "prgrm_file_nm", length = 60)
+    @Column(name = "prgrm_file_nm", length = 100)
     private String progrmFileNm;
 
-    @Column(name = "prgrm_strg_path", length = 100)
+    @Column(name = "prgrm_strg_path", length = 1000)
     private String progrmStrePath;
 
-    @Column(name = "prgrm_korn_nm", length = 60)
+    @Column(name = "prgrm_korn_nm", length = 100)
     private String progrmKoreanNm;
 
-    @Column(name = "url", length = 100)
+    @Column(name = "url", length = 1000)
     private String url;
 
-    @Column(name = "prgrm_expln", length = 200)
+    @Column(name = "prgrm_expln", length = 4000)
     private String progrmDc;
 
     public void update(String progrmStrePath, String progrmKoreanNm, String url, String progrmDc) {

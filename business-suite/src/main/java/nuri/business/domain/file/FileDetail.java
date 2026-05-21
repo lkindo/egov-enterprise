@@ -33,22 +33,22 @@ public class FileDetail extends BaseEntity {
     @Column(name = "atch_file_seq")
     private Integer fileSn;
 
-    @Column(name = "file_strg_path", length = 6000)
+    @Column(name = "file_strg_path", length = 1000)
     private String fileStreCours; // 파일저장경로
 
-    @Column(name = "strg_file_nm", length = 765)
+    @Column(name = "strg_file_nm", length = 100)
     private String streFileNm; // 저장파일명
 
-    @Column(name = "orgnl_file_nm", length = 765)
+    @Column(name = "orgnl_file_nm", length = 100)
     private String orignlFileNm; // 원본파일명
 
-    @Column(name = "file_estn", length = 60)
+    @Column(name = "file_estn", length = 20)
     private String fileExtsn; // 확장자
 
     @Column(name = "file_sz")
     private Long fileMg; // 파일크기
 
-    @Column(name = "file_cn")
+    @Column(name = "file_cn", length = 4000)
     private String fileCn; // 파일내용
 
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,

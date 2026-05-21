@@ -7,7 +7,7 @@ import { NameCard } from '@/types/business/addressbook';
 export interface AddressBook {
   adbkId: string;
   adbkNm: string;
-  othbcScope: string;
+  rlsScopeCd: string;
   wrterId: string;
   createdDate: string;
   telNo?: string;

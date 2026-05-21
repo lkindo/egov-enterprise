@@ -39,7 +39,7 @@ public class UserDto {
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
     private String pswd;
 
-    @Size(max = 100, message = "비밀번호 힌트는 최대 100 자입니다")
+    @Size(max = 300, message = "비밀번호 힌트는 최대 300 자입니다")
     private String pswdHint;
 
     @Size(max = 100, message = "비밀번호 정답은 최대 100 자입니다")
@@ -51,7 +51,7 @@ public class UserDto {
     @Size(max = 20, message = "사번은 최대 20 자입니다")
     private String emplNo;
 
-    @Size(max = 30, message = "성별 코드는 최대 30 자입니다")
+    @Size(max = 12, message = "성별 코드는 최대 12 자입니다")
     private String gndrCd;
 
     @Size(max = 8, message = "생년월일은 8자입니다")
@@ -69,7 +69,7 @@ public class UserDto {
     @Size(max = 20, message = "회원 유형 코드는 최대 20 자입니다")
     private String mberTyCode;
 
-    @Size(max = 20, message = "팩스 번호는 최대 20 자입니다")
+    @Size(max = 11, message = "팩스 번호는 최대 11 자입니다")
     private String faxNo;
 
     @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
@@ -96,11 +96,11 @@ public class UserDto {
     @Size(max = 11, message = "휴대폰 번호는 최대 11 자입니다")
     private String mblTelno;
 
-    @Size(max = 300, message = "이메일은 최대 300 자입니다")
+    @Size(max = 50, message = "이메일은 최대 50 자입니다")
     @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
     private String emlAddr;
 
-    @Size(max = 60, message = "직함은 최대 60 자입니다")
+    @Size(max = 300, message = "직함은 최대 300 자입니다")
     private String ofcpsNm;
 
     @Size(max = 255, message = "DN 정보는 최대 255 자입니다")
@@ -109,7 +109,7 @@ public class UserDto {
     @Size(max = 10, message = "사용자 구분은 최대 10 자입니다")
     private String userSe;
 
-    @Size(max = 30, message = "사용자 상태 코드는 최대 30 자입니다")
+    @Size(max = 12, message = "사용자 상태 코드는 최대 12 자입니다")
     private String userSttsCd;
     
     private String lckYn;

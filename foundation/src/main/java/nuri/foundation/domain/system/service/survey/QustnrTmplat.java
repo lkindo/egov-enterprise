@@ -21,10 +21,10 @@ public class QustnrTmplat extends BaseEntity {
     @Column(name = "srvy_tmplt_id", length = 20)
     private String srvyTmplatId;
 
-    @Column(name = "srvy_tmplt_type_cd", length = 100)
+    @Column(name = "srvy_tmplt_type_cd", length = 12)
     private String srvyTmplatTypeCd;
 
-    @Column(name = "srvy_tmplt_expln", length = 2000)
+    @Column(name = "srvy_tmplt_expln", length = 4000)
     private String srvyTmplatCn;
 
     @Column(name = "srvy_tmplt_path_nm", length = 100)

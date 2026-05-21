@@ -21,9 +21,9 @@ public class Sms extends BaseEntity {
     @Column(name = "sms_id", length = 20)
     private String smsId;
 
-    @Column(name = "sndng_telno", length = 20, nullable = false)
+    @Column(name = "sndng_telno", length = 13, nullable = false)
     private String trnsmitTelno;
 
-    @Column(name = "sndng_cn", length = 2000)
+    @Column(name = "sndng_cn", length = 4000)
     private String trnsmitCn;
 }

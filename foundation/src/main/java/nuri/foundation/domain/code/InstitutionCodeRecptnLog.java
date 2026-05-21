@@ -22,22 +22,22 @@ public class InstitutionCodeRecptnLog {
     @EmbeddedId
     private InstitutionCodeRecptnLogId id;
 
-    @Column(name = "chg_se_cd", length = 1)
+    @Column(name = "chg_se_cd", length = 12)
     private String changeSeCode;
 
     @Column(name = "proc_se", length = 1)
     private String processSe;
 
-    @Column(name = "etc_cd", length = 45)
+    @Column(name = "etc_cd", length = 20)
     private String etcCode;
 
-    @Column(name = "all_inst_nm", length = 300)
+    @Column(name = "all_inst_nm", length = 100)
     private String allInsttNm;
 
-    @Column(name = "lwst_inst_nm", length = 180)
+    @Column(name = "lwst_inst_nm", length = 100)
     private String lowestInsttNm;
 
-    @Column(name = "inst_abbr_nm", length = 300)
+    @Column(name = "inst_abbr_nm", length = 100)
     private String insttAbrvNm;
 
     @Column(name = "odr", length = 2)
@@ -49,13 +49,13 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "inst_cycl", length = 2)
     private String insttOdr;
 
-    @Column(name = "top_inst_cd", length = 30)
+    @Column(name = "top_inst_cd", length = 20)
     private String bestInsttCode;
 
-    @Column(name = "upr_inst_cd", length = 10)
+    @Column(name = "upr_inst_cd", length = 20)
     private String upperInsttCode;
 
-    @Column(name = "reprs_inst_cd", length = 10)
+    @Column(name = "reprs_inst_cd", length = 20)
     private String reprsntInsttCode;
 
     @Column(name = "inst_type_lclsf", length = 2)
@@ -111,10 +111,10 @@ public class InstitutionCodeRecptnLog {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @EqualsAndHashCode
     public static class InstitutionCodeRecptnLogId implements Serializable {
-        @Column(name = "ocrn_ymd", length = 20)
+        @Column(name = "ocrn_ymd", length = 8)
         private String ocrnYmd;
 
-        @Column(name = "inst_cd", length = 10)
+        @Column(name = "inst_cd", length = 20)
         private String insttCode;
 
         @Column(name = "job_sn")

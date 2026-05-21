@@ -35,8 +35,8 @@ public class AddressBook extends BaseEntity {
     @Column(name = "adbk_nm", length = 100, nullable = false)
     private String adbkNm;
 
-    @Column(name = "rls_scope_cd", length = 20)
-    private String othbcScope;
+    @Column(name = "rls_scope_cd", length = 12)
+    private String rlsScopeCd;
 
     @Column(name = "trget_orgnzt_id", length = 20)
     private String trgetOrgnztId;
@@ -47,9 +47,9 @@ public class AddressBook extends BaseEntity {
     @Column(name = "wrter_id", length = 20)
     private String wrterId;
 
-    public void update(String adbkNm, String othbcScope, String useYn) {
+    public void update(String adbkNm, String rlsScopeCd, String useYn) {
         this.adbkNm = adbkNm;
-        this.othbcScope = othbcScope;
+        this.rlsScopeCd = rlsScopeCd;
         this.useYn = useYn;
     }
 

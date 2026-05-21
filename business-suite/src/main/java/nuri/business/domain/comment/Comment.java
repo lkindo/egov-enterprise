@@ -39,7 +39,7 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(name = "wrter_id", length = 20)
     private String writerId;
 
-    @Column(name = "wrter_nm", length = 20)
+    @Column(name = "wrter_nm", length = 100)
     private String writerNm;
 
     @Column(name = "pswd", length = 200)

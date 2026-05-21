@@ -16,7 +16,7 @@ public class SmsRecptn {
     @EmbeddedId
     private SmsRecptnId id;
 
-    @Column(name = "rslt_cd", length = 4)
+    @Column(name = "rslt_cd", length = 12)
     private String resultCode;
 
     @Column(name = "rslt_msg", length = 4000)

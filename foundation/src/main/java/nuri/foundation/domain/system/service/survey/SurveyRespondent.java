@@ -31,16 +31,16 @@ public class SurveyRespondent extends BaseEntity {
     @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
-    @Column(name = "gndr_cd", length = 1)
+    @Column(name = "gndr_cd", length = 12)
     private String gndrCd;
 
-    @Column(name = "cr_type_cd", length = 1)
+    @Column(name = "cr_type_cd", length = 12)
     private String jobTypeCd;
 
-    @Column(name = "rspdnt_nm", length = 50)
+    @Column(name = "rspdnt_nm", length = 100)
     private String rspdNm;
 
-    @Column(name = "brdt", length = 20)
+    @Column(name = "brdt", length = 8)
     private String brthYmd;
 
     @Column(name = "rgn_telno", length = 4)

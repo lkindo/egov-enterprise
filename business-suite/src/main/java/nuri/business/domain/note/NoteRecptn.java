@@ -38,7 +38,7 @@ public class NoteRecptn extends BaseEntity {
     @Column(name = "open_yn", length = 1)
     private String openYn;
 
-    @Column(name = "rcptn_se_cd", length = 1)
+    @Column(name = "rcptn_se_cd", length = 12)
     private String recptnSeCd;
 
     @PrePersist

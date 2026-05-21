@@ -24,16 +24,16 @@ public class OnlineManual extends BaseEntity {
     @Column(name = "onln_mnl_id", length = 20)
     private String onlineMnlId;
 
-    @Column(name = "onln_mnl_nm", length = 255, nullable = false)
+    @Column(name = "onln_mnl_nm", length = 100, nullable = false)
     private String onlineMnlNm;
 
-    @Column(name = "onln_mnl_se_cd", length = 3, nullable = false)
+    @Column(name = "onln_mnl_se_cd", length = 12, nullable = false)
     private String onlineMnlSeCode;
 
     @Column(name = "onln_mnl_dfn", length = 1000)
     private String onlineMnlDf;
 
-    @Column(name = "onln_mnl_expln", columnDefinition = "TEXT")
+    @Column(name = "onln_mnl_expln", columnDefinition = "TEXT", length = 4000)
     private String onlineMnlDc;
 
     public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc) {

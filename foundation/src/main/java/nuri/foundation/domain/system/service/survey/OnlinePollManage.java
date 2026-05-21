@@ -32,7 +32,7 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "poll_id", length = 20)
     private String pollId;
 
-    @Column(name = "poll_nm", length = 300, nullable = false)
+    @Column(name = "poll_nm", length = 100, nullable = false)
     private String pollNm;
 
     @Column(name = "poll_bgng_ymd", length = 8)
@@ -41,7 +41,7 @@ public class OnlinePollManage extends BaseEntity {
     @Column(name = "poll_end_ymd", length = 8)
     private String pollEndYmd;
 
-    @Column(name = "poll_knd_cd", length = 30)
+    @Column(name = "poll_knd_cd", length = 12)
     private String pollTypeCd;
 
     @Column(name = "poll_dsuse_yn", length = 1)

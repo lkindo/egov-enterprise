@@ -25,10 +25,10 @@ public class Menu extends BaseEntity {
     @Column(name = "menu_sn")
     private Long id;
 
-    @Column(name = "menu_nm", nullable = false, length = 60)
+    @Column(name = "menu_nm", nullable = false, length = 100)
     private String menuNm;
 
-    @Column(name = "prgrm_file_nm", length = 60)
+    @Column(name = "prgrm_file_nm", length = 100)
     private String progrmFileNm;
 
     @Column(name = "up_menu_sn")
@@ -37,13 +37,13 @@ public class Menu extends BaseEntity {
     @Column(name = "menu_ordr", nullable = false)
     private Integer menuOrdr;
 
-    @Column(name = "menu_expln", length = 250)
+    @Column(name = "menu_expln", length = 4000)
     private String menuExpln;
 
     @Column(name = "rel_img_path", length = 100)
     private String relateImagePath;
 
-    @Column(name = "rel_img_nm", length = 60)
+    @Column(name = "rel_img_nm", length = 100)
     private String relateImageNm;
 
     /**

@@ -30,7 +30,7 @@ public class DeptManage extends BaseEntity {
     @Column(name = "ognz_nm", length = 100, nullable = false)
     private String orgnztNm;
 
-    @Column(name = "ognz_expln", length = 255)
+    @Column(name = "ognz_expln", length = 4000)
     private String orgnztDc;
 
     public void update(String orgnztNm, String orgnztDc) {

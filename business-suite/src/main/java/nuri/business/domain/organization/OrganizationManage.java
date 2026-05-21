@@ -20,9 +20,9 @@ public class OrganizationManage extends BaseEntity {
     @Column(name = "ognz_id", length = 20)
     private String orgnztId;
 
-    @Column(name = "ognz_nm", length = 20)
+    @Column(name = "ognz_nm", length = 100)
     private String orgnztNm;
 
-    @Column(name = "ognz_expln", length = 100)
+    @Column(name = "ognz_expln", length = 4000)
     private String orgnztDc;
 }

@@ -21,10 +21,10 @@ public class MemoReport extends BaseEntity {
     @Column(name = "rpt_id", length = 20)
     private String reportId;
 
-    @Column(name = "rpt_ttl", length = 255, nullable = false)
+    @Column(name = "rpt_ttl", length = 100, nullable = false)
     private String reportSubject;
 
-    @Column(name = "memo_rpt_ymd", length = 10)
+    @Column(name = "memo_rpt_ymd", length = 8)
     private String reprtDe;
 
     @Column(name = "user_id", length = 20, nullable = false)
@@ -33,7 +33,7 @@ public class MemoReport extends BaseEntity {
     @Column(name = "rptr_id", length = 20, nullable = false)
     private String reportrId;
 
-    @Column(name = "rpt_cn", columnDefinition = "TEXT")
+    @Column(name = "rpt_cn", columnDefinition = "TEXT", length = 4000)
     private String reportContents;
 
     @Column(name = "atch_file_id", length = 20)

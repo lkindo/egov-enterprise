@@ -30,7 +30,7 @@ public class QustnrIem extends BaseEntity {
     @Column(name = "artcl_sn")
     private Long srvyItemSn;
 
-    @Column(name = "artcl_cn", length = 2500)
+    @Column(name = "artcl_cn", length = 4000)
     private String srvyItemCn;
 
     @Column(name = "etc_ans_yn", length = 1)

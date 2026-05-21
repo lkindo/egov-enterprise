@@ -20,16 +20,16 @@ public class DeptJob extends BaseEntity {
     @Column(name = "dept_task_box_id", length = 20)
     private String deptJobbxId;
 
-    @Column(name = "dept_task_nm", length = 255)
+    @Column(name = "dept_task_nm", length = 100)
     private String deptJobNm;
 
-    @Column(name = "dept_task_cn", columnDefinition = "TEXT")
+    @Column(name = "dept_task_cn", columnDefinition = "TEXT", length = 4000)
     private String deptJobCn;
 
     @Column(name = "pic_id", length = 20)
     private String chargerId;
 
-    @Column(name = "prrty_rnk", length = 1)
+    @Column(name = "prrty_rnk", length = 12)
     private String priort; // 1: 높음, 2: 보통, 3: 낮음
 
     @Column(name = "atch_file_id", length = 20)

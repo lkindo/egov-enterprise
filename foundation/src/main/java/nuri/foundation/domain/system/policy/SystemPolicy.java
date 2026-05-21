@@ -27,13 +27,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class SystemPolicy extends BaseEntity {
 
     @Id
-    @Column(name = "plcy_type_cd", length = 30)
+    @Column(name = "plcy_type_cd", length = 12)
     private String policyType;
 
-    @Column(name = "plcy_ttl", length = 255, nullable = false)
+    @Column(name = "plcy_ttl", length = 100, nullable = false)
     private String title;
 
-    @Column(name = "plcy_cn", columnDefinition = "text", nullable = false)
+    @Column(name = "plcy_cn", columnDefinition = "text", nullable = false, length = 4000)
     private String content;
 
     public void update(String title, String content) {

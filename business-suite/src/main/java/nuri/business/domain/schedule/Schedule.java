@@ -29,16 +29,16 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(name = "schdl_nm", length = 100, nullable = false)
     private String schdlTtl;
 
-    @Column(name = "schdl_cn", columnDefinition = "TEXT")
+    @Column(name = "schdl_cn", columnDefinition = "TEXT", length = 4000)
     private String schdlCn;
 
     @Column(name = "rept_se_cd", length = 12)
     private String reptitSeCd;
 
-    @Column(name = "schdl_bgng_ymd", length = 20)
+    @Column(name = "schdl_bgng_ymd", length = 8)
     private String schdlBgngYmd;
 
-    @Column(name = "schdl_end_ymd", length = 20)
+    @Column(name = "schdl_end_ymd", length = 8)
     private String schdlEndYmd;
 
     @Transient

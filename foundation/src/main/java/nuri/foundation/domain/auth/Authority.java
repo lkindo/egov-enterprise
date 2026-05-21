@@ -21,11 +21,11 @@ public class Authority extends BaseEntity implements java.io.Serializable {
     @NonNull
     private String authorCode;
 
-    @Column(name = "authrt_nm", nullable = false, length = 60)
+    @Column(name = "authrt_nm", nullable = false, length = 300)
     @NonNull
     private String authorNm;
 
-    @Column(name = "authrt_expln", length = 200)
+    @Column(name = "authrt_expln", length = 4000)
     private String authorDc;
 
     @Column(name = "authrt_crt_ymd", length = 8)

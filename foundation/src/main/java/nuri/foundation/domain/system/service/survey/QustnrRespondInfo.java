@@ -37,13 +37,13 @@ public class QustnrRespondInfo extends BaseEntity {
     @Column(name = "srvy_artcl_id", length = 20, nullable = false)
     private String srvyItemId;
 
-    @Column(name = "rspdnt_ans_cn", length = 1000)
+    @Column(name = "rspdnt_ans_cn", length = 4000)
     private String rspdAnsCn;
 
-    @Column(name = "rspns_nm", length = 50)
+    @Column(name = "rspns_nm", length = 100)
     private String rspdNm;
 
-    @Column(name = "etc_ans_cn", length = 1000)
+    @Column(name = "etc_ans_cn", length = 4000)
     private String etcAnsCn;
 
     public void update(String rspdAnsCn, String rspdNm, String etcAnsCn) {

@@ -30,13 +30,13 @@ public class Banner extends BaseEntity {
     @Column(name = "bnr_nm", length = 100, nullable = false)
     private String bannerNm;
 
-    @Column(name = "link_url", length = 255)
+    @Column(name = "link_url", length = 512)
     private String linkUrl;
 
     @Column(name = "bnr_img_nm", length = 100)
     private String bannerImage;
 
-    @Column(name = "bnr_expln", length = 1000)
+    @Column(name = "bnr_expln", length = 4000)
     private String bannerDc;
 
     @Column(name = "sort_ordr")

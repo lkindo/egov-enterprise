@@ -25,13 +25,13 @@ public class Faq extends BaseEntity {
     @Column(name = "faq_id", length = 20)
     private String faqId;
 
-    @Column(name = "qstn_ttl", length = 255, nullable = false)
+    @Column(name = "qstn_ttl", length = 100, nullable = false)
     private String qestnTtl;
 
-    @Column(name = "qstn_cn", columnDefinition = "TEXT")
+    @Column(name = "qstn_cn", columnDefinition = "TEXT", length = 4000)
     private String qestnCn;
 
-    @Column(name = "ans_cn", columnDefinition = "TEXT")
+    @Column(name = "ans_cn", columnDefinition = "TEXT", length = 4000)
     private String answerCn;
 
     @Column(name = "inq_cnt")

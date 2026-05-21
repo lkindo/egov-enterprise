@@ -22,18 +22,18 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "cd_id", length = 18)
+    @Column(name = "cd_id", length = 20)
     @NonNull
     private String codeId;
 
-    @Column(name = "cd_id_nm", length = 180)
+    @Column(name = "cd_id_nm", length = 100)
     @NonNull
     private String codeIdNm;
 
-    @Column(name = "cd_id_expln", length = 600)
+    @Column(name = "cd_id_expln", length = 4000)
     private String codeIdDc;
 
-    @Column(name = "clsf_cd", length = 3)
+    @Column(name = "clsf_cd", length = 12)
     private String clCode;
 
     @Column(name = "use_yn", length = 1)

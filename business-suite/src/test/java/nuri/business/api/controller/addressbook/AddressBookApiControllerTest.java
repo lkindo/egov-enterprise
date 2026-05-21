@@ -65,7 +65,7 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(post("/api/v1/address-books")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"adbkNm\":\"My Address Book\", \"othbcScope\":\"PUBLIC\"}")
+                .content("{\"adbkNm\":\"My Address Book\", \"rlsScopeCd\":\"PUBLIC\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

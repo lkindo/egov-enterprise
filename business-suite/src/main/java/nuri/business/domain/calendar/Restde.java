@@ -28,13 +28,13 @@ public class Restde extends BaseEntity {
     @Column(name = "hldy_ymd", length = 8)
     private String restdeDe;
 
-    @Column(name = "hldy_nm", length = 60)
+    @Column(name = "hldy_nm", length = 100)
     private String restdeNm;
 
-    @Column(name = "hldy_expln", length = 200)
+    @Column(name = "hldy_expln", length = 4000)
     private String restdeDc;
 
-    @Column(name = "hldy_se_cd", length = 1)
+    @Column(name = "hldy_se_cd", length = 12)
     private String restdeSeCode;
 
     public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode) {

@@ -17,16 +17,16 @@ import lombok.NoArgsConstructor;
 public class InstitutionCode extends BaseEntity {
 
     @Id
-    @Column(name = "inst_cd", length = 10)
+    @Column(name = "inst_cd", length = 20)
     private String insttCode;
 
-    @Column(name = "all_inst_nm", length = 300)
+    @Column(name = "all_inst_nm", length = 100)
     private String allInsttNm;
 
-    @Column(name = "lwtrk_inst_nm", length = 180)
+    @Column(name = "lwtrk_inst_nm", length = 100)
     private String lowestInsttNm;
 
-    @Column(name = "inst_abbr_nm", length = 300)
+    @Column(name = "inst_abbr_nm", length = 100)
     private String insttAbrvNm;
 
     @Column(name = "odr", length = 2)
@@ -35,16 +35,16 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "ord", length = 3)
     private String ord;
 
-    @Column(name = "inst_cycl", length = 2)
+    @Column(name = "inst_cycl", length = 12)
     private String insttOdr;
 
-    @Column(name = "top_inst_cd", length = 30)
+    @Column(name = "top_inst_cd", length = 20)
     private String bestInsttCode;
 
-    @Column(name = "up_inst_cd", length = 10)
+    @Column(name = "up_inst_cd", length = 20)
     private String upperInsttCode;
 
-    @Column(name = "rprs_inst_cd", length = 10)
+    @Column(name = "rprs_inst_cd", length = 20)
     private String reprsntInsttCode;
 
     @Column(name = "inst_type_lclsf", length = 2)
@@ -56,28 +56,28 @@ public class InstitutionCode extends BaseEntity {
     @Column(name = "inst_type_sclsf", length = 2)
     private String insttTySclas;
 
-    @Column(name = "telno", length = 20)
+    @Column(name = "telno", length = 13)
     private String telno;
 
-    @Column(name = "fax_no", length = 20)
+    @Column(name = "fax_no", length = 13)
     private String fxnum;
 
-    @Column(name = "crt_ymd", length = 20)
+    @Column(name = "crt_ymd", length = 8)
     private String creatDe;
 
-    @Column(name = "abl_ymd", length = 20)
+    @Column(name = "abl_ymd", length = 8)
     private String ablDe;
 
     @Column(name = "abl_yn", length = 1)
     private String ablEnnc;
 
-    @Column(name = "chg_ymd", length = 20)
+    @Column(name = "chg_ymd", length = 8)
     private String changede;
 
     @Column(name = "chg_tm", length = 20)
     private String changeTime;
 
-    @Column(name = "crtr_ymd", length = 20)
+    @Column(name = "crtr_ymd", length = 8)
     private String bsisDe;
 
     @Column(name = "sort_seq")

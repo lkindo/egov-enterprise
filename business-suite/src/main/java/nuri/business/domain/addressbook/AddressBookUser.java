@@ -31,27 +31,27 @@ public class AddressBookUser extends BaseEntity {
     @Column(name = "adbk_id", length = 20, nullable = false)
     private String adbkId;
 
-    @Column(name = "user_id", length = 30)
+    @Column(name = "user_id", length = 20)
     private String userId;
 
     // @Column(name = "rls_scp_cd", length = 30)
     // private String rlsScpCd;
 
-    @Column(name = "nm", length = 50)
+    @Column(name = "nm", length = 100)
     private String userNm;
 
-    @Column(name = "eml_addr", length = 300)
+    @Column(name = "eml_addr", length = 50)
     private String emlAddr;
 
-    @Column(name = "home_telno", length = 20)
+    @Column(name = "home_telno", length = 11)
     private String homeTelno;
 
-    @Column(name = "mbl_telno", length = 20)
+    @Column(name = "mbl_telno", length = 11)
     private String mblTelno;
 
-    @Column(name = "ofc_telno", length = 20)
+    @Column(name = "ofc_telno", length = 11)
     private String officeTelno;
 
-    @Column(name = "fax_no", length = 20)
+    @Column(name = "fax_no", length = 11)
     private String faxNo;
 }

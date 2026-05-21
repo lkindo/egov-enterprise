@@ -22,16 +22,16 @@ import lombok.NoArgsConstructor;
 public class SiteMap extends BaseEntity {
 
     @Id
-    @Column(name = "mpng_crt_id", length = 30)
+    @Column(name = "mpng_crt_id", length = 20)
     private String mapCreatId;
 
-    @Column(name = "crtr_id", length = 30)
+    @Column(name = "crtr_id", length = 20)
     private String creatPersonId;
 
-    @Column(name = "mpng_file_nm", length = 60)
+    @Column(name = "mpng_file_nm", length = 100)
     private String bndeFileNm;
 
-    @Column(name = "mpng_file_path", length = 100)
+    @Column(name = "mpng_file_path", length = 1000)
     private String bndeFilePath;
 
     public SiteMap(String mapCreatId, String creatPersonId, String bndeFileNm, String bndeFilePath) {

@@ -32,13 +32,13 @@ public class LoginLog extends BaseEntity {
     @Column(name = "lgn_ip_addr", length = 30)
     private String loginIp;
 
-    @Column(name = "cntn_mthd_cd", length = 10)
+    @Column(name = "cntn_mthd_cd", length = 12)
     private String loginMthd;
 
     @Column(name = "err_ocrn_yn", length = 1)
     private String errOccrrAt;
 
-    @Column(name = "err_cd", length = 3)
+    @Column(name = "err_cd", length = 12)
     private String errorCode;
 
     public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,

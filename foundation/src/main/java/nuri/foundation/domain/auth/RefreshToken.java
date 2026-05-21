@@ -18,7 +18,7 @@ public class RefreshToken {
     @Column(name = "user_id", nullable = false, length = 20)
     private String userId;
 
-    @Column(name = "rfsh_tkn", nullable = false, unique = true, length = 255)
+    @Column(name = "rfsh_tkn", nullable = false, unique = true, length = 4000)
     private String token;
 
     @Column(name = "exprtn_dt", nullable = false)

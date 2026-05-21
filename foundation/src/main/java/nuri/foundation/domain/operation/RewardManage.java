@@ -28,16 +28,16 @@ public class RewardManage extends BaseEntity {
     @Column(name = "rwrd_user_id", length = 20, nullable = false)
     private String rwardwnrId;
 
-    @Column(name = "rwrd_cd", length = 20, nullable = false)
+    @Column(name = "rwrd_cd", length = 12, nullable = false)
     private String rwardCode;
 
-    @Column(name = "rwrd_ymd", length = 20)
+    @Column(name = "rwrd_ymd", length = 8)
     private String rwardDe;
 
-    @Column(name = "rwrd_nm", length = 255)
+    @Column(name = "rwrd_nm", length = 100)
     private String rwardNm;
 
-    @Column(name = "cntrb_cn", length = 2000)
+    @Column(name = "cntrb_cn", length = 4000)
     private String pblenCn;
 
     @Column(name = "atrzr_id", length = 20)
@@ -49,7 +49,7 @@ public class RewardManage extends BaseEntity {
     @Column(name = "aprv_dt")
     private java.time.LocalDateTime sanctnDt;
 
-    @Column(name = "rtn_rsn_cn", length = 1000)
+    @Column(name = "rtn_rsn_cn", length = 4000)
     private String returnResn;
 
     @Column(name = "atch_file_id", length = 20)

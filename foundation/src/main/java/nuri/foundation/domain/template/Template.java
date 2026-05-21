@@ -21,13 +21,13 @@ public class Template extends BaseEntity {
     @Column(name = "tmplt_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "tmplt_nm", length = 255, nullable = false)
+    @Column(name = "tmplt_nm", length = 100, nullable = false)
     private String tmplatNm;
 
-    @Column(name = "tmplt_se_cd", length = 20, nullable = false)
+    @Column(name = "tmplt_se_cd", length = 12, nullable = false)
     private String tmplatSeCode;
 
-    @Column(name = "tmplt_path", length = 2000)
+    @Column(name = "tmplt_path", length = 1000)
     private String tmplatCours;
 
     @Column(name = "use_yn", length = 1)

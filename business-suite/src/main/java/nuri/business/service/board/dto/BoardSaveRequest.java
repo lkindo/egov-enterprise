@@ -23,9 +23,9 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Event Date (ISO-8601)") @Size(max = 20) String eventDate,
 
-                @Schema(description = "Q&A Status (OPEN/SOLVED)") @Size(max = 10) String qnaSttsCd,
+                @Schema(description = "Q&A Status (OPEN/SOLVED)") @Size(max = 12) String qnaSttsCd,
 
-                @Schema(description = "Q&A Category") @Size(max = 20) String qnaCatCd,
+                @Schema(description = "Q&A Category") @Size(max = 12) String qnaCatCd,
                 
                 @Schema(description = "Secret Flag (Y/N)") @Pattern(regexp = "^[YN]$") String secretYn,
 

@@ -15,11 +15,11 @@ public class AddressBookDto {
     private String adbkId;
 
     @NotBlank(message = "주소록 명칭은 필수입니다.")
-    @Size(max = 255, message = "주소록 명칭은 255자 이내여야 합니다.")
+    @Size(max = 100, message = "주소록 명칭은 100자 이내여야 합니다.")
     private String adbkNm;
 
     @NotBlank(message = "공개 범위 설정은 필수입니다.")
-    private String othbcScope;
+    private String rlsScopeCd;
 
     private String trgetOrgnztId;
     private String useYn;

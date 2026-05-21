@@ -28,16 +28,16 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(name = "bbs_id", nullable = false)
+    @Column(name = "bbs_id", nullable = false, length = 20)
     private String bbsId;
 
     @Column(name = "ans_sn")
     private Long pstSn;
 
-    @Column(name = "pst_ttl", length = 2000)
+    @Column(name = "pst_ttl", length = 100)
     private String pstTtl;
 
-    @Column(name = "pst_cn")
+    @Column(name = "pst_cn", length = 4000)
     private String pstCn;
 
     @Column(name = "up_pst_id", length = 20)
@@ -70,7 +70,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "user_nm", length = 20)
+    @Column(name = "user_nm", length = 100)
     private String userNm;
 
     @Column(name = "pswd", length = 200)
@@ -92,7 +92,7 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private String qnaSttsCd = "OPEN";
 
-    @Column(name = "qna_cat_cd", length = 50)
+    @Column(name = "qna_cat_cd", length = 12)
     private String qnaCatCd;
 
     @Column(name = "like_cnt")

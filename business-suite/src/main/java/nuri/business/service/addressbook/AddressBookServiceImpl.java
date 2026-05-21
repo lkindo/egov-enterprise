@@ -62,7 +62,7 @@ public class AddressBookServiceImpl implements AddressBookService {
             AddressBook entity = AddressBook.builder()
                     .adbkId(adbkId)
                     .adbkNm(dto.getAdbkNm())
-                    .othbcScope(dto.getOthbcScope())
+                    .rlsScopeCd(dto.getRlsScopeCd())
                     .trgetOrgnztId(dto.getTrgetOrgnztId())
                     .useYn("Y")
                     .wrterId(userId)
@@ -102,7 +102,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt());
+        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), dto.getUseAt());
 
         if (dto.getAdbkMan() == null) {
             return;
@@ -149,7 +149,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         AddressBook entity = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(entity.getAdbkNm(), entity.getOthbcScope(), "N");
+        entity.update(entity.getAdbkNm(), entity.getRlsScopeCd(), "N");
     }
 
     @Override
@@ -176,7 +176,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         return AddressBookDto.builder()
                 .adbkId(entity.getAdbkId())
                 .adbkNm(entity.getAdbkNm())
-                .othbcScope(entity.getOthbcScope())
+                .rlsScopeCd(entity.getRlsScopeCd())
                 .trgetOrgnztId(entity.getTrgetOrgnztId())
                 .useYn(entity.getUseYn())
                 .wrterId(entity.getWrterId())

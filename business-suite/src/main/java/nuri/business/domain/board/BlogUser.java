@@ -26,7 +26,7 @@ public class BlogUser extends BaseEntity {
     private String blogId;
 
     @Id
-    @Column(name = "user_id", length = 30)
+    @Column(name = "user_id", length = 20)
     private String userId;
 
     @Column(name = "mngr_yn", length = 1)

@@ -24,10 +24,10 @@ public class Note extends BaseEntity {
     @Column(name = "note_id", length = 20)
     private String noteId;
 
-    @Column(name = "note_ttl", length = 255)
+    @Column(name = "note_ttl", length = 100)
     private String noteSj;
 
-    @Column(name = "note_cn", columnDefinition = "TEXT")
+    @Column(name = "note_cn", columnDefinition = "TEXT", length = 4000)
     private String noteCn;
 
     @Column(name = "atch_file_id", length = 20)

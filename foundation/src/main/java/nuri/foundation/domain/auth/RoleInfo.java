@@ -15,19 +15,19 @@ import java.time.LocalDate;
 public class RoleInfo extends BaseEntity {
 
     @Id
-    @Column(name = "role_id", length = 50)
+    @Column(name = "role_id", length = 30)
     private String roleCode;
 
-    @Column(name = "role_nm", nullable = false, length = 60)
+    @Column(name = "role_nm", nullable = false, length = 100)
     private String roleNm;
 
     @Column(name = "role_patrn", length = 300)
     private String rolePttrn;
 
-    @Column(name = "role_expln", length = 200)
+    @Column(name = "role_expln", length = 4000)
     private String roleDc;
 
-    @Column(name = "role_type_cd", length = 80)
+    @Column(name = "role_type_cd", length = 12)
     private String roleTy;
 
     @Column(name = "role_sort")

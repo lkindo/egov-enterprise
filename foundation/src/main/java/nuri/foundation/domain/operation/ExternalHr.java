@@ -23,19 +23,19 @@ public class ExternalHr {
     @Column(name = "otsd_hr_id", length = 20)
     private String extrlHrId;
 
-    @Column(name = "gndr_cd", length = 1)
+    @Column(name = "gndr_cd", length = 12)
     private String sexdstnCode;
 
-    @Column(name = "otsd_hr_nm", length = 60)
+    @Column(name = "otsd_hr_nm", length = 100)
     private String extrlHrNm;
 
-    @Column(name = "cr_type_cd", length = 1)
+    @Column(name = "cr_type_cd", length = 12)
     private String occpTyCode;
 
     @Column(name = "ogdp_inst_nm", length = 100)
     private String psitnInsttNm;
 
-    @Column(name = "brdt_ymd", length = 20)
+    @Column(name = "brdt_ymd", length = 8)
     private String brthdy;
 
     @Column(name = "area_no", length = 4)
@@ -47,7 +47,7 @@ public class ExternalHr {
     @Column(name = "end_telno", length = 4)
     private String endTelno;
 
-    @Column(name = "eml_addr", length = 300)
+    @Column(name = "eml_addr", length = 100)
     private String emailAdres;
 
     @Column(name = "crt_dt")

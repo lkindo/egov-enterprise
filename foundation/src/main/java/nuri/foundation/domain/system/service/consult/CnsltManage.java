@@ -28,16 +28,16 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "dscsn_id", length = 20)
     private String cnsltId;
 
-    @Column(name = "dscsn_ttl", length = 255)
+    @Column(name = "dscsn_ttl", length = 100)
     private String cnsltSj;
 
-    @Column(name = "dscsn_cn", columnDefinition = "TEXT")
+    @Column(name = "dscsn_cn", columnDefinition = "TEXT", length = 4000)
     private String cnsltCn;
 
     @Column(name = "rls_yn", length = 1)
     private String othbcAt;
 
-    @Column(name = "wrt_pswd", length = 20)
+    @Column(name = "wrt_pswd", length = 200)
     private String writngPassword;
 
     @Column(name = "area_no", length = 4)
@@ -58,13 +58,13 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "mbl_end_telno", length = 4)
     private String endMbtlnum;
 
-    @Column(name = "eml_addr", length = 50)
+    @Column(name = "eml_addr", length = 100)
     private String emailAdres;
 
     @Column(name = "eml_ans_yn", length = 1)
     private String emailAnswerAt;
 
-    @Column(name = "wrter_nm", length = 20)
+    @Column(name = "wrter_nm", length = 100)
     private String wrterNm;
 
     @Column(name = "wrt_ymd", length = 20)
@@ -81,7 +81,7 @@ public class CnsltManage extends BaseEntity {
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "proc_cn", columnDefinition = "TEXT")
+    @Column(name = "proc_cn", columnDefinition = "TEXT", length = 4000)
     private String managtCn;
 
     @Column(name = "mng_ymd", length = 20)

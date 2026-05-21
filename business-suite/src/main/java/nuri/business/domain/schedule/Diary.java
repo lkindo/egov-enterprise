@@ -33,7 +33,7 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(name = "diary_prgrs_rt")
     private Integer diaryProcsPte;
 
-    @Column(name = "diary_nm", length = 255)
+    @Column(name = "diary_nm", length = 100)
     private String diaryNm;
 
     @Column(name = "drctn_mttr", columnDefinition = "TEXT")

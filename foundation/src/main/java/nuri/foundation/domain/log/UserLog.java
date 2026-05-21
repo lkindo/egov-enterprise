@@ -33,7 +33,7 @@ public class UserLog extends BaseEntity {
     private User vnUserMaster;
 
     @Id
-    @Column(name = "ocrn_ymd", length = 20)
+    @Column(name = "ocrn_ymd", length = 8)
     private String ocrnYmd;
 
     @Id
@@ -41,11 +41,11 @@ public class UserLog extends BaseEntity {
     private String dmndUserId;
 
     @Id
-    @Column(name = "srvc_nm", length = 255)
+    @Column(name = "srvc_nm", length = 100)
     private String srvcNm;
 
     @Id
-    @Column(name = "mthd_nm", length = 60)
+    @Column(name = "mthd_nm", length = 100)
     private String methodNm;
 
     @Column(name = "crt_cnt")

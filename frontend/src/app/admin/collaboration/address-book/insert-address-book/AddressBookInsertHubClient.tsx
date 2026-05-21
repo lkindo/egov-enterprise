@@ -35,7 +35,7 @@ export default function AddressBookInsertHubClient() {
  telNo: '',
  email: '',
  adres: '',
- othbcScope: 'G', // [FIX] Required field for backend integrity
+ rlsScopeCd: 'G', // [FIX] Required field for backend integrity
  wrterId: 'webmaster' // [FIX] Required field for backend integrity
  });
 
@@ -49,7 +49,7 @@ export default function AddressBookInsertHubClient() {
  setIsSubmitting(true);
  const payload = {
  adbkNm: form.adbkNm,
- othbcScope: form.othbcScope,
+ rlsScopeCd: form.rlsScopeCd,
  wrterId: form.wrterId,
  adbkMan: [
  {

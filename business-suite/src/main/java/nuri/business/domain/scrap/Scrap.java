@@ -36,7 +36,7 @@ public class Scrap extends BaseEntity {
     @Column(name = "scrap_url", length = 1000)
     private String scrapUrl;
 
-    @Column(name = "scrap_expln", length = 2000)
+    @Column(name = "scrap_expln", length = 4000)
     private String scrapDc;
 
     @Column(name = "use_yn", length = 1)

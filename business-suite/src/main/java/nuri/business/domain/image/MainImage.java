@@ -35,10 +35,10 @@ public class MainImage extends BaseEntity {
     @Column(name = "main_img_file_path", length = 50)
     private String image;
 
-    @Column(name = "img_file_nm", length = 20)
+    @Column(name = "img_file_nm", length = 100)
     private String imageFile;
 
-    @Column(name = "main_img_expln", length = 1000)
+    @Column(name = "main_img_expln", length = 4000)
     private String imageDc;
 
     @Column(name = "rflt_yn", length = 1)

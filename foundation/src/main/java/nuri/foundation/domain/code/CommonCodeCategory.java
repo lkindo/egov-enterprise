@@ -18,13 +18,13 @@ import lombok.experimental.SuperBuilder;
 public class CommonCodeCategory extends BaseEntity {
 
     @Id
-    @Column(name = "clsf_cd", length = 3)
+    @Column(name = "clsf_cd", length = 12)
     private String clCode;
 
-    @Column(name = "clsf_cd_nm", length = 180)
+    @Column(name = "clsf_cd_nm", length = 100)
     private String clCodeNm;
 
-    @Column(name = "clsf_cd_expln", length = 600)
+    @Column(name = "clsf_cd_expln", length = 4000)
     private String clCodeDc;
 
     @Column(name = "use_yn", length = 1)

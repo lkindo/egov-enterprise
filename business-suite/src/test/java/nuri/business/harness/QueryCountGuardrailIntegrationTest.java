@@ -30,7 +30,7 @@ class QueryCountGuardrailIntegrationTest extends BusinessIntegrationTestSupport 
         String userId = "harnessUser";
         AddressBookDto saveRequest = AddressBookDto.builder()
                 .adbkNm("Harness Test Book")
-                .othbcScope("P")
+                .rlsScopeCd("P")
                 .useYn("Y")
                 .adbkMan(Collections.emptyList())
                 .build();

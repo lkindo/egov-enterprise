@@ -27,10 +27,10 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "qstn_sn")
     private Long srvyQitemSn;
 
-    @Column(name = "qstn_type_cd", length = 20)
+    @Column(name = "qstn_type_cd", length = 12)
     private String srvyQitemTypeCd;
 
-    @Column(name = "qstn_cn", length = 2500)
+    @Column(name = "qstn_cn", length = 4000)
     private String srvyQitemCn;
 
     @Column(name = "max_chc_cnt")

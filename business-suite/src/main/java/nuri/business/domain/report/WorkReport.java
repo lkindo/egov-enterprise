@@ -26,7 +26,7 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(name = "rpt_ttl", length = 100, nullable = false)
     private String reportSubject;
 
-    @Column(name = "rpt_cn", columnDefinition = "TEXT")
+    @Column(name = "rpt_cn", columnDefinition = "TEXT", length = 4000)
     private String reportContents;
 
     @Transient

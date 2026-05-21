@@ -24,10 +24,10 @@ public class InternetSvcGuidance extends BaseEntity {
     @Column(name = "itnt_svc_id", length = 20)
     private String intnetSvcId;
 
-    @Column(name = "itnt_svc_nm", length = 255)
+    @Column(name = "itnt_svc_nm", length = 100)
     private String intnetSvcNm;
 
-    @Column(name = "itnt_svc_expln", length = 1000)
+    @Column(name = "itnt_svc_expln", length = 4000)
     private String intnetSvcDc;
 
     @Column(name = "rflt_yn", length = 1)

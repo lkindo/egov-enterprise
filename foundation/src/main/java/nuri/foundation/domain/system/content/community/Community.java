@@ -25,7 +25,7 @@ public class Community extends BaseEntity implements Serializable {
     @Column(name = "cmnty_id", length = 20, nullable = false)
     private String cmntyId;
 
-    @Column(name = "cmnty_nm", length = 300)
+    @Column(name = "cmnty_nm", length = 100)
     private String cmntyTtl;
 
     @Column(name = "cmnty_intro_cn", length = 4000)

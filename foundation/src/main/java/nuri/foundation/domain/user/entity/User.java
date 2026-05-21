@@ -30,7 +30,7 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String esntlId;
 
-    @Column(name = "user_id", nullable = false, length = 30, unique = true)
+    @Column(name = "user_id", nullable = false, length = 20, unique = true)
     @NonNull
     private String userId;
 
@@ -38,7 +38,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "user_type_cd", nullable = false, length = 10)
     private String userType = "EMP";
 
-    @Column(name = "user_nm", nullable = false, length = 300)
+    @Column(name = "user_nm", nullable = false, length = 100)
     @NonNull
     private String userNm;
 
@@ -75,7 +75,7 @@ public class User extends BaseEntity implements Serializable {
     private String subDn;
 
     // ■ 개인 정보
-    @Column(name = "rrno", length = 600)
+    @Column(name = "rrno", length = 256)
     private String ihidnum;
 
     @Column(name = "gndr_cd", length = 30)
@@ -84,10 +84,10 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "brth_ymd", length = 8)
     private String brthYmd;
 
-    @Column(name = "eml_addr", length = 300)
+    @Column(name = "eml_addr", length = 50)
     private String emlAddr;
 
-    @Column(name = "mbl_telno", length = 11)
+    @Column(name = "mbl_telno", length = 20)
     private String mblTelno;
 
     // ■ 주소 정보
@@ -109,26 +109,26 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "end_telno", length = 4)
     private String homeendTelno;
 
-    @Column(name = "fax_no", length = 20)
+    @Column(name = "fax_no", length = 30)
     private String faxNo;
 
     @Column(name = "office_telno", length = 20)
     private String officeTelno;
 
     // ■ 조직 및 권한
-    @Column(name = "group_id", length = 20)
+    @Column(name = "group_id", length = 30)
     private String groupId;
 
     @Column(name = "ognz_id", length = 20)
     private String orgnztId;
 
-    @Column(name = "pstinst_cd", length = 8)
+    @Column(name = "pstinst_cd", length = 30)
     private String insttCode;
 
     @Column(name = "empl_no", length = 20)
     private String emplNo;
 
-    @Column(name = "ofcps_nm", length = 60)
+    @Column(name = "ofcps_nm", length = 300)
     private String ofcpsNm;
 
     @Builder.Default
@@ -143,16 +143,16 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "jurir_no", length = 13)
     private String jurirno;
 
-    @Column(name = "cmpny_nm", length = 50)
+    @Column(name = "cmpny_nm", length = 300)
     private String cmpnyNm;
 
-    @Column(name = "rprsv_nm", length = 50)
+    @Column(name = "rprsv_nm", length = 100)
     private String cxfc;
 
-    @Column(name = "induty_cd", length = 15)
+    @Column(name = "induty_cd", length = 30)
     private String indutyCode;
 
-    @Column(name = "ent_se_cd", length = 15)
+    @Column(name = "ent_se_cd", length = 12)
     private String entrprsSeCode;
 
     // ■ 상태 및 감사

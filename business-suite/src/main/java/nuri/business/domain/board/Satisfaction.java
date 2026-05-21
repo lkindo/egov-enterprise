@@ -29,16 +29,16 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(name = "dgstfn_sn")
     private Long stsfdgId;
 
-    @Column(name = "bbs_id", nullable = false)
+    @Column(name = "bbs_id", nullable = false, length = 20)
     private String bbsId;
 
-    @Column(name = "ntt_id", nullable = false)
+    @Column(name = "ntt_id", nullable = false, length = 20)
     private String pstId;
 
     @Column(name = "dgstfn_scr", nullable = false)
     private Integer stsfdgLevel;
 
-    @Column(name = "dgstfn_cn", length = 2500)
+    @Column(name = "dgstfn_cn", length = 4000)
     private String stsfdgCn;
 
     @Column(name = "pswd", length = 200)

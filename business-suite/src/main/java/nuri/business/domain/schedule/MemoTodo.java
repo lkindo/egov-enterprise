@@ -21,16 +21,16 @@ public class MemoTodo extends BaseEntity {
     @Column(name = "todo_id", length = 20)
     private String todoId;
 
-    @Column(name = "todo_ttl", length = 255, nullable = false)
+    @Column(name = "todo_ttl", length = 100, nullable = false)
     private String todoNm;
 
-    @Column(name = "todo_cn", length = 2500)
+    @Column(name = "todo_cn", length = 4000)
     private String todoCn;
 
-    @Column(name = "todo_bgng_tm", length = 20)
+    @Column(name = "todo_bgng_tm", length = 6)
     private String todoBeginTime;
 
-    @Column(name = "todo_end_tm", length = 20)
+    @Column(name = "todo_end_tm", length = 6)
     private String todoEndTime;
 
     @Column(name = "user_id", length = 20, nullable = false)

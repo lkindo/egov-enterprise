@@ -25,7 +25,7 @@ public class WebLog extends BaseEntity {
     @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "url", length = 200)
+    @Column(name = "url", length = 1000)
     private String url;
 
     @Column(name = "dmnd_user_id", length = 20)

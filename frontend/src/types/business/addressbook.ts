@@ -1,7 +1,7 @@
 export interface AddressBook {
  adbkId: string;
  adbkNm: string;
- othbcScope: string; // 공용, 개인
+ rlsScopeCd: string; // 공용, 개인
  frstRegisterId: string;
 }
 

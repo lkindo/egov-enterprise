@@ -26,22 +26,22 @@ public class Popup extends BaseEntity {
     @Column(name = "popup_id", length = 20)
     private String popupId;
 
-    @Column(name = "popup_ttl_nm", length = 1024, nullable = false)
+    @Column(name = "popup_ttl_nm", length = 100, nullable = false)
     private String popupTitleName;
 
-    @Column(name = "file_url", length = 1024)
+    @Column(name = "file_url", length = 1000)
     private String fileUrl;
 
-    @Column(name = "popup_wdth_pstn", length = 20)
+    @Column(name = "popup_wdth_pstn", length = 12)
     private String popupWidthLocation;
 
-    @Column(name = "popup_vrtc_pstn", length = 20)
+    @Column(name = "popup_vrtc_pstn", length = 12)
     private String popupHeightLocation;
 
-    @Column(name = "popup_vrtc_sz", length = 20)
+    @Column(name = "popup_vrtc_sz", length = 12)
     private String popupHeightSize;
 
-    @Column(name = "popup_wdth_sz", length = 20)
+    @Column(name = "popup_wdth_sz", length = 12)
     private String popupWidthSize;
 
     @Column(name = "ntce_bgnde")

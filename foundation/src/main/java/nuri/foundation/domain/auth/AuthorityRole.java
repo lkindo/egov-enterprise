@@ -32,7 +32,7 @@ public class AuthorityRole extends BaseEntity {
         @Column(name = "authrt_cd", length = 30)
         private String authorCode;
 
-        @Column(name = "role_cd", length = 50)
+        @Column(name = "role_cd", length = 12)
         private String roleCode;
     }
 }

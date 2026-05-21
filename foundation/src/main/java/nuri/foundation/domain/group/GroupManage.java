@@ -22,10 +22,10 @@ public class GroupManage extends BaseEntity {
     @Column(name = "group_id", length = 20)
     private String groupId;
 
-    @Column(name = "group_nm", length = 60)
+    @Column(name = "group_nm", length = 100)
     private String groupNm;
 
-    @Column(name = "group_dc", length = 100)
+    @Column(name = "group_dc", length = 4000)
     private String groupDc;
 
     @Column(name = "group_crt_ymd")
