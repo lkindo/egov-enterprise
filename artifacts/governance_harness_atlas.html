@@ -864,11 +864,104 @@
       color: var(--text-main);
     }
 
+    /* Architecture Visual Flow Styles */
+    .arch-flow-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 1.5rem 0.85rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      margin-top: 1rem;
+      scrollbar-width: thin;
+    }
+    
+    .arch-flow-node {
+      flex: 1;
+      min-width: 155px;
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.1rem 0.75rem;
+      text-align: center;
+      box-shadow: var(--shadow-main);
+      transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+      cursor: help;
+    }
+    
+    .arch-flow-node:hover {
+      border-color: var(--accent-secondary);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2);
+    }
+    
+    .arch-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      font-family: 'Fira Code', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .arch-node-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    
+    .arch-node-file {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      word-break: break-all;
+    }
+    
+    .arch-flow-arrow {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      animation: pulseArrow 2s infinite alternate ease-in-out;
+      flex-shrink: 0;
+    }
+    
+    @keyframes pulseArrow {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+
     /* Responsive adjustments */
     @media (max-width: 1200px) {
       .stat-bar { grid-template-columns: repeat(2, 1fr); }
       .sim-container { grid-template-columns: 1fr; }
       .sim-monitor { position: static; }
+      
+      .arch-flow-container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem 1rem;
+      }
+      .arch-flow-arrow {
+        transform: rotate(90deg);
+        animation: pulseArrowY 2s infinite alternate ease-in-out;
+      }
+      .arch-flow-node {
+        width: 100%;
+        max-width: 400px;
+      }
+    }
+    
+    @keyframes pulseArrowY {
+      0% { opacity: 0.4; transform: rotate(90deg) scale(0.9); }
+      100% { opacity: 1; transform: rotate(90deg) scale(1.1); }
     }
   </style>
 </head>
@@ -948,7 +1041,7 @@
 
         <input type="radio" name="tabs" id="tab-harnesses" class="tab-radio">
         <label for="tab-harnesses" class="nav-label">
-          <span class="nav-number">09</span> 6대 가디언 하네스 스펙
+          <span class="nav-number">09</span> 7대 가디언 하네스 스펙
         </label>
       </nav>
 
@@ -977,7 +1070,7 @@
         <div class="welcome-hero">
           <h2 class="welcome-title">eGov Enterprise Governance</h2>
           <p class="welcome-subtitle">
-            안티그래비티 2.0이 통제하고 실시간으로 보호하는 6대 무결성 가디언 하네스 종합 대시보드
+            안티그래비티 2.0이 통제하고 실시간으로 보호하는 7대 무결성 가디언 하네스 종합 대시보드
           </p>
 
           <!-- Core Metrical Stat Cards Grid -->
@@ -1008,17 +1101,98 @@
         <div class="glass-card">
           <div class="card-neon-glow"></div>
           <h3 class="glow-header">차세대 엔터프라이즈 아키텍처 흐름</h3>
-          <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.25rem;">
-            본 프로젝트는 Java 21 기반 Spring Boot 백엔드와 Next.js 16.2 프론트엔드가 OCI PostgreSQL 17 스토리지 상에서 완벽한 무결성을 유지하며 융합하도록 강제 설계되었습니다.
+          <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1rem;">
+            본 프로젝트는 Java 21 기반 Spring Boot 백엔드와 Next.js 16.2 프론트엔드가 OCI PostgreSQL 17 스토리지 상에서 완벽한 무결성을 유지하며 융합하도록 강제 설계되었습니다. 
+            각 단계 카드에 마우스를 호버하여 대응되는 구체적인 **실제 프로젝트 소스 파일 경로**를 매핑할 수 있습니다.
           </p>
-          <pre class="code-block">
-User ➔ Next.js Middleware(Auth) ➔ Server Component ➔ ApiService ➔ api-server Controller ➔ business-suite Service ➔ PostgreSQL ➔ DTO Response ➔ Client Component</pre>
+          
+          <!-- Visual Timeline Flow -->
+          <div class="arch-flow-container">
+            <!-- Step 1: User -->
+            <div class="arch-flow-node" title="유저 브라우저 레이어">
+              <span class="arch-badge badge-cyan">01. USER</span>
+              <div class="arch-node-name">Client Browser</div>
+              <div class="arch-node-file">HTML / Client JS</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 2: Next.js Middleware -->
+            <div class="arch-flow-node" title="인증 및 인가 가드레일 미들웨어">
+              <span class="arch-badge badge-primary">02. MID</span>
+              <div class="arch-node-name">Next.js Middleware</div>
+              <div class="arch-node-file">middleware.ts</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 3: Server Component -->
+            <div class="arch-flow-node" title="초기 SSR 서버 사이드 렌더링 렌더러">
+              <span class="arch-badge badge-success">03. SSR</span>
+              <div class="arch-node-name">Server Component</div>
+              <div class="arch-node-file">page.tsx</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 4: ApiService -->
+            <div class="arch-flow-node" title="프론트엔드 API 클라이언트 서비스">
+              <span class="arch-badge badge-warning">04. API CLIENT</span>
+              <div class="arch-node-name">ApiService</div>
+              <div class="arch-node-file">dashboardService.ts</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 5: BE Controller -->
+            <div class="arch-flow-node" title="백엔드 웹 어댑터 컨트롤러">
+              <span class="arch-badge badge-error">05. CONTROLLER</span>
+              <div class="arch-node-name">api-server Controller</div>
+              <div class="arch-node-file">DashboardController.java</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 6: BE Service -->
+            <div class="arch-flow-node" title="코어 비즈니스 로직 서비스">
+              <span class="arch-badge badge-primary">06. SERVICE</span>
+              <div class="arch-node-name">business-suite Service</div>
+              <div class="arch-node-file">DashboardService.java</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 7: PostgreSQL -->
+            <div class="arch-flow-node" title="OCI PostgreSQL 17 스토리지">
+              <span class="arch-badge badge-success">07. DATABASE</span>
+              <div class="arch-node-name">PostgreSQL</div>
+              <div class="arch-node-file">Physical Storage</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 8: DTO Response -->
+            <div class="arch-flow-node" title="백엔드 DTO JSON 응답 레이어">
+              <span class="arch-badge badge-warning">08. DTO RESPONSE</span>
+              <div class="arch-node-name">DTO Response (JSON)</div>
+              <div class="arch-node-file">generated-api.d.ts</div>
+            </div>
+            
+            <div class="arch-flow-arrow">➔</div>
+            
+            <!-- Step 9: Client Component -->
+            <div class="arch-flow-node" title="클라이언트 사이드 인터랙션 렌더링">
+              <span class="arch-badge badge-cyan">09. CLIENT COMP</span>
+              <div class="arch-node-name">Client Component</div>
+              <div class="arch-node-file">UnifiedDashboardClient.tsx</div>
+            </div>
+          </div>
         </div>
 
         <div class="glass-card">
           <h3 class="glow-header">실시간 거버넌스 릭(Leak) 방어 아키텍처</h3>
           <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.7;">
-            안티그래비티 하네스는 **빌드 타임(Static Linter/Hard-Stop)**, **테스트 타임(JPA Inspector/PITest/Security Linter)**, **런타임(Playwright Self-Healing/Diagnostics Hub)** 3중 통제 장벽을 구성하여 개발자가 실수로 유입한 버그나 무결성 위반 코드가 프로덕션으로 배포되는 길목을 원천적으로 차단합니다.
+            안티그래비티 하네스는 **빌드 타임(Static Linter/Hard-Stop)**, **테스트 타임(JPA Inspector/PITest/Security Linter/Schema Validator)**, **런타임(Playwright Self-Healing/Diagnostics Hub)** 3중 통제 장벽을 구성하여 개발자가 실수로 유입한 버그나 무결성 위반 코드가 프로덕션으로 배포되는 길목을 원천적으로 차단합니다.
           </p>
         </div>
       </section>
@@ -1367,16 +1541,16 @@ User ➔ Next.js Middleware(Auth) ➔ Server Component ➔ ApiService ➔ api-se
         </div>
       </section>
 
-      <!-- [09] 6대 가디언 하네스 스펙 -->
+      <!-- [09] 7대 가디언 하네스 스펙 -->
       <section id="content-harnesses" class="tab-content">
-        <h2 class="section-title">6대 무결성 가디언 하네스 아키텍처 스펙</h2>
+        <h2 class="section-title">7대 무결성 가디언 하네스 아키텍처 스펙</h2>
         <p class="section-subtitle">eGov Enterprise 빌드/테스트/배포 라이프사이클의 무결성을 수호하는 가디언들의 종합 상세 사양</p>
 
         <!-- Stat total overlay -->
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">하네스 종합 평가 총평</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            본 프로젝트에 구축된 6대 무결성 가디언 하네스는 다중 모듈 및 이종 기술 스택(Spring Boot + Next.js)의 융합 구조에서 누출되기 쉬운 대표적인 **4대 위험 영역(JPA N+1 쿼리 누수, JWT 동기화 유실, API 보안 권한 노출, 프론트엔드 비주얼/타입 불일치)**을 완벽한 컴파일 차단(Hard-Stop) 및 dynamic 자가 치유(Self-Healing) 기술로 극복하였습니다. 
+            본 프로젝트에 구축된 7대 무결성 가디언 하네스는 다중 모듈 및 이종 기술 스택(Spring Boot + Next.js)의 융합 구조에서 누출되기 쉬운 대표적인 **5대 위험 영역(JPA N+1 쿼리 누수, JWT 동기화 유실, API 보안 권한 노출, 프론트엔드 비주얼/타입 불일치, DB 물리-논리 매핑 정합성 유실)**을 완벽한 컴파일 차단(Hard-Stop) 및 dynamic 자가 치유(Self-Healing) 기술로 극복하였습니다. 
             그 결과 전체 백엔드 **JPA Query Leak을 90% 저감**시켰으며, PITest 점진적 AST 증분 캐시 최적화로 **빌드 타임 오버헤드를 92% 단축**하는 등 엔터프라이즈 사스 수준의 무결성과 최고의 생산성을 수리적으로 증명하고 있습니다.
           </p>
         </div>
@@ -1512,6 +1686,16 @@ User ➔ Next.js Middleware(Auth) ➔ Server Component ➔ ApiService ➔ api-se
         impl: "SelfHealingAgent.ts (frontend/e2e/fixtures/)",
         doc: "frontend/e2e/specs/ 하위 전체 브라우저 테스트 케이스 매핑", docLink: null,
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-success))",
+        isFullWidth: true
+      },
+      {
+        num: 7,
+        title: "Flyway + Hibernate Validate 로컬 스키마 무결성 하네스 (Local Schema Integrity Validator)",
+        desc: "백엔드 단위 테스트 시 H2 스키마 DDL(V1__init_test_schema.sql)과 JPA Entity의 매핑 규격을 1:1로 엄격 검증(validate)하는 가디언입니다.<br><strong style='color: var(--accent-secondary);'>[엔지니어링 고도화 탑재]</strong><br>1) <strong>Regex Clean Dumper</strong>: SchemaDumper.java를 통해 H2 SCRIPT 덤프의 H2 전용 불순물 설정(SET, CREATE USER 등)을 정규식으로 자동 청소하여 순수 DDL 구조만 추출 보존.<br>2) <strong>Git Pre-Push Hook Gate</strong>: 커밋 지연을 막는 생산성 타협안으로 push 단계에서만 gradle 검증을 자동 강제하는 bat/sh 인스톨러 배포.<br>3) <strong>CI Paths Filter 연동</strong>: 무분별한 빌드 캐시 리소스를 막기 위해 Entity 및 DDL 관련 핵심 파일 변동 시에만 --no-build-cache 엄격 정합성 검증 게이트웨이를 CI에서 선택적 트리거.",
+        badge1: "Backend", badge2: "Testing", badge3: "Hard-Stop", type1: "primary", type2: "success", type3: "success",
+        impl: "SchemaDumper.java, install-git-hooks.bat/.sh, ci.yml (paths-filter), V1__init_test_schema.sql",
+        doc: "testing-guide.md", docLink: "../docs/03-guides/testing-guide.md",
+        color: "linear-gradient(90deg, var(--accent-success), var(--accent-primary), var(--accent-secondary))",
         isFullWidth: true
       }
     ];

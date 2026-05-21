@@ -38,6 +38,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Detect Schema and JPA Entity Changes
+        id: schema-changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            schema:
+              - 'foundation/src/main/java/**/entity/**'
+              - 'foundation/src/test/resources/db/migration/**'
+              - 'foundation/build.gradle'
+              - 'foundation/src/test/resources/application-test.yml'
+              - 'foundation/src/test/resources/application-test-dump.yml'
+
+      - name: Strict Schema Integrity Validation (No Cache Gateway)
+        if: steps.schema-changes.outputs.schema == 'true'
+        run: ./gradlew :foundation:test --no-build-cache
+
       - name: Build and Test with Gradle
         run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
 
