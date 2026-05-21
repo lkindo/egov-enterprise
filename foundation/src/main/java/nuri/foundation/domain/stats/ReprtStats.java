@@ -17,20 +17,20 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "NREPRTSTATS")
+@Table(name = "nreprtstats")
 @SuperBuilder
 public class ReprtStats extends BaseEntity {
 
     @Id
-    @Column(name = "REPRT_ID", length = 20)
+    @Column(name = "reprt_id", length = 20)
     private String reprtId;
 
-    @Column(name = "REPRT_NM", length = 255)
+    @Column(name = "reprt_nm", length = 255)
     private String reprtNm;
 
-    @Column(name = "REPRT_STTUS", length = 1)
+    @Column(name = "reprt_sttus", length = 1)
     private String reprtSttus;
 
-    @Column(name = "REPRT_TY", length = 1)
+    @Column(name = "reprt_ty", length = 1)
     private String reprtTy;
 }

@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_ONLN_POLL_RSLT")
+@Table(name = "tb_onln_poll_rslt")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,12 +24,12 @@ import lombok.experimental.SuperBuilder;
 public class OnlinePollResult extends BaseEntity {
 
     @Id
-    @Column(name = "POLL_RSLT_ID", length = 20)
+    @Column(name = "poll_rslt_id", length = 20)
     private String pollResultId;
 
-    @Column(name = "POLL_ID", length = 20, nullable = false)
+    @Column(name = "poll_id", length = 20, nullable = false)
     private String pollId;
 
-    @Column(name = "POLL_ARTCL_ID", length = 20, nullable = false)
+    @Column(name = "poll_artcl_id", length = 20, nullable = false)
     private String pollIemId;
 }

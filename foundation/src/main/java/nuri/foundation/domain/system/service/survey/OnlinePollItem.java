@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_ONLN_POLL_ARTCL")
+@Table(name = "tb_onln_poll_artcl")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -25,14 +25,14 @@ import lombok.experimental.SuperBuilder;
 public class OnlinePollItem extends BaseEntity {
 
     @Id
-    @Column(name = "POLL_ARTCL_ID", length = 20)
+    @Column(name = "poll_artcl_id", length = 20)
     private String pollIemId;
 
     @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @jakarta.persistence.JoinColumn(name = "POLL_ID")
     private OnlinePollManage pollManage;
 
-    @Column(name = "POLL_ARTCL_NM", length = 255, nullable = false)
+    @Column(name = "poll_artcl_nm", length = 255, nullable = false)
     private String pollIemNm;
 
     public void update(String pollIemNm) {

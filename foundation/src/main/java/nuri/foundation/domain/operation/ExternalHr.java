@@ -9,57 +9,57 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "TB_EXTRL_HR_INFO")
+@Table(name = "tb_extrl_hr_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(ExternalHrId.class)
 public class ExternalHr {
 
     @Id
-    @Column(name = "EVNT_ID", length = 20)
+    @Column(name = "evnt_id", length = 20)
     private String eventId;
 
     @Id
-    @Column(name = "OTSD_HR_ID", length = 20)
+    @Column(name = "otsd_hr_id", length = 20)
     private String extrlHrId;
 
-    @Column(name = "GNDR_CD", length = 1)
+    @Column(name = "gndr_cd", length = 1)
     private String sexdstnCode;
 
-    @Column(name = "OTSD_HR_NM", length = 60)
+    @Column(name = "otsd_hr_nm", length = 60)
     private String extrlHrNm;
 
-    @Column(name = "CR_TYPE_CD", length = 1)
+    @Column(name = "cr_type_cd", length = 1)
     private String occpTyCode;
 
-    @Column(name = "OGDP_INST_NM", length = 100)
+    @Column(name = "ogdp_inst_nm", length = 100)
     private String psitnInsttNm;
 
-    @Column(name = "BRDT_YMD", length = 20)
+    @Column(name = "brdt_ymd", length = 20)
     private String brthdy;
 
-    @Column(name = "AREA_NO", length = 4)
+    @Column(name = "area_no", length = 4)
     private String areaNo;
 
-    @Column(name = "MD_TELNO", length = 4)
+    @Column(name = "md_telno", length = 4)
     private String middleTelno;
 
-    @Column(name = "END_TELNO", length = 4)
+    @Column(name = "end_telno", length = 4)
     private String endTelno;
 
-    @Column(name = "EML_ADDR", length = 300)
+    @Column(name = "eml_addr", length = 300)
     private String emailAdres;
 
-    @Column(name = "CRT_DT")
+    @Column(name = "crt_dt")
     private LocalDateTime frstRegistPnttm;
 
-    @Column(name = "FRST_RGTR_ID", length = 20)
+    @Column(name = "frst_rgtr_id", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "MDFCN_DT")
+    @Column(name = "mdfcn_dt")
     private LocalDateTime lastUpdtPnttm;
 
-    @Column(name = "LAST_MDFR_ID", length = 20)
+    @Column(name = "last_mdfr_id", length = 20)
     private String lastUpdusrId;
 
     @ManyToOne(fetch = FetchType.LAZY)

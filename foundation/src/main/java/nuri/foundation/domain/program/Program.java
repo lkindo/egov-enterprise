@@ -13,24 +13,24 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "TB_PRGRM_LST")
+@Table(name = "tb_prgrm_lst")
 @SuperBuilder
 public class Program extends BaseEntity {
 
     @Id
-    @Column(name = "PRGRM_FILE_NM", length = 60)
+    @Column(name = "prgrm_file_nm", length = 60)
     private String progrmFileNm;
 
-    @Column(name = "PRGRM_STRG_PATH", length = 100)
+    @Column(name = "prgrm_strg_path", length = 100)
     private String progrmStrePath;
 
-    @Column(name = "PRGRM_KORN_NM", length = 60)
+    @Column(name = "prgrm_korn_nm", length = 60)
     private String progrmKoreanNm;
 
-    @Column(name = "URL", length = 100)
+    @Column(name = "url", length = 100)
     private String url;
 
-    @Column(name = "PRGRM_EXPLN", length = 200)
+    @Column(name = "prgrm_expln", length = 200)
     private String progrmDc;
 
     public void update(String progrmStrePath, String progrmKoreanNm, String url, String progrmDc) {

@@ -20,29 +20,29 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_DIARY_INFO")
+@Table(name = "tb_diary_info")
 public class Diary extends BaseEntity implements Serializable {
 
     @Id
-    @Column(name = "DIARY_ID", length = 20)
+    @Column(name = "diary_id", length = 20)
     private String diaryId;
 
-    @Column(name = "SCHDUL_ID", length = 20)
+    @Column(name = "schdul_id", length = 20)
     private String schdlId;
 
-    @Column(name = "DIARY_PROGRS_RT")
+    @Column(name = "diary_progrs_rt")
     private Integer diaryProcsPte;
 
-    @Column(name = "DIARY_NM", length = 255)
+    @Column(name = "diary_nm", length = 255)
     private String diaryNm;
 
-    @Column(name = "DRCT_MATTER", columnDefinition = "TEXT")
+    @Column(name = "drct_matter", columnDefinition = "TEXT")
     private String drctMatter;
 
-    @Column(name = "PARTCLR_MATTER", columnDefinition = "TEXT")
+    @Column(name = "partclr_matter", columnDefinition = "TEXT")
     private String partclrMatter;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     public void update(Integer diaryProcsPte, String diaryNm, String drctMatter,

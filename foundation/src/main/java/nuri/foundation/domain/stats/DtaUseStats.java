@@ -24,19 +24,19 @@ import lombok.NoArgsConstructor;
 public class DtaUseStats extends BaseEntity {
 
     @Id
-    @Column(name = "DTA_USE_STATS_ID", length = 20)
+    @Column(name = "dta_use_stats_id", length = 20)
     private String dtaUseStatsId;
 
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "NTT_ID")
+    @Column(name = "ntt_id")
     private Long nttId;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "FILE_SN")
+    @Column(name = "file_sn")
     private Integer fileSn;
 
 }

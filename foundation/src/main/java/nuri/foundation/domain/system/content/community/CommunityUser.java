@@ -14,26 +14,26 @@ import java.io.Serializable;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "TB_CMNTY_USER_MAP")
+@Table(name = "tb_cmnty_user_map")
 @SuperBuilder
 public class CommunityUser extends BaseEntity implements Serializable {
 
     @EmbeddedId
     private CommunityUserId id;
 
-    @Column(name = "MNGR_YN", length = 1)
+    @Column(name = "mngr_yn", length = 1)
     private String mngrYn;
 
-    @Column(name = "JOIN_YMD", length = 8)
+    @Column(name = "join_ymd", length = 8)
     private String joinYmd;
 
-    @Column(name = "WHDWL_YMD", length = 8)
+    @Column(name = "whdwl_ymd", length = 8)
     private String wdrlYmd;
 
-    @Column(name = "MBR_STTS_CD", length = 12)
+    @Column(name = "mbr_stts_cd", length = 12)
     private String mbrSttsCd;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public void approve() {

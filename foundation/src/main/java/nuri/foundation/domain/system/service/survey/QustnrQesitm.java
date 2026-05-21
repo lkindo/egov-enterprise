@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_QSTN")
+@Table(name = "tb_srvy_qstn")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,25 +18,25 @@ import lombok.experimental.SuperBuilder;
 public class QustnrQesitm extends BaseEntity {
 
     @Id
-    @Column(name = "SRVY_QITEM_ID", length = 20)
+    @Column(name = "srvy_qitem_id", length = 20)
     private String srvyQitemId;
 
-    @Column(name = "SRVY_ID", length = 20)
+    @Column(name = "srvy_id", length = 20)
     private String srvyId;
 
-    @Column(name = "QSTN_SN")
+    @Column(name = "qstn_sn")
     private Long srvyQitemSn;
 
-    @Column(name = "QSTN_TYPE_CD", length = 20)
+    @Column(name = "qstn_type_cd", length = 20)
     private String srvyQitemTypeCd;
 
-    @Column(name = "SRVY_QITEM_CN", length = 2500)
+    @Column(name = "srvy_qitem_cn", length = 2500)
     private String srvyQitemCn;
 
-    @Column(name = "MAX_CHC_CNT")
+    @Column(name = "max_chc_cnt")
     private Integer maxChcCnt;
 
-    @Column(name = "SRVY_TMPLT_ID", length = 20)
+    @Column(name = "srvy_tmplt_id", length = 20)
     private String srvyTmplatId;
 
     public void update(Long srvyQitemSn, String srvyQitemTypeCd, String srvyQitemCn, Integer maxChcCnt) {

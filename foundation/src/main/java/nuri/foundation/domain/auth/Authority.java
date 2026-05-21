@@ -11,24 +11,24 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_AUTHRT_INFO")
+@Table(name = "tb_authrt_info")
 @SuperBuilder
 public class Authority extends BaseEntity implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "AUTHRT_CD", length = 30)
+    @Column(name = "authrt_cd", length = 30)
     @NonNull
     private String authorCode;
 
-    @Column(name = "AUTHRT_NM", nullable = false, length = 60)
+    @Column(name = "authrt_nm", nullable = false, length = 60)
     @NonNull
     private String authorNm;
 
-    @Column(name = "AUTHRT_EXPLN", length = 200)
+    @Column(name = "authrt_expln", length = 200)
     private String authorDc;
 
-    @Column(name = "AUTHRT_CRT_YMD", length = 8)
+    @Column(name = "authrt_crt_ymd", length = 8)
     @Builder.Default
     private String authorCreatDe = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
 

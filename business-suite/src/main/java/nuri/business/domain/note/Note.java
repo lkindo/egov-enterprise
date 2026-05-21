@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity(name = "NoteDomain")
-@Table(name = "TB_NOTE_INFO")
+@Table(name = "tb_note_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,15 +21,15 @@ import org.hibernate.annotations.DynamicUpdate;
 public class Note extends BaseEntity {
 
     @Id
-    @Column(name = "NOTE_ID", length = 20)
+    @Column(name = "note_id", length = 20)
     private String noteId;
 
-    @Column(name = "NOTE_TTL", length = 255)
+    @Column(name = "note_ttl", length = 255)
     private String noteSj;
 
-    @Column(name = "NOTE_CN", columnDefinition = "TEXT")
+    @Column(name = "note_cn", columnDefinition = "TEXT")
     private String noteCn;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 }

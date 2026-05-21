@@ -8,20 +8,20 @@ import java.time.Instant;
  * JWT 리프레시 토큰 저장 엔티티
  */
 @Entity
-@Table(name = "TB_AUTH_RFSH_TK")
+@Table(name = "tb_auth_rfsh_tk")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class RefreshToken {
     @Id
-    @Column(name = "USER_ID", nullable = false, length = 20)
+    @Column(name = "user_id", nullable = false, length = 20)
     private String userId;
 
-    @Column(name = "RFSH_TKN", nullable = false, unique = true, length = 255)
+    @Column(name = "rfsh_tkn", nullable = false, unique = true, length = 255)
     private String token;
 
-    @Column(name = "EXPRTN_DT", nullable = false)
+    @Column(name = "exprtn_dt", nullable = false)
     private Instant expiryDate;
 
     public void updateToken(String token, Instant expiryDate) {

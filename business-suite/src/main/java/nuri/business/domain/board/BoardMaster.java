@@ -21,79 +21,79 @@ import lombok.Builder;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BBS_MASTER")
+@Table(name = "tb_bbs_master")
 @SecondaryTable(name = "TB_BBS_MASTER_OPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
 @SuperBuilder
 @DynamicUpdate
 public class BoardMaster extends BaseEntity {
 
     @Id
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "BBS_TTL", nullable = false, length = 100)
+    @Column(name = "bbs_ttl", nullable = false, length = 100)
     private String bbsTtl;
 
-    @Column(name = "BBS_EXPLN", length = 4000)
+    @Column(name = "bbs_expln", length = 4000)
     private String bbsExpln;
 
-    @Column(name = "BBS_TYPE_CD", length = 12, nullable = false)
+    @Column(name = "bbs_type_cd", length = 12, nullable = false)
     private String bbsTypeCd;
 
-    @Column(name = "BBS_ATRB_CD", length = 12, nullable = false)
+    @Column(name = "bbs_atrb_cd", length = 12, nullable = false)
     private String bbsAtrbCd;
 
-    @Column(name = "ANS_PSBLTY_YN", length = 1)
+    @Column(name = "ans_psblty_yn", length = 1)
     @Builder.Default
     private String ansPsblYn = "N";
 
-    @Column(name = "FILE_ATCH_PSBLTY_YN", length = 1, nullable = false)
+    @Column(name = "file_atch_psblty_yn", length = 1, nullable = false)
     @Builder.Default
     private String fileAtchPsblYn = "N";
 
-    @Column(name = "ATCH_PSBLTY_FILE_QTY", nullable = false)
+    @Column(name = "atch_psblty_file_qty", nullable = false)
     @Builder.Default
     private Integer atchPsblFileCnt = 0;
 
-    @Column(name = "ATCH_PSBLTY_FILE_SZ")
+    @Column(name = "atch_psblty_file_sz")
     private Long atchPsblFileSize;
 
-    @Column(name = "USE_YN", nullable = false, length = 1)
+    @Column(name = "use_yn", nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "TMPLT_ID", length = 20)
+    @Column(name = "tmplt_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "BLOG_ID", length = 20)
+    @Column(name = "blog_id", length = 20)
     private String blogId;
 
-    @Column(name = "BLOG_YN", length = 1)
+    @Column(name = "blog_yn", length = 1)
     @Builder.Default
     private String blogYn = "N";
 
-    @Column(name = "CMNTY_ID", length = 20)
+    @Column(name = "cmnty_id", length = 20)
     private String cmntyId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "ANS_YN", length = 1)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "ans_yn", length = 1)
     @Builder.Default
     private String commentYn = "N";
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "STSFDG_YN", length = 1)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "stsfdg_yn", length = 1)
     @Builder.Default
     private String stsfdgYn = "N";
 
     // TB_BBS_MASTER_OPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "FRST_RGTR_ID", length = 20, updatable = false)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "frst_rgtr_id", length = 20, updatable = false)
     private String optnFrstRegisterId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "CRT_DT", updatable = false)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "crt_dt", updatable = false)
     private LocalDateTime optnFrstRegistPnttm;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "LAST_MDFR_ID", length = 20)
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "last_mdfr_id", length = 20)
     private String optnLastUpdusrId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "MDFCN_DT")
+    @Column(table = "TB_BBS_MASTER_OPTN", name = "mdfcn_dt")
     private LocalDateTime optnLastUpdtPnttm;
 
     @PrePersist

@@ -15,26 +15,26 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_WEB_LOG")
+@Table(name = "tb_web_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class WebLog extends BaseEntity {
 
     @Id
-    @Column(name = "DMND_ID", length = 20)
+    @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "URL", length = 200)
+    @Column(name = "url", length = 200)
     private String url;
 
-    @Column(name = "DMND_USER_ID", length = 20)
+    @Column(name = "dmnd_user_id", length = 20)
     private String dmndUserId;
 
-    @Column(name = "DMND_USER_IP_ADDR", length = 30)
+    @Column(name = "dmnd_user_ip_addr", length = 30)
     private String rqesterIp;
 
-    @Column(name = "OCCR_YMD", length = 8)
+    @Column(name = "occr_ymd", length = 8)
     private String ocrnYmd;
 
     @jakarta.persistence.Transient

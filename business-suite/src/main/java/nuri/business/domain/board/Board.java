@@ -17,7 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_BBS_ITEM")
+@Table(name = "tb_bbs_item")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SQLRestriction("use_yn = 'Y'")
 @SuperBuilder
@@ -25,77 +25,77 @@ public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "PST_ID", length = 20)
+    @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(name = "BBS_ID", nullable = false)
+    @Column(name = "bbs_id", nullable = false)
     private String bbsId;
 
-    @Column(name = "ANS_SN")
+    @Column(name = "ans_sn")
     private Long pstSn;
 
-    @Column(name = "PST_TTL", length = 2000)
+    @Column(name = "pst_ttl", length = 2000)
     private String pstTtl;
 
-    @Column(name = "PST_CN")
+    @Column(name = "pst_cn")
     private String pstCn;
 
-    @Column(name = "UP_PST_ID", length = 20)
+    @Column(name = "up_pst_id", length = 20)
     private String upPstId;
 
-    @Column(name = "SORT_ORDR")
+    @Column(name = "sort_ordr")
     private Long sortOrdr;
 
-    @Column(name = "TTL_BOLD_YN", length = 1)
+    @Column(name = "ttl_bold_yn", length = 1)
     private String ttlBoldYn;
 
-    @Column(name = "ANS_LVL")
+    @Column(name = "ans_lvl")
     @Builder.Default
     private Integer replyLc = 0;
 
-    @Column(name = "INQ_CNT")
+    @Column(name = "inq_cnt")
     @Builder.Default
     private Integer inqCnt = 0;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "PST_BGNG_YMD", length = 20)
+    @Column(name = "pst_bgng_ymd", length = 20)
     private String bgngYmd;
 
-    @Column(name = "PST_END_YMD", length = 20)
+    @Column(name = "pst_end_ymd", length = 20)
     private String endYmd;
 
-    @Column(name = "USER_ID", length = 20)
+    @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "USER_NM", length = 20)
+    @Column(name = "user_nm", length = 20)
     private String userNm;
 
-    @Column(name = "PSWD", length = 200)
+    @Column(name = "pswd", length = 200)
     private String pswd;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "SCRT_YN", length = 1)
+    @Column(name = "scrt_yn", length = 1)
     private String secretYn;
 
-    @Column(name = "BLOG_ID", length = 20)
+    @Column(name = "blog_id", length = 20)
     private String blogId;
 
-    @Column(name = "EVNT_DT")
+    @Column(name = "evnt_dt")
     private java.time.LocalDateTime eventDate;
 
-    @Column(name = "QNA_STTS_CD", length = 10)
+    @Column(name = "qna_stts_cd", length = 10)
     @Builder.Default
     private String qnaSttsCd = "OPEN";
 
-    @Column(name = "QNA_CAT_CD", length = 50)
+    @Column(name = "qna_cat_cd", length = 50)
     private String qnaCatCd;
 
-    @Column(name = "LIKE_CNT")
+    @Column(name = "like_cnt")
     @Builder.Default
     private Integer likeCnt = 0;
     

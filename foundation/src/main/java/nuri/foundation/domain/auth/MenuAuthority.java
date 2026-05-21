@@ -11,7 +11,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_MENU_CRT_DTL")
+@Table(name = "tb_menu_crt_dtl")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SuperBuilder
 public class MenuAuthority extends BaseEntity {
@@ -19,7 +19,7 @@ public class MenuAuthority extends BaseEntity {
     @EmbeddedId
     private MenuAuthorityId id;
 
-    @Column(name = "MAPNG_CRT_ID", length = 30)
+    @Column(name = "mapng_crt_id", length = 30)
     private String mapngCreatId;
 
     @Embeddable
@@ -29,10 +29,10 @@ public class MenuAuthority extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class MenuAuthorityId implements Serializable {
-        @Column(name = "AUTHRT_CD", length = 30)
+        @Column(name = "authrt_cd", length = 30)
         private String authorCode;
 
-        @Column(name = "MENU_SN")
+        @Column(name = "menu_sn")
         private Long menuNo;
     }
 }

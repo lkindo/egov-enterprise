@@ -15,44 +15,44 @@ import lombok.experimental.SuperBuilder;
  * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공 (PrePersist 제거 및 표준화)
  */
 @Entity
-@Table(name = "TB_MENU_INFO")
+@Table(name = "tb_menu_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class Menu extends BaseEntity {
 
     @Id
-    @Column(name = "MENU_SN")
+    @Column(name = "menu_sn")
     private Long id;
 
-    @Column(name = "MENU_NM", nullable = false, length = 60)
+    @Column(name = "menu_nm", nullable = false, length = 60)
     private String menuNm;
 
-    @Column(name = "PRGRM_FILE_NM", length = 60)
+    @Column(name = "prgrm_file_nm", length = 60)
     private String progrmFileNm;
 
-    @Column(name = "UP_MENU_SN")
+    @Column(name = "up_menu_sn")
     private Long upperMenuSn;
 
-    @Column(name = "MENU_ORDR", nullable = false)
+    @Column(name = "menu_ordr", nullable = false)
     private Integer menuOrdr;
 
-    @Column(name = "MENU_EXPLN", length = 250)
+    @Column(name = "menu_expln", length = 250)
     private String menuExpln;
 
-    @Column(name = "REL_IMG_PATH", length = 100)
+    @Column(name = "rel_img_path", length = 100)
     private String relateImagePath;
 
-    @Column(name = "REL_IMG_NM", length = 60)
+    @Column(name = "rel_img_nm", length = 60)
     private String relateImageNm;
 
     /**
      * 현대적 Next.js 라우트 (예: /admin/system/menus)
      */
-    @Column(name = "MODERN_ROUTE", length = 500)
+    @Column(name = "modern_route", length = 500)
     private String modernRoute;
 
-    @Column(name = "ROUTE_MDFCN_YN", length = 1)
+    @Column(name = "route_mdfcn_yn", length = 1)
     private String routeMdfcnYn;
 
     /**

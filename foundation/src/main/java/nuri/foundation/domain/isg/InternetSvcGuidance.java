@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_INTRN_SVC")
+@Table(name = "tb_intrn_svc")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,16 +21,16 @@ import org.hibernate.annotations.DynamicUpdate;
 public class InternetSvcGuidance extends BaseEntity {
 
     @Id
-    @Column(name = "ITNT_SVC_ID", length = 20)
+    @Column(name = "itnt_svc_id", length = 20)
     private String intnetSvcId;
 
-    @Column(name = "ITNT_SVC_NM", length = 255)
+    @Column(name = "itnt_svc_nm", length = 255)
     private String intnetSvcNm;
 
-    @Column(name = "ITNT_SVC_EXPLN", length = 1000)
+    @Column(name = "itnt_svc_expln", length = 1000)
     private String intnetSvcDc;
 
-    @Column(name = "RFLT_YN", length = 1)
+    @Column(name = "rflt_yn", length = 1)
     private String reflctAt;
 
     public void update(String intnetSvcNm, String intnetSvcDc, String reflctAt) {

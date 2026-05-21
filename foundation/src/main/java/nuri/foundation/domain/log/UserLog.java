@@ -21,7 +21,7 @@ import jakarta.persistence.ManyToOne;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_USER_LOG")
+@Table(name = "tb_user_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(UserLogId.class)
@@ -33,37 +33,37 @@ public class UserLog extends BaseEntity {
     private User vnUserMaster;
 
     @Id
-    @Column(name = "OCRN_YMD", length = 20)
+    @Column(name = "ocrn_ymd", length = 20)
     private String ocrnYmd;
 
     @Id
-    @Column(name = "DMND_USER_ID", length = 20)
+    @Column(name = "dmnd_user_id", length = 20)
     private String dmndUserId;
 
     @Id
-    @Column(name = "SRVC_NM", length = 255)
+    @Column(name = "srvc_nm", length = 255)
     private String srvcNm;
 
     @Id
-    @Column(name = "MTHD_NM", length = 60)
+    @Column(name = "mthd_nm", length = 60)
     private String methodNm;
 
-    @Column(name = "CRT_CNT")
+    @Column(name = "crt_cnt")
     private Integer creatCo;
 
-    @Column(name = "MDFCN_CNT")
+    @Column(name = "mdfcn_cnt")
     private Integer updtCo;
 
-    @Column(name = "INQ_CNT")
+    @Column(name = "inq_cnt")
     private Integer rdCnt;
 
-    @Column(name = "DEL_CNT")
+    @Column(name = "del_cnt")
     private Integer deleteCo;
 
-    @Column(name = "OUTPT_CNT")
+    @Column(name = "outpt_cnt")
     private Integer outptCo;
 
-    @Column(name = "ERR_CNT")
+    @Column(name = "err_cnt")
     private Integer errorCo;
 
     public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String methodNm,

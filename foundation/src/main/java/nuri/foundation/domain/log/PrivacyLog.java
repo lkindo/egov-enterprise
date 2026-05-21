@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_PRIVACY_LOG")
+@Table(name = "tb_privacy_log")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,21 +22,21 @@ import java.time.LocalDateTime;
 public class PrivacyLog extends BaseEntity {
 
     @Id
-    @Column(name = "DMND_ID", length = 20)
+    @Column(name = "dmnd_id", length = 20)
     private String requestId;
 
-    @Column(name = "INQ_DT")
+    @Column(name = "inq_dt")
     private LocalDateTime inquiryDatetime;
 
-    @Column(name = "SRVC_NM", length = 255)
+    @Column(name = "srvc_nm", length = 255)
     private String serviceName;
 
-    @Column(name = "INQ_INFO", length = 255)
+    @Column(name = "inq_info", length = 255)
     private String inquiryInfo;
 
-    @Column(name = "DMND_USER_ID", length = 20)
+    @Column(name = "dmnd_user_id", length = 20)
     private String requesterId;
 
-    @Column(name = "DMND_USER_IP_ADDR", length = 30)
+    @Column(name = "dmnd_user_ip_addr", length = 30)
     private String requesterIp;
 }

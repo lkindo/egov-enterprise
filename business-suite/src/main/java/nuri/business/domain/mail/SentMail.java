@@ -15,35 +15,35 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_EMAIL_DSPTCH_MANAGE")
+@Table(name = "tb_email_dsptch_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class SentMail extends BaseEntity {
 
     @Id
-    @Column(name = "MSG_ID", length = 20)
+    @Column(name = "msg_id", length = 20)
     private String mssageId;
 
-    @Column(name = "EML_TTL", length = 255, nullable = false)
+    @Column(name = "eml_ttl", length = 255, nullable = false)
     private String sj;
 
-    @Column(name = "EML_CN", length = 4000)
+    @Column(name = "eml_cn", length = 4000)
     private String emailCn;
 
-    @Column(name = "SNDPTY_NM", length = 100)
+    @Column(name = "sndpty_nm", length = 100)
     private String dsptchPerson;
 
-    @Column(name = "RCVR_NM", length = 100)
+    @Column(name = "rcvr_nm", length = 100)
     private String recptnPerson;
 
-    @Column(name = "DSPTCH_RSLT_CD", length = 30)
+    @Column(name = "dsptch_rslt_cd", length = 30)
     private String sndngResultCode;
 
-    @Column(name = "DSPTCH_DT")
+    @Column(name = "dsptch_dt")
     private java.time.LocalDateTime sndngDe;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     public SentMail(String mssageId, String sj, String emailCn, String dsptchPerson,

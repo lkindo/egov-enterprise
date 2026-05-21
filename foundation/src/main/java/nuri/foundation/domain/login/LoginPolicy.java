@@ -20,7 +20,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_LOGIN_POLICY")
+@Table(name = "tb_login_policy")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,25 +29,25 @@ import lombok.experimental.SuperBuilder;
 public class LoginPolicy extends BaseEntity {
 
     @Id
-    @Column(name = "USER_ID", length = 20)
+    @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "IP_ADDR", length = 30)
+    @Column(name = "ip_addr", length = 30)
     private String ipAddr;
 
-    @Column(name = "DPCN_PRM_YN", length = 1)
+    @Column(name = "dpcn_prm_yn", length = 1)
     private String dpcnPrmYn;
 
-    @Column(name = "LMT_YN", length = 1)
+    @Column(name = "lmt_yn", length = 1)
     private String lmtYn;
 
-    @Column(name = "BGNG_TM", length = 6)
+    @Column(name = "bgng_tm", length = 6)
     private String bgngTm; // HHmmss
 
-    @Column(name = "END_TM", length = 6)
+    @Column(name = "end_tm", length = 6)
     private String endTm; // HHmmss
 
-    @Column(name = "OTP_USE_YN", length = 1)
+    @Column(name = "otp_use_yn", length = 1)
     private String otpUseYn;
 
     public void update(String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {

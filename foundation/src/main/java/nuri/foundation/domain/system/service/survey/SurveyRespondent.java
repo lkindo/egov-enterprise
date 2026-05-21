@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_RSPDNT")
+@Table(name = "tb_srvy_rspdnt")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,34 +22,34 @@ import lombok.experimental.SuperBuilder;
 public class SurveyRespondent extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_RESPOND_ID", length = 20)
+    @Column(name = "qustnr_respond_id", length = 20)
     private String srvyRspdId;
 
-    @Column(name = "QESTNR_ID", length = 20, nullable = false)
+    @Column(name = "qestnr_id", length = 20, nullable = false)
     private String srvyId;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    @Column(name = "qustnr_tmplat_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
-    @Column(name = "SEXDSTN_CODE", length = 1)
+    @Column(name = "sexdstn_code", length = 1)
     private String gndrCd;
 
-    @Column(name = "OCCP_TY_CODE", length = 1)
+    @Column(name = "occp_ty_code", length = 1)
     private String jobTypeCd;
 
-    @Column(name = "RESPOND_NM", length = 50)
+    @Column(name = "respond_nm", length = 50)
     private String rspdNm;
 
-    @Column(name = "BRDT", length = 20)
+    @Column(name = "brdt", length = 20)
     private String brthYmd;
 
-    @Column(name = "RGN_TELNO", length = 4)
+    @Column(name = "rgn_telno", length = 4)
     private String areaTelno;
 
-    @Column(name = "MID_TELNO", length = 4)
+    @Column(name = "mid_telno", length = 4)
     private String midTelno;
 
-    @Column(name = "END_TELNO", length = 4)
+    @Column(name = "end_telno", length = 4)
     private String endTelno;
 
     public void update(String gndrCd, String jobTypeCd, String rspdNm, String brthYmd,

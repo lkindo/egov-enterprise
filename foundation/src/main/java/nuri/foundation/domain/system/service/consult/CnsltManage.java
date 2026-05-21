@@ -20,71 +20,71 @@ import lombok.Builder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "TB_DSCSN_LIST")
+@Table(name = "tb_dscsn_list")
 @SuperBuilder
 public class CnsltManage extends BaseEntity {
 
     @Id
-    @Column(name = "CNSLT_ID", length = 20)
+    @Column(name = "cnslt_id", length = 20)
     private String cnsltId;
 
-    @Column(name = "CNSLT_SJ", length = 255)
+    @Column(name = "cnslt_sj", length = 255)
     private String cnsltSj;
 
-    @Column(name = "CNSLT_CN", columnDefinition = "TEXT")
+    @Column(name = "cnslt_cn", columnDefinition = "TEXT")
     private String cnsltCn;
 
-    @Column(name = "RLS_YN", length = 1)
+    @Column(name = "rls_yn", length = 1)
     private String othbcAt;
 
-    @Column(name = "WRITNG_PASSWORD", length = 20)
+    @Column(name = "writng_password", length = 20)
     private String writngPassword;
 
-    @Column(name = "AREA_NO", length = 4)
+    @Column(name = "area_no", length = 4)
     private String areaNo;
 
-    @Column(name = "MIDDLE_TELNO", length = 4)
+    @Column(name = "middle_telno", length = 4)
     private String middleTelno;
 
-    @Column(name = "END_TELNO", length = 4)
+    @Column(name = "end_telno", length = 4)
     private String endTelno;
 
-    @Column(name = "FRST_MBTLNUM", length = 4)
+    @Column(name = "frst_mbtlnum", length = 4)
     private String firstMoblphonNo;
 
-    @Column(name = "MIDDLE_MBTLNUM", length = 4)
+    @Column(name = "middle_mbtlnum", length = 4)
     private String middleMbtlnum;
 
-    @Column(name = "END_MBTLNUM", length = 4)
+    @Column(name = "end_mbtlnum", length = 4)
     private String endMbtlnum;
 
-    @Column(name = "EMAIL_ADRES", length = 50)
+    @Column(name = "email_adres", length = 50)
     private String emailAdres;
 
-    @Column(name = "EMAIL_ANSWER_YN", length = 1)
+    @Column(name = "email_answer_yn", length = 1)
     private String emailAnswerAt;
 
-    @Column(name = "WRTER_NM", length = 20)
+    @Column(name = "wrter_nm", length = 20)
     private String wrterNm;
 
-    @Column(name = "WRITNG_DE", length = 20)
+    @Column(name = "writng_de", length = 20)
     private String writngDe;
 
-    @Column(name = "INQ_CNT")
+    @Column(name = "inq_cnt")
     @Builder.Default
     private Integer inqireCo = 0;
 
-    @Column(name = "QNA_PROCESS_STTUS_CODE", length = 3)
+    @Column(name = "qna_process_sttus_code", length = 3)
     @Builder.Default
     private String qnaProcessSttusCode = "1";
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "PROC_CN", columnDefinition = "TEXT")
+    @Column(name = "proc_cn", columnDefinition = "TEXT")
     private String managtCn;
 
-    @Column(name = "MNG_YMD", length = 20)
+    @Column(name = "mng_ymd", length = 20)
     private String managtDe;
 
     public void update(String cnsltSj, String cnsltCn, String othbcAt, String writngPassword,

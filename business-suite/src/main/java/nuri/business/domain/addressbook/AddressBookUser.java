@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_ADBK_INFO")
+@Table(name = "tb_adbk_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -25,33 +25,33 @@ import lombok.NoArgsConstructor;
 public class AddressBookUser extends BaseEntity {
 
     @Id
-    @Column(name = "ADBK_CONSTNT_ID", length = 20)
+    @Column(name = "adbk_constnt_id", length = 20)
     private String adbkUserId;
 
-    @Column(name = "ADBK_ID", length = 20, nullable = false)
+    @Column(name = "adbk_id", length = 20, nullable = false)
     private String adbkId;
 
-    @Column(name = "USER_ID", length = 30)
+    @Column(name = "user_id", length = 30)
     private String userId;
 
-    // @Column(name = "RLS_SCP_CD", length = 30)
+    // @Column(name = "rls_scp_cd", length = 30)
     // private String rlsScpCd;
 
-    @Column(name = "NM", length = 50)
+    @Column(name = "nm", length = 50)
     private String userNm;
 
-    @Column(name = "EML_ADDR", length = 300)
+    @Column(name = "eml_addr", length = 300)
     private String emlAddr;
 
-    @Column(name = "HOME_TELNO", length = 20)
+    @Column(name = "home_telno", length = 20)
     private String homeTelno;
 
-    @Column(name = "MBL_TELNO", length = 20)
+    @Column(name = "mbl_telno", length = 20)
     private String mblTelno;
 
-    @Column(name = "OFC_TELNO", length = 20)
+    @Column(name = "ofc_telno", length = 20)
     private String officeTelno;
 
-    @Column(name = "FAX_NO", length = 20)
+    @Column(name = "fax_no", length = 20)
     private String faxNo;
 }

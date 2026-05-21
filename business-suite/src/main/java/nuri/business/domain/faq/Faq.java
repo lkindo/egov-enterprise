@@ -12,7 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: TB_FAQ_INFO
  */
 @Entity
-@Table(name = "TB_FAQ_INFO")
+@Table(name = "tb_faq_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,23 +22,23 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Faq extends BaseEntity {
 
     @Id
-    @Column(name = "FAQ_ID", length = 20)
+    @Column(name = "faq_id", length = 20)
     private String faqId;
 
-    @Column(name = "QESTN_SJ", length = 255, nullable = false)
+    @Column(name = "qestn_sj", length = 255, nullable = false)
     private String qestnTtl;
 
-    @Column(name = "QESTN_CN", columnDefinition = "TEXT")
+    @Column(name = "qestn_cn", columnDefinition = "TEXT")
     private String qestnCn;
 
-    @Column(name = "ANSWER_CN", columnDefinition = "TEXT")
+    @Column(name = "answer_cn", columnDefinition = "TEXT")
     private String answerCn;
 
-    @Column(name = "RDCNT")
+    @Column(name = "rdcnt")
     @Builder.Default
     private Integer inqireCo = 0;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     public void update(String qestnTtl, String qestnCn, String answerCn, String atchFileId) {

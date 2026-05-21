@@ -14,21 +14,21 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_AUTHRT_GROUP_INFO")
+@Table(name = "tb_authrt_group_info")
 @SuperBuilder
 public class GroupManage extends BaseEntity {
 
     @Id
-    @Column(name = "GROUP_ID", length = 20)
+    @Column(name = "group_id", length = 20)
     private String groupId;
 
-    @Column(name = "GROUP_NM", length = 60)
+    @Column(name = "group_nm", length = 60)
     private String groupNm;
 
-    @Column(name = "GROUP_DC", length = 100)
+    @Column(name = "group_dc", length = 100)
     private String groupDc;
 
-    @Column(name = "GROUP_CRT_YMD")
+    @Column(name = "group_crt_ymd")
     @Builder.Default
     private LocalDateTime groupCreatDe = LocalDateTime.now();
 

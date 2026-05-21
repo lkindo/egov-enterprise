@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_MEMO_RPT_INFO")
+@Table(name = "tb_memo_rpt_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,34 +18,34 @@ import lombok.experimental.SuperBuilder;
 public class MemoReport extends BaseEntity {
 
     @Id
-    @Column(name = "RPT_ID", length = 20)
+    @Column(name = "rpt_id", length = 20)
     private String reportId;
 
-    @Column(name = "RPT_TTL", length = 255, nullable = false)
+    @Column(name = "rpt_ttl", length = 255, nullable = false)
     private String reportSubject;
 
-    @Column(name = "MEMO_RPT_YMD", length = 10)
+    @Column(name = "memo_rpt_ymd", length = 10)
     private String reprtDe;
 
-    @Column(name = "USER_ID", length = 20, nullable = false)
+    @Column(name = "user_id", length = 20, nullable = false)
     private String writerId;
 
-    @Column(name = "RPTR_ID", length = 20, nullable = false)
+    @Column(name = "rptr_id", length = 20, nullable = false)
     private String reportrId;
 
-    @Column(name = "RPT_CN", columnDefinition = "TEXT")
+    @Column(name = "rpt_cn", columnDefinition = "TEXT")
     private String reportContents;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "DRCTN_MTTR", length = 2000)
+    @Column(name = "drctn_mttr", length = 2000)
     private String instrCn;
 
-    @Column(name = "DRCTN_MTTR_REG_DT", length = 20)
+    @Column(name = "drctn_mttr_reg_dt", length = 20)
     private String instrRegDt;
 
-    @Column(name = "RPTR_INQ_DT", length = 20)
+    @Column(name = "rptr_inq_dt", length = 20)
     private String reportrInqireDt;
 
     public void update(String reportSubject, String reprtDe, String writerId, String reportrId,

@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_MAIN_IMAGE")
+@Table(name = "tb_main_image")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -26,22 +26,22 @@ import lombok.experimental.SuperBuilder;
 public class MainImage extends BaseEntity {
 
     @Id
-    @Column(name = "IMAGE_ID", length = 20)
+    @Column(name = "image_id", length = 20)
     private String imageId;
 
-    @Column(name = "IMAGE_NM", length = 100, nullable = false)
+    @Column(name = "image_nm", length = 100, nullable = false)
     private String imageNm;
 
-    @Column(name = "MAIN_IMG_FILE_PATH", length = 50)
+    @Column(name = "main_img_file_path", length = 50)
     private String image;
 
-    @Column(name = "IMAGE_FILE", length = 20)
+    @Column(name = "image_file", length = 20)
     private String imageFile;
 
-    @Column(name = "MAIN_IMG_EXPLN", length = 1000)
+    @Column(name = "main_img_expln", length = 1000)
     private String imageDc;
 
-    @Column(name = "REFLCT_AT", length = 1)
+    @Column(name = "reflct_at", length = 1)
     private String reflctAt;
 
     public void update(String imageNm, String image, String imageFile, String imageDc, String reflctAt) {

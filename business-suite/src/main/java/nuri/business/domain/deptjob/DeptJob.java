@@ -6,7 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "TB_DEPT_TASK_INFO")
+@Table(name = "tb_dept_task_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -14,25 +14,25 @@ import lombok.experimental.SuperBuilder;
 public class DeptJob extends BaseEntity {
 
     @Id
-    @Column(name = "DEPT_JOB_ID", length = 20)
+    @Column(name = "dept_job_id", length = 20)
     private String deptJobId;
 
-    @Column(name = "DEPT_JOBBX_ID", length = 20)
+    @Column(name = "dept_jobbx_id", length = 20)
     private String deptJobbxId;
 
-    @Column(name = "DEPT_JOB_NM", length = 255)
+    @Column(name = "dept_job_nm", length = 255)
     private String deptJobNm;
 
-    @Column(name = "DEPT_JOB_CN", columnDefinition = "TEXT")
+    @Column(name = "dept_job_cn", columnDefinition = "TEXT")
     private String deptJobCn;
 
-    @Column(name = "CHARGER_ID", length = 20)
+    @Column(name = "charger_id", length = 20)
     private String chargerId;
 
-    @Column(name = "PRORD", length = 1)
+    @Column(name = "prord", length = 1)
     private String priort; // 1: 높음, 2: 보통, 3: 낮음
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     public void update(String deptJobbxId, String deptJobNm, String deptJobCn, String chargerId, String priort,

@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 테이블명: TB_HLP_INFO
  */
 @Entity
-@Table(name = "TB_HLP_INFO")
+@Table(name = "tb_hlp_info")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,16 +21,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Hpcm extends BaseEntity {
 
     @Id
-    @Column(name = "HLP_ID", length = 20)
+    @Column(name = "hlp_id", length = 20)
     private String hpcmId;
 
-    @Column(name = "HLP_SE_CD", length = 3, nullable = false)
+    @Column(name = "hlp_se_cd", length = 3, nullable = false)
     private String hpcmSeCode;
 
-    @Column(name = "HLP_DFN", length = 1000, nullable = false)
+    @Column(name = "hlp_dfn", length = 1000, nullable = false)
     private String hpcmDf;
 
-    @Column(name = "HLP_EXPLN", columnDefinition = "TEXT")
+    @Column(name = "hlp_expln", columnDefinition = "TEXT")
     private String hpcmDc;
 
     public void update(String hpcmSeCode, String hpcmDf, String hpcmDc) {

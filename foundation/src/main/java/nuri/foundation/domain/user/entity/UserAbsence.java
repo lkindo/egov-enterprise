@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
  * 사용자 부재 정보 엔티티
  */
 @Entity
-@Table(name = "TB_USER_ABSN")
+@Table(name = "tb_user_absn")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,10 +18,10 @@ import lombok.experimental.SuperBuilder;
 public class UserAbsence extends BaseEntity {
 
     @Id
-    @Column(name = "USER_ID", length = 20)
+    @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "USER_ABSNCE_YN", length = 1, nullable = false)
+    @Column(name = "user_absnce_yn", length = 1, nullable = false)
     private String userAbsnceAt; // Y: 부재, N: 정상
 
     public void updateAbsence(String userAbsnceAt) {

@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NSMS
  */
 @Entity
-@Table(name = "TB_SMS_INFO")
+@Table(name = "tb_sms_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,12 +18,12 @@ import lombok.experimental.SuperBuilder;
 public class Sms extends BaseEntity {
 
     @Id
-    @Column(name = "SMS_ID", length = 20)
+    @Column(name = "sms_id", length = 20)
     private String smsId;
 
-    @Column(name = "SNDNG_TELNO", length = 20, nullable = false)
+    @Column(name = "sndng_telno", length = 20, nullable = false)
     private String trnsmitTelno;
 
-    @Column(name = "SNDNG_CN", length = 2000)
+    @Column(name = "sndng_cn", length = 2000)
     private String trnsmitCn;
 }

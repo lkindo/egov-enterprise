@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
-@Table(name = "TB_USER_AUTHRT_MAP")
+@Table(name = "tb_user_authrt_map")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,15 +18,15 @@ public class UserAuthority extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "SCRTY_DCSN_TRGT_ID", length = 20)
+    @Column(name = "scrty_dcsn_trgt_id", length = 20)
     @NonNull
     private String uniqId;
 
-    @Column(name = "AUTHRT_ID", nullable = false, length = 30)
+    @Column(name = "authrt_id", nullable = false, length = 30)
     @NonNull
     private String authorCode;
 
-    @Column(name = "MBR_TYPE_CD", length = 15)
+    @Column(name = "mbr_type_cd", length = 15)
     private String mberTyCode;
 
     public void update(@NonNull String authorCode, String mberTyCode) {

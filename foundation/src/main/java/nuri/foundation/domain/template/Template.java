@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NTMPLATINFO
  */
 @Entity
-@Table(name = "TB_TMPLT_INFO")
+@Table(name = "tb_tmplt_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,19 +18,19 @@ import lombok.experimental.SuperBuilder;
 public class Template extends BaseEntity {
 
     @Id
-    @Column(name = "TMPLAT_ID", length = 20)
+    @Column(name = "tmplat_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "TMPLAT_NM", length = 255, nullable = false)
+    @Column(name = "tmplat_nm", length = 255, nullable = false)
     private String tmplatNm;
 
-    @Column(name = "TMPLAT_SE_CODE", length = 20, nullable = false)
+    @Column(name = "tmplat_se_code", length = 20, nullable = false)
     private String tmplatSeCode;
 
-    @Column(name = "TMPLAT_COURS", length = 2000)
+    @Column(name = "tmplat_cours", length = 2000)
     private String tmplatCours;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public void update(String tmplatNm, String tmplatSeCode, String tmplatCours, String useYn) {

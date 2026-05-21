@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BNR_INFO")
+@Table(name = "tb_bnr_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,28 +24,28 @@ import lombok.experimental.SuperBuilder;
 public class Banner extends BaseEntity {
 
     @Id
-    @Column(name = "BNR_ID", length = 20)
+    @Column(name = "bnr_id", length = 20)
     private String bannerId;
 
-    @Column(name = "BNR_NM", length = 100, nullable = false)
+    @Column(name = "bnr_nm", length = 100, nullable = false)
     private String bannerNm;
 
-    @Column(name = "LINK_URL", length = 255)
+    @Column(name = "link_url", length = 255)
     private String linkUrl;
 
-    @Column(name = "BNR_IMG_NM", length = 100)
+    @Column(name = "bnr_img_nm", length = 100)
     private String bannerImage;
 
-    @Column(name = "BNR_EXPLN", length = 1000)
+    @Column(name = "bnr_expln", length = 1000)
     private String bannerDc;
 
-    @Column(name = "SORT_ORDR")
+    @Column(name = "sort_ordr")
     private Integer sortOrdr;
 
-    @Column(name = "RFLT_YN", length = 1)
+    @Column(name = "rflt_yn", length = 1)
     private String reflctAt;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String bannerImageFile;
 
     public void update(String bannerNm, String linkUrl, String bannerImage,

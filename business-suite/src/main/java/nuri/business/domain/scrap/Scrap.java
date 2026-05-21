@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: TB_BBS_SCRAP
  */
 @Entity
-@Table(name = "TB_BBS_SCRAP")
+@Table(name = "tb_bbs_scrap")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -21,25 +21,25 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Scrap extends BaseEntity {
 
     @Id
-    @Column(name = "SCRAP_ID", length = 20)
+    @Column(name = "scrap_id", length = 20)
     private String scrapId;
 
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "PST_ID", length = 20)
+    @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(name = "SCRAP_NM", length = 100)
+    @Column(name = "scrap_nm", length = 100)
     private String scrapNm;
 
-    @Column(name = "SCRAP_URL", length = 1000)
+    @Column(name = "scrap_url", length = 1000)
     private String scrapUrl;
 
-    @Column(name = "SCRAP_EXPLN", length = 2000)
+    @Column(name = "scrap_expln", length = 2000)
     private String scrapDc;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     @Builder.Default
     private String useYn = "Y";
 

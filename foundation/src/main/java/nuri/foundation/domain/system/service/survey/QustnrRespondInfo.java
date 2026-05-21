@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_RSLT")
+@Table(name = "tb_srvy_rslt")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,28 +22,28 @@ import lombok.experimental.SuperBuilder;
 public class QustnrRespondInfo extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_RSPNS_ID", length = 20)
+    @Column(name = "qustnr_rspns_id", length = 20)
     private String srvyRspdId;
 
-    @Column(name = "QESTNR_ID", length = 20, nullable = false)
+    @Column(name = "qestnr_id", length = 20, nullable = false)
     private String srvyId;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    @Column(name = "qustnr_tmplat_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
-    @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
+    @Column(name = "qustnr_qesitm_id", length = 20, nullable = false)
     private String srvyQitemId;
 
-    @Column(name = "QUSTNR_IEM_ID", length = 20, nullable = false)
+    @Column(name = "qustnr_iem_id", length = 20, nullable = false)
     private String srvyItemId;
 
-    @Column(name = "RSPDNT_ANS_CN", length = 1000)
+    @Column(name = "rspdnt_ans_cn", length = 1000)
     private String rspdAnsCn;
 
-    @Column(name = "RESPOND_NM", length = 50)
+    @Column(name = "respond_nm", length = 50)
     private String rspdNm;
 
-    @Column(name = "ETC_ANS_CN", length = 1000)
+    @Column(name = "etc_ans_cn", length = 1000)
     private String etcAnsCn;
 
     public void update(String rspdAnsCn, String rspdNm, String etcAnsCn) {

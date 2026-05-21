@@ -13,9 +13,9 @@ import java.io.Serializable;
 @Embeddable
 public class SmsRecptnId implements Serializable {
 
-    @Column(name = "SMS_ID", length = 20)
+    @Column(name = "sms_id", length = 20)
     private String smsId;
 
-    @Column(name = "RCPTN_TELNO", length = 20)
+    @Column(name = "rcptn_telno", length = 20)
     private String recptnTelno;
 }

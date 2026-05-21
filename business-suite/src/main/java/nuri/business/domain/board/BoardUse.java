@@ -19,23 +19,23 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BBS_USE_INFO")
+@Table(name = "tb_bbs_use_info")
 @IdClass(BoardUseId.class)
 @SuperBuilder
 public class BoardUse extends BaseTimeEntity implements Serializable {
 
     @Id
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
     @Id
-    @Column(name = "TRGET_ID", length = 20)
+    @Column(name = "trget_id", length = 20)
     private String trgetId;
 
-    @Column(name = "REG_SE_CD", length = 6)
+    @Column(name = "reg_se_cd", length = 6)
     private String registSeCode;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public BoardUse(String bbsId, String trgetId, String registSeCode, String useYn) {

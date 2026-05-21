@@ -15,47 +15,47 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_RWARD_MANAGE")
+@Table(name = "tb_rward_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class RewardManage extends BaseEntity {
 
     @Id
-    @Column(name = "RWRD_ID", length = 20)
+    @Column(name = "rwrd_id", length = 20)
     private String rwardId;
 
-    @Column(name = "RWRD_USER_ID", length = 20, nullable = false)
+    @Column(name = "rwrd_user_id", length = 20, nullable = false)
     private String rwardwnrId;
 
-    @Column(name = "RWRD_CD", length = 20, nullable = false)
+    @Column(name = "rwrd_cd", length = 20, nullable = false)
     private String rwardCode;
 
-    @Column(name = "RWRD_YMD", length = 20)
+    @Column(name = "rwrd_ymd", length = 20)
     private String rwardDe;
 
-    @Column(name = "RWRD_NM", length = 255)
+    @Column(name = "rwrd_nm", length = 255)
     private String rwardNm;
 
-    @Column(name = "CNTRB_CN", length = 2000)
+    @Column(name = "cntrb_cn", length = 2000)
     private String pblenCn;
 
-    @Column(name = "ATRZR_ID", length = 20)
+    @Column(name = "atrzr_id", length = 20)
     private String sanctnerId;
 
-    @Column(name = "CONFM_YN", length = 1)
+    @Column(name = "confm_yn", length = 1)
     private String confmAt;
 
-    @Column(name = "APRV_DT")
+    @Column(name = "aprv_dt")
     private java.time.LocalDateTime sanctnDt;
 
-    @Column(name = "RTN_RSN_CN", length = 1000)
+    @Column(name = "rtn_rsn_cn", length = 1000)
     private String returnResn;
 
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "IFML_ATRZ_ID", length = 20)
+    @Column(name = "ifml_atrz_id", length = 20)
     private String informlSanctnId;
 
     public void update(String rwardDe, String rwardNm, String pblenCn) {

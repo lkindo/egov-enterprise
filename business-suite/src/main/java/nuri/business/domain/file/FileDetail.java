@@ -19,7 +19,7 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @IdClass(FileDetailId.class)
-@Table(name = "TB_FILE_DETAIL")
+@Table(name = "tb_file_detail")
 @SuperBuilder
 public class FileDetail extends BaseEntity {
 
@@ -30,25 +30,25 @@ public class FileDetail extends BaseEntity {
     private FileMaster fileMaster;
 
     @Id
-    @Column(name = "ATCH_FILE_SN")
+    @Column(name = "atch_file_sn")
     private Integer fileSn;
 
-    @Column(name = "FILE_STRE_COURS", length = 6000)
+    @Column(name = "file_stre_cours", length = 6000)
     private String fileStreCours; // 파일저장경로
 
-    @Column(name = "STRE_FILE_NM", length = 765)
+    @Column(name = "stre_file_nm", length = 765)
     private String streFileNm; // 저장파일명
 
-    @Column(name = "ORIGNL_FILE_NM", length = 765)
+    @Column(name = "orignl_file_nm", length = 765)
     private String orignlFileNm; // 원본파일명
 
-    @Column(name = "FILE_EXTSN", length = 60)
+    @Column(name = "file_extsn", length = 60)
     private String fileExtsn; // 확장자
 
-    @Column(name = "FILE_SZ")
+    @Column(name = "file_sz")
     private Long fileMg; // 파일크기
 
-    @Column(name = "FILE_CN")
+    @Column(name = "file_cn")
     private String fileCn; // 파일내용
 
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,

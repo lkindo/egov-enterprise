@@ -11,76 +11,76 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "TB_INST_CD")
+@Table(name = "tb_inst_cd")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InstitutionCode extends BaseEntity {
 
     @Id
-    @Column(name = "INST_CD", length = 10)
+    @Column(name = "inst_cd", length = 10)
     private String insttCode;
 
-    @Column(name = "ALL_INST_NM", length = 300)
+    @Column(name = "all_inst_nm", length = 300)
     private String allInsttNm;
 
-    @Column(name = "LWTRK_INST_NM", length = 180)
+    @Column(name = "lwtrk_inst_nm", length = 180)
     private String lowestInsttNm;
 
-    @Column(name = "INST_ABBR_NM", length = 300)
+    @Column(name = "inst_abbr_nm", length = 300)
     private String insttAbrvNm;
 
-    @Column(name = "ODR", length = 2)
+    @Column(name = "odr", length = 2)
     private String odr;
 
-    @Column(name = "ORD", length = 3)
+    @Column(name = "ord", length = 3)
     private String ord;
 
-    @Column(name = "INST_CYCL", length = 2)
+    @Column(name = "inst_cycl", length = 2)
     private String insttOdr;
 
-    @Column(name = "TOP_INST_CD", length = 30)
+    @Column(name = "top_inst_cd", length = 30)
     private String bestInsttCode;
 
-    @Column(name = "UP_INST_CD", length = 10)
+    @Column(name = "up_inst_cd", length = 10)
     private String upperInsttCode;
 
-    @Column(name = "RPRS_INST_CD", length = 10)
+    @Column(name = "rprs_inst_cd", length = 10)
     private String reprsntInsttCode;
 
-    @Column(name = "INST_TYPE_LCLSF", length = 2)
+    @Column(name = "inst_type_lclsf", length = 2)
     private String insttTyLclas;
 
-    @Column(name = "INST_TYPE_MCLSF", length = 2)
+    @Column(name = "inst_type_mclsf", length = 2)
     private String insttTyMclas;
 
-    @Column(name = "INST_TYPE_SCLSF", length = 2)
+    @Column(name = "inst_type_sclsf", length = 2)
     private String insttTySclas;
 
-    @Column(name = "TELNO", length = 20)
+    @Column(name = "telno", length = 20)
     private String telno;
 
-    @Column(name = "FAX_NO", length = 20)
+    @Column(name = "fax_no", length = 20)
     private String fxnum;
 
-    @Column(name = "CRT_YMD", length = 20)
+    @Column(name = "crt_ymd", length = 20)
     private String creatDe;
 
-    @Column(name = "ABL_YMD", length = 20)
+    @Column(name = "abl_ymd", length = 20)
     private String ablDe;
 
-    @Column(name = "ABL_YN", length = 1)
+    @Column(name = "abl_yn", length = 1)
     private String ablEnnc;
 
-    @Column(name = "CHG_YMD", length = 20)
+    @Column(name = "chg_ymd", length = 20)
     private String changede;
 
-    @Column(name = "CHG_TM", length = 20)
+    @Column(name = "chg_tm", length = 20)
     private String changeTime;
 
-    @Column(name = "CRTR_YMD", length = 20)
+    @Column(name = "crtr_ymd", length = 20)
     private String bsisDe;
 
-    @Column(name = "SORT_SEQ")
+    @Column(name = "sort_seq")
     private Integer sortOrdr;
 
     @Builder

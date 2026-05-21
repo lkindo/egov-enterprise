@@ -10,30 +10,30 @@ import java.time.LocalDate;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_ROLE_INFO")
+@Table(name = "tb_role_info")
 @SuperBuilder
 public class RoleInfo extends BaseEntity {
 
     @Id
-    @Column(name = "ROLE_ID", length = 50)
+    @Column(name = "role_id", length = 50)
     private String roleCode;
 
-    @Column(name = "ROLE_NM", nullable = false, length = 60)
+    @Column(name = "role_nm", nullable = false, length = 60)
     private String roleNm;
 
-    @Column(name = "ROLE_PATRN", length = 300)
+    @Column(name = "role_patrn", length = 300)
     private String rolePttrn;
 
-    @Column(name = "ROLE_EXPLN", length = 200)
+    @Column(name = "role_expln", length = 200)
     private String roleDc;
 
-    @Column(name = "ROLE_TYPE_CD", length = 80)
+    @Column(name = "role_type_cd", length = 80)
     private String roleTy;
 
-    @Column(name = "ROLE_SORT")
+    @Column(name = "role_sort")
     private Integer roleSort;
 
-    @Column(name = "ROLE_CRT_YMD")
+    @Column(name = "role_crt_ymd")
     @Builder.Default
     private LocalDate creatDt = LocalDate.now();
 

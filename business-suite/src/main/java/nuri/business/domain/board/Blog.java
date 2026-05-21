@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BLOG_INFO")
+@Table(name = "tb_blog_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,28 +22,28 @@ import lombok.experimental.SuperBuilder;
 public class Blog extends BaseEntity {
 
     @Id
-    @Column(name = "BLOG_ID", length = 20)
+    @Column(name = "blog_id", length = 20)
     private String blogId;
 
-    @Column(name = "BLOG_TTL", nullable = false, length = 300)
+    @Column(name = "blog_ttl", nullable = false, length = 300)
     private String blogTtl;
 
-    @Column(name = "BLOG_INTRO_CN", length = 4000)
+    @Column(name = "blog_intro_cn", length = 4000)
     private String blogIntroCn;
 
-    @Column(name = "REG_SE_CD", length = 12)
+    @Column(name = "reg_se_cd", length = 12)
     private String regTypeCd;
 
-    @Column(name = "TMPLT_ID", length = 20)
+    @Column(name = "tmplt_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "BLOG_YN", length = 1)
+    @Column(name = "blog_yn", length = 1)
     private String blogYn;
 
     public void update(String blogTtl, String blogIntroCn, String useYn) {

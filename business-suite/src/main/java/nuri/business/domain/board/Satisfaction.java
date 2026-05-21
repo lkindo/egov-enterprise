@@ -17,7 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "TB_DGSTFN_INFO")
+@Table(name = "tb_dgstfn_info")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SuperBuilder
 public class Satisfaction extends BaseEntity implements Serializable {
@@ -26,26 +26,26 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stsfdgIdSeq")
     @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "STSFDG_ID_SEQ", allocationSize = 1)
-    @Column(name = "STSFDG_ID")
+    @Column(name = "stsfdg_id")
     private Long stsfdgId;
 
-    @Column(name = "BBS_ID", nullable = false)
+    @Column(name = "bbs_id", nullable = false)
     private String bbsId;
 
-    @Column(name = "NTT_ID", nullable = false)
+    @Column(name = "ntt_id", nullable = false)
     private Long pstId;
 
-    @Column(name = "DGSTFN_SCR", nullable = false)
+    @Column(name = "dgstfn_scr", nullable = false)
     private Integer stsfdgLevel;
 
-    @Column(name = "DGSTFN_CN", length = 2500)
+    @Column(name = "dgstfn_cn", length = 2500)
     private String stsfdgCn;
 
-    @Column(name = "PSWD", length = 200)
+    @Column(name = "pswd", length = 200)
     private String password;
 
     @Builder.Default
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn = "Y";
 
     public void update(Integer stsfdgLevel, String stsfdgCn, String password) {

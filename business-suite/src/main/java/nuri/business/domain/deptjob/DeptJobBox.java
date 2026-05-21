@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
  * @see NDEPTJOBBX 데이터베이스
  */
 @Entity
-@Table(name = "TB_DEPT_JOB_BX")
+@Table(name = "tb_dept_job_bx")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -28,7 +28,7 @@ public class DeptJobBox extends BaseEntity {
     @Column(name = "dept_id", length = 20)
     private String deptId;
 
-    @Column(name = "SORT_ORDR")
+    @Column(name = "sort_ordr")
     private Integer indictOrdr;
 
     public void update(String deptJobbxNm, String deptId, Integer indictOrdr) {

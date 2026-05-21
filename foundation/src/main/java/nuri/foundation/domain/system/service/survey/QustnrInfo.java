@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_INFO")
+@Table(name = "tb_srvy_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,28 +22,28 @@ import lombok.experimental.SuperBuilder;
 public class QustnrInfo extends BaseEntity {
 
     @Id
-    @Column(name = "SRVY_ID", length = 20)
+    @Column(name = "srvy_id", length = 20)
     private String srvyId;
 
-    @Column(name = "SRVY_TTL", length = 255, nullable = false)
+    @Column(name = "srvy_ttl", length = 255, nullable = false)
     private String srvyTtl;
 
-    @Column(name = "SRVY_PRPS_CN", length = 1000)
+    @Column(name = "srvy_prps_cn", length = 1000)
     private String srvyPrpsCn;
 
-    @Column(name = "SRVY_WRT_GD_CN", length = 2000)
+    @Column(name = "srvy_wrt_gd_cn", length = 2000)
     private String srvyGuidCn;
 
-    @Column(name = "SRVY_BGNG_YMD", length = 10)
+    @Column(name = "srvy_bgng_ymd", length = 10)
     private String srvyBgngYmd;
 
-    @Column(name = "SRVY_END_YMD", length = 10)
+    @Column(name = "srvy_end_ymd", length = 10)
     private String srvyEndYmd;
 
-    @Column(name = "SRVY_TRGT", length = 1000)
+    @Column(name = "srvy_trgt", length = 1000)
     private String srvyTrgtCn;
 
-    @Column(name = "SRVY_TMPLT_ID", length = 20, nullable = false)
+    @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
     private String srvyTmplatId;
 
     public void update(String srvyTtl, String srvyPrpsCn, String srvyGuidCn,

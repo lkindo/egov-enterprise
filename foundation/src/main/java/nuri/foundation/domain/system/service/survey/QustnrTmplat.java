@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_TMPLT")
+@Table(name = "tb_srvy_tmplt")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,19 +18,19 @@ import lombok.experimental.SuperBuilder;
 public class QustnrTmplat extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
+    @Column(name = "qustnr_tmplat_id", length = 20)
     private String srvyTmplatId;
 
-    @Column(name = "SRVY_TMPLT_TYPE", length = 100)
+    @Column(name = "srvy_tmplt_type", length = 100)
     private String srvyTmplatTypeCd;
 
-    @Column(name = "QUSTNR_TMPLAT_DC", length = 2000)
+    @Column(name = "qustnr_tmplat_dc", length = 2000)
     private String srvyTmplatCn;
 
-    @Column(name = "QUSTNR_TMPLAT_PATH_NM", length = 100)
+    @Column(name = "qustnr_tmplat_path_nm", length = 100)
     private String srvyTmplatImgPath;
 
-    @Column(name = "SRVY_TMPLT_IMG_INFO")
+    @Column(name = "srvy_tmplt_img_info")
     private byte[] srvyTmplatImgInfo;
 
     public void update(String srvyTmplatTypeCd, String srvyTmplatImgPath, String srvyTmplatCn) {

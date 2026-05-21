@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_NOTE_RCPTN")
+@Table(name = "tb_note_rcptn")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,7 +21,7 @@ import org.hibernate.annotations.DynamicUpdate;
 public class NoteRecptn extends BaseEntity {
 
     @Id
-    @Column(name = "NOTE_RCPTN_ID", length = 20)
+    @Column(name = "note_rcptn_id", length = 20)
     private String noteRecptnId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,13 +32,13 @@ public class NoteRecptn extends BaseEntity {
     @JoinColumn(name = "NOTE_SNDNG_ID")
     private NoteTrnsmit noteDsptch;
 
-    @Column(name = "RCVR_ID", length = 20)
+    @Column(name = "rcvr_id", length = 20)
     private String rcverId;
 
-    @Column(name = "OPEN_YN", length = 1)
+    @Column(name = "open_yn", length = 1)
     private String openYn;
 
-    @Column(name = "RCPTN_SE_CD", length = 1)
+    @Column(name = "rcptn_se_cd", length = 1)
     private String recptnSeCd;
 
     @PrePersist

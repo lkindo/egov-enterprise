@@ -15,7 +15,7 @@ import java.util.Objects;
  * 테이블: TB_USER_INFO
  */
 @Entity
-@Table(name = "TB_USER_INFO")
+@Table(name = "tb_user_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -26,141 +26,141 @@ public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "ESNTL_ID", length = 20)
+    @Column(name = "esntl_id", length = 20)
     @NonNull
     private String esntlId;
 
-    @Column(name = "USER_ID", nullable = false, length = 30, unique = true)
+    @Column(name = "user_id", nullable = false, length = 30, unique = true)
     @NonNull
     private String userId;
 
     @Builder.Default
-    @Column(name = "USER_TYPE_CD", nullable = false, length = 10)
+    @Column(name = "user_type_cd", nullable = false, length = 10)
     private String userType = "EMP";
 
-    @Column(name = "USER_NM", nullable = false, length = 300)
+    @Column(name = "user_nm", nullable = false, length = 300)
     @NonNull
     private String userNm;
 
-    @Column(name = "PSWD", nullable = false, length = 300)
+    @Column(name = "pswd", nullable = false, length = 300)
     @NonNull
     private String pswd;
 
-    @Column(name = "PSWD_HINT", length = 300)
+    @Column(name = "pswd_hint", length = 300)
     private String pswdHint;
 
-    @Column(name = "PSWD_CNSR", length = 300)
+    @Column(name = "pswd_cnsr", length = 300)
     private String pswdCrans;
 
-    @Column(name = "CHG_PSWD_LAST_DT")
+    @Column(name = "chg_pswd_last_dt")
     private LocalDateTime passwordUpdateDate;
 
-    @Column(name = "CHG_PWD_CNT")
+    @Column(name = "chg_pwd_cnt")
     private Integer changePasswordCount;
 
     @Builder.Default
-    @Column(name = "LCK_YN", length = 1)
+    @Column(name = "lck_yn", length = 1)
     private String lckYn = "N";
 
-    @Column(name = "LCK_CNT")
+    @Column(name = "lck_cnt")
     private Integer lockCount;
 
-    @Column(name = "LCK_LAST_PNTTM")
+    @Column(name = "lck_last_pnttm")
     private LocalDateTime lockLastDate;
 
-    @Column(name = "OTP_SECRET", length = 32)
+    @Column(name = "otp_secret", length = 32)
     private String otpSecret;
 
-    @Column(name = "CRTFC_DN_VALUE", length = 100)
+    @Column(name = "crtfc_dn_value", length = 100)
     private String subDn;
 
     // ■ 개인 정보
-    @Column(name = "RRNO", length = 600)
+    @Column(name = "rrno", length = 600)
     private String ihidnum;
 
-    @Column(name = "GNDR_CD", length = 30)
+    @Column(name = "gndr_cd", length = 30)
     private String gndrCd;
 
-    @Column(name = "BRTH_YMD", length = 8)
+    @Column(name = "brth_ymd", length = 8)
     private String brthYmd;
 
-    @Column(name = "EML_ADDR", length = 300)
+    @Column(name = "eml_addr", length = 300)
     private String emlAddr;
 
-    @Column(name = "MBL_TELNO", length = 11)
+    @Column(name = "mbl_telno", length = 11)
     private String mblTelno;
 
     // ■ 주소 정보
-    @Column(name = "ZIP", length = 5)
+    @Column(name = "zip", length = 5)
     private String zip;
 
-    @Column(name = "BASE_ADDR", length = 300)
+    @Column(name = "base_addr", length = 300)
     private String homeAddr;
 
-    @Column(name = "DTL_ADDR", length = 300)
+    @Column(name = "dtl_addr", length = 300)
     private String daddr;
 
-    @Column(name = "AREA_NO", length = 4)
+    @Column(name = "area_no", length = 4)
     private String areaNo;
 
-    @Column(name = "MIDDLE_TELNO", length = 4)
+    @Column(name = "middle_telno", length = 4)
     private String homemiddleTelno;
 
-    @Column(name = "END_TELNO", length = 4)
+    @Column(name = "end_telno", length = 4)
     private String homeendTelno;
 
-    @Column(name = "FAX_NO", length = 20)
+    @Column(name = "fax_no", length = 20)
     private String faxNo;
 
-    @Column(name = "OFFICE_TELNO", length = 20)
+    @Column(name = "office_telno", length = 20)
     private String officeTelno;
 
     // ■ 조직 및 권한
-    @Column(name = "GROUP_ID", length = 20)
+    @Column(name = "group_id", length = 20)
     private String groupId;
 
-    @Column(name = "OGNZ_ID", length = 20)
+    @Column(name = "ognz_id", length = 20)
     private String orgnztId;
 
-    @Column(name = "PSTINST_CD", length = 8)
+    @Column(name = "pstinst_cd", length = 8)
     private String insttCode;
 
-    @Column(name = "EMPL_NO", length = 20)
+    @Column(name = "empl_no", length = 20)
     private String emplNo;
 
-    @Column(name = "OFCPS_NM", length = 60)
+    @Column(name = "ofcps_nm", length = 60)
     private String ofcpsNm;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "ROLE", length = 50)
+    @Column(name = "role", length = 50)
     private Role role = Role.USER;
 
     // ■ 기업 전용 (nullable)
-    @Column(name = "BIZR_NO", length = 10)
+    @Column(name = "bizr_no", length = 10)
     private String bizrno;
 
-    @Column(name = "JURIR_NO", length = 13)
+    @Column(name = "jurir_no", length = 13)
     private String jurirno;
 
-    @Column(name = "CMPNY_NM", length = 50)
+    @Column(name = "cmpny_nm", length = 50)
     private String cmpnyNm;
 
-    @Column(name = "RPRSV_NM", length = 50)
+    @Column(name = "rprsv_nm", length = 50)
     private String cxfc;
 
-    @Column(name = "INDUTY_CD", length = 15)
+    @Column(name = "induty_cd", length = 15)
     private String indutyCode;
 
-    @Column(name = "ENT_SE_CD", length = 15)
+    @Column(name = "ent_se_cd", length = 15)
     private String entrprsSeCode;
 
     // ■ 상태 및 감사
     @Builder.Default
-    @Column(name = "USER_STTS_CD", length = 30)
+    @Column(name = "user_stts_cd", length = 30)
     private String userSttsCd = "P";
 
-    @Column(name = "SBSCRB_YMD", updatable = false, length = 8)
+    @Column(name = "sbscrb_ymd", updatable = false, length = 8)
     private String sbscrbYmd;
 
     public void update(String userNm, String pswdHint, String pswdCrans,

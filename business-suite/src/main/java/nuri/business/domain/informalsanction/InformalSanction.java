@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 비정형 결재 Entity
  */
 @Entity
-@Table(name = "TB_IFML_ATRZ_INFO")
+@Table(name = "tb_ifml_atrz_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -24,28 +24,28 @@ import java.time.LocalDateTime;
 public class InformalSanction extends BaseEntity {
 
     @Id
-    @Column(name = "IFML_ATRZ_ID", length = 20)
+    @Column(name = "ifml_atrz_id", length = 20)
     private String informalSanctionId;
 
-    @Column(name = "TASK_SE_CD", length = 3, nullable = false)
+    @Column(name = "task_se_cd", length = 3, nullable = false)
     private String jobSeCode;
 
-    @Column(name = "APLCNT_ID", length = 20, nullable = false)
+    @Column(name = "aplcnt_id", length = 20, nullable = false)
     private String applicantId;
 
-    @Column(name = "REQ_YMD", length = 10)
+    @Column(name = "req_ymd", length = 10)
     private String requestDe;
 
-    @Column(name = "APRVR_ID", length = 20, nullable = false)
+    @Column(name = "aprvr_id", length = 20, nullable = false)
     private String sanctionerId;
 
-    @Column(name = "APRV_YN", length = 1)
+    @Column(name = "aprv_yn", length = 1)
     private String confmAt;
 
-    @Column(name = "ATRZ_DT")
+    @Column(name = "atrz_dt")
     private LocalDateTime sanctionDt;
 
-    @Column(name = "RJCT_RSN_CN", length = 1000)
+    @Column(name = "rjct_rsn_cn", length = 1000)
     private String returnResn;
 
     public void update(String jobSeCode, String requestDe, String sanctionerId) {

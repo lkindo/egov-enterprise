@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SRVY_ARTCL")
+@Table(name = "tb_srvy_artcl")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,25 +18,25 @@ import lombok.experimental.SuperBuilder;
 public class QustnrIem extends BaseEntity {
 
     @Id
-    @Column(name = "SRVY_ARTCL_ID", length = 20)
+    @Column(name = "srvy_artcl_id", length = 20)
     private String srvyItemId;
 
-    @Column(name = "SRVY_QSTN_ID", length = 20)
+    @Column(name = "srvy_qstn_id", length = 20)
     private String srvyQitemId;
 
-    @Column(name = "SRVY_ID", length = 20)
+    @Column(name = "srvy_id", length = 20)
     private String srvyId;
 
-    @Column(name = "ARTCL_SN")
+    @Column(name = "artcl_sn")
     private Long srvyItemSn;
 
-    @Column(name = "ARTCL_CN", length = 2500)
+    @Column(name = "artcl_cn", length = 2500)
     private String srvyItemCn;
 
-    @Column(name = "ETC_ANS_YN", length = 1)
+    @Column(name = "etc_ans_yn", length = 1)
     private String etcAnsYn;
 
-    @Column(name = "SRVY_TMPLT_ID", length = 20)
+    @Column(name = "srvy_tmplt_id", length = 20)
     private String srvyTmplatId;
 
     public void update(Long srvyItemSn, String srvyItemCn, String etcAnsYn) {

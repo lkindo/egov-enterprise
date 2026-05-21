@@ -1,0 +1,1085 @@
+{
+  "backend": [
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+      "issues": [
+        "L17: @Table name \"TB_ADBK_MANAGE\" violates standard."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+      "issues": [
+        "L20: @Table name \"TB_ADBK_INFO\" violates standard.",
+        "L28: @Column name \"ADBK_CONSTNT_ID\" contains uppercase.",
+        "L31: @Column name \"ADBK_ID\" contains uppercase.",
+        "L34: @Column name \"USER_ID\" contains uppercase.",
+        "L37: @Column name \"RLS_SCP_CD\" contains uppercase.",
+        "L40: @Column name \"NM\" contains uppercase.",
+        "L43: @Column name \"EML_ADDR\" contains uppercase.",
+        "L46: @Column name \"HOME_TELNO\" contains uppercase.",
+        "L49: @Column name \"MBL_TELNO\" contains uppercase.",
+        "L52: @Column name \"OFC_TELNO\" contains uppercase.",
+        "L55: @Column name \"FAX_NO\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java",
+      "issues": [
+        "L16: @Table name \"TB_BLOG_INFO\" violates standard.",
+        "L25: @Column name \"BLOG_ID\" contains uppercase.",
+        "L28: @Column name \"BLOG_TTL\" contains uppercase.",
+        "L31: @Column name \"BLOG_INTRO_CN\" contains uppercase.",
+        "L34: @Column name \"REG_SE_CD\" contains uppercase.",
+        "L37: @Column name \"TMPLT_ID\" contains uppercase.",
+        "L40: @Column name \"USE_YN\" contains uppercase.",
+        "L43: @Column name \"BBS_ID\" contains uppercase.",
+        "L46: @Column name \"BLOG_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java",
+      "issues": [
+        "L17: @Table name \"TB_BLOG_USER_MAP\" violates standard.",
+        "L25: @Column name \"BLOG_ID\" contains uppercase.",
+        "L29: @Column name \"USER_ID\" contains uppercase.",
+        "L32: @Column name \"MNGR_YN\" contains uppercase.",
+        "L35: @Column name \"JOIN_YMD\" contains uppercase.",
+        "L38: @Column name \"WHDWL_YMD\" contains uppercase.",
+        "L41: @Column name \"MBR_STTS_CD\" contains uppercase.",
+        "L44: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java",
+      "issues": [
+        "L20: @Table name \"TB_BBS_ITEM\" violates standard.",
+        "L28: @Column name \"PST_ID\" contains uppercase.",
+        "L31: @Column name \"BBS_ID\" contains uppercase.",
+        "L34: @Column name \"ANS_SN\" contains uppercase.",
+        "L37: @Column name \"PST_TTL\" contains uppercase.",
+        "L40: @Column name \"PST_CN\" contains uppercase.",
+        "L43: @Column name \"UP_PST_ID\" contains uppercase.",
+        "L46: @Column name \"SORT_ORDR\" contains uppercase.",
+        "L49: @Column name \"TTL_BOLD_YN\" contains uppercase.",
+        "L52: @Column name \"ANS_LVL\" contains uppercase.",
+        "L56: @Column name \"INQ_CNT\" contains uppercase.",
+        "L60: @Column name \"USE_YN\" contains uppercase.",
+        "L64: @Column name \"PST_BGNG_YMD\" contains uppercase.",
+        "L67: @Column name \"PST_END_YMD\" contains uppercase.",
+        "L70: @Column name \"USER_ID\" contains uppercase.",
+        "L73: @Column name \"USER_NM\" contains uppercase.",
+        "L76: @Column name \"PSWD\" contains uppercase.",
+        "L79: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L82: @Column name \"SCRT_YN\" contains uppercase.",
+        "L85: @Column name \"BLOG_ID\" contains uppercase.",
+        "L88: @Column name \"EVNT_DT\" contains uppercase.",
+        "L91: @Column name \"QNA_STTS_CD\" contains uppercase.",
+        "L95: @Column name \"QNA_CAT_CD\" contains uppercase.",
+        "L98: @Column name \"LIKE_CNT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+      "issues": [
+        "L24: @Table name \"TB_BBS_MASTER\" violates standard.",
+        "L31: @Column name \"BBS_ID\" contains uppercase.",
+        "L34: @Column name \"BBS_TTL\" contains uppercase.",
+        "L37: @Column name \"BBS_EXPLN\" contains uppercase.",
+        "L40: @Column name \"BBS_TYPE_CD\" contains uppercase.",
+        "L43: @Column name \"BBS_ATRB_CD\" contains uppercase.",
+        "L46: @Column name \"ANS_PSBLTY_YN\" contains uppercase.",
+        "L50: @Column name \"FILE_ATCH_PSBLTY_YN\" contains uppercase.",
+        "L54: @Column name \"ATCH_PSBLTY_FILE_QTY\" contains uppercase.",
+        "L58: @Column name \"ATCH_PSBLTY_FILE_SZ\" contains uppercase.",
+        "L61: @Column name \"USE_YN\" contains uppercase.",
+        "L65: @Column name \"TMPLT_ID\" contains uppercase.",
+        "L68: @Column name \"BLOG_ID\" contains uppercase.",
+        "L71: @Column name \"BLOG_YN\" contains uppercase.",
+        "L75: @Column name \"CMNTY_ID\" contains uppercase.",
+        "L78: @Column name \"ANS_YN\" contains uppercase.",
+        "L82: @Column name \"STSFDG_YN\" contains uppercase.",
+        "L87: @Column name \"FRST_RGTR_ID\" contains uppercase.",
+        "L90: @Column name \"CRT_DT\" contains uppercase.",
+        "L93: @Column name \"LAST_MDFR_ID\" contains uppercase.",
+        "L96: @Column name \"MDFCN_DT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java",
+      "issues": [
+        "L22: @Table name \"TB_BBS_USE_INFO\" violates standard.",
+        "L28: @Column name \"BBS_ID\" contains uppercase.",
+        "L32: @Column name \"TRGET_ID\" contains uppercase.",
+        "L35: @Column name \"REG_SE_CD\" contains uppercase.",
+        "L38: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+      "issues": [
+        "L20: @Table name \"TB_DGSTFN_INFO\" violates standard.",
+        "L29: @Column name \"STSFDG_ID\" contains uppercase.",
+        "L32: @Column name \"BBS_ID\" contains uppercase.",
+        "L35: @Column name \"NTT_ID\" contains uppercase.",
+        "L38: @Column name \"DGSTFN_SCR\" contains uppercase.",
+        "L41: @Column name \"DGSTFN_CN\" contains uppercase.",
+        "L44: @Column name \"PSWD\" contains uppercase.",
+        "L48: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+      "issues": [
+        "L17: @Table name \"TB_TMPLT_INFO\" violates standard.",
+        "L21: @Column name \"TMPLAT_ID\" contains uppercase.",
+        "L24: @Column name \"TMPLAT_NM\" contains uppercase.",
+        "L27: @Column name \"TMPLAT_COURS\" contains uppercase.",
+        "L30: @Column name \"USE_YN\" contains uppercase.",
+        "L34: @Column name \"TMPLAT_SE_CODE\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+      "issues": [
+        "L20: @Table name \"TB_HLDY_INFO\" violates standard.",
+        "L25: @Column name \"RESTDE_NO\" contains uppercase.",
+        "L28: @Column name \"HLDY_YMD\" contains uppercase.",
+        "L31: @Column name \"HLDY_NM\" contains uppercase.",
+        "L34: @Column name \"HLDY_EXPLN\" contains uppercase.",
+        "L37: @Column name \"HLDY_SE_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+      "issues": [
+        "L23: @Table name \"TB_BBS_COMMENT\" violates standard.",
+        "L30: @Column name \"ANS_SN\" contains uppercase.",
+        "L33: @Column name \"PST_ID\" contains uppercase.",
+        "L36: @Column name \"BBS_ID\" contains uppercase.",
+        "L39: @Column name \"WRTER_ID\" contains uppercase.",
+        "L42: @Column name \"WRTER_NM\" contains uppercase.",
+        "L45: @Column name \"PSWD\" contains uppercase.",
+        "L48: @Column name \"ANS_CN\" contains uppercase.",
+        "L51: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+      "issues": [
+        "L9: @Table name \"TB_DEPT_TASK_INFO\" violates standard.",
+        "L17: @Column name \"DEPT_JOB_ID\" contains uppercase.",
+        "L20: @Column name \"DEPT_JOBBX_ID\" contains uppercase.",
+        "L23: @Column name \"DEPT_JOB_NM\" contains uppercase.",
+        "L26: @Column name \"DEPT_JOB_CN\" contains uppercase.",
+        "L29: @Column name \"CHARGER_ID\" contains uppercase.",
+        "L32: @Column name \"PRORD\" contains uppercase.",
+        "L35: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+      "issues": [
+        "L14: @Table name \"TB_DEPT_JOB_BX\" violates standard.",
+        "L31: @Column name \"SORT_ORDR\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+      "issues": [
+        "L15: @Table name \"TB_FAQ_INFO\" violates standard.",
+        "L25: @Column name \"FAQ_ID\" contains uppercase.",
+        "L28: @Column name \"QESTN_SJ\" contains uppercase.",
+        "L31: @Column name \"QESTN_CN\" contains uppercase.",
+        "L34: @Column name \"ANSWER_CN\" contains uppercase.",
+        "L37: @Column name \"RDCNT\" contains uppercase.",
+        "L41: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+      "issues": [
+        "L22: @Table name \"TB_FILE_DETAIL\" violates standard.",
+        "L33: @Column name \"ATCH_FILE_SN\" contains uppercase.",
+        "L36: @Column name \"FILE_STRE_COURS\" contains uppercase.",
+        "L39: @Column name \"STRE_FILE_NM\" contains uppercase.",
+        "L42: @Column name \"ORIGNL_FILE_NM\" contains uppercase.",
+        "L45: @Column name \"FILE_EXTSN\" contains uppercase.",
+        "L48: @Column name \"FILE_SZ\" contains uppercase.",
+        "L51: @Column name \"FILE_CN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java",
+      "issues": [
+        "L20: @Table name \"TB_FILE_MASTER\" violates standard.",
+        "L25: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L28: @Column name \"USE_AT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+      "issues": [
+        "L14: @Table name \"TB_HLP_INFO\" violates standard.",
+        "L24: @Column name \"HLP_ID\" contains uppercase.",
+        "L27: @Column name \"HLP_SE_CD\" contains uppercase.",
+        "L30: @Column name \"HLP_DFN\" contains uppercase.",
+        "L33: @Column name \"HLP_EXPLN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+      "issues": [
+        "L14: @Table name \"TB_ONLN_MNL_INFO\" violates standard.",
+        "L24: @Column name \"ONLN_MNL_ID\" contains uppercase.",
+        "L27: @Column name \"ONLN_MNL_NM\" contains uppercase.",
+        "L30: @Column name \"ONLN_MNL_SE_CD\" contains uppercase.",
+        "L33: @Column name \"ONLN_MNL_DFN\" contains uppercase.",
+        "L36: @Column name \"ONLN_MNL_EXPLN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+      "issues": [
+        "L21: @Table name \"TB_MAIN_IMAGE\" violates standard.",
+        "L29: @Column name \"IMAGE_ID\" contains uppercase.",
+        "L32: @Column name \"IMAGE_NM\" contains uppercase.",
+        "L35: @Column name \"MAIN_IMG_FILE_PATH\" contains uppercase.",
+        "L38: @Column name \"IMAGE_FILE\" contains uppercase.",
+        "L41: @Column name \"MAIN_IMG_EXPLN\" contains uppercase.",
+        "L44: @Column name \"REFLCT_AT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java",
+      "issues": [
+        "L19: @Table name \"TB_IFML_ATRZ_INFO\" violates standard.",
+        "L27: @Column name \"IFML_ATRZ_ID\" contains uppercase.",
+        "L30: @Column name \"TASK_SE_CD\" contains uppercase.",
+        "L33: @Column name \"APLCNT_ID\" contains uppercase.",
+        "L36: @Column name \"REQ_YMD\" contains uppercase.",
+        "L39: @Column name \"APRVR_ID\" contains uppercase.",
+        "L42: @Column name \"APRV_YN\" contains uppercase.",
+        "L45: @Column name \"ATRZ_DT\" contains uppercase.",
+        "L48: @Column name \"RJCT_RSN_CN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java",
+      "issues": [
+        "L18: @Table name \"TB_EMAIL_DSPTCH_MANAGE\" violates standard.",
+        "L25: @Column name \"MSG_ID\" contains uppercase.",
+        "L28: @Column name \"EML_TTL\" contains uppercase.",
+        "L31: @Column name \"EML_CN\" contains uppercase.",
+        "L34: @Column name \"SNDPTY_NM\" contains uppercase.",
+        "L37: @Column name \"RCVR_NM\" contains uppercase.",
+        "L40: @Column name \"DSPTCH_RSLT_CD\" contains uppercase.",
+        "L43: @Column name \"DSPTCH_DT\" contains uppercase.",
+        "L46: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java",
+      "issues": [
+        "L12: @Table name \"TB_MEMO_RPT_INFO\" violates standard.",
+        "L21: @Column name \"RPT_ID\" contains uppercase.",
+        "L24: @Column name \"RPT_TTL\" contains uppercase.",
+        "L27: @Column name \"MEMO_RPT_YMD\" contains uppercase.",
+        "L30: @Column name \"USER_ID\" contains uppercase.",
+        "L33: @Column name \"RPTR_ID\" contains uppercase.",
+        "L36: @Column name \"RPT_CN\" contains uppercase.",
+        "L39: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L42: @Column name \"DRCTN_MTTR\" contains uppercase.",
+        "L45: @Column name \"DRCTN_MTTR_REG_DT\" contains uppercase.",
+        "L48: @Column name \"RPTR_INQ_DT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\Note.java",
+      "issues": [
+        "L14: @Table name \"TB_NOTE_INFO\" violates standard.",
+        "L24: @Column name \"NOTE_ID\" contains uppercase.",
+        "L27: @Column name \"NOTE_TTL\" contains uppercase.",
+        "L30: @Column name \"NOTE_CN\" contains uppercase.",
+        "L33: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java",
+      "issues": [
+        "L14: @Table name \"TB_NOTE_RCPTN\" violates standard.",
+        "L24: @Column name \"NOTE_RCPTN_ID\" contains uppercase.",
+        "L35: @Column name \"RCVR_ID\" contains uppercase.",
+        "L38: @Column name \"OPEN_YN\" contains uppercase.",
+        "L41: @Column name \"RCPTN_SE_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java",
+      "issues": [
+        "L14: @Table name \"TB_NOTE_SNDNG\" violates standard.",
+        "L25: @Column name \"NOTE_SNDNG_ID\" contains uppercase.",
+        "L32: @Column name \"SNDR_ID\" contains uppercase.",
+        "L35: @Column name \"DEL_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java",
+      "issues": [
+        "L16: @Table name \"TB_USER_NOTI\" violates standard.",
+        "L24: @Column name \"NOTI_SN\" contains uppercase.",
+        "L27: @Column name \"NOTI_TTL_NM\" contains uppercase.",
+        "L30: @Column name \"NOTI_CN\" contains uppercase.",
+        "L33: @Column name \"RCVR_ID\" contains uppercase.",
+        "L37: @Column name \"READ_YN\" contains uppercase.",
+        "L40: @Column name \"LINK_URL\" contains uppercase.",
+        "L43: @Column name \"NOTI_DT\" contains uppercase.",
+        "L46: @Column name \"NOTI_IVL_VAL\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Diary.java",
+      "issues": [
+        "L23: @Table name \"TB_DIARY_INFO\" violates standard.",
+        "L27: @Column name \"DIARY_ID\" contains uppercase.",
+        "L30: @Column name \"SCHDUL_ID\" contains uppercase.",
+        "L33: @Column name \"DIARY_PROGRS_RT\" contains uppercase.",
+        "L36: @Column name \"DIARY_NM\" contains uppercase.",
+        "L39: @Column name \"DRCT_MATTER\" contains uppercase.",
+        "L42: @Column name \"PARTCLR_MATTER\" contains uppercase.",
+        "L45: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\MemoTodo.java",
+      "issues": [
+        "L14: @Table name \"TB_MEMO_TODO_INFO\" violates standard.",
+        "L21: @Column name \"TODO_ID\" contains uppercase.",
+        "L24: @Column name \"TODO_SJ\" contains uppercase.",
+        "L27: @Column name \"TODO_CN\" contains uppercase.",
+        "L30: @Column name \"TODO_BEGIN_TIME\" contains uppercase.",
+        "L33: @Column name \"TODO_END_TIME\" contains uppercase.",
+        "L36: @Column name \"WRTER_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\scrap\\Scrap.java",
+      "issues": [
+        "L14: @Table name \"TB_BBS_SCRAP\" violates standard.",
+        "L24: @Column name \"SCRAP_ID\" contains uppercase.",
+        "L27: @Column name \"BBS_ID\" contains uppercase.",
+        "L30: @Column name \"PST_ID\" contains uppercase.",
+        "L33: @Column name \"SCRAP_NM\" contains uppercase.",
+        "L36: @Column name \"SCRAP_URL\" contains uppercase.",
+        "L39: @Column name \"SCRAP_EXPLN\" contains uppercase.",
+        "L42: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java",
+      "issues": [
+        "L13: @Table name \"TB_SMS_INFO\" violates standard.",
+        "L21: @Column name \"SMS_ID\" contains uppercase.",
+        "L24: @Column name \"SNDNG_TELNO\" contains uppercase.",
+        "L27: @Column name \"SNDNG_CN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java",
+      "issues": [
+        "L11: @Table name \"TB_SMS_RCPTN\" violates standard.",
+        "L19: @Column name \"RSLT_CD\" contains uppercase.",
+        "L22: @Column name \"RSLT_MSG\" contains uppercase."
+      ]
+    },
+    {
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptnId.java",
+      "issues": [
+        "L16: @Column name \"SMS_ID\" contains uppercase.",
+        "L19: @Column name \"RCPTN_TELNO\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\Authority.java",
+      "issues": [
+        "L14: @Table name \"TB_AUTHRT_INFO\" violates standard.",
+        "L20: @Column name \"AUTHRT_CD\" contains uppercase.",
+        "L24: @Column name \"AUTHRT_NM\" contains uppercase.",
+        "L28: @Column name \"AUTHRT_EXPLN\" contains uppercase.",
+        "L31: @Column name \"AUTHRT_CRT_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\AuthorityRole.java",
+      "issues": [
+        "L17: @Table name \"TB_AUTHRT_ROLE_MAP\" violates standard.",
+        "L19: @Column name \"CREAT_DT\" contains uppercase.",
+        "L33: @Column name \"AUTHRT_CD\" contains uppercase.",
+        "L36: @Column name \"ROLE_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\MenuAuthority.java",
+      "issues": [
+        "L14: @Table name \"TB_MENU_CRT_DTL\" violates standard.",
+        "L22: @Column name \"MAPNG_CRT_ID\" contains uppercase.",
+        "L32: @Column name \"AUTHRT_CD\" contains uppercase.",
+        "L35: @Column name \"MENU_SN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RefreshToken.java",
+      "issues": [
+        "L11: @Table name \"TB_AUTH_RFSH_TK\" violates standard.",
+        "L18: @Column name \"USER_ID\" contains uppercase.",
+        "L21: @Column name \"RFSH_TKN\" contains uppercase.",
+        "L24: @Column name \"EXPRTN_DT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\RoleInfo.java",
+      "issues": [
+        "L13: @Table name \"TB_ROLE_INFO\" violates standard.",
+        "L18: @Column name \"ROLE_ID\" contains uppercase.",
+        "L21: @Column name \"ROLE_NM\" contains uppercase.",
+        "L24: @Column name \"ROLE_PATRN\" contains uppercase.",
+        "L27: @Column name \"ROLE_EXPLN\" contains uppercase.",
+        "L30: @Column name \"ROLE_TYPE_CD\" contains uppercase.",
+        "L33: @Column name \"ROLE_SORT\" contains uppercase.",
+        "L36: @Column name \"ROLE_CRT_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\auth\\UserAuthority.java",
+      "issues": [
+        "L12: @Table name \"TB_USER_AUTHRT_MAP\" violates standard.",
+        "L21: @Column name \"SCRTY_DCSN_TRGT_ID\" contains uppercase.",
+        "L25: @Column name \"AUTHRT_ID\" contains uppercase.",
+        "L29: @Column name \"MBR_TYPE_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\AdministCode.java",
+      "issues": [
+        "L14: @Table name \"TB_ADMDST_CD\" violates standard.",
+        "L21: @Column name \"ADMDST_CD\" contains uppercase.",
+        "L24: @Column name \"ADMDST_SE\" contains uppercase.",
+        "L27: @Column name \"ADMINIST_ZONE_NM\" contains uppercase.",
+        "L30: @Column name \"UP_ADMDST_CD\" contains uppercase.",
+        "L33: @Column name \"USE_YN\" contains uppercase.",
+        "L36: @Column name \"CRT_YMD\" contains uppercase.",
+        "L39: @Column name \"ABL_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\CommonCode.java",
+      "issues": [
+        "L20: @Table name \"TB_COM_DTL_CD\" violates standard.",
+        "L26: @Column name \"CD_ID\" contains uppercase.",
+        "L31: @Column name \"DTL_CD\" contains uppercase.",
+        "L35: @Column name \"DTL_CD_NM\" contains uppercase.",
+        "L39: @Column name \"DTL_CD_EXPLN\" contains uppercase.",
+        "L42: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCode.java",
+      "issues": [
+        "L14: @Table name \"TB_INST_CD\" violates standard.",
+        "L20: @Column name \"INST_CD\" contains uppercase.",
+        "L23: @Column name \"ALL_INST_NM\" contains uppercase.",
+        "L26: @Column name \"LWTRK_INST_NM\" contains uppercase.",
+        "L29: @Column name \"INST_ABBR_NM\" contains uppercase.",
+        "L32: @Column name \"ODR\" contains uppercase.",
+        "L35: @Column name \"ORD\" contains uppercase.",
+        "L38: @Column name \"INST_CYCL\" contains uppercase.",
+        "L41: @Column name \"TOP_INST_CD\" contains uppercase.",
+        "L44: @Column name \"UP_INST_CD\" contains uppercase.",
+        "L47: @Column name \"RPRS_INST_CD\" contains uppercase.",
+        "L50: @Column name \"INST_TYPE_LCLSF\" contains uppercase.",
+        "L53: @Column name \"INST_TYPE_MCLSF\" contains uppercase.",
+        "L56: @Column name \"INST_TYPE_SCLSF\" contains uppercase.",
+        "L59: @Column name \"TELNO\" contains uppercase.",
+        "L62: @Column name \"FAX_NO\" contains uppercase.",
+        "L65: @Column name \"CRT_YMD\" contains uppercase.",
+        "L68: @Column name \"ABL_YMD\" contains uppercase.",
+        "L71: @Column name \"ABL_YN\" contains uppercase.",
+        "L74: @Column name \"CHG_YMD\" contains uppercase.",
+        "L77: @Column name \"CHG_TM\" contains uppercase.",
+        "L80: @Column name \"CRTR_YMD\" contains uppercase.",
+        "L83: @Column name \"SORT_SEQ\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\code\\InstitutionCodeRecptnLog.java",
+      "issues": [
+        "L17: @Table name \"TB_INST_CD_RCPTN_LOG\" violates standard.",
+        "L25: @Column name \"CHG_SE_CD\" contains uppercase.",
+        "L28: @Column name \"PRCS_SE_CD\" contains uppercase.",
+        "L31: @Column name \"ETC_CD\" contains uppercase.",
+        "L34: @Column name \"ALL_INST_NM\" contains uppercase.",
+        "L37: @Column name \"LOWEST_INSTT_NM\" contains uppercase.",
+        "L40: @Column name \"INST_ABBR_NM\" contains uppercase.",
+        "L43: @Column name \"ODR\" contains uppercase.",
+        "L46: @Column name \"ORD\" contains uppercase.",
+        "L49: @Column name \"INST_SEQ\" contains uppercase.",
+        "L52: @Column name \"BEST_INST_CD\" contains uppercase.",
+        "L55: @Column name \"UP_INST_CD\" contains uppercase.",
+        "L58: @Column name \"REPRSNT_INST_CD\" contains uppercase.",
+        "L61: @Column name \"INST_TY_LCLAS_CD\" contains uppercase.",
+        "L64: @Column name \"INST_TY_MCLAS_CD\" contains uppercase.",
+        "L67: @Column name \"INST_TY_SCLAS_CD\" contains uppercase.",
+        "L70: @Column name \"TELNO\" contains uppercase.",
+        "L73: @Column name \"FXNO\" contains uppercase.",
+        "L76: @Column name \"CRT_YMD\" contains uppercase.",
+        "L79: @Column name \"ABL_YMD\" contains uppercase.",
+        "L82: @Column name \"ABL_YN\" contains uppercase.",
+        "L85: @Column name \"CHG_YMD\" contains uppercase.",
+        "L88: @Column name \"CHG_TM\" contains uppercase.",
+        "L91: @Column name \"BSIS_YMD\" contains uppercase.",
+        "L94: @Column name \"SORT_SEQ\" contains uppercase.",
+        "L97: @Column name \"CRT_DT\" contains uppercase.",
+        "L100: @Column name \"FRST_RGTR_ID\" contains uppercase.",
+        "L103: @Column name \"MDFCN_DT\" contains uppercase.",
+        "L106: @Column name \"LAST_MDFR_ID\" contains uppercase.",
+        "L114: @Column name \"OCRN_YMD\" contains uppercase.",
+        "L117: @Column name \"INST_CD\" contains uppercase.",
+        "L120: @Column name \"OPERT_SN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseEntity.java",
+      "issues": [
+        "L26: @Column name \"FRST_RGTR_ID\" contains uppercase.",
+        "L30: @Column name \"LAST_MDFR_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\common\\BaseTimeEntity.java",
+      "issues": [
+        "L31: @Column name \"CRT_DT\" contains uppercase.",
+        "L35: @Column name \"MDFCN_DT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\group\\GroupManage.java",
+      "issues": [
+        "L17: @Table name \"TB_AUTHRT_GROUP_INFO\" violates standard.",
+        "L22: @Column name \"GROUP_ID\" contains uppercase.",
+        "L25: @Column name \"GROUP_NM\" contains uppercase.",
+        "L28: @Column name \"GROUP_DC\" contains uppercase.",
+        "L31: @Column name \"GROUP_CRT_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\isg\\InternetSvcGuidance.java",
+      "issues": [
+        "L14: @Table name \"TB_INTRN_SVC\" violates standard.",
+        "L24: @Column name \"ITNT_SVC_ID\" contains uppercase.",
+        "L27: @Column name \"ITNT_SVC_NM\" contains uppercase.",
+        "L30: @Column name \"ITNT_SVC_EXPLN\" contains uppercase.",
+        "L33: @Column name \"RFLT_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\LoginLog.java",
+      "issues": [
+        "L19: @Table name \"TB_LOGIN_LOG\" violates standard.",
+        "L26: @Column name \"LOG_ID\" contains uppercase.",
+        "L29: @Column name \"USER_ID\" contains uppercase.",
+        "L32: @Column name \"LGN_IP_ADDR\" contains uppercase.",
+        "L35: @Column name \"CNTN_MTHD_CD\" contains uppercase.",
+        "L38: @Column name \"ERR_OCRN_YN\" contains uppercase.",
+        "L41: @Column name \"ERR_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\PrivacyLog.java",
+      "issues": [
+        "L16: @Table name \"TB_PRIVACY_LOG\" violates standard.",
+        "L25: @Column name \"DMND_ID\" contains uppercase.",
+        "L28: @Column name \"INQ_DT\" contains uppercase.",
+        "L31: @Column name \"SRVC_NM\" contains uppercase.",
+        "L34: @Column name \"INQ_INFO\" contains uppercase.",
+        "L37: @Column name \"DMND_USER_ID\" contains uppercase.",
+        "L40: @Column name \"DMND_USER_IP_ADDR\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\SysLog.java",
+      "issues": [
+        "L18: @Table name \"TB_SYS_LOG\" violates standard.",
+        "L25: @Column name \"DMND_ID\" contains uppercase.",
+        "L28: @Column name \"SRVC_NM\" contains uppercase.",
+        "L31: @Column name \"MTHD_NM\" contains uppercase.",
+        "L34: @Column name \"PRCS_SE_CD\" contains uppercase.",
+        "L37: @Column name \"PRCS_TM\" contains uppercase.",
+        "L40: @Column name \"DMND_USER_ID\" contains uppercase.",
+        "L43: @Column name \"DMND_USER_IP_ADDR\" contains uppercase.",
+        "L46: @Column name \"OCRN_YMD\" contains uppercase.",
+        "L49: @Column name \"RSPNS_CD\" contains uppercase.",
+        "L52: @Column name \"ERR_CD\" contains uppercase.",
+        "L55: @Column name \"ERR_SE_CD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\UserLog.java",
+      "issues": [
+        "L24: @Table name \"TB_USER_LOG\" violates standard.",
+        "L36: @Column name \"OCRN_YMD\" contains uppercase.",
+        "L40: @Column name \"DMND_USER_ID\" contains uppercase.",
+        "L44: @Column name \"SRVC_NM\" contains uppercase.",
+        "L48: @Column name \"MTHD_NM\" contains uppercase.",
+        "L51: @Column name \"CRT_CNT\" contains uppercase.",
+        "L54: @Column name \"MDFCN_CNT\" contains uppercase.",
+        "L57: @Column name \"INQ_CNT\" contains uppercase.",
+        "L60: @Column name \"DEL_CNT\" contains uppercase.",
+        "L63: @Column name \"OUTPT_CNT\" contains uppercase.",
+        "L66: @Column name \"ERR_CNT\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\log\\WebLog.java",
+      "issues": [
+        "L18: @Table name \"TB_WEB_LOG\" violates standard.",
+        "L25: @Column name \"DMND_ID\" contains uppercase.",
+        "L28: @Column name \"URL\" contains uppercase.",
+        "L31: @Column name \"DMND_USER_ID\" contains uppercase.",
+        "L34: @Column name \"DMND_USER_IP_ADDR\" contains uppercase.",
+        "L37: @Column name \"OCCR_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\login\\LoginPolicy.java",
+      "issues": [
+        "L23: @Table name \"TB_LOGIN_POLICY\" violates standard.",
+        "L32: @Column name \"USER_ID\" contains uppercase.",
+        "L35: @Column name \"IP_ADDR\" contains uppercase.",
+        "L38: @Column name \"DPCN_PRM_YN\" contains uppercase.",
+        "L41: @Column name \"LMT_YN\" contains uppercase.",
+        "L44: @Column name \"BGNG_TM\" contains uppercase.",
+        "L47: @Column name \"END_TM\" contains uppercase.",
+        "L50: @Column name \"OTP_USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\BkmkMenu.java",
+      "issues": [
+        "L14: @Table name \"NBKMKMENUMANAGERESULT\" violates standard.",
+        "L23: @Column name \"MENU_NM\" contains uppercase.",
+        "L26: @Column name \"PROGRM_STRE_PATH\" contains uppercase.",
+        "L42: @Column name \"MENU_ID\" contains uppercase.",
+        "L45: @Column name \"USER_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\Menu.java",
+      "issues": [
+        "L18: @Table name \"TB_MENU_INFO\" violates standard.",
+        "L25: @Column name \"MENU_SN\" contains uppercase.",
+        "L28: @Column name \"MENU_NM\" contains uppercase.",
+        "L31: @Column name \"PRGRM_FILE_NM\" contains uppercase.",
+        "L34: @Column name \"UP_MENU_SN\" contains uppercase.",
+        "L37: @Column name \"MENU_ORDR\" contains uppercase.",
+        "L40: @Column name \"MENU_EXPLN\" contains uppercase.",
+        "L43: @Column name \"REL_IMG_PATH\" contains uppercase.",
+        "L46: @Column name \"REL_IMG_NM\" contains uppercase.",
+        "L52: @Column name \"MODERN_ROUTE\" contains uppercase.",
+        "L55: @Column name \"ROUTE_MDFCN_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\menu\\SiteMap.java",
+      "issues": [
+        "L18: @Table name \"TB_STMP_INFO\" violates standard.",
+        "L25: @Column name \"MPNG_CRT_ID\" contains uppercase.",
+        "L28: @Column name \"CRTR_ID\" contains uppercase.",
+        "L31: @Column name \"MPNG_FILE_NM\" contains uppercase.",
+        "L34: @Column name \"MPNG_FILE_PATH\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\mypage\\IndividualPage.java",
+      "issues": [
+        "L16: @Table name \"TB_INDV_PG\" violates standard.",
+        "L24: @Column name \"PAGE_ID\" contains uppercase.",
+        "L27: @Column name \"PAGE_TTL\" contains uppercase.",
+        "L30: @Column name \"PAGE_EXPLN\" contains uppercase.",
+        "L33: @Column name \"USER_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\EventInfo.java",
+      "issues": [
+        "L19: @Table name \"TB_EVENT_INFO\" violates standard.",
+        "L26: @Column name \"EVNT_ID\" contains uppercase.",
+        "L29: @Column name \"BIZ_YR\" contains uppercase.",
+        "L32: @Column name \"BIZ_CD\" contains uppercase.",
+        "L35: @Column name \"EVNT_CN\" contains uppercase.",
+        "L38: @Column name \"EVNT_BGNG_YMD\" contains uppercase.",
+        "L41: @Column name \"EVNT_END_YMD\" contains uppercase.",
+        "L44: @Column name \"EVNT_USE_CNT\" contains uppercase.",
+        "L47: @Column name \"PIC_NM\" contains uppercase.",
+        "L50: @Column name \"PREP_MTTR\" contains uppercase.",
+        "L53: @Column name \"EVNT_TYPE_CD\" contains uppercase.",
+        "L56: @Column name \"EVNT_APRV_YN\" contains uppercase.",
+        "L59: @Column name \"EVNT_APRV_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\ExternalHr.java",
+      "issues": [
+        "L12: @Table name \"TB_EXTRL_HR_INFO\" violates standard.",
+        "L19: @Column name \"EVNT_ID\" contains uppercase.",
+        "L23: @Column name \"OTSD_HR_ID\" contains uppercase.",
+        "L26: @Column name \"GNDR_CD\" contains uppercase.",
+        "L29: @Column name \"OTSD_HR_NM\" contains uppercase.",
+        "L32: @Column name \"CR_TYPE_CD\" contains uppercase.",
+        "L35: @Column name \"OGDP_INST_NM\" contains uppercase.",
+        "L38: @Column name \"BRDT_YMD\" contains uppercase.",
+        "L41: @Column name \"AREA_NO\" contains uppercase.",
+        "L44: @Column name \"MD_TELNO\" contains uppercase.",
+        "L47: @Column name \"END_TELNO\" contains uppercase.",
+        "L50: @Column name \"EML_ADDR\" contains uppercase.",
+        "L53: @Column name \"CRT_DT\" contains uppercase.",
+        "L56: @Column name \"FRST_RGTR_ID\" contains uppercase.",
+        "L59: @Column name \"MDFCN_DT\" contains uppercase.",
+        "L62: @Column name \"LAST_MDFR_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java",
+      "issues": [
+        "L18: @Table name \"TB_RWARD_MANAGE\" violates standard.",
+        "L25: @Column name \"RWRD_ID\" contains uppercase.",
+        "L28: @Column name \"RWRD_USER_ID\" contains uppercase.",
+        "L31: @Column name \"RWRD_CD\" contains uppercase.",
+        "L34: @Column name \"RWRD_YMD\" contains uppercase.",
+        "L37: @Column name \"RWRD_NM\" contains uppercase.",
+        "L40: @Column name \"CNTRB_CN\" contains uppercase.",
+        "L43: @Column name \"ATRZR_ID\" contains uppercase.",
+        "L46: @Column name \"CONFM_YN\" contains uppercase.",
+        "L49: @Column name \"APRV_DT\" contains uppercase.",
+        "L52: @Column name \"RTN_RSN_CN\" contains uppercase.",
+        "L55: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L58: @Column name \"IFML_ATRZ_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\program\\Program.java",
+      "issues": [
+        "L16: @Table name \"TB_PRGRM_LST\" violates standard.",
+        "L21: @Column name \"PRGRM_FILE_NM\" contains uppercase.",
+        "L24: @Column name \"PRGRM_STRG_PATH\" contains uppercase.",
+        "L27: @Column name \"PRGRM_KORN_NM\" contains uppercase.",
+        "L30: @Column name \"URL\" contains uppercase.",
+        "L33: @Column name \"PRGRM_EXPLN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\stats\\DtaUseStats.java",
+      "issues": [
+        "L27: @Column name \"DTA_USE_STATS_ID\" contains uppercase.",
+        "L30: @Column name \"BBS_ID\" contains uppercase.",
+        "L33: @Column name \"NTT_ID\" contains uppercase.",
+        "L36: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L39: @Column name \"FILE_SN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\stats\\ReprtStats.java",
+      "issues": [
+        "L20: @Table name \"NREPRTSTATS\" violates standard.",
+        "L25: @Column name \"REPRT_ID\" contains uppercase.",
+        "L28: @Column name \"REPRT_NM\" contains uppercase.",
+        "L31: @Column name \"REPRT_STTUS\" contains uppercase.",
+        "L34: @Column name \"REPRT_TY\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\banner\\Banner.java",
+      "issues": [
+        "L19: @Table name \"TB_BNR_INFO\" violates standard.",
+        "L27: @Column name \"BNR_ID\" contains uppercase.",
+        "L30: @Column name \"BNR_NM\" contains uppercase.",
+        "L33: @Column name \"LINK_URL\" contains uppercase.",
+        "L36: @Column name \"BNR_IMG_NM\" contains uppercase.",
+        "L39: @Column name \"BNR_EXPLN\" contains uppercase.",
+        "L42: @Column name \"SORT_ORDR\" contains uppercase.",
+        "L45: @Column name \"RFLT_YN\" contains uppercase.",
+        "L48: @Column name \"ATCH_FILE_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\Community.java",
+      "issues": [
+        "L20: @Table name \"TB_CMNTY_INFO\" violates standard.",
+        "L25: @Column name \"CMNTY_ID\" contains uppercase.",
+        "L28: @Column name \"CMNTY_NM\" contains uppercase.",
+        "L31: @Column name \"CMNTY_INTRO_CN\" contains uppercase.",
+        "L34: @Column name \"REG_SE_CD\" contains uppercase.",
+        "L37: @Column name \"TMPLT_ID\" contains uppercase.",
+        "L40: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUser.java",
+      "issues": [
+        "L17: @Table name \"TB_CMNTY_USER_MAP\" violates standard.",
+        "L24: @Column name \"MNGR_YN\" contains uppercase.",
+        "L27: @Column name \"JOIN_YMD\" contains uppercase.",
+        "L30: @Column name \"WHDWL_YMD\" contains uppercase.",
+        "L33: @Column name \"MBR_STTS_CD\" contains uppercase.",
+        "L36: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUserId.java",
+      "issues": [
+        "L18: @Column name \"CMNTY_ID\" contains uppercase.",
+        "L21: @Column name \"USER_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\popup\\Popup.java",
+      "issues": [
+        "L19: @Table name \"TB_POPUP_INFO\" violates standard.",
+        "L26: @Column name \"POPUP_ID\" contains uppercase.",
+        "L29: @Column name \"POPUP_TTL_NM\" contains uppercase.",
+        "L32: @Column name \"FILE_URL\" contains uppercase.",
+        "L35: @Column name \"POPUP_WDTH_PSTN\" contains uppercase.",
+        "L38: @Column name \"POPUP_VRTC_PSTN\" contains uppercase.",
+        "L41: @Column name \"POPUP_VRTC_SZ\" contains uppercase.",
+        "L44: @Column name \"POPUP_WDTH_SZ\" contains uppercase.",
+        "L47: @Column name \"NTCE_BGNDE\" contains uppercase.",
+        "L50: @Column name \"NTCE_ENDDE\" contains uppercase.",
+        "L53: @Column name \"STOPVEW_SETUP_YN\" contains uppercase.",
+        "L56: @Column name \"NTCE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\policy\\SystemPolicy.java",
+      "issues": [
+        "L22: @Table name \"TB_PLCY_MANAGE\" violates standard.",
+        "L30: @Column name \"POLICY_TYPE\" contains uppercase.",
+        "L33: @Column name \"TITLE\" contains uppercase.",
+        "L36: @Column name \"POLICY_CN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\consult\\CnsltManage.java",
+      "issues": [
+        "L23: @Table name \"TB_DSCSN_LIST\" violates standard.",
+        "L28: @Column name \"CNSLT_ID\" contains uppercase.",
+        "L31: @Column name \"CNSLT_SJ\" contains uppercase.",
+        "L34: @Column name \"CNSLT_CN\" contains uppercase.",
+        "L37: @Column name \"RLS_YN\" contains uppercase.",
+        "L40: @Column name \"WRITNG_PASSWORD\" contains uppercase.",
+        "L43: @Column name \"AREA_NO\" contains uppercase.",
+        "L46: @Column name \"MIDDLE_TELNO\" contains uppercase.",
+        "L49: @Column name \"END_TELNO\" contains uppercase.",
+        "L52: @Column name \"FRST_MBTLNUM\" contains uppercase.",
+        "L55: @Column name \"MIDDLE_MBTLNUM\" contains uppercase.",
+        "L58: @Column name \"END_MBTLNUM\" contains uppercase.",
+        "L61: @Column name \"EMAIL_ADRES\" contains uppercase.",
+        "L64: @Column name \"EMAIL_ANSWER_YN\" contains uppercase.",
+        "L67: @Column name \"WRTER_NM\" contains uppercase.",
+        "L70: @Column name \"WRITNG_DE\" contains uppercase.",
+        "L73: @Column name \"INQ_CNT\" contains uppercase.",
+        "L77: @Column name \"QNA_PROCESS_STTUS_CODE\" contains uppercase.",
+        "L81: @Column name \"ATCH_FILE_ID\" contains uppercase.",
+        "L84: @Column name \"PROC_CN\" contains uppercase.",
+        "L87: @Column name \"MNG_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollItem.java",
+      "issues": [
+        "L20: @Table name \"TB_ONLN_POLL_ARTCL\" violates standard.",
+        "L28: @Column name \"POLL_ARTCL_ID\" contains uppercase.",
+        "L35: @Column name \"POLL_ARTCL_NM\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollManage.java",
+      "issues": [
+        "L24: @Table name \"TB_ONLN_POLL_MANAGE\" violates standard.",
+        "L32: @Column name \"POLL_ID\" contains uppercase.",
+        "L35: @Column name \"POLL_NM\" contains uppercase.",
+        "L38: @Column name \"POLL_BGNG_YMD\" contains uppercase.",
+        "L41: @Column name \"POLL_END_YMD\" contains uppercase.",
+        "L44: @Column name \"POLL_KND_CD\" contains uppercase.",
+        "L47: @Column name \"POLL_DSUSE_YN\" contains uppercase.",
+        "L51: @Column name \"POLL_ATMC_DSUSE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollResult.java",
+      "issues": [
+        "L19: @Table name \"TB_ONLN_POLL_RSLT\" violates standard.",
+        "L27: @Column name \"POLL_RSLT_ID\" contains uppercase.",
+        "L30: @Column name \"POLL_ID\" contains uppercase.",
+        "L33: @Column name \"POLL_ARTCL_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrIem.java",
+      "issues": [
+        "L12: @Table name \"TB_SRVY_ARTCL\" violates standard.",
+        "L21: @Column name \"SRVY_ARTCL_ID\" contains uppercase.",
+        "L24: @Column name \"SRVY_QSTN_ID\" contains uppercase.",
+        "L27: @Column name \"SRVY_ID\" contains uppercase.",
+        "L30: @Column name \"ARTCL_SN\" contains uppercase.",
+        "L33: @Column name \"ARTCL_CN\" contains uppercase.",
+        "L36: @Column name \"ETC_ANS_YN\" contains uppercase.",
+        "L39: @Column name \"SRVY_TMPLT_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrInfo.java",
+      "issues": [
+        "L16: @Table name \"TB_SRVY_INFO\" violates standard.",
+        "L25: @Column name \"SRVY_ID\" contains uppercase.",
+        "L28: @Column name \"SRVY_TTL\" contains uppercase.",
+        "L31: @Column name \"SRVY_PRPS_CN\" contains uppercase.",
+        "L34: @Column name \"SRVY_WRT_GD_CN\" contains uppercase.",
+        "L37: @Column name \"SRVY_BGNG_YMD\" contains uppercase.",
+        "L40: @Column name \"SRVY_END_YMD\" contains uppercase.",
+        "L43: @Column name \"SRVY_TRGT\" contains uppercase.",
+        "L46: @Column name \"SRVY_TMPLT_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrQesitm.java",
+      "issues": [
+        "L12: @Table name \"TB_SRVY_QSTN\" violates standard.",
+        "L21: @Column name \"SRVY_QITEM_ID\" contains uppercase.",
+        "L24: @Column name \"SRVY_ID\" contains uppercase.",
+        "L27: @Column name \"QSTN_SN\" contains uppercase.",
+        "L30: @Column name \"QSTN_TYPE_CD\" contains uppercase.",
+        "L33: @Column name \"SRVY_QITEM_CN\" contains uppercase.",
+        "L36: @Column name \"MAX_CHC_CNT\" contains uppercase.",
+        "L39: @Column name \"SRVY_TMPLT_ID\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrRespondInfo.java",
+      "issues": [
+        "L16: @Table name \"TB_SRVY_RSLT\" violates standard.",
+        "L25: @Column name \"QUSTNR_RSPNS_ID\" contains uppercase.",
+        "L28: @Column name \"QESTNR_ID\" contains uppercase.",
+        "L31: @Column name \"QUSTNR_TMPLAT_ID\" contains uppercase.",
+        "L34: @Column name \"QUSTNR_QESITM_ID\" contains uppercase.",
+        "L37: @Column name \"QUSTNR_IEM_ID\" contains uppercase.",
+        "L40: @Column name \"RSPDNT_ANS_CN\" contains uppercase.",
+        "L43: @Column name \"RESPOND_NM\" contains uppercase.",
+        "L46: @Column name \"ETC_ANS_CN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\QustnrTmplat.java",
+      "issues": [
+        "L12: @Table name \"TB_SRVY_TMPLT\" violates standard.",
+        "L21: @Column name \"QUSTNR_TMPLAT_ID\" contains uppercase.",
+        "L24: @Column name \"SRVY_TMPLT_TYPE\" contains uppercase.",
+        "L27: @Column name \"QUSTNR_TMPLAT_DC\" contains uppercase.",
+        "L30: @Column name \"QUSTNR_TMPLAT_PATH_NM\" contains uppercase.",
+        "L33: @Column name \"SRVY_TMPLT_IMG_INFO\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyRespondent.java",
+      "issues": [
+        "L16: @Table name \"TB_SRVY_RSPDNT\" violates standard.",
+        "L25: @Column name \"QUSTNR_RESPOND_ID\" contains uppercase.",
+        "L28: @Column name \"QESTNR_ID\" contains uppercase.",
+        "L31: @Column name \"QUSTNR_TMPLAT_ID\" contains uppercase.",
+        "L34: @Column name \"SEXDSTN_CODE\" contains uppercase.",
+        "L37: @Column name \"OCCP_TY_CODE\" contains uppercase.",
+        "L40: @Column name \"RESPOND_NM\" contains uppercase.",
+        "L43: @Column name \"BRDT\" contains uppercase.",
+        "L46: @Column name \"RGN_TELNO\" contains uppercase.",
+        "L49: @Column name \"MID_TELNO\" contains uppercase.",
+        "L52: @Column name \"END_TELNO\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\template\\Template.java",
+      "issues": [
+        "L13: @Table name \"TB_TMPLT_INFO\" violates standard.",
+        "L21: @Column name \"TMPLAT_ID\" contains uppercase.",
+        "L24: @Column name \"TMPLAT_NM\" contains uppercase.",
+        "L27: @Column name \"TMPLAT_SE_CODE\" contains uppercase.",
+        "L30: @Column name \"TMPLAT_COURS\" contains uppercase.",
+        "L33: @Column name \"USE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\User.java",
+      "issues": [
+        "L18: @Table name \"TB_USER_INFO\" violates standard.",
+        "L29: @Column name \"ESNTL_ID\" contains uppercase.",
+        "L33: @Column name \"USER_ID\" contains uppercase.",
+        "L38: @Column name \"USER_TYPE_CD\" contains uppercase.",
+        "L41: @Column name \"USER_NM\" contains uppercase.",
+        "L45: @Column name \"PSWD\" contains uppercase.",
+        "L49: @Column name \"PSWD_HINT\" contains uppercase.",
+        "L52: @Column name \"PSWD_CNSR\" contains uppercase.",
+        "L55: @Column name \"CHG_PSWD_LAST_DT\" contains uppercase.",
+        "L58: @Column name \"CHG_PWD_CNT\" contains uppercase.",
+        "L62: @Column name \"LCK_YN\" contains uppercase.",
+        "L65: @Column name \"LCK_CNT\" contains uppercase.",
+        "L68: @Column name \"LCK_LAST_PNTTM\" contains uppercase.",
+        "L71: @Column name \"OTP_SECRET\" contains uppercase.",
+        "L74: @Column name \"CRTFC_DN_VALUE\" contains uppercase.",
+        "L78: @Column name \"RRNO\" contains uppercase.",
+        "L81: @Column name \"GNDR_CD\" contains uppercase.",
+        "L84: @Column name \"BRTH_YMD\" contains uppercase.",
+        "L87: @Column name \"EML_ADDR\" contains uppercase.",
+        "L90: @Column name \"MBL_TELNO\" contains uppercase.",
+        "L94: @Column name \"ZIP\" contains uppercase.",
+        "L97: @Column name \"BASE_ADDR\" contains uppercase.",
+        "L100: @Column name \"DTL_ADDR\" contains uppercase.",
+        "L103: @Column name \"AREA_NO\" contains uppercase.",
+        "L106: @Column name \"MIDDLE_TELNO\" contains uppercase.",
+        "L109: @Column name \"END_TELNO\" contains uppercase.",
+        "L112: @Column name \"FAX_NO\" contains uppercase.",
+        "L115: @Column name \"OFFICE_TELNO\" contains uppercase.",
+        "L119: @Column name \"GROUP_ID\" contains uppercase.",
+        "L122: @Column name \"OGNZ_ID\" contains uppercase.",
+        "L125: @Column name \"PSTINST_CD\" contains uppercase.",
+        "L128: @Column name \"EMPL_NO\" contains uppercase.",
+        "L131: @Column name \"OFCPS_NM\" contains uppercase.",
+        "L136: @Column name \"ROLE\" contains uppercase.",
+        "L140: @Column name \"BIZR_NO\" contains uppercase.",
+        "L143: @Column name \"JURIR_NO\" contains uppercase.",
+        "L146: @Column name \"CMPNY_NM\" contains uppercase.",
+        "L149: @Column name \"RPRSV_NM\" contains uppercase.",
+        "L152: @Column name \"INDUTY_CD\" contains uppercase.",
+        "L155: @Column name \"ENT_SE_CD\" contains uppercase.",
+        "L160: @Column name \"USER_STTS_CD\" contains uppercase.",
+        "L163: @Column name \"SBSCRB_YMD\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\user\\entity\\UserAbsence.java",
+      "issues": [
+        "L12: @Table name \"TB_USER_ABSN\" violates standard.",
+        "L21: @Column name \"USER_ID\" contains uppercase.",
+        "L24: @Column name \"USER_ABSNCE_YN\" contains uppercase."
+      ]
+    },
+    {
+      "file": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\workspace\\MyPageContent.java",
+      "issues": [
+        "L18: @Table name \"TB_INDV_PG_CONTS\" violates standard.",
+        "L25: @Column name \"CNTNTS_ID\" contains uppercase.",
+        "L28: @Column name \"CNTNTS_NM\" contains uppercase.",
+        "L31: @Column name \"CNTC_URL\" contains uppercase.",
+        "L34: @Column name \"CNTNTS_USE_YN\" contains uppercase.",
+        "L37: @Column name \"CNTNTS_LINK_URL\" contains uppercase.",
+        "L40: @Column name \"CNTNTS_DC\" contains uppercase."
+      ]
+    }
+  ],
+  "frontend": []
+}

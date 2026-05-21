@@ -17,29 +17,29 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @IdClass(CommonCodeId.class)
-@Table(name = "TB_COM_DTL_CD")
+@Table(name = "tb_com_dtl_cd")
 @SuperBuilder
 public class CommonCode extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "CD_ID", length = 18)
+    @Column(name = "cd_id", length = 18)
     @NonNull
     private String codeGroupId; // eGovFrame 기준 CODE_ID
 
     @Id
-    @Column(name = "DTL_CD", length = 45)
+    @Column(name = "dtl_cd", length = 45)
     @NonNull
     private String code; // 상세코드
 
-    @Column(name = "DTL_CD_NM", length = 180)
+    @Column(name = "dtl_cd_nm", length = 180)
     @NonNull
     private String codeNm; // 상세코드명
 
-    @Column(name = "DTL_CD_EXPLN", length = 600)
+    @Column(name = "dtl_cd_expln", length = 600)
     private String codeDc; // 상세코드설명
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn; // 사용여부 (Y/N)
 
     public CommonCode(@NonNull String codeGroupId, @NonNull String code, @NonNull String codeNm, String codeDc,

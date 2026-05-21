@@ -19,7 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_PLCY_MANAGE")
+@Table(name = "tb_plcy_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -27,13 +27,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class SystemPolicy extends BaseEntity {
 
     @Id
-    @Column(name = "POLICY_TYPE", length = 30)
+    @Column(name = "policy_type", length = 30)
     private String policyType;
 
-    @Column(name = "TITLE", length = 255, nullable = false)
+    @Column(name = "title", length = 255, nullable = false)
     private String title;
 
-    @Column(name = "POLICY_CN", columnDefinition = "text", nullable = false)
+    @Column(name = "policy_cn", columnDefinition = "text", nullable = false)
     private String content;
 
     public void update(String title, String content) {

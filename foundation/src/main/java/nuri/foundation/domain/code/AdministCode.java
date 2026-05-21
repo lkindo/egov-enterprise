@@ -11,32 +11,32 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "TB_ADMDST_CD")
+@Table(name = "tb_admdst_cd")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class AdministCode extends BaseEntity {
 
     @Id
-    @Column(name = "ADMDST_CD", length = 10)
+    @Column(name = "admdst_cd", length = 10)
     private String administZoneCode;
 
-    @Column(name = "ADMDST_SE", length = 1)
+    @Column(name = "admdst_se", length = 1)
     private String administZoneSe;
 
-    @Column(name = "ADMINIST_ZONE_NM", length = 60)
+    @Column(name = "administ_zone_nm", length = 60)
     private String administZoneNm;
 
-    @Column(name = "UP_ADMDST_CD", length = 10)
+    @Column(name = "up_admdst_cd", length = 10)
     private String upperAdministZoneCode;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    @Column(name = "CRT_YMD", length = 8)
+    @Column(name = "crt_ymd", length = 8)
     private String creatDe;
 
-    @Column(name = "ABL_YMD", length = 8)
+    @Column(name = "abl_ymd", length = 8)
     private String ablDe;
 
     public void update(String administZoneSe, String administZoneNm, String upperAdministZoneCode, 

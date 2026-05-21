@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_USER_NOTI")
+@Table(name = "tb_user_noti")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,29 +21,29 @@ import java.time.LocalDateTime;
 public class Notification extends BaseEntity {
 
     @Id
-    @Column(name = "NOTI_SN", length = 20)
+    @Column(name = "noti_sn", length = 20)
     private String ntfcNo;
 
-    @Column(name = "NOTI_TTL_NM", length = 100)
+    @Column(name = "noti_ttl_nm", length = 100)
     private String ntfcSj;
 
-    @Column(name = "NOTI_CN", length = 4000)
+    @Column(name = "noti_cn", length = 4000)
     private String ntfcCn;
 
-    @Column(name = "RCVR_ID", length = 20)
+    @Column(name = "rcvr_id", length = 20)
     private String receiverId;
 
     @Builder.Default
-    @Column(name = "READ_YN", length = 1)
+    @Column(name = "read_yn", length = 1)
     private String isRead = "N";
 
-    @Column(name = "LINK_URL", length = 1000)
+    @Column(name = "link_url", length = 1000)
     private String linkUrl;
 
-    @Column(name = "NOTI_DT")
+    @Column(name = "noti_dt")
     private LocalDateTime ntfcTime;
 
-    @Column(name = "NOTI_IVL_VAL", length = 100)
+    @Column(name = "noti_ivl_val", length = 100)
     private String bhNtfcIntrvl;
 
     public void markAsRead() {

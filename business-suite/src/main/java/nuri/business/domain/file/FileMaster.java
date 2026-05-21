@@ -17,15 +17,15 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_FILE_MASTER")
+@Table(name = "tb_file_master")
 @SuperBuilder
 public class FileMaster extends BaseEntity {
 
     @Id
-    @Column(name = "ATCH_FILE_ID", length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "USE_AT", nullable = false, length = 1)
+    @Column(name = "use_at", nullable = false, length = 1)
     private String useAt;
 
     @Builder.Default

@@ -2,7 +2,6 @@ package nuri.foundation.api.controller.system.stats;
 
 import nuri.foundation.test.BaseControllerTest;
 import nuri.foundation.service.stats.ReportStatsService;
-import nuri.foundation.service.stats.dto.StatsDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 

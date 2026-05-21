@@ -21,7 +21,7 @@ import java.util.List;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_ONLN_POLL_MANAGE")
+@Table(name = "tb_onln_poll_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -29,26 +29,26 @@ import java.util.List;
 public class OnlinePollManage extends BaseEntity {
 
     @Id
-    @Column(name = "POLL_ID", length = 20)
+    @Column(name = "poll_id", length = 20)
     private String pollId;
 
-    @Column(name = "POLL_NM", length = 300, nullable = false)
+    @Column(name = "poll_nm", length = 300, nullable = false)
     private String pollNm;
 
-    @Column(name = "POLL_BGNG_YMD", length = 8)
+    @Column(name = "poll_bgng_ymd", length = 8)
     private String pollBgngYmd;
 
-    @Column(name = "POLL_END_YMD", length = 8)
+    @Column(name = "poll_end_ymd", length = 8)
     private String pollEndYmd;
 
-    @Column(name = "POLL_KND_CD", length = 30)
+    @Column(name = "poll_knd_cd", length = 30)
     private String pollTypeCd;
 
-    @Column(name = "POLL_DSUSE_YN", length = 1)
+    @Column(name = "poll_dsuse_yn", length = 1)
     @Builder.Default
     private String pollDsuseYn = "N";
 
-    @Column(name = "POLL_ATMC_DSUSE_YN", length = 1)
+    @Column(name = "poll_atmc_dsuse_yn", length = 1)
     @Builder.Default
     private String pollAutoDsuseYn = "N";
 

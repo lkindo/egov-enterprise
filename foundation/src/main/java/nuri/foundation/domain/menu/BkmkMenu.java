@@ -11,7 +11,7 @@ import java.io.Serializable;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "NBKMKMENUMANAGERESULT")
+@Table(name = "nbkmkmenumanageresult")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -20,10 +20,10 @@ public class BkmkMenu extends BaseEntity {
     @EmbeddedId
     private BkmkMenuId id;
 
-    @Column(name = "MENU_NM", length = 60)
+    @Column(name = "menu_nm", length = 60)
     private String menuNm;
 
-    @Column(name = "PROGRM_STRE_PATH", length = 100)
+    @Column(name = "progrm_stre_path", length = 100)
     private String progrmStrePath;
 
     public BkmkMenu(BkmkMenuId id, String menuNm, String progrmStrePath) {
@@ -39,10 +39,10 @@ public class BkmkMenu extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class BkmkMenuId implements Serializable {
-        @Column(name = "MENU_ID")
+        @Column(name = "menu_id")
         private Long menuId;
 
-        @Column(name = "USER_ID", length = 20)
+        @Column(name = "user_id", length = 20)
         private String userId;
     }
 }

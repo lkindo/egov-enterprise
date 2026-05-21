@@ -16,46 +16,46 @@ import lombok.NoArgsConstructor;
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_EVENT_INFO")
+@Table(name = "tb_event_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class EventInfo extends BaseEntity {
 
     @Id
-    @Column(name = "EVNT_ID", length = 20)
+    @Column(name = "evnt_id", length = 20)
     private String eventId;
 
-    @Column(name = "BIZ_YR", length = 4)
+    @Column(name = "biz_yr", length = 4)
     private String bsnsYear;
 
-    @Column(name = "BIZ_CD", length = 20)
+    @Column(name = "biz_cd", length = 20)
     private String bsnsCode;
 
-    @Column(name = "EVNT_CN", length = 2500)
+    @Column(name = "evnt_cn", length = 2500)
     private String eventCn;
 
-    @Column(name = "EVNT_BGNG_YMD", length = 20)
+    @Column(name = "evnt_bgng_ymd", length = 20)
     private String eventSvcBgnde;
 
-    @Column(name = "EVNT_END_YMD", length = 20)
+    @Column(name = "evnt_end_ymd", length = 20)
     private String eventSvcEndde;
 
-    @Column(name = "EVNT_USE_CNT")
+    @Column(name = "evnt_use_cnt")
     private Long svcUseNmprCo;
 
-    @Column(name = "PIC_NM", length = 60)
+    @Column(name = "pic_nm", length = 60)
     private String chargerNm;
 
-    @Column(name = "PREP_MTTR", length = 2500)
+    @Column(name = "prep_mttr", length = 2500)
     private String prparetgCn;
 
-    @Column(name = "EVNT_TYPE_CD", length = 20)
+    @Column(name = "evnt_type_cd", length = 20)
     private String eventTyCode;
 
-    @Column(name = "EVNT_APRV_YN", length = 1)
+    @Column(name = "evnt_aprv_yn", length = 1)
     private String eventConfmAt;
 
-    @Column(name = "EVNT_APRV_YMD", length = 20)
+    @Column(name = "evnt_aprv_ymd", length = 20)
     private String eventConfmDe;
 }

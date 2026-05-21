@@ -20,35 +20,35 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BBS_COMMENT")
+@Table(name = "tb_bbs_comment")
 @SQLRestriction("use_yn = 'Y'")
 public class Comment extends BaseEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answerNoSeq")
     @SequenceGenerator(name = "answerNoSeq", sequenceName = "ANSWER_NO_SEQ", allocationSize = 1)
-    @Column(name = "ANS_SN")
+    @Column(name = "ans_sn")
     private Long ansSn;
 
-    @Column(name = "PST_ID", length = 20)
+    @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(name = "BBS_ID", length = 20)
+    @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "WRTER_ID", length = 20)
+    @Column(name = "wrter_id", length = 20)
     private String writerId;
 
-    @Column(name = "WRTER_NM", length = 20)
+    @Column(name = "wrter_nm", length = 20)
     private String writerNm;
 
-    @Column(name = "PSWD", length = 200)
+    @Column(name = "pswd", length = 200)
     private String password;
 
-    @Column(name = "ANS_CN", columnDefinition = "TEXT")
+    @Column(name = "ans_cn", columnDefinition = "TEXT")
     private String ansCn;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     @Builder.Default
     private String useYn = "Y";
 

@@ -17,27 +17,27 @@ import java.io.Serializable;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "TB_CMNTY_INFO")
+@Table(name = "tb_cmnty_info")
 @SuperBuilder
 public class Community extends BaseEntity implements Serializable {
 
     @Id
-    @Column(name = "CMNTY_ID", length = 20, nullable = false)
+    @Column(name = "cmnty_id", length = 20, nullable = false)
     private String cmntyId;
 
-    @Column(name = "CMNTY_NM", length = 300)
+    @Column(name = "cmnty_nm", length = 300)
     private String cmntyTtl;
 
-    @Column(name = "CMNTY_INTRO_CN", length = 4000)
+    @Column(name = "cmnty_intro_cn", length = 4000)
     private String cmntyIntroCn;
 
-    @Column(name = "REG_SE_CD", length = 12)
+    @Column(name = "reg_se_cd", length = 12)
     private String regTypeCd;
 
-    @Column(name = "TMPLT_ID", length = 20)
+    @Column(name = "tmplt_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 
     public void update(String cmntyTtl, String cmntyIntroCn, String tmplatId, String useYn) {

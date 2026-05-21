@@ -14,24 +14,24 @@ import lombok.Builder;
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity(name = "BoardTemplate")
-@Table(name = "TB_TMPLT_INFO")
+@Table(name = "tb_tmplt_info")
 public class Template extends BaseEntity {
 
     @Id
-    @Column(name = "TMPLAT_ID", length = 20)
+    @Column(name = "tmplat_id", length = 20)
     private String tmplatId;
 
-    @Column(name = "TMPLAT_NM", nullable = false, length = 765)
+    @Column(name = "tmplat_nm", nullable = false, length = 765)
     private String tmplatNm;
 
-    @Column(name = "TMPLAT_COURS", nullable = false, length = 6000)
+    @Column(name = "tmplat_cours", nullable = false, length = 6000)
     private String tmplatCours;
 
-    @Column(name = "USE_YN", nullable = false, length = 1)
+    @Column(name = "use_yn", nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "TMPLAT_SE_CODE", length = 6, nullable = false)
+    @Column(name = "tmplat_se_code", length = 6, nullable = false)
     private String tmplatSeCode;
 
     public void update(String tmplatNm, String tmplatCours, String useYn, String tmplatSeCode) {

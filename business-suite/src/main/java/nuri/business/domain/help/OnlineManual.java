@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 매핑 테이블: TB_ONLN_MNL_INFO
  */
 @Entity
-@Table(name = "TB_ONLN_MNL_INFO")
+@Table(name = "tb_onln_mnl_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -21,19 +21,19 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class OnlineManual extends BaseEntity {
 
     @Id
-    @Column(name = "ONLN_MNL_ID", length = 20)
+    @Column(name = "onln_mnl_id", length = 20)
     private String onlineMnlId;
 
-    @Column(name = "ONLN_MNL_NM", length = 255, nullable = false)
+    @Column(name = "onln_mnl_nm", length = 255, nullable = false)
     private String onlineMnlNm;
 
-    @Column(name = "ONLN_MNL_SE_CD", length = 3, nullable = false)
+    @Column(name = "onln_mnl_se_cd", length = 3, nullable = false)
     private String onlineMnlSeCode;
 
-    @Column(name = "ONLN_MNL_DFN", length = 1000)
+    @Column(name = "onln_mnl_dfn", length = 1000)
     private String onlineMnlDf;
 
-    @Column(name = "ONLN_MNL_EXPLN", columnDefinition = "TEXT")
+    @Column(name = "onln_mnl_expln", columnDefinition = "TEXT")
     private String onlineMnlDc;
 
     public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc) {

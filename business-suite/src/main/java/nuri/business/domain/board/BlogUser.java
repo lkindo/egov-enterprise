@@ -14,7 +14,7 @@ import java.io.Serializable;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_BLOG_USER_MAP")
+@Table(name = "tb_blog_user_map")
 @IdClass(BlogUserId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,26 +22,26 @@ import java.io.Serializable;
 public class BlogUser extends BaseEntity {
 
     @Id
-    @Column(name = "BLOG_ID", length = 20)
+    @Column(name = "blog_id", length = 20)
     private String blogId;
 
     @Id
-    @Column(name = "USER_ID", length = 30)
+    @Column(name = "user_id", length = 30)
     private String userId;
 
-    @Column(name = "MNGR_YN", length = 1)
+    @Column(name = "mngr_yn", length = 1)
     private String mngrYn;
 
-    @Column(name = "JOIN_YMD", length = 8)
+    @Column(name = "join_ymd", length = 8)
     private String joinYmd;
 
-    @Column(name = "WHDWL_YMD", length = 8)
+    @Column(name = "whdwl_ymd", length = 8)
     private String wdrlYmd;
 
-    @Column(name = "MBR_STTS_CD", length = 12)
+    @Column(name = "mbr_stts_cd", length = 12)
     private String mbrSttsCd;
 
-    @Column(name = "USE_YN", length = 1)
+    @Column(name = "use_yn", length = 1)
     private String useYn;
 }
 

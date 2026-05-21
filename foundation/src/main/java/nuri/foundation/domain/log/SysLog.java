@@ -15,44 +15,44 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "TB_SYS_LOG")
+@Table(name = "tb_sys_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class SysLog extends BaseEntity {
 
     @Id
-    @Column(name = "DMND_ID", length = 20)
+    @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "SRVC_NM", length = 255)
+    @Column(name = "srvc_nm", length = 255)
     private String srvcNm;
 
-    @Column(name = "MTHD_NM", length = 100)
+    @Column(name = "mthd_nm", length = 100)
     private String methodNm;
 
-    @Column(name = "PRCS_SE_CD", length = 3)
+    @Column(name = "prcs_se_cd", length = 3)
     private String prcsSeCd;
 
-    @Column(name = "PRCS_TM", length = 14)
+    @Column(name = "prcs_tm", length = 14)
     private String prcsTm;
 
-    @Column(name = "DMND_USER_ID", length = 20)
+    @Column(name = "dmnd_user_id", length = 20)
     private String dmndUserId;
 
-    @Column(name = "DMND_USER_IP_ADDR", length = 30)
+    @Column(name = "dmnd_user_ip_addr", length = 30)
     private String rqesterIp;
 
-    @Column(name = "OCRN_YMD", length = 20)
+    @Column(name = "ocrn_ymd", length = 20)
     private String ocrnYmd;
 
-    @Column(name = "RSPNS_CD", length = 3)
+    @Column(name = "rspns_cd", length = 3)
     private String rspnsCd;
 
-    @Column(name = "ERR_CD", length = 15)
+    @Column(name = "err_cd", length = 15)
     private String errCd;
 
-    @Column(name = "ERR_SE_CD", length = 3)
+    @Column(name = "err_se_cd", length = 3)
     private String errSeCd;
 
     public SysLog(String dmndId, String srvcNm, String methodNm, String prcsSeCd, String prcsTm,

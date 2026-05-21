@@ -15,29 +15,29 @@ import lombok.experimental.SuperBuilder;
  * [Audit] BaseEntity 상속
  */
 @Entity
-@Table(name = "TB_INDV_PG_CONTS")
+@Table(name = "tb_indv_pg_conts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class MyPageContent extends BaseEntity {
 
     @Id
-    @Column(name = "CNTNTS_ID", length = 20)
+    @Column(name = "cntnts_id", length = 20)
     private String cntntsId;
 
-    @Column(name = "CNTNTS_NM", length = 100)
+    @Column(name = "cntnts_nm", length = 100)
     private String cntntsNm;
 
-    @Column(name = "CNTC_URL", length = 255)
+    @Column(name = "cntc_url", length = 255)
     private String cntcUrl;
 
-    @Column(name = "CNTNTS_USE_YN", length = 1)
+    @Column(name = "cntnts_use_yn", length = 1)
     private String cntntsUseAt;
 
-    @Column(name = "CNTNTS_LINK_URL", length = 255)
+    @Column(name = "cntnts_link_url", length = 255)
     private String cntntsLinkUrl;
 
-    @Column(name = "CNTNTS_DC", length = 255)
+    @Column(name = "cntnts_dc", length = 255)
     private String cntntsDc;
 
     public void update(String cntntsNm, String cntcUrl, String cntntsUseAt, String cntntsLinkUrl, String cntntsDc) {

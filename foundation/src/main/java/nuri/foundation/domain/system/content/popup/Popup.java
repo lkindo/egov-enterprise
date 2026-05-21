@@ -16,44 +16,44 @@ import lombok.NoArgsConstructor;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity(name = "PopupDomain")
-@Table(name = "TB_POPUP_INFO")
+@Table(name = "tb_popup_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 public class Popup extends BaseEntity {
 
     @Id
-    @Column(name = "POPUP_ID", length = 20)
+    @Column(name = "popup_id", length = 20)
     private String popupId;
 
-    @Column(name = "POPUP_TTL_NM", length = 1024, nullable = false)
+    @Column(name = "popup_ttl_nm", length = 1024, nullable = false)
     private String popupTitleName;
 
-    @Column(name = "FILE_URL", length = 1024)
+    @Column(name = "file_url", length = 1024)
     private String fileUrl;
 
-    @Column(name = "POPUP_WDTH_PSTN", length = 20)
+    @Column(name = "popup_wdth_pstn", length = 20)
     private String popupWidthLocation;
 
-    @Column(name = "POPUP_VRTC_PSTN", length = 20)
+    @Column(name = "popup_vrtc_pstn", length = 20)
     private String popupHeightLocation;
 
-    @Column(name = "POPUP_VRTC_SZ", length = 20)
+    @Column(name = "popup_vrtc_sz", length = 20)
     private String popupHeightSize;
 
-    @Column(name = "POPUP_WDTH_SZ", length = 20)
+    @Column(name = "popup_wdth_sz", length = 20)
     private String popupWidthSize;
 
-    @Column(name = "NTCE_BGNDE")
+    @Column(name = "ntce_bgnde")
     private LocalDate noticeBeginDate;
 
-    @Column(name = "NTCE_ENDDE")
+    @Column(name = "ntce_endde")
     private LocalDate noticeEndDate;
 
-    @Column(name = "STOPVEW_SETUP_YN", length = 1)
+    @Column(name = "stopvew_setup_yn", length = 1)
     private String isStopView;
 
-    @Column(name = "NTCE_YN", length = 1)
+    @Column(name = "ntce_yn", length = 1)
     private String isNotice;
 
     public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
