@@ -77,41 +77,27 @@ public class Notification extends BaseEntity {
 
     // ----- [Custom Builder Extension for Backwards Compatibility] -----
     public static abstract class NotificationBuilder<C extends Notification, B extends NotificationBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String notiSn;
-        private String notiTtlNm;
-        private String notiCn;
-        private String rcvrId;
-        private String readYn;
-        private LocalDateTime notiDt;
-        private String notiIvlVal;
 
         public B ntfcNo(String ntfcNo) {
-            this.notiSn = ntfcNo;
-            return self();
+            return this.notiSn(ntfcNo);
         }
         public B ntfcSj(String ntfcSj) {
-            this.notiTtlNm = ntfcSj;
-            return self();
+            return this.notiTtlNm(ntfcSj);
         }
         public B ntfcCn(String ntfcCn) {
-            this.notiCn = ntfcCn;
-            return self();
+            return this.notiCn(ntfcCn);
         }
         public B receiverId(String receiverId) {
-            this.rcvrId = receiverId;
-            return self();
+            return this.rcvrId(receiverId);
         }
         public B isRead(String isRead) {
-            this.readYn = isRead;
-            return self();
+            return this.readYn(isRead);
         }
         public B ntfcTime(LocalDateTime ntfcTime) {
-            this.notiDt = ntfcTime;
-            return self();
+            return this.notiDt(ntfcTime);
         }
         public B bhNtfcIntrvl(String bhNtfcIntrvl) {
-            this.notiIvlVal = bhNtfcIntrvl;
-            return self();
+            return this.notiIvlVal(bhNtfcIntrvl);
         }
     }
 }

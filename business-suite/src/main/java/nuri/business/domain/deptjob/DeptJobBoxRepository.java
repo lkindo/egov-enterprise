@@ -14,14 +14,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DeptJobBoxRepository extends JpaRepository<DeptJobBox, String> {
 
-    @Query("SELECT d FROM DeptJobBox d WHERE d.deptId = :deptId ORDER BY d.indictOrdr")
+    @Query("SELECT d FROM DeptJobBox d WHERE d.deptId = :deptId ORDER BY d.sortOrdr")
     Page<DeptJobBox> findByDeptId(@Param("deptId") String deptId, Pageable pageable);
 
-    @Query("SELECT d FROM DeptJobBox d WHERE d.deptId = :deptId ORDER BY d.indictOrdr")
+    @Query("SELECT d FROM DeptJobBox d WHERE d.deptId = :deptId ORDER BY d.sortOrdr")
     List<DeptJobBox> findByDeptId(@Param("deptId") String deptId);
 
     @Query("SELECT d FROM DeptJobBox d WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR d.deptJobbxNm LIKE %:keyword%) " +
-            "ORDER BY d.indictOrdr")
+            "(:keyword IS NULL OR :keyword = '' OR d.deptTaskBoxNm LIKE %:keyword%) " +
+            "ORDER BY d.sortOrdr")
     Page<DeptJobBox> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

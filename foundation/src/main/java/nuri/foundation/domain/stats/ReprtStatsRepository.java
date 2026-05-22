@@ -20,9 +20,9 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
     @Query("""
             SELECT r FROM ReprtStats r
             WHERE (:reprtType IS NULL OR :reprtType = '' OR r.reprtType = :reprtType)
-            AND r.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+            AND r.crtDt BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
                 AND CAST(:toDate AS java.time.LocalDateTime)
-            ORDER BY r.createdDate DESC
+            ORDER BY r.crtDt DESC
             """)
     Page<ReprtStats> findByConditions(
             @Param("reprtType") String reprtType,
@@ -78,7 +78,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
     @Query("""
             SELECT COUNT(r) FROM ReprtStats r
             WHERE (:reprtType IS NULL OR :reprtType = '' OR r.reprtType = :reprtType)
-            AND r.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+            AND r.crtDt BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
                 AND CAST(:toDate AS java.time.LocalDateTime)
             """)
     long countByConditions(
