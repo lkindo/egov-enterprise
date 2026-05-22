@@ -93,7 +93,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
   }, [hasDraft, restoreDraft, toast, pstId, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
-    console.log('>>> [BoardRegistClient] onSubmit called with:', values);
+    // Debug log removed for Zero-Tolerance clean console requirement
     if (!values.pstCn || values.pstCn === '<p></p>') {
       toast('내용을 입력해 주세요.', 'error');
       return;
@@ -116,7 +116,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       }
 
       const result = await saveBoardArticle(null, formData);
-      console.log('>>> [BoardRegistClient] saveBoardArticle result:', result);
+      // Debug log removed for Zero-Tolerance clean console requirement
       
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
@@ -175,7 +175,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log('>>> [BoardRegistClient] Form Validation Errors:', errors))} className="space-y-12 px-4">
+        <form onSubmit={form.handleSubmit(onSubmit, () => {})} className="space-y-12 px-4">
           {/* Title Input Area */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}

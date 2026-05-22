@@ -310,25 +310,28 @@ open build/reports/jacoco/aggregated/html/index.html
 
 본 프로젝트는 단순히 기능의 성공/실패를 넘어, 사용자 경험을 저해하는 미세한 오류를 사전에 차단하기 위해 고도화된 감지 시스템을 운용합니다.
 
-### 1. 전역 브라우저 에러 감시 (Zero-Tolerance)
+### 1. 전역 브라우저 에러 감시 (Zero-Tolerance Console Guard)
 E2E 테스트 실행 중 브라우저 콘솔에 에러가 발생하거나 런타임 예외가 던져지면 테스트 코드가 'Pass' 하더라도 강제로 실패 처리합니다.
 - **설정**: `e2e/fixtures/error-detector.ts` 및 `base-test.ts`
 - **감지 항목**:
     - `console.error()`: 스크립트 실행 중 발생하는 비치명적 오류
-    - `pageerror`: 하이드레이션 오류를 포함한 런타임 예외
+    - `pageerror`: 런타임 예외 및 Uncaught Error
     - `unhandledrejection`: 처리되지 않은 비동기(Promise) 오류
+    - **Hydration Mismatch**: React/Next.js 하이드레이션 불일치 로그가 감지되면 즉시 `🌊 [HYDRATION MISMATCH]` 에러로 강제 실패 처리 (Fail-Fast).
 
-### 2. 네트워크 리소스 무결성 검사 (Network Auditor)
-이미지 404, 깨진 폰트, CSS 로딩 실패 등 정적 리소스 로드 오류를 자동으로 감지합니다.
-- **동작**: `image`, `stylesheet`, `font`, `script` 등 주요 리소스의 응답 상태 코드가 400 이상인 경우 경고 로그 및 필요 시 테스트 실패를 유도합니다.
+### 2. 네트워크 리소스 무결성 검사 (Network Auditor & Silent API 가드)
+이미지 404, 깨진 폰트, CSS 로딩 실패 및 백그라운드 API 호출 오류(Silent API Failure)를 자동으로 감지합니다.
+- **동작**: `response` 리스너를 통해 주요 리소스 및 API의 응답 상태 코드가 400 이상인 경우 E2E 테스트를 즉시 실패시킵니다.
+- **세부 진단 정보**: 오류 발생 시 HTTP Method(`GET`, `POST` 등), 요청 URL, 상태 코드, 리소스 타입을 상세 로그로 출력하여 원인 파악을 극대화합니다.
+- **예외적 허용**: 기능 안정성을 해치지 않기 위해 이미지 로드 오류(`image`) 및 비인가 시나리오가 의도된 특정 인증 API(`isAuthExpected`)는 무시 필터링(Whitelist)을 적용합니다.
 
 ### 3. 정밀 시각 회귀 테스트 (VRT)
 UI 프레임워크나 테마 변경 시 발생하는 미세한 레이아웃 시프트를 감지합니다.
 - **임계값**: `maxDiffPixelRatio` 기준 일반 페이지 **0.2%**, 통계 데이터 페이지 **0.5%** 이하로 제한.
 - **실행**: `npm run test:e2e -- visual-regression.spec.ts`
 
-### 4. 하이드레이션 오류 조기 경보
-Next.js 15의 서버/클라이언트 불일치 문제를 잡기 위해 `StandardErrorBoundary`에서 전역 이벤트를 수신하여 콘솔에 `🌊 [HYDRATION MISMATCH DETECTED]` 로그를 남깁니다.
+### 4. 하이드레이션 오류 조기 경보 및 E2E 연동
+Next.js의 서버/클라이언트 불일치 문제를 신속히 잡기 위해, 클라이언트 컴포넌트의 `StandardErrorBoundary`가 수집한 불일치 정보를 콘솔에 `🌊 [HYDRATION MISMATCH DETECTED]` 플래그로 출력하며, 이는 `ConsoleErrorGuard`에 의해 실시간 가로채어져 E2E 빌드 파이프라인에서 100% 빌드 실패로 직결됩니다.
 
 ---
 

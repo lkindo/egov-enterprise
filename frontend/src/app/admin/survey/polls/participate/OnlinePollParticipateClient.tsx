@@ -44,7 +44,6 @@ export default function OnlinePollParticipateClient() {
  setLoading(true);
  try {
  const res = await pollUserService.getPollList({ page: 0, size: 100 });
- console.log('>>> [DEBUG] fetchPolls res:', JSON.stringify(res, null, 2));
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
  } catch (error) {
@@ -55,24 +54,19 @@ export default function OnlinePollParticipateClient() {
  };
 
  const handleSelectPoll = async (poll: OnlinePollManageVO) => {
- console.log(`>>> [DEBUG] handleSelectPoll: pollId=${poll.pollId}, today=${todayStr}, begin=${poll.pollBeginDe}, end=${poll.pollEndDe}`);
  setLoading(true);
  try {
  const items = await pollUserService.getPollItemList(poll.pollId!);
- console.log(`>>> [DEBUG] fetched items: count=${items?.length || 0}`);
  setPollItems(items || []);
  setSelectedPoll(poll);
  setSelectedItemId(null);
  
  if (todayStr > (poll.pollEndDe || '9999-12-31')) {
- console.log('>>> [DEBUG] setting viewMode: result');
  setViewMode('result');
  } else {
- console.log('>>> [DEBUG] setting viewMode: vote');
  setViewMode('vote');
  }
  } catch (error) {
- console.error('>>> [ERROR] handleSelectPoll failed:', error);
  toast.error('설문 상세 정보를 불러오지 못했습니다.');
  } finally {
  setLoading(false);

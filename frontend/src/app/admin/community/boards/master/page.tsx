@@ -84,10 +84,6 @@ export default function BoardMasterListPage() {
     queryKey: ['boardMasters', searchWrd],
     queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
   });
-
-  if (isError) console.log('>>> [DEBUG] Board List Fetch Error:', error);
-  if (boardData) console.log('>>> [DEBUG] Board List Data count:', boardData.list?.length);
-
   const boardList = (boardData?.list || []) as BoardMaster[];
 
   const handleEdit = (board: BoardMaster) => {

@@ -87,9 +87,7 @@ export function AuthProvider({
         setUser(userData);
 
         // 4. 디버깅 로그 확인
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AuthContext] Login successful, user set to:', userData);
-        }
+        // Removed to ensure zero-tolerance clean console interface
       } else {
         throw new Error('인증 정보가 올바르지 않습니다.');
       }

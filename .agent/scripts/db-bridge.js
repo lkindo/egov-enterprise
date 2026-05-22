@@ -40,6 +40,14 @@ async function run() {
     try {
         await client.connect();
         
+        // Safety session timeouts configuration (3 seconds limit)
+        await client.query("SET statement_timeout = 3000;");
+        await client.query("SET lock_timeout = 3000;");
+        
+        if (!process.env.DB_HOST) {
+            console.warn("⚠️ Warning: DB_HOST not provided in environment variables. Falling back to default sandbox IP: " + config.host);
+        }
+        
         // Support multiple statements
         const isRaw = process.argv.includes('--raw');
         const statements = isRaw ? [query] : query.split(';').map(s => s.trim()).filter(s => s.length > 0);

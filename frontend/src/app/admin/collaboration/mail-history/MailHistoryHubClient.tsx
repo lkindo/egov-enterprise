@@ -60,8 +60,7 @@ export default function MailHistoryHubClient() {
     }),
   });
   const mails = (mailData as any)?.list || [];
-  console.log('[DEBUG] MailHistoryHubClient - mailData:', mailData);
-  console.log('[DEBUG] MailHistoryHubClient - mails:', mails);
+  // Debug logs removed to comply with zero-tolerance clean console requirement
 
   // --- Mutations ---
   const deleteMutation = useMutation({

@@ -83,7 +83,7 @@
 | API 설계 및 문서화 가이드 | `docs/03-guides/api-documentation-guide.md` | 신규 API 생성 및 연동 시 |
 | DB 표준화 이행 지침 | `.agent/knowledge/db-standard-constitution/artifacts/standard_terms.md` | DB 오브젝트 설계 시 |
 
-> **문서 관리 규칙**: 새 문서 생성 시 경로는 `01-product/`(기획), `02-architecture/`(설계), `03-guides/`(개발 지침), `04-operations/`(운영), `archived/`(구버전 보관)로 분류하며, 파일명은 반드시 **`kebab-case.md`** 형식을 준수한다.
+> **문서 관리 규칙**: 새 문서 생성 시 경로는 `01-product/`(기획), `02-architecture/`(설계), `03-guides/`(개발 지침), `04-operations/`(운영), `archived/`(구버전 보관)로 분류하며, 파일명은 반드시 **`kebab-case.md`** 형식을 준수한다. *(단, 글로벌 룰셋의 YYYYMMDD_task_name.md 태스크 기록 양식과의 정합성 및 에이전트 린터 오작동 방지를 위해, 태스크 진행 기록 파일은 **`YYYYMMDD-task-name.md`** 형식의 kebab-case 명명을 전면 허용 및 권장한다.)*
 
 ### 6.1. 안티그래비티 독점 고성능 스킬 (Antigravity Native Skills)
 
@@ -95,7 +95,7 @@
 | **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | DB 제약조건(SSOT) ➔ BE DTO ➔ FE Zod 스키마로 이어지는 **단방향 연쇄 거울 동기화** 및 OpenAPI 타입 명세 일치율 검증으로 Breaking Change 완벽 방어 |
 | **OWASP Security Auditor** | `.agent/skills/owasp-security-auditor/` | 인증(JWT), Spring Security 필터, Next.js Middleware 변경 시 Red Team 관점의 가상 침투 및 취약점 검증 |
 | **Docs-as-Code Sync** | `.agent/skills/docs-as-code-sync/` | 시스템 아키텍처 및 로직 변경 시 관련 마크다운 문서와 Mermaid 다이어그램 자율 갱신 |
-| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — **Mutation Score 85% 이상 강제** (BE 헌법 제16조) |
+| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — **Mutation Score 85% 이상 강제** (BE 헌법 제16조) *(※ 단, 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장함)* |
 | **Zero-Downtime Planner** | `.agent/skills/zero-downtime-migration-planner/` | DB 스키마 변경 시 Expand-and-Contract 패턴 기반의 무중단 마이그레이션 설계 |
 
 ## 7. Database Interaction Rules (via Local Bridge)

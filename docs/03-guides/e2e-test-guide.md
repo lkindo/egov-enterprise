@@ -46,6 +46,43 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 
 ---
 
+## 🛡️ 콘솔 무결성 및 Hydration 결함 탐지 (Console Guard Architecture)
+
+본 프로젝트는 E2E 테스트가 모든 UI 동작을 검증하여 통과하더라도, 백그라운드나 브라우저 콘솔에서 발생하는 미세한 결함을 100% 잡아내기 위해 **Console Guard Architecture**를 핵심 안전 장치로 운영합니다.
+
+### 1. Hydration Mismatch 전역 Fail-Fast 정책
+- **배경**: Next.js의 SSR/RSC 렌더링 결과와 클라이언트 Hydration 결과가 어긋나는 경우, 브라우저가 직접 크래시(Crash)를 내지 않고 콘솔에 Warning/Error 형태의 불일치 로그를 남겨 은밀한 UI 훼손을 초래합니다.
+- **감지 및 차단**: `ConsoleErrorGuard`는 콘솔 출력 스트림을 실시간 감시하며, 아래의 정밀 키워드가 검출될 시 즉시 `🌊 [HYDRATION MISMATCH]` 에러로 가공해 테스트를 즉각 실패(Fail)시킵니다:
+  - `Hydration failed`
+  - `Text content did not match`
+  - `Prop ... did not match`
+  - `Did not expect server HTML`
+  - `error happened outside of a Suspense boundary`
+
+### 2. Silent HTTP API 에러 탐지 (Network Auditor)
+- **원리**: API fetch 실패(400 이상)나 리소스 로딩 오류가 발생하더라도 프론트엔드가 자체 에러 바운더리나 토스트 메시지로 우회하여 E2E 테스트 검증 요소를 통과하는 '무언의 에러(Silent API Failure)' 현상을 방지합니다.
+- **동작**: `response` 리스너를 통해 모든 4xx/5xx 실패를 잡아내어 에러 풀에 적재하고, 실패 시의 HTTP Method, 요청 URL, 리소스 타입을 명시해 빠른 디버깅을 유도합니다.
+
+### 3. 경고 및 콘솔 로그 오류 식별 정책 (Zero-Tolerance Policy)
+- **개념**: 운영 프로덕션 환경의 완전한 청정 상태(Clean State)를 보장하기 위해, 개발자가 소스 코드 상에 실수로 방치해 둔 일반 `console.log` 및 `console.warn` 출력을 잠재적인 오류 결함으로 간주합니다.
+- **동작**:
+  - `console.warn` 감지 시 **`⚠️ [FORBIDDEN CONSOLE WARNING]`** 결함으로 식별하여 즉시 E2E 테스트를 실패 처리합니다.
+  - `console.log`/`console.info` 감지 시(단, Next.js 개발 서버의 Fast Refresh 및 빌드 도구의 내부 시스템 로깅 제외), **`⚠️ [FORBIDDEN CONSOLE LOG]`** 결함으로 간주하여 빌드를 즉시 중단 및 실패 처리합니다.
+
+### 4. 특정 테스트에서 의도된 에러 무시 방법 (Escape Hatch)
+만약 특정 테스트 스펙에서 고의로 에러 콘솔 로그를 유도하거나 테스트 목적상 특정 API 오류를 넘겨야 하는 경우, E2E 스펙 파일에서 `consoleGuard` 인스턴스를 확보하여 예외 패턴을 추가할 수 있습니다:
+```typescript
+test('특정 에러 발생 시나리오 테스트', async ({ page, consoleGuard }) => {
+  // 특정 URL이나 텍스트 패턴을 일시적으로 감지 대상에서 무시 설정
+  consoleGuard.addIgnorePattern(/\/api\/v1\/temporary-error/);
+  
+  // 에러를 유발하는 UI 클릭 액션
+  await page.click('#trigger-error-btn');
+});
+```
+
+---
+
 ## 📊 계층형 테스트 구조 (Tiered Architecture)
 
 본 프로젝트의 22-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~22 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.

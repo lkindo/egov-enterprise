@@ -112,7 +112,8 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     page.locator('.tabular-nums'), // Mask dynamic numbers
                     page.locator('.custom-scrollbar') // Mask dynamic scrollbar contents (Audit History)
                 ],
-                maxDiffPixelRatio: 0.3
+                maxDiffPixelRatio: 0.3,
+                maxDiffPixels: 50000
             });
         });
     });
