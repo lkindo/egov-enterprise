@@ -30,7 +30,7 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
      */
     @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
-        return commonCodeRepository.findByCodeGroupIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
+        return commonCodeRepository.findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -49,10 +49,10 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
 
     private CodeDto convertToDto(CommonCode code) {
         return CodeDto.builder()
-                .codeGroupId(code.getCodeGroupId())
-                .code(code.getCode())
-                .codeNm(code.getCodeNm())
-                .codeDc(code.getCodeDc())
+                .codeGroupId(code.getCdId())
+                .code(code.getDtlCd())
+                .codeNm(code.getDtlCdNm())
+                .codeDc(code.getDtlCdExpln())
                 .useYn(code.getUseYn())
                 .build();
     }

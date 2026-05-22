@@ -7,5 +7,5 @@ import java.util.List;
 @Repository
 public interface CommonCodeGroupRepository
         extends JpaRepository<CommonCodeGroup, String>, CommonCodeGroupRepositoryCustom {
-    List<CommonCodeGroup> findByClCode(String clCode);
+    List<CommonCodeGroup> findByClsfCd(String clsfCd);
 }

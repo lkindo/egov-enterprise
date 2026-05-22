@@ -36,10 +36,10 @@ public record CommonCodeDto(
 
     public static CommonCodeDto from(CommonCode entity) {
         return new CommonCodeDto(
-                entity.getCodeGroupId(),
-                entity.getCode(),
-                entity.getCodeNm(),
-                entity.getCodeDc(),
+                entity.getCdId(),
+                entity.getDtlCd(),
+                entity.getDtlCdNm(),
+                entity.getDtlCdExpln(),
                 entity.getUseYn());
     }
 }

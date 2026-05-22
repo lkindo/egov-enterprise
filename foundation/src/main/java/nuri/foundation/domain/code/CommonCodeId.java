@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class CommonCodeId implements Serializable {
-    private String codeGroupId;
-    private String code;
+    private String cdId;
+    private String dtlCd;
 }

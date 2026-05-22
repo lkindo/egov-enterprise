@@ -43,7 +43,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
             if ("0".equals(condition.getSearchCnd())) {
                 builder.and(boardMaster.bbsTtl.contains(condition.getSearchWrd()));
             } else if ("1".equals(condition.getSearchCnd())) {
-                builder.and(commonCodeTy.codeNm.contains(condition.getSearchWrd()));
+                builder.and(commonCodeTy.dtlCdNm.contains(condition.getSearchWrd()));
             }
         }
 
@@ -62,18 +62,18 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         JPAQuery<BoardMasterSearchResult> query = queryFactory.select(Projections.fields(BoardMasterSearchResult.class,
                 boardMaster.bbsId,
                 boardMaster.bbsTypeCd,
-                commonCodeTy.codeNm.as("bbsTypeCdNm"),
+                commonCodeTy.dtlCdNm.as("bbsTypeCdNm"),
                 boardMaster.bbsAtrbCd,
-                commonCodeAttr.codeNm.as("bbsAtrbCdNm"),
+                commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
                 boardMaster.tmplatId,
                 boardMaster.useYn,
                 boardMaster.createdDate))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
-                .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")));
+                .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")));
 
         if (StringUtils.hasText(condition.getTrgtId())) {
             query.join(boardUse).on(boardMaster.bbsId.eq(boardUse.bbsId));
@@ -89,7 +89,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         Long totalResult = queryFactory.select(Wildcard.count)
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .where(builder)
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;
@@ -105,10 +105,10 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         BoardMasterDetailResult result = queryFactory.select(Projections.fields(BoardMasterDetailResult.class,
                 boardMaster.bbsId,
                 boardMaster.bbsTypeCd,
-                commonCodeTy.codeNm.as("bbsTypeCdNm"),
+                commonCodeTy.dtlCdNm.as("bbsTypeCdNm"),
                 boardMaster.bbsExpln,
                 boardMaster.bbsAtrbCd,
-                commonCodeAttr.codeNm.as("bbsAtrbCdNm"),
+                commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
                 boardMaster.tmplatId,
                 template.tmplatNm,
@@ -122,9 +122,9 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.createdDate))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.code).and(commonCodeTy.codeGroupId.eq("COM004")))
+                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
-                .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.code).and(commonCodeAttr.codeGroupId.eq("COM009")))
+                .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")))
                 .leftJoin(template).on(boardMaster.tmplatId.eq(template.tmplatId))
                 .where(boardMaster.bbsId.eq(bbsId))
                 .fetchOne();

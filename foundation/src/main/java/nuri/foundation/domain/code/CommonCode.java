@@ -25,38 +25,38 @@ public class CommonCode extends BaseEntity implements Serializable {
     @Id
     @Column(name = "cd_id", length = 20)
     @NonNull
-    private String codeGroupId; // eGovFrame 기준 CODE_ID
+    private String cdId; // eGovFrame 기준 CODE_ID -> cdId로 표준화
 
     @Id
     @Column(name = "dtl_cd", length = 12)
     @NonNull
-    private String code; // 상세코드
+    private String dtlCd; // 상세코드 -> dtlCd로 표준화
 
     @Column(name = "dtl_cd_nm", length = 100)
     @NonNull
-    private String codeNm; // 상세코드명
+    private String dtlCdNm; // 상세코드명 -> dtlCdNm으로 표준화
 
     @Column(name = "dtl_cd_expln", length = 4000)
-    private String codeDc; // 상세코드설명
+    private String dtlCdExpln; // 상세코드설명 -> dtlCdExpln으로 표준화
 
     @Column(name = "use_yn", length = 1)
     private String useYn; // 사용여부 (Y/N)
 
-    public CommonCode(@NonNull String codeGroupId, @NonNull String code, @NonNull String codeNm, String codeDc,
+    public CommonCode(@NonNull String cdId, @NonNull String dtlCd, @NonNull String dtlCdNm, String dtlCdExpln,
             String useYn,
             String frstRegisterId) {
-        this.codeGroupId = Objects.requireNonNull(codeGroupId);
-        this.code = Objects.requireNonNull(code);
-        this.codeNm = Objects.requireNonNull(codeNm);
-        this.codeDc = codeDc;
+        this.cdId = Objects.requireNonNull(cdId);
+        this.dtlCd = Objects.requireNonNull(dtlCd);
+        this.dtlCdNm = Objects.requireNonNull(dtlCdNm);
+        this.dtlCdExpln = dtlCdExpln;
         this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(@NonNull String codeNm, String codeDc, String useYn, String lastUpdusrId) {
-        this.codeNm = Objects.requireNonNull(codeNm);
-        this.codeDc = codeDc;
+    public void update(@NonNull String dtlCdNm, String dtlCdExpln, String useYn, String lastUpdusrId) {
+        this.dtlCdNm = Objects.requireNonNull(dtlCdNm);
+        this.dtlCdExpln = dtlCdExpln;
         this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }

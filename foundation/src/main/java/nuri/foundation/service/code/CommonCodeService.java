@@ -51,7 +51,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         @Cacheable(value = "commonCodes", key = "#codeGroupId")
         public List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId) {
                 return commonCodeRepository
-                                .findByCodeGroupIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
+                                .findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
                                 .stream()
                                 .map(CommonCodeDto::from)
                                 .collect(Collectors.toList());
@@ -74,10 +74,10 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 }
 
                 CommonCode code = CommonCode.builder()
-                                .codeGroupId(required(request.codeGroupId(), "request.codeGroupId() 는 null 일 수 없습니다"))
-                                .code(required(request.code(), "request.code() 는 null 일 수 없습니다"))
-                                .codeNm(required(request.codeNm(), "request.codeNm() 는 null 일 수 없습니다"))
-                                .codeDc(request.codeDc())
+                                .cdId(required(request.codeGroupId(), "request.codeGroupId() 는 null 일 수 없습니다"))
+                                .dtlCd(required(request.code(), "request.code() 는 null 일 수 없습니다"))
+                                .dtlCdNm(required(request.codeNm(), "request.codeNm() 는 null 일 수 없습니다"))
+                                .dtlCdExpln(request.codeDc())
                                 .useYn(request.useYn())
                                 .build();
 
@@ -122,9 +122,9 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                         throw new BusinessException(ErrorCode.DUPLICATE_CODE);
                 }
                 CommonCodeCategory entity = CommonCodeCategory.builder()
-                                .clCode(required(dto.getClCode(), "dto.getClCode() 는 null 일 수 없습니다"))
-                                .clCodeNm(required(dto.getClCodeNm(), "dto.getClCodeNm() 는 null 일 수 없습니다"))
-                                .clCodeDc(dto.getClCodeDc())
+                                .clsfCd(required(dto.getClCode(), "dto.getClCode() 는 null 일 수 없습니다"))
+                                .clsfCdNm(required(dto.getClCodeNm(), "dto.getClCodeNm() 는 null 일 수 없습니다"))
+                                .clsfCdExpln(dto.getClCodeDc())
                                 .useYn(dto.getUseYn())
                                 .createdBy(dto.getFrstRegisterId())
                                 .build();
@@ -156,9 +156,9 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
 
         private CmmnClCodeDto toDto(CommonCodeCategory entity) {
                 return CmmnClCodeDto.builder()
-                                .clCode(entity.getClCode())
-                                .clCodeNm(entity.getClCodeNm())
-                                .clCodeDc(entity.getClCodeDc())
+                                .clCode(entity.getClsfCd())
+                                .clCodeNm(entity.getClsfCdNm())
+                                .clCodeDc(entity.getClsfCdExpln())
                                 .useYn(entity.getUseYn())
                                 .frstRegisterId(entity.getFrstRegisterId())
                                 .lastUpdusrId(entity.getLastUpdusrId())
@@ -204,10 +204,10 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                         throw new BusinessException(ErrorCode.DUPLICATE_CODE);
                 }
                 CommonCodeGroup entity = CommonCodeGroup.builder()
-                                .codeId(required(dto.getCodeId(), "dto.getCodeId() 는 null 일 수 없습니다"))
-                                .codeIdNm(required(dto.getCodeIdNm(), "dto.getCodeIdNm() 는 null 일 수 없습니다"))
-                                .codeIdDc(dto.getCodeIdDc())
-                                .clCode(required(dto.getClCode(), "dto.getClCode() 는 null 일 수 없습니다"))
+                                .cdId(required(dto.getCodeId(), "dto.getCodeId() 는 null 일 수 없습니다"))
+                                .cdIdNm(required(dto.getCodeIdNm(), "dto.getCodeIdNm() 는 null 일 수 없습니다"))
+                                .cdIdExpln(dto.getCodeIdDc())
+                                .clsfCd(required(dto.getClCode(), "dto.getClCode() 는 null 일 수 없습니다"))
                                 .useYn(dto.getUseYn())
                                 .createdBy(dto.getFrstRegisterId())
                                 .build();
@@ -250,13 +250,13 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
 
         private CmmnCodeDto toDto(CommonCodeGroup entity) {
                 String clCodeNm = commonCodeCategoryRepository
-                                .findById(required(entity.getClCode(), "entity.getClCode() 는 null 일 수 없습니다"))
-                                .map(CommonCodeCategory::getClCodeNm).orElse("");
+                                .findById(required(entity.getClsfCd(), "entity.getClsfCd() 는 null 일 수 없습니다"))
+                                .map(CommonCodeCategory::getClsfCdNm).orElse("");
                 return CmmnCodeDto.builder()
-                                .codeId(entity.getCodeId())
-                                .codeIdNm(entity.getCodeIdNm())
-                                .codeIdDc(entity.getCodeIdDc())
-                                .clCode(entity.getClCode())
+                                .codeId(entity.getCdId())
+                                .codeIdNm(entity.getCdIdNm())
+                                .codeIdDc(entity.getCdIdExpln())
+                                .clCode(entity.getClsfCd())
                                 .clCodeNm(clCodeNm)
                                 .useYn(entity.getUseYn())
                                 .frstRegisterId(entity.getFrstRegisterId())
@@ -310,10 +310,10 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                         throw new BusinessException(ErrorCode.DUPLICATE_CODE);
                 }
                 CommonCode entity = CommonCode.builder()
-                                .codeGroupId(required(dto.getCodeId(), "dto.getCodeId() 는 null 일 수 없습니다"))
-                                .code(required(dto.getCode(), "dto.getCode() 는 null 일 수 없습니다"))
-                                .codeNm(required(dto.getCodeNm(), "dto.getCodeNm() 는 null 일 수 없습니다"))
-                                .codeDc(dto.getCodeDc())
+                                .cdId(required(dto.getCodeId(), "dto.getCodeId() 는 null 일 수 없습니다"))
+                                .dtlCd(required(dto.getCode(), "dto.getCode() 는 null 일 수 없습니다"))
+                                .dtlCdNm(required(dto.getCodeNm(), "dto.getCodeNm() 는 null 일 수 없습니다"))
+                                .dtlCdExpln(dto.getCodeDc())
                                 .useYn(dto.getUseYn())
                                 .createdBy(dto.getFrstRegisterId())
                                 .build();
@@ -364,15 +364,15 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         }
 
         private CmmnDetailCodeDto toDto(CommonCode entity) {
-                String codeGroupIdNm = commonCodeGroupRepository.findById(entity.getCodeGroupId())
-                                .map(CommonCodeGroup::getCodeIdNm).orElse("");
-
+                String codeGroupIdNm = commonCodeGroupRepository.findById(entity.getCdId())
+                                .map(CommonCodeGroup::getCdIdNm).orElse("");
+ 
                 return CmmnDetailCodeDto.builder()
-                                .codeId(entity.getCodeGroupId())
+                                .codeId(entity.getCdId())
                                 .codeIdNm(codeGroupIdNm)
-                                .code(entity.getCode())
-                                .codeNm(entity.getCodeNm())
-                                .codeDc(entity.getCodeDc())
+                                .code(entity.getDtlCd())
+                                .codeNm(entity.getDtlCdNm())
+                                .codeDc(entity.getDtlCdExpln())
                                 .useYn(entity.getUseYn())
                                 .frstRegisterId(entity.getFrstRegisterId())
                                 .lastUpdusrId(entity.getLastUpdusrId())

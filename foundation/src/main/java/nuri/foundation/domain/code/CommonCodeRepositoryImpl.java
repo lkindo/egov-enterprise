@@ -24,14 +24,14 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
             @NonNull Pageable pageable) {
         List<CommonCodeDetailProjection> content = queryFactory
                 .select(Projections.constructor(CommonCodeDetailProjection.class,
-                        commonCode.codeGroupId,
-                        commonCodeGroup.codeIdNm,
-                        commonCode.code,
-                        commonCode.codeNm,
-                        commonCode.codeDc,
+                        commonCode.cdId,
+                        commonCodeGroup.cdIdNm,
+                        commonCode.dtlCd,
+                        commonCode.dtlCdNm,
+                        commonCode.dtlCdExpln,
                         commonCode.useYn))
                 .from(commonCode)
-                .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
+                .join(commonCodeGroup).on(commonCode.cdId.eq(commonCodeGroup.cdId))
                 .where(
                         commonCodeGroup.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
@@ -42,7 +42,7 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
         long total = queryFactory
                 .select(commonCode.count())
                 .from(commonCode)
-                .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
+                .join(commonCodeGroup).on(commonCode.cdId.eq(commonCodeGroup.cdId))
                 .where(
                         commonCodeGroup.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
@@ -57,11 +57,11 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
         }
 
         if ("1".equals(searchCondition)) {
-            return commonCode.codeGroupId.contains(searchKeyword);
+            return commonCode.cdId.contains(searchKeyword);
         } else if ("2".equals(searchCondition)) {
-            return commonCode.code.contains(searchKeyword);
+            return commonCode.dtlCd.contains(searchKeyword);
         } else if ("3".equals(searchCondition)) {
-            return commonCode.codeNm.contains(searchKeyword);
+            return commonCode.dtlCdNm.contains(searchKeyword);
         }
 
         return null;

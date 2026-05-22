@@ -27,13 +27,13 @@ public class RoleInfoRepositoryImpl implements RoleInfoRepositoryCustom {
                                                 roleInfo.rolePatrn,
                                                 roleInfo.roleExpln,
                                                 roleInfo.roleTypeCd,
-                                                commonCode.codeNm.as("roleTyNm"),
+                                                commonCode.dtlCdNm.as("roleTyNm"),
                                                 roleInfo.roleSort,
                                                 roleInfo.creatDt))
                                 .from(roleInfo)
                                 .leftJoin(commonCode).on(
-                                                commonCode.codeGroupId.eq("COM029")
-                                                                .and(commonCode.code.eq(roleInfo.roleTypeCd)))
+                                                commonCode.cdId.eq("COM029")
+                                                                .and(commonCode.dtlCd.eq(roleInfo.roleTypeCd)))
                                 .where(roleNmLike(searchKeyword))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())

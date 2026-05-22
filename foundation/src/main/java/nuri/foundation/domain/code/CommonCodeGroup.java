@@ -24,36 +24,36 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     @Id
     @Column(name = "cd_id", length = 20)
     @NonNull
-    private String codeId;
+    private String cdId;
 
     @Column(name = "cd_id_nm", length = 100)
     @NonNull
-    private String codeIdNm;
+    private String cdIdNm;
 
     @Column(name = "cd_id_expln", length = 4000)
-    private String codeIdDc;
+    private String cdIdExpln;
 
     @Column(name = "clsf_cd", length = 12)
-    private String clCode;
+    private String clsfCd;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    public CommonCodeGroup(@NonNull String codeId, @NonNull String codeIdNm, String codeIdDc, String clCode,
+    public CommonCodeGroup(@NonNull String cdId, @NonNull String cdIdNm, String cdIdExpln, String clsfCd,
             String useYn,
             String frstRegisterId) {
-        this.codeId = Objects.requireNonNull(codeId);
-        this.codeIdNm = Objects.requireNonNull(codeIdNm);
-        this.codeIdDc = codeIdDc;
-        this.clCode = clCode;
+        this.cdId = Objects.requireNonNull(cdId);
+        this.cdIdNm = Objects.requireNonNull(cdIdNm);
+        this.cdIdExpln = cdIdExpln;
+        this.clsfCd = clsfCd;
         this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(@NonNull String codeIdNm, String codeIdDc, String useYn, String lastUpdusrId) {
-        this.codeIdNm = Objects.requireNonNull(codeIdNm);
-        this.codeIdDc = codeIdDc;
+    public void update(@NonNull String cdIdNm, String cdIdExpln, String useYn, String lastUpdusrId) {
+        this.cdIdNm = Objects.requireNonNull(cdIdNm);
+        this.cdIdExpln = cdIdExpln;
         this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }

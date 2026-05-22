@@ -30,8 +30,8 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
 
         List<SysLog> content = queryFactory
                 .selectFrom(QSysLog.sysLog)
-                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.code)
-                        .and(commonCode.codeGroupId.eq("COM033")))
+                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.dtlCd)
+                        .and(commonCode.cdId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
@@ -43,8 +43,8 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         JPAQuery<Long> countQuery = queryFactory
                 .select(QSysLog.sysLog.count())
                 .from(QSysLog.sysLog)
-                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.code)
-                        .and(commonCode.codeGroupId.eq("COM033")))
+                .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.dtlCd)
+                        .and(commonCode.cdId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
@@ -64,7 +64,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
     }
 
     private BooleanExpression processSeCodeNmLike(String searchWrd, QCommonCode commonCode) {
-        return StringUtils.hasText(searchWrd) ? commonCode.codeNm.contains(searchWrd) : null;
+        return StringUtils.hasText(searchWrd) ? commonCode.dtlCdNm.contains(searchWrd) : null;
     }
 
     private BooleanExpression occrrncDeBetween(String searchBgnDe, String searchEndDe) {

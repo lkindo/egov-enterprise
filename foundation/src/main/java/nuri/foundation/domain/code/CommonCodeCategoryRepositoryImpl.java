@@ -43,9 +43,9 @@ public class CommonCodeCategoryRepositoryImpl implements CommonCodeCategoryRepos
         }
 
         if ("1".equals(searchCondition)) {
-            return commonCodeCategory.clCode.contains(searchKeyword);
+            return commonCodeCategory.clsfCd.contains(searchKeyword);
         } else if ("2".equals(searchCondition)) {
-            return commonCodeCategory.clCodeNm.contains(searchKeyword);
+            return commonCodeCategory.clsfCdNm.contains(searchKeyword);
         }
 
         return null;

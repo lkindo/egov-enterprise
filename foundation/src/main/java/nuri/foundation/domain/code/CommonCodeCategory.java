@@ -19,29 +19,29 @@ public class CommonCodeCategory extends BaseEntity {
 
     @Id
     @Column(name = "clsf_cd", length = 12)
-    private String clCode;
+    private String clsfCd;
 
     @Column(name = "clsf_cd_nm", length = 100)
-    private String clCodeNm;
+    private String clsfCdNm;
 
     @Column(name = "clsf_cd_expln", length = 4000)
-    private String clCodeDc;
+    private String clsfCdExpln;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    public CommonCodeCategory(String clCode, String clCodeNm, String clCodeDc, String useYn, String frstRegisterId) {
-        this.clCode = clCode;
-        this.clCodeNm = clCodeNm;
-        this.clCodeDc = clCodeDc;
+    public CommonCodeCategory(String clsfCd, String clsfCdNm, String clsfCdExpln, String useYn, String frstRegisterId) {
+        this.clsfCd = clsfCd;
+        this.clsfCdNm = clsfCdNm;
+        this.clsfCdExpln = clsfCdExpln;
         this.useYn = useYn == null ? "Y" : useYn;
         this.createdBy = frstRegisterId;
         this.lastModifiedBy = frstRegisterId;
     }
 
-    public void update(String clCodeNm, String clCodeDc, String useYn, String lastUpdusrId) {
-        this.clCodeNm = clCodeNm;
-        this.clCodeDc = clCodeDc;
+    public void update(String clsfCdNm, String clsfCdExpln, String useYn, String lastUpdusrId) {
+        this.clsfCdNm = clsfCdNm;
+        this.clsfCdExpln = clsfCdExpln;
         this.useYn = useYn;
         this.lastModifiedBy = lastUpdusrId;
     }

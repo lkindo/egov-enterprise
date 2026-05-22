@@ -87,9 +87,9 @@ class BoardMasterRepositoryTest {
         boardMasterRepository.save(master);
 
         CommonCode code = CommonCode.builder()
-                .code("BBST01")
-                .codeGroupId("COM004")
-                .codeNm("General Board")
+                .dtlCd("BBST01")
+                .cdId("COM004")
+                .dtlCdNm("General Board")
                 .useYn("Y")
                 .build();
         commonCodeRepository.save(code);
