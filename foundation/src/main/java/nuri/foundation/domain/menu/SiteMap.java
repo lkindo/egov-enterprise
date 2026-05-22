@@ -23,21 +23,22 @@ public class SiteMap extends BaseEntity {
 
     @Id
     @Column(name = "mpng_crt_id", length = 20)
-    private String mapCreatId;
+    private String mpngCrtId;
 
     @Column(name = "crtr_id", length = 20)
-    private String creatPersonId;
+    private String crtrId;
 
     @Column(name = "mpng_file_nm", length = 100)
-    private String bndeFileNm;
+    private String mpngFileNm;
 
     @Column(name = "mpng_file_path", length = 1000)
-    private String bndeFilePath;
+    private String mpngFilePath;
 
-    public SiteMap(String mapCreatId, String creatPersonId, String bndeFileNm, String bndeFilePath) {
-        this.mapCreatId = mapCreatId;
-        this.creatPersonId = creatPersonId;
-        this.bndeFileNm = bndeFileNm;
-        this.bndeFilePath = bndeFilePath;
+    public SiteMap(String mpngCrtId, String crtrId, String mpngFileNm, String mpngFilePath) {
+        this.mpngCrtId = mpngCrtId;
+        this.crtrId = crtrId;
+        this.mpngFileNm = mpngFileNm;
+        this.mpngFilePath = mpngFilePath;
     }
 }
+

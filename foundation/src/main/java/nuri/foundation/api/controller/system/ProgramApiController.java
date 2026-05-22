@@ -51,7 +51,7 @@ public class ProgramApiController {
     @PutMapping("/{progrmFileNm}")
     public ResponseEntity<ApiResponse<Void>> updateProgram(@PathVariable String progrmFileNm,
             @RequestBody ProgramDto dto) throws Exception {
-        dto.setProgrmFileNm(progrmFileNm);
+        dto.setPrgrmFileNm(progrmFileNm);
         programService.updateProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -60,7 +60,7 @@ public class ProgramApiController {
     @DeleteMapping("/{progrmFileNm}")
     public ResponseEntity<ApiResponse<Void>> deleteProgram(@PathVariable String progrmFileNm) throws Exception {
         ProgramDto dto = new ProgramDto();
-        dto.setProgrmFileNm(progrmFileNm);
+        dto.setPrgrmFileNm(progrmFileNm);
         programService.deleteProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

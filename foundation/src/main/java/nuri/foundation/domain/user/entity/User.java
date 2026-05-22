@@ -1,5 +1,6 @@
 package nuri.foundation.domain.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,183 +29,224 @@ public class User extends BaseEntity implements Serializable {
     @Id
     @Column(name = "esntl_id", length = 20)
     @NonNull
+    @JsonProperty("esntlId")
     private String esntlId;
 
     @Column(name = "user_id", nullable = false, length = 20, unique = true)
     @NonNull
+    @JsonProperty("userId")
     private String userId;
 
     @Builder.Default
     @Column(name = "user_type_cd", nullable = false, length = 10)
-    private String userType = "EMP";
+    @JsonProperty("userType")
+    private String userTypeCd = "EMP";
 
     @Column(name = "user_nm", nullable = false, length = 100)
     @NonNull
+    @JsonProperty("userNm")
     private String userNm;
 
     @Column(name = "pswd", nullable = false, length = 300)
     @NonNull
+    @JsonProperty("pswd")
     private String pswd;
 
     @Column(name = "pswd_hint", length = 300)
+    @JsonProperty("pswdHint")
     private String pswdHint;
 
     @Column(name = "pswd_cnsr", length = 300)
-    private String pswdCrans;
+    @JsonProperty("passwordCnsr")
+    private String pswdCnsr;
 
     @Column(name = "chg_pswd_last_dt")
-    private LocalDateTime passwordUpdateDate;
+    @JsonProperty("passwordUpdateDate")
+    private LocalDateTime chgPswdLastDt;
 
     @Column(name = "chg_pwd_cnt")
-    private Integer changePasswordCount;
+    @JsonProperty("changePasswordCount")
+    private Integer chgPwdCnt;
 
     @Builder.Default
     @Column(name = "lck_yn", length = 1)
+    @JsonProperty("lckYn")
     private String lckYn = "N";
 
     @Column(name = "lck_cnt")
-    private Integer lockCount;
+    @JsonProperty("lockCount")
+    private Integer lckCnt;
 
     @Column(name = "lck_last_pnttm")
-    private LocalDateTime lockLastDate;
+    @JsonProperty("lockLastDate")
+    private LocalDateTime lckLastPnttm;
 
     @Column(name = "otp_secret", length = 32)
+    @JsonProperty("otpSecret")
     private String otpSecret;
 
     @Column(name = "crtfc_dn_value", length = 100)
-    private String subDn;
+    @JsonProperty("subDn")
+    private String crtfcDnValue;
 
     // ■ 개인 정보
     @Column(name = "rrno", length = 256)
-    private String ihidnum;
+    @JsonProperty("ihidnum")
+    private String rrno;
 
     @Column(name = "gndr_cd", length = 30)
+    @JsonProperty("gndrCd")
     private String gndrCd;
 
     @Column(name = "brth_ymd", length = 8)
+    @JsonProperty("brthYmd")
     private String brthYmd;
 
     @Column(name = "eml_addr", length = 50)
+    @JsonProperty("emlAddr")
     private String emlAddr;
 
     @Column(name = "mbl_telno", length = 20)
+    @JsonProperty("mblTelno")
     private String mblTelno;
 
     // ■ 주소 정보
     @Column(name = "zip", length = 5)
+    @JsonProperty("zip")
     private String zip;
 
     @Column(name = "base_addr", length = 300)
-    private String homeAddr;
+    @JsonProperty("homeAddr")
+    private String baseAddr;
 
     @Column(name = "dtl_addr", length = 300)
-    private String daddr;
+    @JsonProperty("daddr")
+    private String dtlAddr;
 
     @Column(name = "area_no", length = 4)
+    @JsonProperty("areaNo")
     private String areaNo;
 
     @Column(name = "middle_telno", length = 4)
-    private String homemiddleTelno;
+    @JsonProperty("homemiddleTelno")
+    private String middleTelno;
 
     @Column(name = "end_telno", length = 4)
-    private String homeendTelno;
+    @JsonProperty("homeendTelno")
+    private String endTelno;
 
     @Column(name = "fax_no", length = 30)
+    @JsonProperty("faxNo")
     private String faxNo;
 
     @Column(name = "office_telno", length = 20)
+    @JsonProperty("officeTelno")
     private String officeTelno;
 
     // ■ 조직 및 권한
     @Column(name = "group_id", length = 30)
+    @JsonProperty("groupId")
     private String groupId;
 
     @Column(name = "ognz_id", length = 20)
-    private String orgnztId;
+    @JsonProperty("orgnztId")
+    private String ognzId;
 
     @Column(name = "pstinst_cd", length = 30)
-    private String insttCode;
+    @JsonProperty("insttCode")
+    private String pstinstCd;
 
     @Column(name = "empl_no", length = 20)
+    @JsonProperty("emplNo")
     private String emplNo;
 
     @Column(name = "ofcps_nm", length = 300)
+    @JsonProperty("ofcpsNm")
     private String ofcpsNm;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "role", length = 50)
+    @JsonProperty("role")
     private Role role = Role.USER;
 
     // ■ 기업 전용 (nullable)
     @Column(name = "bizr_no", length = 10)
-    private String bizrno;
+    @JsonProperty("bizrno")
+    private String bizrNo;
 
     @Column(name = "jurir_no", length = 13)
-    private String jurirno;
+    @JsonProperty("jurirno")
+    private String jurirNo;
 
     @Column(name = "cmpny_nm", length = 300)
+    @JsonProperty("cmpnyNm")
     private String cmpnyNm;
 
     @Column(name = "rprsv_nm", length = 100)
-    private String cxfc;
+    @JsonProperty("cxfc")
+    private String rprsvNm;
 
     @Column(name = "induty_cd", length = 30)
-    private String indutyCode;
+    @JsonProperty("indutyCode")
+    private String indutyCd;
 
     @Column(name = "ent_se_cd", length = 12)
-    private String entrprsSeCode;
+    @JsonProperty("entrprsSeCode")
+    private String entSeCd;
 
     // ■ 상태 및 감사
     @Builder.Default
     @Column(name = "user_stts_cd", length = 30)
+    @JsonProperty("userSttsCd")
     private String userSttsCd = "P";
 
     @Column(name = "sbscrb_ymd", updatable = false, length = 8)
+    @JsonProperty("sbscrbYmd")
     private String sbscrbYmd;
 
-    public void update(String userNm, String pswdHint, String pswdCrans,
-            String emplNo, String ihidnum, String gndrCd, String brthYmd,
-            String areaNo, String homemiddleTelno, String homeendTelno,
-            String faxNo, String homeAddr, String daddr, String zip,
+    public void update(String userNm, String pswdHint, String pswdCnsr,
+            String emplNo, String rrno, String gndrCd, String brthYmd,
+            String areaNo, String middleTelno, String endTelno,
+            String faxNo, String baseAddr, String dtlAddr, String zip,
             String officeTelno, String mblTelno, String emlAddr, String ofcpsNm,
-            String groupId, String orgnztId, String insttCode, Role role, String subDn) {
+            String groupId, String ognzId, String pstinstCd, Role role, String crtfcDnValue) {
         if (userNm != null)
             this.userNm = userNm;
         this.pswdHint = pswdHint;
-        this.pswdCrans = pswdCrans;
+        this.pswdCnsr = pswdCnsr;
         this.emplNo = emplNo;
-        this.ihidnum = ihidnum;
+        this.rrno = rrno;
         this.gndrCd = gndrCd;
         this.brthYmd = brthYmd;
         this.areaNo = areaNo;
-        this.homemiddleTelno = homemiddleTelno;
-        this.homeendTelno = homeendTelno;
+        this.middleTelno = middleTelno;
+        this.endTelno = endTelno;
         this.faxNo = faxNo;
-        this.homeAddr = homeAddr;
-        this.daddr = daddr;
+        this.baseAddr = baseAddr;
+        this.dtlAddr = dtlAddr;
         this.zip = zip;
         this.officeTelno = officeTelno;
         this.mblTelno = mblTelno;
         this.emlAddr = emlAddr;
         this.ofcpsNm = ofcpsNm;
         this.groupId = groupId;
-        this.orgnztId = orgnztId;
-        this.insttCode = insttCode;
+        this.ognzId = ognzId;
+        this.pstinstCd = pstinstCd;
         if (role != null)
             this.role = role;
-        this.subDn = subDn;
+        this.crtfcDnValue = crtfcDnValue;
     }
 
     public void updatePassword(String pswd) {
         this.pswd = Objects.requireNonNull(pswd);
-        this.passwordUpdateDate = LocalDateTime.now();
+        this.chgPswdLastDt = LocalDateTime.now();
     }
 
     public void unlock() {
         this.lckYn = "N";
-        this.lockCount = 0;
-        this.lockLastDate = null;
+        this.lckCnt = 0;
+        this.lckLastPnttm = null;
     }
 
     public void setAuthorCode(String authorCode) {
@@ -229,10 +271,10 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void incrementLockCount() {
-        if (this.lockCount == null) {
-            this.lockCount = 1;
+        if (this.lckCnt == null) {
+            this.lckCnt = 1;
         } else {
-            this.lockCount++;
+            this.lckCnt++;
         }
     }
 
@@ -240,35 +282,67 @@ public class User extends BaseEntity implements Serializable {
         this.userSttsCd = status;
     }
 
-    public void updateOrgnztId(String orgnztId) {
-        this.orgnztId = orgnztId;
+    public void updateOrgnztId(String ognzId) {
+        this.ognzId = ognzId;
     }
 
-    // ----- [Legacy Aliases] -----
+    // ----- [Legacy Aliases for Backwards Compatibility] -----
+    public String getUserType() { return userTypeCd; }
+    public void setUserType(String v) { this.userTypeCd = v; }
     public String getPassword() { return pswd; }
-    public String getPasswordHint() { return pswdHint; }
-    public String getPasswordCnsr() { return pswdCrans; }
-    public String getHomeadres() { return homeAddr; }
-    public String getDetailAdres() { return daddr; }
-    public String getMoblphonNo() { return mblTelno; }
-    public String getEmailAdres() { return emlAddr; }
-    public String getOffmTelno() { return officeTelno; }
-    public String getSexdstnCode() { return gndrCd; }
-    public String getBrth() { return brthYmd; }
-    public String getFxnum() { return faxNo; }
-    public String getLockAt() { return lckYn; }
-    public String getStatusCode() { return userSttsCd; }
-    
     public void setPassword(String v) { this.pswd = v; }
+    public String getPasswordHint() { return pswdHint; }
     public void setPasswordHint(String v) { this.pswdHint = v; }
-    public void setPasswordCnsr(String v) { this.pswdCrans = v; }
-    public void setHomeadres(String v) { this.homeAddr = v; }
-    public void setDetailAdres(String v) { this.daddr = v; }
-    public void setMoblphonNo(String v) { this.mblTelno = v; }
-    public void setEmailAdres(String v) { this.emlAddr = v; }
-    public void setOffmTelno(String v) { this.officeTelno = v; }
-    public void setSexdstnCode(String v) { this.gndrCd = v; }
-    public void setBrth(String v) { this.brthYmd = v; }
-    public void setFxnum(String v) { this.faxNo = v; }
+    public String getPasswordCnsr() { return pswdCnsr; }
+    public void setPasswordCnsr(String v) { this.pswdCnsr = v; }
+    public String getPswdCrans() { return pswdCnsr; }
+    public void setPswdCrans(String v) { this.pswdCnsr = v; }
+    public LocalDateTime getPasswordUpdateDate() { return chgPswdLastDt; }
+    public void setPasswordUpdateDate(LocalDateTime v) { this.chgPswdLastDt = v; }
+    public Integer getChangePasswordCount() { return chgPwdCnt; }
+    public void setChangePasswordCount(Integer v) { this.chgPwdCnt = v; }
+    public String getLockAt() { return lckYn; }
     public void setLockAt(String v) { this.lckYn = v; }
+    public Integer getLockCount() { return lckCnt; }
+    public void setLockCount(Integer v) { this.lckCnt = v; }
+    public LocalDateTime getLockLastDate() { return lckLastPnttm; }
+    public void setLockLastDate(LocalDateTime v) { this.lckLastPnttm = v; }
+    public String getSubDn() { return crtfcDnValue; }
+    public void setSubDn(String v) { this.crtfcDnValue = v; }
+    public String getIhidnum() { return rrno; }
+    public void setIhidnum(String v) { this.rrno = v; }
+    public String getHomeadres() { return baseAddr; }
+    public void setHomeadres(String v) { this.baseAddr = v; }
+    public String getDetailAdres() { return dtlAddr; }
+    public void setDetailAdres(String v) { this.dtlAddr = v; }
+    public String getHomeAddr() { return baseAddr; }
+    public void setHomeAddr(String v) { this.baseAddr = v; }
+    public String getDaddr() { return dtlAddr; }
+    public void setDaddr(String v) { this.dtlAddr = v; }
+    public String getHomemiddleTelno() { return middleTelno; }
+    public void setHomemiddleTelno(String v) { this.middleTelno = v; }
+    public String getHomeendTelno() { return endTelno; }
+    public void setHomeendTelno(String v) { this.endTelno = v; }
+    public String getOrgnztId() { return ognzId; }
+    public void setOrgnztId(String v) { this.ognzId = v; }
+    public String getInsttCode() { return pstinstCd; }
+    public void setInsttCode(String v) { this.pstinstCd = v; }
+    public String getBizrno() { return bizrNo; }
+    public void setBizrno(String v) { this.bizrNo = v; }
+    public String getJurirno() { return jurirNo; }
+    public void setJurirno(String v) { this.jurirNo = v; }
+    public String getCxfc() { return rprsvNm; }
+    public void setCxfc(String v) { this.rprsvNm = v; }
+    public String getIndutyCode() { return indutyCd; }
+    public void setIndutyCode(String v) { this.indutyCd = v; }
+    public String getEntrprsSeCode() { return entSeCd; }
+    public void setEntrprsSeCode(String v) { this.entSeCd = v; }
+    public String getStatusCode() { return userSttsCd; }
+    public void setStatusCode(String v) { this.userSttsCd = v; }
+    public String getSexdstnCode() { return gndrCd; }
+    public void setSexdstnCode(String v) { this.gndrCd = v; }
+    public String getBrth() { return brthYmd; }
+    public void setBrth(String v) { this.brthYmd = v; }
+    public String getFxnum() { return faxNo; }
+    public void setFxnum(String v) { this.faxNo = v; }
 }

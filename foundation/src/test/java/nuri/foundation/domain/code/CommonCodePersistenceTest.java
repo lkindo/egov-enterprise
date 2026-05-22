@@ -29,8 +29,8 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void searchCommonCodeCategories() {
         // given
         categoryRepository.save(CommonCodeCategory.builder()
-                .clCode("C01")
-                .clCodeNm("테스트 분류")
+                .clsfCd("C01")
+                .clsfCdNm("테스트 분류")
                 .useYn("Y")
                 .build());
 
@@ -46,15 +46,15 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void searchCommonCodeGroups() {
         // given
         categoryRepository.save(CommonCodeCategory.builder()
-                .clCode("C02")
-                .clCodeNm("테스트 분류2")
+                .clsfCd("C02")
+                .clsfCdNm("테스트 분류2")
                 .useYn("Y")
                 .build());
 
         groupRepository.save(CommonCodeGroup.builder()
-                .codeId("G01")
-                .codeIdNm("테스트 그룹")
-                .clCode("C02")
+                .cdId("G01")
+                .cdIdNm("테스트 그룹")
+                .clsfCd("C02")
                 .useYn("Y")
                 .build());
 
@@ -70,16 +70,16 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void searchCommonCodeDetails() {
         // given
         groupRepository.save(CommonCodeGroup.builder()
-                .codeId("G02")
-                .codeIdNm("테스트 그룹2")
-                .clCode("C03")
+                .cdId("G02")
+                .cdIdNm("테스트 그룹2")
+                .clsfCd("C03")
                 .useYn("Y")
                 .build());
 
         codeRepository.save(CommonCode.builder()
-                .codeGroupId("G02")
-                .code("CODE01")
-                .codeNm("테스트 코드")
+                .cdId("G02")
+                .dtlCd("CODE01")
+                .dtlCdNm("테스트 코드")
                 .useYn("Y")
                 .build());
 
@@ -95,8 +95,8 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void categoryCrud() {
         // given
         CommonCodeCategory category = CommonCodeCategory.builder()
-                .clCode("C99")
-                .clCodeNm("CRUD 테스트")
+                .clsfCd("C99")
+                .clsfCdNm("CRUD 테스트")
                 .build();
 
         // when: Save
@@ -106,7 +106,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
 
         // then: Find
         CommonCodeCategory saved = categoryRepository.findById("C99").orElseThrow();
-        assertThat(saved.getClCodeNm()).isEqualTo("CRUD 테스트");
+        assertThat(saved.getClsfCdNm()).isEqualTo("CRUD 테스트");
 
         // when: Update
         saved.update("수정된 이름", "설명", "Y", "ADMIN");
@@ -116,7 +116,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
 
         // then: Verify Update
         CommonCodeCategory updated = categoryRepository.findById("C99").orElseThrow();
-        assertThat(updated.getClCodeNm()).isEqualTo("수정된 이름");
+        assertThat(updated.getClsfCdNm()).isEqualTo("수정된 이름");
     }
 
     @Test
@@ -124,9 +124,9 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void groupCrud() {
         // given
         CommonCodeGroup group = CommonCodeGroup.builder()
-                .codeId("GRP99")
-                .codeIdNm("그룹 테스트")
-                .clCode("C01")
+                .cdId("GRP99")
+                .cdIdNm("그룹 테스트")
+                .clsfCd("C01")
                 .build();
 
         // when: Save
@@ -136,7 +136,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
 
         // then: Find
         CommonCodeGroup saved = groupRepository.findById("GRP99").orElseThrow();
-        assertThat(saved.getCodeIdNm()).isEqualTo("그룹 테스트");
+        assertThat(saved.getCdIdNm()).isEqualTo("그룹 테스트");
 
         // when: Update
         saved.update("수정된 그룹", "설명", "Y", "ADMIN");
@@ -146,7 +146,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
 
         // then: Verify Update
         CommonCodeGroup updated = groupRepository.findById("GRP99").orElseThrow();
-        assertThat(updated.getCodeIdNm()).isEqualTo("수정된 그룹");
+        assertThat(updated.getCdIdNm()).isEqualTo("수정된 그룹");
     }
 
     @Test
@@ -154,9 +154,9 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
     void codeCrud() {
         // given
         CommonCode code = CommonCode.builder()
-                .codeGroupId("G01")
-                .code("DET99")
-                .codeNm("상세 테스트")
+                .cdId("G01")
+                .dtlCd("DET99")
+                .dtlCdNm("상세 테스트")
                 .build();
 
         // when: Save
@@ -167,7 +167,7 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
         // then: Find
         CommonCodeId id = new CommonCodeId("G01", "DET99");
         CommonCode saved = codeRepository.findById(id).orElseThrow();
-        assertThat(saved.getCodeNm()).isEqualTo("상세 테스트");
+        assertThat(saved.getDtlCdNm()).isEqualTo("상세 테스트");
 
         // when: Update
         saved.update("수정된 상세", "설명", "Y", "ADMIN");
@@ -177,6 +177,6 @@ class CommonCodePersistenceTest extends PersistenceTestSupport {
 
         // then: Verify Update
         CommonCode updated = codeRepository.findById(id).orElseThrow();
-        assertThat(updated.getCodeNm()).isEqualTo("수정된 상세");
+        assertThat(updated.getDtlCdNm()).isEqualTo("수정된 상세");
     }
 }

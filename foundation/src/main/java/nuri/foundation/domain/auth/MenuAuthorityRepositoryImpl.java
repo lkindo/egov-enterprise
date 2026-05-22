@@ -28,7 +28,7 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
                                 .select(Projections.bean(MenuAuthorityProjection.class,
                                                 menu.id.as("menuSn"),
                                                 menu.menuNm.as("menuNm"),
-                                                menu.upperMenuSn.as("upperMenuSn"),
+                                                menu.upMenuSn.as("upperMenuSn"),
                                                 Expressions.asString(authrtCd).as("authrtCd"),
                                                 new CaseBuilder()
                                                                 .when(menuAuthority.id.authrtCd.isNotNull()).then("Y")

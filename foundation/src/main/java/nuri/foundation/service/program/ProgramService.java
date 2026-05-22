@@ -31,7 +31,7 @@ public class ProgramService {
      */
     public List<ProgramDto> selectProgrmList(BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
-                Sort.by("progrmFileNm").ascending());
+                Sort.by("prgrmFileNm").ascending());
         String keyword = searchVO.getSearchKeyword();
 
         Page<Program> page;
@@ -68,8 +68,8 @@ public class ProgramService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
     }
 
-    public ProgramDto selectProgrmById(String progrmFileNm) {
-        return programRepository.findById(Objects.requireNonNull(progrmFileNm))
+    public ProgramDto selectProgrmById(String prgrmFileNm) {
+        return programRepository.findById(Objects.requireNonNull(prgrmFileNm))
                 .map(this::toDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
     }
@@ -81,11 +81,11 @@ public class ProgramService {
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void insertProgrm(ProgramDto dto) {
         Program program = Program.builder()
-                .progrmFileNm(dto.getProgrmFileNm())
-                .progrmStrePath(dto.getProgrmStrePath())
-                .progrmKoreanNm(dto.getProgrmKoreanNm())
+                .prgrmFileNm(dto.getPrgrmFileNm())
+                .prgrmStrgPath(dto.getPrgrmStrgPath())
+                .prgrmKornNm(dto.getPrgrmKornNm())
                 .url(dto.getUrl())
-                .progrmDc(dto.getProgrmDc())
+                .prgrmExpln(dto.getPrgrmExpln())
                 .build();
         programRepository.save(Objects.requireNonNull(program));
     }
@@ -96,9 +96,9 @@ public class ProgramService {
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void updateProgrm(ProgramDto dto) {
-        Program program = programRepository.findById(Objects.requireNonNull(dto.getProgrmFileNm()))
+        Program program = programRepository.findById(Objects.requireNonNull(dto.getPrgrmFileNm()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-        program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
+        program.update(dto.getPrgrmStrgPath(), dto.getPrgrmKornNm(), dto.getUrl(), dto.getPrgrmExpln());
     }
 
     /**
@@ -107,7 +107,7 @@ public class ProgramService {
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
-        programRepository.deleteById(Objects.requireNonNull(dto.getProgrmFileNm()));
+        programRepository.deleteById(Objects.requireNonNull(dto.getPrgrmFileNm()));
     }
 
     /**
@@ -124,11 +124,11 @@ public class ProgramService {
 
     private ProgramDto toDto(Program entity) {
         return ProgramDto.builder()
-                .progrmFileNm(entity.getProgrmFileNm())
-                .progrmStrePath(entity.getProgrmStrePath())
-                .progrmKoreanNm(entity.getProgrmKoreanNm())
+                .prgrmFileNm(entity.getPrgrmFileNm())
+                .prgrmStrgPath(entity.getPrgrmStrgPath())
+                .prgrmKornNm(entity.getPrgrmKornNm())
                 .url(entity.getUrl())
-                .progrmDc(entity.getProgrmDc())
+                .prgrmExpln(entity.getPrgrmExpln())
                 .build();
     }
 }

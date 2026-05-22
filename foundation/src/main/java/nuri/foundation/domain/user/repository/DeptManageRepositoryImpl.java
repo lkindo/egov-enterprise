@@ -27,7 +27,7 @@ public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
                 .where(keywordContains(keyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(deptManage.orgnztNm.asc())
+                .orderBy(deptManage.ognzNm.asc())
                 .fetch();
 
         long total = queryFactory
@@ -40,6 +40,6 @@ public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
     }
 
     private BooleanExpression keywordContains(String keyword) {
-        return StringUtils.hasText(keyword) ? deptManage.orgnztNm.containsIgnoreCase(keyword) : null;
+        return StringUtils.hasText(keyword) ? deptManage.ognzNm.containsIgnoreCase(keyword) : null;
     }
 }

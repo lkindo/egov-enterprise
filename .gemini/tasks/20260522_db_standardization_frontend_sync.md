@@ -15,6 +15,7 @@ JPA 엔티티 필드명을 DB 물리 명명 백백 표준 규격에 맞게 리�
   - [x] `frontend` 디렉토리로 이동하여 `npm run codegen:file` 실행 완료
   - [x] `generated-api.d.ts` 타입 갱신 및 Git Diff 확인 완료 (DTO 바인딩 직렬화 변수명 보존에 따른 Breaking Change 0건 달성)
   - [x] Next.js 타입 검증(`npm run type-check`)을 수행하여 정적 타입 에러 '0'건 통과 증명
-- [/] **[Step 4] 종합 검증 및 E2E 테스트 확인**
-  - [/] Next.js 프론트엔드 전체 프로덕션 빌드 (`npm run build`) 구동 검증 중
-  - [ ] E2E Playwright 테스트 최종 동작 확인
+- [x] **[Step 4] 종합 검증 및 E2E 테스트 확인**
+  - [x] Next.js 프론트엔드 전체 프로덕션 빌드 (`npm run build`) 구동 검증 100% 성공 완료
+  - [x] E2E Playwright 테스트 최종 동작 확인 (`10 passed` 통과 증명)
+

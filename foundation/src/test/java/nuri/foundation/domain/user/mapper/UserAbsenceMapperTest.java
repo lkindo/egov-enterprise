@@ -18,7 +18,7 @@ class UserAbsenceMapperTest {
         // given
         UserAbsence entity = UserAbsence.builder()
                 .userId("user01")
-                .userAbsnceAt("Y")
+                .userAbsnYn("Y")
                 .build();
 
         // when

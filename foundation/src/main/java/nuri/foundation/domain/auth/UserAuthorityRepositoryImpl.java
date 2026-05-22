@@ -62,8 +62,8 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
     public Page<DeptAuthorProjection> searchDeptAuthors(String deptCode, Pageable pageable) {
         var query = queryFactory
                 .select(Projections.bean(DeptAuthorProjection.class,
-                        deptManage.orgnztId.as("deptCode"),
-                        deptManage.orgnztNm.as("deptNm"),
+                        deptManage.ognzId.as("deptCode"),
+                        deptManage.ognzNm.as("deptNm"),
                         user.userId.as("userId"),
                         user.userNm.as("userNm"),
                         userAuthority.authrtId.as("authrtId"),
@@ -72,9 +72,9 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                                 .when(userAuthority.scrtyDcsnTrgtId.isNotNull()).then("Y")
                                 .otherwise("N").as("regYn")))
                 .from(deptManage)
-                .join(user).on(deptManage.orgnztId.eq(user.orgnztId))
+                .join(user).on(deptManage.ognzId.eq(user.ognzId))
                 .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId))
-                .where(deptManage.orgnztId.eq(deptCode))
+                .where(deptManage.ognzId.eq(deptCode))
                 .orderBy(user.userId.asc());
 
         if (pageable.isPaged()) {
@@ -85,8 +85,8 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
         Long totalResult = queryFactory
                 .select(user.count())
                 .from(deptManage)
-                .join(user).on(deptManage.orgnztId.eq(user.orgnztId))
-                .where(deptManage.orgnztId.eq(deptCode))
+                .join(user).on(deptManage.ognzId.eq(user.ognzId))
+                .where(deptManage.ognzId.eq(deptCode))
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;
 

@@ -17,7 +17,7 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     Optional<User> findByEsntlId(String esntlId);
     Optional<User> findByUserId(String userId);
 
-    Optional<User> findBySubDn(String subDn);
+    Optional<User> findByCrtfcDnValue(String crtfcDnValue);
 
     Optional<User> findByUserNmAndEmlAddr(String userNm, String emlAddr);
 
@@ -48,11 +48,11 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     List<User> findByEmlAddrContaining(String emlAddr);
 
-    List<User> findByOrgnztId(String orgnztId);
+    List<User> findByOgnzId(String ognzId);
 
     List<User> findByRole(Role role);
 
-    List<User> findByOrgnztIdAndRole(String orgnztId, Role role);
+    List<User> findByOgnzIdAndRole(String ognzId, Role role);
 
     List<User> findByUserNmContainingOrEmlAddrContaining(String userNm, String emlAddr);
 }

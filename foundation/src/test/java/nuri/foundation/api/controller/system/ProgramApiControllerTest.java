@@ -63,8 +63,8 @@ class ProgramApiControllerTest {
     void testGetProgram() throws Exception {
         // Given
         ProgramDto dto = new ProgramDto();
-        dto.setProgrmFileNm("PROG_01");
-        dto.setProgrmKoreanNm("프로그램01");
+        dto.setPrgrmFileNm("PROG_01");
+        dto.setPrgrmKornNm("프로그램01");
         when(programService.selectProgrmById("PROG_01")).thenReturn(dto);
 
         // When & Then
@@ -78,8 +78,8 @@ class ProgramApiControllerTest {
     void testCreateProgram() throws Exception {
         // Given
         ProgramDto dto = new ProgramDto();
-        dto.setProgrmFileNm("PROG_NEW");
-        dto.setProgrmKoreanNm("신규 프로그램");
+        dto.setPrgrmFileNm("PROG_NEW");
+        dto.setPrgrmKornNm("신규 프로그램");
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/programs")

@@ -35,9 +35,9 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     @Transactional
     public void insertDeptManage(DeptManageDto dto) {
         DeptManage entity = DeptManage.builder()
-                .orgnztId(dto.getOrgnztId())
-                .orgnztNm(dto.getOrgnztNm())
-                .orgnztDc(dto.getOrgnztDc())
+                .ognzId(dto.getOrgnztId())
+                .ognzNm(dto.getOrgnztNm())
+                .ognzExpln(dto.getOrgnztDc())
                 .build();
         deptManageRepository.save(Objects.requireNonNull(entity));
     }

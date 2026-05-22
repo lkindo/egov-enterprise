@@ -45,16 +45,16 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                                  menu.id.as("menuNo"),
                                                  menu.menuOrdr.as("menuOrdr"),
                                                  menu.menuNm.as("menuNm"),
-                                                 menu.upperMenuSn.as("upperMenuId"),
+                                                 menu.upMenuSn.as("upperMenuId"),
                                                  menu.menuExpln.as("menuDc"),
-                                                 menu.relateImagePath.as("relateImagePath"),
-                                                 menu.relateImageNm.as("relateImageNm"),
-                                                 menu.progrmFileNm.as("progrmFileNm"),
+                                                 menu.relImgPath.as("relateImagePath"),
+                                                 menu.relImgNm.as("relateImageNm"),
+                                                 menu.prgrmFileNm.as("progrmFileNm"),
                                                  program.url.as("chkURL")))
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuSn.eq(menu.id))
-                                .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))
-                                .where(menu.upperMenuSn.eq(0L)
+                                .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
+                                .where(menu.upMenuSn.eq(0L)
                                                 .and(menuAuthority.id.authrtCd.eq(
                                                                 queryFactory.select(userAuthority.authrtId)
                                                                                 .from(userAuthority)
@@ -71,13 +71,13 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                                  menu.id.as("menuNo"),
                                                  menu.menuOrdr.as("menuOrdr"),
                                                  menu.menuNm.as("menuNm"),
-                                                 menu.upperMenuSn.as("upperMenuId"),
-                                                 menu.relateImagePath.as("relateImagePath"),
-                                                 menu.relateImageNm.as("relateImageNm"),
+                                                 menu.upMenuSn.as("upperMenuId"),
+                                                 menu.relImgPath.as("relateImagePath"),
+                                                 menu.relImgNm.as("relateImageNm"),
                                                  program.url.as("chkURL")))
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuSn.eq(menu.id))
-                                .leftJoin(program).on(menu.progrmFileNm.eq(program.progrmFileNm))
+                                .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
                                 .where(menuAuthority.id.authrtCd.eq(
                                                 queryFactory.select(userAuthority.authrtId)
                                                                 .from(userAuthority)
@@ -85,6 +85,7 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
         }
+
 
         private com.querydsl.core.types.dsl.BooleanExpression menuNmLike(String searchKeyword) {
                 return StringUtils.hasText(searchKeyword) ? menu.menuNm.contains(searchKeyword) : null;

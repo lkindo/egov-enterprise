@@ -37,7 +37,7 @@ class DeptManageServiceTest {
     @DisplayName("부서 목록 조회 테스트")
     void getDeptManageListTest() {
         Page<DeptManage> page = new PageImpl<>(List.of(
-                DeptManage.builder().orgnztId("DEPT1").orgnztNm("부서1").build()
+                DeptManage.builder().ognzId("DEPT1").ognzNm("부서1").build()
         ));
         given(deptManageRepository.searchDeptManages(anyString(), any(Pageable.class))).willReturn(page);
 
@@ -50,7 +50,7 @@ class DeptManageServiceTest {
     @Test
     @DisplayName("부서 상세 조회 테스트 - 성공")
     void getDeptManageSuccessTest() {
-        DeptManage entity = DeptManage.builder().orgnztId("DEPT1").orgnztNm("부서1").build();
+        DeptManage entity = DeptManage.builder().ognzId("DEPT1").ognzNm("부서1").build();
         given(deptManageRepository.findById("DEPT1")).willReturn(Optional.of(entity));
 
         DeptManageDto result = deptManageService.getDeptManage("DEPT1");

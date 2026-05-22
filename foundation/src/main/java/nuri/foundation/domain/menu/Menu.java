@@ -29,10 +29,10 @@ public class Menu extends BaseEntity {
     private String menuNm;
 
     @Column(name = "prgrm_file_nm", length = 100)
-    private String progrmFileNm;
+    private String prgrmFileNm;
 
     @Column(name = "up_menu_sn")
-    private Long upperMenuSn;
+    private Long upMenuSn;
 
     @Column(name = "menu_ordr", nullable = false)
     private Integer menuOrdr;
@@ -41,10 +41,10 @@ public class Menu extends BaseEntity {
     private String menuExpln;
 
     @Column(name = "rel_img_path", length = 100)
-    private String relateImagePath;
+    private String relImgPath;
 
     @Column(name = "rel_img_nm", length = 100)
-    private String relateImageNm;
+    private String relImgNm;
 
     /**
      * 현대적 Next.js 라우트 (예: /admin/system/menus)
@@ -58,15 +58,15 @@ public class Menu extends BaseEntity {
     /**
      * 메뉴 정보 수정
      */
-    public void update(String menuNm, String progrmFileNm, Long upperMenuSn, Integer menuOrdr, String menuExpln,
-                       String relateImagePath, String relateImageNm) {
+    public void update(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr, String menuExpln,
+                       String relImgPath, String relImgNm) {
         this.menuNm = menuNm;
-        this.progrmFileNm = progrmFileNm;
-        this.upperMenuSn = upperMenuSn;
+        this.prgrmFileNm = prgrmFileNm;
+        this.upMenuSn = upMenuSn;
         this.menuOrdr = menuOrdr;
         this.menuExpln = menuExpln;
-        this.relateImagePath = relateImagePath;
-        this.relateImageNm = relateImageNm;
+        this.relImgPath = relImgPath;
+        this.relImgNm = relImgNm;
     }
 
     /**
@@ -79,9 +79,10 @@ public class Menu extends BaseEntity {
     /**
      * 메뉴 정보 수정 (modern_route 포함)
      */
-    public void updateWithModernRoute(String menuNm, String progrmFileNm, Long upperMenuSn, Integer menuOrdr,
-                                       String menuExpln, String relateImagePath, String relateImageNm, String modernRoute) {
-        this.update(menuNm, progrmFileNm, upperMenuSn, menuOrdr, menuExpln, relateImagePath, relateImageNm);
+    public void updateWithModernRoute(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+                                       String menuExpln, String relImgPath, String relImgNm, String modernRoute) {
+        this.update(menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm);
         this.modernRoute = modernRoute;
     }
 }
+

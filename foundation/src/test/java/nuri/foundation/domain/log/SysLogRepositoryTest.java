@@ -32,9 +32,9 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
     void searchSysLogs() {
         // given
         CommonCode code = CommonCode.builder()
-                .codeGroupId("COM033")
-                .code("C")
-                .codeNm("생성")
+                .cdId("COM033")
+                .dtlCd("C")
+                .dtlCdNm("생성")
                 .useYn("Y")
                 .build();
         commonCodeRepository.save(code);

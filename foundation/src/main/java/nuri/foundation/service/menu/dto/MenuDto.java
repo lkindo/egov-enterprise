@@ -1,5 +1,6 @@
 package nuri.foundation.service.menu.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -23,11 +24,13 @@ public class MenuDto {
     @Schema(description = "메뉴 명칭", example = "시스템관리")
     private String menuNm;
 
+    @JsonProperty("progrmFileNm")
     @Schema(description = "프로그램 파일 명칭", example = "EgovMain")
-    private String progrmFileNm;
+    private String prgrmFileNm;
 
+    @JsonProperty("upperMenuSn")
     @Schema(description = "상위 메뉴 번호", example = "0")
-    private Long upperMenuSn;
+    private Long upMenuSn;
 
     @Schema(description = "상위 메뉴 ID", example = "0")
     private Long upperMenuId;
@@ -41,17 +44,20 @@ public class MenuDto {
     @Schema(description = "메뉴 설명", example = "시스템 전반을 관리하는 최상위 메뉴")
     private String menuExpln;
 
+    @JsonProperty("relateImagePath")
     @Schema(description = "관련 이미지 경로", example = "/images/menu/")
-    private String relateImagePath;
+    private String relImgPath;
 
+    @JsonProperty("relateImageNm")
     @Schema(description = "관련 이미지 명칭", example = "icon_system.png")
-    private String relateImageNm;
+    private String relImgNm;
 
     @Schema(description = "현대화된 라우트 경로 (Next.js)", example = "/admin/system")
     private String modernRoute;
 
+    @JsonProperty("creatPersonId")
     @Schema(description = "생성자 ID", example = "admin")
-    private String creatPersonId;
+    private String crtrId;
 
     @Builder.Default
     @Schema(description = "하위 메뉴 목록")
@@ -61,4 +67,5 @@ public class MenuDto {
         this.children.add(child);
     }
 }
+
 

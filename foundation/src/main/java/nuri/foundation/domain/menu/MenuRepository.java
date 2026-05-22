@@ -10,20 +10,20 @@ import java.util.Optional;
 
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
-    List<Menu> findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
+    List<Menu> findAllByOrderByUpMenuSnAscMenuOrdrAsc();
 
-    List<Menu> findByUpperMenuSnOrderByMenuOrdrAsc(Long upperMenuSn);
+    List<Menu> findByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
 
-    Optional<Menu> findFirstByUpperMenuSnOrderByMenuOrdrAsc(Long upperMenuSn);
+    Optional<Menu> findFirstByUpMenuSnOrderByMenuOrdrAsc(Long upMenuSn);
 
-    Optional<Menu> findByProgrmFileNm(String progrmFileNm);
+    Optional<Menu> findByPrgrmFileNm(String prgrmFileNm);
 
-    @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.progrmFileNm LIKE %:searchKeyword%")
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.prgrmFileNm LIKE %:searchKeyword%")
     org.springframework.data.domain.Page<Menu> searchByKeyword(
             @org.springframework.data.repository.query.Param("searchKeyword") String searchKeyword,
             org.springframework.data.domain.Pageable pageable);
 
-    int countByUpperMenuSn(Long upperMenuSn);
+    int countByUpMenuSn(Long upMenuSn);
 
     /**
      * modern_route 가 설정되지 않은 메뉴 조회
@@ -51,10 +51,10 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
     int bulkUpdateModernRoute(@Param("menuIds") List<Long> menuIds, @Param("modernRoute") String modernRoute);
 
     /**
-     * progrm_file_nm 패턴으로 modern_route 일괄 업데이트
+     * prgrm_file_nm 패턴으로 modern_route 일괄 업데이트
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.progrmFileNm LIKE :pattern")
+    @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.prgrmFileNm LIKE :pattern")
     int bulkUpdateModernRouteByPattern(@Param("pattern") String pattern, @Param("modernRoute") String modernRoute);
 
     /**
@@ -64,7 +64,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
                 SELECT m, ma
                 FROM Menu m
                 LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuSn
-                ORDER BY m.upperMenuSn ASC, m.menuOrdr ASC
+                ORDER BY m.upMenuSn ASC, m.menuOrdr ASC
             """)
     List<Object[]> findAllWithAuthorities();
 
@@ -74,8 +74,9 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
     @Query("""
                 SELECT m, p
                 FROM Menu m
-                LEFT JOIN Program p ON m.progrmFileNm = p.progrmFileNm
-                ORDER BY m.upperMenuSn ASC, m.menuOrdr ASC
+                LEFT JOIN Program p ON m.prgrmFileNm = p.prgrmFileNm
+                ORDER BY m.upMenuSn ASC, m.menuOrdr ASC
             """)
     List<Object[]> findAllWithPrograms();
 }
+

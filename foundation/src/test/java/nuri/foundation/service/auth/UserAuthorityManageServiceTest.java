@@ -107,7 +107,7 @@ class UserAuthorityManageServiceTest {
         
         User user = mock(User.class);
         given(user.getEsntlId()).willReturn("USER1");
-        given(userRepository.findByOrgnztId("DEPT1")).willReturn(List.of(user));
+        given(userRepository.findByOgnzId("DEPT1")).willReturn(List.of(user));
         given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
 
         userAuthorityManageService.saveDeptAuthorities(request);

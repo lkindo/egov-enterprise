@@ -42,21 +42,21 @@ class CodeServiceTest {
         // given
         String codeGroupId = "COM001";
         CommonCode code1 = CommonCode.builder()
-                .codeGroupId(codeGroupId)
-                .code("C01")
-                .codeNm("코드1")
-                .codeDc("코드1 설명")
+                .cdId(codeGroupId)
+                .dtlCd("C01")
+                .dtlCdNm("코드1")
+                .dtlCdExpln("코드1 설명")
                 .useYn("Y")
                 .build();
         CommonCode code2 = CommonCode.builder()
-                .codeGroupId(codeGroupId)
-                .code("C02")
-                .codeNm("코드2")
-                .codeDc("코드2 설명")
+                .cdId(codeGroupId)
+                .dtlCd("C02")
+                .dtlCdNm("코드2")
+                .dtlCdExpln("코드2 설명")
                 .useYn("Y")
                 .build();
 
-        given(commonCodeRepository.findByCodeGroupIdAndUseYn(codeGroupId, "Y"))
+        given(commonCodeRepository.findByCdIdAndUseYn(codeGroupId, "Y"))
                 .willReturn(List.of(code1, code2));
 
         // when
@@ -74,7 +74,7 @@ class CodeServiceTest {
         assertThat(result.get(1).getCodeNm()).isEqualTo("코드2");
         assertThat(result.get(1).getUseYn()).isEqualTo("Y");
 
-        verify(commonCodeRepository, times(1)).findByCodeGroupIdAndUseYn(codeGroupId, "Y");
+        verify(commonCodeRepository, times(1)).findByCdIdAndUseYn(codeGroupId, "Y");
     }
 
     @Test
@@ -90,21 +90,21 @@ class CodeServiceTest {
     void getAllActiveCodes_ShouldFilterActiveCodesOnly() {
         // given
         CommonCode code1 = CommonCode.builder()
-                .codeGroupId("COM001")
-                .code("C01")
-                .codeNm("활성코드")
+                .cdId("COM001")
+                .dtlCd("C01")
+                .dtlCdNm("활성코드")
                 .useYn("Y")
                 .build();
         CommonCode code2 = CommonCode.builder()
-                .codeGroupId("COM001")
-                .code("C02")
-                .codeNm("비활성코드")
+                .cdId("COM001")
+                .dtlCd("C02")
+                .dtlCdNm("비활성코드")
                 .useYn("N")
                 .build();
         CommonCode code3 = CommonCode.builder()
-                .codeGroupId("COM002")
-                .code("C03")
-                .codeNm("다른활성코드")
+                .cdId("COM002")
+                .dtlCd("C03")
+                .dtlCdNm("다른활성코드")
                 .useYn("Y")
                 .build();
 

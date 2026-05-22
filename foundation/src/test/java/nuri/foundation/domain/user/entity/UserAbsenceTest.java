@@ -12,7 +12,7 @@ class UserAbsenceTest {
     void testBuilder() {
         UserAbsence absence = UserAbsence.builder()
                 .userId("user01")
-                .userAbsnceAt("Y")
+                .userAbsnYn("Y")
                 .build();
 
         assertEquals("user01", absence.getUserId());

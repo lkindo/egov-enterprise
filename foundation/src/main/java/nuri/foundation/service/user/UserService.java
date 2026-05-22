@@ -169,7 +169,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .userNm(userNm)
                                 .esntlId(esntlId)
                                 .pswdHint(pswdHint)
-                                .pswdCrans(pswdCrans)
+                                .pswdCnsr(pswdCrans)
                                 .role(role)
                                 .build();
 
@@ -296,7 +296,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .userNm(request.getUserNm())
                                 .esntlId(esntlId)
                                 .pswdHint(request.getPswdHint())
-                                .pswdCrans(request.getPswdCrans())
+                                .pswdCnsr(request.getPswdCrans())
                                 .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.USER)
                                 .build();
 

@@ -1,5 +1,6 @@
 package nuri.foundation.service.program.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +11,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProgramDto {
-    private String progrmFileNm;
-    private String progrmStrePath;
-    private String progrmKoreanNm;
+    @JsonProperty("progrmFileNm")
+    private String prgrmFileNm;
+
+    @JsonProperty("progrmStrePath")
+    private String prgrmStrgPath;
+
+    @JsonProperty("progrmKoreanNm")
+    private String prgrmKornNm;
+
     private String url;
-    private String progrmDc;
+
+    @JsonProperty("progrmDc")
+    private String prgrmExpln;
 }
+

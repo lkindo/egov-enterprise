@@ -25,16 +25,24 @@ public class DeptManage extends BaseEntity {
 
     @Id
     @Column(name = "ognz_id", length = 20)
-    private String orgnztId;
+    private String ognzId;
 
     @Column(name = "ognz_nm", length = 100, nullable = false)
-    private String orgnztNm;
+    private String ognzNm;
 
     @Column(name = "ognz_expln", length = 4000)
-    private String orgnztDc;
+    private String ognzExpln;
 
-    public void update(String orgnztNm, String orgnztDc) {
-        this.orgnztNm = orgnztNm;
-        this.orgnztDc = orgnztDc;
+    public void update(String ognzNm, String ognzExpln) {
+        this.ognzNm = ognzNm;
+        this.ognzExpln = ognzExpln;
     }
+
+    // ----- [Legacy Aliases for Compatibility] -----
+    public String getOrgnztId() { return ognzId; }
+    public String getOrgnztNm() { return ognzNm; }
+    public String getOrgnztDc() { return ognzExpln; }
+    public void setOrgnztId(String v) { this.ognzId = v; }
+    public void setOrgnztNm(String v) { this.ognzNm = v; }
+    public void setOrgnztDc(String v) { this.ognzExpln = v; }
 }

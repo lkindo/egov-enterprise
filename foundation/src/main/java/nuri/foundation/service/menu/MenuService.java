@@ -103,8 +103,8 @@ public class MenuService {
 
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+                .filter(p -> p.getPrgrmFileNm() != null)
+                .collect(Collectors.toMap(Program::getPrgrmFileNm, Function.identity(), (a, b) -> a));
 
         Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
@@ -116,19 +116,20 @@ public class MenuService {
                     .id(menu.getId())
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
-                    .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuSn(menu.getUpperMenuSn())
-                    .upperMenuId(menu.getUpperMenuSn())
+                    .prgrmFileNm(menu.getPrgrmFileNm())
+                    .upMenuSn(menu.getUpMenuSn())
+                    .upperMenuId(menu.getUpMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
-                    .relateImagePath(menu.getRelateImagePath())
-                    .relateImageNm(menu.getRelateImageNm())
+                    .relImgPath(menu.getRelImgPath())
+                    .relImgNm(menu.getRelImgNm())
                     .build();
 
             dtoMap.put(dto.getId(), dto);
 
-            Long upperNo = dto.getUpperMenuSn();
+            Long upperNo = dto.getUpMenuSn();
+
             if (rootMenuNo == null) {
                 if (upperNo == null || upperNo == 0) {
                     rootNodes.add(dto);
@@ -148,18 +149,19 @@ public class MenuService {
 
     @Cacheable(value = "allMenus", unless = "#result == null")
     public List<Menu> getAllMenusCached() {
-        return menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
+        return menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
     }
 
     @Cacheable(value = "menuParentMap")
     public Map<Long, Long> getMenuParentMapCached() {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpperMenuSn());
+            parentMap.put(m.getId(), m.getUpMenuSn());
         }
         return Collections.unmodifiableMap(parentMap);
     }
+
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
@@ -171,26 +173,27 @@ public class MenuService {
             Program program = (Program) menuResult[1];
 
             String url = calculateUrl(menu,
-                    program != null ? java.util.Collections.singletonMap(program.getProgrmFileNm(), program) : null);
+                    program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
 
             MenuDto dto = MenuDto.builder()
                     .id(menu.getId())
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
-                    .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuSn(menu.getUpperMenuSn())
-                    .upperMenuId(menu.getUpperMenuSn())
+                    .prgrmFileNm(menu.getPrgrmFileNm())
+                    .upMenuSn(menu.getUpMenuSn())
+                    .upperMenuId(menu.getUpMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
-                    .relateImagePath(menu.getRelateImagePath())
-                    .relateImageNm(menu.getRelateImageNm())
+                    .relImgPath(menu.getRelImgPath())
+                    .relImgNm(menu.getRelImgNm())
                     .build();
 
             result.add(dto);
         }
         return result;
     }
+
 
     public List<Program> getAllPrograms() {
         return programRepository.findAll();
@@ -204,10 +207,10 @@ public class MenuService {
         return menuAuthorityRepository
                 .selectMenuCreatManagList(searchKeyword, Objects.requireNonNull(pageable)).stream()
                 .map(proj -> MenuCreateDto.builder()
-                        .authorCode(proj.getAuthrtCd())
-                        .authorNm(proj.getAuthrtNm())
-                        .authorDc(proj.getAuthrtExpln())
-                        .authorCreatDe(proj.getAuthrtCrtYmd() != null ? proj.getAuthrtCrtYmd().toString() : "")
+                        .authrtCd(proj.getAuthrtCd())
+                        .authrtNm(proj.getAuthrtNm())
+                        .authrtExpln(proj.getAuthrtExpln())
+                        .authrtCrtYmd(proj.getAuthrtCrtYmd() != null ? proj.getAuthrtCrtYmd().toString() : "")
                         .chkYeoBu(proj.getChkYeoBu().intValue())
                         .build())
                 .collect(Collectors.toList());
@@ -220,19 +223,19 @@ public class MenuService {
     }
 
     public List<MenuCreateDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
-        log.info(">>> [MenuService] selectMenuCreatList called for authorCode: {}", vo.getAuthorCode());
-        List<MenuAuthorityProjection> projections = menuAuthorityRepository.selectMenuCreatList(vo.getAuthorCode());
+        log.info(">>> [MenuService] selectMenuCreatList called for authorCode: {}", vo.getAuthrtCd());
+        List<MenuAuthorityProjection> projections = menuAuthorityRepository.selectMenuCreatList(vo.getAuthrtCd());
         log.info(">>> [MenuService] selectMenuCreatList found {} projections", projections.size());
         
         return projections.stream()
                 .map(proj -> {
                     if (proj.getMenuSn() == null) {
-                        log.error(">>> [MenuService] Found projection with NULL menuSn for authorCode: {}", vo.getAuthorCode());
+                        log.error(">>> [MenuService] Found projection with NULL menuSn for authorCode: {}", vo.getAuthrtCd());
                     }
                     return MenuCreateDto.builder()
                         .menuNo(proj.getMenuSn() != null ? proj.getMenuSn().intValue() : 0)
-                        .authorCode(proj.getAuthrtCd())
-                        .authorNm(proj.getMenuNm())
+                        .authrtCd(proj.getAuthrtCd())
+                        .authrtNm(proj.getMenuNm())
                         .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)
                         .build();
                 })
@@ -269,13 +272,13 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
-        if (vo.getProgrmFileNm() != null && !programRepository.existsById(vo.getProgrmFileNm())) {
+        if (vo.getPrgrmFileNm() != null && !programRepository.existsById(vo.getPrgrmFileNm())) {
             nuri.foundation.domain.program.Program p = nuri.foundation.domain.program.Program
                     .builder()
-                    .progrmFileNm(vo.getProgrmFileNm())
-                    .progrmKoreanNm("자동생성메뉴(" + vo.getMenuNm() + ")")
+                    .prgrmFileNm(vo.getPrgrmFileNm())
+                    .prgrmKornNm("자동생성메뉴(" + vo.getMenuNm() + ")")
                     .url(vo.getModernRoute())
-                    .progrmStrePath("/auto-generated")
+                    .prgrmStrgPath("/auto-generated")
                     .build();
             programRepository.save(p);
         }
@@ -283,12 +286,12 @@ public class MenuService {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
-                .progrmFileNm(vo.getProgrmFileNm())
-                .upperMenuSn(vo.getUpperMenuSn())
+                .prgrmFileNm(vo.getPrgrmFileNm())
+                .upMenuSn(vo.getUpMenuSn())
                 .menuOrdr(vo.getMenuOrdr())
                 .menuExpln(vo.getMenuExpln())
-                .relateImagePath(vo.getRelateImagePath())
-                .relateImageNm(vo.getRelateImageNm())
+                .relImgPath(vo.getRelImgPath())
+                .relImgNm(vo.getRelImgNm())
                 .modernRoute(vo.getModernRoute())
                 .createdBy("webmaster")
                 .createdDate(java.time.LocalDateTime.now())
@@ -298,15 +301,17 @@ public class MenuService {
         menuRepository.save(Objects.requireNonNull(menu));
     }
 
+
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuSn(), vo.getMenuOrdr(),
+        menu.updateWithModernRoute(vo.getMenuNm(), vo.getPrgrmFileNm(), vo.getUpMenuSn(), vo.getMenuOrdr(),
                 vo.getMenuExpln(),
-                vo.getRelateImagePath(), vo.getRelateImageNm(), vo.getModernRoute());
+                vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute());
     }
+
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
@@ -342,25 +347,26 @@ public class MenuService {
         if (url == null || url.isEmpty())
             return null;
         return programRepository.findByUrl(Objects.requireNonNull(url))
-                .map(Program::getProgrmFileNm)
+                .map(Program::getPrgrmFileNm)
                 .orElse(null);
     }
+
 
     public Long getRootMenuIdByProgrmFileNm(String progrmFileNm) {
         if (progrmFileNm == null)
             return null;
-        Menu currentMenu = menuRepository.findByProgrmFileNm(Objects.requireNonNull(progrmFileNm)).orElse(null);
+        Menu currentMenu = menuRepository.findByPrgrmFileNm(Objects.requireNonNull(progrmFileNm)).orElse(null);
         if (currentMenu == null)
             return null;
 
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpperMenuSn());
+            parentMap.put(m.getId(), m.getUpMenuSn());
         }
 
         Long currentId = currentMenu.getId();
-        Long upperId = currentMenu.getUpperMenuSn();
+        Long upperId = currentMenu.getUpMenuSn();
 
         while (upperId != null && upperId != 0) {
             if (!parentMap.containsKey(upperId))
@@ -371,6 +377,7 @@ public class MenuService {
         }
         return currentId;
     }
+
 
     public List<MenuDto> getSubMenus(Long menuNo) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -393,23 +400,24 @@ public class MenuService {
             Program program = (Program) menuResult[1];
 
             String url = calculateUrl(menu,
-                    program != null ? java.util.Collections.singletonMap(program.getProgrmFileNm(), program) : null);
+                    program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
 
             return MenuDto.builder()
                     .id(menu.getId())
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
-                    .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuSn(menu.getUpperMenuSn())
-                    .upperMenuId(menu.getUpperMenuSn())
+                    .prgrmFileNm(menu.getPrgrmFileNm())
+                    .upMenuSn(menu.getUpMenuSn())
+                    .upperMenuId(menu.getUpMenuSn())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
                     .modernRoute(menu.getModernRoute())
-                    .relateImagePath(menu.getRelateImagePath())
-                    .relateImageNm(menu.getRelateImageNm())
+                    .relImgPath(menu.getRelImgPath())
+                    .relImgNm(menu.getRelImgNm())
                     .build();
         }).collect(Collectors.toList());
     }
+
 
     public int selectMenuManageListTotCnt(@NonNull BaseSearchDto searchVO) {
         return (int) menuRepository.count();
@@ -425,26 +433,28 @@ public class MenuService {
                 .id(menu.getId())
                 .menuNo(menu.getId())
                 .menuNm(menu.getMenuNm())
-                .progrmFileNm(menu.getProgrmFileNm())
-                .upperMenuSn(menu.getUpperMenuSn())
-                .upperMenuId(menu.getUpperMenuSn())
+                .prgrmFileNm(menu.getPrgrmFileNm())
+                .upMenuSn(menu.getUpMenuSn())
+                .upperMenuId(menu.getUpMenuSn())
                 .menuOrdr(menu.getMenuOrdr())
                 .chkURL(url)
                 .modernRoute(menu.getModernRoute())
-                .relateImagePath(menu.getRelateImagePath())
-                .relateImageNm(menu.getRelateImageNm())
+                .relImgPath(menu.getRelImgPath())
+                .relImgNm(menu.getRelImgNm())
                 .build();
     }
+
 
     private String calculateUrl(Menu menu, Map<String, Program> programMap) {
         if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
             return menu.getModernRoute();
         }
 
-        String progrmFileNm = menu.getProgrmFileNm();
+        String progrmFileNm = menu.getPrgrmFileNm();
         if (progrmFileNm == null || "dir".equals(progrmFileNm) || "/".equals(progrmFileNm)) {
             return "#";
         }
+
 
         String inferred = inferModernRoute(progrmFileNm);
         if (inferred != null)

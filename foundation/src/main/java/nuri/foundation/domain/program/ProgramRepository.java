@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProgramRepository extends JpaRepository<Program, String> {
 
-    @Query("SELECT p FROM Program p WHERE p.progrmKoreanNm LIKE %:searchKeyword% OR p.progrmFileNm LIKE %:searchKeyword%")
+    @Query("SELECT p FROM Program p WHERE p.prgrmKornNm LIKE %:searchKeyword% OR p.prgrmFileNm LIKE %:searchKeyword%")
     Page<Program> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);
 
     java.util.Optional<Program> findByUrl(String url);

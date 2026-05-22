@@ -22,11 +22,15 @@ public class UserAbsence extends BaseEntity {
     private String userId;
 
     @Column(name = "user_absn_yn", length = 1, nullable = false)
-    private String userAbsnceAt; // Y: 부재, N: 정상
+    private String userAbsnYn; // Y: 부재, N: 정상
 
-    public void updateAbsence(String userAbsnceAt) {
-        this.userAbsnceAt = userAbsnceAt;
+    public void updateAbsence(String userAbsnYn) {
+        this.userAbsnYn = userAbsnYn;
     }
+
+    // ----- [Legacy Aliases for Compatibility] -----
+    public String getUserAbsnceAt() { return userAbsnYn; }
+    public void setUserAbsnceAt(String v) { this.userAbsnYn = v; }
 
     // legacy
     public String getEmplyrId() { return userId; }

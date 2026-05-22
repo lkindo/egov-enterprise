@@ -75,7 +75,7 @@ public class AuthorApiController {
         log.info(">>> [AuthorApiController] getAuthorMenus called for code: {}", authrtCd);
 
         MenuCreateDto vo = new MenuCreateDto();
-        vo.setAuthorCode(authrtCd);
+        vo.setAuthrtCd(authrtCd);
 
         List<MenuCreateDto> list = menuService.selectMenuCreatList(vo);
 

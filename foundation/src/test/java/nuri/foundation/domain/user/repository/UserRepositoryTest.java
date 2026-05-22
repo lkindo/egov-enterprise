@@ -94,7 +94,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .esntlId("ENT_001")
                 .userNm("기업회원")
                 .pswd("password")
-                .userType("ENT")
+                .userTypeCd("ENT")
                 .role(Role.USER)
                 .build();
         userRepository.save(entUser);
@@ -104,7 +104,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 .esntlId("GEN_001")
                 .userNm("일반회원")
                 .pswd("password")
-                .userType("GNR")
+                .userTypeCd("GNR")
                 .role(Role.USER)
                 .build();
         userRepository.save(genUser);
@@ -160,7 +160,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent()).isNotEmpty();
 
         // 조건 OFFM_TELNO
-        testUser.setOffmTelno("010-1234-5678");
+        testUser.setOfficeTelno("010-1234-5678");
         userRepository.save(testUser);
         em.flush();
         em.clear();

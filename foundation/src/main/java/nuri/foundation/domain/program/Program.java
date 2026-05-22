@@ -19,24 +19,25 @@ public class Program extends BaseEntity {
 
     @Id
     @Column(name = "prgrm_file_nm", length = 100)
-    private String progrmFileNm;
+    private String prgrmFileNm;
 
     @Column(name = "prgrm_strg_path", length = 1000)
-    private String progrmStrePath;
+    private String prgrmStrgPath;
 
     @Column(name = "prgrm_korn_nm", length = 100)
-    private String progrmKoreanNm;
+    private String prgrmKornNm;
 
     @Column(name = "url", length = 1000)
     private String url;
 
     @Column(name = "prgrm_expln", length = 4000)
-    private String progrmDc;
+    private String prgrmExpln;
 
-    public void update(String progrmStrePath, String progrmKoreanNm, String url, String progrmDc) {
-        this.progrmStrePath = progrmStrePath;
-        this.progrmKoreanNm = progrmKoreanNm;
+    public void update(String prgrmStrgPath, String prgrmKornNm, String url, String prgrmExpln) {
+        this.prgrmStrgPath = prgrmStrgPath;
+        this.prgrmKornNm = prgrmKornNm;
         this.url = url;
-        this.progrmDc = progrmDc;
+        this.prgrmExpln = prgrmExpln;
     }
 }
+

@@ -107,7 +107,7 @@ public class UserAuthorityManageService {
         List<String> userIds;
         if (request.isAllMembers()) {
             // 부서 내 모든 사용자 조회
-            userIds = userRepository.findByOrgnztId(request.getDeptId()).stream()
+            userIds = userRepository.findByOgnzId(request.getDeptId()).stream()
                     .map(User::getEsntlId)
                     .collect(Collectors.toList());
         } else {

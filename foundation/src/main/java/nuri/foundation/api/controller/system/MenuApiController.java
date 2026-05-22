@@ -95,7 +95,7 @@ public class MenuApiController {
     @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한에 할당된 메뉴 목록 및 상태를 조회합니다.")
     @GetMapping("/creation/{authorCode}")
     public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getMenuCreationList(@PathVariable String authorCode) throws Exception {
-        MenuCreateDto vo = MenuCreateDto.builder().authorCode(authorCode).build();
+        MenuCreateDto vo = MenuCreateDto.builder().authrtCd(authorCode).build();
         List<MenuCreateDto> result = menuService.selectMenuCreatList(vo);
         return ResponseEntity.ok(ApiResponse.success(result));
     }

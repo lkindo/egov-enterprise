@@ -27,7 +27,7 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     @Override
     public UserAbsenceDto getAbsence(String userId) {
         UserAbsence absence = userAbsenceRepository.findById(userId)
-                .orElse(UserAbsence.builder().userId(userId).userAbsnceAt("N").build());
+                .orElse(UserAbsence.builder().userId(userId).userAbsnYn("N").build());
         return userAbsenceMapper.toDto(absence);
     }
 

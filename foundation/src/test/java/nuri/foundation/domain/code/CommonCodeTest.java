@@ -11,12 +11,12 @@ class CommonCodeTest {
     @DisplayName("CommonCode 빌더 생성 확인")
     void testCommonCodeBuilder() {
         CommonCode code = CommonCode.builder()
-                .codeGroupId("GROUP01")
-                .code("C001")
-                .codeNm("코드명")
+                .cdId("GROUP01")
+                .dtlCd("C001")
+                .dtlCdNm("코드명")
                 .build();
 
-        assertEquals("C001", code.getCode());
-        assertEquals("코드명", code.getCodeNm());
+        assertEquals("C001", code.getDtlCd());
+        assertEquals("코드명", code.getDtlCdNm());
     }
 }

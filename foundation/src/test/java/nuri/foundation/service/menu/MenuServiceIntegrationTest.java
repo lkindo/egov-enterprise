@@ -69,9 +69,9 @@ class MenuServiceIntegrationTest {
     void testGetMenuHierarchyAndCaching() {
         // Given
         Program program = Program.builder()
-                .progrmFileNm("PROG_01")
+                .prgrmFileNm("PROG_01")
                 .url("/test/prog1")
-                .progrmKoreanNm("테스트프로그램")
+                .prgrmKornNm("테스트프로그램")
                 .build();
         programRepository.save(program);
 
@@ -89,8 +89,8 @@ class MenuServiceIntegrationTest {
         Menu child = Menu.builder()
                 .id(2L)
                 .menuNm("CHILD")
-                .progrmFileNm("PROG_01")
-                .upperMenuSn(1L)
+                .prgrmFileNm("PROG_01")
+                .upMenuSn(1L)
                 .menuOrdr(1)
                 .menuExpln("DESC")
                 .modernRoute("/child")

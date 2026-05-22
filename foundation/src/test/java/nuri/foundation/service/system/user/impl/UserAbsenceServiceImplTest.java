@@ -52,7 +52,7 @@ class UserAbsenceServiceImplTest {
     @DisplayName("부재 정보 상세 조회 성공 - 데이터 있음")
     void getAbsence_Found() {
         // given
-        UserAbsence absence = UserAbsence.builder().userId("user1").userAbsnceAt("Y").build();
+        UserAbsence absence = UserAbsence.builder().userId("user1").userAbsnYn("Y").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
         given(userAbsenceMapper.toDto(any())).willReturn(UserAbsenceDto.builder().userId("user1").userAbsnceAt("Y").build());
 

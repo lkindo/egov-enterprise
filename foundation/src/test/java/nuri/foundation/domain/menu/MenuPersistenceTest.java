@@ -26,7 +26,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
                 .id(9999L)
                 .menuNm("테스트 메뉴")
                 .menuOrdr(1)
-                .upperMenuSn(0L)
+                .upMenuSn(0L)
                 .build();
 
         // when: Save
@@ -58,13 +58,13 @@ class MenuPersistenceTest extends PersistenceTestSupport {
                 .id(1000L)
                 .menuNm("시스템 관리")
                 .menuOrdr(1)
-                .upperMenuSn(0L)
+                .upMenuSn(0L)
                 .build());
         menuRepository.save(Menu.builder()
                 .id(1001L)
                 .menuNm("사용자 관리")
                 .menuOrdr(2)
-                .upperMenuSn(1000L)
+                .upMenuSn(1000L)
                 .build());
         menuRepository.flush();
         entityManager.clear();

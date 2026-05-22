@@ -87,8 +87,8 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
     void searchDeptAuthors() {
         // Given
         DeptManage dept = DeptManage.builder()
-                .orgnztId("DEPT_001")
-                .orgnztNm("테스트부서")
+                .ognzId("DEPT_001")
+                .ognzNm("테스트부서")
                 .build();
         em.persist(dept);
 
@@ -120,8 +120,8 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
     void searchDeptAuthors_Unpaged() {
         // Given
         DeptManage dept = DeptManage.builder()
-                .orgnztId("DEPT_001")
-                .orgnztNm("테스트부서")
+                .ognzId("DEPT_001")
+                .ognzNm("테스트부서")
                 .build();
         em.persist(dept);
         testUser.setOrgnztId("DEPT_001");

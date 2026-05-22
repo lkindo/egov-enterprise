@@ -74,8 +74,8 @@ class MenuServiceBranchTest {
     }
 
     private void verifyLegacyUrl(String legacyUrl, String expectedModernRoute) {
-        Menu menu = Menu.builder().id(1L).progrmFileNm("LegacyProg").build();
-        Program program = Program.builder().progrmFileNm("LegacyProg").url(legacyUrl).build();
+        Menu menu = Menu.builder().id(1L).prgrmFileNm("LegacyProg").build();
+        Program program = Program.builder().prgrmFileNm("LegacyProg").url(legacyUrl).build();
         
         given(menuRepository.findById(1L)).willReturn(Optional.of(menu));
         given(programRepository.findById("LegacyProg")).willReturn(Optional.of(program));
@@ -85,7 +85,7 @@ class MenuServiceBranchTest {
     }
 
     private void verifyProgramName(String progName, String expectedModernRoute) {
-        Menu menu = Menu.builder().id(1L).progrmFileNm(progName).build();
+        Menu menu = Menu.builder().id(1L).prgrmFileNm(progName).build();
         given(menuRepository.findById(1L)).willReturn(Optional.of(menu));
         
         MenuDto dto = menuService.selectMenuManage(1L);

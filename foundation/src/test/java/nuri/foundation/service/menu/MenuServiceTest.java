@@ -68,7 +68,7 @@ class MenuServiceTest {
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
         Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
-        Menu menu2 = Menu.builder().id(2L).menuNm("Menu 2").menuOrdr(2).upperMenuSn(1L).build();
+        Menu menu2 = Menu.builder().id(2L).menuNm("Menu 2").menuOrdr(2).upMenuSn(1L).build();
         
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
@@ -127,7 +127,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - progrmFileNm이 dir/인 경우 # 반환")
     void calculateUrl_Dir() {
         // given
-        Menu menu = Menu.builder().id(1L).progrmFileNm("dir").build();
+        Menu menu = Menu.builder().id(1L).prgrmFileNm("dir").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -141,7 +141,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - inferModernRoute 매칭 케이스 (BoardManage)")
     void calculateUrl_InferModernRoute() {
         // given
-        Menu menu = Menu.builder().id(1L).progrmFileNm("BoardManage").build();
+        Menu menu = Menu.builder().id(1L).prgrmFileNm("BoardManage").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -155,8 +155,8 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - legacy URL 추론 (qna)")
     void calculateUrl_InferFromLegacy() {
         // given
-        Menu menu = Menu.builder().id(1L).progrmFileNm("SomeProgram").build();
-        Program program = Program.builder().progrmFileNm("SomeProgram").url("/uss/olh/qna/list.do").build();
+        Menu menu = Menu.builder().id(1L).prgrmFileNm("SomeProgram").build();
+        Program program = Program.builder().prgrmFileNm("SomeProgram").url("/uss/olh/qna/list.do").build();
         
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
         when(programRepository.findById("SomeProgram")).thenReturn(Optional.of(program));
@@ -207,12 +207,12 @@ class MenuServiceTest {
     @DisplayName("getRootIdByProgrmFileNm - 최상위 메뉴 ID 찾기")
     void getRootIdByProgrmFileNm() {
         // given
-        Menu menu3 = Menu.builder().id(3L).upperMenuSn(2L).progrmFileNm("Prog3").build();
-        Menu menu2 = Menu.builder().id(2L).upperMenuSn(1L).build();
-        Menu menu1 = Menu.builder().id(1L).upperMenuSn(0L).build();
+        Menu menu3 = Menu.builder().id(3L).upMenuSn(2L).prgrmFileNm("Prog3").build();
+        Menu menu2 = Menu.builder().id(2L).upMenuSn(1L).build();
+        Menu menu1 = Menu.builder().id(1L).upMenuSn(0L).build();
 
-        when(menuRepository.findByProgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
-        when(menuRepository.findAllByOrderByUpperMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
+        when(menuRepository.findByPrgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
 
         // when
         Long rootId = menuService.getRootMenuIdByProgrmFileNm("Prog3");
@@ -234,7 +234,7 @@ class MenuServiceTest {
         for (String p : programs) {
             // Internal method call via public method is hard to isolate perfectly, 
             // but selectMenuManage calls calculateUrl which calls inferModernRoute.
-            Menu menu = Menu.builder().id(1L).progrmFileNm(p).build();
+            Menu menu = Menu.builder().id(1L).prgrmFileNm(p).build();
             when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
             menuService.selectMenuManage(1L);
         }
@@ -249,8 +249,8 @@ class MenuServiceTest {
         };
         
         for (String url : urls) {
-            Menu menu = Menu.builder().id(1L).progrmFileNm("Prog").build();
-            Program program = Program.builder().progrmFileNm("Prog").url(url + "test.do").build();
+            Menu menu = Menu.builder().id(1L).prgrmFileNm("Prog").build();
+            Program program = Program.builder().prgrmFileNm("Prog").url(url + "test.do").build();
             
             when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
             when(programRepository.findById("Prog")).thenReturn(Optional.of(program));

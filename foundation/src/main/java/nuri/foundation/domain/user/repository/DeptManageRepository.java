@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * ??????? Repository
  */
 public interface DeptManageRepository extends JpaRepository<DeptManage, String>, DeptManageRepositoryCustom {
-    Page<DeptManage> findByOrgnztNmContainingIgnoreCase(String orgnztNm, Pageable pageable);
-    Page<DeptManage> findByOrgnztDcContainingIgnoreCase(String orgnztDc, Pageable pageable);
-    long countByOrgnztNmContainingIgnoreCase(String orgnztNm);
-    long countByOrgnztDcContainingIgnoreCase(String orgnztDc);
+    Page<DeptManage> findByOgnzNmContainingIgnoreCase(String ognzNm, Pageable pageable);
+    Page<DeptManage> findByOgnzExplnContainingIgnoreCase(String ognzExpln, Pageable pageable);
+    long countByOgnzNmContainingIgnoreCase(String ognzNm);
+    long countByOgnzExplnContainingIgnoreCase(String ognzExpln);
 }

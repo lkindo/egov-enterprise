@@ -41,11 +41,11 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("그룹별 코드 목록 조회 테스트")
     void getCodesByGroupTest() {
-        given(commonCodeRepository.findByCodeGroupIdAndUseYn(anyString(), anyString()))
+        given(commonCodeRepository.findByCdIdAndUseYn(anyString(), anyString()))
                 .willReturn(List.of(CommonCode.builder()
-                        .codeGroupId("GRP1")
-                        .code("CODE1")
-                        .codeNm("코드명1")
+                        .cdId("GRP1")
+                        .dtlCd("CODE1")
+                        .dtlCdNm("코드명1")
                         .build()));
 
         List<CommonCodeDto> result = commonCodeService.getCodesByGroup("GRP1");
@@ -81,7 +81,7 @@ class CommonCodeServiceTest {
     void selectCmmnClCodeListTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
         Page<CommonCodeCategory> page = new PageImpl<>(List.of(
-                CommonCodeCategory.builder().clCode("CL1").clCodeNm("분류1").build()
+                CommonCodeCategory.builder().clsfCd("CL1").clsfCdNm("분류1").build()
         ));
 
         given(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any(Pageable.class)))

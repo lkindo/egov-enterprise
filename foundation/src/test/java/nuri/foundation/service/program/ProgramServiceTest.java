@@ -47,8 +47,8 @@ class ProgramServiceTest {
             searchVO.setPageUnit(10);
 
             Program prog1 = Program.builder()
-                    .progrmFileNm("Prog001")
-                    .progrmKoreanNm("프로그램 001")
+                    .prgrmFileNm("Prog001")
+                    .prgrmKornNm("프로그램 001")
                     .build();
 
             Page<Program> page = new PageImpl<>(Arrays.asList(prog1));
@@ -60,7 +60,7 @@ class ProgramServiceTest {
             // Then
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals("Prog001", result.get(0).getProgrmFileNm());
+            assertEquals("Prog001", result.get(0).getPrgrmFileNm());
             verify(programRepository, times(1)).findAll(any(Pageable.class));
         }
 
@@ -74,8 +74,8 @@ class ProgramServiceTest {
             searchVO.setSearchKeyword("Test");
 
             Program prog1 = Program.builder()
-                    .progrmFileNm("Prog001")
-                    .progrmKoreanNm("Test Program")
+                    .prgrmFileNm("Prog001")
+                    .prgrmKornNm("Test Program")
                     .build();
 
             Page<Program> page = new PageImpl<>(Arrays.asList(prog1));
@@ -101,8 +101,8 @@ class ProgramServiceTest {
             // Given
             String progName = "Prog001";
             Program prog = Program.builder()
-                    .progrmFileNm(progName)
-                    .progrmKoreanNm("프로그램 001")
+                    .prgrmFileNm(progName)
+                    .prgrmKornNm("프로그램 001")
                     .build();
 
             when(programRepository.findById(progName)).thenReturn(Optional.of(prog));
@@ -112,7 +112,7 @@ class ProgramServiceTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(progName, result.getProgrmFileNm());
+            assertEquals(progName, result.getPrgrmFileNm());
         }
 
         @Test
@@ -138,8 +138,8 @@ class ProgramServiceTest {
         void testInsertProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
-                    .progrmFileNm("NewProg")
-                    .progrmKoreanNm("신규 프로그램")
+                    .prgrmFileNm("NewProg")
+                    .prgrmKornNm("신규 프로그램")
                     .build();
 
             // When
@@ -154,13 +154,13 @@ class ProgramServiceTest {
         void testUpdateProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
-                    .progrmFileNm("Prog001")
-                    .progrmKoreanNm("수정된 이름")
+                    .prgrmFileNm("Prog001")
+                    .prgrmKornNm("수정된 이름")
                     .build();
 
             Program existing = Program.builder()
-                    .progrmFileNm("Prog001")
-                    .progrmKoreanNm("기존 이름")
+                    .prgrmFileNm("Prog001")
+                    .prgrmKornNm("기존 이름")
                     .build();
 
             when(programRepository.findById("Prog001")).thenReturn(Optional.of(existing));
@@ -169,7 +169,7 @@ class ProgramServiceTest {
             programService.updateProgrm(dto);
 
             // Then
-            assertEquals("수정된 이름", existing.getProgrmKoreanNm());
+            assertEquals("수정된 이름", existing.getPrgrmKornNm());
         }
 
         @Test
@@ -177,7 +177,7 @@ class ProgramServiceTest {
         void testDeleteProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
-                    .progrmFileNm("Prog001")
+                    .prgrmFileNm("Prog001")
                     .build();
 
             // When
