@@ -12,6 +12,7 @@
 - **목적**: `BoardMaster.java`의 Lombok `@SuperBuilder` 섀도잉 결함 제거 및 소문자 `@SecondaryTable` CASING 교정 후, 캐시 없이 전수 빌드/테스트를 수행하여 루트 수준의 aggregated JaCoCo 리포트를 완수하고 형상을 마감함.
 - **결과**:
   - `jacocoRootReport` 성공적 병합 완료.
-  - 전체 Instruction Coverage **75%**, Branch Coverage **62%** 달성 확인.
-  - `nuri.business.domain.board` 패키지 Instruction Coverage **66%**, Branch Coverage **63%** 달성.
+  - 전체 Instruction Coverage **75.7% (Missed 8,443 of 34,768)**, Branch Coverage **62.8% (Missed 597 of 1,609)** 달성 확인.
+  - `nuri.business.domain.board` 패키지 Instruction Coverage **65%**, Branch Coverage **63%** 달성.
   - `BoardMaster.java` (JPA 웜업 및 위임 체이닝 빌더) 무결성 기계적 검증 완료.
+
