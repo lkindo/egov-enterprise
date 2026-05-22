@@ -51,16 +51,34 @@ public class ExternalHr {
     private String emlAddr;
 
     @Column(name = "crt_dt")
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime crtDt;
 
     @Column(name = "frst_rgtr_id", length = 20)
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Column(name = "mdfcn_dt")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime mdfcnDt;
 
     @Column(name = "last_mdfr_id", length = 20)
-    private String lastUpdusrId;
+    private String lastMdfrId;
+
+    // ----- [Legacy Getter Aliases] -----
+
+    public LocalDateTime getFrstRegistPnttm() {
+        return this.crtDt;
+    }
+
+    public String getFrstRegisterId() {
+        return this.frstRgtrId;
+    }
+
+    public LocalDateTime getLastUpdtPnttm() {
+        return this.mdfcnDt;
+    }
+
+    public String getLastUpdusrId() {
+        return this.lastMdfrId;
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EVNT_ID", insertable = false, updatable = false)
@@ -82,9 +100,9 @@ public class ExternalHr {
         this.mdTelno = mdTelno;
         this.endTelno = endTelno;
         this.emlAddr = emlAddr;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdtPnttm = LocalDateTime.now();
+        this.frstRgtrId = frstRegisterId;
+        this.crtDt = LocalDateTime.now();
+        this.lastMdfrId = lastUpdusrId;
+        this.mdfcnDt = LocalDateTime.now();
     }
 }

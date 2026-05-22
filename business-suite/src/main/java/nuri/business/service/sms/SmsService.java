@@ -59,8 +59,8 @@ public class SmsService implements EgovSmsService {
 
         Sms sms = Sms.builder()
                 .smsId(smsId)
-                .trnsmitTelno(dto.getTrnsmitTelno())
-                .trnsmitCn(dto.getTrnsmitCn())
+                .sndngTelno(dto.getTrnsmitTelno())
+                .sndngCn(dto.getTrnsmitCn())
                 .build();
 
         smsRepository.save(Objects.requireNonNull(sms));
@@ -71,7 +71,7 @@ public class SmsService implements EgovSmsService {
                 SmsRecptn recptn = SmsRecptn.builder()
                         .smsId(smsId)
                         .recptnTelno(recptnDto.getRecptnTelno())
-                        .resultCode("P") // Pending
+                        .rsltCd("P") // Pending
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
             }

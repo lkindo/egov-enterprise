@@ -41,7 +41,7 @@ class HelpServiceTest {
     void getHpcmList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
         Hpcm entity = Hpcm.builder().hpcmId("ID").hpcmDf("Definition").build();
-        when(hpcmRepository.findByHpcmDfContaining(anyString(), any(Pageable.class)))
+        when(hpcmRepository.findByHlpDfnContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
         Page<HpcmDto> result = helpService.getHpcmList("keyword", pageable);
@@ -98,7 +98,7 @@ class HelpServiceTest {
     void getOnlineManualList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlineManual entity = OnlineManual.builder().onlineMnlId("ID").onlineMnlNm("Name").build();
-        when(onlineManualRepository.findByOnlineMnlNmContaining(anyString(), any(Pageable.class)))
+        when(onlineManualRepository.findByOnlnMnlNmContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlineManualDto> result = helpService.getOnlineManualList("keyword", pageable);

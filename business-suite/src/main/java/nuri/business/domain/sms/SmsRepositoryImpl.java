@@ -49,7 +49,7 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         if ("0".equals(searchCondition)) { // 수신전화번호 (RECPTN_TELNO)
             return QSmsRecptn.smsRecptn.id.recptnTelno.contains(searchKeyword);
         } else if ("1".equals(searchCondition)) { // 전송내용 (TRNSMIS_CN)
-            return QSms.sms.trnsmitCn.contains(searchKeyword);
+            return QSms.sms.sndngCn.contains(searchKeyword);
         }
 
         return null;

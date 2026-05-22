@@ -72,21 +72,21 @@ class LogServiceTest {
             // Given
             LoginLog log1 = LoginLog.builder()
                     .logId("LGN_001")
-                    .loginId("user01")
-                    .loginIp("127.0.0.1")
-                    .loginMthd("LOGIN")
-                    .createdDate(LocalDateTime.now())
+                    .userId("user01")
+                    .lgnIpAddr("127.0.0.1")
+                    .cntnMthdCd("LOGIN")
+                    .crtDt(LocalDateTime.now())
                     .build();
 
             LoginLog log2 = LoginLog.builder()
                     .logId("LGN_002")
-                    .loginId("user02")
-                    .loginIp("127.0.0.1")
-                    .loginMthd("LOGIN")
-                    .createdDate(LocalDateTime.now().minusMinutes(1))
+                    .userId("user02")
+                    .lgnIpAddr("127.0.0.1")
+                    .cntnMthdCd("LOGIN")
+                    .crtDt(LocalDateTime.now().minusMinutes(1))
                     .build();
 
-            when(loginLogRepository.findTop100ByOrderByCreatedDateDesc()).thenReturn(Arrays.asList(log1, log2));
+            when(loginLogRepository.findTop100ByOrderByCrtDtDesc()).thenReturn(Arrays.asList(log1, log2));
 
             // When
             List<LogDto> result = logService.getRecentLoginLogs();
@@ -98,14 +98,14 @@ class LogServiceTest {
             assertEquals("user01", result.get(0).getConectId());
             assertEquals("LGN_002", result.get(1).getLogId());
             assertEquals("user02", result.get(1).getConectId());
-            verify(loginLogRepository, times(1)).findTop100ByOrderByCreatedDateDesc();
+            verify(loginLogRepository, times(1)).findTop100ByOrderByCrtDtDesc();
         }
 
         @Test
         @DisplayName("로그가 없을 때 빈 목록 반환")
         void testGetRecentLoginLogs_Empty() {
             // Given
-            when(loginLogRepository.findTop100ByOrderByCreatedDateDesc()).thenReturn(List.of());
+            when(loginLogRepository.findTop100ByOrderByCrtDtDesc()).thenReturn(List.of());
 
             // When
             List<LogDto> result = logService.getRecentLoginLogs();

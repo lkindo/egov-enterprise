@@ -23,17 +23,37 @@ public class NoteTrnsmit extends BaseEntity {
 
     @Id
     @Column(name = "note_sndng_id", length = 20)
-    private String noteDsptchId;
+    private String noteSndngId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "NOTE_ID")
     private Note note;
 
     @Column(name = "sndr_id", length = 20)
-    private String dsptchUserId;
+    private String sndrId;
 
     @Column(name = "del_yn", length = 1)
     private String delYn;
+
+    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
+    public String getNoteDsptchId() { return this.noteSndngId; }
+    public String getDsptchUserId() { return this.sndrId; }
+
+    // ----- [Legacy Setter Aliases for Backwards Compatibility] -----
+    public void setNoteDsptchId(String noteDsptchId) { this.noteSndngId = noteDsptchId; }
+    public void setDsptchUserId(String dsptchUserId) { this.sndrId = dsptchUserId; }
+
+    // ----- [Custom Builder Extension for Backwards Compatibility] -----
+    public static abstract class NoteTrnsmitBuilder<C extends NoteTrnsmit, B extends NoteTrnsmitBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        public B noteDsptchId(String noteDsptchId) {
+            this.noteSndngId = noteDsptchId;
+            return self();
+        }
+        public B dsptchUserId(String dsptchUserId) {
+            this.sndrId = dsptchUserId;
+            return self();
+        }
+    }
 
     @PrePersist
     protected void onCreate() {

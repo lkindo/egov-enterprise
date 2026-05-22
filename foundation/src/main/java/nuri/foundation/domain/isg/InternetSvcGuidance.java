@@ -22,20 +22,54 @@ public class InternetSvcGuidance extends BaseEntity {
 
     @Id
     @Column(name = "itnt_svc_id", length = 20)
-    private String intnetSvcId;
+    private String itntSvcId;
 
     @Column(name = "itnt_svc_nm", length = 100)
-    private String intnetSvcNm;
+    private String itntSvcNm;
 
     @Column(name = "itnt_svc_expln", length = 4000)
-    private String intnetSvcDc;
+    private String itntSvcExpln;
 
     @Column(name = "rflt_yn", length = 1)
-    private String reflctAt;
+    private String rfltYn;
 
-    public void update(String intnetSvcNm, String intnetSvcDc, String reflctAt) {
-        this.intnetSvcNm = intnetSvcNm;
-        this.intnetSvcDc = intnetSvcDc;
-        this.reflctAt = reflctAt;
+    public void update(String itntSvcNm, String itntSvcExpln, String rfltYn) {
+        this.itntSvcNm = itntSvcNm;
+        this.itntSvcExpln = itntSvcExpln;
+        this.rfltYn = rfltYn;
+    }
+
+    // ----- [Legacy Aliases for Backward Compatibility] -----
+
+    public String getIntnetSvcId() {
+        return itntSvcId;
+    }
+
+    public void setIntnetSvcId(String intnetSvcId) {
+        this.itntSvcId = intnetSvcId;
+    }
+
+    public String getIntnetSvcNm() {
+        return itntSvcNm;
+    }
+
+    public void setIntnetSvcNm(String intnetSvcNm) {
+        this.itntSvcNm = intnetSvcNm;
+    }
+
+    public String getIntnetSvcDc() {
+        return itntSvcExpln;
+    }
+
+    public void setIntnetSvcDc(String intnetSvcDc) {
+        this.itntSvcExpln = intnetSvcDc;
+    }
+
+    public String getReflctAt() {
+        return rfltYn;
+    }
+
+    public void setReflctAt(String reflctAt) {
+        this.rfltYn = reflctAt;
     }
 }

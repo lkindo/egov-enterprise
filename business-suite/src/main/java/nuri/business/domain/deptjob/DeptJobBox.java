@@ -20,20 +20,53 @@ public class DeptJobBox extends BaseEntity {
 
     @Id
     @Column(name = "dept_task_box_id", length = 20)
-    private String deptJobbxId;
+    @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxId")
+    private String deptTaskBoxId;
 
     @Column(name = "dept_task_box_nm", length = 100)
-    private String deptJobbxNm;
+    @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxNm")
+    private String deptTaskBoxNm;
 
     @Column(name = "dept_id", length = 20)
     private String deptId;
 
     @Column(name = "sort_ordr")
-    private Integer indictOrdr;
+    @com.fasterxml.jackson.annotation.JsonProperty("indictOrdr")
+    private Integer sortOrdr;
 
     public void update(String deptJobbxNm, String deptId, Integer indictOrdr) {
-        this.deptJobbxNm = deptJobbxNm;
+        this.deptTaskBoxNm = deptJobbxNm;
         this.deptId = deptId;
-        this.indictOrdr = indictOrdr;
+        this.sortOrdr = indictOrdr;
+    }
+
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getDeptJobbxId() { return this.deptTaskBoxId; }
+    public void setDeptJobbxId(String v) { this.deptTaskBoxId = v; }
+
+    public String getDeptJobbxNm() { return this.deptTaskBoxNm; }
+    public void setDeptJobbxNm(String v) { this.deptTaskBoxNm = v; }
+
+    public Integer getIndictOrdr() { return this.sortOrdr; }
+    public void setIndictOrdr(Integer v) { this.sortOrdr = v; }
+
+    public static abstract class DeptJobBoxBuilder<C extends DeptJobBox, B extends DeptJobBoxBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String deptTaskBoxId;
+        private String deptTaskBoxNm;
+        private Integer sortOrdr;
+
+        public B deptJobbxId(String deptJobbxId) {
+            this.deptTaskBoxId = deptJobbxId;
+            return self();
+        }
+        public B deptJobbxNm(String deptJobbxNm) {
+            this.deptTaskBoxNm = deptJobbxNm;
+            return self();
+        }
+        public B indictOrdr(Integer indictOrdr) {
+            this.sortOrdr = indictOrdr;
+            return self();
+        }
     }
 }

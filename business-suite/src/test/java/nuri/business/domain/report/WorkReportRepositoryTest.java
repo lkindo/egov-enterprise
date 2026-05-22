@@ -18,14 +18,16 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
     @DisplayName("작업보고 저장 및 검색")
     void saveAndSearchWorkReports() {
         // given
+        // 1. 신규 표준 필드 빌더 활용
         WorkReport report1 = WorkReport.builder()
-                .reportId("R1")
-                .reportSubject("Weekly Report 1")
-                .reprtSe("1")
-                .wrterId("user1")
+                .rptId("R1")
+                .rptTtl("Weekly Report 1")
+                .rptSeCd("1")
+                .userId("user1")
                 .build();
         workReportRepository.save(report1);
 
+        // 2. 하위 호환용 레거시 필드 빌더 활용
         WorkReport report2 = WorkReport.builder()
                 .reportId("R2")
                 .reportSubject("Monthly Report")
@@ -39,6 +41,9 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        // 신규 standard getter
+        assertThat(result.getContent().get(0).getRptTtl()).isEqualTo("Weekly Report 1");
+        // 하위 호환 legacy getter
         assertThat(result.getContent().get(0).getReportSubject()).isEqualTo("Weekly Report 1");
     }
 }

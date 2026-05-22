@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface RewardManageRepository extends JpaRepository<RewardManage, String> {
-    List<RewardManage> findByRwardNmContaining(String name);
-    List<RewardManage> findByRwardwnrId(String winnerId);
+    List<RewardManage> findByRwrdNmContaining(String name);
+    List<RewardManage> findByRwrdUserId(String winnerId);
 }

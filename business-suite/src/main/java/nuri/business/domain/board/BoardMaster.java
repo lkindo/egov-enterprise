@@ -85,33 +85,92 @@ public class BoardMaster extends BaseEntity {
 
     // TB_BBS_MASTER_OPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
     @Column(table = "TB_BBS_MASTER_OPTN", name = "frst_rgtr_id", length = 20, updatable = false)
-    private String optnFrstRegisterId;
+    @com.fasterxml.jackson.annotation.JsonProperty("optnFrstRegisterId")
+    private String optnFrstRgtrId;
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "crt_dt", updatable = false)
-    private LocalDateTime optnFrstRegistPnttm;
+    @com.fasterxml.jackson.annotation.JsonProperty("optnFrstRegistPnttm")
+    private LocalDateTime optnCrtDt;
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "last_mdfr_id", length = 20)
-    private String optnLastUpdusrId;
+    @com.fasterxml.jackson.annotation.JsonProperty("optnLastUpdusrId")
+    private String optnLastMdfrId;
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "mdfcn_dt")
-    private LocalDateTime optnLastUpdtPnttm;
+    @com.fasterxml.jackson.annotation.JsonProperty("optnLastUpdtPnttm")
+    private LocalDateTime optnMdfcnDt;
 
     @PrePersist
     protected void onPrePersist() {
-        if (this.optnFrstRegisterId == null) {
-            this.optnFrstRegisterId = "webmaster";
+        if (this.optnFrstRgtrId == null) {
+            this.optnFrstRgtrId = "webmaster";
         }
-        if (this.optnFrstRegistPnttm == null) {
-            this.optnFrstRegistPnttm = LocalDateTime.now();
+        if (this.optnCrtDt == null) {
+            this.optnCrtDt = LocalDateTime.now();
         }
-        if (this.optnLastUpdtPnttm == null) {
-            this.optnLastUpdtPnttm = LocalDateTime.now();
+        if (this.optnMdfcnDt == null) {
+            this.optnMdfcnDt = LocalDateTime.now();
         }
     }
 
     @PreUpdate
     protected void onPreUpdate() {
-        this.optnLastUpdtPnttm = LocalDateTime.now();
+        this.optnMdfcnDt = LocalDateTime.now();
+    }
+
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getOptnFrstRegisterId() { return this.optnFrstRgtrId; }
+    public void setOptnFrstRegisterId(String v) { this.optnFrstRgtrId = v; }
+
+    public LocalDateTime getOptnFrstRegistPnttm() { return this.optnCrtDt; }
+    public void setOptnFrstRegistPnttm(LocalDateTime v) { this.optnCrtDt = v; }
+
+    public String getOptnLastUpdusrId() { return this.optnLastMdfrId; }
+    public void setOptnLastUpdusrId(String v) { this.optnLastMdfrId = v; }
+
+    public LocalDateTime getOptnLastUpdtPnttm() { return this.optnMdfcnDt; }
+    public void setOptnLastUpdtPnttm(LocalDateTime v) { this.optnMdfcnDt = v; }
+
+    public static abstract class BoardMasterBuilder<C extends BoardMaster, B extends BoardMasterBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String optnFrstRgtrId;
+        private LocalDateTime optnCrtDt;
+        private String optnLastMdfrId;
+        private LocalDateTime optnMdfcnDt;
+
+        public B optnFrstRegisterId(String v) {
+            this.optnFrstRgtrId = v;
+            return self();
+        }
+        public B optnFrstRegistPnttm(LocalDateTime v) {
+            this.optnCrtDt = v;
+            return self();
+        }
+        public B optnLastUpdusrId(String v) {
+            this.optnLastMdfrId = v;
+            return self();
+        }
+        public B optnLastUpdtPnttm(LocalDateTime v) {
+            this.optnMdfcnDt = v;
+            return self();
+        }
+
+        public B optnFrstRgtrId(String v) {
+            this.optnFrstRgtrId = v;
+            return self();
+        }
+        public B optnCrtDt(LocalDateTime v) {
+            this.optnCrtDt = v;
+            return self();
+        }
+        public B optnLastMdfrId(String v) {
+            this.optnLastMdfrId = v;
+            return self();
+        }
+        public B optnMdfcnDt(LocalDateTime v) {
+            this.optnMdfcnDt = v;
+            return self();
+        }
     }
 
     public void update(String bbsTtl, String bbsExpln, String ansPsbltyYn, String fileAtchPsbltyYn,

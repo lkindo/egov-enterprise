@@ -42,7 +42,7 @@ public class ScrapDto {
                 .pstId(entity.getPstId())
                 .scrapNm(entity.getScrapNm())
                 .scrapUrl(entity.getScrapUrl())
-                .scrapDc(entity.getScrapDc())
+                .scrapDc(entity.getScrapExpln())
                 .useYn(entity.getUseYn())
                 .uniqId(entity.getUniqId())
                 .userId(entity.getFrstRegisterId())

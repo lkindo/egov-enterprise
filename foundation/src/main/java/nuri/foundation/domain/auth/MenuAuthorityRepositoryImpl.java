@@ -26,7 +26,7 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
         public List<MenuAuthorityProjection> selectMenuCreatList(String authrtCd) {
                 return queryFactory
                                 .select(Projections.bean(MenuAuthorityProjection.class,
-                                                menu.id.as("menuSn"),
+                                                menu.menuSn.as("menuSn"),
                                                 menu.menuNm.as("menuNm"),
                                                 menu.upMenuSn.as("upperMenuSn"),
                                                 Expressions.asString(authrtCd).as("authrtCd"),
@@ -35,7 +35,7 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
                                                                 .otherwise("N").as("regYn")))
                                 .from(menu)
                                 .leftJoin(menuAuthority)
-                                .on(menu.id.eq(menuAuthority.id.menuSn).and(menuAuthority.id.authrtCd.eq(authrtCd)))
+                                .on(menu.menuSn.eq(menuAuthority.id.menuSn).and(menuAuthority.id.authrtCd.eq(authrtCd)))
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
         }

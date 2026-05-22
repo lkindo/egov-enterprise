@@ -17,16 +17,16 @@ public class SmsRecptn {
     private SmsRecptnId id;
 
     @Column(name = "rslt_cd", length = 12)
-    private String resultCode;
+    private String rsltCd;
 
     @Column(name = "rslt_msg", length = 4000)
-    private String resultMssage;
+    private String rsltMsg;
 
     @Builder
-    public SmsRecptn(String smsId, String recptnTelno, String resultCode, String resultMssage) {
+    public SmsRecptn(String smsId, String recptnTelno, String resultCode, String resultMssage, String rsltCd, String rsltMsg) {
         this.id = new SmsRecptnId(smsId, recptnTelno);
-        this.resultCode = resultCode;
-        this.resultMssage = resultMssage;
+        this.rsltCd = rsltCd != null ? rsltCd : resultCode;
+        this.rsltMsg = rsltMsg != null ? rsltMsg : resultMssage;
     }
 
     public String getSmsId() {
@@ -37,9 +37,21 @@ public class SmsRecptn {
         return id != null ? id.getRecptnTelno() : null;
     }
 
-    public void updateResult(String resultCode, String resultMssage) {
-        this.resultCode = resultCode;
-        this.resultMssage = resultMssage;
+    public void updateResult(String rsltCd, String rsltMsg) {
+        this.rsltCd = rsltCd;
+        this.rsltMsg = rsltMsg;
+    }
+
+    // ----- [Legacy Aliases for Backward Compatibility] -----
+
+    @Deprecated
+    public String getResultCode() {
+        return rsltCd;
+    }
+
+    @Deprecated
+    public String getResultMssage() {
+        return rsltMsg;
     }
 
 }

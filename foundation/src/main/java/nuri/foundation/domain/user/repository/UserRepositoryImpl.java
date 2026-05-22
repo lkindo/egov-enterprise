@@ -39,7 +39,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                         user.mblTelno.as("mblTelno"),
                         user.emlAddr.as("emlAddr"),
                         user.ofcpsNm,
-                        user.createdDate))
+                        user.crtDt))
                 .from(user)
                 .where(condition)
                 .offset(pageable.getOffset())

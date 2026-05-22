@@ -28,9 +28,9 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
         // given
         WebLog log = WebLog.builder()
                 .dmndId("REQ_001")
-                .ocrnYmd("20240103")
+                .occrYmd("20240103")
                 .url("/test/url")
-                .rqesterIp("127.0.0.1")
+                .dmndUserIpAddr("127.0.0.1")
                 .build();
         webLogRepository.save(log);
 
@@ -48,7 +48,7 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
         // given
         WebLog oldLog = WebLog.builder()
                 .dmndId("REQ_OLD")
-                .ocrnYmd("20200101")
+                .occrYmd("20200101")
                 .build();
         webLogRepository.save(oldLog);
         entityManager.flush();

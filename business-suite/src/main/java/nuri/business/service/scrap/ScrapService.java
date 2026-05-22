@@ -55,7 +55,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     public void updateScrap(String userId, ScrapDto dto) {
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(dto.getScrapId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getScrapNm(), entity.getScrapUrl(), entity.getScrapDc(), entity.getUseYn());
+        entity.update(dto.getScrapNm(), entity.getScrapUrl(), entity.getScrapExpln(), entity.getUseYn());
         entity.setLastModifiedBy(userId);
     }
 

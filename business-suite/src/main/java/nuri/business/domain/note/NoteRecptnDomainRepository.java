@@ -14,8 +14,8 @@ import java.util.Optional;
 @Repository("noteRecptnDomainRepository")
 public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {
 
-    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
-           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId AND (:searchWrd IS NULL OR r.note.noteSj LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcvrId = :rcverId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
+           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcverId AND (:searchWrd IS NULL OR r.note.noteTtl LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
     Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);
 
@@ -24,9 +24,19 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, St
         return searchNoteRecptns(null, searchWrd, rcverId, pageable);
     }
 
-    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId",
-           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcverId = :rcverId")
-    Page<NoteRecptn> findByRcverId(@Param("rcverId") String rcverId, Pageable pageable);
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcvrId = :rcvrId",
+           countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcvrId")
+    Page<NoteRecptn> findByRcvrId(@Param("rcvrId") String rcvrId, Pageable pageable);
 
-    Optional<NoteRecptn> findByNoteNoteIdAndRcverId(String noteId, String rcverId);
+    @Deprecated
+    default Page<NoteRecptn> findByRcverId(String rcverId, Pageable pageable) {
+        return findByRcvrId(rcverId, pageable);
+    }
+
+    Optional<NoteRecptn> findByNoteNoteIdAndRcvrId(String noteId, String rcvrId);
+
+    @Deprecated
+    default Optional<NoteRecptn> findByNoteNoteIdAndRcverId(String noteId, String rcverId) {
+        return findByNoteNoteIdAndRcvrId(noteId, rcverId);
+    }
 }

@@ -9,10 +9,20 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, String> {
 
-    @Query("SELECT n FROM Notification n WHERE (:keyword IS NULL OR n.ntfcSj LIKE %:keyword% OR n.ntfcCn LIKE %:keyword%) ORDER BY n.createdDate DESC")
+    @Query("SELECT n FROM Notification n WHERE (:keyword IS NULL OR n.notiTtlNm LIKE %:keyword% OR n.notiCn LIKE %:keyword%) ORDER BY n.crtDt DESC")
     Page<Notification> searchNotifications(String keyword, Pageable pageable);
 
-    long countByReceiverIdAndIsRead(String receiverId, String isRead);
+    long countByRcvrIdAndReadYn(String rcvrId, String readYn);
 
-    long countByIsRead(String isRead);
+    @Deprecated
+    default long countByReceiverIdAndIsRead(String receiverId, String isRead) {
+        return countByRcvrIdAndReadYn(receiverId, isRead);
+    }
+
+    long countByReadYn(String readYn);
+
+    @Deprecated
+    default long countByIsRead(String isRead) {
+        return countByReadYn(isRead);
+    }
 }

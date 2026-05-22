@@ -6,5 +6,5 @@ import java.util.List;
 
 @Repository
 public interface MainImageDomainRepository extends JpaRepository<MainImage, String> {
-    List<MainImage> findByReflctAt(String reflctAt);
+    List<MainImage> findByRfltYn(String rfltYn);
 }

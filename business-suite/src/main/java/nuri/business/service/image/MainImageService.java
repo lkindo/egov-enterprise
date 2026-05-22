@@ -27,7 +27,7 @@ public class MainImageService implements EgovMainImageService {
             return mainImageRepository.findAll(Objects.requireNonNull(pageable))
                     .map(MainImageDto::from);
         }
-        return mainImageRepository.findByImageNmContaining(searchKeyword, Objects.requireNonNull(pageable))
+        return mainImageRepository.findByImgNmContaining(searchKeyword, Objects.requireNonNull(pageable))
                 .map(MainImageDto::from);
     }
 
@@ -69,8 +69,7 @@ public class MainImageService implements EgovMainImageService {
 
     @Override
     public List<MainImageDto> getReflectedMainImages() {
-        return mainImageRepository.findAll().stream()
-                .filter(img -> "Y".equals(img.getReflctAt()))
+        return mainImageRepository.findByRfltYn("Y").stream()
                 .map(MainImageDto::from)
                 .collect(Collectors.toList());
     }

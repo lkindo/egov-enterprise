@@ -28,7 +28,7 @@ public class TmplatInfoService extends BaseAbstractService {
     }
 
     public List<Template> selectTmplatInfoListByType(String seCode) {
-        return templateRepository.findByTmplatSeCode(seCode);
+        return templateRepository.findByTmpltSeCd(seCode);
     }
 
     public Template selectTmplatInfoDetail(String tmplatId) {

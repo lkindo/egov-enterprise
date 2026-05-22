@@ -79,14 +79,14 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 타입별 목록 조회")
     void selectTmplatInfoListByType() {
         // given
-        when(templateRepository.findByTmplatSeCode("TYPE01")).thenReturn(Collections.emptyList());
+        when(templateRepository.findByTmpltSeCd("TYPE01")).thenReturn(Collections.emptyList());
 
         // when
         List<Template> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
 
         // then
         assertThat(result).isEmpty();
-        verify(templateRepository, times(1)).findByTmplatSeCode("TYPE01");
+        verify(templateRepository, times(1)).findByTmpltSeCd("TYPE01");
     }
 
     @Test

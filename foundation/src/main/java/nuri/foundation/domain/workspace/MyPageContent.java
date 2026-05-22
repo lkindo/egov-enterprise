@@ -32,7 +32,8 @@ public class MyPageContent extends BaseEntity {
     private String cntcUrl;
 
     @Column(name = "cntnts_use_yn", length = 1)
-    private String cntntsUseAt;
+    @com.fasterxml.jackson.annotation.JsonProperty("cntntsUseAt")
+    private String cntntsUseYn;
 
     @Column(name = "cntnts_link_url", length = 255)
     private String cntntsLinkUrl;
@@ -40,11 +41,35 @@ public class MyPageContent extends BaseEntity {
     @Column(name = "cntnts_dc", length = 255)
     private String cntntsDc;
 
-    public void update(String cntntsNm, String cntcUrl, String cntntsUseAt, String cntntsLinkUrl, String cntntsDc) {
+    public void update(String cntntsNm, String cntcUrl, String cntntsUseYn, String cntntsLinkUrl, String cntntsDc) {
         this.cntntsNm = cntntsNm;
         this.cntcUrl = cntcUrl;
-        this.cntntsUseAt = cntntsUseAt;
+        this.cntntsUseYn = cntntsUseYn;
         this.cntntsLinkUrl = cntntsLinkUrl;
         this.cntntsDc = cntntsDc;
+    }
+
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getCntntsUseAt() {
+        return this.cntntsUseYn;
+    }
+
+    public void setCntntsUseAt(String cntntsUseAt) {
+        this.cntntsUseYn = cntntsUseAt;
+    }
+
+    public static abstract class MyPageContentBuilder<C extends MyPageContent, B extends MyPageContentBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String cntntsUseYn;
+
+        public B cntntsUseAt(String cntntsUseAt) {
+            this.cntntsUseYn = cntntsUseAt;
+            return self();
+        }
+
+        public B cntntsUseYn(String cntntsUseYn) {
+            this.cntntsUseYn = cntntsUseYn;
+            return self();
+        }
     }
 }

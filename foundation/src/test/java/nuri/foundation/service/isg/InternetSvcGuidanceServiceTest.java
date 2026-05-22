@@ -40,8 +40,8 @@ class InternetSvcGuidanceServiceTest {
         // given
         String id = "ISG_01";
         InternetSvcGuidance entity = InternetSvcGuidance.builder()
-                .intnetSvcId(id)
-                .intnetSvcNm("Test ISG")
+                .itntSvcId(id)
+                .itntSvcNm("Test ISG")
                 .build();
         given(internetSvcGuidanceRepository.findById(id)).willReturn(Optional.of(entity));
 
@@ -91,9 +91,9 @@ class InternetSvcGuidanceServiceTest {
         // given
         String id = "ISG_01";
         InternetSvcGuidance existingEntity = InternetSvcGuidance.builder()
-                .intnetSvcId(id)
-                .intnetSvcNm("Old ISG")
-                .intnetSvcDc("Old Desc")
+                .itntSvcId(id)
+                .itntSvcNm("Old ISG")
+                .itntSvcExpln("Old Desc")
                 .build();
         given(internetSvcGuidanceRepository.findById(id)).willReturn(Optional.of(existingEntity));
 
@@ -131,7 +131,7 @@ class InternetSvcGuidanceServiceTest {
     void getIntnetSvcGuidanceList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        InternetSvcGuidance entity = InternetSvcGuidance.builder().intnetSvcId("ISG_01").intnetSvcNm("Test").build();
+        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSvcId("ISG_01").itntSvcNm("Test").build();
         given(internetSvcGuidanceRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -149,8 +149,8 @@ class InternetSvcGuidanceServiceTest {
         // given
         String keyword = "Test";
         Pageable pageable = PageRequest.of(0, 10);
-        InternetSvcGuidance entity = InternetSvcGuidance.builder().intnetSvcId("ISG_01").intnetSvcNm("Test ISG").build();
-        given(internetSvcGuidanceRepository.findByIntnetSvcNmContaining(keyword, pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSvcId("ISG_01").itntSvcNm("Test ISG").build();
+        given(internetSvcGuidanceRepository.findByItntSvcNmContaining(keyword, pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
         Page<InternetSvcGuidanceDto> result = internetSvcGuidanceService.getIntnetSvcGuidanceList(keyword, pageable);

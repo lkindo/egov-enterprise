@@ -109,9 +109,9 @@ public class ReportStatsService {
                 .reprtType(reprtStats.getReprtType())
                 .reprtSttus(reprtStats.getReprtSttus())
                 .createdBy(reprtStats.getCreatedBy())
-                .createdDate(java.time.LocalDateTime.now())
+                .crtDt(java.time.LocalDateTime.now())
                 .lastModifiedBy(reprtStats.getCreatedBy())
-                .lastModifiedDate(java.time.LocalDateTime.now())
+                .mdfcnDt(java.time.LocalDateTime.now())
                 .build();
         reprtStatsRepository.save(Objects.requireNonNull(newStats));
     }

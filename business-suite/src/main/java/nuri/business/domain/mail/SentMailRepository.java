@@ -9,16 +9,28 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SentMailRepository extends JpaRepository<SentMail, String>, SentMailRepositoryCustom {
 
-    Page<SentMail> findBySjContaining(String sj, Pageable pageable);
+    Page<SentMail> findByEmlTtlContaining(String emlTtl, Pageable pageable);
 
-    Page<SentMail> findByDsptchPerson(String dsptchPerson, Pageable pageable);
+    Page<SentMail> findBySndptyNm(String sndptyNm, Pageable pageable);
 
-    Page<SentMail> findByRecptnPerson(String recptnPerson, Pageable pageable);
+    Page<SentMail> findByRcvrNm(String rcvrNm, Pageable pageable);
 
-    Page<SentMail> findBySndngResultCode(String sndngResultCode, Pageable pageable);
+    Page<SentMail> findByDsptchRsltCd(String dsptchRsltCd, Pageable pageable);
 
-    // standard
-    default Page<SentMail> findByDsptchRsltCd(String dsptchRsltCd, Pageable pageable) {
-        return findBySndngResultCode(dsptchRsltCd, pageable);
+    // ----- [Legacy Query Method Bridges] -----
+    default Page<SentMail> findBySjContaining(String sj, Pageable pageable) {
+        return findByEmlTtlContaining(sj, pageable);
+    }
+
+    default Page<SentMail> findByDsptchPerson(String dsptchPerson, Pageable pageable) {
+        return findBySndptyNm(dsptchPerson, pageable);
+    }
+
+    default Page<SentMail> findByRecptnPerson(String recptnPerson, Pageable pageable) {
+        return findByRcvrNm(recptnPerson, pageable);
+    }
+
+    default Page<SentMail> findBySndngResultCode(String sndngResultCode, Pageable pageable) {
+        return findByDsptchRsltCd(sndngResultCode, pageable);
     }
 }

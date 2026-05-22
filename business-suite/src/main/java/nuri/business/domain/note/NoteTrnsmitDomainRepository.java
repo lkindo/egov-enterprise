@@ -13,8 +13,8 @@ import org.springframework.stereotype.Repository;
 @Repository("noteTrnsmitDomainRepository")
 public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {
 
-    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'",
-           countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.dsptchUserId = :dsptchUserId AND (:searchWrd IS NULL OR t.note.noteSj LIKE %:searchWrd% OR t.note.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")
+    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'",
+           countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR t.note.noteTtl LIKE %:searchWrd% OR t.note.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")
     Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);
 
@@ -23,12 +23,17 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
         return searchNoteTrnsmits(null, searchWrd, dsptchUserId, pageable);
     }
 
-    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.dsptchUserId = :dsptchUserId AND t.delYn = 'N'",
-           countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.dsptchUserId = :dsptchUserId AND t.delYn = 'N'")
-    Page<NoteTrnsmit> findByDsptchUserId(@Param("dsptchUserId") String dsptchUserId, Pageable pageable);
+    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :sndrId AND t.delYn = 'N'",
+           countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :sndrId AND t.delYn = 'N'")
+    Page<NoteTrnsmit> findBySndrId(@Param("sndrId") String sndrId, Pageable pageable);
+
+    @Deprecated
+    default Page<NoteTrnsmit> findByDsptchUserId(String dsptchUserId, Pageable pageable) {
+        return findBySndrId(dsptchUserId, pageable);
+    }
     
     // legacy
     default Page<NoteTrnsmit> findByTrnsmiterId(String dsptchUserId, Pageable pageable) {
-        return findByDsptchUserId(dsptchUserId, pageable);
+        return findBySndrId(dsptchUserId, pageable);
     }
 }

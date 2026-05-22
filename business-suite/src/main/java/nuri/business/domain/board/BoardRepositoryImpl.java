@@ -36,7 +36,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.pswd,
                                                  QBoard.board.createdBy.as("frstRegisterId"),
                                                  QUser.user.userNm.coalesce(QBoard.board.userNm).as("frstRegisterNm"),
-                                                 QBoard.board.createdDate,
+                                                 QBoard.board.crtDt.as("createdDate"),
                                                  QBoard.board.pstBgngYmd,
                                                  QBoard.board.pstEndYmd,
                                                  QBoard.board.inqCnt,
@@ -78,7 +78,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                         break;
  
                                 case "date":
-                                        orderSpecifier = QBoard.board.createdDate.desc();        
+                                        orderSpecifier = QBoard.board.crtDt.desc();        
                                         break;
                         }
                 }
@@ -89,7 +89,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.bbsId,
                                                  QBoard.board.pstTtl,
                                                  QBoard.board.userNm.as("frstRegisterNm"),
-                                                 QBoard.board.createdDate,
+                                                 QBoard.board.crtDt.as("createdDate"),
                                                  QBoard.board.inqCnt,
                                                  QBoard.board.likeCnt,
                                                  QBoard.board.upPstId,

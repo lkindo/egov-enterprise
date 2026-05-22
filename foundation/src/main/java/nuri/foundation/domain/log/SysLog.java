@@ -29,7 +29,7 @@ public class SysLog extends BaseEntity {
     private String srvcNm;
 
     @Column(name = "mthd_nm", length = 100)
-    private String methodNm;
+    private String mthdNm;
 
     @Column(name = "prcs_se_cd", length = 12)
     private String prcsSeCd;
@@ -41,7 +41,7 @@ public class SysLog extends BaseEntity {
     private String dmndUserId;
 
     @Column(name = "dmnd_user_ip_addr", length = 30)
-    private String rqesterIp;
+    private String dmndUserIpAddr;
 
     @Column(name = "ocrn_ymd", length = 8)
     private String ocrnYmd;
@@ -55,18 +55,37 @@ public class SysLog extends BaseEntity {
     @Column(name = "err_se_cd", length = 12)
     private String errSeCd;
 
-    public SysLog(String dmndId, String srvcNm, String methodNm, String prcsSeCd, String prcsTm,
-            String dmndUserId, String rqesterIp, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
+    public SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
+            String dmndUserId, String dmndUserIpAddr, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
         this.dmndId = dmndId;
         this.srvcNm = srvcNm;
-        this.methodNm = methodNm;
+        this.mthdNm = mthdNm;
         this.prcsSeCd = prcsSeCd;
         this.prcsTm = prcsTm;
         this.dmndUserId = dmndUserId;
-        this.rqesterIp = rqesterIp;
+        this.dmndUserIpAddr = dmndUserIpAddr;
         this.ocrnYmd = ocrnYmd;
         this.rspnsCd = rspnsCd;
         this.errCd = errCd;
         this.errSeCd = errSeCd;
+    }
+
+    public static abstract class SysLogBuilder<C extends SysLog, B extends SysLogBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String mthdNm;
+
+        public B methodNm(String methodNm) {
+            this.mthdNm = methodNm;
+            return self();
+        }
+    }
+
+    // ----- [Legacy Aliases] -----
+
+    public String getMethodNm() {
+        return this.mthdNm;
+    }
+
+    public String getRqesterIp() {
+        return this.dmndUserIpAddr;
     }
 }

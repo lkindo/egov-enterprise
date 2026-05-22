@@ -27,7 +27,7 @@ public class HelpService implements EgovHelpService {
     @Override
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
         return hpcmRepository
-                .findByHpcmDfContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
                 .map(HpcmDto::from);
     }
 
@@ -70,7 +70,7 @@ public class HelpService implements EgovHelpService {
     @Override
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
         return onlineManualRepository
-                .findByOnlineMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
                 .map(OnlineManualDto::from);
     }
 

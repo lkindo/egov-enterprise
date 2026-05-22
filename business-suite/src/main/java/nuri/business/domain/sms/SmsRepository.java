@@ -9,5 +9,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SmsRepository extends JpaRepository<Sms, String>, SmsRepositoryCustom {
 
-    Page<Sms> findByTrnsmitCnContaining(String keyword, Pageable pageable);
+    Page<Sms> findBySndngCnContaining(String keyword, Pageable pageable);
+
+    @Deprecated
+    default Page<Sms> findByTrnsmitCnContaining(String keyword, Pageable pageable) {
+        return findBySndngCnContaining(keyword, pageable);
+    }
 }

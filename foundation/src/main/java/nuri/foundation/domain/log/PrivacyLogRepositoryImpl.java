@@ -29,7 +29,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                                                 inquiryDatetimeBetween(searchBgnDe, searchEndDe))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(QPrivacyLog.privacyLog.inquiryDatetime.desc())
+                                .orderBy(QPrivacyLog.privacyLog.inqDt.desc())
                                 .fetch();
 
                 long total = queryFactory
@@ -44,7 +44,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
         }
 
         private BooleanExpression inquiryInfoLike(String searchWrd) {
-                return StringUtils.hasText(searchWrd) ? QPrivacyLog.privacyLog.inquiryInfo.contains(searchWrd) : null;
+                return StringUtils.hasText(searchWrd) ? QPrivacyLog.privacyLog.inqInfo.contains(searchWrd) : null;
         }
 
         private BooleanExpression inquiryDatetimeBetween(String searchBgnDe, String searchEndDe) {
@@ -56,7 +56,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                                         .atStartOfDay();
                         LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                                         .atTime(LocalTime.MAX);
-                        return QPrivacyLog.privacyLog.inquiryDatetime.between(start, end);
+                        return QPrivacyLog.privacyLog.inqDt.between(start, end);
                 } catch (Exception e) {
                         return null;
                 }

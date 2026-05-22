@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface LoginLogRepository extends JpaRepository<LoginLog, String>, LoginLogRepositoryCustom {
-        java.util.List<LoginLog> findTop100ByOrderByCreatedDateDesc();
+        java.util.List<LoginLog> findTop100ByOrderByCrtDtDesc();
 
         /**
          * 개인별 통계 (연도별)

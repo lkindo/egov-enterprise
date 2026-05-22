@@ -26,37 +26,78 @@ public class Faq extends BaseEntity {
     private String faqId;
 
     @Column(name = "qstn_ttl", length = 100, nullable = false)
-    private String qestnTtl;
+    @com.fasterxml.jackson.annotation.JsonProperty("qestnTtl")
+    private String qstnTtl;
 
     @Column(name = "qstn_cn", columnDefinition = "TEXT", length = 4000)
-    private String qestnCn;
+    @com.fasterxml.jackson.annotation.JsonProperty("qestnCn")
+    private String qstnCn;
 
     @Column(name = "ans_cn", columnDefinition = "TEXT", length = 4000)
-    private String answerCn;
+    @com.fasterxml.jackson.annotation.JsonProperty("answerCn")
+    private String ansCn;
 
     @Column(name = "inq_cnt")
     @Builder.Default
-    private Integer inqireCo = 0;
+    @com.fasterxml.jackson.annotation.JsonProperty("inqireCo")
+    private Integer inqCnt = 0;
 
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     public void update(String qestnTtl, String qestnCn, String answerCn, String atchFileId) {
-        this.qestnTtl = qestnTtl;
-        this.qestnCn = qestnCn;
-        this.answerCn = answerCn;
+        this.qstnTtl = qestnTtl;
+        this.qstnCn = qestnCn;
+        this.ansCn = answerCn;
         this.atchFileId = atchFileId;
     }
 
     public void increaseInqireCo() {
-        this.inqireCo = (this.inqireCo == null ? 0 : this.inqireCo) + 1;
+        this.inqCnt = (this.inqCnt == null ? 0 : this.inqCnt) + 1;
     }
 
     public void increaseViewCount() {
         this.increaseInqireCo();
     }
 
-    // legacy
-    public String getQestnSj() { return qestnTtl; }
-    public void setQestnSj(String v) { this.qestnTtl = v; }
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getQestnTtl() { return this.qstnTtl; }
+    public void setQestnTtl(String v) { this.qstnTtl = v; }
+
+    public String getQestnCn() { return this.qstnCn; }
+    public void setQestnCn(String v) { this.qstnCn = v; }
+
+    public String getAnswerCn() { return this.ansCn; }
+    public void setAnswerCn(String v) { this.ansCn = v; }
+
+    public Integer getInqireCo() { return this.inqCnt; }
+    public void setInqireCo(Integer v) { this.inqCnt = v; }
+
+    public String getQestnSj() { return this.qstnTtl; }
+    public void setQestnSj(String v) { this.qstnTtl = v; }
+
+    public static abstract class FaqBuilder<C extends Faq, B extends FaqBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String qstnTtl;
+        private String qstnCn;
+        private String ansCn;
+        private Integer inqCnt;
+
+        public B qestnTtl(String qestnTtl) {
+            this.qstnTtl = qestnTtl;
+            return self();
+        }
+        public B qestnCn(String qestnCn) {
+            this.qstnCn = qestnCn;
+            return self();
+        }
+        public B answerCn(String answerCn) {
+            this.ansCn = answerCn;
+            return self();
+        }
+        public B inqireCo(Integer inqireCo) {
+            this.inqCnt = inqireCo;
+            return self();
+        }
+    }
 }

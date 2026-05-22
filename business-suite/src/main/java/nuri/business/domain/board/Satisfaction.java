@@ -27,46 +27,103 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stsfdgIdSeq")
     @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "sq_dgstfn_sn", allocationSize = 1)
     @Column(name = "dgstfn_sn")
-    private Long stsfdgId;
+    @com.fasterxml.jackson.annotation.JsonProperty("stsfdgId")
+    private Long dgstfnSn;
 
     @Column(name = "bbs_id", nullable = false, length = 20)
     private String bbsId;
 
     @Column(name = "ntt_id", nullable = false, length = 20)
-    private String pstId;
+    @com.fasterxml.jackson.annotation.JsonProperty("pstId")
+    private String nttId;
 
     @Column(name = "dgstfn_scr", nullable = false)
-    private Integer stsfdgLevel;
+    @com.fasterxml.jackson.annotation.JsonProperty("stsfdgLevel")
+    private Integer dgstfnScr;
 
     @Column(name = "dgstfn_cn", length = 4000)
-    private String stsfdgCn;
+    @com.fasterxml.jackson.annotation.JsonProperty("stsfdgCn")
+    private String dgstfnCn;
 
     @Column(name = "pswd", length = 200)
-    private String password;
+    @com.fasterxml.jackson.annotation.JsonProperty("password")
+    private String pswd;
 
     @Builder.Default
     @Column(name = "use_yn", length = 1)
     private String useYn = "Y";
 
     public void update(Integer stsfdgLevel, String stsfdgCn, String password) {
-        this.stsfdgLevel = stsfdgLevel;
-        this.stsfdgCn = stsfdgCn;
+        this.dgstfnScr = stsfdgLevel;
+        this.dgstfnCn = stsfdgCn;
         if (password != null && !password.isEmpty()) {
-            this.password = password;
+            this.pswd = password;
         }
     }
 
     public void delete() {
         this.useYn = "N";
     }
-    
-    // legacy
+
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public Long getStsfdgId() { return this.dgstfnSn; }
+    public void setStsfdgId(Long v) { this.dgstfnSn = v; }
+
+    public String getPstId() { return this.nttId; }
+    public void setPstId(String v) { this.nttId = v; }
+
+    public Integer getStsfdgLevel() { return this.dgstfnScr; }
+    public void setStsfdgLevel(Integer v) { this.dgstfnScr = v; }
+
+    public String getStsfdgCn() { return this.dgstfnCn; }
+    public void setStsfdgCn(String v) { this.dgstfnCn = v; }
+
+    public String getPassword() { return this.pswd; }
+    public void setPassword(String v) { this.pswd = v; }
+
     public String getBoardId() { return bbsId; }
     public void setBoardId(String v) { this.bbsId = v; }
-    public String getArticleId() { return pstId; }
-    public void setArticleId(String v) { this.pstId = v; }
-    public Integer getSatisfactionLevel() { return stsfdgLevel; }
-    public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
+
+    public String getArticleId() { return nttId; }
+    public void setArticleId(String v) { this.nttId = v; }
+
+    public Integer getSatisfactionLevel() { return dgstfnScr; }
+    public void setSatisfactionLevel(Integer v) { this.dgstfnScr = v; }
+
+    public String getNttId() { return nttId; }
+    public void setNttId(String v) { this.nttId = v; }
+
+    public static abstract class SatisfactionBuilder<C extends Satisfaction, B extends SatisfactionBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private Long dgstfnSn;
+        private String nttId;
+        private Integer dgstfnScr;
+        private String dgstfnCn;
+        private String pswd;
+
+        public B stsfdgId(Long stsfdgId) {
+            this.dgstfnSn = stsfdgId;
+            return self();
+        }
+        public B pstId(String pstId) {
+            this.nttId = pstId;
+            return self();
+        }
+        public B stsfdgLevel(Integer stsfdgLevel) {
+            this.dgstfnScr = stsfdgLevel;
+            return self();
+        }
+        public B stsfdgCn(String stsfdgCn) {
+            this.dgstfnCn = stsfdgCn;
+            return self();
+        }
+        public B password(String password) {
+            this.pswd = password;
+            return self();
+        }
+        public B nttId(String nttId) {
+            this.nttId = nttId;
+            return self();
+        }
+    }
 }

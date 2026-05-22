@@ -24,7 +24,7 @@ public class RewardManageService {
     }
 
     public List<RewardManageDto> searchByName(String name) {
-        return rewardManageRepository.findByRwardNmContaining(name).stream()
+        return rewardManageRepository.findByRwrdNmContaining(name).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

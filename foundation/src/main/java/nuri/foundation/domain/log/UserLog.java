@@ -46,38 +46,68 @@ public class UserLog extends BaseEntity {
 
     @Id
     @Column(name = "mthd_nm", length = 100)
-    private String methodNm;
+    private String mthdNm;
 
     @Column(name = "crt_cnt")
-    private Integer creatCo;
+    private Integer crtCnt;
 
     @Column(name = "mdfcn_cnt")
-    private Integer updtCo;
+    private Integer mdfcnCnt;
 
     @Column(name = "inq_cnt")
-    private Integer rdCnt;
+    private Integer inqCnt;
 
     @Column(name = "del_cnt")
-    private Integer deleteCo;
+    private Integer delCnt;
 
     @Column(name = "otpt_cnt")
-    private Integer outptCo;
+    private Integer otptCnt;
 
     @Column(name = "err_cnt")
-    private Integer errorCo;
+    private Integer errCnt;
 
-    public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String methodNm,
-            Integer creatCo, Integer updtCo, Integer rdCnt, Integer deleteCo,
-            Integer outptCo, Integer errorCo) {
+    public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
+            Integer crtCnt, Integer mdfcnCnt, Integer inqCnt, Integer delCnt,
+            Integer otptCnt, Integer errCnt) {
         this.ocrnYmd = ocrnYmd;
         this.dmndUserId = dmndUserId;
         this.srvcNm = srvcNm;
-        this.methodNm = methodNm;
-        this.creatCo = creatCo;
-        this.updtCo = updtCo;
-        this.rdCnt = rdCnt;
-        this.deleteCo = deleteCo;
-        this.outptCo = outptCo;
-        this.errorCo = errorCo;
+        this.mthdNm = mthdNm;
+        this.crtCnt = crtCnt;
+        this.mdfcnCnt = mdfcnCnt;
+        this.inqCnt = inqCnt;
+        this.delCnt = delCnt;
+        this.otptCnt = otptCnt;
+        this.errCnt = errCnt;
+    }
+
+    // ----- [Legacy Aliases] -----
+
+    public String getMethodNm() {
+        return this.mthdNm;
+    }
+
+    public Integer getCreatCo() {
+        return this.crtCnt;
+    }
+
+    public Integer getUpdtCo() {
+        return this.mdfcnCnt;
+    }
+
+    public Integer getRdCnt() {
+        return this.inqCnt;
+    }
+
+    public Integer getDeleteCo() {
+        return this.delCnt;
+    }
+
+    public Integer getOutptCo() {
+        return this.otptCnt;
+    }
+
+    public Integer getErrorCo() {
+        return this.errCnt;
     }
 }

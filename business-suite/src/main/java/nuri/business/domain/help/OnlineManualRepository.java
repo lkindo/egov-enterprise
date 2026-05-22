@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * 온라인 매뉴얼 Repository
  */
 public interface OnlineManualRepository extends JpaRepository<OnlineManual, String> {
-    Page<OnlineManual> findByOnlineMnlNmContaining(String onlineMnlNm, Pageable pageable);
+    Page<OnlineManual> findByOnlnMnlNmContaining(String onlnMnlNm, Pageable pageable);
 }

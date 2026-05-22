@@ -46,7 +46,7 @@ class MainImageServiceTest {
         PageRequest pageable = PageRequest.of(0, 10);
         when(mainImageRepository.findAll(any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(createMockImage("IMG_1", "All", "Y"))));
-        when(mainImageRepository.findByImageNmContaining(anyString(), any()))
+        when(mainImageRepository.findByImgNmContaining(anyString(), any()))
                 .thenReturn(new PageImpl<>(List.of(createMockImage("IMG_2", "Keyword", "Y"))));
 
         // Keyword null
@@ -113,9 +113,8 @@ class MainImageServiceTest {
     @Test
     @DisplayName("반영된 이미지 목록 조회 - 필터링 검증")
     void getReflectedMainImages_filterTest() {
-        when(mainImageRepository.findAll()).thenReturn(List.of(
-                createMockImage("IMG_Y", "Show", "Y"),
-                createMockImage("IMG_N", "Hide", "N")
+        when(mainImageRepository.findByRfltYn("Y")).thenReturn(List.of(
+                createMockImage("IMG_Y", "Show", "Y")
         ));
 
         List<MainImageDto> result = mainImageService.getReflectedMainImages();

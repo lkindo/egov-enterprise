@@ -27,15 +27,15 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (StringUtils.hasText(searchId)) {
-            builder.and(workReport.wrterId.eq(searchId)); 
+            builder.and(workReport.userId.eq(searchId)); 
         }
 
         if (StringUtils.hasText(searchSe)) {
-            builder.and(workReport.reprtSe.eq(searchSe));
+            builder.and(workReport.rptSeCd.eq(searchSe));
         }
 
         if (StringUtils.hasText(searchWrd)) {
-            builder.and(workReport.reportSubject.contains(searchWrd));
+            builder.and(workReport.rptTtl.contains(searchWrd));
         }
 
         List<WorkReport> results = queryFactory
@@ -43,7 +43,7 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(workReport.reportId.desc())
+                .orderBy(workReport.rptId.desc())
                 .fetch();
 
         long total = queryFactory

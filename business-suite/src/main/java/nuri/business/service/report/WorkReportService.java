@@ -26,11 +26,11 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
     @Transactional
     public void createWorkReport(WorkReportDto dto) {
         WorkReport entity = WorkReport.builder()
-                .reportId(dto.getReportId())
-                .reportSubject(dto.getReportSubject())
-                .reportContents(dto.getReportContents())
-                .reprtSe(dto.getReprtSe())
-                .wrterId(dto.getWrterId())
+                .rptId(dto.getReportId())
+                .rptTtl(dto.getReportSubject())
+                .rptCn(dto.getReportContents())
+                .rptSeCd(dto.getReprtSe())
+                .userId(dto.getWrterId())
                 .atchFileId(dto.getAtchFileId())
                 .createdBy(dto.getWrterId())
                 .lastModifiedBy(dto.getWrterId())
@@ -65,11 +65,11 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
 
     private WorkReportDto toDto(WorkReport entity) {
         return WorkReportDto.builder()
-                .reportId(entity.getReportId())
-                .reportSubject(entity.getReportSubject())
-                .reportContents(entity.getReportContents())
-                .reprtSe(entity.getReprtSe())
-                .wrterId(entity.getWrterId())
+                .reportId(entity.getRptId())
+                .reportSubject(entity.getRptTtl())
+                .reportContents(entity.getRptCn())
+                .reprtSe(entity.getRptSeCd())
+                .wrterId(entity.getUserId())
                 .atchFileId(entity.getAtchFileId())
                 .build();
     }

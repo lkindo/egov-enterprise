@@ -33,7 +33,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
                         creatDtBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(loginLog.createdDate.desc())
+                .orderBy(loginLog.crtDt.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -48,7 +48,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
     }
 
     private BooleanExpression loginMthdLike(String searchWrd) {
-        return StringUtils.hasText(searchWrd) ? loginLog.loginMthd.contains(searchWrd) : null;
+        return StringUtils.hasText(searchWrd) ? loginLog.cntnMthdCd.contains(searchWrd) : null;
     }
 
     private BooleanExpression creatDtBetween(String searchBgnDe, String searchEndDe) {
@@ -59,7 +59,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
             LocalDateTime start = LocalDate.parse(searchBgnDe, DateTimeFormatter.ofPattern("yyyyMMdd")).atStartOfDay();
             LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyyMMdd"))
                     .atTime(LocalTime.MAX);
-            return loginLog.createdDate.between(start, end);
+            return loginLog.crtDt.between(start, end);
         } catch (Exception e) {
             return null;
         }

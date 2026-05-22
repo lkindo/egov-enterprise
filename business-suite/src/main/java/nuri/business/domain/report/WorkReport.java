@@ -21,32 +21,122 @@ public class WorkReport extends BaseEntity implements Serializable {
 
     @Id
     @Column(name = "rpt_id", length = 20)
-    private String reportId;
+    private String rptId;
 
     @Column(name = "rpt_ttl", length = 100, nullable = false)
-    private String reportSubject;
+    private String rptTtl;
 
     @Column(name = "rpt_cn", columnDefinition = "TEXT", length = 4000)
-    private String reportContents;
+    private String rptCn;
 
     @Transient
     private String atchFileId;
 
     @Column(name = "rpt_se_cd", length = 12)
-    private String reprtSe;
+    private String rptSeCd;
 
     @Column(name = "user_id", length = 20)
-    private String wrterId;
+    private String userId;
 
-    public void update(String reportSubject, String reportContents, String atchFileId, String reprtSe) {
-        this.reportSubject = reportSubject;
-        this.reportContents = reportContents;
+    public void update(String rptTtl, String rptCn, String atchFileId, String rptSeCd) {
+        this.rptTtl = rptTtl;
+        this.rptCn = rptCn;
         this.atchFileId = atchFileId;
-        this.reprtSe = reprtSe;
+        this.rptSeCd = rptSeCd;
     }
 
     // standard aliases
-    public String getReprtId() { return reportId; }
-    public String getReprtTtl() { return reportSubject; }
-    public String getReprtCn() { return reportContents; }
+    public String getReprtId() { return rptId; }
+    public String getReprtTtl() { return rptTtl; }
+    public String getReprtCn() { return rptCn; }
+
+    // ----- [Legacy Aliases for Backward Compatibility] -----
+
+    @Deprecated
+    public String getReportId() {
+        return rptId;
+    }
+
+    @Deprecated
+    public void setReportId(String reportId) {
+        this.rptId = reportId;
+    }
+
+    @Deprecated
+    public String getReportSubject() {
+        return rptTtl;
+    }
+
+    @Deprecated
+    public void setReportSubject(String reportSubject) {
+        this.rptTtl = reportSubject;
+    }
+
+    @Deprecated
+    public String getReportContents() {
+        return rptCn;
+    }
+
+    @Deprecated
+    public void setReportContents(String reportContents) {
+        this.rptCn = reportContents;
+    }
+
+    @Deprecated
+    public String getReprtSe() {
+        return rptSeCd;
+    }
+
+    @Deprecated
+    public void setReprtSe(String reprtSe) {
+        this.rptSeCd = reprtSe;
+    }
+
+    @Deprecated
+    public String getWrterId() {
+        return userId;
+    }
+
+    @Deprecated
+    public void setWrterId(String wrterId) {
+        this.userId = wrterId;
+    }
+
+    public static abstract class WorkReportBuilder<C extends WorkReport, B extends WorkReportBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String rptId;
+        private String rptTtl;
+        private String rptCn;
+        private String rptSeCd;
+        private String userId;
+
+        @Deprecated
+        public B reportId(String reportId) {
+            this.rptId = reportId;
+            return self();
+        }
+
+        @Deprecated
+        public B reportSubject(String reportSubject) {
+            this.rptTtl = reportSubject;
+            return self();
+        }
+
+        @Deprecated
+        public B reportContents(String reportContents) {
+            this.rptCn = reportContents;
+            return self();
+        }
+
+        @Deprecated
+        public B reprtSe(String reprtSe) {
+            this.rptSeCd = reprtSe;
+            return self();
+        }
+
+        @Deprecated
+        public B wrterId(String wrterId) {
+            this.userId = wrterId;
+            return self();
+        }
+    }
 }

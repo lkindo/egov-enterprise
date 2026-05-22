@@ -28,11 +28,11 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
     public void logInsertLoginLog(@NonNull LoginLogDto dto) {
         LoginLog entity = LoginLog.builder()
                 .logId(dto.getLogId())
-                .loginId(dto.getLoginId())
-                .loginIp(dto.getLoginIp())
-                .loginMthd(dto.getLoginMthd())
-                .errOccrrAt(dto.getErrOccrrAt())
-                .errorCode(dto.getErrorCode())
+                .userId(dto.getLoginId())
+                .lgnIpAddr(dto.getLoginIp())
+                .cntnMthdCd(dto.getLoginMthd())
+                .errOcrnYn(dto.getErrOccrrAt())
+                .errCd(dto.getErrorCode())
                 .build();
         loginLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }

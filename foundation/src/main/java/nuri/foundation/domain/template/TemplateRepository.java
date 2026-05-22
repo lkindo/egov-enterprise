@@ -12,13 +12,13 @@ import java.util.List;
 @Repository("commonTemplateRepository")
 public interface TemplateRepository extends JpaRepository<Template, String> {
 
-    Page<Template> findByTmplatNmContaining(String tmplatNm, Pageable pageable);
+    Page<Template> findByTmpltNmContaining(String tmpltNm, Pageable pageable);
 
-    Page<Template> findByTmplatSeCode(String tmplatSeCode, Pageable pageable);
+    Page<Template> findByTmpltSeCd(String tmpltSeCd, Pageable pageable);
 
-    List<Template> findByTmplatSeCode(String tmplatSeCode);
+    List<Template> findByTmpltSeCd(String tmpltSeCd);
 
     List<Template> findByUseYn(String useYn);
 
-    List<Template> findByTmplatSeCodeAndUseYn(String tmplatSeCode, String useYn);
+    List<Template> findByTmpltSeCdAndUseYn(String tmpltSeCd, String useYn);
 }

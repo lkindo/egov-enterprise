@@ -56,16 +56,17 @@ class WorkReportServiceTest {
                 .build();
 
         WorkReport report = WorkReport.builder()
-                .reportId("REPO_001")
-                .reportSubject("주간보고")
-                .wrterId("user01")
+                .rptId("REPO_001")
+                .rptTtl("주간보고")
+                .userId("user01")
                 .build();
 
         when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));
 
         workReportService.updateWorkReport(dto);
 
-        assertEquals("수정보고", report.getReportSubject());
+        assertEquals("수정보고", report.getRptTtl());
+        assertEquals("수정보고", report.getReportSubject()); // 레거시 호환성 검증
     }
 
     @Test
@@ -80,10 +81,10 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 상세 조회 테스트")
     void getWorkReportTest() {
         WorkReport report = WorkReport.builder()
-                .reportId("REPO_001")
-                .reportSubject("주간보고")
-                .reportContents("내용")
-                .wrterId("user01")
+                .rptId("REPO_001")
+                .rptTtl("주간보고")
+                .rptCn("내용")
+                .userId("user01")
                 .build();
 
         when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));

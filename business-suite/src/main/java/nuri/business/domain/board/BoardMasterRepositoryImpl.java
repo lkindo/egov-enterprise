@@ -68,7 +68,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.bbsTtl,
                 boardMaster.tmpltId,
                 boardMaster.useYn,
-                boardMaster.createdDate))
+                boardMaster.crtDt.as("createdDate")))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
@@ -81,7 +81,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         List<BoardMasterSearchResult> results = query
                 .where(builder)
-                .orderBy(boardMaster.createdDate.desc())
+                .orderBy(boardMaster.crtDt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -111,21 +111,21 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
                 boardMaster.tmpltId,
-                template.tmplatNm,
-                template.tmplatCours,
+                template.tmpltNm.as("tmplatNm"),
+                template.tmpltPath.as("tmplatCours"),
                 boardMaster.fileAtchPsbltyYn,
                 boardMaster.atchPsbltyFileQty,
                 boardMaster.atchPsbltyFileSz,
                 boardMaster.ansPsbltyYn,
                 boardMaster.createdBy.as("frstRegisterId"),
                 boardMaster.useYn,
-                boardMaster.createdDate))
+                boardMaster.crtDt.as("createdDate")))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")))
-                .leftJoin(template).on(boardMaster.tmpltId.eq(template.tmplatId))
+                .leftJoin(template).on(boardMaster.tmpltId.eq(template.tmpltId))
                 .where(boardMaster.bbsId.eq(bbsId))
                 .fetchOne();
 

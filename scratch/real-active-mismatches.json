@@ -1,0 +1,542 @@
+[
+  {
+    "filePath": "d:\\project\\egov-enterprise\\foundation\\src\\main\\java\\nuri\\foundation\\domain\\workspace\\MyPageContent.java",
+    "relativeClass": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\workspace\\MyPageContent.java",
+    "columnName": "cntnts_use_yn",
+    "expectedCamel": "cntntsUseYn",
+    "actualField": "cntntsUseAt",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "adbkId",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "adbkId",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "frst_rgtr_id",
+    "expectedCamel": "frstRgtrId",
+    "actualField": "optnFrstRegisterId",
+    "isId": false,
+    "line": 87
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "crt_dt",
+    "expectedCamel": "crtDt",
+    "actualField": "optnFrstRegistPnttm",
+    "isId": false,
+    "line": 90
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "last_mdfr_id",
+    "expectedCamel": "lastMdfrId",
+    "actualField": "optnLastUpdusrId",
+    "isId": false,
+    "line": 93
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+    "columnName": "mdfcn_dt",
+    "expectedCamel": "mdfcnDt",
+    "actualField": "optnLastUpdtPnttm",
+    "isId": false,
+    "line": 96
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java",
+    "columnName": "rgstr_se_cd",
+    "expectedCamel": "rgstrSeCd",
+    "actualField": "registSeCode",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_sn",
+    "expectedCamel": "dgstfnSn",
+    "actualField": "stsfdgId",
+    "isId": true,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "ntt_id",
+    "expectedCamel": "nttId",
+    "actualField": "pstId",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_scr",
+    "expectedCamel": "dgstfnScr",
+    "actualField": "stsfdgLevel",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "dgstfn_cn",
+    "expectedCamel": "dgstfnCn",
+    "actualField": "stsfdgCn",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java",
+    "columnName": "pswd",
+    "expectedCamel": "pswd",
+    "actualField": "password",
+    "isId": false,
+    "line": 44
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_id",
+    "expectedCamel": "tmpltId",
+    "actualField": "tmplatId",
+    "isId": true,
+    "line": 21
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_nm",
+    "expectedCamel": "tmpltNm",
+    "actualField": "tmplatNm",
+    "isId": false,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_path",
+    "expectedCamel": "tmpltPath",
+    "actualField": "tmplatCours",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java",
+    "columnName": "tmplt_se_cd",
+    "expectedCamel": "tmpltSeCd",
+    "actualField": "tmplatSeCode",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_sn",
+    "expectedCamel": "hldySn",
+    "actualField": "restdeNo",
+    "isId": true,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_ymd",
+    "expectedCamel": "hldyYmd",
+    "actualField": "restdeDe",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_nm",
+    "expectedCamel": "hldyNm",
+    "actualField": "restdeNm",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_expln",
+    "expectedCamel": "hldyExpln",
+    "actualField": "restdeDc",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java",
+    "columnName": "hldy_se_cd",
+    "expectedCamel": "hldySeCd",
+    "actualField": "restdeSeCode",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "wrter_id",
+    "expectedCamel": "wrterId",
+    "actualField": "writerId",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "wrter_nm",
+    "expectedCamel": "wrterNm",
+    "actualField": "writerNm",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java",
+    "columnName": "pswd",
+    "expectedCamel": "pswd",
+    "actualField": "password",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_id",
+    "expectedCamel": "deptTaskId",
+    "actualField": "deptJobId",
+    "isId": true,
+    "line": 17
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_box_id",
+    "expectedCamel": "deptTaskBoxId",
+    "actualField": "deptJobbxId",
+    "isId": false,
+    "line": 20
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_nm",
+    "expectedCamel": "deptTaskNm",
+    "actualField": "deptJobNm",
+    "isId": false,
+    "line": 23
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "dept_task_cn",
+    "expectedCamel": "deptTaskCn",
+    "actualField": "deptJobCn",
+    "isId": false,
+    "line": 26
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "pic_id",
+    "expectedCamel": "picId",
+    "actualField": "chargerId",
+    "isId": false,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java",
+    "columnName": "prrty_rnk",
+    "expectedCamel": "prrtyRnk",
+    "actualField": "priort",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "dept_task_box_id",
+    "expectedCamel": "deptTaskBoxId",
+    "actualField": "deptJobbxId",
+    "isId": true,
+    "line": 22
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "dept_task_box_nm",
+    "expectedCamel": "deptTaskBoxNm",
+    "actualField": "deptJobbxNm",
+    "isId": false,
+    "line": 25
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java",
+    "columnName": "sort_ordr",
+    "expectedCamel": "sortOrdr",
+    "actualField": "indictOrdr",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "qstn_ttl",
+    "expectedCamel": "qstnTtl",
+    "actualField": "qestnTtl",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "qstn_cn",
+    "expectedCamel": "qstnCn",
+    "actualField": "qestnCn",
+    "isId": false,
+    "line": 31
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "ans_cn",
+    "expectedCamel": "ansCn",
+    "actualField": "answerCn",
+    "isId": false,
+    "line": 34
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java",
+    "columnName": "inq_cnt",
+    "expectedCamel": "inqCnt",
+    "actualField": "atchFileId",
+    "isId": false,
+    "line": 37
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "atch_file_seq",
+    "expectedCamel": "atchFileSeq",
+    "actualField": "fileSn",
+    "isId": true,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_strg_path",
+    "expectedCamel": "fileStrgPath",
+    "actualField": "fileStreCours",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "strg_file_nm",
+    "expectedCamel": "strgFileNm",
+    "actualField": "streFileNm",
+    "isId": false,
+    "line": 39
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "orgnl_file_nm",
+    "expectedCamel": "orgnlFileNm",
+    "actualField": "orignlFileNm",
+    "isId": false,
+    "line": 42
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_estn",
+    "expectedCamel": "fileEstn",
+    "actualField": "fileExtsn",
+    "isId": false,
+    "line": 45
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java",
+    "columnName": "file_sz",
+    "expectedCamel": "fileSz",
+    "actualField": "fileMg",
+    "isId": false,
+    "line": 48
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java",
+    "columnName": "use_yn",
+    "expectedCamel": "useYn",
+    "actualField": "useAt",
+    "isId": false,
+    "line": 28
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_id",
+    "expectedCamel": "hlpId",
+    "actualField": "hpcmId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_se_cd",
+    "expectedCamel": "hlpSeCd",
+    "actualField": "hpcmSeCode",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_dfn",
+    "expectedCamel": "hlpDfn",
+    "actualField": "hpcmDf",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java",
+    "columnName": "hlp_expln",
+    "expectedCamel": "hlpExpln",
+    "actualField": "hpcmDc",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_id",
+    "expectedCamel": "onlnMnlId",
+    "actualField": "onlineMnlId",
+    "isId": true,
+    "line": 24
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_nm",
+    "expectedCamel": "onlnMnlNm",
+    "actualField": "onlineMnlNm",
+    "isId": false,
+    "line": 27
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_se_cd",
+    "expectedCamel": "onlnMnlSeCd",
+    "actualField": "onlineMnlSeCode",
+    "isId": false,
+    "line": 30
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_dfn",
+    "expectedCamel": "onlnMnlDfn",
+    "actualField": "onlineMnlDf",
+    "isId": false,
+    "line": 33
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java",
+    "columnName": "onln_mnl_expln",
+    "expectedCamel": "onlnMnlExpln",
+    "actualField": "onlineMnlDc",
+    "isId": false,
+    "line": 36
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_id",
+    "expectedCamel": "imgId",
+    "actualField": "imageId",
+    "isId": true,
+    "line": 29
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_nm",
+    "expectedCamel": "imgNm",
+    "actualField": "imageNm",
+    "isId": false,
+    "line": 32
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "main_img_file_path",
+    "expectedCamel": "mainImgFilePath",
+    "actualField": "image",
+    "isId": false,
+    "line": 35
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "img_file_nm",
+    "expectedCamel": "imgFileNm",
+    "actualField": "imageFile",
+    "isId": false,
+    "line": 38
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "main_img_expln",
+    "expectedCamel": "mainImgExpln",
+    "actualField": "imageDc",
+    "isId": false,
+    "line": 41
+  },
+  {
+    "filePath": "d:\\project\\egov-enterprise\\business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "relativeClass": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java",
+    "columnName": "rflt_yn",
+    "expectedCamel": "rfltYn",
+    "actualField": "reflctAt",
+    "isId": false,
+    "line": 44
+  }
+]

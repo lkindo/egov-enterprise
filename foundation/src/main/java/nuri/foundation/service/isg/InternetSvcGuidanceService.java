@@ -29,10 +29,10 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
     @Transactional
     public void registerIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         InternetSvcGuidance isg = InternetSvcGuidance.builder()
-                .intnetSvcId(dto.getIntnetSvcId())
-                .intnetSvcNm(dto.getIntnetSvcNm())
-                .intnetSvcDc(dto.getIntnetSvcDc())
-                .reflctAt(dto.getReflctAt())
+                .itntSvcId(dto.getIntnetSvcId())
+                .itntSvcNm(dto.getIntnetSvcNm())
+                .itntSvcExpln(dto.getIntnetSvcDc())
+                .rfltYn(dto.getReflctAt())
                 .build();
         internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
     }
@@ -53,7 +53,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
     @Override
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
-            return internetSvcGuidanceRepository.findByIntnetSvcNmContaining(searchKeyword, pageable)
+            return internetSvcGuidanceRepository.findByItntSvcNmContaining(searchKeyword, pageable)
                     .map(this::convertToDto);
         }
         return internetSvcGuidanceRepository.findAll(Objects.requireNonNull(pageable))
@@ -67,10 +67,10 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
 
     private InternetSvcGuidanceDto convertToDto(InternetSvcGuidance isg) {
         return InternetSvcGuidanceDto.builder()
-                .intnetSvcId(isg.getIntnetSvcId())
-                .intnetSvcNm(isg.getIntnetSvcNm())
-                .intnetSvcDc(isg.getIntnetSvcDc())
-                .reflctAt(isg.getReflctAt())
+                .intnetSvcId(isg.getItntSvcId())
+                .intnetSvcNm(isg.getItntSvcNm())
+                .intnetSvcDc(isg.getItntSvcExpln())
+                .reflctAt(isg.getRfltYn())
                 .userId(isg.getLastModifiedBy())
                 .regDate(isg.getLastModifiedDate())
                 .build();

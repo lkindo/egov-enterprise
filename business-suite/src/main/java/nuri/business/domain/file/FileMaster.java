@@ -26,7 +26,7 @@ public class FileMaster extends BaseEntity {
     private String atchFileId;
 
     @Column(name = "use_yn", nullable = false, length = 1)
-    private String useAt;
+    private String useYn;
 
     @Builder.Default
     @OneToMany(mappedBy = "fileMaster", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -34,7 +34,7 @@ public class FileMaster extends BaseEntity {
 
     public FileMaster(String atchFileId) {
         this.atchFileId = atchFileId;
-        this.useAt = "Y";
+        this.useYn = "Y";
     }
 
     public void addFileDetail(FileDetail detail) {
@@ -43,6 +43,21 @@ public class FileMaster extends BaseEntity {
     }
 
     public void delete() {
-        this.useAt = "N";
+        this.useYn = "N";
+    }
+
+    // ----- [Legacy Aliases & Compatibility Bridge] -----
+
+    public String getUseAt() {
+        return this.useYn;
+    }
+
+    public static abstract class FileMasterBuilder<C extends FileMaster, B extends FileMasterBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String useYn;
+
+        public B useAt(String useAt) {
+            this.useYn = useAt;
+            return self();
+        }
     }
 }

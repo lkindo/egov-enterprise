@@ -31,8 +31,8 @@ public class SmsRecptnDto {
         return SmsRecptnDto.builder()
                 .smsId(entity.getSmsId())
                 .recptnTelno(entity.getRecptnTelno())
-                .resultCode(entity.getResultCode())
-                .resultMssage(entity.getResultMssage())
+                .resultCode(entity.getRsltCd())
+                .resultMssage(entity.getRsltMsg())
                 .build();
     }
 }

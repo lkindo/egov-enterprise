@@ -37,12 +37,12 @@ public class LogService extends BaseAbstractService implements EgovLogService {
 
         LoginLog log = LoginLog.builder()
                 .logId("LGN_" + UUID.randomUUID().toString().substring(0, 16))
-                .loginId(userId)
-                .loginIp(ip)
-                .loginMthd(mthd)
-                .errOccrrAt(errAt)
-                .errorCode(errCode)
-                .createdDate(java.time.LocalDateTime.now())
+                .userId(userId)
+                .lgnIpAddr(ip)
+                .cntnMthdCd(mthd)
+                .errOcrnYn(errAt)
+                .errCd(errCode)
+                .crtDt(java.time.LocalDateTime.now())
                 .build();
         loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
     }
@@ -52,7 +52,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
      */
     @Override
     public List<LogDto> getRecentLoginLogs() {
-        return loginLogRepository.findTop100ByOrderByCreatedDateDesc().stream()
+        return loginLogRepository.findTop100ByOrderByCrtDtDesc().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

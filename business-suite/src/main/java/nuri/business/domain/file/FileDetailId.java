@@ -11,7 +11,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
+@lombok.Getter
+@lombok.Setter
 public class FileDetailId implements Serializable {
     private String fileMaster; // FileMaster의 atchFileId와 매핑
-    private Integer fileSn;
+    private Integer atchFileSeq;
+
+    // ----- [Legacy Aliases] -----
+
+    public Integer getFileSn() {
+        return this.atchFileSeq;
+    }
+
+    public void setFileSn(Integer fileSn) {
+        this.atchFileSeq = fileSn;
+    }
 }

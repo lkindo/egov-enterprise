@@ -56,7 +56,7 @@ class TemplateServiceTest {
         // given
         Pageable pageable = PageRequest.of(0, 10);
         Template template = Template.builder().tmplatId("TMPL_1").tmplatNm("KeywordTest").build();
-        given(templateRepository.findByTmplatNmContaining("Keyword", pageable)).willReturn(new PageImpl<>(List.of(template)));
+        given(templateRepository.findByTmpltNmContaining("Keyword", pageable)).willReturn(new PageImpl<>(List.of(template)));
 
         // when
         Page<TemplateDto> result = templateService.getTemplateList("Keyword", pageable);
@@ -70,11 +70,11 @@ class TemplateServiceTest {
     @DisplayName("유형별 템플릿 조회")
     void getTemplatesByType() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(templateRepository.findByTmplatSeCode("TYPE1", pageable)).willReturn(new PageImpl<>(List.of()));
+        given(templateRepository.findByTmpltSeCd("TYPE1", pageable)).willReturn(new PageImpl<>(List.of()));
 
         templateService.getTemplatesByType("TYPE1", pageable);
 
-        verify(templateRepository).findByTmplatSeCode("TYPE1", pageable);
+        verify(templateRepository).findByTmpltSeCd("TYPE1", pageable);
     }
 
     @Test
@@ -143,10 +143,10 @@ class TemplateServiceTest {
     @Test
     @DisplayName("유형별 사용 중인 템플릿 목록 조회")
     void getActiveTemplatesByType() {
-        given(templateRepository.findByTmplatSeCodeAndUseYn("T1", "Y")).willReturn(List.of());
+        given(templateRepository.findByTmpltSeCdAndUseYn("T1", "Y")).willReturn(List.of());
 
         templateService.getActiveTemplatesByType("T1");
 
-        verify(templateRepository).findByTmplatSeCodeAndUseYn("T1", "Y");
+        verify(templateRepository).findByTmpltSeCdAndUseYn("T1", "Y");
     }
 }

@@ -27,28 +27,71 @@ public class LoginLog extends BaseEntity {
     private String logId;
 
     @Column(name = "user_id", length = 20)
-    private String loginId;
+    private String userId;
 
     @Column(name = "lgn_ip_addr", length = 30)
-    private String loginIp;
+    private String lgnIpAddr;
 
     @Column(name = "cntn_mthd_cd", length = 12)
-    private String loginMthd;
+    private String cntnMthdCd;
 
     @Column(name = "err_ocrn_yn", length = 1)
-    private String errOccrrAt;
+    private String errOcrnYn;
 
     @Column(name = "err_cd", length = 12)
-    private String errorCode;
+    private String errCd;
 
-    public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,
+    public LoginLog(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn, String errCd,
             LocalDateTime createdDate) {
         this.logId = logId;
-        this.loginId = loginId;
-        this.loginIp = loginIp;
-        this.loginMthd = loginMthd;
-        this.errOccrrAt = errOccrrAt;
-        this.errorCode = errorCode;
-        this.createdDate = createdDate;
+        this.userId = userId;
+        this.lgnIpAddr = lgnIpAddr;
+        this.cntnMthdCd = cntnMthdCd;
+        this.errOcrnYn = errOcrnYn;
+        this.errCd = errCd;
+        this.crtDt = createdDate;
+    }
+
+    public static abstract class LoginLogBuilder<C extends LoginLog, B extends LoginLogBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String userId;
+        private String cntnMthdCd;
+        private String lgnIpAddr;
+
+        public B loginId(String loginId) {
+            this.userId = loginId;
+            return self();
+        }
+
+        public B loginMthd(String loginMthd) {
+            this.cntnMthdCd = loginMthd;
+            return self();
+        }
+
+        public B loginIp(String loginIp) {
+            this.lgnIpAddr = loginIp;
+            return self();
+        }
+    }
+
+    // ----- [Legacy Aliases] -----
+
+    public String getLoginId() {
+        return this.userId;
+    }
+
+    public String getLoginIp() {
+        return this.lgnIpAddr;
+    }
+
+    public String getLoginMthd() {
+        return this.cntnMthdCd;
+    }
+
+    public String getErrOccrrAt() {
+        return this.errOcrnYn;
+    }
+
+    public String getErrorCode() {
+        return this.errCd;
     }
 }

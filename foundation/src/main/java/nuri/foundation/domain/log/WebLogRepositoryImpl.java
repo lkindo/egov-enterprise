@@ -30,7 +30,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(QWebLog.webLog.ocrnYmd.desc())
+                .orderBy(QWebLog.webLog.occrYmd.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -54,7 +54,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
         }
         String start = searchBgnDe.replace("-", "");
         String end = searchEndDe.replace("-", "");
-        return QWebLog.webLog.ocrnYmd.trim().between(start, end);
+        return QWebLog.webLog.occrYmd.trim().between(start, end);
     }
 
     @Override

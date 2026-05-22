@@ -33,16 +33,36 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     private String trgtId;
 
     @Column(name = "rgstr_se_cd", length = 12)
-    private String registSeCode;
+    @com.fasterxml.jackson.annotation.JsonProperty("registSeCode")
+    private String rgstrSeCd;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    public BoardUse(String bbsId, String trgtId, String registSeCode, String useYn) {
+    public BoardUse(String bbsId, String trgtId, String rgstrSeCd, String useYn) {
         this.bbsId = bbsId;
         this.trgtId = trgtId;
-        this.registSeCode = registSeCode;
+        this.rgstrSeCd = rgstrSeCd;
         this.useYn = useYn;
+    }
+
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getRegistSeCode() {
+        return this.rgstrSeCd;
+    }
+
+    public void setRegistSeCode(String registSeCode) {
+        this.rgstrSeCd = registSeCode;
+    }
+
+    public static abstract class BoardUseBuilder<C extends BoardUse, B extends BoardUseBuilder<C, B>> extends BaseTimeEntityBuilder<C, B> {
+        private String rgstrSeCd;
+
+        public B registSeCode(String registSeCode) {
+            this.rgstrSeCd = registSeCode;
+            return self();
+        }
     }
 
     public void update(String useYn) {

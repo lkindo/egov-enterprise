@@ -21,7 +21,7 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
         List<SentMail> content = queryFactory
                 .selectFrom(sentMail)
                 .where(searchExpression(searchCondition, searchKeyword))
-                .orderBy(sentMail.mssageId.desc())
+                .orderBy(sentMail.msgId.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -41,11 +41,11 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
         }
 
         if ("1".equals(searchCondition)) { // 제목 (sj)
-            return sentMail.sj.contains(searchKeyword);
+            return sentMail.emlTtl.contains(searchKeyword);
         } else if ("2".equals(searchCondition)) { // 메일내용 (emailCn)
-            return sentMail.emailCn.contains(searchKeyword);
+            return sentMail.emlCn.contains(searchKeyword);
         } else if ("3".equals(searchCondition)) { // 발신자 (dsptchPerson)
-            return sentMail.dsptchPerson.contains(searchKeyword);
+            return sentMail.sndptyNm.contains(searchKeyword);
         }
 
         return null;

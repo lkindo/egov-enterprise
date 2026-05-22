@@ -28,7 +28,20 @@ public class CommunityUser extends BaseEntity implements Serializable {
     private String joinYmd;
 
     @Column(name = "whdwl_ymd", length = 8)
-    private String wdrlYmd;
+    private String whdwlYmd;
+
+    // ----- [Legacy Getter Aliases] -----
+
+    public String getWdrlYmd() { return this.whdwlYmd; }
+
+    // ----- [Custom Builder Extension for Backwards Compatibility] -----
+
+    public static abstract class CommunityUserBuilder<C extends CommunityUser, B extends CommunityUserBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        public B wdrlYmd(String wdrlYmd) {
+            this.whdwlYmd = wdrlYmd;
+            return self();
+        }
+    }
 
     @Column(name = "mbr_stts_cd", length = 12)
     private String mbrSttsCd;
@@ -42,7 +55,7 @@ public class CommunityUser extends BaseEntity implements Serializable {
 
     public void withdraw() {
         this.useYn = "N";
-        this.wdrlYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        this.whdwlYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         this.mngrYn = "N";
     }
 

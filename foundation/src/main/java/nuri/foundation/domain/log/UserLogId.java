@@ -12,5 +12,5 @@ public class UserLogId implements Serializable {
     private String ocrnYmd;
     private String dmndUserId;
     private String srvcNm;
-    private String methodNm;
+    private String mthdNm;
 }

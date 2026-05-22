@@ -22,20 +22,85 @@ public class Hpcm extends BaseEntity {
 
     @Id
     @Column(name = "hlp_id", length = 20)
-    private String hpcmId;
+    @com.fasterxml.jackson.annotation.JsonProperty("hpcmId")
+    private String hlpId;
 
     @Column(name = "hlp_se_cd", length = 3, nullable = false)
-    private String hpcmSeCode;
+    @com.fasterxml.jackson.annotation.JsonProperty("hpcmSeCode")
+    private String hlpSeCd;
 
     @Column(name = "hlp_dfn", length = 1000, nullable = false)
-    private String hpcmDf;
+    @com.fasterxml.jackson.annotation.JsonProperty("hpcmDf")
+    private String hlpDfn;
 
     @Column(name = "hlp_expln", columnDefinition = "TEXT")
-    private String hpcmDc;
+    @com.fasterxml.jackson.annotation.JsonProperty("hpcmDc")
+    private String hlpExpln;
 
     public void update(String hpcmSeCode, String hpcmDf, String hpcmDc) {
-        this.hpcmSeCode = hpcmSeCode;
-        this.hpcmDf = hpcmDf;
-        this.hpcmDc = hpcmDc;
+        this.hlpSeCd = hpcmSeCode;
+        this.hlpDfn = hpcmDf;
+        this.hlpExpln = hpcmDc;
+    }
+
+    // ----- [Legacy Aliases & Compatibility Bridge] -----
+
+    public String getHpcmId() {
+        return this.hlpId;
+    }
+
+    public void setHpcmId(String hpcmId) {
+        this.hlpId = hpcmId;
+    }
+
+    public String getHpcmSeCode() {
+        return this.hlpSeCd;
+    }
+
+    public void setHpcmSeCode(String hpcmSeCode) {
+        this.hlpSeCd = hpcmSeCode;
+    }
+
+    public String getHpcmDf() {
+        return this.hlpDfn;
+    }
+
+    public void setHpcmDf(String hpcmDf) {
+        this.hlpDfn = hpcmDf;
+    }
+
+    public String getHpcmDc() {
+        return this.hlpExpln;
+    }
+
+    public void setHpcmDc(String hpcmDc) {
+        this.hlpExpln = hpcmDc;
+    }
+
+    public static abstract class HpcmBuilder<C extends Hpcm, B extends HpcmBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String hlpId;
+        private String hlpSeCd;
+        private String hlpDfn;
+        private String hlpExpln;
+
+        public B hpcmId(String hpcmId) {
+            this.hlpId = hpcmId;
+            return self();
+        }
+
+        public B hpcmSeCode(String hpcmSeCode) {
+            this.hlpSeCd = hpcmSeCode;
+            return self();
+        }
+
+        public B hpcmDf(String hpcmDf) {
+            this.hlpDfn = hpcmDf;
+            return self();
+        }
+
+        public B hpcmDc(String hpcmDc) {
+            this.hlpExpln = hpcmDc;
+            return self();
+        }
     }
 }

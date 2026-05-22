@@ -37,7 +37,7 @@ public class Scrap extends BaseEntity {
     private String scrapUrl;
 
     @Column(name = "scrap_expln", length = 4000)
-    private String scrapDc;
+    private String scrapExpln;
 
     @Column(name = "use_yn", length = 1)
     @Builder.Default
@@ -47,14 +47,36 @@ public class Scrap extends BaseEntity {
         return getFrstRegisterId();
     }
 
-    public void update(String scrapNm, String scrapUrl, String scrapDc, String useYn) {
+    public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {
         this.scrapNm = scrapNm;
         this.scrapUrl = scrapUrl;
-        this.scrapDc = scrapDc;
+        this.scrapExpln = scrapExpln;
         this.useYn = useYn;
     }
 
     // legacy
     public String getNttId() { return pstId; }
     public void setNttId(String v) { this.pstId = v; }
+
+    // ----- [Legacy Aliases for Backward Compatibility] -----
+
+    @Deprecated
+    public String getScrapDc() {
+        return scrapExpln;
+    }
+
+    @Deprecated
+    public void setScrapDc(String scrapDc) {
+        this.scrapExpln = scrapDc;
+    }
+
+    public static abstract class ScrapBuilder<C extends Scrap, B extends ScrapBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String scrapExpln;
+
+        @Deprecated
+        public B scrapDc(String scrapDc) {
+            this.scrapExpln = scrapDc;
+            return self();
+        }
+    }
 }

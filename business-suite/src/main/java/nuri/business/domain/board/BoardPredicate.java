@@ -38,11 +38,11 @@ public class BoardPredicate {
         }
 
         if (condition.getStartDate() != null) {
-            builder.and(QBoard.board.createdDate.goe(condition.getStartDate()));
+            builder.and(QBoard.board.crtDt.goe(condition.getStartDate()));
         }
 
         if (condition.getEndDate() != null) {
-            builder.and(QBoard.board.createdDate.loe(condition.getEndDate()));
+            builder.and(QBoard.board.crtDt.loe(condition.getEndDate()));
         }
 
         if (StringUtils.hasText(condition.getQnaStatus())) {

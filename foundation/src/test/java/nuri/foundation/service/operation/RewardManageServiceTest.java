@@ -46,7 +46,7 @@ class RewardManageServiceTest {
     void searchByName_Success() {
         // Given
         RewardManage entity = RewardManage.builder().rwardId("R1").rwardNm("Gold Prize").build();
-        given(rewardManageRepository.findByRwardNmContaining("Gold")).willReturn(List.of(entity));
+        given(rewardManageRepository.findByRwrdNmContaining("Gold")).willReturn(List.of(entity));
 
         // When
         List<RewardManageDto> result = rewardManageService.searchByName("Gold");

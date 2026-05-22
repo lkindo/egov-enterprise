@@ -68,8 +68,8 @@ public class SmsDto {
             return null;
         return SmsDto.builder()
                 .smsId(entity.getSmsId())
-                .trnsmitTelno(entity.getTrnsmitTelno())
-                .trnsmitCn(entity.getTrnsmitCn())
+                .trnsmitTelno(entity.getSndngTelno())
+                .trnsmitCn(entity.getSndngCn())
                 .recptnCnt(0)
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())

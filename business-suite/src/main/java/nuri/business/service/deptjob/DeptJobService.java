@@ -50,25 +50,25 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         BooleanBuilder builder = new BooleanBuilder();
 
         if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
-            builder.and(deptJob.deptJobbxId.eq(deptJobbxId));
+            builder.and(deptJob.deptTaskBoxId.eq(deptJobbxId));
         } else if (deptId != null && !deptId.isEmpty()) {
             List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
                     .map(box -> box.getDeptJobbxId())
                     .collect(Collectors.toList());
             if (!boxIds.isEmpty()) {
-                builder.and(deptJob.deptJobbxId.in(boxIds));
+                builder.and(deptJob.deptTaskBoxId.in(boxIds));
             } else {
-                builder.and(deptJob.deptJobbxId.eq("NONE_BOX"));
+                builder.and(deptJob.deptTaskBoxId.eq("NONE_BOX"));
             }
         }
 
         if (keyword != null && !keyword.isEmpty()) {
             if ("0".equals(searchCondition)) { // 부서업무명
-                builder.and(deptJob.deptJobNm.contains(keyword));
+                builder.and(deptJob.deptTaskNm.contains(keyword));
             } else if ("1".equals(searchCondition)) { // 부서업무내용
-                builder.and(deptJob.deptJobCn.contains(keyword));
+                builder.and(deptJob.deptTaskCn.contains(keyword));
             } else if ("2".equals(searchCondition)) { // 담당자ID
-                builder.and(deptJob.chargerId.contains(keyword));
+                builder.and(deptJob.picId.contains(keyword));
             }
         }
         return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
@@ -125,7 +125,7 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
                     dto.setDeptJobbxNm(box.getDeptJobbxNm());
                     dto.setDeptId(box.getDeptId());
                     organizationManageRepository.findById(required(box.getDeptId(), "box.getDeptId() 는 null 일 수 없습니다"))
-                            .ifPresent(org -> dto.setDeptNm(org.getOrgnztNm()));
+                            .ifPresent(org -> dto.setDeptNm(org.getOgnzNm()));
                 });
 
         userRepository.findByEsntlId(required(entity.getChargerId(), "entity.getChargerId() 는 null 일 수 없습니다"))

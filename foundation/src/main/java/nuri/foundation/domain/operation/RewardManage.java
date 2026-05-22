@@ -23,44 +23,107 @@ public class RewardManage extends BaseEntity {
 
     @Id
     @Column(name = "rwrd_id", length = 20)
-    private String rwardId;
+    private String rwrdId;
 
     @Column(name = "rwrd_user_id", length = 20, nullable = false)
-    private String rwardwnrId;
+    private String rwrdUserId;
 
     @Column(name = "rwrd_cd", length = 12, nullable = false)
-    private String rwardCode;
+    private String rwrdCd;
 
     @Column(name = "rwrd_ymd", length = 8)
-    private String rwardDe;
+    private String rwrdYmd;
 
     @Column(name = "rwrd_nm", length = 100)
-    private String rwardNm;
+    private String rwrdNm;
 
     @Column(name = "cntrb_cn", length = 4000)
-    private String pblenCn;
+    private String cntrbCn;
 
     @Column(name = "atrzr_id", length = 20)
-    private String sanctnerId;
+    private String atrzrId;
 
     @Column(name = "confm_yn", length = 1)
-    private String confmAt;
+    private String confmYn;
 
     @Column(name = "aprv_dt")
-    private java.time.LocalDateTime sanctnDt;
+    private java.time.LocalDateTime aprvDt;
 
     @Column(name = "rtn_rsn_cn", length = 4000)
-    private String returnResn;
+    private String rtnRsnCn;
 
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     @Column(name = "ifml_atrz_id", length = 20)
-    private String informlSanctnId;
+    private String ifmlAtrzId;
+
+    // ----- [Legacy Getter Aliases] -----
+
+    public String getRwardId() { return this.rwrdId; }
+    public String getRwardwnrId() { return this.rwrdUserId; }
+    public String getRwardCode() { return this.rwrdCd; }
+    public String getRwardDe() { return this.rwrdYmd; }
+    public String getRwardNm() { return this.rwrdNm; }
+    public String getPblenCn() { return this.cntrbCn; }
+    public String getSanctnerId() { return this.atrzrId; }
+    public String getConfmAt() { return this.confmYn; }
+    public java.time.LocalDateTime getSanctnDt() { return this.aprvDt; }
+    public String getReturnResn() { return this.rtnRsnCn; }
+    public String getInformlSanctnId() { return this.ifmlAtrzId; }
+
+    // ----- [Custom Builder Extension for Backwards Compatibility] -----
+
+    public static abstract class RewardManageBuilder<C extends RewardManage, B extends RewardManageBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        public B rwardId(String rwardId) {
+            this.rwrdId = rwardId;
+            return self();
+        }
+        public B rwardwnrId(String rwardwnrId) {
+            this.rwrdUserId = rwardwnrId;
+            return self();
+        }
+        public B rwardCode(String rwardCode) {
+            this.rwrdCd = rwardCode;
+            return self();
+        }
+        public B rwardDe(String rwardDe) {
+            this.rwrdYmd = rwardDe;
+            return self();
+        }
+        public B rwardNm(String rwardNm) {
+            this.rwrdNm = rwardNm;
+            return self();
+        }
+        public B pblenCn(String pblenCn) {
+            this.cntrbCn = pblenCn;
+            return self();
+        }
+        public B sanctnerId(String sanctnerId) {
+            this.atrzrId = sanctnerId;
+            return self();
+        }
+        public B confmAt(String confmAt) {
+            this.confmYn = confmAt;
+            return self();
+        }
+        public B sanctnDt(java.time.LocalDateTime sanctnDt) {
+            this.aprvDt = sanctnDt;
+            return self();
+        }
+        public B returnResn(String returnResn) {
+            this.rtnRsnCn = returnResn;
+            return self();
+        }
+        public B informlSanctnId(String informlSanctnId) {
+            this.ifmlAtrzId = informlSanctnId;
+            return self();
+        }
+    }
 
     public void update(String rwardDe, String rwardNm, String pblenCn) {
-        this.rwardDe = rwardDe;
-        this.rwardNm = rwardNm;
-        this.pblenCn = pblenCn;
+        this.rwrdYmd = rwardDe;
+        this.rwrdNm = rwardNm;
+        this.cntrbCn = pblenCn;
     }
 }

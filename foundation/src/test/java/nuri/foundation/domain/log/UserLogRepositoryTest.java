@@ -51,8 +51,8 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
                 .ocrnYmd("20240408")
                 .dmndUserId("ESNTL_01")
                 .srvcNm("TestService")
-                .methodNm("testMethod")
-                .creatCo(1)
+                .mthdNm("testMethod")
+                .crtCnt(1)
                 .build();
         userLogRepository.save(log);
         entityManager.flush();

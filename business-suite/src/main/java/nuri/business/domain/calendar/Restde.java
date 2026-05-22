@@ -23,29 +23,79 @@ public class Restde extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hldy_sn")
-    private Integer restdeNo;
+    @com.fasterxml.jackson.annotation.JsonProperty("restdeNo")
+    private Integer hldySn;
 
     @Column(name = "hldy_ymd", length = 8)
-    private String restdeDe;
+    @com.fasterxml.jackson.annotation.JsonProperty("restdeDe")
+    private String hldyYmd;
 
     @Column(name = "hldy_nm", length = 100)
-    private String restdeNm;
+    @com.fasterxml.jackson.annotation.JsonProperty("restdeNm")
+    private String hldyNm;
 
     @Column(name = "hldy_expln", length = 4000)
-    private String restdeDc;
+    @com.fasterxml.jackson.annotation.JsonProperty("restdeDc")
+    private String hldyExpln;
 
     @Column(name = "hldy_se_cd", length = 12)
-    private String restdeSeCode;
+    @com.fasterxml.jackson.annotation.JsonProperty("restdeSeCode")
+    private String hldySeCd;
 
     public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode) {
-        this.restdeDe = restdeDe;
-        this.restdeNm = restdeNm;
-        this.restdeDc = restdeDc;
-        this.restdeSeCode = restdeSeCode;
+        this.hldyYmd = restdeDe;
+        this.hldyNm = restdeNm;
+        this.hldyExpln = restdeDc;
+        this.hldySeCd = restdeSeCode;
     }
 
-    // standard aliases
-    public String getRestdeYmd() { return restdeDe; }
-    public String getRestdeExpln() { return restdeDc; }
-    public String getRestdeSeCd() { return restdeSeCode; }
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public Integer getRestdeNo() { return this.hldySn; }
+    public void setRestdeNo(Integer v) { this.hldySn = v; }
+
+    public String getRestdeDe() { return this.hldyYmd; }
+    public void setRestdeDe(String v) { this.hldyYmd = v; }
+
+    public String getRestdeNm() { return this.hldyNm; }
+    public void setRestdeNm(String v) { this.hldyNm = v; }
+
+    public String getRestdeDc() { return this.hldyExpln; }
+    public void setRestdeDc(String v) { this.hldyExpln = v; }
+
+    public String getRestdeSeCode() { return this.hldySeCd; }
+    public void setRestdeSeCode(String v) { this.hldySeCd = v; }
+
+    public String getRestdeYmd() { return this.hldyYmd; }
+    public String getRestdeExpln() { return this.hldyExpln; }
+    public String getRestdeSeCd() { return this.hldySeCd; }
+
+    public static abstract class RestdeBuilder<C extends Restde, B extends RestdeBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private Integer hldySn;
+        private String hldyYmd;
+        private String hldyNm;
+        private String hldyExpln;
+        private String hldySeCd;
+
+        public B restdeNo(Integer restdeNo) {
+            this.hldySn = restdeNo;
+            return self();
+        }
+        public B restdeDe(String restdeDe) {
+            this.hldyYmd = restdeDe;
+            return self();
+        }
+        public B restdeNm(String restdeNm) {
+            this.hldyNm = restdeNm;
+            return self();
+        }
+        public B restdeDc(String restdeDc) {
+            this.hldyExpln = restdeDc;
+            return self();
+        }
+        public B restdeSeCode(String restdeSeCode) {
+            this.hldySeCd = restdeSeCode;
+            return self();
+        }
+    }
 }

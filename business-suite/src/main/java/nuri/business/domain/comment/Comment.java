@@ -37,13 +37,16 @@ public class Comment extends BaseEntity implements Serializable {
     private String bbsId;
 
     @Column(name = "wrter_id", length = 20)
-    private String writerId;
+    @com.fasterxml.jackson.annotation.JsonProperty("writerId")
+    private String wrterId;
 
     @Column(name = "wrter_nm", length = 100)
-    private String writerNm;
+    @com.fasterxml.jackson.annotation.JsonProperty("writerNm")
+    private String wrterNm;
 
     @Column(name = "pswd", length = 200)
-    private String password;
+    @com.fasterxml.jackson.annotation.JsonProperty("password")
+    private String pswd;
 
     @Column(name = "ans_cn", columnDefinition = "TEXT")
     private String ansCn;
@@ -60,7 +63,17 @@ public class Comment extends BaseEntity implements Serializable {
         this.useYn = "N";
     }
 
-    // aliases for backward compatibility and mapping
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+
+    public String getWriterId() { return this.wrterId; }
+    public void setWriterId(String v) { this.wrterId = v; }
+
+    public String getWriterNm() { return this.wrterNm; }
+    public void setWriterNm(String v) { this.wrterNm = v; }
+
+    public String getPassword() { return this.pswd; }
+    public void setPassword(String v) { this.pswd = v; }
+
     public Long getAnswerNo() { return ansSn; }
     public void setAnswerNo(Long v) { this.ansSn = v; }
     public String getNttId() { return pstId; }
@@ -70,4 +83,23 @@ public class Comment extends BaseEntity implements Serializable {
 
     public Long getId() { return ansSn; }
     public void setId(Long v) { this.ansSn = v; }
+
+    public static abstract class CommentBuilder<C extends Comment, B extends CommentBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        private String wrterId;
+        private String wrterNm;
+        private String pswd;
+
+        public B writerId(String writerId) {
+            this.wrterId = writerId;
+            return self();
+        }
+        public B writerNm(String writerNm) {
+            this.wrterNm = writerNm;
+            return self();
+        }
+        public B password(String password) {
+            this.pswd = password;
+            return self();
+        }
+    }
 }

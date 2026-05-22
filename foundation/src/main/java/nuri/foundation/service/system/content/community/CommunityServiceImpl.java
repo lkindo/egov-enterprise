@@ -36,11 +36,11 @@ public class CommunityServiceImpl implements CommunityService {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
-        builder.and(qCommunity.regTypeCd.eq("REGC01"));
+        builder.and(qCommunity.regSeCd.eq("REGC01"));
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
             if ("0".equals(searchCnd)) {
-                builder.and(qCommunity.cmntyTtl.contains(searchWrd));
+                builder.and(qCommunity.cmntyNm.contains(searchWrd));
             }
         }
 
@@ -49,7 +49,7 @@ public class CommunityServiceImpl implements CommunityService {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qCommunity.createdDate.desc())
+                .orderBy(qCommunity.crtDt.desc())
                 .fetch();
 
         long totalCount = queryFactory
@@ -116,7 +116,7 @@ public class CommunityServiceImpl implements CommunityService {
         return queryFactory
                 .selectFrom(qCommunity)
                 .where(qCommunity.useYn.eq("Y"))
-                .orderBy(qCommunity.createdDate.desc())
+                .orderBy(qCommunity.crtDt.desc())
                 .fetch()
                 .stream()
                 .map(CommunityDto::from)

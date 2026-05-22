@@ -29,11 +29,11 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         SysLog entity = SysLog.builder()
                 .dmndId(dto.getDmndId())
                 .srvcNm(dto.getSrvcNm())
-                .methodNm(dto.getMethodNm())
+                .mthdNm(dto.getMethodNm())
                 .prcsSeCd(dto.getPrcsSeCd())
                 .prcsTm(dto.getPrcsTm())
                 .dmndUserId(dto.getDmndUserId())
-                .rqesterIp(dto.getRqesterIp())
+                .dmndUserIpAddr(dto.getRqesterIp())
                 .ocrnYmd(dto.getOcrnYmd())
                 .build();
         sysLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));

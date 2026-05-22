@@ -23,7 +23,7 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
                 .where(conditionEq(searchCondition, searchKeyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(restde.restdeDe.desc())
+                .orderBy(restde.hldyYmd.desc())
                 .fetch();
 
         Long total = queryFactory
@@ -42,9 +42,9 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
         }
 
         if ("1".equals(searchCondition)) { // 휴일일자
-            return restde.restdeDe.eq(searchKeyword);
+            return restde.hldyYmd.eq(searchKeyword);
         } else if ("2".equals(searchCondition)) { // 휴일명
-            return restde.restdeNm.contains(searchKeyword);
+            return restde.hldyNm.contains(searchKeyword);
         }
 
         return null;

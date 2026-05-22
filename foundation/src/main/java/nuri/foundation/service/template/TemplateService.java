@@ -33,12 +33,12 @@ public class TemplateService implements EgovTemplateService {
         if (keyword == null || keyword.isEmpty()) {
             return templateRepository.findAll(pageable).map(TemplateDto::from);
         }
-        return templateRepository.findByTmplatNmContaining(keyword, pageable).map(TemplateDto::from);
+        return templateRepository.findByTmpltNmContaining(keyword, pageable).map(TemplateDto::from);
     }
 
     @Override
     public Page<TemplateDto> getTemplatesByType(String tmplatSeCode, Pageable pageable) {
-        return templateRepository.findByTmplatSeCode(tmplatSeCode, pageable).map(TemplateDto::from);
+        return templateRepository.findByTmpltSeCd(tmplatSeCode, pageable).map(TemplateDto::from);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class TemplateService implements EgovTemplateService {
 
     @Override
     public List<TemplateDto> getActiveTemplatesByType(String tmplatSeCode) {
-        return templateRepository.findByTmplatSeCodeAndUseYn(tmplatSeCode, "Y").stream()
+        return templateRepository.findByTmpltSeCdAndUseYn(tmplatSeCode, "Y").stream()
                 .map(TemplateDto::from)
                 .collect(Collectors.toList());
     }
