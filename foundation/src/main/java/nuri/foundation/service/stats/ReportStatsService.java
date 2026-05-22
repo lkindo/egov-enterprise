@@ -55,19 +55,19 @@ public class ReportStatsService {
     /**
      * 보고서 통계 목록 조회
      */
-    public Page<ReprtStats> getReprtStatsList(String reprtTy, String fromDate, String toDate, int page, int size) {
+    public Page<ReprtStats> getReprtStatsList(String reprtType, String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
-        return reprtStatsRepository.findByConditions(reprtTy, from, to, PageRequest.of(page, size));
+        return reprtStatsRepository.findByConditions(reprtType, from, to, PageRequest.of(page, size));
     }
 
     /**
      * 보고서 통계 전체 건수
      */
-    public long getReprtStatsCount(String reprtTy, String fromDate, String toDate) {
+    public long getReprtStatsCount(String reprtType, String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
-        return reprtStatsRepository.countByConditions(reprtTy, from, to);
+        return reprtStatsRepository.countByConditions(reprtType, from, to);
     }
 
     /**
@@ -85,7 +85,7 @@ public class ReportStatsService {
     public List<Object[]> getReprtStatsByType(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
-        return reprtStatsRepository.countByReprtTy(from, to);
+        return reprtStatsRepository.countByReprtType(from, to);
     }
 
     /**
@@ -106,7 +106,7 @@ public class ReportStatsService {
         ReprtStats newStats = ReprtStats.builder()
                 .reprtId(reprtId)
                 .reprtNm(reprtStats.getReprtNm())
-                .reprtTy(reprtStats.getReprtTy())
+                .reprtType(reprtStats.getReprtType())
                 .reprtSttus(reprtStats.getReprtSttus())
                 .createdBy(reprtStats.getCreatedBy())
                 .createdDate(java.time.LocalDateTime.now())

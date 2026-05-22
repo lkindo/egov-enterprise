@@ -72,9 +72,9 @@ class ReportStatsServiceTest {
     @Test
     @DisplayName("유형별 보고서 통계 조회")
     void getReprtStatsByType() {
-        given(reprtStatsRepository.countByReprtTy(anyString(), anyString())).willReturn(new ArrayList<>());
+        given(reprtStatsRepository.countByReprtType(anyString(), anyString())).willReturn(new ArrayList<>());
         reportStatsService.getReprtStatsByType("2024-01-01", "2024-01-31");
-        verify(reprtStatsRepository).countByReprtTy(anyString(), anyString());
+        verify(reprtStatsRepository).countByReprtType(anyString(), anyString());
     }
 
     @Test
@@ -91,7 +91,7 @@ class ReportStatsServiceTest {
         ReflectionTestUtils.setField(reportStatsService, "reprtStatsIdGnrService", reprtStatsIdGnrService);
         given(reprtStatsIdGnrService.getNextStringId()).willReturn("REPRT_001");
         
-        ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtTy("A").createdBy("user1").build();
+        ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtType("A").createdBy("user1").build();
         reportStatsService.insertReprtStats(stats);
 
         verify(reprtStatsRepository).save(any(ReprtStats.class));

@@ -31,6 +31,6 @@ public class ReprtStats extends BaseEntity {
     @Column(name = "reprt_sttus", length = 1)
     private String reprtSttus;
 
-    @Column(name = "reprt_ty", length = 1)
-    private String reprtTy;
+    @Column(name = "reprt_type", length = 1)
+    private String reprtType;
 }

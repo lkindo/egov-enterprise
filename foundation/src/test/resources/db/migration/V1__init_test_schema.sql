@@ -481,7 +481,7 @@ CREATE MEMORY TABLE "public"."tb_role_info"(
 ALTER TABLE "public"."tb_role_info" ADD CONSTRAINT "public"."CONSTRAINT_37" PRIMARY KEY("role_id");
 CREATE MEMORY TABLE "public"."tb_rptp_stats"(
     "reprt_sttus" CHARACTER VARYING(1),
-    "reprt_ty" CHARACTER VARYING(1),
+    "reprt_type" CHARACTER VARYING(1),
     "crt_dt" TIMESTAMP(6),
     "mdfcn_dt" TIMESTAMP(6),
     "frst_rgtr_id" CHARACTER VARYING(20),

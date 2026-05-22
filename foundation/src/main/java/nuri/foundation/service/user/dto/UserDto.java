@@ -11,6 +11,10 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 /**
  * 사용자 관리 DTO
@@ -60,20 +64,28 @@ public class UserDto {
     @Size(max = 4, message = "지역번호는 최대 4 자입니다")
     private String areaNo;
 
+    @JsonProperty("homemiddleTelno")
+    @JsonAlias({"homemiddleTelno", "homeMiddleTelno"})
     @Size(max = 4, message = "전화번호 중간자리는 최대 4 자입니다")
-    private String homemiddleTelno;
+    private String homeMiddleTelno;
 
+    @JsonProperty("homeendTelno")
+    @JsonAlias({"homeendTelno", "homeEndTelno"})
     @Size(max = 4, message = "전화번호 끝자리는 최대 4 자입니다")
-    private String homeendTelno;
+    private String homeEndTelno;
 
+    @JsonProperty("mberTyCode")
+    @JsonAlias({"mberTyCode", "mberTypeCd"})
     @Size(max = 20, message = "회원 유형 코드는 최대 20 자입니다")
-    private String mberTyCode;
+    private String mberTypeCd;
 
     @Size(max = 11, message = "팩스 번호는 최대 11 자입니다")
     private String faxNo;
 
+    @JsonProperty("insttCode")
+    @JsonAlias({"insttCode", "insttCd"})
     @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
-    private String insttCode;
+    private String insttCd;
 
     @Size(max = 20, message = "조직 ID 는 최대 20 자입니다")
     private String orgnztId;
@@ -131,6 +143,15 @@ public class UserDto {
     public String getUserSttusCode() { return userSttsCd; }
     public String getLockAt() { return lckYn; }
 
+    @JsonIgnore
+    public String getHomemiddleTelno() { return homeMiddleTelno; }
+    @JsonIgnore
+    public String getHomeendTelno() { return homeEndTelno; }
+    @JsonIgnore
+    public String getMberTyCode() { return mberTypeCd; }
+    @JsonIgnore
+    public String getInsttCode() { return insttCd; }
+
     public void setPassword(String v) { this.pswd = v; }
     public void setPasswordHint(String v) { this.pswdHint = v; }
     public void setPasswordCnsr(String v) { this.pswdCrans = v; }
@@ -144,6 +165,26 @@ public class UserDto {
     public void setEmailAdres(String v) { this.emlAddr = v; }
     public void setUserSttusCode(String v) { this.userSttsCd = v; }
     public void setLockAt(String v) { this.lckYn = v; }
+
+    @JsonIgnore
+    public void setHomemiddleTelno(String v) { this.homeMiddleTelno = v; }
+    @JsonIgnore
+    public void setHomeendTelno(String v) { this.homeEndTelno = v; }
+    @JsonIgnore
+    public void setMberTyCode(String v) { this.mberTypeCd = v; }
+    @JsonIgnore
+    public void setInsttCode(String v) { this.insttCd = v; }
+
+    // ----- [Standard CamelCase Accessors] -----
+    public String getHomeMiddleTelno() { return homeMiddleTelno; }
+    public String getHomeEndTelno() { return homeEndTelno; }
+    public String getInsttCd() { return insttCd; }
+    public String getMberTypeCd() { return mberTypeCd; }
+
+    public void setHomeMiddleTelno(String v) { this.homeMiddleTelno = v; }
+    public void setHomeEndTelno(String v) { this.homeEndTelno = v; }
+    public void setInsttCd(String v) { this.insttCd = v; }
+    public void setMberTypeCd(String v) { this.mberTypeCd = v; }
 
     public static UserDto from(nuri.foundation.domain.user.entity.User user) {
         if (user == null)
@@ -160,10 +201,10 @@ public class UserDto {
                 .gndrCd(user.getGndrCd())
                 .brthYmd(user.getBrthYmd())
                 .areaNo(user.getAreaNo())
-                .homemiddleTelno(user.getHomemiddleTelno())
-                .homeendTelno(user.getHomeendTelno())
+                .homeMiddleTelno(user.getHomemiddleTelno())
+                .homeEndTelno(user.getHomeendTelno())
                 .faxNo(user.getFaxNo())
-                .insttCode(user.getInsttCode())
+                .insttCd(user.getInsttCode())
                 .orgnztId(user.getOrgnztId())
                 .groupId(user.getGroupId())
                 .homeAddr(user.getHomeAddr())
