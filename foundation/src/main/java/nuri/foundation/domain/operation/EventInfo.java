@@ -24,38 +24,38 @@ public class EventInfo extends BaseEntity {
 
     @Id
     @Column(name = "evnt_id", length = 30)
-    private String eventId;
+    private String evntId;
 
     @Column(name = "biz_yr", length = 4)
-    private String bsnsYear;
+    private String bizYr;
 
     @Column(name = "biz_cd", length = 30)
-    private String bsnsCode;
+    private String bizCd;
 
     @Column(name = "evnt_cn", length = 4000)
-    private String eventCn;
+    private String evntCn;
 
     @Column(name = "evnt_bgng_ymd", length = 20)
-    private String eventSvcBgnde;
+    private String evntBgngYmd;
 
     @Column(name = "evnt_end_ymd", length = 20)
-    private String eventSvcEndde;
+    private String evntEndYmd;
 
     @Column(name = "evnt_use_cnt")
-    private Long svcUseNmprCo;
+    private Long evntUseCnt;
 
     @Column(name = "pic_nm", length = 300)
-    private String chargerNm;
+    private String picNm;
 
     @Column(name = "prep_mttr", length = 2500)
-    private String prparetgCn;
+    private String prepMttr;
 
     @Column(name = "evnt_type_cd", length = 30)
-    private String eventTyCode;
+    private String evntTypeCd;
 
     @Column(name = "evnt_aprv_yn", length = 1)
-    private String eventConfmAt;
+    private String evntAprvYn;
 
     @Column(name = "evnt_aprv_ymd", length = 20)
-    private String eventConfmDe;
+    private String evntAprvYmd;
 }

@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ExternalHrId implements Serializable {
-    private String eventId;
-    private String extrlHrId;
+    private String evntId;
+    private String otsdHrId;
 }

@@ -2,6 +2,8 @@ package nuri.foundation.service.system.policy;
 
 import nuri.foundation.domain.system.policy.SystemPolicy;
 import nuri.foundation.domain.system.policy.SystemPolicyRepository;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,9 +38,17 @@ public class PolicyService {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Policy {
-        private String id;
-        private String title;
-        private String content;
+        @JsonProperty("id")
+        @JsonAlias({"id", "plcyTypeCd"})
+        private String plcyTypeCd;
+
+        @JsonProperty("title")
+        @JsonAlias({"title", "plcyTtl"})
+        private String plcyTtl;
+
+        @JsonProperty("content")
+        @JsonAlias({"content", "plcyCn"})
+        private String plcyCn;
     }
 
     /**
@@ -48,9 +58,9 @@ public class PolicyService {
     public List<Policy> getPolicies() {
         return systemPolicyRepository.findAll().stream()
                 .map(entity -> Policy.builder()
-                        .id(entity.getPolicyType())
-                        .title(entity.getTitle())
-                        .content(entity.getContent())
+                        .plcyTypeCd(entity.getPlcyTypeCd())
+                        .plcyTtl(entity.getPlcyTtl())
+                        .plcyCn(entity.getPlcyCn())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -62,9 +72,9 @@ public class PolicyService {
     public Optional<Policy> getPolicy(String type) {
         return systemPolicyRepository.findById(type)
                 .map(entity -> Policy.builder()
-                        .id(entity.getPolicyType())
-                        .title(entity.getTitle())
-                        .content(entity.getContent())
+                        .plcyTypeCd(entity.getPlcyTypeCd())
+                        .plcyTtl(entity.getPlcyTtl())
+                        .plcyCn(entity.getPlcyCn())
                         .build());
     }
 
@@ -79,7 +89,7 @@ public class PolicyService {
     public void updatePolicy(String type, String title, String content) {
         SystemPolicy policy = systemPolicyRepository.findById(type)
                 .orElseGet(() -> SystemPolicy.builder()
-                        .policyType(type)
+                        .plcyTypeCd(type)
                         .build());
         
         policy.update(title, content);

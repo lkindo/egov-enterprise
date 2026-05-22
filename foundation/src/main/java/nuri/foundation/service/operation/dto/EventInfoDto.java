@@ -1,5 +1,6 @@
 package nuri.foundation.service.operation.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nuri.foundation.domain.operation.EventInfo;
@@ -17,29 +18,55 @@ import java.time.LocalDateTime;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EventInfoDto {
-    private String eventId;
+
+    @JsonProperty("eventId")
+    @JsonAlias({"eventId", "evntId"})
+    private String evntId;
     
     @JsonProperty("eventNm")
-    private String bsnsCode; // Mapping bsnsCode to eventNm as a temporary measure if name is missing, 
-                             // OR better, we will assume eventNm is part of the contract now.
+    @JsonAlias({"eventNm", "bsnsCode", "bizCd"})
+    private String bizCd; // Mapping bsnsCode to eventNm as a temporary measure if name is missing
                              
-    private String bsnsYear;
-    private String eventCn;
+    @JsonProperty("bsnsYear")
+    @JsonAlias({"bsnsYear", "bizYr"})
+    private String bizYr;
+
+    @JsonProperty("eventCn")
+    @JsonAlias({"eventCn", "evntCn"})
+    private String evntCn;
     
     @JsonProperty("eventBeginDe")
-    private String eventSvcBgnde;
+    @JsonAlias({"eventBeginDe", "eventSvcBgnde", "evntBgngYmd"})
+    private String evntBgngYmd;
     
     @JsonProperty("eventEndDe")
-    private String eventSvcEndde;
+    @JsonAlias({"eventEndDe", "eventSvcEndde", "evntEndYmd"})
+    private String evntEndYmd;
     
     @JsonProperty("psncpa")
-    private Long svcUseNmprCo;
+    @JsonAlias({"psncpa", "svcUseNmprCo", "evntUseCnt"})
+    private Long evntUseCnt;
     
-    private String chargerNm;
-    private String prparetgCn;
-    private String eventTyCode;
-    private String eventConfmAt;
-    private String eventConfmDe;
+    @JsonProperty("chargerNm")
+    @JsonAlias({"chargerNm", "picNm"})
+    private String picNm;
+
+    @JsonProperty("prparetgCn")
+    @JsonAlias({"prparetgCn", "prepMttr"})
+    private String prepMttr;
+
+    @JsonProperty("eventTyCode")
+    @JsonAlias({"eventTyCode", "evntTypeCd"})
+    private String evntTypeCd;
+
+    @JsonProperty("eventConfmAt")
+    @JsonAlias({"eventConfmAt", "evntAprvYn"})
+    private String evntAprvYn;
+
+    @JsonProperty("eventConfmDe")
+    @JsonAlias({"eventConfmDe", "evntAprvYmd"})
+    private String evntAprvYmd;
+
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
@@ -47,25 +74,25 @@ public class EventInfoDto {
 
     // Aliases for Frontend Compatibility
     @JsonProperty("rceptBeginDe")
-    public String getRceptBeginDe() { return this.eventSvcBgnde; }
+    public String getRceptBeginDe() { return this.evntBgngYmd; }
 
     @JsonProperty("rceptEndDe")
-    public String getRceptEndDe() { return this.eventSvcEndde; }
+    public String getRceptEndDe() { return this.evntEndYmd; }
 
     public static EventInfoDto from(EventInfo entity) {
         return EventInfoDto.builder()
-                .eventId(entity.getEventId())
-                .bsnsYear(entity.getBsnsYear())
-                .bsnsCode(entity.getBsnsCode())
-                .eventCn(entity.getEventCn())
-                .eventSvcBgnde(entity.getEventSvcBgnde())
-                .eventSvcEndde(entity.getEventSvcEndde())
-                .svcUseNmprCo(entity.getSvcUseNmprCo())
-                .chargerNm(entity.getChargerNm())
-                .prparetgCn(entity.getPrparetgCn())
-                .eventTyCode(entity.getEventTyCode())
-                .eventConfmAt(entity.getEventConfmAt())
-                .eventConfmDe(entity.getEventConfmDe())
+                .evntId(entity.getEvntId())
+                .bizYr(entity.getBizYr())
+                .bizCd(entity.getBizCd())
+                .evntCn(entity.getEvntCn())
+                .evntBgngYmd(entity.getEvntBgngYmd())
+                .evntEndYmd(entity.getEvntEndYmd())
+                .evntUseCnt(entity.getEvntUseCnt())
+                .picNm(entity.getPicNm())
+                .prepMttr(entity.getPrepMttr())
+                .evntTypeCd(entity.getEvntTypeCd())
+                .evntAprvYn(entity.getEvntAprvYn())
+                .evntAprvYmd(entity.getEvntAprvYmd())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getFrstRegisterPnttm())
                 .lastUpdusrId(entity.getLastUpdusrId())

@@ -17,38 +17,38 @@ public class ExternalHr {
 
     @Id
     @Column(name = "evnt_id", length = 20)
-    private String eventId;
+    private String evntId;
 
     @Id
     @Column(name = "otsd_hr_id", length = 20)
-    private String extrlHrId;
+    private String otsdHrId;
 
     @Column(name = "gndr_cd", length = 12)
-    private String sexdstnCode;
+    private String gndrCd;
 
     @Column(name = "otsd_hr_nm", length = 100)
-    private String extrlHrNm;
+    private String otsdHrNm;
 
     @Column(name = "cr_type_cd", length = 12)
-    private String occpTyCode;
+    private String crTypeCd;
 
     @Column(name = "ogdp_inst_nm", length = 100)
-    private String psitnInsttNm;
+    private String ogdpInstNm;
 
     @Column(name = "brdt_ymd", length = 8)
-    private String brthdy;
+    private String brdtYmd;
 
     @Column(name = "area_no", length = 4)
     private String areaNo;
 
     @Column(name = "md_telno", length = 4)
-    private String middleTelno;
+    private String mdTelno;
 
     @Column(name = "end_telno", length = 4)
     private String endTelno;
 
     @Column(name = "eml_addr", length = 100)
-    private String emailAdres;
+    private String emlAddr;
 
     @Column(name = "crt_dt")
     private LocalDateTime frstRegistPnttm;
@@ -67,21 +67,21 @@ public class ExternalHr {
     private EventInfo event;
 
     @Builder
-    public ExternalHr(String eventId, String extrlHrId, String sexdstnCode, String extrlHrNm,
-                      String occpTyCode, String psitnInsttNm, String brthdy, String areaNo,
-                      String middleTelno, String endTelno, String emailAdres,
+    public ExternalHr(String evntId, String otsdHrId, String gndrCd, String otsdHrNm,
+                      String crTypeCd, String ogdpInstNm, String brdtYmd, String areaNo,
+                      String mdTelno, String endTelno, String emlAddr,
                       String frstRegisterId, String lastUpdusrId) {
-        this.eventId = eventId;
-        this.extrlHrId = extrlHrId;
-        this.sexdstnCode = sexdstnCode;
-        this.extrlHrNm = extrlHrNm;
-        this.occpTyCode = occpTyCode;
-        this.psitnInsttNm = psitnInsttNm;
-        this.brthdy = brthdy;
+        this.evntId = evntId;
+        this.otsdHrId = otsdHrId;
+        this.gndrCd = gndrCd;
+        this.otsdHrNm = otsdHrNm;
+        this.crTypeCd = crTypeCd;
+        this.ogdpInstNm = ogdpInstNm;
+        this.brdtYmd = brdtYmd;
         this.areaNo = areaNo;
-        this.middleTelno = middleTelno;
+        this.mdTelno = mdTelno;
         this.endTelno = endTelno;
-        this.emailAdres = emailAdres;
+        this.emlAddr = emlAddr;
         this.frstRegisterId = frstRegisterId;
         this.frstRegistPnttm = LocalDateTime.now();
         this.lastUpdusrId = lastUpdusrId;

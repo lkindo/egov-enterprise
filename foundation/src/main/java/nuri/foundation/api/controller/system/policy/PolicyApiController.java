@@ -39,8 +39,8 @@ public class PolicyApiController {
         
         policyService.getPolicy(type).ifPresentOrElse(
             policy -> {
-                result.put("title", policy.getTitle());
-                result.put("content", policy.getContent());
+                result.put("title", policy.getPlcyTtl());
+                result.put("content", policy.getPlcyCn());
             },
             () -> {
                 // 기본값 제공

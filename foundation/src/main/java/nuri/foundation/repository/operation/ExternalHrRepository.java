@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ExternalHrRepository extends JpaRepository<ExternalHr, ExternalHrId> {
-    List<ExternalHr> findByEventId(String eventId);
-    List<ExternalHr> findByExtrlHrNmContaining(String name);
+    List<ExternalHr> findByEvntId(String evntId);
+    List<ExternalHr> findByOtsdHrNmContaining(String name);
 }

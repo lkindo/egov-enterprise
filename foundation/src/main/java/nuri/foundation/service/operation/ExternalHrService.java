@@ -24,7 +24,7 @@ public class ExternalHrService {
     }
 
     public List<ExternalHrDto> searchByName(String name) {
-        return externalHrRepository.findByExtrlHrNmContaining(name).stream()
+        return externalHrRepository.findByOtsdHrNmContaining(name).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -32,17 +32,17 @@ public class ExternalHrService {
     @Transactional
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
         ExternalHr hr = ExternalHr.builder()
-                .eventId(dto.getEventId())
-                .extrlHrId(dto.getExtrlHrId())
-                .extrlHrNm(dto.getExtrlHrNm())
-                .sexdstnCode(dto.getSexdstnCode())
-                .occpTyCode(dto.getOccpTyCode())
-                .psitnInsttNm(dto.getPsitnInsttNm())
-                .brthdy(dto.getBrthdy())
+                .evntId(dto.getEvntId())
+                .otsdHrId(dto.getOtsdHrId())
+                .otsdHrNm(dto.getOtsdHrNm())
+                .gndrCd(dto.getGndrCd())
+                .crTypeCd(dto.getCrTypeCd())
+                .ogdpInstNm(dto.getOgdpInstNm())
+                .brdtYmd(dto.getBrdtYmd())
                 .areaNo(dto.getAreaNo())
-                .middleTelno(dto.getMiddleTelno())
+                .mdTelno(dto.getMdTelno())
                 .endTelno(dto.getEndTelno())
-                .emailAdres(dto.getEmailAdres())
+                .emlAddr(dto.getEmlAddr())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .build();
@@ -51,17 +51,17 @@ public class ExternalHrService {
 
     private ExternalHrDto convertToDto(ExternalHr hr) {
         return ExternalHrDto.builder()
-                .eventId(hr.getEventId())
-                .extrlHrId(hr.getExtrlHrId())
-                .extrlHrNm(hr.getExtrlHrNm())
-                .sexdstnCode(hr.getSexdstnCode())
-                .occpTyCode(hr.getOccpTyCode())
-                .psitnInsttNm(hr.getPsitnInsttNm())
-                .brthdy(hr.getBrthdy())
+                .evntId(hr.getEvntId())
+                .otsdHrId(hr.getOtsdHrId())
+                .otsdHrNm(hr.getOtsdHrNm())
+                .gndrCd(hr.getGndrCd())
+                .crTypeCd(hr.getCrTypeCd())
+                .ogdpInstNm(hr.getOgdpInstNm())
+                .brdtYmd(hr.getBrdtYmd())
                 .areaNo(hr.getAreaNo())
-                .middleTelno(hr.getMiddleTelno())
+                .mdTelno(hr.getMdTelno())
                 .endTelno(hr.getEndTelno())
-                .emailAdres(hr.getEmailAdres())
+                .emlAddr(hr.getEmlAddr())
                 .frstRegisterId(hr.getFrstRegisterId())
                 .frstRegistPnttm(hr.getFrstRegistPnttm())
                 .lastUpdusrId(hr.getLastUpdusrId())

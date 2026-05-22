@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
 public interface EventInfoRepository extends JpaRepository<EventInfo, String> {
     
     @Query("SELECT e FROM EventInfo e WHERE " +
-           "(:searchWrd IS NULL OR e.eventCn LIKE %:searchWrd% OR e.bsnsCode LIKE %:searchWrd%)")
+           "(:searchWrd IS NULL OR e.evntCn LIKE %:searchWrd% OR e.bizCd LIKE %:searchWrd%)")
     Page<EventInfo> findBySearchWrd(@Param("searchWrd") String searchWrd, Pageable pageable);
 }

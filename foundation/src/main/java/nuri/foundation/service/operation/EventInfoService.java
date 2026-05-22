@@ -42,24 +42,24 @@ public class EventInfoService {
         String eventId = "EVT_" + System.currentTimeMillis();
  
         EventInfo eventInfo = EventInfo.builder()
-                .eventId(eventId)
-                .bsnsYear(dto.getBsnsYear())
-                .bsnsCode(dto.getBsnsCode())
-                .eventCn(dto.getEventCn())
-                .eventSvcBgnde(dto.getEventSvcBgnde())
-                .eventSvcEndde(dto.getEventSvcEndde())
-                .svcUseNmprCo(dto.getSvcUseNmprCo())
-                .chargerNm(dto.getChargerNm())
-                .prparetgCn(dto.getPrparetgCn())
-                .eventTyCode(dto.getEventTyCode())
-                .eventConfmAt(dto.getEventConfmAt())
-                .eventConfmDe(dto.getEventConfmDe())
+                .evntId(eventId)
+                .bizYr(dto.getBizYr())
+                .bizCd(dto.getBizCd())
+                .evntCn(dto.getEvntCn())
+                .evntBgngYmd(dto.getEvntBgngYmd())
+                .evntEndYmd(dto.getEvntEndYmd())
+                .evntUseCnt(dto.getEvntUseCnt())
+                .picNm(dto.getPicNm())
+                .prepMttr(dto.getPrepMttr())
+                .evntTypeCd(dto.getEvntTypeCd())
+                .evntAprvYn(dto.getEvntAprvYn())
+                .evntAprvYmd(dto.getEvntAprvYmd())
                 .createdBy(userId)
                 .lastModifiedBy(userId)
                 .build();
  
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
-        log.info("Event created successfully: {}", saved.getEventId());
+        log.info("Event created successfully: {}", saved.getEvntId());
         return eventId;
     }
  
@@ -70,18 +70,18 @@ public class EventInfoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
  
         eventInfoRepository.save(EventInfo.builder()
-                .eventId(eventId)
-                .bsnsYear(dto.getBsnsYear())
-                .bsnsCode(dto.getBsnsCode())
-                .eventCn(dto.getEventCn())
-                .eventSvcBgnde(dto.getEventSvcBgnde())
-                .eventSvcEndde(dto.getEventSvcEndde())
-                .svcUseNmprCo(dto.getSvcUseNmprCo())
-                .chargerNm(dto.getChargerNm())
-                .prparetgCn(dto.getPrparetgCn())
-                .eventTyCode(dto.getEventTyCode())
-                .eventConfmAt(dto.getEventConfmAt())
-                .eventConfmDe(dto.getEventConfmDe())
+                .evntId(eventId)
+                .bizYr(dto.getBizYr())
+                .bizCd(dto.getBizCd())
+                .evntCn(dto.getEvntCn())
+                .evntBgngYmd(dto.getEvntBgngYmd())
+                .evntEndYmd(dto.getEvntEndYmd())
+                .evntUseCnt(dto.getEvntUseCnt())
+                .picNm(dto.getPicNm())
+                .prepMttr(dto.getPrepMttr())
+                .evntTypeCd(dto.getEvntTypeCd())
+                .evntAprvYn(dto.getEvntAprvYn())
+                .evntAprvYmd(dto.getEvntAprvYmd())
                 .createdBy(eventInfo.getCreatedBy())
                 .lastModifiedBy(userId)
                 .build());

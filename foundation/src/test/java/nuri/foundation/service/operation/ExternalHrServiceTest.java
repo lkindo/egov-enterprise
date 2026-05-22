@@ -30,7 +30,7 @@ class ExternalHrServiceTest {
     @DisplayName("외부 인력 전체 조회")
     void getAllExternalHr_Success() {
         // Given
-        ExternalHr entity = ExternalHr.builder().extrlHrId("HR1").extrlHrNm("Name").build();
+        ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Name").build();
         given(externalHrRepository.findAll()).willReturn(List.of(entity));
 
         // When
@@ -38,15 +38,15 @@ class ExternalHrServiceTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getExtrlHrNm()).isEqualTo("Name");
+        assertThat(result.get(0).getOtsdHrNm()).isEqualTo("Name");
     }
 
     @Test
     @DisplayName("이름으로 외부 인력 검색")
     void searchByName_Success() {
         // Given
-        ExternalHr entity = ExternalHr.builder().extrlHrId("HR1").extrlHrNm("Tester").build();
-        given(externalHrRepository.findByExtrlHrNmContaining("Test")).willReturn(List.of(entity));
+        ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Tester").build();
+        given(externalHrRepository.findByOtsdHrNmContaining("Test")).willReturn(List.of(entity));
 
         // When
         List<ExternalHrDto> result = externalHrService.searchByName("Test");
@@ -59,14 +59,14 @@ class ExternalHrServiceTest {
     @DisplayName("외부 인력 등록")
     void createExternalHr_Success() {
         // Given
-        ExternalHrDto dto = ExternalHrDto.builder().extrlHrNm("New").build();
-        ExternalHr savedEntity = ExternalHr.builder().extrlHrId("HR2").extrlHrNm("New").build();
+        ExternalHrDto dto = ExternalHrDto.builder().otsdHrNm("New").build();
+        ExternalHr savedEntity = ExternalHr.builder().otsdHrId("HR2").otsdHrNm("New").build();
         given(externalHrRepository.save(any(ExternalHr.class))).willReturn(savedEntity);
 
         // When
         ExternalHrDto result = externalHrService.createExternalHr(dto);
 
         // Then
-        assertThat(result.getExtrlHrId()).isEqualTo("HR2");
+        assertThat(result.getOtsdHrId()).isEqualTo("HR2");
     }
 }
