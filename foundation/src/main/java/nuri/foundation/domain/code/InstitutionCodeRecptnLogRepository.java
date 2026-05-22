@@ -7,6 +7,6 @@ import nuri.foundation.domain.code.InstitutionCodeRecptnLog.InstitutionCodeRecpt
 
 public interface InstitutionCodeRecptnLogRepository
         extends JpaRepository<InstitutionCodeRecptnLog, InstitutionCodeRecptnLogId> {
-    Page<InstitutionCodeRecptnLog> findByAllInsttNmContainingAndProcessSe(String allInsttNm, String processSe, Pageable pageable);
-    Page<InstitutionCodeRecptnLog> findByAllInsttNmContaining(String allInsttNm, Pageable pageable);
+    Page<InstitutionCodeRecptnLog> findByAllInstNmContainingAndProcSe(String allInstNm, String procSe, Pageable pageable);
+    Page<InstitutionCodeRecptnLog> findByAllInstNmContaining(String allInstNm, Pageable pageable);
 }

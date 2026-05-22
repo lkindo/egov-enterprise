@@ -40,7 +40,7 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 상세 조회")
     @GetMapping("/{code}")
     public ResponseEntity<ApiResponse<InstitutionCodeDto>> getInstitutionCodeDetail(@PathVariable String code) {
-        InstitutionCodeDto dto = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().insttCode(code).build());
+        InstitutionCodeDto dto = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().instCd(code).build());
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 

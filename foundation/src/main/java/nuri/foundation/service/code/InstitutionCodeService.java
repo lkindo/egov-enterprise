@@ -54,37 +54,37 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId
                 .builder()
                 .ocrnYmd(occrrncDe)
-                .insttCode(dto.getInsttCode())
-                .opertSn(System.currentTimeMillis()) // Simplified Sn
+                .instCd(dto.getInstCd())
+                .jobSn(System.currentTimeMillis()) // Simplified Sn
                 .build();
 
         InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder()
                 .id(id)
-                .changeSeCode(dto.getChangeSeCode())
-                .processSe("0")
-                .etcCode(dto.getEtcCode())
-                .allInsttNm(dto.getAllInsttNm())
-                .lowestInsttNm(dto.getLowestInsttNm())
-                .insttAbrvNm(dto.getInsttAbrvNm())
+                .chgSeCd(dto.getChgSeCd())
+                .procSe("0")
+                .etcCd(dto.getEtcCd())
+                .allInstNm(dto.getAllInstNm())
+                .lwtrkInstNm(dto.getLwtrkInstNm())
+                .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
-                .insttOdr(dto.getInsttOdr())
-                .bestInsttCode(dto.getBestInsttCode())
-                .upperInsttCode(dto.getUpperInsttCode())
-                .reprsntInsttCode(dto.getReprsntInsttCode())
-                .insttTyLclas(dto.getInsttTyLclas())
-                .insttTyMclas(dto.getInsttTyMclas())
-                .insttTySclas(dto.getInsttTySclas())
+                .instCycl(dto.getInstCycl())
+                .topInstCd(dto.getTopInstCd())
+                .upInstCd(dto.getUpInstCd())
+                .rprsInstCd(dto.getRprsInstCd())
+                .instTypeLclsf(dto.getInstTypeLclsf())
+                .instTypeMclsf(dto.getInstTypeMclsf())
+                .instTypeSclsf(dto.getInstTypeSclsf())
                 .telno(dto.getTelno())
-                .fxnum(dto.getFxnum())
-                .creatDe(dto.getCreatDe())
-                .ablDe(dto.getAblDe())
-                .ablEnnc(dto.getAblEnnc())
-                .changede(dto.getChangede())
-                .changeTime(dto.getChangeTime())
-                .bsisDe(dto.getBsisDe())
-                .sortOrdr(dto.getSortOrdr())
-                .frstRegisterId("SYSTEM")
+                .faxNo(dto.getFaxNo())
+                .crtYmd(dto.getCrtYmd())
+                .ablYmd(dto.getAblYmd())
+                .ablYn(dto.getAblYn())
+                .chgYmd(dto.getChgYmd())
+                .chgTm(dto.getChgTm())
+                .crtrYmd(dto.getCrtrYmd())
+                .sortSeq(dto.getSortSeq())
+                .frstRgtrId("SYSTEM")
                 .build();
 
         institutionCodeRecptnLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
@@ -94,8 +94,8 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
     @Transactional
     public void updateInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
         institutionCodeRecptnLogRepository.findById(new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
-                dto.getOcrnYmd(), dto.getInsttCode(), dto.getOpertSn())).ifPresent(entity -> {
-                    entity.updateProcessSe(dto.getProcessSe(), "SYSTEM");
+                dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn())).ifPresent(entity -> {
+                    entity.updateProcessSe(dto.getProcSe(), "SYSTEM");
                 });
     }
 
@@ -111,39 +111,39 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
 
     @Override
     public InstitutionCodeDto selectInstitutionCodeDetail(InstitutionCodeDto dto) {
-        return institutionCodeRepository.findById(dto.getInsttCode()).map(this::toDto).orElse(null);
+        return institutionCodeRepository.findById(dto.getInstCd()).map(this::toDto).orElse(null);
     }
 
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void insertInstitutionCode(InstitutionCodeDto dto) {
-        if (institutionCodeRepository.existsById(dto.getInsttCode())) {
+        if (institutionCodeRepository.existsById(dto.getInstCd())) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
         InstitutionCode entity = InstitutionCode.builder()
-                .insttCode(dto.getInsttCode())
-                .allInsttNm(dto.getAllInsttNm())
-                .lowestInsttNm(dto.getLowestInsttNm())
-                .insttAbrvNm(dto.getInsttAbrvNm())
+                .instCd(dto.getInstCd())
+                .allInstNm(dto.getAllInstNm())
+                .lwtrkInstNm(dto.getLwtrkInstNm())
+                .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
-                .insttOdr(dto.getInsttOdr())
-                .bestInsttCode(dto.getBestInsttCode())
-                .upperInsttCode(dto.getUpperInsttCode())
-                .reprsntInsttCode(dto.getReprsntInsttCode())
-                .insttTyLclas(dto.getInsttTyLclas())
-                .insttTyMclas(dto.getInsttTyMclas())
-                .insttTySclas(dto.getInsttTySclas())
+                .instCycl(dto.getInstCycl())
+                .topInstCd(dto.getTopInstCd())
+                .upInstCd(dto.getUpInstCd())
+                .rprsInstCd(dto.getRprsInstCd())
+                .instTypeLclsf(dto.getInstTypeLclsf())
+                .instTypeMclsf(dto.getInstTypeMclsf())
+                .instTypeSclas(dto.getInstTypeSclsf())
                 .telno(dto.getTelno())
-                .fxnum(dto.getFxnum())
-                .creatDe(dto.getCreatDe())
-                .ablDe(dto.getAblDe())
-                .ablEnnc(dto.getAblEnnc())
-                .changede(dto.getChangede())
-                .changeTime(dto.getChangeTime())
-                .bsisDe(dto.getBsisDe())
-                .sortOrdr(dto.getSortOrdr())
+                .faxNo(dto.getFaxNo())
+                .crtYmd(dto.getCrtYmd())
+                .ablYmd(dto.getAblYmd())
+                .ablYn(dto.getAblYn())
+                .chgYmd(dto.getChgYmd())
+                .chgTm(dto.getChgTm())
+                .crtrYmd(dto.getCrtrYmd())
+                .sortSeq(dto.getSortSeq())
                 .createdBy("SYSTEM")
                 .build();
         institutionCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
@@ -153,8 +153,12 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void updateInstitutionCode(InstitutionCodeDto dto) {
-        institutionCodeRepository.findById(dto.getInsttCode()).ifPresent(entity -> {
-            // Update logic here
+        institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
+            entity.update(dto.getAllInstNm(), dto.getLwtrkInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
+                    dto.getInstCycl(), dto.getTopInstCd(), dto.getUpInstCd(), dto.getRprsInstCd(),
+                    dto.getInstTypeLclsf(), dto.getInstTypeMclsf(), dto.getInstTypeSclsf(), dto.getTelno(),
+                    dto.getFaxNo(), dto.getCrtYmd(), dto.getAblYmd(), dto.getAblYn(), dto.getChgYmd(),
+                    dto.getChgTm(), dto.getCrtrYmd(), dto.getSortSeq(), "SYSTEM");
         });
     }
 
@@ -162,65 +166,65 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteInstitutionCode(InstitutionCodeDto dto) {
-        institutionCodeRepository.deleteById(dto.getInsttCode());
+        institutionCodeRepository.deleteById(dto.getInstCd());
     }
 
     private InstitutionCodeDto toDto(InstitutionCode entity) {
         return InstitutionCodeDto.builder()
-                .insttCode(entity.getInsttCode())
-                .allInsttNm(entity.getAllInsttNm())
-                .lowestInsttNm(entity.getLowestInsttNm())
-                .insttAbrvNm(entity.getInsttAbrvNm())
+                .instCd(entity.getInstCd())
+                .allInstNm(entity.getAllInstNm())
+                .lwtrkInstNm(entity.getLwtrkInstNm())
+                .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
-                .insttOdr(entity.getInsttOdr())
-                .bestInsttCode(entity.getBestInsttCode())
-                .upperInsttCode(entity.getUpperInsttCode())
-                .reprsntInsttCode(entity.getReprsntInsttCode())
-                .insttTyLclas(entity.getInsttTyLclas())
-                .insttTyMclas(entity.getInsttTyMclas())
-                .insttTySclas(entity.getInsttTySclas())
+                .instCycl(entity.getInstCycl())
+                .topInstCd(entity.getTopInstCd())
+                .upInstCd(entity.getUpInstCd())
+                .rprsInstCd(entity.getRprsInstCd())
+                .instTypeLclsf(entity.getInstTypeLclsf())
+                .instTypeMclsf(entity.getInstTypeMclsf())
+                .instTypeSclsf(entity.getInstTypeSclsf())
                 .telno(entity.getTelno())
-                .fxnum(entity.getFxnum())
-                .creatDe(entity.getCreatDe())
-                .ablDe(entity.getAblDe())
-                .ablEnnc(entity.getAblEnnc())
-                .changede(entity.getChangede())
-                .changeTime(entity.getChangeTime())
-                .bsisDe(entity.getBsisDe())
-                .sortOrdr(entity.getSortOrdr())
+                .faxNo(entity.getFaxNo())
+                .crtYmd(entity.getCrtYmd())
+                .ablYmd(entity.getAblYmd())
+                .ablYn(entity.getAblYn())
+                .chgYmd(entity.getChgYmd())
+                .chgTm(entity.getChgTm())
+                .crtrYmd(entity.getCrtrYmd())
+                .sortSeq(entity.getSortSeq())
                 .build();
     }
 
     private InstitutionCodeRecptnDto toLogDto(InstitutionCodeRecptnLog entity) {
         return InstitutionCodeRecptnDto.builder()
                 .ocrnYmd(entity.getId().getOcrnYmd())
-                .insttCode(entity.getId().getInsttCode())
-                .opertSn(entity.getId().getOpertSn())
-                .changeSeCode(entity.getChangeSeCode())
-                .processSe(entity.getProcessSe())
-                .etcCode(entity.getEtcCode())
-                .allInsttNm(entity.getAllInsttNm())
-                .lowestInsttNm(entity.getLowestInsttNm())
-                .insttAbrvNm(entity.getInsttAbrvNm())
+                .instCd(entity.getId().getInstCd())
+                .jobSn(entity.getId().getJobSn())
+                .chgSeCd(entity.getChgSeCd())
+                .procSe(entity.getProcSe())
+                .etcCd(entity.getEtcCd())
+                .allInstNm(entity.getAllInstNm())
+                .lwtrkInstNm(entity.getLwtrkInstNm())
+                .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
-                .insttOdr(entity.getInsttOdr())
-                .bestInsttCode(entity.getBestInsttCode())
-                .upperInsttCode(entity.getUpperInsttCode())
-                .reprsntInsttCode(entity.getReprsntInsttCode())
-                .insttTyLclas(entity.getInsttTyLclas())
-                .insttTyMclas(entity.getInsttTyMclas())
-                .insttTySclas(entity.getInsttTySclas())
+                .instCycl(entity.getInstCycl())
+                .topInstCd(entity.getTopInstCd())
+                .upInstCd(entity.getUpInstCd())
+                .rprsInstCd(entity.getRprsInstCd())
+                .instTypeLclsf(entity.getInstTypeLclsf())
+                .instTypeMclsf(entity.getInstTypeMclsf())
+                .instTypeSclsf(entity.getInstTypeSclsf())
                 .telno(entity.getTelno())
-                .fxnum(entity.getFxnum())
-                .creatDe(entity.getCreatDe())
-                .ablDe(entity.getAblDe())
-                .ablEnnc(entity.getAblEnnc())
-                .changede(entity.getChangede())
-                .changeTime(entity.getChangeTime())
-                .bsisDe(entity.getBsisDe())
-                .sortOrdr(entity.getSortOrdr())
+                .faxNo(entity.getFaxNo())
+                .crtYmd(entity.getCrtYmd())
+                .ablYmd(entity.getAblYmd())
+                .ablYn(entity.getAblYn())
+                .chgYmd(entity.getChgYmd())
+                .chgTm(entity.getChgTm())
+                .crtrYmd(entity.getCrtrYmd())
+                .sortSeq(entity.getSortSeq())
                 .build();
     }
 }

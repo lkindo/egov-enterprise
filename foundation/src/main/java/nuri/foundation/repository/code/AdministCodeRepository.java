@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AdministCodeRepository extends JpaRepository<AdministCode, String> {
-    Page<AdministCode> findByAdministZoneNmContaining(String administZoneNm, Pageable pageable);
+    Page<AdministCode> findByAdmdstZoneNmContaining(String admdstZoneNm, Pageable pageable);
 }

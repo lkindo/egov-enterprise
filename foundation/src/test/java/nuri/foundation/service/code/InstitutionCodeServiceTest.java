@@ -44,7 +44,7 @@ class InstitutionCodeServiceTest {
     @DisplayName("기관코드 목록 조회")
     void selectInstitutionCodeList() {
         // given
-        InstitutionCode entity = InstitutionCode.builder().insttCode("INST1").allInsttNm("Inst 1").build();
+        InstitutionCode entity = InstitutionCode.builder().instCd("INST1").allInstNm("Inst 1").build();
         Page<InstitutionCode> page = new PageImpl<>(List.of(entity));
         when(institutionCodeRepository.searchInstitutionCodes(any(), any(), any())).thenReturn(page);
 
@@ -56,22 +56,22 @@ class InstitutionCodeServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getInsttCode()).isEqualTo("INST1");
+        assertThat(result.get(0).getInstCd()).isEqualTo("INST1");
     }
 
     @Test
     @DisplayName("기관코드 상세 조회")
     void selectInstitutionCodeDetail() {
         // given
-        InstitutionCode entity = InstitutionCode.builder().insttCode("INST1").allInsttNm("Inst 1").build();
+        InstitutionCode entity = InstitutionCode.builder().instCd("INST1").allInstNm("Inst 1").build();
         when(institutionCodeRepository.findById("INST1")).thenReturn(Optional.of(entity));
 
         // when
-        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().insttCode("INST1").build());
+        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().instCd("INST1").build());
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getInsttCode()).isEqualTo("INST1");
+        assertThat(result.getInstCd()).isEqualTo("INST1");
     }
 
     @Test
@@ -81,7 +81,7 @@ class InstitutionCodeServiceTest {
         when(institutionCodeRepository.findById("NOT_EXIST")).thenReturn(Optional.empty());
 
         // when
-        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().insttCode("NOT_EXIST").build());
+        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().instCd("NOT_EXIST").build());
 
         // then
         assertThat(result).isNull();
@@ -112,9 +112,9 @@ class InstitutionCodeServiceTest {
         // when
         InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
                 .ocrnYmd("20240101")
-                .insttCode("I1")
-                .opertSn(1L)
-                .processSe("1")
+                .instCd("I1")
+                .jobSn(1L)
+                .procSe("1")
                 .build();
         institutionCodeService.updateInstitutionCodeRecptn(dto);
 
@@ -124,8 +124,8 @@ class InstitutionCodeServiceTest {
 
     // Helper static class if needed or import
     private static class InstitutionCodeRecptnLogId extends InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId {
-        public InstitutionCodeRecptnLogId(String ocrnYmd, String insttCode, Long opertSn) {
-            super(ocrnYmd, insttCode, opertSn);
+        public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
+            super(ocrnYmd, instCd, jobSn);
         }
     }
 }

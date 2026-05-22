@@ -66,16 +66,19 @@ class CodeDtoCoverageTest {
     @DisplayName("AdministCodeDto 커버리지")
     void administCodeDto_Coverage() {
         AdministCodeDto dto = AdministCodeDto.builder()
-                .administZoneCode("110")
-                .administZoneNm("Seoul")
+                .admdstCd("110")
+                .admdstZoneNm("Seoul")
                 .useYn("Y")
                 .build();
 
+        assertThat(dto.getAdmdstCd()).isEqualTo("110");
         assertThat(dto.getAdministZoneCode()).isEqualTo("110");
+        assertThat(dto.getAdmdstZoneNm()).isEqualTo("Seoul");
         assertThat(dto.getAdministZoneNm()).isEqualTo("Seoul");
         assertThat(dto.getUseYn()).isEqualTo("Y");
         
         AdministCodeDto fullDto = new AdministCodeDto("1", "S", "N", "U", "Y", "C", "A", "CB", null, "MB", null);
         assertThat(fullDto.getAdministZoneCode()).isEqualTo("1");
+        assertThat(fullDto.getAdmdstCd()).isEqualTo("1");
     }
 }

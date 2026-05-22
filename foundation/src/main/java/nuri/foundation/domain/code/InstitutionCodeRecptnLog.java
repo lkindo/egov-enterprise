@@ -23,22 +23,22 @@ public class InstitutionCodeRecptnLog {
     private InstitutionCodeRecptnLogId id;
 
     @Column(name = "chg_se_cd", length = 12)
-    private String changeSeCode;
+    private String chgSeCd;
 
     @Column(name = "proc_se", length = 1)
-    private String processSe;
+    private String procSe;
 
     @Column(name = "etc_cd", length = 20)
-    private String etcCode;
+    private String etcCd;
 
     @Column(name = "all_inst_nm", length = 100)
-    private String allInsttNm;
+    private String allInstNm;
 
     @Column(name = "lwst_inst_nm", length = 100)
-    private String lowestInsttNm;
+    private String lwtrkInstNm;
 
     @Column(name = "inst_abbr_nm", length = 100)
-    private String insttAbrvNm;
+    private String instAbbrNm;
 
     @Column(name = "odr", length = 2)
     private String odr;
@@ -47,64 +47,64 @@ public class InstitutionCodeRecptnLog {
     private String ord;
 
     @Column(name = "inst_cycl", length = 2)
-    private String insttOdr;
+    private String instCycl;
 
     @Column(name = "top_inst_cd", length = 20)
-    private String bestInsttCode;
+    private String topInstCd;
 
     @Column(name = "upr_inst_cd", length = 20)
-    private String upperInsttCode;
+    private String upInstCd;
 
     @Column(name = "reprs_inst_cd", length = 20)
-    private String reprsntInsttCode;
+    private String rprsInstCd;
 
     @Column(name = "inst_type_lclsf", length = 2)
-    private String insttTyLclas;
+    private String instTypeLclsf;
 
     @Column(name = "inst_type_mclsf", length = 2)
-    private String insttTyMclas;
+    private String instTypeMclsf;
 
     @Column(name = "inst_type_sclsf", length = 2)
-    private String insttTySclas;
+    private String instTypeSclsf;
 
     @Column(name = "telno", length = 20)
     private String telno;
 
     @Column(name = "fax_no", length = 20)
-    private String fxnum;
+    private String faxNo;
 
     @Column(name = "crt_ymd", length = 8)
-    private String creatDe;
+    private String crtYmd;
 
     @Column(name = "abl_ymd", length = 8)
-    private String ablDe;
+    private String ablYmd;
 
     @Column(name = "abl_yn", length = 1)
-    private String ablEnnc;
+    private String ablYn;
 
     @Column(name = "chg_ymd", length = 8)
-    private String changede;
+    private String chgYmd;
 
     @Column(name = "chg_tm", length = 20)
-    private String changeTime;
+    private String chgTm;
 
     @Column(name = "crtr_ymd", length = 8)
-    private String bsisDe;
+    private String crtrYmd;
 
     @Column(name = "sort_ordr")
-    private Integer sortOrdr;
+    private Integer sortSeq;
 
     @Column(name = "crt_dt")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Column(name = "frst_rgtr_id", length = 20)
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Column(name = "mdfcn_dt")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime mdfcnDt;
 
     @Column(name = "last_mdfr_id", length = 20)
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
     @Embeddable
     @Getter
@@ -115,62 +115,62 @@ public class InstitutionCodeRecptnLog {
         private String ocrnYmd;
 
         @Column(name = "inst_cd", length = 20)
-        private String insttCode;
+        private String instCd;
 
         @Column(name = "job_sn")
-        private Long opertSn;
+        private Long jobSn;
 
         @Builder
-        public InstitutionCodeRecptnLogId(String ocrnYmd, String insttCode, Long opertSn) {
+        public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
             this.ocrnYmd = ocrnYmd;
-            this.insttCode = insttCode;
-            this.opertSn = opertSn;
+            this.instCd = instCd;
+            this.jobSn = jobSn;
         }
     }
 
     @Builder
-    public InstitutionCodeRecptnLog(InstitutionCodeRecptnLogId id, String changeSeCode, String processSe,
-            String etcCode, String allInsttNm, String lowestInsttNm,
-            String insttAbrvNm, String odr, String ord, String insttOdr,
-            String bestInsttCode, String upperInsttCode, String reprsntInsttCode,
-            String insttTyLclas, String insttTyMclas, String insttTySclas,
-            String telno, String fxnum, String creatDe, String ablDe,
-            String ablEnnc, String changede, String changeTime,
-            String bsisDe, Integer sortOrdr, String frstRegisterId) {
+    public InstitutionCodeRecptnLog(InstitutionCodeRecptnLogId id, String chgSeCd, String procSe,
+            String etcCd, String allInstNm, String lwtrkInstNm,
+            String instAbbrNm, String odr, String ord, String instCycl,
+            String topInstCd, String upInstCd, String rprsInstCd,
+            String instTypeLclsf, String instTypeMclsf, String instTypeSclsf,
+            String telno, String faxNo, String crtYmd, String ablYmd,
+            String ablYn, String chgYmd, String chgTm,
+            String crtrYmd, Integer sortSeq, String frstRgtrId) {
         this.id = id;
-        this.changeSeCode = changeSeCode;
-        this.processSe = processSe == null ? "0" : processSe;
-        this.etcCode = etcCode;
-        this.allInsttNm = allInsttNm;
-        this.lowestInsttNm = lowestInsttNm;
-        this.insttAbrvNm = insttAbrvNm;
+        this.chgSeCd = chgSeCd;
+        this.procSe = procSe == null ? "0" : procSe;
+        this.etcCd = etcCd;
+        this.allInstNm = allInstNm;
+        this.lwtrkInstNm = lwtrkInstNm;
+        this.instAbbrNm = instAbbrNm;
         this.odr = odr;
         this.ord = ord;
-        this.insttOdr = insttOdr;
-        this.bestInsttCode = bestInsttCode;
-        this.upperInsttCode = upperInsttCode;
-        this.reprsntInsttCode = reprsntInsttCode;
-        this.insttTyLclas = insttTyLclas;
-        this.insttTyMclas = insttTyMclas;
-        this.insttTySclas = insttTySclas;
+        this.instCycl = instCycl;
+        this.topInstCd = topInstCd;
+        this.upInstCd = upInstCd;
+        this.rprsInstCd = rprsInstCd;
+        this.instTypeLclsf = instTypeLclsf;
+        this.instTypeMclsf = instTypeMclsf;
+        this.instTypeSclsf = instTypeSclsf;
         this.telno = telno;
-        this.fxnum = fxnum;
-        this.creatDe = creatDe;
-        this.ablDe = ablDe;
-        this.ablEnnc = ablEnnc;
-        this.changede = changede;
-        this.changeTime = changeTime;
-        this.bsisDe = bsisDe;
-        this.sortOrdr = sortOrdr;
-        this.frstRegisterId = frstRegisterId;
-        this.lastUpdusrId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
+        this.faxNo = faxNo;
+        this.crtYmd = crtYmd;
+        this.ablYmd = ablYmd;
+        this.ablYn = ablYn;
+        this.chgYmd = chgYmd;
+        this.chgTm = chgTm;
+        this.crtrYmd = crtrYmd;
+        this.sortSeq = sortSeq;
+        this.frstRgtrId = frstRgtrId;
+        this.lastMdfrId = frstRgtrId;
+        this.crtDt = LocalDateTime.now();
+        this.mdfcnDt = LocalDateTime.now();
     }
 
-    public void updateProcessSe(String processSe, String lastUpdusrId) {
-        this.processSe = processSe;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdtPnttm = LocalDateTime.now();
+    public void updateProcessSe(String procSe, String lastMdfrId) {
+        this.procSe = procSe;
+        this.lastMdfrId = lastMdfrId;
+        this.mdfcnDt = LocalDateTime.now();
     }
 }

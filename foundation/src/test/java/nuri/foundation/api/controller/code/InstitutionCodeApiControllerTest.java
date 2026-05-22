@@ -63,7 +63,7 @@ class InstitutionCodeApiControllerTest {
     @DisplayName("기관코드 상세 조회")
     void getInstitutionCodeDetail() throws Exception {
         InstitutionCodeDto dto = new InstitutionCodeDto();
-        dto.setInsttCode("INST1");
+        dto.setInstCd("INST1");
         when(institutionCodeService.selectInstitutionCodeDetail(any(InstitutionCodeDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/INST1")

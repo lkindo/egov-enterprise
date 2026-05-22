@@ -19,31 +19,31 @@ public class AdministCode extends BaseEntity {
 
     @Id
     @Column(name = "admdst_cd", length = 12)
-    private String administZoneCode;
+    private String admdstCd;
 
     @Column(name = "admdst_se_cd", length = 12)
-    private String administZoneSe;
+    private String admdstSeCd;
 
     @Column(name = "admdst_zone_nm", length = 100)
-    private String administZoneNm;
+    private String admdstZoneNm;
 
     @Column(name = "up_admdst_cd", length = 12)
-    private String upperAdministZoneCode;
+    private String upAdmdstCd;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
     @Column(name = "crt_ymd", length = 8)
-    private String creatDe;
+    private String crtYmd;
 
     @Column(name = "abl_ymd", length = 8)
-    private String ablDe;
+    private String ablYmd;
 
-    public void update(String administZoneSe, String administZoneNm, String upperAdministZoneCode, 
+    public void update(String admdstSeCd, String admdstZoneNm, String upAdmdstCd, 
                        String useYn, String lastModifiedBy) {
-        this.administZoneSe = administZoneSe;
-        this.administZoneNm = administZoneNm;
-        this.upperAdministZoneCode = upperAdministZoneCode;
+        this.admdstSeCd = admdstSeCd;
+        this.admdstZoneNm = admdstZoneNm;
+        this.upAdmdstCd = upAdmdstCd;
         this.useYn = useYn;
         this.lastModifiedBy = lastModifiedBy;
     }

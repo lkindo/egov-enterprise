@@ -19,7 +19,7 @@ public class AdministCodeService {
     public Page<AdministCodeDto> getAdministCodeList(String searchWrd, Pageable pageable) {
         Page<AdministCode> entities;
         if (searchWrd != null && !searchWrd.isEmpty()) {
-            entities = administCodeRepository.findByAdministZoneNmContaining(searchWrd, pageable);
+            entities = administCodeRepository.findByAdmdstZoneNmContaining(searchWrd, pageable);
         } else {
             entities = administCodeRepository.findAll(pageable);
         }
@@ -35,22 +35,22 @@ public class AdministCodeService {
     @Transactional
     public String createAdministCode(AdministCodeDto dto, String userId) {
         AdministCode entity = AdministCode.builder()
-                .administZoneCode(dto.getAdministZoneCode())
-                .administZoneSe(dto.getAdministZoneSe())
-                .administZoneNm(dto.getAdministZoneNm())
-                .upperAdministZoneCode(dto.getUpperAdministZoneCode())
+                .admdstCd(dto.getAdmdstCd())
+                .admdstSeCd(dto.getAdmdstSeCd())
+                .admdstZoneNm(dto.getAdmdstZoneNm())
+                .upAdmdstCd(dto.getUpAdmdstCd())
                 .useYn(dto.getUseYn())
-                .creatDe(dto.getCreatDe())
+                .crtYmd(dto.getCrtYmd())
                 .createdBy(userId)
                 .build();
-        return administCodeRepository.save(entity).getAdministZoneCode();
+        return administCodeRepository.save(entity).getAdmdstCd();
     }
 
     @Transactional
     public void updateAdministCode(String code, AdministCodeDto dto, String userId) {
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("Administrative code not found: " + code));
-        entity.update(dto.getAdministZoneSe(), dto.getAdministZoneNm(), dto.getUpperAdministZoneCode(), dto.getUseYn(), userId);
+        entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), dto.getUpAdmdstCd(), dto.getUseYn(), userId);
     }
 
     @Transactional
@@ -60,13 +60,13 @@ public class AdministCodeService {
 
     private AdministCodeDto convertToDto(AdministCode entity) {
         return AdministCodeDto.builder()
-                .administZoneCode(entity.getAdministZoneCode())
-                .administZoneSe(entity.getAdministZoneSe())
-                .administZoneNm(entity.getAdministZoneNm())
-                .upperAdministZoneCode(entity.getUpperAdministZoneCode())
+                .admdstCd(entity.getAdmdstCd())
+                .admdstSeCd(entity.getAdmdstSeCd())
+                .admdstZoneNm(entity.getAdmdstZoneNm())
+                .upAdmdstCd(entity.getUpAdmdstCd())
                 .useYn(entity.getUseYn())
-                .creatDe(entity.getCreatDe())
-                .ablDe(entity.getAblDe())
+                .crtYmd(entity.getCrtYmd())
+                .ablYmd(entity.getAblYmd())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .lastModifiedBy(entity.getLastModifiedBy())

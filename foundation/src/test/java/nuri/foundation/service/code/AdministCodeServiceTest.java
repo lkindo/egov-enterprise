@@ -39,8 +39,8 @@ class AdministCodeServiceTest {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         AdministCode entity = AdministCode.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("서울특별시")
+                .admdstCd("1100000000")
+                .admdstZoneNm("서울특별시")
                 .build();
         Page<AdministCode> page = new PageImpl<>(Collections.singletonList(entity));
         given(administCodeRepository.findAll(pageable)).willReturn(page);
@@ -59,18 +59,18 @@ class AdministCodeServiceTest {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         AdministCode entity = AdministCode.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("서울특별시")
+                .admdstCd("1100000000")
+                .admdstZoneNm("서울특별시")
                 .build();
         Page<AdministCode> page = new PageImpl<>(Collections.singletonList(entity));
-        given(administCodeRepository.findByAdministZoneNmContaining(eq("서울"), any())).willReturn(page);
-
+        given(administCodeRepository.findByAdmdstZoneNmContaining(eq("서울"), any())).willReturn(page);
+ 
         // when
         Page<AdministCodeDto> result = administCodeService.getAdministCodeList("서울", pageable);
-
+ 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(administCodeRepository).findByAdministZoneNmContaining(eq("서울"), any());
+        verify(administCodeRepository).findByAdmdstZoneNmContaining(eq("서울"), any());
     }
 
     @Test
@@ -91,18 +91,18 @@ class AdministCodeServiceTest {
     void createAdministCode_Success() {
         // given
         AdministCodeDto dto = AdministCodeDto.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("서울특별시")
+                .admdstCd("1100000000")
+                .admdstZoneNm("서울특별시")
                 .build();
         AdministCode entity = AdministCode.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("서울특별시")
+                .admdstCd("1100000000")
+                .admdstZoneNm("서울특별시")
                 .build();
         given(administCodeRepository.save(any(AdministCode.class))).willReturn(entity);
-
+ 
         // when
         String result = administCodeService.createAdministCode(dto, "webmaster");
-
+ 
         // then
         assertThat(result).isEqualTo("1100000000");
         verify(administCodeRepository).save(any(AdministCode.class));
@@ -113,18 +113,18 @@ class AdministCodeServiceTest {
     void updateAdministCode_Success() {
         // given
         AdministCode entity = spy(AdministCode.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("Old Name")
+                .admdstCd("1100000000")
+                .admdstZoneNm("Old Name")
                 .build());
         given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
-
+ 
         AdministCodeDto dto = AdministCodeDto.builder()
-                .administZoneNm("New Name")
+                .admdstZoneNm("New Name")
                 .build();
-
+ 
         // when
         administCodeService.updateAdministCode("1100000000", dto, "admin");
-
+ 
         // then
         verify(entity).update(any(), eq("New Name"), any(), any(), eq("admin"));
     }
