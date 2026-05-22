@@ -22,7 +22,7 @@ import lombok.Builder;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bbs_master")
-@SecondaryTable(name = "TB_BBS_MASTER_OPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
+@SecondaryTable(name = "tb_bbs_master_optn", pkJoinColumns = @PrimaryKeyJoinColumn(name = "bbs_id", referencedColumnName = "bbs_id"))
 @SuperBuilder
 @DynamicUpdate
 public class BoardMaster extends BaseEntity {
@@ -75,28 +75,28 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "cmnty_id", length = 20)
     private String cmntyId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "ans_yn", length = 1)
+    @Column(table = "tb_bbs_master_optn", name = "ans_yn", length = 1)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "stsfdg_yn", length = 1)
+    @Column(table = "tb_bbs_master_optn", name = "stsfdg_yn", length = 1)
     @Builder.Default
     private String stsfdgYn = "N";
 
     // TB_BBS_MASTER_OPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "frst_rgtr_id", length = 20, updatable = false)
+    @Column(table = "tb_bbs_master_optn", name = "frst_rgtr_id", length = 20, updatable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("optnFrstRegisterId")
     private String optnFrstRgtrId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "crt_dt", updatable = false)
+    @Column(table = "tb_bbs_master_optn", name = "crt_dt", updatable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("optnFrstRegistPnttm")
     private LocalDateTime optnCrtDt;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "last_mdfr_id", length = 20)
+    @Column(table = "tb_bbs_master_optn", name = "last_mdfr_id", length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("optnLastUpdusrId")
     private String optnLastMdfrId;
 
-    @Column(table = "TB_BBS_MASTER_OPTN", name = "mdfcn_dt")
+    @Column(table = "tb_bbs_master_optn", name = "mdfcn_dt")
     @com.fasterxml.jackson.annotation.JsonProperty("optnLastUpdtPnttm")
     private LocalDateTime optnMdfcnDt;
 
@@ -133,43 +133,18 @@ public class BoardMaster extends BaseEntity {
     public void setOptnLastUpdtPnttm(LocalDateTime v) { this.optnMdfcnDt = v; }
 
     public static abstract class BoardMasterBuilder<C extends BoardMaster, B extends BoardMasterBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String optnFrstRgtrId;
-        private LocalDateTime optnCrtDt;
-        private String optnLastMdfrId;
-        private LocalDateTime optnMdfcnDt;
 
         public B optnFrstRegisterId(String v) {
-            this.optnFrstRgtrId = v;
-            return self();
+            return this.optnFrstRgtrId(v);
         }
         public B optnFrstRegistPnttm(LocalDateTime v) {
-            this.optnCrtDt = v;
-            return self();
+            return this.optnCrtDt(v);
         }
         public B optnLastUpdusrId(String v) {
-            this.optnLastMdfrId = v;
-            return self();
+            return this.optnLastMdfrId(v);
         }
         public B optnLastUpdtPnttm(LocalDateTime v) {
-            this.optnMdfcnDt = v;
-            return self();
-        }
-
-        public B optnFrstRgtrId(String v) {
-            this.optnFrstRgtrId = v;
-            return self();
-        }
-        public B optnCrtDt(LocalDateTime v) {
-            this.optnCrtDt = v;
-            return self();
-        }
-        public B optnLastMdfrId(String v) {
-            this.optnLastMdfrId = v;
-            return self();
-        }
-        public B optnMdfcnDt(LocalDateTime v) {
-            this.optnMdfcnDt = v;
-            return self();
+            return this.optnMdfcnDt(v);
         }
     }
 
