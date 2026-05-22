@@ -21,34 +21,34 @@ public class BoardSearchResult {
     private Integer likeCnt;
     private String upPstId;
     private String replyYn;
-    private Integer replyLc;
+    private Integer ansLvl;
     private String useYn;
     private String atchFileId;
-    private String bgngYmd;
-    private String endYmd;
+    private String pstBgngYmd;
+    private String pstEndYmd;
     private String ttlBoldYn;
     private String noticeYn;
-    private String secretYn;
+    private String scrtYn;
     private Integer commentCnt; 
-    private LocalDateTime eventDate;
+    private LocalDateTime evntDt;
     private String qnaSttsCd;
     private String qnaCatCd;
-    private Long pstSn;
+    private Long ansSn;
 
     // legacy / aliases
     public String getNttId() { return pstId; }
     public String getNttSj() { return pstTtl; }
-    public Long getNttNo() { return pstSn; }
+    public Long getNttNo() { return ansSn; }
     public Integer getInqireCo() { return inqCnt; }
     public Integer getLikeCo() { return likeCnt; }
     public String getParnts() { return upPstId; }
-    public String getNtceBgngYmd() { return bgngYmd; }
-    public String getNtceEndYmd() { return endYmd; }
+    public String getNtceBgngYmd() { return pstBgngYmd; }
+    public String getNtceEndYmd() { return pstEndYmd; }
     public String getSjBoldYn() { return ttlBoldYn; }
     public String getQnaStatus() { return qnaSttsCd; }
     public String getQnaCategory() { return qnaCatCd; }
 
     public String getPstId() { return pstId; }
     public String getPstTtl() { return pstTtl; }
-    public Long getPstSn() { return pstSn; }
+    public Long getPstSn() { return ansSn; }
 }

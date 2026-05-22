@@ -55,9 +55,9 @@ public class EgovTestDataConfig {
                     .bbsTypeCd(tyCode)
                     .bbsAtrbCd("BBSA01")
                     .useYn("Y")
-                    .ansPsblYn("Y")
-                    .fileAtchPsblYn("Y")
-                    .atchPsblFileCnt(3)
+                    .ansPsbltyYn("Y")
+                    .fileAtchPsbltyYn("Y")
+                    .atchPsbltyFileQty(3)
                     .optnFrstRegisterId("webmaster")
                     .build();
             boardMasterRepository.save(board);

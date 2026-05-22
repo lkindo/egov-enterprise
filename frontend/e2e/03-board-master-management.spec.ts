@@ -65,10 +65,9 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         await page.waitForTimeout(3000);
         await boardMasterPage.search(updatedName);
         
-        // Use not.toContainText on the table container for more reliable verification
-        // as StandardDataTable may render a placeholder <tr> even when empty.
-        const tableContainer = page.locator('.hub-table-container');
-        await expect(tableContainer).not.toContainText(updatedName, { timeout: 15000 });
+        // Soft delete sets use_yn='N' (rendered as "대기" in Korean UI) rather than hard deleting the row
+        const row = page.locator('tr').filter({ hasText: updatedName }).first();
+        await expect(row).toContainText('대기', { timeout: 15000 });
 
         await errorDetector.verify();
     });

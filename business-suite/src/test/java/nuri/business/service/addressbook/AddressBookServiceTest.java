@@ -121,7 +121,7 @@ class AddressBookServiceTest {
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("USER_1");
         
         nuri.business.service.addressbook.dto.AddressBookUserDto userDto = 
-            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("EMP_1").userNm("User").build();
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("EMP_1").nm("User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkNm("New").adbkMan(List.of(userDto)).build();
 
         // When
@@ -157,7 +157,7 @@ class AddressBookServiceTest {
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("NEW_USER_ID");
 
         nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto = 
-            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").userNm("New User").build();
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").nm("New User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkId(adbkId).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 
         // When
@@ -176,6 +176,7 @@ class AddressBookServiceTest {
         nuri.business.domain.addressbook.AddressBookUserSearchResult view = mock(nuri.business.domain.addressbook.AddressBookUserSearchResult.class);
         given(view.getUserId()).willReturn("EMP_1");
         given(view.getUserNm()).willReturn("Name");
+        given(view.getNm()).willReturn("Name");
         Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> page = new PageImpl<>(List.of(view));
         given(addressBookRepository.searchAddressBookUsers(any(), any(Pageable.class))).willReturn(page);
 
@@ -185,6 +186,6 @@ class AddressBookServiceTest {
 
         // Then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("Name");
+        assertThat(result.getContent().get(0).getNm()).isEqualTo("Name");
     }
 }

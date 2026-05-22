@@ -66,7 +66,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.bbsAtrbCd,
                 commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
-                boardMaster.tmplatId,
+                boardMaster.tmpltId,
                 boardMaster.useYn,
                 boardMaster.createdDate))
                 .from(boardMaster)
@@ -110,13 +110,13 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.bbsAtrbCd,
                 commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
-                boardMaster.tmplatId,
+                boardMaster.tmpltId,
                 template.tmplatNm,
                 template.tmplatCours,
-                boardMaster.fileAtchPsblYn.as("fileAtchPsblYn"),
-                boardMaster.atchPsblFileCnt.as("atchPsblFileCnt"),
-                boardMaster.atchPsblFileSize.as("atchPsblFileSize"),
-                boardMaster.ansPsblYn.as("replyPsblYn"),
+                boardMaster.fileAtchPsbltyYn,
+                boardMaster.atchPsbltyFileQty,
+                boardMaster.atchPsbltyFileSz,
+                boardMaster.ansPsbltyYn,
                 boardMaster.createdBy.as("frstRegisterId"),
                 boardMaster.useYn,
                 boardMaster.createdDate))
@@ -125,7 +125,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")))
-                .leftJoin(template).on(boardMaster.tmplatId.eq(template.tmplatId))
+                .leftJoin(template).on(boardMaster.tmpltId.eq(template.tmplatId))
                 .where(boardMaster.bbsId.eq(bbsId))
                 .fetchOne();
 

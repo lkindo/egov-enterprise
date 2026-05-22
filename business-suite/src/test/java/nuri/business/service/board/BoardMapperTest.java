@@ -106,6 +106,6 @@ class BoardMapperTest {
         assertNotNull(entity);
         assertEquals("Y", entity.getUseYn());
         assertEquals("OPEN", entity.getQnaSttsCd());
-        assertNull(entity.getEventDate());
+        assertNull(entity.getEvntDt());
     }
 }

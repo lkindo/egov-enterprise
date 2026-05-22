@@ -49,12 +49,12 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                     .schdlId(schdlId)
                     .schdlSeCd(dto.getSchdlSeCd())
                     .leaderId(dto.getLeaderId())
-                    .schdlTtl(dto.getSchdlTtl())
+                    .schdlNm(dto.getSchdlNm())
                     .schdlCn(dto.getSchdlCn())
-                    .reptitSeCd(dto.getReptitSeCd())
-                    .schdlIpcrCd(dto.getSchdlIpcrCd())
-                    .bgngYmd(dto.getBgngYmd())
-                    .endYmd(dto.getEndYmd())
+                    .reptSeCd(dto.getReptSeCd())
+                    .schdlImprtCd(dto.getSchdlImprtCd())
+                    .schdlBgngYmd(dto.getSchdlBgngYmd())
+                    .schdlEndYmd(dto.getSchdlEndYmd())
                     .schdlPicId(dto.getSchdlPicId())
                     .createdBy(userId)
                     .build();
@@ -74,12 +74,12 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
         entity.update(
                 dto.getSchdlSeCd(),
                 dto.getLeaderId(),
-                dto.getSchdlTtl(),
+                dto.getSchdlNm(),
                 dto.getSchdlCn(),
-                dto.getReptitSeCd(),
-                dto.getSchdlIpcrCd(),
-                dto.getBgngYmd(),
-                dto.getEndYmd(),
+                dto.getReptSeCd(),
+                dto.getSchdlImprtCd(),
+                dto.getSchdlBgngYmd(),
+                dto.getSchdlEndYmd(),
                 dto.getSchdlPicId());
         
         entity.setLastModifiedBy(userId);
@@ -113,17 +113,17 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
     public void updateLeaderStatus(nuri.business.service.schedule.dto.LeaderStatusDto dto) {
         LeaderStatus entity = leaderStatusRepository.findById(dto.getLeaderId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.updateStatus(dto.getLeaderSttus());
+        entity.updateStatus(dto.getLeaderSttsCd());
     }
 
     private LeaderScheduleDto toDto(LeaderSchedule entity) {
         return LeaderScheduleDto.builder()
                 .schdlId(entity.getSchdlId())
                 .leaderId(entity.getLeaderId())
-                .schdlTtl(entity.getSchdlTtl())
+                .schdlNm(entity.getSchdlNm())
                 .schdlCn(entity.getSchdlCn())
-                .schdlBgngYmd(entity.getBgngYmd())
-                .schdlEndYmd(entity.getEndYmd())
+                .schdlBgngYmd(entity.getSchdlBgngYmd())
+                .schdlEndYmd(entity.getSchdlEndYmd())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

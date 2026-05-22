@@ -1,5 +1,7 @@
 package nuri.business.service.addressbook.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -8,24 +10,57 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class AddressBookUserDto {
-    private String adbkUserId;
+    @JsonProperty("adbkUserId")
+    private String adbkConstntId;
+
     private String adbkId;
     private String userId;
-    private String userNm;
+
+    @JsonProperty("userNm")
+    private String nm;
+
     private String emlAddr;
     private String homeTelno;
     private String mblTelno;
-    private String officeTelno;
+
+    @JsonProperty("officeTelno")
+    private String ofcTelno;
+
     private String faxNo;
 
-    // ----- [Legacy Aliases] -----
-    public String getNm() { return userNm; }
-    public void setNm(String v) { this.userNm = v; }
-    
-    // Existing manual getters for backward compatibility (can be removed if @Getter is enough, 
-    // but kept here for explicit mapping if needed by some frameworks)
+    // ----- [Legacy Aliases for Internal Java Parity] -----
+    @JsonIgnore
+    public String getAdbkUserId() {
+        return adbkConstntId;
+    }
+
+    @JsonIgnore
+    public void setAdbkUserId(String adbkUserId) {
+        this.adbkConstntId = adbkUserId;
+    }
+
+    @JsonIgnore
+    public String getUserNm() {
+        return nm;
+    }
+
+    @JsonIgnore
+    public void setUserNm(String userNm) {
+        this.nm = userNm;
+    }
+
+    @JsonIgnore
+    public String getOfficeTelno() {
+        return ofcTelno;
+    }
+
+    @JsonIgnore
+    public void setOfficeTelno(String officeTelno) {
+        this.ofcTelno = officeTelno;
+    }
+
+    // Existing manual getters for backward compatibility
     public String getEmlAddr() { return emlAddr; }
     public String getMblTelno() { return mblTelno; }
-    public String getOfficeTelno() { return officeTelno; }
     public String getFaxNo() { return faxNo; }
 }

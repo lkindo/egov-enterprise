@@ -3,6 +3,8 @@ package nuri.business.service.addressbook.dto;
 import lombok.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -22,8 +24,13 @@ public class AddressBookDto {
     private String rlsScopeCd;
 
     private String trgetOrgnztId;
+
+    @JsonProperty("useAt")
     private String useYn;
+
     private String wrterId;
+
+    @JsonProperty("nameCards")
     @Builder.Default
     private List<AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
 
@@ -33,8 +40,12 @@ public class AddressBookDto {
     private LocalDateTime lastUpdtPnttm;
 
     // legacy
+    @JsonIgnore
     public String getUseAt() { return useYn; }
+    @JsonIgnore
     public void setUseAt(String v) { this.useYn = v; }
+    @JsonIgnore
     public LocalDateTime getCreatedDate() { return frstRegistPnttm; }
+    @JsonIgnore
     public List<AddressBookUserDto> getNameCards() { return adbkMan; }
 }

@@ -37,7 +37,7 @@ public class CommonCodeApiController {
     @GetMapping("/cl/{clCode}")
     public ResponseEntity<ApiResponse<CmmnClCodeDto>> getClCode(@PathVariable String clCode) throws Exception {
         CmmnClCodeDto vo = new CmmnClCodeDto();
-        vo.setClCode(clCode);
+        vo.setClsfCd(clCode);
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnClCodeDetail(vo)));
     }
 
@@ -51,7 +51,7 @@ public class CommonCodeApiController {
     @Operation(summary = "분류코드 수정")
     @PutMapping("/cl/{clCode}")
     public ResponseEntity<ApiResponse<Void>> updateClCode(@PathVariable String clCode, @Valid @RequestBody CmmnClCodeDto vo) throws Exception {
-        vo.setClCode(clCode);
+        vo.setClsfCd(clCode);
         commonCodeService.updateCmmnClCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -60,7 +60,7 @@ public class CommonCodeApiController {
     @DeleteMapping("/cl/{clCode}")
     public ResponseEntity<ApiResponse<Void>> deleteClCode(@PathVariable String clCode) throws Exception {
         CmmnClCodeDto vo = new CmmnClCodeDto();
-        vo.setClCode(clCode);
+        vo.setClsfCd(clCode);
         commonCodeService.deleteCmmnClCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -79,7 +79,7 @@ public class CommonCodeApiController {
     @GetMapping("/cmmn/{codeId}")
     public ResponseEntity<ApiResponse<CmmnCodeDto>> getCmmnCode(@PathVariable String codeId) throws Exception {
         CmmnCodeDto vo = new CmmnCodeDto();
-        vo.setCodeId(codeId);
+        vo.setCdId(codeId);
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnCodeDetail(vo)));
     }
 
@@ -93,7 +93,7 @@ public class CommonCodeApiController {
     @Operation(summary = "공통코드 수정")
     @PutMapping("/cmmn/{codeId}")
     public ResponseEntity<ApiResponse<Void>> updateCmmnCode(@PathVariable String codeId, @Valid @RequestBody CmmnCodeDto vo) throws Exception {
-        vo.setCodeId(codeId);
+        vo.setCdId(codeId);
         commonCodeService.updateCmmnCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -102,7 +102,7 @@ public class CommonCodeApiController {
     @DeleteMapping("/cmmn/{codeId}")
     public ResponseEntity<ApiResponse<Void>> deleteCmmnCode(@PathVariable String codeId) throws Exception {
         CmmnCodeDto vo = new CmmnCodeDto();
-        vo.setCodeId(codeId);
+        vo.setCdId(codeId);
         commonCodeService.deleteCmmnCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -121,8 +121,8 @@ public class CommonCodeApiController {
     @GetMapping("/detail/{codeId}/{code}")
     public ResponseEntity<ApiResponse<CmmnDetailCodeDto>> getDetailCode(@PathVariable String codeId, @PathVariable String code) throws Exception {
         CmmnDetailCodeDto vo = new CmmnDetailCodeDto();
-        vo.setCodeId(codeId);
-        vo.setCode(code);
+        vo.setCdId(codeId);
+        vo.setDtlCd(code);
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnDetailCodeDetail(vo)));
     }
 
@@ -136,8 +136,8 @@ public class CommonCodeApiController {
     @Operation(summary = "상세코드 수정")
     @PutMapping("/detail/{codeId}/{code}")
     public ResponseEntity<ApiResponse<Void>> updateDetailCode(@PathVariable String codeId, @PathVariable String code, @Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
-        vo.setCodeId(codeId);
-        vo.setCode(code);
+        vo.setCdId(codeId);
+        vo.setDtlCd(code);
         commonCodeService.updateCmmnDetailCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -146,8 +146,8 @@ public class CommonCodeApiController {
     @DeleteMapping("/detail/{codeId}/{code}")
     public ResponseEntity<ApiResponse<Void>> deleteDetailCode(@PathVariable String codeId, @PathVariable String code) throws Exception {
         CmmnDetailCodeDto vo = new CmmnDetailCodeDto();
-        vo.setCodeId(codeId);
-        vo.setCode(code);
+        vo.setCdId(codeId);
+        vo.setDtlCd(code);
         commonCodeService.deleteCmmnDetailCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

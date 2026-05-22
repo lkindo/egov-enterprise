@@ -31,14 +31,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.pstTtl,
                                                  QBoard.board.userId,
                                                  QBoard.board.userNm,
-                                                 QBoard.board.pstSn,
+                                                 QBoard.board.ansSn,
                                                  QBoard.board.pstCn,
                                                  QBoard.board.pswd,
                                                  QBoard.board.createdBy.as("frstRegisterId"),
                                                  QUser.user.userNm.coalesce(QBoard.board.userNm).as("frstRegisterNm"),
                                                  QBoard.board.createdDate,
-                                                 QBoard.board.bgngYmd,
-                                                 QBoard.board.endYmd,
+                                                 QBoard.board.pstBgngYmd,
+                                                 QBoard.board.pstEndYmd,
                                                  QBoard.board.inqCnt,
                                                  QBoard.board.likeCnt,
                                                  QBoard.board.useYn,
@@ -46,14 +46,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.upPstId,
                                                  QBoard.board.sortOrdr,
                                                  QBoard.board.ttlBoldYn,
-                                                 QBoard.board.secretYn,
-                                                 QBoard.board.eventDate,
+                                                 QBoard.board.scrtYn,
+                                                 QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd,
                                                  QBoardMaster.boardMaster.bbsTypeCd.as("bbsTypeCd"),
-                                                 QBoardMaster.boardMaster.ansPsblYn.as("ansPsblYn"),
-                                                 QBoardMaster.boardMaster.fileAtchPsblYn.as("fileAtchPsblYn"),
-                                                 QBoardMaster.boardMaster.atchPsblFileCnt.as("atchPsblFileCnt"),
+                                                 QBoardMaster.boardMaster.ansPsbltyYn.as("ansPsbltyYn"),
+                                                 QBoardMaster.boardMaster.fileAtchPsbltyYn.as("fileAtchPsbltyYn"),
+                                                 QBoardMaster.boardMaster.atchPsbltyFileQty.as("atchPsbltyFileQty"),
                                                  QBoardMaster.boardMaster.bbsTtl.as("bbsTtl")))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
@@ -94,15 +94,15 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.likeCnt,
                                                  QBoard.board.upPstId,
                                                  QBoard.board.sortOrdr,
-                                                 QBoard.board.pstSn,
-                                                 QBoard.board.secretYn,
-                                                 QBoard.board.eventDate,
+                                                 QBoard.board.ansSn,
+                                                 QBoard.board.scrtYn,
+                                                 QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)
-                                .orderBy(orderSpecifier, QBoard.board.pstSn.asc())
+                                .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -125,7 +125,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 List<Board> content = queryFactory
                                 .selectFrom(QBoard.board)
                                 .where(builder)
-                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.pstSn.asc()) 
+                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.ansSn.asc()) 
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();

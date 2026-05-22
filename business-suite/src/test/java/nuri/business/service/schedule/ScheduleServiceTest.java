@@ -42,7 +42,7 @@ class ScheduleServiceTest {
     void getScheduleList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Schedule entity = Schedule.builder().schdlId("S1").schdlTtl("Test Schedule").build();
+        Schedule entity = Schedule.builder().schdlId("S1").schdlNm("Test Schedule").build();
         given(scheduleRepository.searchSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -50,7 +50,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSchdlTtl()).isEqualTo("Test Schedule");
+        assertThat(result.getContent().get(0).getSchdlNm()).isEqualTo("Test Schedule");
     }
 
     @Test
@@ -58,7 +58,7 @@ class ScheduleServiceTest {
     void getSchedule() {
         // given
         String schdlId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).schdlTtl("Test Schedule").build();
+        Schedule entity = Schedule.builder().schdlId(schdlId).schdlNm("Test Schedule").build();
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
         // when
@@ -75,7 +75,7 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdlTtl("New Schedule")
+                .schdlNm("New Schedule")
                 .schdlSeCd("1")
                 .build();
 
@@ -92,10 +92,10 @@ class ScheduleServiceTest {
         // given
         String schdlId = "S1";
         String userId = "user1";
-        Schedule existingEntity = Schedule.builder().schdlId(schdlId).schdlTtl("Old Title").build();
+        Schedule existingEntity = Schedule.builder().schdlId(schdlId).schdlNm("Old Title").build();
         ScheduleDto updateDto = ScheduleDto.builder()
                 .schdlId(schdlId)
-                .schdlTtl("New Title")
+                .schdlNm("New Title")
                 .build();
 
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
@@ -104,7 +104,7 @@ class ScheduleServiceTest {
         scheduleService.updateSchedule(schdlId, userId, updateDto);
 
         // then
-        assertThat(existingEntity.getSchdlTtl()).isEqualTo("New Title");
+        assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
     }
 
     @Test

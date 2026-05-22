@@ -25,34 +25,34 @@ public class InformalSanction extends BaseEntity {
 
     @Id
     @Column(name = "ifml_atrz_id", length = 20)
-    private String informalSanctionId;
+    private String ifmlAtrzId;
 
     @Column(name = "task_se_cd", length = 12, nullable = false)
-    private String jobSeCode;
+    private String taskSeCd;
 
     @Column(name = "aplcnt_id", length = 20, nullable = false)
-    private String applicantId;
+    private String aplcntId;
 
     @Column(name = "req_ymd", length = 8)
-    private String requestDe;
+    private String reqYmd;
 
     @Column(name = "aprvr_id", length = 20, nullable = false)
-    private String sanctionerId;
+    private String aprvrId;
 
     @Column(name = "aprv_yn", length = 1)
-    private String confmAt;
+    private String aprvYn;
 
     @Column(name = "atrz_dt")
-    private LocalDateTime sanctionDt;
+    private LocalDateTime atrzDt;
 
     @Column(name = "rjct_rsn_cn", length = 4000)
-    private String returnResn;
+    private String rjctRsnCn;
 
-    public void update(String jobSeCode, String requestDe, String sanctionerId) {
+    public void update(String taskSeCd, String reqYmd, String aprvrId) {
         validateRequestedState();
-        this.jobSeCode = jobSeCode;
-        this.requestDe = requestDe;
-        this.sanctionerId = sanctionerId;
+        this.taskSeCd = taskSeCd;
+        this.reqYmd = reqYmd;
+        this.aprvrId = aprvrId;
     }
 
     /**
@@ -60,9 +60,9 @@ public class InformalSanction extends BaseEntity {
      */
     public void approve() {
         validateRequestedState();
-        this.confmAt = SanctionStatus.APPROVED.getCode();
-        this.sanctionDt = LocalDateTime.now();
-        this.returnResn = null;
+        this.aprvYn = SanctionStatus.APPROVED.getCode();
+        this.atrzDt = LocalDateTime.now();
+        this.rjctRsnCn = null;
     }
 
     /**
@@ -74,16 +74,26 @@ public class InformalSanction extends BaseEntity {
             throw new nuri.foundation.core.exception.BusinessException(
                 "반려 사유는 필수입니다.", nuri.foundation.core.exception.ErrorCode.INVALID_INPUT_VALUE);
         }
-        this.confmAt = SanctionStatus.REJECTED.getCode();
-        this.returnResn = reason;
-        this.sanctionDt = LocalDateTime.now();
+        this.aprvYn = SanctionStatus.REJECTED.getCode();
+        this.rjctRsnCn = reason;
+        this.atrzDt = LocalDateTime.now();
     }
 
     private void validateRequestedState() {
-        if (!SanctionStatus.REQUESTED.getCode().equals(this.confmAt)) {
+        if (!SanctionStatus.REQUESTED.getCode().equals(this.aprvYn)) {
             throw new nuri.foundation.core.exception.BusinessException(
-                "이미 처리가 완료된 결재 건입니다. (현재 상태: " + SanctionStatus.fromCode(this.confmAt).getDescription() + ")",
+                "이미 처리가 완료된 결재 건입니다. (현재 상태: " + SanctionStatus.fromCode(this.aprvYn).getDescription() + ")",
                 nuri.foundation.core.exception.ErrorCode.INVALID_STATE);
         }
     }
+
+    // legacy aliases
+    public String getInformalSanctionId() { return ifmlAtrzId; }
+    public String getJobSeCode() { return taskSeCd; }
+    public String getApplicantId() { return aplcntId; }
+    public String getRequestDe() { return reqYmd; }
+    public String getSanctionerId() { return aprvrId; }
+    public String getConfmAt() { return aprvYn; }
+    public LocalDateTime getSanctionDt() { return atrzDt; }
+    public String getReturnResn() { return rjctRsnCn; }
 }

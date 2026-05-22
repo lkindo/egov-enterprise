@@ -36,13 +36,18 @@ public class BlogUser extends BaseEntity {
     private String joinYmd;
 
     @Column(name = "whdwl_ymd", length = 8)
-    private String wdrlYmd;
+    private String whdwlYmd;
 
     @Column(name = "mbr_stts_cd", length = 12)
     private String mbrSttsCd;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
+
+    @Transient
+    public String getWdrlYmd() { return whdwlYmd; }
+    @Transient
+    public void setWdrlYmd(String v) { this.whdwlYmd = v; }
 }
 
 @EqualsAndHashCode

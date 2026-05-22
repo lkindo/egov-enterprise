@@ -40,8 +40,8 @@ class BoardTest {
         assertThat(board.getUserId()).isEqualTo("user01");
         assertThat(board.getUserNm()).isEqualTo("User 01");
         assertThat(board.getPswd()).isEqualTo("pass");
-        assertThat(board.getBgngYmd()).isEqualTo("20240101");
-        assertThat(board.getEndYmd()).isEqualTo("20241231");
+        assertThat(board.getPstBgngYmd()).isEqualTo("20240101");
+        assertThat(board.getPstEndYmd()).isEqualTo("20241231");
         assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
     }
 
@@ -89,12 +89,12 @@ class BoardTest {
     void updateReplyOrderTest() {
         Board board = Board.builder()
                 .bbsId("BBS_001")
-                .pstSn(1L)
+                .ansSn(1L)
                 .build();
 
         board.updateReplyOrder(2L);
 
-        assertThat(board.getPstSn()).isEqualTo(2L);
+        assertThat(board.getAnsSn()).isEqualTo(2L);
     }
 
     @Test

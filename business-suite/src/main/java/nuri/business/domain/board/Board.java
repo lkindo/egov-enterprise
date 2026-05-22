@@ -32,7 +32,7 @@ public class Board extends BaseEntity implements Serializable {
     private String bbsId;
 
     @Column(name = "ans_sn")
-    private Long pstSn;
+    private Long ansSn;
 
     @Column(name = "pst_ttl", length = 100)
     private String pstTtl;
@@ -51,7 +51,7 @@ public class Board extends BaseEntity implements Serializable {
 
     @Column(name = "ans_lvl")
     @Builder.Default
-    private Integer replyLc = 0;
+    private Integer ansLvl = 0;
 
     @Column(name = "inq_cnt")
     @Builder.Default
@@ -62,10 +62,10 @@ public class Board extends BaseEntity implements Serializable {
     private String useYn = "Y";
 
     @Column(name = "pst_bgng_ymd", length = 20)
-    private String bgngYmd;
+    private String pstBgngYmd;
 
     @Column(name = "pst_end_ymd", length = 20)
-    private String endYmd;
+    private String pstEndYmd;
 
     @Column(name = "user_id", length = 20)
     private String userId;
@@ -80,13 +80,13 @@ public class Board extends BaseEntity implements Serializable {
     private String atchFileId;
 
     @Column(name = "scrt_yn", length = 1)
-    private String secretYn;
+    private String scrtYn;
 
     @Column(name = "blog_id", length = 20)
     private String blogId;
 
     @Column(name = "evnt_dt")
-    private java.time.LocalDateTime eventDate;
+    private java.time.LocalDateTime evntDt;
 
     @Column(name = "qna_stts_cd", length = 10)
     @Builder.Default
@@ -107,20 +107,20 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer fileCnt = 0;
 
-    public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String bgngYmd,
-            String endYmd, String atchFileId, java.time.LocalDateTime eventDate, String qnaSttsCd, String qnaCatCd, String secretYn) {
+    public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String pstBgngYmd,
+            String pstEndYmd, String atchFileId, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {
         this.pstTtl = pstTtl;
         this.pstCn = pstCn;
         this.userId = userId;
         this.userNm = userNm;
         this.pswd = pswd;
-        this.bgngYmd = bgngYmd;
-        this.endYmd = endYmd;
+        this.pstBgngYmd = pstBgngYmd;
+        this.pstEndYmd = pstEndYmd;
         this.atchFileId = atchFileId;
-        this.eventDate = eventDate;
+        this.evntDt = evntDt;
         this.qnaSttsCd = qnaSttsCd;
         this.qnaCatCd = qnaCatCd;
-        this.secretYn = secretYn;
+        this.scrtYn = scrtYn;
     }
 
     public void delete() {
@@ -134,8 +134,8 @@ public class Board extends BaseEntity implements Serializable {
         this.inqCnt++;
     }
 
-    public void updateReplyOrder(Long pstSn) {
-        this.pstSn = pstSn;
+    public void updateReplyOrder(Long ansSn) {
+        this.ansSn = ansSn;
     }
 
     public void increaseLikeCnt() {
@@ -149,12 +149,12 @@ public class Board extends BaseEntity implements Serializable {
     public String getNttId() { return pstId; }
     public String getNttSj() { return pstTtl; }
     public String getNttCn() { return pstCn; }
-    public Long getNttNo() { return pstSn; }
+    public Long getNttNo() { return ansSn; }
     public String getNtcrId() { return userId; }
     public String getNtcrNm() { return userNm; }
     public String getPassword() { return pswd; }
-    public String getNtceBgngYmd() { return bgngYmd; }
-    public String getNtceEndYmd() { return endYmd; }
+    public String getNtceBgngYmd() { return pstBgngYmd; }
+    public String getNtceEndYmd() { return pstEndYmd; }
     public Integer getInqireCo() { return inqCnt; }
     public Integer getLikeCo() { return likeCnt; }
     public String getQnaStatus() { return qnaSttsCd; }
@@ -165,12 +165,12 @@ public class Board extends BaseEntity implements Serializable {
     public void setNttId(String v) { this.pstId = v; }
     public void setNttSj(String v) { this.pstTtl = v; }
     public void setNttCn(String v) { this.pstCn = v; }
-    public void setNttNo(Long v) { this.pstSn = v; }
+    public void setNttNo(Long v) { this.ansSn = v; }
     public void setNtcrId(String v) { this.userId = v; }
     public void setNtcrNm(String v) { this.userNm = v; }
     public void setPassword(String v) { this.pswd = v; }
-    public void setNtceBgngYmd(String v) { this.bgngYmd = v; }
-    public void setNtceEndYmd(String v) { this.endYmd = v; }
+    public void setNtceBgngYmd(String v) { this.pstBgngYmd = v; }
+    public void setNtceEndYmd(String v) { this.pstEndYmd = v; }
     public void setInqireCo(Integer v) { this.inqCnt = v; }
     public void setLikeCo(Integer v) { this.likeCnt = v; }
     public void setQnaStatus(String v) { this.qnaSttsCd = v; }

@@ -27,10 +27,10 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Page<InformalSanctionDto> getInformalSanctionList(String applicantId, Pageable pageable) {
+    public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
         Page<InformalSanction> result;
-        if (applicantId != null && !applicantId.isEmpty()) {
-            result = informalSanctionRepository.findByApplicantId(applicantId, pageable);
+        if (aplcntId != null && !aplcntId.isEmpty()) {
+            result = informalSanctionRepository.findByAplcntId(aplcntId, pageable);
         } else {
             result = informalSanctionRepository.findAll(pageable);
         }
@@ -38,23 +38,23 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     }
 
     @Override
-    public Page<InformalSanctionDto> getReceivedInformalSanctionList(String sanctionerId, Pageable pageable) {
+    public Page<InformalSanctionDto> getReceivedInformalSanctionList(String aprvrId, Pageable pageable) {
         return informalSanctionRepository
-                .findBySanctionerId(Objects.requireNonNull(sanctionerId), Objects.requireNonNull(pageable))
+                .findByAprvrId(Objects.requireNonNull(aprvrId), Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
-    public InformalSanctionDto getInformalSanction(String informalSanctionId) {
-        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(informalSanctionId))
+    public InformalSanctionDto getInformalSanction(String ifmlAtrzId) {
+        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         InformalSanctionDto dto = convertToDto(entity);
 
         // 코드명 설정
         List<CommonCodeDto> jobCodes = commonCodeService.getCodesByGroup("COM075");
-        dto.setJobSeNm(jobCodes.stream()
-                .filter(c -> c.code().equals(dto.getJobSeCode()))
+        dto.setTaskSeNm(jobCodes.stream()
+                .filter(c -> c.code().equals(dto.getTaskSeCd()))
                 .findFirst().map(CommonCodeDto::codeNm).orElse(""));
 
         return dto;
@@ -63,18 +63,18 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     @Override
     @Transactional
     public void registerInformalSanction(InformalSanctionDto dto) {
-        String informalSanctionId = dto.getInformalSanctionId();
-        if (informalSanctionId == null || informalSanctionId.isEmpty()) {
-            informalSanctionId = nuri.foundation.core.util.IdGenerationUtil.generateInformalSanctionId();
+        String ifmlAtrzId = dto.getIfmlAtrzId();
+        if (ifmlAtrzId == null || ifmlAtrzId.isEmpty()) {
+            ifmlAtrzId = nuri.foundation.core.util.IdGenerationUtil.generateInformalSanctionId();
         }
 
         InformalSanction entity = InformalSanction.builder()
-                .informalSanctionId(informalSanctionId)
-                .jobSeCode(dto.getJobSeCode())
-                .applicantId(dto.getApplicantId())
-                .requestDe(dto.getRequestDe())
-                .sanctionerId(dto.getSanctionerId())
-                .confmAt(SanctionStatus.REQUESTED.getCode()) // 초기상태: 신청
+                .ifmlAtrzId(ifmlAtrzId)
+                .taskSeCd(dto.getTaskSeCd())
+                .aplcntId(dto.getAplcntId())
+                .reqYmd(dto.getReqYmd())
+                .aprvrId(dto.getAprvrId())
+                .aprvYn(SanctionStatus.REQUESTED.getCode()) // 초기상태: 신청
                 .build();
         informalSanctionRepository.save(Objects.requireNonNull(entity));
     }
@@ -83,40 +83,40 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     @Transactional
     public void updateInformalSanction(InformalSanctionDto dto) {
         InformalSanction entity = informalSanctionRepository
-                .findById(Objects.requireNonNull(dto.getInformalSanctionId()))
+                .findById(Objects.requireNonNull(dto.getIfmlAtrzId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
         String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getApplicantId())) {
+        if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         // [안정성] 상태 전이 가드 (신청 상태에서만 수정 가능)
-        if (!"A".equals(entity.getConfmAt())) {
+        if (!"A".equals(entity.getAprvYn())) {
             throw new BusinessException(ErrorCode.INVALID_STATE, "신청 상태인 경우에만 수정할 수 있습니다.");
         }
 
-        entity.update(dto.getJobSeCode(), dto.getRequestDe(), dto.getSanctionerId());
+        entity.update(dto.getTaskSeCd(), dto.getReqYmd(), dto.getAprvrId());
     }
 
     @Override
     @Transactional
-    public void deleteInformalSanction(String informalSanctionId) {
+    public void deleteInformalSanction(String ifmlAtrzId) {
         InformalSanction entity = informalSanctionRepository
-                .findById(Objects.requireNonNull(informalSanctionId))
+                .findById(Objects.requireNonNull(ifmlAtrzId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
         String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getApplicantId())) {
+        if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         // [안정성] 상태 전이 가드 (신청 상태에서만 삭제 가능)
-        if (!"A".equals(entity.getConfmAt())) {
+        if (!"A".equals(entity.getAprvYn())) {
             throw new BusinessException(ErrorCode.INVALID_STATE, "신청 상태인 경우에만 삭제할 수 있습니다.");
         }
 
@@ -125,30 +125,30 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
 
     @Override
     @Transactional
-    public void confirmInformalSanction(String informalSanctionId, String confmAt, String returnResn) {
-        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(informalSanctionId))
+    public void confirmInformalSanction(String ifmlAtrzId, String aprvYn, String rjctRsnCn) {
+        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (결재자 본인)
         String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getSanctionerId())) {
+        if (!currentUserId.equals(entity.getAprvrId())) {
             throw new BusinessException("접근 권한이 없습니다.", ErrorCode.ACCESS_DENIED);
         }
 
         // [안정성] 상태 전이 가드 및 비즈니스 행위 위임
-        if (SanctionStatus.APPROVED.getCode().equals(confmAt)) {
+        if (SanctionStatus.APPROVED.getCode().equals(aprvYn)) {
             entity.approve();
-        } else if (SanctionStatus.REJECTED.getCode().equals(confmAt)) {
-            entity.reject(returnResn);
+        } else if (SanctionStatus.REJECTED.getCode().equals(aprvYn)) {
+            entity.reject(rjctRsnCn);
         } else {
-            throw new BusinessException("잘못된 결재 상태 코드입니다: " + confmAt, ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException("잘못된 결재 상태 코드입니다: " + aprvYn, ErrorCode.INVALID_INPUT_VALUE);
         }
 
         // 이벤트 발행
         eventPublisher.publishEvent(new nuri.business.service.informalsanction.event.SanctionStatusChangedEvent(
-                informalSanctionId, entity.getApplicantId(), entity.getSanctionerId(), 
-                SanctionStatus.fromCode(confmAt), returnResn));
+                ifmlAtrzId, entity.getAplcntId(), entity.getAprvrId(), 
+                SanctionStatus.fromCode(aprvYn), rjctRsnCn));
     }
 
     private InformalSanctionDto convertToDto(InformalSanction entity) {

@@ -27,13 +27,13 @@ public class Schedule extends BaseEntity implements Serializable {
     private String schdlSeCd;
 
     @Column(name = "schdl_nm", length = 100, nullable = false)
-    private String schdlTtl;
+    private String schdlNm;
 
     @Column(name = "schdl_cn", columnDefinition = "TEXT", length = 4000)
     private String schdlCn;
 
     @Column(name = "rept_se_cd", length = 12)
-    private String reptitSeCd;
+    private String reptSeCd;
 
     @Column(name = "schdl_bgng_ymd", length = 8)
     private String schdlBgngYmd;
@@ -54,41 +54,41 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(name = "schdl_dept_id", length = 20)
     private String schdlDeptId;
     @Column(name = "schdl_knd_cd", length = 12)
-    private String schdlKindCd;
+    private String schdlKndCd;
     @Column(name = "schdl_plc_nm", length = 100)
     private String schdlPlcNm;
     @Column(name = "schdl_imprt_cd", length = 12)
-    private String schdlIpcrCd;
+    private String schdlImprtCd;
 
-    public void update(String schdlTtl, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
-                       String reptitSeCd, String schdlPicId, String atchFileId) {
-        this.schdlTtl = schdlTtl;
+    public void update(String schdlNm, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
+                       String reptSeCd, String schdlPicId, String atchFileId) {
+        this.schdlNm = schdlNm;
         this.schdlCn = schdlCn;
         this.schdlSeCd = schdlSeCd;
         this.schdlBgngYmd = schdlBgngYmd;
         this.schdlEndYmd = schdlEndYmd;
-        this.reptitSeCd = reptitSeCd;
+        this.reptSeCd = reptSeCd;
         this.schdlPicId = schdlPicId;
         this.atchFileId = atchFileId;
     }
     
-    public void updateAll(String schdlTtl, String schdlCn, String schdlSeCd, String schdlKindCd, String schdlBgngYmd, String schdlEndYmd,
-                       String schdlPlcNm, String schdlIpcrCd, String schdlPicId, String reptitSeCd) {
-        this.schdlTtl = schdlTtl;
+    public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,
+                       String schdlPlcNm, String schdlImprtCd, String schdlPicId, String reptSeCd) {
+        this.schdlNm = schdlNm;
         this.schdlCn = schdlCn;
         this.schdlSeCd = schdlSeCd;
-        this.schdlKindCd = schdlKindCd;
+        this.schdlKndCd = schdlKndCd;
         this.schdlBgngYmd = schdlBgngYmd;
         this.schdlEndYmd = schdlEndYmd;
         this.schdlPlcNm = schdlPlcNm;
-        this.schdlIpcrCd = schdlIpcrCd;
+        this.schdlImprtCd = schdlImprtCd;
         this.schdlPicId = schdlPicId;
-        this.reptitSeCd = reptitSeCd;
+        this.reptSeCd = reptSeCd;
     }
 
     // legacy aliases
     public String getSchdulId() { return schdlId; }
-    public String getSchdulNm() { return schdlTtl; }
+    public String getSchdulNm() { return schdlNm; }
     public String getSchdulCn() { return schdlCn; }
     public String getSchdulBgnde() { return schdlBgngYmd; }
     public String getSchdulEndde() { return schdlEndYmd; }

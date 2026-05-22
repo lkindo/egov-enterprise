@@ -36,7 +36,7 @@ class ScheduleApiControllerTest {
     @DisplayName("일정 목록 조회 성공")
     void getScheduleList_Success() throws Exception {
         // Given
-        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH1").schdlTtl("Meeting").build()));
+        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH1").schdlNm("Meeting").build()));
         given(egovScheduleService.getScheduleList(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then

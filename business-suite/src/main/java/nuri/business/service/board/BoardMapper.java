@@ -26,8 +26,8 @@ public interface BoardMapper {
     @Mapping(target = "frstRegisterId", source = "createdBy")
     @Mapping(target = "lastUpdtPnttm", source = "lastModifiedDate")
     @Mapping(target = "blogYn", source = "blogId", qualifiedByName = "blogIdToYn")
-    @Mapping(target = "eventDateStr", source = "eventDate", qualifiedByName = "formatDateTime")
-    @Mapping(target = "isExpired", source = "endYmd", qualifiedByName = "calculateExpired")
+    @Mapping(target = "eventDateStr", source = "evntDt", qualifiedByName = "formatDateTime")
+    @Mapping(target = "isExpired", source = "pstEndYmd", qualifiedByName = "calculateExpired")
     @Mapping(target = "upPstId", source = "upPstId")
     @Mapping(target = "bbsTtl", ignore = true)
     BoardDto toDto(Board entity);
@@ -40,8 +40,8 @@ public interface BoardMapper {
     @Mapping(target = "userNm", source = "frstRegisterNm")
     @Mapping(target = "frstRegisterPnttm", source = "createdDate")
     @Mapping(target = "frstRegisterPnttmStr", source = "createdDate", qualifiedByName = "formatDate")
-    @Mapping(target = "eventDateStr", source = "eventDate", qualifiedByName = "formatDateTime")
-    @Mapping(target = "isExpired", source = "endYmd", qualifiedByName = "calculateExpired")
+    @Mapping(target = "eventDateStr", source = "evntDt", qualifiedByName = "formatDateTime")
+    @Mapping(target = "isExpired", source = "pstEndYmd", qualifiedByName = "calculateExpired")
     @Mapping(target = "upPstId", source = "upPstId")
     @Mapping(target = "bbsTtl", ignore = true)
     BoardDto toDto(BoardSearchResult result);
@@ -55,18 +55,18 @@ public interface BoardMapper {
     @Mapping(target = "userNm", source = "frstRegisterNm")
     @Mapping(target = "frstRegisterPnttm", source = "createdDate")
     @Mapping(target = "frstRegisterPnttmStr", source = "createdDate", qualifiedByName = "formatDate")
-    @Mapping(target = "eventDateStr", source = "eventDate", qualifiedByName = "formatDateTime")
-    @Mapping(target = "isExpired", source = "endYmd", qualifiedByName = "calculateExpired")
+    @Mapping(target = "eventDateStr", source = "evntDt", qualifiedByName = "formatDateTime")
+    @Mapping(target = "isExpired", source = "pstEndYmd", qualifiedByName = "calculateExpired")
     @Mapping(target = "upPstId", source = "upPstId")
     @Mapping(target = "bbsTtl", source = "bbsTtl")
     BoardDto toDto(BoardDetailResult detail);
 
     @Mapping(target = "pstId", ignore = true)
-    @Mapping(target = "pstSn", constant = "1L")
+    @Mapping(target = "ansSn", constant = "1L")
     @Mapping(target = "upPstId", constant = "0")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaSttsCd", source = "request.qnaSttsCd", defaultValue = "OPEN")
-    @Mapping(target = "eventDate", source = "request.eventDate", qualifiedByName = "parseDateTime")
+    @Mapping(target = "evntDt", source = "request.evntDt", qualifiedByName = "parseDateTime")
     @Mapping(target = "inqCnt", constant = "0")
     @Mapping(target = "likeCnt", constant = "0")
     @Mapping(target = "bbsId", source = "bbsId")
@@ -76,18 +76,19 @@ public interface BoardMapper {
     Board toEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr);
 
     @Mapping(target = "pstId", ignore = true)
-    @Mapping(target = "pstSn", source = "pstSn")
+    @Mapping(target = "ansSn", source = "ansSn")
     @Mapping(target = "upPstId", source = "upPstId")
+    @Mapping(target = "ansLvl", source = "replyLc")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaSttsCd", source = "request.qnaSttsCd", defaultValue = "OPEN")
-    @Mapping(target = "eventDate", source = "request.eventDate", qualifiedByName = "parseDateTime")
+    @Mapping(target = "evntDt", source = "request.evntDt", qualifiedByName = "parseDateTime")
     @Mapping(target = "inqCnt", constant = "0")
     @Mapping(target = "likeCnt", constant = "0")
     @Mapping(target = "bbsId", source = "bbsId")
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "userNm", source = "userNm")
     @Mapping(target = "sortOrdr", source = "sortOrdr")
-    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long pstSn, String upPstId, Integer replyLc);
+    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long ansSn, String upPstId, Integer replyLc);
 
     @Named("formatDate")
     default String formatDate(LocalDateTime date) {

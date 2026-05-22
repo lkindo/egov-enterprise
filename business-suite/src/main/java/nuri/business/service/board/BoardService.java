@@ -200,9 +200,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.bgngYmd(), request.endYmd(), atchFileId,
-                                request.eventDate(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.secretYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
+                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
 
                 return createPost(userId, newRequest);
         }
@@ -232,12 +232,12 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
                 }
 
-                Long pstSn = boardRepository.findMaxPstSn(master.getBbsId(), parent.getSortOrdr()) + 1;
+                Long ansSn = boardRepository.findMaxAnsSn(master.getBbsId(), parent.getSortOrdr()) + 1;
 
                 String userIdToSet = userId;
                 String userNmToSet = author != null ? author.getUserNm() : "익명";
 
-                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), userIdToSet, userNmToSet, parent.getSortOrdr(), pstSn, parentId, 0);
+                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), userIdToSet, userNmToSet, parent.getSortOrdr(), ansSn, parentId, 0);
                 
                 // ID 생성
                 board.setPstId(String.valueOf(System.currentTimeMillis()));
@@ -263,9 +263,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.bgngYmd(), request.endYmd(), atchFileId,
-                                request.eventDate(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.secretYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
+                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
 
                 return replyPost(userId, parentId, newRequest);
         }
@@ -299,11 +299,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 java.time.LocalDateTime eventDate = null;
-                if (StringUtils.hasText(request.eventDate())) {
+                if (StringUtils.hasText(request.evntDt())) {
                         try {
-                                eventDate = java.time.LocalDateTime.parse(request.eventDate());
+                                eventDate = java.time.LocalDateTime.parse(request.evntDt());
                         } catch (Exception e) {
-                                log.warn("Failed to parse eventDate for update: {}", request.eventDate());
+                                log.warn("Failed to parse eventDate for update: {}", request.evntDt());
                         }
                 }
 
@@ -311,10 +311,10 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.userId() != null ? request.userId() : board.getUserId(), 
                                 request.userNm() != null ? request.userNm() : board.getUserNm(),
                                 request.pswd() != null ? request.pswd() : board.getPswd(), 
-                                request.bgngYmd(), request.endYmd(),
+                                request.pstBgngYmd(), request.pstEndYmd(),
                                 request.atchFileId(), eventDate,
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
-                                request.qnaCatCd(), request.secretYn());
+                                request.qnaCatCd(), request.scrtYn());
         }
 
         @Override
@@ -334,9 +334,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.bgngYmd(), request.endYmd(), atchFileId,
-                                request.eventDate(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.secretYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
+                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstId, "pstId 는 null 일 수 없습니다"),
                                 newRequest);

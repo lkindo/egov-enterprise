@@ -26,7 +26,7 @@ public class AddressBookUser extends BaseEntity {
 
     @Id
     @Column(name = "adbk_constnt_id", length = 20)
-    private String adbkUserId;
+    private String adbkConstntId;
 
     @Column(name = "adbk_id", length = 20, nullable = false)
     private String adbkId;
@@ -38,7 +38,7 @@ public class AddressBookUser extends BaseEntity {
     // private String rlsScpCd;
 
     @Column(name = "nm", length = 100)
-    private String userNm;
+    private String nm;
 
     @Column(name = "eml_addr", length = 50)
     private String emlAddr;
@@ -50,7 +50,7 @@ public class AddressBookUser extends BaseEntity {
     private String mblTelno;
 
     @Column(name = "ofc_telno", length = 11)
-    private String officeTelno;
+    private String ofcTelno;
 
     @Column(name = "fax_no", length = 11)
     private String faxNo;

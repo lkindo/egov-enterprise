@@ -49,7 +49,7 @@ class LeaderScheduleServiceTest {
     void getLeaderScheduleList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        LeaderSchedule entity = LeaderSchedule.builder().schdlId("LS1").schdlTtl("Test LS").build();
+        LeaderSchedule entity = LeaderSchedule.builder().schdlId("LS1").schdlNm("Test LS").build();
         given(leaderScheduleRepository.searchLeaderSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -64,7 +64,7 @@ class LeaderScheduleServiceTest {
     void getLeaderSchedule() {
         // given
         String schdlId = "LS1";
-        LeaderSchedule entity = LeaderSchedule.builder().schdlId(schdlId).schdlTtl("Test LS").build();
+        LeaderSchedule entity = LeaderSchedule.builder().schdlId(schdlId).schdlNm("Test LS").build();
         given(leaderScheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
         // when
@@ -81,7 +81,7 @@ class LeaderScheduleServiceTest {
         // given
         String userId = "user1";
         LeaderScheduleDto dto = LeaderScheduleDto.builder()
-                .schdlTtl("New LS")
+                .schdlNm("New LS")
                 .leaderId("leader1")
                 .build();
         given(egovLeaderSchdlIdGnrService.getNextStringId()).willReturn("LS1");
@@ -99,10 +99,10 @@ class LeaderScheduleServiceTest {
         // given
         String schdlId = "LS1";
         String userId = "user1";
-        LeaderSchedule existingEntity = LeaderSchedule.builder().schdlId(schdlId).schdlTtl("Old Title").build();
+        LeaderSchedule existingEntity = LeaderSchedule.builder().schdlId(schdlId).schdlNm("Old Title").build();
         LeaderScheduleDto updateDto = LeaderScheduleDto.builder()
                 .schdlId(schdlId)
-                .schdlTtl("New Title")
+                .schdlNm("New Title")
                 .build();
 
         given(leaderScheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
@@ -111,7 +111,7 @@ class LeaderScheduleServiceTest {
         leaderScheduleService.updateLeaderSchedule(schdlId, userId, updateDto);
 
         // then
-        assertThat(existingEntity.getSchdlTtl()).isEqualTo("New Title");
+        assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
     }
 
     @Test
@@ -134,7 +134,7 @@ class LeaderScheduleServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         nuri.business.domain.schedule.LeaderStatus entity = nuri.business.domain.schedule.LeaderStatus.builder()
                 .leaderId("leader1")
-                .leaderSttus("1")
+                .leaderSttsCd("1")
                 .build();
         given(leaderStatusRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
@@ -154,7 +154,7 @@ class LeaderScheduleServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         nuri.business.domain.schedule.LeaderStatus entity = nuri.business.domain.schedule.LeaderStatus.builder()
                 .leaderId("leader1")
-                .leaderSttus("1")
+                .leaderSttsCd("1")
                 .build();
         given(leaderStatusRepository.findByLeaderIdContaining("leader", pageable)).willReturn(new PageImpl<>(List.of(entity)));
 

@@ -1,5 +1,6 @@
 package nuri.foundation.service.sec.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 @Getter
@@ -14,5 +15,15 @@ public class RoleDto {
     private String roleExpln;
     private String roleTypeCd;
     private String roleSort;
-    private String roleCreatDe;
+    private String roleCrtYmd;
+
+    @JsonIgnore
+    public String getRoleCreatDe() {
+        return roleCrtYmd;
+    }
+
+    @JsonIgnore
+    public void setRoleCreatDe(String roleCreatDe) {
+        this.roleCrtYmd = roleCreatDe;
+    }
 }

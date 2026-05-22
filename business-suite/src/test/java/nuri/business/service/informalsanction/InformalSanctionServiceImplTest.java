@@ -60,10 +60,10 @@ class InformalSanctionServiceImplTest {
         // given
         String sanctionerId = "SANCTNER_01";
         InformalSanction entity = InformalSanction.builder()
-                .informalSanctionId("SANC_01")
-                .applicantId("APPLICANT_01")
-                .sanctionerId(sanctionerId)
-                .confmAt(SanctionStatus.REQUESTED.getCode())
+                .ifmlAtrzId("SANC_01")
+                .aplcntId("APPLICANT_01")
+                .aprvrId(sanctionerId)
+                .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
@@ -73,7 +73,7 @@ class InformalSanctionServiceImplTest {
         informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.APPROVED.getCode(), null);
 
         // then
-        assertThat(entity.getConfmAt()).isEqualTo(SanctionStatus.APPROVED.getCode());
+        assertThat(entity.getAprvYn()).isEqualTo(SanctionStatus.APPROVED.getCode());
         verify(eventPublisher, times(1)).publishEvent(any(Object.class));
     }
 
@@ -82,8 +82,8 @@ class InformalSanctionServiceImplTest {
     void confirmInformalSanction_AccessDenied() {
         // given
         InformalSanction entity = InformalSanction.builder()
-                .informalSanctionId("SANC_01")
-                .sanctionerId("SANCTNER_01")
+                .ifmlAtrzId("SANC_01")
+                .aprvrId("SANCTNER_01")
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
@@ -102,9 +102,9 @@ class InformalSanctionServiceImplTest {
         // given
         String sanctionerId = "SANCTNER_01";
         InformalSanction entity = InformalSanction.builder()
-                .informalSanctionId("SANC_01")
-                .sanctionerId(sanctionerId)
-                .confmAt(SanctionStatus.APPROVED.getCode())
+                .ifmlAtrzId("SANC_01")
+                .aprvrId(sanctionerId)
+                .aprvYn(SanctionStatus.APPROVED.getCode())
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));

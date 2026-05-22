@@ -62,7 +62,7 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Book").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser user = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").userNm("User").build();
+        AddressBookUser user = AddressBookUser.builder().adbkConstntId("AU1").adbkId("A1").nm("User").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(user));
 
         AddressBookDto result = addressBookService.getAddressBook("A1");
@@ -76,7 +76,7 @@ class AddressBookServiceImplTest {
     void createAddressBook_Success() throws Exception {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkNm("New Book")
-                .adbkMan(List.of(AddressBookUserDto.builder().userNm("User").build()))
+                .adbkMan(List.of(AddressBookUserDto.builder().nm("User").build()))
                 .build();
         
         given(egovAdbkIdGnrService.getNextStringId()).willReturn("A1");
@@ -94,13 +94,13 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Old").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser existingUser = AddressBookUser.builder().adbkUserId("AU1").adbkId("A1").userId("E1").build();
+        AddressBookUser existingUser = AddressBookUser.builder().adbkConstntId("AU1").adbkId("A1").userId("E1").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(existingUser));
 
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkId("A1")
                 .adbkNm("New")
-                .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").userNm("NewUser").build())) // Add new user, remove E1
+                .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").nm("NewUser").build())) // Add new user, remove E1
                 .build();
         
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("AU2");

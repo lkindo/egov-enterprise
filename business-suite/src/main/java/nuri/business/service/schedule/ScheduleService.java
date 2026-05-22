@@ -71,16 +71,16 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
                 .schdlId(dto.getSchdlId())
                 .schdlSeCd(dto.getSchdlSeCd())
                 .schdlDeptId(dto.getSchdlDeptId())
-                .schdlKindCd(dto.getSchdlKindCd())
-                .schdlTtl(dto.getSchdlTtl())
+                .schdlKndCd(dto.getSchdlKndCd())
+                .schdlNm(dto.getSchdlNm())
                 .schdlCn(dto.getSchdlCn())
                 .schdlBgngYmd(dto.getSchdlBgngYmd())
                 .schdlEndYmd(dto.getSchdlEndYmd())
                 .schdlPlcNm(dto.getSchdlPlcNm())
-                .schdlIpcrCd(dto.getSchdlIpcrCd())
+                .schdlImprtCd(dto.getSchdlImprtCd())
                 .schdlPicId(dto.getSchdlPicId())
-                .schdlIpAddr(dto.getSchdulIpAdres())
-                .reptitSeCd(dto.getReptitSeCd())
+                .schdlIpAddr(dto.getSchdlIpAddr())
+                .reptSeCd(dto.getReptSeCd())
                 .atchFileId(dto.getAtchFileId())
                 .createdBy(userId)
                 .build();
@@ -95,16 +95,16 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.updateAll(
-                dto.getSchdlTtl(),
+                dto.getSchdlNm(),
                 dto.getSchdlCn(),
                 dto.getSchdlSeCd(),
-                dto.getSchdlKindCd(),
+                dto.getSchdlKndCd(),
                 dto.getSchdlBgngYmd(),
                 dto.getSchdlEndYmd(),
                 dto.getSchdlPlcNm(),
-                dto.getSchdlIpcrCd(),
+                dto.getSchdlImprtCd(),
                 dto.getSchdlPicId(),
-                dto.getReptitSeCd());
+                dto.getReptSeCd());
         
         entity.setLastModifiedBy(userId);
     }
@@ -128,21 +128,6 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     }
 
     private ScheduleDto convertToDto(Schedule entity) {
-        return ScheduleDto.builder()
-                .schdlId(entity.getSchdlId())
-                .schdulSe(entity.getSchdlSeCd())
-                .schdlTtl(entity.getSchdlTtl())
-                .schdlCn(entity.getSchdlCn())
-                .reptitSeCode(entity.getReptitSeCd())
-                .schdlBgngYmd(entity.getSchdlBgngYmd())
-                .schdlEndYmd(entity.getSchdlEndYmd())
-                .schdulIpAdres(entity.getSchdlIpAddr())
-                .schdulChargerId(entity.getSchdlPicId())
-                .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
-                .modifiedDate(entity.getLastModifiedDate())
-                .build();
+        return ScheduleDto.from(entity);
     }
 }

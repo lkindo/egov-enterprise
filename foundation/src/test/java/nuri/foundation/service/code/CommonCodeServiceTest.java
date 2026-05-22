@@ -96,7 +96,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("공통분류코드 등록 테스트")
     void insertCmmnClCodeTest() {
-        CmmnClCodeDto dto = CmmnClCodeDto.builder().clCode("CL1").clCodeNm("분류1").build();
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("분류1").build();
         given(commonCodeCategoryRepository.existsById("CL1")).willReturn(false);
 
         commonCodeService.insertCmmnClCode(dto);
@@ -109,7 +109,7 @@ class CommonCodeServiceTest {
     void selectCmmnCodeListTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
         CommonCodeGroupProjection projection = mock(CommonCodeGroupProjection.class);
-        given(projection.getCodeId()).willReturn("GRP1");
+        given(projection.getCdId()).willReturn("GRP1");
         
         Page<CommonCodeGroupProjection> page = new PageImpl<>(List.of(projection));
         given(commonCodeGroupRepository.searchCommonCodeGroups(any(), any(), any(Pageable.class)))
@@ -126,7 +126,7 @@ class CommonCodeServiceTest {
     void selectCmmnDetailCodeListTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
         CommonCodeDetailProjection projection = mock(CommonCodeDetailProjection.class);
-        given(projection.getCode()).willReturn("DTL1");
+        given(projection.getDtlCd()).willReturn("DTL1");
         
         Page<CommonCodeDetailProjection> page = new PageImpl<>(List.of(projection));
         given(commonCodeRepository.searchCommonCodeDetails(any(), any(), any(Pageable.class)))

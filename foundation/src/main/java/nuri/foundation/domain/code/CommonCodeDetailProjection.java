@@ -6,10 +6,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CommonCodeDetailProjection {
-    private String codeId;
-    private String codeIdNm;
-    private String code;
-    private String codeNm;
-    private String codeDc;
+    private String cdId;
+    private String cdIdNm;
+    private String dtlCd;
+    private String dtlCdNm;
+    private String dtlCdExpln;
     private String useYn;
 }

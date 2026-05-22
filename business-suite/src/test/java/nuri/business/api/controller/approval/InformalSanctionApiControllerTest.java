@@ -68,8 +68,8 @@ class InformalSanctionApiControllerTest {
         given(egovInfrmlSanctnIdGnrService.getNextStringId()).willReturn("IS1");
         
         InformalSanctionDto dto = InformalSanctionDto.builder()
-                .jobSeCode("001")
-                .sanctionerId("boss01")
+                .taskSeCd("001")
+                .aprvrId("boss01")
                 .build();
 
         mockMvc.perform(post("/api/v1/informal-sanctions")
@@ -84,7 +84,7 @@ class InformalSanctionApiControllerTest {
     @WithMockUser(username = "user01")
     void updateInformalSanctionTest() throws Exception {
         InformalSanctionDto dto = InformalSanctionDto.builder()
-                .jobSeCode("001")
+                .taskSeCd("001")
                 .build();
 
         mockMvc.perform(put("/api/v1/informal-sanctions/IS1")

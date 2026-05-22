@@ -45,25 +45,25 @@ public class BoardMaster extends BaseEntity {
 
     @Column(name = "ans_psblty_yn", length = 1)
     @Builder.Default
-    private String ansPsblYn = "N";
+    private String ansPsbltyYn = "N";
 
     @Column(name = "file_atch_psblty_yn", length = 1, nullable = false)
     @Builder.Default
-    private String fileAtchPsblYn = "N";
+    private String fileAtchPsbltyYn = "N";
 
     @Column(name = "atch_psblty_file_qty", nullable = false)
     @Builder.Default
-    private Integer atchPsblFileCnt = 0;
+    private Integer atchPsbltyFileQty = 0;
 
     @Column(name = "atch_psblty_file_sz")
-    private Long atchPsblFileSize;
+    private Long atchPsbltyFileSz;
 
     @Column(name = "use_yn", nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
     @Column(name = "tmplt_id", length = 20)
-    private String tmplatId;
+    private String tmpltId;
 
     @Column(name = "blog_id", length = 20)
     private String blogId;
@@ -77,7 +77,7 @@ public class BoardMaster extends BaseEntity {
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "ans_yn", length = 1)
     @Builder.Default
-    private String commentYn = "N";
+    private String ansYn = "N";
 
     @Column(table = "TB_BBS_MASTER_OPTN", name = "stsfdg_yn", length = 1)
     @Builder.Default
@@ -114,30 +114,30 @@ public class BoardMaster extends BaseEntity {
         this.optnLastUpdtPnttm = LocalDateTime.now();
     }
 
-    public void update(String bbsTtl, String bbsExpln, String ansPsblYn, String fileAtchPsblYn,
-            Integer atchPsblFileCnt, Long atchPsblFileSize, String tmplatId, String useYn,
-            String commentYn, String stsfdgYn) {
+    public void update(String bbsTtl, String bbsExpln, String ansPsbltyYn, String fileAtchPsbltyYn,
+            Integer atchPsbltyFileQty, Long atchPsbltyFileSz, String tmpltId, String useYn,
+            String ansYn, String stsfdgYn) {
         this.bbsTtl = bbsTtl;
         this.bbsExpln = bbsExpln;
-        this.ansPsblYn = ansPsblYn;
-        this.fileAtchPsblYn = fileAtchPsblYn;
-        this.atchPsblFileCnt = atchPsblFileCnt;
-        this.atchPsblFileSize = atchPsblFileSize;
-        this.tmplatId = tmplatId;
+        this.ansPsbltyYn = ansPsbltyYn;
+        this.fileAtchPsbltyYn = fileAtchPsbltyYn;
+        this.atchPsbltyFileQty = atchPsbltyFileQty;
+        this.atchPsbltyFileSz = atchPsbltyFileSz;
+        this.tmpltId = tmpltId;
         this.useYn = useYn;
-        this.commentYn = commentYn;
+        this.ansYn = ansYn;
         this.stsfdgYn = stsfdgYn;
     }
 
     public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
     public void updateBbsExpln(String bbsExpln) { this.bbsExpln = bbsExpln; }
-    public void updateAnsPsblYn(String ansPsblYn) { this.ansPsblYn = ansPsblYn; }
-    public void updateFileAtchPsblYn(String fileAtchPsblYn) { this.fileAtchPsblYn = fileAtchPsblYn; }
-    public void updateAtchPsblFileCnt(Integer atchPsblFileCnt) { this.atchPsblFileCnt = atchPsblFileCnt; }
-    public void updateAtchPsblFileSize(Long atchPsblFileSize) { this.atchPsblFileSize = atchPsblFileSize; }
-    public void updateTmplatId(String tmplatId) { this.tmplatId = tmplatId; }
+    public void updateAnsPsbltyYn(String ansPsbltyYn) { this.ansPsbltyYn = ansPsbltyYn; }
+    public void updateFileAtchPsbltyYn(String fileAtchPsbltyYn) { this.fileAtchPsbltyYn = fileAtchPsbltyYn; }
+    public void updateAtchPsbltyFileQty(Integer atchPsbltyFileQty) { this.atchPsbltyFileQty = atchPsbltyFileQty; }
+    public void updateAtchPsbltyFileSz(Long atchPsbltyFileSz) { this.atchPsbltyFileSz = atchPsbltyFileSz; }
+    public void updateTmpltId(String tmpltId) { this.tmpltId = tmpltId; }
     public void updateUseYn(String useYn) { this.useYn = useYn; }
-    public void updateCommentYn(String commentYn) { this.commentYn = commentYn; }
+    public void updateAnsYn(String ansYn) { this.ansYn = ansYn; }
     public void updateStsfdgYn(String stsfdgYn) { this.stsfdgYn = stsfdgYn; }
 
     public void delete() {
@@ -148,14 +148,14 @@ public class BoardMaster extends BaseEntity {
     public String getBbsNm() { return bbsTtl; }
     public String getBbsTyCode() { return bbsTypeCd; }
     public String getBbsAttrbCode() { return bbsAtrbCd; }
-    public String getReplyPosblAt() { return ansPsblYn; }
-    public String getFileAtchPosblAt() { return fileAtchPsblYn; }
-    public Integer getAtchPosblFileNumber() { return atchPsblFileCnt; }
+    public String getReplyPosblAt() { return ansPsbltyYn; }
+    public String getFileAtchPosblAt() { return fileAtchPsbltyYn; }
+    public Integer getAtchPosblFileNumber() { return atchPsbltyFileQty; }
     public String getBbsIntrcn() { return bbsExpln; }
-    public String getTmpltId() { return tmplatId; }
-    public Long getAtchPosblFileSize() { return atchPsblFileSize; }
-    public String getCommentAt() { return commentYn; }
+    public String getTmpltId() { return tmpltId; }
+    public Long getAtchPosblFileSize() { return atchPsbltyFileSz; }
+    public String getCommentAt() { return ansYn; }
     public String getStsfdgAt() { return stsfdgYn; }
     public String getBbsAttrCd() { return bbsAtrbCd; }
-    public String getReplyPsblYn() { return ansPsblYn; }
+    public String getReplyPsblYn() { return ansPsbltyYn; }
 }

@@ -90,7 +90,7 @@ class BoardMasterServiceTest {
                 .bbsTtl(bbsTtl)
                 .bbsTypeCd("TY01")
                 .bbsAtrbCd("AT01")
-                .tmplatId("TMP_01")
+                .tmpltId("TMP_01")
                 .useYn("Y")
                 .build();
     }
@@ -142,7 +142,7 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("만족도 및 댓글 사용 가능 여부 확인")
     void canUseSatisfactionAndComment() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgYn("Y").commentYn("N").build();
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgYn("Y").ansYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
         assertThat(boardMasterService.canUseSatisfaction("BBS_01")).isTrue();
@@ -207,14 +207,14 @@ class BoardMasterServiceTest {
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
                     .blogYn("Y")
-                    .commentYn("Y")
+                    .ansYn("Y")
                     .stsfdgYn("Y")
                     .build();
 
             boardMasterService.createBoardMaster("user1", dto);
 
             verify(boardMasterRepository).save(argThat(bm -> 
-                "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getCommentYn()) && "Y".equals(bm.getStsfdgYn())
+                "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
     }

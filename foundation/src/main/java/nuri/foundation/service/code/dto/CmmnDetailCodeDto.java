@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Getter
 @Setter
 @Builder
@@ -16,19 +19,24 @@ import lombok.Setter;
 public class CmmnDetailCodeDto {
 
     @Schema(description = "Code ID")
-    private String codeId;
+    @JsonProperty("codeId")
+    private String cdId;
 
     @Schema(description = "Code ID Name")
-    private String codeIdNm;
+    @JsonProperty("codeIdNm")
+    private String cdIdNm;
 
     @Schema(description = "Detail Code")
-    private String code;
+    @JsonProperty("code")
+    private String dtlCd;
 
     @Schema(description = "Detail Code Name")
-    private String codeNm;
+    @JsonProperty("codeNm")
+    private String dtlCdNm;
 
     @Schema(description = "Detail Code Description")
-    private String codeDc;
+    @JsonProperty("codeDc")
+    private String dtlCdExpln;
 
     @Schema(description = "Use Y/N")
     private String useYn;
@@ -38,4 +46,56 @@ public class CmmnDetailCodeDto {
 
     @Schema(description = "Last Updater ID")
     private String lastUpdusrId;
+
+    // Compatibility Getters/Setters for legacy java references
+    @JsonIgnore
+    public String getCodeId() {
+        return cdId;
+    }
+
+    @JsonIgnore
+    public void setCodeId(String codeId) {
+        this.cdId = codeId;
+    }
+
+    @JsonIgnore
+    public String getCodeIdNm() {
+        return cdIdNm;
+    }
+
+    @JsonIgnore
+    public void setCodeIdNm(String codeIdNm) {
+        this.cdIdNm = codeIdNm;
+    }
+
+    @JsonIgnore
+    public String getCode() {
+        return dtlCd;
+    }
+
+    @JsonIgnore
+    public void setCode(String code) {
+        this.dtlCd = code;
+    }
+
+    @JsonIgnore
+    public String getCodeNm() {
+        return dtlCdNm;
+    }
+
+    @JsonIgnore
+    public void setCodeNm(String codeNm) {
+        this.dtlCdNm = codeNm;
+    }
+
+    @JsonIgnore
+    public String getCodeDc() {
+        return dtlCdExpln;
+    }
+
+    @JsonIgnore
+    public void setCodeDc(String codeDc) {
+        this.dtlCdExpln = codeDc;
+    }
 }
+

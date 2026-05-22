@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Getter
 @Setter
 @Builder
@@ -16,13 +19,16 @@ import lombok.Setter;
 public class CmmnClCodeDto {
 
     @Schema(description = "Classification Code")
-    private String clCode;
+    @JsonProperty("clCode")
+    private String clsfCd;
 
     @Schema(description = "Classification Code Name")
-    private String clCodeNm;
+    @JsonProperty("clCodeNm")
+    private String clsfCdNm;
 
     @Schema(description = "Classification Code Description")
-    private String clCodeDc;
+    @JsonProperty("clCodeDc")
+    private String clsfCdExpln;
 
     @Schema(description = "Use Y/N")
     private String useYn;
@@ -32,4 +38,36 @@ public class CmmnClCodeDto {
 
     @Schema(description = "Last Updater ID")
     private String lastUpdusrId;
+
+    // Compatibility Getters/Setters for legacy java references
+    @JsonIgnore
+    public String getClCode() {
+        return clsfCd;
+    }
+
+    @JsonIgnore
+    public void setClCode(String clCode) {
+        this.clsfCd = clCode;
+    }
+
+    @JsonIgnore
+    public String getClCodeNm() {
+        return clsfCdNm;
+    }
+
+    @JsonIgnore
+    public void setClCodeNm(String clCodeNm) {
+        this.clsfCdNm = clCodeNm;
+    }
+
+    @JsonIgnore
+    public String getClCodeDc() {
+        return clsfCdExpln;
+    }
+
+    @JsonIgnore
+    public void setClCodeDc(String clCodeDc) {
+        this.clsfCdExpln = clCodeDc;
+    }
 }
+

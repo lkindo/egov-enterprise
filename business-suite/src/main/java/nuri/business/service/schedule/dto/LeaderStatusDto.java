@@ -12,32 +12,44 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "간부 상태 정보 DTO")
 public class LeaderStatusDto {
 
-    @Schema(description = "Description")
+    @Schema(description = "간부아이디")
     private String leaderId;
 
-    @Schema(description = "Description")
+    @Schema(description = "간부명")
     private String leaderNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "조직명")
     private String orgnztNm;
 
-    @Schema(description = "Description")
-    private String leaderSttus;
+    @Schema(description = "간부상태코드")
+    @com.fasterxml.jackson.annotation.JsonProperty("leaderSttus")
+    private String leaderSttsCd;
 
-    @Schema(description = "Description")
+    @Schema(description = "간부상태명")
     private String leaderSttusNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록일시")
     private LocalDateTime createdDate;
+
+    // legacy with @JsonIgnore to prevent Lombok duplicate serialization
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getLeaderSttus() {
+        return leaderSttsCd;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setLeaderSttus(String leaderSttus) {
+        this.leaderSttsCd = leaderSttus;
+    }
 
     public static LeaderStatusDto from(LeaderStatus entity) {
         if (entity == null) return null;
         return LeaderStatusDto.builder()
                 .leaderId(entity.getLeaderId())
-                .leaderSttus(entity.getLeaderSttus())
+                .leaderSttsCd(entity.getLeaderSttsCd())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

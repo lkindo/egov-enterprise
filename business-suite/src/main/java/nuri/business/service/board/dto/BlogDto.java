@@ -2,6 +2,8 @@ package nuri.business.service.board.dto;
 
 import nuri.business.domain.board.Blog;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,8 +16,13 @@ public class BlogDto {
     private String bbsId;
     private String blogTtl;
     private String blogIntroCn;
-    private String regTypeCd;
-    private String tmplatId;
+
+    @JsonProperty("regTypeCd")
+    private String regSeCd;
+
+    @JsonProperty("tmplatId")
+    private String tmpltId;
+
     private String useYn;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
@@ -31,6 +38,15 @@ public class BlogDto {
     public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
     public LocalDateTime getLastUpdusrPnttm() { return lastUpdtPnttm; }
 
+    @JsonIgnore
+    public String getRegTypeCd() { return regSeCd; }
+    @JsonIgnore
+    public void setRegTypeCd(String v) { this.regSeCd = v; }
+    @JsonIgnore
+    public String getTmplatId() { return tmpltId; }
+    @JsonIgnore
+    public void setTmplatId(String v) { this.tmpltId = v; }
+
     public static BlogDto from(Blog entity) {
         if (entity == null)
             return null;
@@ -39,8 +55,8 @@ public class BlogDto {
                 .bbsId(entity.getBbsId())
                 .blogTtl(entity.getBlogTtl())
                 .blogIntroCn(entity.getBlogIntroCn())
-                .regTypeCd(entity.getRegTypeCd())
-                .tmplatId(entity.getTmplatId())
+                .regSeCd(entity.getRegSeCd())
+                .tmpltId(entity.getTmpltId())
                 .useYn(entity.getUseYn())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())

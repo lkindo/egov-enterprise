@@ -75,14 +75,14 @@ public class AddressBookServiceImpl implements AddressBookService {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
                     AddressBookUser userEntity = AddressBookUser.builder()
-                            .adbkUserId(adbkUserId)
+                            .adbkConstntId(adbkUserId)
                             .adbkId(adbkId)
                             .userId(userDto.getUserId())
-                            .userNm(userDto.getUserNm())
+                            .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())
                             .mblTelno(userDto.getMblTelno())
-                            .officeTelno(userDto.getOfficeTelno())
+                            .ofcTelno(userDto.getOfcTelno())
                             .faxNo(userDto.getFaxNo())
                             .build();
                     addressBookUserRepository.save(userEntity);
@@ -125,14 +125,14 @@ public class AddressBookServiceImpl implements AddressBookService {
                 try {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
                     AddressBookUser newUser = AddressBookUser.builder()
-                            .adbkUserId(adbkUserId)
+                            .adbkConstntId(adbkUserId)
                             .adbkId(dto.getAdbkId())
                             .userId(userDto.getUserId())
-                            .userNm(userDto.getUserNm())
+                            .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
                             .homeTelno(userDto.getHomeTelno())
                             .mblTelno(userDto.getMblTelno())
-                            .officeTelno(userDto.getOfficeTelno())
+                            .ofcTelno(userDto.getOfcTelno())
                             .faxNo(userDto.getFaxNo())
                             .build();
                     addressBookUserRepository.save(newUser);
@@ -157,10 +157,10 @@ public class AddressBookServiceImpl implements AddressBookService {
         return addressBookRepository.searchAddressBookUsers(searchWrd, Objects.requireNonNull(pageable))
                 .map(res -> AddressBookUserDto.builder()
                         .userId(res.getUserId())
-                        .userNm(res.getUserNm())
+                        .nm(res.getNm())
                         .emlAddr(res.getEmlAddr())
                         .mblTelno(res.getMblTelno())
-                        .officeTelno(res.getOfficeTelno())
+                        .ofcTelno(res.getOfficeTelno())
                         .homeTelno(res.getHomeTelno())
                         .build());
     }
@@ -189,14 +189,14 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     private AddressBookUserDto convertToUserDto(AddressBookUser entity) {
         return AddressBookUserDto.builder()
-                .adbkUserId(entity.getAdbkUserId())
+                .adbkConstntId(entity.getAdbkConstntId())
                 .adbkId(entity.getAdbkId())
                 .userId(entity.getUserId())
-                .userNm(entity.getUserNm())
+                .nm(entity.getNm())
                 .emlAddr(entity.getEmlAddr())
                 .homeTelno(entity.getHomeTelno())
                 .mblTelno(entity.getMblTelno())
-                .officeTelno(entity.getOfficeTelno())
+                .ofcTelno(entity.getOfcTelno())
                 .faxNo(entity.getFaxNo())
                 .build();
     }

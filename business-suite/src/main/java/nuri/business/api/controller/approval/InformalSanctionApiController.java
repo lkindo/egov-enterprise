@@ -48,8 +48,8 @@ public class InformalSanctionApiController {
     @Operation(summary = "비정형 결재 상세 조회", description = "비정형 결재 상세 정보를 조회합니다.")
     @GetMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<InformalSanctionDto>> getInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable String informalSanctionId) {
-        return ResponseEntity.ok(ApiResponse.success(informalSanctionService.getInformalSanction(informalSanctionId)));
+            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId) {
+        return ResponseEntity.ok(ApiResponse.success(informalSanctionService.getInformalSanction(ifmlAtrzId)));
     }
 
     @Operation(summary = "비정형 결재 등록", description = "새로운 비정형 결재를 요청합니다.")
@@ -59,8 +59,8 @@ public class InformalSanctionApiController {
             @RequestBody InformalSanctionDto dto) throws Exception {
 
         String id = egovInfrmlSanctnIdGnrService.getNextStringId();
-        dto.setInformalSanctionId(id);
-        dto.setApplicantId(userDetails.getEsntlId());
+        dto.setIfmlAtrzId(id);
+        dto.setAplcntId(userDetails.getEsntlId());
 
         informalSanctionService.registerInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(id));
@@ -69,9 +69,9 @@ public class InformalSanctionApiController {
     @Operation(summary = "비정형 결재 수정", description = "비정형 결재 정보를 수정합니다.")
     @PutMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<Void>> updateInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable String informalSanctionId,
+            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId,
             @RequestBody InformalSanctionDto dto) {
-        dto.setInformalSanctionId(informalSanctionId);
+        dto.setIfmlAtrzId(ifmlAtrzId);
         informalSanctionService.updateInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -79,18 +79,18 @@ public class InformalSanctionApiController {
     @Operation(summary = "비정형 결재 승인/반려", description = "결재자가 결재를 승인 또는 반려 처리합니다.")
     @PatchMapping("/{informalSanctionId}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirmInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable String informalSanctionId,
+            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId,
             @RequestParam String confmAt,
             @RequestParam(required = false) String returnResn) {
-        informalSanctionService.confirmInformalSanction(informalSanctionId, confmAt, returnResn);
+        informalSanctionService.confirmInformalSanction(ifmlAtrzId, confmAt, returnResn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "비정형 결재 삭제", description = "비정형 결재 정보를 삭제합니다.")
     @DeleteMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<Void>> deleteInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable String informalSanctionId) {
-        informalSanctionService.deleteInformalSanction(informalSanctionId);
+            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId) {
+        informalSanctionService.deleteInformalSanction(ifmlAtrzId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -30,36 +30,36 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
     private String leaderId;
 
     @Column(name = "schdl_nm", length = 100, nullable = false)
-    private String schdlTtl;
+    private String schdlNm;
 
     @Column(name = "schdl_cn", columnDefinition = "TEXT", length = 4000)
     private String schdlCn;
 
     @Column(name = "rept_se_cd", length = 12)
-    private String reptitSeCd;
+    private String reptSeCd;
 
     @Column(name = "schdl_imprt_cd", length = 12)
-    private String schdlIpcrCd;
+    private String schdlImprtCd;
 
     @Column(name = "schdl_bgng_ymd", length = 8)
-    private String bgngYmd;
+    private String schdlBgngYmd;
 
     @Column(name = "schdl_end_ymd", length = 8)
-    private String endYmd;
+    private String schdlEndYmd;
 
     @Column(name = "schdl_pic_id", length = 20)
     private String schdlPicId;
 
-    public void update(String schdlSeCd, String leaderId, String schdlTtl, String schdlCn,
-                       String reptitSeCd, String schdlIpcrCd, String bgngYmd, String endYmd, String schdlPicId) {
+    public void update(String schdlSeCd, String leaderId, String schdlNm, String schdlCn,
+                       String reptSeCd, String schdlImprtCd, String schdlBgngYmd, String schdlEndYmd, String schdlPicId) {
         this.schdlSeCd = schdlSeCd;
         this.leaderId = leaderId;
-        this.schdlTtl = schdlTtl;
+        this.schdlNm = schdlNm;
         this.schdlCn = schdlCn;
-        this.reptitSeCd = reptitSeCd;
-        this.schdlIpcrCd = schdlIpcrCd;
-        this.bgngYmd = bgngYmd;
-        this.endYmd = endYmd;
+        this.reptSeCd = reptSeCd;
+        this.schdlImprtCd = schdlImprtCd;
+        this.schdlBgngYmd = schdlBgngYmd;
+        this.schdlEndYmd = schdlEndYmd;
         this.schdlPicId = schdlPicId;
     }
 }

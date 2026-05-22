@@ -30,9 +30,9 @@ public class LeaderStatus extends BaseEntity {
     private String leaderId;
 
     @Column(name = "leader_stts_cd", length = 12)
-    private String leaderSttus;
+    private String leaderSttsCd;
 
-    public void updateStatus(String leaderSttus) {
-        this.leaderSttus = leaderSttus;
+    public void updateStatus(String leaderSttsCd) {
+        this.leaderSttsCd = leaderSttsCd;
     }
 }

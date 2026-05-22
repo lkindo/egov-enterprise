@@ -32,10 +32,10 @@ public class Blog extends BaseEntity {
     private String blogIntroCn;
 
     @Column(name = "reg_se_cd", length = 12)
-    private String regTypeCd;
+    private String regSeCd;
 
     @Column(name = "tmplt_id", length = 20)
-    private String tmplatId;
+    private String tmpltId;
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
@@ -57,5 +57,14 @@ public class Blog extends BaseEntity {
     public void setBlogNm(String v) { this.blogTtl = v; }
     public String getBlogIntrcn() { return blogIntroCn; }
     public void setBlogIntrcn(String v) { this.blogIntroCn = v; }
+
+    @Transient
+    public String getRegTypeCd() { return regSeCd; }
+    @Transient
+    public void setRegTypeCd(String v) { this.regSeCd = v; }
+    @Transient
+    public String getTmplatId() { return tmpltId; }
+    @Transient
+    public void setTmplatId(String v) { this.tmpltId = v; }
 
 }

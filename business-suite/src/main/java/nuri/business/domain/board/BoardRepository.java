@@ -21,8 +21,8 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @Query("SELECT COALESCE(MAX(b.sortOrdr), 0L) FROM Board b WHERE b.bbsId = :bbsId")
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
 
-        @Query("SELECT COALESCE(MAX(b.pstSn), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
-        Long findMaxPstSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
+        @Query("SELECT COALESCE(MAX(b.ansSn), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
+        Long findMaxAnsSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
         @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
         Optional<Board> findByPstId(@Param("pstId") String pstId);

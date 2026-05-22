@@ -10,4 +10,12 @@ import org.mapstruct.factory.Mappers;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserAbsenceMapper extends GenericMapper<UserAbsenceDto, UserAbsence> {
     UserAbsenceMapper INSTANCE = Mappers.getMapper(UserAbsenceMapper.class);
+
+    @Override
+    @org.mapstruct.Mapping(source = "userAbsnYn", target = "userAbsnceAt")
+    UserAbsenceDto toDto(UserAbsence entity);
+
+    @Override
+    @org.mapstruct.Mapping(source = "userAbsnceAt", target = "userAbsnYn")
+    UserAbsence toEntity(UserAbsenceDto dto);
 }

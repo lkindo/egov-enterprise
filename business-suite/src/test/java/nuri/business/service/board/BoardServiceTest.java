@@ -156,14 +156,14 @@ class BoardServiceTest {
         String parentId = "1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
         Board reply = Board.builder().pstId("2").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willReturn(user);
-        given(boardRepository.findMaxPstSn("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
         given(boardRepository.save(reply)).willReturn(reply);
 
@@ -391,13 +391,13 @@ class BoardServiceTest {
         String parentId = "1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         Board reply = Board.builder().pstId("2").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
-        given(boardRepository.findMaxPstSn(any(), any())).willReturn(0L);
+        given(boardRepository.findMaxAnsSn(any(), any())).willReturn(0L);
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
         given(boardRepository.save(any())).willReturn(reply);
 
@@ -421,7 +421,7 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
@@ -464,7 +464,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         String pstId = "1";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date", null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));

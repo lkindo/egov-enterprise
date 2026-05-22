@@ -18,11 +18,20 @@ public class BoardMasterDto {
     private String bbsExpln;
     private String bbsTypeCd;
     private String bbsAtrbCd;
-    private String ansPsblYn;
-    private String fileAtchPsblYn;
-    private Integer atchPsblFileCnt;
-    private Long atchPsblFileSize;
-    private String tmplatId;
+    @com.fasterxml.jackson.annotation.JsonProperty("ansPsblYn")
+    private String ansPsbltyYn;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("fileAtchPsblYn")
+    private String fileAtchPsbltyYn;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("atchPsblFileCnt")
+    private Integer atchPsbltyFileQty;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("atchPsblFileSize")
+    private Long atchPsbltyFileSz;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("tmplatId")
+    private String tmpltId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
@@ -31,7 +40,8 @@ public class BoardMasterDto {
     private String cmntyId;
     private String blogId;
     private String blogYn;
-    private String commentYn;
+    @com.fasterxml.jackson.annotation.JsonProperty("commentYn")
+    private String ansYn;
     private String stsfdgYn;
 
     // Additional fields for completeness
@@ -51,16 +61,16 @@ public class BoardMasterDto {
     public void setBbsIntrcn(String v) { this.bbsExpln = v; }
     public String getBbsIntroCn() { return bbsExpln; }
     public void setBbsIntroCn(String bbsIntroCn) { this.bbsExpln = bbsIntroCn; }
-    public String getReplyPosblAt() { return ansPsblYn; }
-    public void setReplyPosblAt(String v) { this.ansPsblYn = v; }
-    public String getReplyPsblYn() { return ansPsblYn; }
-    public void setReplyPsblYn(String v) { this.ansPsblYn = v; }
-    public String getFileAtchPosblAt() { return fileAtchPsblYn; }
-    public void setFileAtchPosblAt(String v) { this.fileAtchPsblYn = v; }
+    public String getReplyPosblAt() { return ansPsbltyYn; }
+    public void setReplyPosblAt(String v) { this.ansPsbltyYn = v; }
+    public String getReplyPsblYn() { return ansPsbltyYn; }
+    public void setReplyPsblYn(String v) { this.ansPsbltyYn = v; }
+    public String getFileAtchPosblAt() { return fileAtchPsbltyYn; }
+    public void setFileAtchPosblAt(String v) { this.fileAtchPsbltyYn = v; }
     public String getUseAt() { return useYn; }
     public void setUseAt(String v) { this.useYn = v; }
-    public String getTmpltId() { return tmplatId; }
-    public void setTmpltId(String v) { this.tmplatId = v; }
+    public String getTmpltId() { return tmpltId; }
+    public void setTmpltId(String v) { this.tmpltId = v; }
 
     public static BoardMasterDto from(BoardMaster entity) {
         if (entity == null)
@@ -71,11 +81,11 @@ public class BoardMasterDto {
                 .bbsExpln(entity.getBbsExpln())
                 .bbsTypeCd(entity.getBbsTypeCd())
                 .bbsAtrbCd(entity.getBbsAtrbCd())
-                .ansPsblYn(entity.getAnsPsblYn())
-                .fileAtchPsblYn(entity.getFileAtchPsblYn())
-                .atchPsblFileCnt(entity.getAtchPsblFileCnt())
-                .atchPsblFileSize(entity.getAtchPsblFileSize())
-                .tmplatId(entity.getTmplatId())
+                .ansPsbltyYn(entity.getAnsPsbltyYn())
+                .fileAtchPsbltyYn(entity.getFileAtchPsbltyYn())
+                .atchPsbltyFileQty(entity.getAtchPsbltyFileQty())
+                .atchPsbltyFileSz(entity.getAtchPsbltyFileSz())
+                .tmpltId(entity.getTmpltId())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
@@ -84,7 +94,7 @@ public class BoardMasterDto {
                 .cmntyId(entity.getCmntyId())
                 .blogId(entity.getBlogId())
                 .blogYn(entity.getBlogYn())
-                .commentYn(entity.getCommentYn())
+                .ansYn(entity.getAnsYn())
                 .stsfdgYn(entity.getStsfdgYn())
                 .build();
     }
