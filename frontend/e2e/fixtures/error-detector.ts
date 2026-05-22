@@ -122,20 +122,23 @@ export class ConsoleErrorGuard {
           return;
         }
 
-        // 특정 API 에러(401/403)는 인증/보안 테스트에서 의도될 수 있음
-        const isAuthExpected = [401, 403].includes(status) && (
-          url.includes('/api/auth') || 
-          url.includes('/api/user/info') ||
-          url.includes('/api/v1/admin/') || // Generic RBAC test support
-          url.includes('/api/v1/admin/system/banners/reflected') || 
-          url.includes('/api/v1/admin/system/statistics/connect')
-        );
+        // 특정 API 에러(401/403) 및 의도된 모의 에러(507 용량 초과, 403 IP 차단 등)는 인증/보안/기능 테스트에서 의도될 수 있음
+        const isExpectedError = 
+          ([401, 403].includes(status) && (
+            url.includes('/api/auth') || 
+            url.includes('/api/user/info') ||
+            url.includes('/api/v1/admin/') || // Generic RBAC test support
+            url.includes('/api/v1/admin/system/banners/reflected') || 
+            url.includes('/api/v1/admin/system/statistics/connect') ||
+            url.includes('/api/v1/system/policies/ip') // IP restriction mock
+          )) ||
+          (status === 507 && url.includes('/api/v1/system/storage/upload'));
 
         const isIgnored = this.ignorePatterns.some(pattern => 
           typeof pattern === 'string' ? url.includes(pattern) : pattern.test(url)
         );
 
-        if (!isAuthExpected && !isIgnored) {
+        if (!isExpectedError && !isIgnored) {
           const message = `[HTTP ${status} ${method}]: ${url} (${resourceType})`;
           this.errors.push(message);
           console.error(`❌ ${message}`);

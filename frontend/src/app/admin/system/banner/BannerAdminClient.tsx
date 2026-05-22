@@ -275,7 +275,6 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  
  if (uploadedFileId) {
  data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
- console.log('>>> [Frontend] Setting fileUrl with atchFileId:', uploadedFileId);
  }
  } else if (editingItem) {
  data.fileUrl = (editingItem as Popup).fileUrl;
