@@ -40,7 +40,7 @@ class BannerServiceTest {
     void getBannerList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Banner banner = Banner.builder().bannerId("BNR_01").bannerNm("Test Banner").build();
+        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
         Page<Banner> page = new PageImpl<>(List.of(banner));
 
         given(bannerRepository.findAll(pageable)).willReturn(page);
@@ -51,7 +51,7 @@ class BannerServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBannerId()).isEqualTo("BNR_01");
+        assertThat(result.getContent().get(0).getBnrId()).isEqualTo("BNR_01");
     }
 
     @Test
@@ -60,10 +60,10 @@ class BannerServiceTest {
         // given
         String keyword = "Test";
         Pageable pageable = PageRequest.of(0, 10);
-        Banner banner = Banner.builder().bannerId("BNR_01").bannerNm("Test Banner").build();
+        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
         Page<Banner> page = new PageImpl<>(List.of(banner));
 
-        given(bannerRepository.findByBannerNmContaining(keyword, pageable)).willReturn(page);
+        given(bannerRepository.findByBnrNmContaining(keyword, pageable)).willReturn(page);
 
         // when
         Page<BannerDto> result = bannerService.getBannerList(keyword, pageable);
@@ -71,14 +71,14 @@ class BannerServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBannerNm()).isEqualTo("Test Banner");
+        assertThat(result.getContent().get(0).getBnrNm()).isEqualTo("Test Banner");
     }
 
     @Test
     @DisplayName("배너 상세 조회 - 성공")
     void getBanner_Success() {
         // given
-        Banner banner = Banner.builder().bannerId("BNR_01").bannerNm("Test Banner").build();
+        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
         given(bannerRepository.findById("BNR_01")).willReturn(Optional.of(banner));
 
         // when
@@ -86,8 +86,8 @@ class BannerServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getBannerId()).isEqualTo("BNR_01");
-        assertThat(result.getBannerNm()).isEqualTo("Test Banner");
+        assertThat(result.getBnrId()).isEqualTo("BNR_01");
+        assertThat(result.getBnrNm()).isEqualTo("Test Banner");
     }
 
     @Test
@@ -105,10 +105,10 @@ class BannerServiceTest {
     void insertBanner() {
         // given
         BannerDto dto = BannerDto.builder()
-                .bannerNm("New Banner")
+                .bnrNm("New Banner")
                 .linkUrl("http://example.com")
                 .sortOrdr(1)
-                .reflctAt("Y")
+                .rfltYn("Y")
                 .build();
 
         given(bannerRepository.save(any(Banner.class))).willAnswer(inv -> inv.getArgument(0));
@@ -125,35 +125,35 @@ class BannerServiceTest {
     void updateBanner() {
         // given
         Banner existingBanner = Banner.builder()
-                .bannerId("BNR_01")
-                .bannerNm("Old Banner")
+                .bnrId("BNR_01")
+                .bnrNm("Old Banner")
                 .sortOrdr(1)
                 .build();
         given(bannerRepository.findById("BNR_01")).willReturn(Optional.of(existingBanner));
 
         BannerDto updateDto = BannerDto.builder()
-                .bannerId("BNR_01")
-                .bannerNm("Updated Banner")
+                .bnrId("BNR_01")
+                .bnrNm("Updated Banner")
                 .linkUrl("http://updated.com")
                 .sortOrdr(2)
-                .reflctAt("N")
+                .rfltYn("N")
                 .build();
 
         // when
         bannerService.updateBanner(updateDto);
 
         // then
-        assertThat(existingBanner.getBannerNm()).isEqualTo("Updated Banner");
+        assertThat(existingBanner.getBnrNm()).isEqualTo("Updated Banner");
         assertThat(existingBanner.getLinkUrl()).isEqualTo("http://updated.com");
         assertThat(existingBanner.getSortOrdr()).isEqualTo(2);
-        assertThat(existingBanner.getReflctAt()).isEqualTo("N");
+        assertThat(existingBanner.getRfltYn()).isEqualTo("N");
     }
 
     @Test
     @DisplayName("배너 수정 - 실패 (존재하지 않음)")
     void updateBanner_Fail_NotFound() {
         // given
-        BannerDto updateDto = BannerDto.builder().bannerId("BNR_99").build();
+        BannerDto updateDto = BannerDto.builder().bnrId("BNR_99").build();
         given(bannerRepository.findById("BNR_99")).willReturn(Optional.empty());
 
         // when & then
@@ -177,10 +177,10 @@ class BannerServiceTest {
     @DisplayName("반영된(Reflected) 배너 목록 조회")
     void getReflectedBanners() {
         // given
-        Banner banner1 = Banner.builder().bannerId("BNR_01").bannerNm("Reflected 1").reflctAt("Y").sortOrdr(1).build();
-        Banner banner2 = Banner.builder().bannerId("BNR_02").bannerNm("Reflected 2").reflctAt("Y").sortOrdr(2).build();
+        Banner banner1 = Banner.builder().bnrId("BNR_01").bnrNm("Reflected 1").rfltYn("Y").sortOrdr(1).build();
+        Banner banner2 = Banner.builder().bnrId("BNR_02").bnrNm("Reflected 2").rfltYn("Y").sortOrdr(2).build();
 
-        given(bannerRepository.findByReflctAtOrderBySortOrdrAsc("Y")).willReturn(List.of(banner1, banner2));
+        given(bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y")).willReturn(List.of(banner1, banner2));
 
         // when
         List<BannerDto> result = bannerService.getReflectedBanners();
@@ -188,7 +188,7 @@ class BannerServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getBannerId()).isEqualTo("BNR_01");
-        assertThat(result.get(1).getBannerId()).isEqualTo("BNR_02");
+        assertThat(result.get(0).getBnrId()).isEqualTo("BNR_01");
+        assertThat(result.get(1).getBnrId()).isEqualTo("BNR_02");
     }
 }

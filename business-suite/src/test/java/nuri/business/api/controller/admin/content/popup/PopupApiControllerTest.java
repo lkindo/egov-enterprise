@@ -59,7 +59,7 @@ class PopupApiControllerTest extends ControllerTestSupport {
     @WithMockUser
     void createPopup_Success() throws Exception {
         // given
-        PopupDto dto = PopupDto.builder().popupTitleName("Popup").build();
+        PopupDto dto = PopupDto.builder().popupTtlNm("Popup").build();
         given(popupService.createPopup(anyString(), any(PopupDto.class))).willReturn("POP_01");
 
         // when & then

@@ -233,7 +233,7 @@ public class MenuService {
                         log.error(">>> [MenuService] Found projection with NULL menuSn for authorCode: {}", vo.getAuthrtCd());
                     }
                     return MenuCreateDto.builder()
-                        .menuNo(proj.getMenuSn() != null ? proj.getMenuSn().intValue() : 0)
+                        .menuSn(proj.getMenuSn())
                         .authrtCd(proj.getAuthrtCd())
                         .authrtNm(proj.getMenuNm())
                         .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)

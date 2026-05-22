@@ -4,6 +4,7 @@ import nuri.foundation.domain.system.content.popup.Popup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @Setter
@@ -12,92 +13,70 @@ import java.time.LocalDateTime;
 @Builder
 @Schema(description = "팝업 정보")
 public class PopupDto {
+    @JsonProperty("popupId")
     @Schema(description = "팝업 ID")
     private String popupId;
+
+    @JsonProperty("popupTitleName")
     @Schema(description = "팝업 제목")
-    private String popupTitleName;
+    private String popupTtlNm;
+
+    @JsonProperty("fileUrl")
     @Schema(description = "파일 URL")
     private String fileUrl;
+
+    @JsonProperty("popupWidthLocation")
     @Schema(description = "팝업 가로 위치")
-    private String popupWidthLocation;
+    private String popupWdthPstn;
+
+    @JsonProperty("popupHeightLocation")
     @Schema(description = "팝업 세로 위치")
-    private String popupHeightLocation;
+    private String popupVrtcPstn;
+
+    @JsonProperty("popupHeightSize")
     @Schema(description = "팝업 높이 크기")
-    private String popupHeightSize;
+    private String popupVrtcSz;
+
+    @JsonProperty("popupWidthSize")
     @Schema(description = "팝업 너비 크기")
-    private String popupWidthSize;
+    private String popupWdthSz;
+
+    @JsonProperty("noticeBeginDate")
     @Schema(description = "게시 시작일")
-    private String noticeBeginDate;
+    private String ntceBgnde;
+
+    @JsonProperty("noticeEndDate")
     @Schema(description = "게시 종료일")
-    private String noticeEndDate;
+    private String ntceEndde;
+
+    @JsonProperty("isStopView")
     @Schema(description = "그만보기 여부")
-    private String isStopView;
+    private String stopvewSetupYn;
+
+    @JsonProperty("isNotice")
     @Schema(description = "게시 여부")
-    private String isNotice;
+    private String ntceYn;
+
     @Schema(description = "생성자 ID")
     private String createdBy;
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
-
-    public String getPopupTitleNm() {
-        return popupTitleName;
-    }
-
-    public String getPopupWlc() {
-        return popupWidthLocation;
-    }
-
-    public String getPopupHlc() {
-        return popupHeightLocation;
-    }
-
-    public String getPopupHSize() {
-        return popupHeightSize;
-    }
-
-    public String getPopupWSize() {
-        return popupWidthSize;
-    }
-
-    public String getNtceBgnde() {
-        return noticeBeginDate;
-    }
-
-    public String getNtceEndde() {
-        return noticeEndDate;
-    }
-
-    public String getStopVewAt() {
-        return isStopView;
-    }
-
-    public String getNtceAt() {
-        return isNotice;
-    }
-
-    public String getFrstRegisterId() {
-        return createdBy;
-    }
-
-    public LocalDateTime getFrstRegistPnttm() {
-        return createdDate;
-    }
 
     public static PopupDto from(Popup entity) {
         if (entity == null)
             return null;
         return PopupDto.builder()
                 .popupId(entity.getPopupId())
-                .popupTitleName(entity.getPopupTitleName())
+                .popupTtlNm(entity.getPopupTtlNm())
                 .fileUrl(entity.getFileUrl())
-                .popupWidthLocation(entity.getPopupWidthLocation())
-                .popupHeightLocation(entity.getPopupHeightLocation())
-                .popupHeightSize(entity.getPopupHeightSize())
-                .popupWidthSize(entity.getPopupWidthSize())
-                .noticeBeginDate(entity.getNoticeBeginDate() != null ? entity.getNoticeBeginDate().toString() : null)
-                .noticeEndDate(entity.getNoticeEndDate() != null ? entity.getNoticeEndDate().toString() : null)
-                .isStopView(entity.getIsStopView())
-                .isNotice(entity.getIsNotice())
+                .popupWdthPstn(entity.getPopupWdthPstn())
+                .popupVrtcPstn(entity.getPopupVrtcPstn())
+                .popupVrtcSz(entity.getPopupVrtcSz())
+                .popupWdthSz(entity.getPopupWdthSz())
+                .ntceBgnde(entity.getNtceBgnde() != null ? entity.getNtceBgnde().toString() : null)
+                .ntceEndde(entity.getNtceEndde() != null ? entity.getNtceEndde().toString() : null)
+                .stopvewSetupYn(entity.getStopvewSetupYn())
+                .ntceYn(entity.getNtceYn())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

@@ -26,7 +26,7 @@ public class BannerService implements EgovBannerService {
         if (keyword == null || keyword.isEmpty()) {
             return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(BannerDto::from);
         }
-        return bannerRepository.findByBannerNmContaining(keyword, Objects.requireNonNull(pageable))
+        return bannerRepository.findByBnrNmContaining(keyword, Objects.requireNonNull(pageable))
                 .map(BannerDto::from);
     }
 
@@ -42,14 +42,14 @@ public class BannerService implements EgovBannerService {
     public void insertBanner(BannerDto dto) {
         String id = "BANNER_" + System.currentTimeMillis();
         Banner entity = Banner.builder()
-                .bannerId(id)
-                .bannerNm(dto.getBannerNm())
+                .bnrId(id)
+                .bnrNm(dto.getBnrNm())
                 .linkUrl(dto.getLinkUrl())
-                .bannerImage(dto.getBannerImage())
-                .bannerDc(dto.getBannerDc())
+                .bnrImgNm(dto.getBnrImgNm())
+                .bnrExpln(dto.getBnrExpln())
                 .sortOrdr(dto.getSortOrdr())
-                .reflctAt(dto.getReflctAt())
-                .bannerImageFile(dto.getBannerImageFile())
+                .rfltYn(dto.getRfltYn())
+                .atchFileId(dto.getAtchFileId())
                 .build();
         bannerRepository.save(Objects.requireNonNull(entity));
     }
@@ -57,10 +57,10 @@ public class BannerService implements EgovBannerService {
     @Override
     @Transactional
     public void updateBanner(BannerDto dto) {
-        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBannerId()))
+        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getBannerNm(), dto.getLinkUrl(), dto.getBannerImage(),
-                dto.getBannerDc(), dto.getSortOrdr(), dto.getReflctAt(), dto.getBannerImageFile());
+        entity.update(dto.getBnrNm(), dto.getLinkUrl(), dto.getBnrImgNm(),
+                dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileId());
     }
 
     @Override
@@ -71,7 +71,7 @@ public class BannerService implements EgovBannerService {
 
     @Override
     public List<BannerDto> getReflectedBanners() {
-        return bannerRepository.findByReflctAtOrderBySortOrdrAsc("Y").stream()
+        return bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y").stream()
                 .map(BannerDto::from)
                 .collect(Collectors.toList());
     }

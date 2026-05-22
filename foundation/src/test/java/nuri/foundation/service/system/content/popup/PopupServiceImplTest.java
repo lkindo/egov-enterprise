@@ -49,7 +49,7 @@ class PopupServiceImplTest {
     void getPopupList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Popup popup = Popup.builder().popupId("POP_01").popupTitleName("팝업1").build();
+        Popup popup = Popup.builder().popupId("POP_01").popupTtlNm("팝업1").build();
         given(popupRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(popup)));
 
         // when
@@ -57,7 +57,7 @@ class PopupServiceImplTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getPopupTitleName()).isEqualTo("팝업1");
+        assertThat(result.getContent().get(0).getPopupTtlNm()).isEqualTo("팝업1");
         verify(popupRepository, times(1)).findAll(pageable);
     }
 
@@ -66,8 +66,8 @@ class PopupServiceImplTest {
     void getPopupList_WithKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Popup popup = Popup.builder().popupId("POP_01").popupTitleName("팝업검색").build();
-        given(popupRepository.findByPopupTitleNameContaining(eq("검색"), any(Pageable.class)))
+        Popup popup = Popup.builder().popupId("POP_01").popupTtlNm("팝업검색").build();
+        given(popupRepository.findByPopupTtlNmContaining(eq("검색"), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(popup)));
 
         // when
@@ -75,7 +75,7 @@ class PopupServiceImplTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(popupRepository, times(1)).findByPopupTitleNameContaining("검색", pageable);
+        verify(popupRepository, times(1)).findByPopupTtlNmContaining("검색", pageable);
     }
 
     @Test
@@ -98,9 +98,9 @@ class PopupServiceImplTest {
         // given
         Popup popup = Popup.builder()
                 .popupId("POP1")
-                .popupTitleName("제목")
-                .noticeBeginDate(LocalDate.of(2026, 1, 1))
-                .noticeEndDate(LocalDate.of(2026, 1, 31))
+                .popupTtlNm("제목")
+                .ntceBgnde(LocalDate.of(2026, 1, 1))
+                .ntceEndde(LocalDate.of(2026, 1, 31))
                 .build();
         given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
 
@@ -109,9 +109,9 @@ class PopupServiceImplTest {
 
         // then
         assertThat(result.getPopupId()).isEqualTo("POP1");
-        assertThat(result.getPopupTitleName()).isEqualTo("제목");
-        assertThat(result.getNoticeBeginDate()).isEqualTo("2026-01-01");
-        assertThat(result.getNoticeEndDate()).isEqualTo("2026-01-31");
+        assertThat(result.getPopupTtlNm()).isEqualTo("제목");
+        assertThat(result.getNtceBgnde()).isEqualTo("2026-01-01");
+        assertThat(result.getNtceEndde()).isEqualTo("2026-01-31");
     }
 
     @Test
@@ -135,11 +135,11 @@ class PopupServiceImplTest {
     void createPopup_Success() throws Exception {
         // given
         PopupDto dto = PopupDto.builder()
-                .popupTitleName("Test Popup")
-                .noticeBeginDate("2026-01-01")
-                .noticeEndDate("2026-01-31")
-                .isStopView("Y")
-                .isNotice("Y")
+                .popupTtlNm("Test Popup")
+                .ntceBgnde("2026-01-01")
+                .ntceEndde("2026-01-31")
+                .stopvewSetupYn("Y")
+                .ntceYn("Y")
                 .build();
         given(egovPopupManageIdGnrService.getNextStringId()).willReturn("POP_99");
 
@@ -155,7 +155,7 @@ class PopupServiceImplTest {
     @DisplayName("팝업 등록 - ID 생성 실패 시 RuntimeException 발생")
     void createPopup_IdGnrException_ShouldThrowRuntimeException() throws Exception {
         // given
-        PopupDto dto = PopupDto.builder().popupTitleName("Test").build();
+        PopupDto dto = PopupDto.builder().popupTtlNm("Test").build();
         given(egovPopupManageIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID generation fail"));
 
         // when & then
@@ -170,25 +170,25 @@ class PopupServiceImplTest {
         // given
         Popup popup = Popup.builder()
                 .popupId("POP1")
-                .popupTitleName("OLD")
+                .popupTtlNm("OLD")
                 .build();
         given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
 
         PopupDto dto = PopupDto.builder()
-                .popupTitleName("NEW")
-                .noticeBeginDate("2026-02-01")
-                .noticeEndDate("2026-02-28")
-                .isStopView("N")
-                .isNotice("N")
+                .popupTtlNm("NEW")
+                .ntceBgnde("2026-02-01")
+                .ntceEndde("2026-02-28")
+                .stopvewSetupYn("N")
+                .ntceYn("N")
                 .build();
 
         // when
         popupService.updatePopup("POP1", "updater", dto);
 
         // then
-        assertThat(popup.getPopupTitleName()).isEqualTo("NEW");
-        assertThat(popup.getNoticeBeginDate()).isEqualTo(LocalDate.of(2026, 2, 1));
-        assertThat(popup.getNoticeEndDate()).isEqualTo(LocalDate.of(2026, 2, 28));
+        assertThat(popup.getPopupTtlNm()).isEqualTo("NEW");
+        assertThat(popup.getNtceBgnde()).isEqualTo(LocalDate.of(2026, 2, 1));
+        assertThat(popup.getNtceEndde()).isEqualTo(LocalDate.of(2026, 2, 28));
         assertThat(popup.getLastUpdusrId()).isEqualTo("updater");
     }
 
@@ -197,7 +197,7 @@ class PopupServiceImplTest {
     void updatePopup_NotFound_ShouldThrowBusinessException() {
         // given
         given(popupRepository.findById("POP1")).willReturn(Optional.empty());
-        PopupDto dto = PopupDto.builder().popupTitleName("NEW").build();
+        PopupDto dto = PopupDto.builder().popupTtlNm("NEW").build();
 
         // when & then
         assertThatThrownBy(() -> popupService.updatePopup("POP1", "updater", dto))

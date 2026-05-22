@@ -27,66 +27,63 @@ public class Popup extends BaseEntity {
     private String popupId;
 
     @Column(name = "popup_ttl_nm", length = 100, nullable = false)
-    private String popupTitleName;
+    private String popupTtlNm;
 
     @Column(name = "file_url", length = 1000)
     private String fileUrl;
 
     @Column(name = "popup_wdth_pstn", length = 12)
-    private String popupWidthLocation;
+    private String popupWdthPstn;
 
     @Column(name = "popup_vrtc_pstn", length = 12)
-    private String popupHeightLocation;
+    private String popupVrtcPstn;
 
     @Column(name = "popup_vrtc_sz", length = 12)
-    private String popupHeightSize;
+    private String popupVrtcSz;
 
     @Column(name = "popup_wdth_sz", length = 12)
-    private String popupWidthSize;
+    private String popupWdthSz;
 
     @Column(name = "ntce_bgnde")
-    private LocalDate noticeBeginDate;
+    private LocalDate ntceBgnde;
 
     @Column(name = "ntce_endde")
-    private LocalDate noticeEndDate;
+    private LocalDate ntceEndde;
 
     @Column(name = "stopvew_setup_yn", length = 1)
-    private String isStopView;
+    private String stopvewSetupYn;
 
     @Column(name = "ntce_yn", length = 1)
-    private String isNotice;
+    private String ntceYn;
 
-    public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
-            String popupHeightLocation, String popupHeightSize, String popupWidthSize,
-            LocalDate noticeBeginDate, LocalDate noticeEndDate, String isStopView, String isNotice) {
+    public Popup(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
+            String popupVrtcPstn, String popupVrtcSz, String popupWdthSz,
+            LocalDate ntceBgnde, LocalDate ntceEndde, String stopvewSetupYn, String ntceYn) {
         this.popupId = popupId;
-        this.popupTitleName = popupTitleName;
+        this.popupTtlNm = popupTtlNm;
         this.fileUrl = fileUrl;
-        this.popupWidthLocation = popupWidthLocation;
-        this.popupHeightLocation = popupHeightLocation;
-        this.popupHeightSize = popupHeightSize;
-        this.popupWidthSize = popupWidthSize;
-        this.noticeBeginDate = noticeBeginDate;
-        this.noticeEndDate = noticeEndDate;
-        this.isStopView = isStopView;
-        this.isNotice = isNotice;
+        this.popupWdthPstn = popupWdthPstn;
+        this.popupVrtcPstn = popupVrtcPstn;
+        this.popupVrtcSz = popupVrtcSz;
+        this.popupWdthSz = popupWdthSz;
+        this.ntceBgnde = ntceBgnde;
+        this.ntceEndde = ntceEndde;
+        this.stopvewSetupYn = stopvewSetupYn;
+        this.ntceYn = ntceYn;
     }
 
-    public void update(String popupTitleName, String fileUrl, String popupWidthLocation, String popupHeightLocation,
-            String popupHeightSize, String popupWidthSize, LocalDate noticeBeginDate, LocalDate noticeEndDate,
-            String isStopView, String isNotice) {
-        this.popupTitleName = popupTitleName;
+    public void update(String popupTtlNm, String fileUrl, String popupWdthPstn, String popupVrtcPstn,
+            String popupVrtcSz, String popupWdthSz, LocalDate ntceBgnde, LocalDate ntceEndde,
+            String stopvewSetupYn, String ntceYn) {
+        this.popupTtlNm = popupTtlNm;
         this.fileUrl = fileUrl;
-        this.popupWidthLocation = popupWidthLocation;
-        this.popupHeightLocation = popupHeightLocation;
-        this.popupHeightSize = popupHeightSize;
-        this.popupWidthSize = popupWidthSize;
-        this.noticeBeginDate = noticeBeginDate;
-        this.noticeEndDate = noticeEndDate;
-        this.isStopView = isStopView;
-        this.isNotice = isNotice;
+        this.popupWdthPstn = popupWdthPstn;
+        this.popupVrtcPstn = popupVrtcPstn;
+        this.popupVrtcSz = popupVrtcSz;
+        this.popupWdthSz = popupWdthSz;
+        this.ntceBgnde = ntceBgnde;
+        this.ntceEndde = ntceEndde;
+        this.stopvewSetupYn = stopvewSetupYn;
+        this.ntceYn = ntceYn;
     }
-
-    // legacy getters for compatibility
-    public String getPopupSjNm() { return popupTitleName; }
 }

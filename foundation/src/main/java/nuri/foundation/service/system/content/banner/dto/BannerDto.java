@@ -4,7 +4,7 @@ import nuri.foundation.domain.system.content.banner.Banner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @Setter
@@ -13,47 +13,54 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Builder
 @Schema(description = "배너 정보")
 public class BannerDto {
+    @JsonProperty("bannerId")
     @Schema(description = "배너 ID")
-    private String bannerId;
+    private String bnrId;
+
+    @JsonProperty("bannerNm")
     @Schema(description = "배너 명칭")
-    private String bannerNm;
+    private String bnrNm;
+
+    @JsonProperty("linkUrl")
     @Schema(description = "링크 URL")
     private String linkUrl;
+
+    @JsonProperty("bannerImage")
     @Schema(description = "배너 이미지 경로")
-    private String bannerImage;
+    private String bnrImgNm;
+
+    @JsonProperty("bannerDc")
     @Schema(description = "배너 설명")
-    private String bannerDc;
+    private String bnrExpln;
+
+    @JsonProperty("sortOrdr")
     @Schema(description = "정렬 순서")
     private Integer sortOrdr;
+
+    @JsonProperty("reflctAt")
     @Schema(description = "반영 여부")
-    private String reflctAt;
+    private String rfltYn;
+
+    @JsonProperty("bannerImageFile")
     @Schema(description = "배너 이미지 파일 ID")
-    private String bannerImageFile;
+    private String atchFileId;
+
     @Schema(description = "생성자 ID")
     private String createdBy;
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
-    @JsonIgnore
-    public String getBnrId() { return bannerId; }
-    @JsonIgnore
-    public String getBnrNm() { return bannerNm; }
-    @JsonIgnore
-    public String getBnrImgNm() { return bannerImage; }
-    @JsonIgnore
-    public String getBnrExpln() { return bannerDc; }
-
     public static BannerDto from(Banner entity) {
         if (entity == null) return null;
         return BannerDto.builder()
-                .bannerId(entity.getBannerId())
-                .bannerNm(entity.getBannerNm())
+                .bnrId(entity.getBnrId())
+                .bnrNm(entity.getBnrNm())
                 .linkUrl(entity.getLinkUrl())
-                .bannerImage(entity.getBannerImage())
-                .bannerDc(entity.getBannerDc())
+                .bnrImgNm(entity.getBnrImgNm())
+                .bnrExpln(entity.getBnrExpln())
                 .sortOrdr(entity.getSortOrdr())
-                .reflctAt(entity.getReflctAt())
-                .bannerImageFile(entity.getBannerImageFile())
+                .rfltYn(entity.getRfltYn())
+                .atchFileId(entity.getAtchFileId())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

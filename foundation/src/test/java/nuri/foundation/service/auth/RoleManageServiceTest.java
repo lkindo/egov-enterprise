@@ -84,7 +84,7 @@ class RoleManageServiceTest {
         // Given
         RoleManageDto dto = RoleManageDto.builder()
                 .roleNm("New Role")
-                .roleDc("Description")
+                .roleExpln("Description")
                 .build();
 
         // When
@@ -100,7 +100,7 @@ class RoleManageServiceTest {
         // Given
         String roleCode = "ROLE_TARGET";
         RoleManageDto dto = RoleManageDto.builder()
-                .roleCode(roleCode)
+                .roleId(roleCode)
                 .roleNm("Updated Name")
                 .build();
         RoleInfo roleInfo = mock(RoleInfo.class);
@@ -145,7 +145,7 @@ class RoleManageServiceTest {
     void insertRole_WithCodeTest() {
         // Given
         RoleManageDto dto = RoleManageDto.builder()
-                .roleCode("ROLE_SPECIFIC")
+                .roleId("ROLE_SPECIFIC")
                 .roleNm("New Role")
                 .build();
 

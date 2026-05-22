@@ -2,7 +2,7 @@ package nuri.business.api.controller.poll;
  
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.service.system.service.survey.OnlinePollService;
-import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
+import nuri.foundation.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import nuri.foundation.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -136,10 +136,10 @@ class PollApiControllerTest extends ControllerTestSupport {
     @DisplayName("설문 항목 목록 조회 성공")
     void getPollItems_Success() throws Exception {
         // Given
-        OnlinePollItemDto item = OnlinePollItemDto.builder()
-                .pollIemId("ITEM_001")
+        OnlinePollArticleDto item = OnlinePollArticleDto.builder()
+                .pollArtclId("ITEM_001")
                 .pollId("POLL_001")
-                .pollIemNm("항목 1")
+                .pollArtclNm("항목 1")
                 .pollIemCo(10L)
                 .build();
         given(pollService.getPollItemList("POLL_001")).willReturn(List.of(item));

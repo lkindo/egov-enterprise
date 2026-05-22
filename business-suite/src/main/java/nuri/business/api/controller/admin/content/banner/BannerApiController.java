@@ -54,7 +54,7 @@ public class BannerApiController {
     public ResponseEntity<ApiResponse<Void>> updateBanner(
             @PathVariable String bannerId,
             @RequestBody BannerDto dto) {
-        dto.setBannerId(bannerId);
+        dto.setBnrId(bannerId);
         bannerService.updateBanner(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

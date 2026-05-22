@@ -25,41 +25,37 @@ public class Banner extends BaseEntity {
 
     @Id
     @Column(name = "bnr_id", length = 20)
-    private String bannerId;
+    private String bnrId;
 
     @Column(name = "bnr_nm", length = 100, nullable = false)
-    private String bannerNm;
+    private String bnrNm;
 
     @Column(name = "link_url", length = 512)
     private String linkUrl;
 
     @Column(name = "bnr_img_nm", length = 100)
-    private String bannerImage;
+    private String bnrImgNm;
 
     @Column(name = "bnr_expln", length = 4000)
-    private String bannerDc;
+    private String bnrExpln;
 
     @Column(name = "sort_ordr")
     private Integer sortOrdr;
 
     @Column(name = "rflt_yn", length = 1)
-    private String reflctAt;
+    private String rfltYn;
 
     @Column(name = "atch_file_id", length = 20)
-    private String bannerImageFile;
+    private String atchFileId;
 
-    public void update(String bannerNm, String linkUrl, String bannerImage,
-                      String bannerDc, Integer sortOrdr, String reflctAt, String bannerImageFile) {
-        this.bannerNm = bannerNm;
+    public void update(String bnrNm, String linkUrl, String bnrImgNm,
+                      String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+        this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
-        if (bannerImage != null) this.bannerImage = bannerImage;
-        this.bannerDc = bannerDc;
+        if (bnrImgNm != null) this.bnrImgNm = bnrImgNm;
+        this.bnrExpln = bnrExpln;
         this.sortOrdr = sortOrdr;
-        this.reflctAt = reflctAt;
-        if (bannerImageFile != null) this.bannerImageFile = bannerImageFile;
+        this.rfltYn = rfltYn;
+        if (atchFileId != null) this.atchFileId = atchFileId;
     }
-
-    // legacy getters for compatibility
-    public String getBnrId() { return bannerId; }
-    public String getBnrNm() { return bannerNm; }
 }

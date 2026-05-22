@@ -59,17 +59,17 @@ public class RoleManageService {
      */
     @Transactional
     public void insertRole(RoleManageDto dto) {
-        String roleCode = dto.getRoleCode();
-        if (roleCode == null || roleCode.isEmpty()) {
-            roleCode = "ROLE_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String roleId = dto.getRoleId();
+        if (roleId == null || roleId.isEmpty()) {
+            roleId = "ROLE_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         }
 
         RoleInfo entity = RoleInfo.builder()
-                .roleId(roleCode)
+                .roleId(roleId)
                 .roleNm(dto.getRoleNm())
-                .rolePatrn(dto.getRolePttrn())
-                .roleExpln(dto.getRoleDc())
-                .roleTypeCd(dto.getRoleTy())
+                .rolePatrn(dto.getRolePatrn())
+                .roleExpln(dto.getRoleExpln())
+                .roleTypeCd(dto.getRoleTypeCd())
                 .roleSort(dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null)
                 .build();
         roleInfoRepository.save(Objects.requireNonNull(entity));
@@ -80,8 +80,8 @@ public class RoleManageService {
      */
     @Transactional
     public void updateRole(RoleManageDto dto) {
-        roleInfoRepository.findById(Objects.requireNonNull(dto.getRoleCode())).ifPresent(entity -> {
-            entity.update(dto.getRoleNm(), dto.getRolePttrn(), dto.getRoleDc(), dto.getRoleTy(), 
+        roleInfoRepository.findById(Objects.requireNonNull(dto.getRoleId())).ifPresent(entity -> {
+            entity.update(dto.getRoleNm(), dto.getRolePatrn(), dto.getRoleExpln(), dto.getRoleTypeCd(), 
                 dto.getRoleSort() != null && !dto.getRoleSort().isEmpty() ? Integer.parseInt(dto.getRoleSort()) : null);
         });
     }
@@ -105,11 +105,11 @@ public class RoleManageService {
 
     private RoleManageDto toDto(RoleInfo entity) {
         return RoleManageDto.builder()
-                .roleCode(entity.getRoleId())
+                .roleId(entity.getRoleId())
                 .roleNm(entity.getRoleNm())
-                .rolePttrn(entity.getRolePatrn())
-                .roleDc(entity.getRoleExpln())
-                .roleTy(entity.getRoleTypeCd())
+                .rolePatrn(entity.getRolePatrn())
+                .roleExpln(entity.getRoleExpln())
+                .roleTypeCd(entity.getRoleTypeCd())
                 .roleSort(entity.getRoleSort() != null ? entity.getRoleSort().toString() : null)
                 .creatDt(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
                 .build();

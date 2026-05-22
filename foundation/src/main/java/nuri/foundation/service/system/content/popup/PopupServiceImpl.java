@@ -29,7 +29,7 @@ public class PopupServiceImpl implements PopupService {
         if (keyword == null || keyword.isEmpty()) {
             return popupRepository.findAll(Objects.requireNonNull(pageable)).map(PopupDto::from);
         }
-        return popupRepository.findByPopupTitleNameContaining(keyword, Objects.requireNonNull(pageable))
+        return popupRepository.findByPopupTtlNmContaining(keyword, Objects.requireNonNull(pageable))
                 .map(PopupDto::from);
     }
 
@@ -54,16 +54,16 @@ public class PopupServiceImpl implements PopupService {
             String popupId = egovPopupManageIdGnrService.getNextStringId();
             Popup popup = Popup.builder()
                     .popupId(popupId)
-                    .popupTitleName(dto.getPopupTitleName())
+                    .popupTtlNm(dto.getPopupTtlNm())
                     .fileUrl(dto.getFileUrl())
-                    .popupWidthLocation(dto.getPopupWidthLocation())
-                    .popupHeightLocation(dto.getPopupHeightLocation())
-                    .popupHeightSize(dto.getPopupHeightSize())
-                    .popupWidthSize(dto.getPopupWidthSize())
-                    .noticeBeginDate(dto.getNoticeBeginDate() != null ? LocalDate.parse(dto.getNoticeBeginDate()) : null)
-                    .noticeEndDate(dto.getNoticeEndDate() != null ? LocalDate.parse(dto.getNoticeEndDate()) : null)
-                    .isStopView(dto.getIsStopView())
-                    .isNotice(dto.getIsNotice())
+                    .popupWdthPstn(dto.getPopupWdthPstn())
+                    .popupVrtcPstn(dto.getPopupVrtcPstn())
+                    .popupVrtcSz(dto.getPopupVrtcSz())
+                    .popupWdthSz(dto.getPopupWdthSz())
+                    .ntceBgnde(dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null)
+                    .ntceEndde(dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null)
+                    .stopvewSetupYn(dto.getStopvewSetupYn())
+                    .ntceYn(dto.getNtceYn())
                     .build();
             popup.setFrstRegisterId(userId);
             popupRepository.save(Objects.requireNonNull(popup));
@@ -79,12 +79,12 @@ public class PopupServiceImpl implements PopupService {
         Popup popup = popupRepository.findById(Objects.requireNonNull(popupId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        popup.update(dto.getPopupTitleName(), dto.getFileUrl(), dto.getPopupWidthLocation(),
-                dto.getPopupHeightLocation(),
-                dto.getPopupHeightSize(), dto.getPopupWidthSize(),
-                dto.getNoticeBeginDate() != null ? LocalDate.parse(dto.getNoticeBeginDate()) : null,
-                dto.getNoticeEndDate() != null ? LocalDate.parse(dto.getNoticeEndDate()) : null,
-                dto.getIsStopView(), dto.getIsNotice());
+        popup.update(dto.getPopupTtlNm(), dto.getFileUrl(), dto.getPopupWdthPstn(),
+                dto.getPopupVrtcPstn(),
+                dto.getPopupVrtcSz(), dto.getPopupWdthSz(),
+                dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null,
+                dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null,
+                dto.getStopvewSetupYn(), dto.getNtceYn());
         popup.setLastUpdusrId(userId);
     }
 

@@ -11,21 +11,28 @@ class AuthDtoTest {
     @DisplayName("RoleManageDto 빌더 및 Getter/Setter 테스트")
     void roleManageDtoTest() {
         RoleManageDto dto = RoleManageDto.builder()
-                .roleCode("ROLE_USER")
+                .roleId("ROLE_USER")
                 .roleNm("사용자")
-                .rolePttrn("/api/**")
-                .roleDc("사용자 권한")
-                .roleTy("URL")
+                .rolePatrn("/api/**")
+                .roleExpln("사용자 권한")
+                .roleTypeCd("URL")
                 .roleSort("1")
                 .creatDt("2024-01-01")
                 .build();
 
-        assertThat(dto.getRoleCode()).isEqualTo("ROLE_USER");
+        // Standardized getters
+        assertThat(dto.getRoleId()).isEqualTo("ROLE_USER");
         assertThat(dto.getRoleNm()).isEqualTo("사용자");
+        assertThat(dto.getRolePatrn()).isEqualTo("/api/**");
+        assertThat(dto.getRoleExpln()).isEqualTo("사용자 권한");
+        assertThat(dto.getRoleTypeCd()).isEqualTo("URL");
+        assertThat(dto.getRoleSort()).isEqualTo("1");
+        assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
+
+        // Legacy compatibility getters
+        assertThat(dto.getRoleCode()).isEqualTo("ROLE_USER");
         assertThat(dto.getRolePttrn()).isEqualTo("/api/**");
         assertThat(dto.getRoleDc()).isEqualTo("사용자 권한");
         assertThat(dto.getRoleTy()).isEqualTo("URL");
-        assertThat(dto.getRoleSort()).isEqualTo("1");
-        assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
     }
 }

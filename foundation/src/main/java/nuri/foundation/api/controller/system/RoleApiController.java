@@ -54,7 +54,7 @@ public class RoleApiController {
     public ResponseEntity<ApiResponse<Void>> updateRole(
             @PathVariable String roleCode,
             @RequestBody RoleManageDto dto) {
-        dto.setRoleCode(roleCode);
+        dto.setRoleId(roleCode);
         roleManageService.updateRole(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

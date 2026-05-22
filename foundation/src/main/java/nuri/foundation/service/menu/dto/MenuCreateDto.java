@@ -12,10 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MenuCreateDto {
     /** 메뉴번호 */
-    private int menuNo;
+    @JsonProperty("menuNo")
+    private Long menuSn;
+    
     /** 맵생성ID */
     @JsonProperty("mapCreatId")
-    private String mpngCrtId;
+    private String mapngCrtId;
+    
     /** 권한코드 */
     @JsonProperty("authorCode")
     private String authrtCd;
@@ -39,4 +42,3 @@ public class MenuCreateDto {
     /** 메뉴생성여부 (1 이상: 생성됨, 0: 미생성) */
     private int chkYeoBu;
 }
-
