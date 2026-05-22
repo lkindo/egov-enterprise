@@ -1,6 +1,7 @@
 package nuri.foundation.service.system.service.survey.dto;
 
-import nuri.foundation.domain.system.service.survey.OnlinePollItem;
+import nuri.foundation.domain.system.service.survey.OnlinePollArticle;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,40 +13,41 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "온라인 설문 항목 DTO")
-public class OnlinePollItemDto {
+@Schema(description = "온라인 설문 항목 DTO (표준화)")
+public class OnlinePollArticleDto {
 
+    @JsonProperty("pollIemId")
     @Schema(description = "설문 항목 ID")
-    private String pollIemId;
+    private String pollArtclId;
 
+    @JsonProperty("pollId")
     @Schema(description = "설문 ID")
     private String pollId;
 
+    @JsonProperty("pollIemNm")
     @Schema(description = "설문 항목 명")
-    private String pollIemNm;
+    private String pollArtclNm;
 
+    @JsonProperty("pollIemCo")
     @Schema(description = "투표 수")
     private Long pollIemCo;
 
+    @JsonProperty("createdBy")
     @Schema(description = "생성자 ID")
     private String createdBy;
 
+    @JsonProperty("createdDate")
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
-    public static OnlinePollItemDto from(OnlinePollItem entity) {
-        if (entity == null)
-            return null;
-        return OnlinePollItemDto.builder()
-                .pollIemId(entity.getPollIemId())
+    public static OnlinePollArticleDto from(OnlinePollArticle entity) {
+        if (entity == null) return null;
+        return OnlinePollArticleDto.builder()
+                .pollArtclId(entity.getPollArtclId())
                 .pollId(entity.getPollManage() != null ? entity.getPollManage().getPollId() : null)
-                .pollIemNm(entity.getPollIemNm())
+                .pollArtclNm(entity.getPollArtclNm())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }
-
-    // legacy getters for compatibility
-    public String getPollArtclId() { return pollIemId; }
-    public String getPollArtclNm() { return pollIemNm; }
 }

@@ -41,37 +41,37 @@ class SurveyRespondentServiceTest {
     @DisplayName("설문 응답자 목록 조회 - 키워드 없음 (null)")
     void getSurveyRespondentList_NullKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("User1").build();
-        given(surveyRespondentRepository.findByRspdNmContaining(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("User1").build();
+        given(surveyRespondentRepository.findByRspdntNmContaining(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRspdNmContaining(eq(""), eq(pageable));
+        verify(surveyRespondentRepository).findByRspdntNmContaining(eq(""), eq(pageable));
     }
 
     @Test
     @DisplayName("설문 응답자 목록 조회 - 키워드 있음")
     void getSurveyRespondentList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("User1").build();
-        given(surveyRespondentRepository.findByRspdNmContaining(eq("User"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("User1").build();
+        given(surveyRespondentRepository.findByRspdntNmContaining(eq("User"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", "User", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRspdNmContaining(eq("User"), eq(pageable));
+        verify(surveyRespondentRepository).findByRspdntNmContaining(eq("User"), eq(pageable));
     }
 
     @Test
     @DisplayName("설문 응답자 상세 조회 - 성공")
     void getSurveyRespondent_Success() {
-        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("User1").build();
+        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("User1").build();
         given(surveyRespondentRepository.findById("R1")).willReturn(Optional.of(entity));
 
         SurveyRespondentDto result = surveyRespondentService.getSurveyRespondent("R1");
 
-        assertThat(result.getRspdNm()).isEqualTo("User1");
+        assertThat(result.getRspdntNm()).isEqualTo("User1");
     }
 
     @Test
@@ -84,7 +84,7 @@ class SurveyRespondentServiceTest {
     @Test
     @DisplayName("설문 응답자 등록")
     void createSurveyRespondent() {
-        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdNm("New User").build();
+        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdntNm("New User").build();
         String id = surveyRespondentService.createSurveyRespondent("user1", dto);
         
         assertThat(id).isNotNull();
@@ -95,20 +95,20 @@ class SurveyRespondentServiceTest {
     @Test
     @DisplayName("설문 응답자 수정 - 성공")
     void updateSurveyRespondent_Success() {
-        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdId("R1").rspdNm("Old").build();
+        SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("Old").build();
         given(surveyRespondentRepository.findById("R1")).willReturn(Optional.of(entity));
 
-        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdNm("New").build();
+        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdntNm("New").build();
         surveyRespondentService.updateSurveyRespondent("R1", "user1", dto);
 
-        assertThat(entity.getRspdNm()).isEqualTo("New");
+        assertThat(entity.getRspdntNm()).isEqualTo("New");
     }
 
     @Test
     @DisplayName("설문 응답자 수정 - 실패 (데이터 없음)")
     void updateSurveyRespondent_Fail() {
         given(surveyRespondentRepository.findById("R99")).willReturn(Optional.empty());
-        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdNm("New").build();
+        SurveyRespondentDto dto = SurveyRespondentDto.builder().rspdntNm("New").build();
         assertThrows(BusinessException.class, () -> surveyRespondentService.updateSurveyRespondent("R99", "user1", dto));
     }
 

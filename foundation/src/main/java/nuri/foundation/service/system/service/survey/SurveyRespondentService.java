@@ -21,7 +21,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
 
     @Override
     public Page<SurveyRespondentDto> getSurveyRespondentList(String srvyId, String keyword, Pageable pageable) {
-        return surveyRespondentRepository.findByRspdNmContaining(keyword == null ? "" : keyword, pageable)
+        return surveyRespondentRepository.findByRspdntNmContaining(keyword == null ? "" : keyword, pageable)
                 .map(SurveyRespondentDto::from);
     }
 
@@ -37,14 +37,14 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
         String id = "SRES_" + System.currentTimeMillis();
         SurveyRespondent entity = SurveyRespondent.builder()
-                .srvyRspdId(id)
+                .srvyRspdntId(id)
                 .srvyId(dto.getSrvyId())
-                .srvyTmplatId(dto.getSrvyTmplatId())
+                .srvyTmpltId(dto.getSrvyTmpltId())
                 .gndrCd(dto.getGndrCd())
-                .jobTypeCd(dto.getJobTypeCd())
-                .rspdNm(dto.getRspdNm())
-                .brthYmd(dto.getBrthYmd())
-                .areaTelno(dto.getAreaTelno())
+                .crTypeCd(dto.getCrTypeCd())
+                .rspdntNm(dto.getRspdntNm())
+                .brdt(dto.getBrdt())
+                .rgnTelno(dto.getRgnTelno())
                 .midTelno(dto.getMidTelno())
                 .endTelno(dto.getEndTelno())
                 .createdBy(userId)
@@ -58,8 +58,8 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     public void updateSurveyRespondent(String respondentId, String userId, SurveyRespondentDto dto) {
         SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getGndrCd(), dto.getJobTypeCd(), dto.getRspdNm(),
-                dto.getBrthYmd(), dto.getAreaTelno(), dto.getMidTelno(), dto.getEndTelno());
+        entity.update(dto.getGndrCd(), dto.getCrTypeCd(), dto.getRspdntNm(),
+                dto.getBrdt(), dto.getRgnTelno(), dto.getMidTelno(), dto.getEndTelno());
     }
 
     @Override

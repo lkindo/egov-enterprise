@@ -42,7 +42,7 @@ public class OnlinePollManage extends BaseEntity {
     private String pollEndYmd;
 
     @Column(name = "poll_knd_cd", length = 12)
-    private String pollTypeCd;
+    private String pollKndCd;
 
     @Column(name = "poll_dsuse_yn", length = 1)
     @Builder.Default
@@ -50,20 +50,20 @@ public class OnlinePollManage extends BaseEntity {
 
     @Column(name = "poll_atmc_dsuse_yn", length = 1)
     @Builder.Default
-    private String pollAutoDsuseYn = "N";
+    private String pollAtmcDsuseYn = "N";
 
     @OneToMany(mappedBy = "pollManage", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<OnlinePollItem> pollItems = new ArrayList<>();
+    private List<OnlinePollArticle> pollArticles = new ArrayList<>();
 
-    public void update(String pollNm, String pollBgngYmd, String pollEndYmd, String pollTypeCd,
-            String pollDsuseYn, String pollAutoDsuseYn) {
+    public void update(String pollNm, String pollBgngYmd, String pollEndYmd, String pollKndCd,
+            String pollDsuseYn, String pollAtmcDsuseYn) {
         this.pollNm = pollNm;
         this.pollBgngYmd = pollBgngYmd;
         this.pollEndYmd = pollEndYmd;
-        this.pollTypeCd = pollTypeCd;
+        this.pollKndCd = pollKndCd;
         this.pollDsuseYn = pollDsuseYn;
-        this.pollAutoDsuseYn = pollAutoDsuseYn;
+        this.pollAtmcDsuseYn = pollAtmcDsuseYn;
     }
 
     // legacy

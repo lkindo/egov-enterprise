@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * 설문 문항 엔티티 (물리 DB 명세 100% 일치)
+ */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_srvy_qstn")
@@ -15,34 +18,34 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-public class QustnrQesitm extends BaseEntity {
+public class SurveyQuestion extends BaseEntity {
 
     @Id
     @Column(name = "srvy_qstn_id", length = 20)
-    private String srvyQitemId;
+    private String srvyQstnId;
 
     @Column(name = "srvy_id", length = 20)
     private String srvyId;
 
     @Column(name = "qstn_sn")
-    private Long srvyQitemSn;
+    private Long qstnSn;
 
     @Column(name = "qstn_type_cd", length = 12)
-    private String srvyQitemTypeCd;
+    private String qstnTypeCd;
 
     @Column(name = "qstn_cn", length = 4000)
-    private String srvyQitemCn;
+    private String qstnCn;
 
     @Column(name = "max_chc_cnt")
     private Integer maxChcCnt;
 
     @Column(name = "srvy_tmplt_id", length = 20)
-    private String srvyTmplatId;
+    private String srvyTmpltId;
 
-    public void update(Long srvyQitemSn, String srvyQitemTypeCd, String srvyQitemCn, Integer maxChcCnt) {
-        this.srvyQitemSn = srvyQitemSn;
-        this.srvyQitemTypeCd = srvyQitemTypeCd;
-        this.srvyQitemCn = srvyQitemCn;
+    public void update(Long qstnSn, String qstnTypeCd, String qstnCn, Integer maxChcCnt) {
+        this.qstnSn = qstnSn;
+        this.qstnTypeCd = qstnTypeCd;
+        this.qstnCn = qstnCn;
         this.maxChcCnt = maxChcCnt;
     }
 }

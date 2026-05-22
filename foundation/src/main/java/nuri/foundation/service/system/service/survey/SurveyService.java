@@ -3,10 +3,10 @@ package nuri.foundation.service.system.service.survey;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.domain.system.service.survey.*;
-import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyInfoDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyTemplateDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyArticleDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyQuestionDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,46 +21,46 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SurveyService implements EgovSurveyService {
 
-    private final QustnrTmplatRepository tmplatRepository;
-    private final QustnrInfoRepository infoRepository;
-    private final QustnrQesitmRepository qesitmRepository;
-    private final QustnrIemRepository iemRepository;
+    private final SurveyTemplateRepository tmplatRepository;
+    private final SurveyInfoRepository infoRepository;
+    private final SurveyQuestionRepository qesitmRepository;
+    private final SurveyArticleRepository iemRepository;
 
     // 설문 템플릿
     @Override
-    public Page<QustnrTmplatDto> getTmplatList(String keyword, Pageable pageable) {
+    public Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(QustnrTmplatDto::from);
+            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(SurveyTemplateDto::from);
         }
-        return tmplatRepository.findBySrvyTmplatTypeCdContaining(keyword, Objects.requireNonNull(pageable))
-                .map(QustnrTmplatDto::from);
+        return tmplatRepository.findBySrvyTmpltTypeCdContaining(keyword, Objects.requireNonNull(pageable))
+                .map(SurveyTemplateDto::from);
     }
 
     @Override
-    public QustnrTmplatDto getTmplat(String tmplatId) {
+    public SurveyTemplateDto getTmplat(String tmplatId) {
         return tmplatRepository.findById(Objects.requireNonNull(tmplatId))
-                .map(QustnrTmplatDto::from)
+                .map(SurveyTemplateDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void insertTmplat(QustnrTmplatDto dto) {
+    public void insertTmplat(SurveyTemplateDto dto) {
         String id = "QUSTMP_" + System.currentTimeMillis();
-        tmplatRepository.save(Objects.requireNonNull(QustnrTmplat.builder()
-                .srvyTmplatId(id)
-                .srvyTmplatTypeCd(dto.getSrvyTmplatTypeCd())
-                .srvyTmplatImgPath(dto.getSrvyTmplatImgPath())
-                .srvyTmplatCn(dto.getSrvyTmplatCn())
+        tmplatRepository.save(Objects.requireNonNull(SurveyTemplate.builder()
+                .srvyTmpltId(id)
+                .srvyTmpltTypeCd(dto.getSrvyTmpltTypeCd())
+                .srvyTmpltPathNm(dto.getSrvyTmpltPathNm())
+                .srvyTmpltExpln(dto.getSrvyTmpltExpln())
                 .build()));
     }
 
     @Override
     @Transactional
-    public void updateTmplat(QustnrTmplatDto dto) {
-        QustnrTmplat entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmplatId()))
+    public void updateTmplat(SurveyTemplateDto dto) {
+        SurveyTemplate entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmpltId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSrvyTmplatTypeCd(), dto.getSrvyTmplatImgPath(), dto.getSrvyTmplatCn());
+        entity.update(dto.getSrvyTmpltTypeCd(), dto.getSrvyTmpltPathNm(), dto.getSrvyTmpltExpln());
     }
 
     @Override
@@ -71,46 +71,46 @@ public class SurveyService implements EgovSurveyService {
 
     // 설문 정보
     @Override
-    public Page<QustnrInfoDto> getSurveyList(String keyword, Pageable pageable) {
+    public Page<SurveyInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return infoRepository.findAll(Objects.requireNonNull(pageable)).map(QustnrInfoDto::from);
+            return infoRepository.findAll(Objects.requireNonNull(pageable)).map(SurveyInfoDto::from);
         }
         return infoRepository.findBySrvyTtlContaining(keyword, Objects.requireNonNull(pageable))
-                .map(QustnrInfoDto::from);
+                .map(SurveyInfoDto::from);
     }
 
     @Override
-    public QustnrInfoDto getSurvey(String qustnrId) {
+    public SurveyInfoDto getSurvey(String qustnrId) {
         return infoRepository.findById(Objects.requireNonNull(qustnrId))
-                .map(QustnrInfoDto::from)
+                .map(SurveyInfoDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void insertSurvey(QustnrInfoDto dto) {
+    public void insertSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
         String id = "QESTNR_" + System.currentTimeMillis();
-        infoRepository.save(Objects.requireNonNull(QustnrInfo.builder()
+        infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
                 .srvyId(id)
                 .srvyTtl(dto.getSrvyTtl())
-                .srvyPrpsCn(dto.getSrvyPrpsCn())
-                .srvyGuidCn(dto.getSrvyGuidCn())
+                .srvyPrps(dto.getSrvyPrps())
+                .srvyWrtGdCn(dto.getSrvyWrtGdCn())
                 .srvyBgngYmd(dto.getSrvyBgngYmd())
                 .srvyEndYmd(dto.getSrvyEndYmd())
-                .srvyTrgtCn(dto.getSrvyTrgtCn())
-                .srvyTmplatId(dto.getSrvyTmplatId())
+                .srvyTrgt(dto.getSrvyTrgt())
+                .srvyTmpltId(dto.getSrvyTmpltId())
                 .build()));
     }
 
     @Override
     @Transactional
-    public void updateSurvey(QustnrInfoDto dto) {
+    public void updateSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
-        QustnrInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvyId()))
+        SurveyInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvyId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSrvyTtl(), dto.getSrvyPrpsCn(), dto.getSrvyGuidCn(),
-                dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgtCn(), dto.getSrvyTmplatId());
+        entity.update(dto.getSrvyTtl(), dto.getSrvyPrps(), dto.getSrvyWrtGdCn(),
+                dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltId());
     }
 
     @Override
@@ -121,44 +121,44 @@ public class SurveyService implements EgovSurveyService {
 
     // 설문 문항
     @Override
-    public List<QustnrQesitmDto> getQuestionList(String qustnrId) {
-        return qesitmRepository.findBySrvyIdOrderBySrvyQitemSnAsc(Objects.requireNonNull(qustnrId)).stream()
+    public List<SurveyQuestionDto> getQuestionList(String qustnrId) {
+        return qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId)).stream()
                 .map(q -> {
-                    QustnrQesitmDto dto = QustnrQesitmDto.from(q);
-                    dto.setItems(getItemList(q.getSrvyQitemId()));
+                    SurveyQuestionDto dto = SurveyQuestionDto.from(q);
+                    dto.setItems(getItemList(q.getSrvyQstnId()));
                     return dto;
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public QustnrQesitmDto getQuestion(String qesitmId) {
+    public SurveyQuestionDto getQuestion(String qesitmId) {
         return qesitmRepository.findById(Objects.requireNonNull(qesitmId))
-                .map(QustnrQesitmDto::from)
+                .map(SurveyQuestionDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void insertQuestion(QustnrQesitmDto dto) {
+    public void insertQuestion(SurveyQuestionDto dto) {
         String id = "QESITM_" + System.currentTimeMillis();
-        qesitmRepository.save(Objects.requireNonNull(QustnrQesitm.builder()
-                .srvyQitemId(id)
+        qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
+                .srvyQstnId(id)
                 .srvyId(dto.getSrvyId())
-                .srvyQitemSn(dto.getSrvyQitemSn())
-                .srvyQitemTypeCd(dto.getSrvyQitemTypeCd())
-                .srvyQitemCn(dto.getSrvyQitemCn())
+                .qstnSn(dto.getQstnSn())
+                .qstnTypeCd(dto.getQstnTypeCd())
+                .qstnCn(dto.getQstnCn())
                 .maxChcCnt(dto.getMaxChcCnt())
-                .srvyTmplatId(dto.getSrvyTmplatId())
+                .srvyTmpltId(dto.getSrvyTmpltId())
                 .build()));
     }
 
     @Override
     @Transactional
-    public void updateQuestion(QustnrQesitmDto dto) {
-        QustnrQesitm entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQitemId()))
+    public void updateQuestion(SurveyQuestionDto dto) {
+        SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSrvyQitemSn(), dto.getSrvyQitemTypeCd(), dto.getSrvyQitemCn(), dto.getMaxChcCnt());
+        entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
     }
 
     @Override
@@ -169,33 +169,33 @@ public class SurveyService implements EgovSurveyService {
 
     // 설문 항목
     @Override
-    public List<QustnrIemDto> getItemList(String qesitmId) {
-        return iemRepository.findBySrvyQitemIdOrderBySrvyItemSnAsc(Objects.requireNonNull(qesitmId)).stream()
-                .map(QustnrIemDto::from)
+    public List<SurveyArticleDto> getItemList(String qesitmId) {
+        return iemRepository.findBySrvyQstnIdOrderByArtclSnAsc(Objects.requireNonNull(qesitmId)).stream()
+                .map(SurveyArticleDto::from)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public void insertItem(QustnrIemDto dto) {
+    public void insertItem(SurveyArticleDto dto) {
         String id = "IEM_" + System.currentTimeMillis();
-        iemRepository.save(Objects.requireNonNull(QustnrIem.builder()
-                .srvyItemId(id)
-                .srvyQitemId(dto.getSrvyQitemId())
+        iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
+                .srvyArtclId(id)
+                .srvyQstnId(dto.getSrvyQstnId())
                 .srvyId(dto.getSrvyId())
-                .srvyItemSn(dto.getSrvyItemSn())
-                .srvyItemCn(dto.getSrvyItemCn())
+                .artclSn(dto.getArtclSn())
+                .artclCn(dto.getArtclCn())
                 .etcAnsYn(dto.getEtcAnsYn())
-                .srvyTmplatId(dto.getSrvyTmplatId())
+                .srvyTmpltId(dto.getSrvyTmpltId())
                 .build()));
     }
 
     @Override
     @Transactional
-    public void updateItem(QustnrIemDto dto) {
-        QustnrIem entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyItemId()))
+    public void updateItem(SurveyArticleDto dto) {
+        SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSrvyItemSn(), dto.getSrvyItemCn(), dto.getEtcAnsYn());
+        entity.update(dto.getArtclSn(), dto.getArtclCn(), dto.getEtcAnsYn());
     }
 
     @Override

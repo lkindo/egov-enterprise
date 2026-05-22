@@ -13,9 +13,9 @@ public interface SurveyRespondentRepository extends JpaRepository<SurveyResponde
 
     Page<SurveyRespondent> findBySrvyId(String srvyId, Pageable pageable);
 
-    Page<SurveyRespondent> findByRspdNmContaining(String rspdNm, Pageable pageable);
+    Page<SurveyRespondent> findByRspdntNmContaining(String rspdntNm, Pageable pageable);
 
-    @Query("SELECT s FROM SurveyRespondent s WHERE s.srvyId = :srvyId AND (s.rspdNm LIKE %:keyword% OR s.gndrCd = :keyword)")
+    @Query("SELECT s FROM SurveyRespondent s WHERE s.srvyId = :srvyId AND (s.rspdntNm LIKE %:keyword% OR s.gndrCd = :keyword)")
     Page<SurveyRespondent> searchBySrvyIdAndKeyword(@Param("srvyId") String srvyId,
             @Param("keyword") String keyword, Pageable pageable);
 }

@@ -5,6 +5,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface QustnrQesitmRepository extends JpaRepository<QustnrQesitm, String> {
-    List<QustnrQesitm> findBySrvyIdOrderBySrvyQitemSnAsc(String srvyId);
+public interface SurveyArticleRepository extends JpaRepository<SurveyArticle, String> {
+    List<SurveyArticle> findBySrvyQstnIdOrderByArtclSnAsc(String srvyQstnId);
 }

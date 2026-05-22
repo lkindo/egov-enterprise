@@ -42,7 +42,7 @@ class CnsltServiceTest {
     void getCnsltList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        CnsltManage entity = CnsltManage.builder().cnsltId("CNSLT_01").cnsltSj("Test Consult").build();
+        CnsltManage entity = CnsltManage.builder().dscsnId("CNSLT_01").dscsnTtl("Test Consult").build();
         given(cnsltManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -51,7 +51,7 @@ class CnsltServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getCnsltId()).isEqualTo("CNSLT_01");
+        assertThat(result.getContent().get(0).getDscsnId()).isEqualTo("CNSLT_01");
     }
 
     @Test
@@ -60,8 +60,8 @@ class CnsltServiceTest {
         // given
         String keyword = "Test";
         Pageable pageable = PageRequest.of(0, 10);
-        CnsltManage entity = CnsltManage.builder().cnsltId("CNSLT_01").cnsltSj("Test Consult").build();
-        given(cnsltManageRepository.findByCnsltSjContaining(keyword, pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        CnsltManage entity = CnsltManage.builder().dscsnId("CNSLT_01").dscsnTtl("Test Consult").build();
+        given(cnsltManageRepository.findByDscsnTtlContaining(keyword, pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
         Page<CnsltManageDto> result = cnsltService.getCnsltList(keyword, pageable);
@@ -69,7 +69,7 @@ class CnsltServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getCnsltSj()).isEqualTo("Test Consult");
+        assertThat(result.getContent().get(0).getDscsnTtl()).isEqualTo("Test Consult");
     }
 
     @Test
@@ -77,7 +77,7 @@ class CnsltServiceTest {
     void getCnslt_Success() {
         // given
         String cnsltId = "CNSLT_01";
-        CnsltManage entity = CnsltManage.builder().cnsltId(cnsltId).cnsltSj("Test Consult").inqireCo(0).build();
+        CnsltManage entity = CnsltManage.builder().dscsnId(cnsltId).dscsnTtl("Test Consult").inqCnt(0).build();
         given(cnsltManageRepository.findById(cnsltId)).willReturn(Optional.of(entity));
 
         // when
@@ -85,8 +85,8 @@ class CnsltServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getCnsltId()).isEqualTo(cnsltId);
-        assertThat(entity.getInqireCo()).isEqualTo(1); // 조회수 증가 확인
+        assertThat(result.getDscsnId()).isEqualTo(cnsltId);
+        assertThat(entity.getInqCnt()).isEqualTo(1); // 조회수 증가 확인
     }
 
     @Test
@@ -105,9 +105,9 @@ class CnsltServiceTest {
     void insertCnslt() {
         // given
         CnsltManageDto dto = CnsltManageDto.builder()
-                .cnsltSj("New Consult")
-                .cnsltCn("Content")
-                .othbcAt("Y")
+                .dscsnTtl("New Consult")
+                .dscsnCn("Content")
+                .rlsYn("Y")
                 .wrterNm("user1")
                 .build();
         
@@ -124,16 +124,16 @@ class CnsltServiceTest {
         // given
         String cnsltId = "CNSLT_01";
         CnsltManage existingEntity = CnsltManage.builder()
-                .cnsltId(cnsltId)
-                .cnsltSj("Old Consult")
-                .cnsltCn("Old Content")
+                .dscsnId(cnsltId)
+                .dscsnTtl("Old Consult")
+                .dscsnCn("Old Content")
                 .build();
         given(cnsltManageRepository.findById(cnsltId)).willReturn(Optional.of(existingEntity));
 
         CnsltManageDto updateDto = CnsltManageDto.builder()
-                .cnsltId(cnsltId)
-                .cnsltSj("Updated Consult")
-                .cnsltCn("Updated Content")
+                .dscsnId(cnsltId)
+                .dscsnTtl("Updated Consult")
+                .dscsnCn("Updated Content")
                 .wrterNm("user2")
                 .build();
 
@@ -141,8 +141,8 @@ class CnsltServiceTest {
         cnsltService.updateCnslt(updateDto);
 
         // then
-        assertThat(existingEntity.getCnsltSj()).isEqualTo("Updated Consult");
-        assertThat(existingEntity.getCnsltCn()).isEqualTo("Updated Content");
+        assertThat(existingEntity.getDscsnTtl()).isEqualTo("Updated Consult");
+        assertThat(existingEntity.getDscsnCn()).isEqualTo("Updated Content");
         assertThat(existingEntity.getWrterNm()).isEqualTo("user2");
     }
 
@@ -150,7 +150,7 @@ class CnsltServiceTest {
     @DisplayName("상담 수정 - 실패 (존재하지 않음)")
     void updateCnslt_Fail_NotFound() {
         // given
-        CnsltManageDto updateDto = CnsltManageDto.builder().cnsltId("CNSLT_99").build();
+        CnsltManageDto updateDto = CnsltManageDto.builder().dscsnId("CNSLT_99").build();
         given(cnsltManageRepository.findById("CNSLT_99")).willReturn(Optional.empty());
 
         // when & then
@@ -176,8 +176,8 @@ class CnsltServiceTest {
         // given
         String cnsltId = "CNSLT_01";
         CnsltManage existingEntity = CnsltManage.builder()
-                .cnsltId(cnsltId)
-                .qnaProcessSttusCode("1")
+                .dscsnId(cnsltId)
+                .qnaProcSttsCd("1")
                 .build();
         given(cnsltManageRepository.findById(cnsltId)).willReturn(Optional.of(existingEntity));
 
@@ -187,9 +187,9 @@ class CnsltServiceTest {
         cnsltService.answerCnslt(cnsltId, answerCn);
 
         // then
-        assertThat(existingEntity.getQnaProcessSttusCode()).isEqualTo("2");
-        assertThat(existingEntity.getManagtCn()).isEqualTo(answerCn);
-        assertThat(existingEntity.getManagtDe()).isNotNull();
+        assertThat(existingEntity.getQnaProcSttsCd()).isEqualTo("2");
+        assertThat(existingEntity.getProcCn()).isEqualTo(answerCn);
+        assertThat(existingEntity.getMngYmd()).isNotNull();
     }
 
     @Test

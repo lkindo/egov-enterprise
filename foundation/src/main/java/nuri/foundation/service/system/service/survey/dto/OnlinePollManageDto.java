@@ -1,6 +1,7 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.OnlinePollManage;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,48 +16,48 @@ import java.util.stream.Collectors;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "온라인 설문 관리 DTO")
+@Schema(description = "온라인 설문 관리 DTO (표준화)")
 public class OnlinePollManageDto {
 
+    @JsonProperty("pollId")
     @Schema(description = "설문 ID")
     private String pollId;
 
+    @JsonProperty("pollNm")
     @Schema(description = "설문 제목")
     private String pollNm;
 
+    @JsonProperty("pollBeginDe")
     @Schema(description = "설문 시작일")
     private String pollBgngYmd;
 
+    @JsonProperty("pollEndDe")
     @Schema(description = "설문 종료일")
     private String pollEndYmd;
 
-    // legacy aliases for E2E / Frontend
-    public String getPollBeginDe() { return pollBgngYmd; }
-    public void setPollBeginDe(String v) { this.pollBgngYmd = v; }
-    public String getPollEndDe() { return pollEndYmd; }
-    public void setPollEndDe(String v) { this.pollEndYmd = v; }
-
+    @JsonProperty("pollKindCode")
     @Schema(description = "설문 종류 코드")
-    private String pollTypeCd;
+    private String pollKndCd;
 
-    // legacy aliases for E2E / Frontend
-    public String getPollKindCode() { return pollTypeCd; }
-    public void setPollKindCode(String v) { this.pollTypeCd = v; }
-
+    @JsonProperty("pollDsuseYn")
     @Schema(description = "설문 폐기 여부")
     private String pollDsuseYn;
 
+    @JsonProperty("pollAutoDsuseYn")
     @Schema(description = "설문 자동 폐기 여부")
-    private String pollAutoDsuseYn;
+    private String pollAtmcDsuseYn;
 
+    @JsonProperty("createdBy")
     @Schema(description = "생성자 ID")
     private String createdBy;
 
+    @JsonProperty("createdDate")
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
+    @JsonProperty("pollItems")
     @Schema(description = "설문 항목 목록")
-    private List<OnlinePollItemDto> pollItems;
+    private List<OnlinePollArticleDto> pollArticles;
 
     public static OnlinePollManageDto from(OnlinePollManage entity) {
         if (entity == null) return null;
@@ -65,18 +66,18 @@ public class OnlinePollManageDto {
                 .pollNm(entity.getPollNm())
                 .pollBgngYmd(entity.getPollBgngYmd())
                 .pollEndYmd(entity.getPollEndYmd())
-                .pollTypeCd(entity.getPollTypeCd())
+                .pollKndCd(entity.getPollKndCd())
                 .pollDsuseYn(entity.getPollDsuseYn())
-                .pollAutoDsuseYn(entity.getPollAutoDsuseYn())
+                .pollAtmcDsuseYn(entity.getPollAtmcDsuseYn())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
-                .pollItems(entity.getPollItems() != null ? 
-                        entity.getPollItems().stream().map(OnlinePollItemDto::from).collect(Collectors.toList()) : 
+                .pollArticles(entity.getPollArticles() != null ? 
+                        entity.getPollArticles().stream().map(OnlinePollArticleDto::from).collect(Collectors.toList()) : 
                         Collections.emptyList())
                 .build();
     }
 
-    // legacy
+    // legacy 호환성 수호
+    @JsonProperty("pollTtl")
     public String getPollTtl() { return pollNm; }
-    public void setPollTtl(String v) { this.pollNm = v; }
 }

@@ -3,10 +3,10 @@ package nuri.foundation.api.controller.system.service.survey;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.service.system.service.survey.EgovSurveyService;
-import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyInfoDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyTemplateDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyArticleDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyQuestionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,22 +29,22 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 템플릿 목록 페이징 조회")
     @GetMapping("/templates")
-    public ResponseEntity<ApiResponse<PageResponse<QustnrTmplatDto>>> getTemplates(
+    public ResponseEntity<ApiResponse<PageResponse<SurveyTemplateDto>>> getTemplates(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<QustnrTmplatDto> page = surveyService.getTmplatList(keyword, pageable);
+        Page<SurveyTemplateDto> page = surveyService.getTmplatList(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     @Operation(summary = "설문 템플릿 상세 조회")
     @GetMapping("/templates/{tmplatId}")
-    public ResponseEntity<ApiResponse<QustnrTmplatDto>> getTemplate(@PathVariable String tmplatId) {
+    public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable String tmplatId) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(tmplatId)));
     }
 
     @Operation(summary = "설문 템플릿 등록")
     @PostMapping("/templates")
-    public ResponseEntity<ApiResponse<Void>> insertTemplate(@RequestBody QustnrTmplatDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertTemplate(@RequestBody SurveyTemplateDto dto) {
         surveyService.insertTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -53,29 +53,29 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 정보 목록 페이징 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<QustnrInfoDto>>> getSurveys(
+    public ResponseEntity<ApiResponse<PageResponse<SurveyInfoDto>>> getSurveys(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<QustnrInfoDto> page = surveyService.getSurveyList(keyword, pageable);
+        Page<SurveyInfoDto> page = surveyService.getSurveyList(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     @Operation(summary = "설문 정보 상세 조회")
     @GetMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<QustnrInfoDto>> getSurvey(@PathVariable String srvyId) {
+    public ResponseEntity<ApiResponse<SurveyInfoDto>> getSurvey(@PathVariable String srvyId) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getSurvey(srvyId)));
     }
 
     @Operation(summary = "설문 정보 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertSurvey(@RequestBody QustnrInfoDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertSurvey(@RequestBody SurveyInfoDto dto) {
         surveyService.insertSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 정보 수정")
     @PutMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String srvyId, @RequestBody QustnrInfoDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String srvyId, @RequestBody SurveyInfoDto dto) {
         dto.setSrvyId(srvyId);
         surveyService.updateSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -90,8 +90,8 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 템플릿 수정")
     @PutMapping("/templates/{tmplatId}")
-    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmplatId, @RequestBody QustnrTmplatDto dto) {
-        dto.setSrvyTmplatId(tmplatId);
+    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmplatId, @RequestBody SurveyTemplateDto dto) {
+        dto.setSrvyTmpltId(tmplatId);
         surveyService.updateTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -107,15 +107,15 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 문항 목록 조회")
     @GetMapping("/{srvyId}/questions")
-    public ResponseEntity<ApiResponse<List<QustnrQesitmDto>>> getQuestions(@PathVariable String srvyId) {
+    public ResponseEntity<ApiResponse<List<SurveyQuestionDto>>> getQuestions(@PathVariable String srvyId) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getQuestionList(srvyId)));
     }
 
     @Operation(summary = "설문 문항 수정")
     @PutMapping("/{srvyId}/questions/{srvyQitemId}")
-    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String srvyId, @PathVariable String srvyQitemId, @RequestBody QustnrQesitmDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String srvyId, @PathVariable String srvyQitemId, @RequestBody SurveyQuestionDto dto) {
         dto.setSrvyId(srvyId);
-        dto.setSrvyQitemId(srvyQitemId);
+        dto.setSrvyQstnId(srvyQitemId);
         surveyService.updateQuestion(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -130,7 +130,7 @@ public class SurveyApiController {
     @Operation(summary = "설문 문항 등록")
     @PostMapping("/{srvyId}/questions")
     public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable String srvyId,
-            @RequestBody QustnrQesitmDto dto) {
+            @RequestBody SurveyQuestionDto dto) {
         dto.setSrvyId(srvyId);
         surveyService.insertQuestion(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -138,8 +138,8 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 항목 수정")
     @PutMapping("/questions/items/{srvyItemId}")
-    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String srvyItemId, @RequestBody QustnrIemDto dto) {
-        dto.setSrvyItemId(srvyItemId);
+    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String srvyItemId, @RequestBody SurveyArticleDto dto) {
+        dto.setSrvyArtclId(srvyItemId);
         surveyService.updateItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -153,8 +153,8 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 항목 등록")
     @PostMapping("/questions/{srvyQitemId}/items")
-    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable String srvyQitemId, @RequestBody QustnrIemDto dto) {
-        dto.setSrvyQitemId(srvyQitemId);
+    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable String srvyQitemId, @RequestBody SurveyArticleDto dto) {
+        dto.setSrvyQstnId(srvyQitemId);
         surveyService.insertItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

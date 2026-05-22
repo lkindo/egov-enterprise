@@ -25,11 +25,11 @@ public class OnlinePollResult extends BaseEntity {
 
     @Id
     @Column(name = "poll_rslt_id", length = 20)
-    private String pollResultId;
+    private String pollRsltId;
 
     @Column(name = "poll_id", length = 20, nullable = false)
     private String pollId;
 
     @Column(name = "poll_artcl_id", length = 20, nullable = false)
-    private String pollIemId;
+    private String pollArtclId;
 }

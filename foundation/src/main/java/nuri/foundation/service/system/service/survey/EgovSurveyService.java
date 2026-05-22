@@ -1,53 +1,53 @@
 package nuri.foundation.service.system.service.survey;
 
-import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyInfoDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyTemplateDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyArticleDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyQuestionDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface EgovSurveyService {
     // 템플릿
-    Page<QustnrTmplatDto> getTmplatList(String keyword, Pageable pageable);
+    Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable);
 
-    QustnrTmplatDto getTmplat(String tmplatId);
+    SurveyTemplateDto getTmplat(String tmplatId);
 
-    void insertTmplat(QustnrTmplatDto dto);
+    void insertTmplat(SurveyTemplateDto dto);
 
-    void updateTmplat(QustnrTmplatDto dto);
+    void updateTmplat(SurveyTemplateDto dto);
 
     void deleteTmplat(String tmplatId);
 
     // 설문정보
-    Page<QustnrInfoDto> getSurveyList(String keyword, Pageable pageable);
+    Page<SurveyInfoDto> getSurveyList(String keyword, Pageable pageable);
 
-    QustnrInfoDto getSurvey(String srvyId);
+    SurveyInfoDto getSurvey(String srvyId);
 
-    void insertSurvey(QustnrInfoDto dto);
+    void insertSurvey(SurveyInfoDto dto);
 
-    void updateSurvey(QustnrInfoDto dto);
+    void updateSurvey(SurveyInfoDto dto);
 
     void deleteSurvey(String srvyId);
 
     // 설문문항
-    List<QustnrQesitmDto> getQuestionList(String srvyId);
+    List<SurveyQuestionDto> getQuestionList(String srvyId);
 
-    QustnrQesitmDto getQuestion(String srvyQitemId);
+    SurveyQuestionDto getQuestion(String srvyQstnId);
 
-    void insertQuestion(QustnrQesitmDto dto);
+    void insertQuestion(SurveyQuestionDto dto);
 
-    void updateQuestion(QustnrQesitmDto dto);
+    void updateQuestion(SurveyQuestionDto dto);
 
-    void deleteQuestion(String srvyQitemId);
+    void deleteQuestion(String srvyQstnId);
 
     // 설문항목
-    List<QustnrIemDto> getItemList(String srvyQitemId);
+    List<SurveyArticleDto> getItemList(String srvyQstnId);
 
-    void insertItem(QustnrIemDto dto);
+    void insertItem(SurveyArticleDto dto);
 
-    void updateItem(QustnrIemDto dto);
+    void updateItem(SurveyArticleDto dto);
 
-    void deleteItem(String srvyItemId);
+    void deleteItem(String srvyArtclId);
 }

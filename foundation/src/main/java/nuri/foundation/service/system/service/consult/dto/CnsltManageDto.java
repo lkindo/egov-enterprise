@@ -2,6 +2,7 @@ package nuri.foundation.service.system.service.consult.dto;
 
 import nuri.foundation.domain.system.service.consult.CnsltManage;
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,34 +17,80 @@ import java.time.LocalDateTime;
 public class CnsltManageDto {
 
     @Schema(description = "Consultation ID")
-    private String cnsltId;
+    @JsonProperty("cnsltId")
+    private String dscsnId;
 
     @Schema(description = "Consultation Subject")
-    private String cnsltSj;
+    @JsonProperty("cnsltSj")
+    private String dscsnTtl;
 
     @Schema(description = "Consultation Content")
-    private String cnsltCn;
+    @JsonProperty("cnsltCn")
+    private String dscsnCn;
 
     @Schema(description = "Public Status")
-    private String othbcAt;
+    @JsonProperty("othbcAt")
+    private String rlsYn;
 
     @Schema(description = "Writing Password")
-    private String writngPassword;
+    @JsonProperty("writngPassword")
+    private String wrtPswd;
 
     @Schema(description = "Writer Name")
+    @JsonProperty("wrterNm")
     private String wrterNm;
 
+    @Schema(description = "Area No")
+    @JsonProperty("areaNo")
+    private String areaNo;
+
+    @Schema(description = "Middle Telno")
+    @JsonProperty("middleTelno")
+    private String mdTelno;
+
+    @Schema(description = "End Telno")
+    @JsonProperty("endTelno")
+    private String endTelno;
+
+    @Schema(description = "First Moblphon No")
+    @JsonProperty("firstMoblphonNo")
+    private String mblFrstTelno;
+
+    @Schema(description = "Middle Mbtlnum")
+    @JsonProperty("middleMbtlnum")
+    private String mblMdTelno;
+
+    @Schema(description = "End Mbtlnum")
+    @JsonProperty("endMbtlnum")
+    private String mblEndTelno;
+
+    @Schema(description = "Email Address")
+    @JsonProperty("emailAdres")
+    private String emlAddr;
+
+    @Schema(description = "Email Answer YN")
+    @JsonProperty("emailAnswerAt")
+    private String emlAnsYn;
+
     @Schema(description = "Inquiry Count")
-    private Integer inqireCo;
+    @JsonProperty("inqireCo")
+    private Integer inqCnt;
 
     @Schema(description = "Process Status Code")
-    private String qnaProcessSttusCode;
+    @JsonProperty("qnaProcessSttusCode")
+    private String qnaProcSttsCd;
+
+    @Schema(description = "Attachment File ID")
+    @JsonProperty("atchFileId")
+    private String atchFileId;
 
     @Schema(description = "Management Content")
-    private String managtCn;
+    @JsonProperty("managtCn")
+    private String procCn;
 
     @Schema(description = "Management Date")
-    private String managtDe;
+    @JsonProperty("managtDe")
+    private String mngYmd;
 
     @Schema(description = "Created By ID")
     private String createdBy;
@@ -55,16 +102,25 @@ public class CnsltManageDto {
         if (entity == null)
             return null;
         return CnsltManageDto.builder()
-                .cnsltId(entity.getCnsltId())
-                .cnsltSj(entity.getCnsltSj())
-                .cnsltCn(entity.getCnsltCn())
-                .othbcAt(entity.getOthbcAt())
-                .writngPassword(entity.getWritngPassword())
+                .dscsnId(entity.getDscsnId())
+                .dscsnTtl(entity.getDscsnTtl())
+                .dscsnCn(entity.getDscsnCn())
+                .rlsYn(entity.getRlsYn())
+                .wrtPswd(entity.getWrtPswd())
                 .wrterNm(entity.getWrterNm())
-                .inqireCo(entity.getInqireCo())
-                .qnaProcessSttusCode(entity.getQnaProcessSttusCode())
-                .managtCn(entity.getManagtCn())
-                .managtDe(entity.getManagtDe())
+                .areaNo(entity.getAreaNo())
+                .mdTelno(entity.getMdTelno())
+                .endTelno(entity.getEndTelno())
+                .mblFrstTelno(entity.getMblFrstTelno())
+                .mblMdTelno(entity.getMblMdTelno())
+                .mblEndTelno(entity.getMblEndTelno())
+                .emlAddr(entity.getEmlAddr())
+                .emlAnsYn(entity.getEmlAnsYn())
+                .inqCnt(entity.getInqCnt())
+                .qnaProcSttsCd(entity.getQnaProcSttsCd())
+                .atchFileId(entity.getAtchFileId())
+                .procCn(entity.getProcCn())
+                .mngYmd(entity.getMngYmd())
                 .createdBy(entity.getFrstRegisterId())
                 .createdDate(entity.getFrstRegisterPnttm())
                 .build();

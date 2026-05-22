@@ -26,94 +26,94 @@ public class CnsltManage extends BaseEntity {
 
     @Id
     @Column(name = "dscsn_id", length = 20)
-    private String cnsltId;
+    private String dscsnId;
 
     @Column(name = "dscsn_ttl", length = 100)
-    private String cnsltSj;
+    private String dscsnTtl;
 
     @Column(name = "dscsn_cn", columnDefinition = "TEXT", length = 4000)
-    private String cnsltCn;
+    private String dscsnCn;
 
     @Column(name = "rls_yn", length = 1)
-    private String othbcAt;
+    private String rlsYn;
 
     @Column(name = "wrt_pswd", length = 200)
-    private String writngPassword;
+    private String wrtPswd;
 
     @Column(name = "area_no", length = 4)
     private String areaNo;
 
     @Column(name = "md_telno", length = 4)
-    private String middleTelno;
+    private String mdTelno;
 
     @Column(name = "end_telno", length = 4)
     private String endTelno;
 
     @Column(name = "mbl_frst_telno", length = 4)
-    private String firstMoblphonNo;
+    private String mblFrstTelno;
 
     @Column(name = "mbl_md_telno", length = 4)
-    private String middleMbtlnum;
+    private String mblMdTelno;
 
     @Column(name = "mbl_end_telno", length = 4)
-    private String endMbtlnum;
+    private String mblEndTelno;
 
     @Column(name = "eml_addr", length = 100)
-    private String emailAdres;
+    private String emlAddr;
 
     @Column(name = "eml_ans_yn", length = 1)
-    private String emailAnswerAt;
+    private String emlAnsYn;
 
     @Column(name = "wrter_nm", length = 100)
     private String wrterNm;
 
     @Column(name = "wrt_ymd", length = 20)
-    private String writngDe;
+    private String wrtYmd;
 
     @Column(name = "inq_cnt")
     @Builder.Default
-    private Integer inqireCo = 0;
+    private Integer inqCnt = 0;
 
     @Column(name = "qna_proc_stts_cd", length = 3)
     @Builder.Default
-    private String qnaProcessSttusCode = "1";
+    private String qnaProcSttsCd = "1";
 
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     @Column(name = "proc_cn", columnDefinition = "TEXT", length = 4000)
-    private String managtCn;
+    private String procCn;
 
     @Column(name = "mng_ymd", length = 20)
-    private String managtDe;
+    private String mngYmd;
 
-    public void update(String cnsltSj, String cnsltCn, String othbcAt, String writngPassword,
-            String areaNo, String middleTelno, String endTelno, String firstMoblphonNo, String middleMbtlnum,
-            String endMbtlnum,
-            String emailAdres, String emailAnswerAt, String wrterNm, String atchFileId) {
-        this.cnsltSj = cnsltSj;
-        this.cnsltCn = cnsltCn;
-        this.othbcAt = othbcAt;
-        this.writngPassword = writngPassword;
+    public void update(String dscsnTtl, String dscsnCn, String rlsYn, String wrtPswd,
+            String areaNo, String mdTelno, String endTelno, String mblFrstTelno, String mblMdTelno,
+            String mblEndTelno,
+            String emlAddr, String emlAnsYn, String wrterNm, String atchFileId) {
+        this.dscsnTtl = dscsnTtl;
+        this.dscsnCn = dscsnCn;
+        this.rlsYn = rlsYn;
+        this.wrtPswd = wrtPswd;
         this.areaNo = areaNo;
-        this.middleTelno = middleTelno;
+        this.mdTelno = mdTelno;
         this.endTelno = endTelno;
-        this.firstMoblphonNo = firstMoblphonNo;
-        this.middleMbtlnum = middleMbtlnum;
-        this.endMbtlnum = endMbtlnum;
-        this.emailAdres = emailAdres;
-        this.emailAnswerAt = emailAnswerAt;
+        this.mblFrstTelno = mblFrstTelno;
+        this.mblMdTelno = mblMdTelno;
+        this.mblEndTelno = mblEndTelno;
+        this.emlAddr = emlAddr;
+        this.emlAnsYn = emlAnsYn;
         this.wrterNm = wrterNm;
         this.atchFileId = atchFileId;
     }
 
     public void incrementInqireCo() {
-        this.inqireCo = (this.inqireCo == null ? 0 : this.inqireCo) + 1;
+        this.inqCnt = (this.inqCnt == null ? 0 : this.inqCnt) + 1;
     }
 
-    public void updateAnswer(String qnaProcessSttusCode, String managtCn) {
-        this.qnaProcessSttusCode = qnaProcessSttusCode;
-        this.managtCn = managtCn;
-        this.managtDe = LocalDateTime.now().toString();
+    public void updateAnswer(String qnaProcSttsCd, String procCn) {
+        this.qnaProcSttsCd = qnaProcSttsCd;
+        this.procCn = procCn;
+        this.mngYmd = LocalDateTime.now().toString();
     }
 }

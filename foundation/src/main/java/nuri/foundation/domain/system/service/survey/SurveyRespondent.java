@@ -23,28 +23,28 @@ public class SurveyRespondent extends BaseEntity {
 
     @Id
     @Column(name = "srvy_rspdnt_id", length = 20)
-    private String srvyRspdId;
+    private String srvyRspdntId;
 
     @Column(name = "srvy_id", length = 20, nullable = false)
     private String srvyId;
 
     @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
-    private String srvyTmplatId;
+    private String srvyTmpltId;
 
     @Column(name = "gndr_cd", length = 12)
     private String gndrCd;
 
     @Column(name = "cr_type_cd", length = 12)
-    private String jobTypeCd;
+    private String crTypeCd;
 
     @Column(name = "rspdnt_nm", length = 100)
-    private String rspdNm;
+    private String rspdntNm;
 
     @Column(name = "brdt", length = 8)
-    private String brthYmd;
+    private String brdt;
 
     @Column(name = "rgn_telno", length = 4)
-    private String areaTelno;
+    private String rgnTelno;
 
     @Column(name = "mid_telno", length = 4)
     private String midTelno;
@@ -52,13 +52,13 @@ public class SurveyRespondent extends BaseEntity {
     @Column(name = "end_telno", length = 4)
     private String endTelno;
 
-    public void update(String gndrCd, String jobTypeCd, String rspdNm, String brthYmd,
-            String areaTelno, String midTelno, String endTelno) {
+    public void update(String gndrCd, String crTypeCd, String rspdntNm, String brdt,
+            String rgnTelno, String midTelno, String endTelno) {
         this.gndrCd = gndrCd;
-        this.jobTypeCd = jobTypeCd;
-        this.rspdNm = rspdNm;
-        this.brthYmd = brthYmd;
-        this.areaTelno = areaTelno;
+        this.crTypeCd = crTypeCd;
+        this.rspdntNm = rspdntNm;
+        this.brdt = brdt;
+        this.rgnTelno = rgnTelno;
         this.midTelno = midTelno;
         this.endTelno = endTelno;
     }

@@ -9,7 +9,7 @@ import java.util.List;
  * 온라인설문 결과 Repository
  */
 public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResult, String> {
-    long countByPollIemId(String pollIemId);
+    long countByPollArtclId(String pollArtclId);
 
     @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollId = :pollId AND r.createdBy = :frstRegisterId")
     long countByPollIdAndFrstRegisterId(@Param("pollId") String pollId, @Param("frstRegisterId") String frstRegisterId);

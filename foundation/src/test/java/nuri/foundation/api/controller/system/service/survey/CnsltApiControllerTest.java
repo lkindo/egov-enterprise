@@ -33,11 +33,11 @@ public class CnsltApiControllerTest extends BaseControllerTest {
     @Test
     public void getConsultations_ShouldReturnPagedList() throws Exception {
         CnsltManageDto dto = CnsltManageDto.builder()
-                .cnsltId("CNSLT_001")
-                .cnsltSj("시스템 연동 문의")
-                .cnsltCn("차세대 표준 프레임워크 연동 질문입니다.")
+                .dscsnId("CNSLT_001")
+                .dscsnTtl("시스템 연동 문의")
+                .dscsnCn("차세대 표준 프레임워크 연동 질문입니다.")
                 .wrterNm("홍길동")
-                .qnaProcessSttusCode("3")
+                .qnaProcSttsCd("3")
                 .build();
         Page<CnsltManageDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
 
@@ -56,11 +56,11 @@ public class CnsltApiControllerTest extends BaseControllerTest {
     @Test
     public void getConsultation_ShouldReturnDetail() throws Exception {
         CnsltManageDto dto = CnsltManageDto.builder()
-                .cnsltId("CNSLT_001")
-                .cnsltSj("시스템 연동 문의")
-                .cnsltCn("차세대 표준 프레임워크 연동 질문입니다.")
+                .dscsnId("CNSLT_001")
+                .dscsnTtl("시스템 연동 문의")
+                .dscsnCn("차세대 표준 프레임워크 연동 질문입니다.")
                 .wrterNm("홍길동")
-                .qnaProcessSttusCode("3")
+                .qnaProcSttsCd("3")
                 .build();
 
         when(cnsltService.getCnslt("CNSLT_001")).thenReturn(dto);
@@ -76,8 +76,8 @@ public class CnsltApiControllerTest extends BaseControllerTest {
     @Test
     public void insertConsultation_ShouldSucceed() throws Exception {
         CnsltManageDto dto = CnsltManageDto.builder()
-                .cnsltSj("신규 상담 등록")
-                .cnsltCn("상담 내용")
+                .dscsnTtl("신규 상담 등록")
+                .dscsnCn("상담 내용")
                 .wrterNm("임꺽정")
                 .build();
 

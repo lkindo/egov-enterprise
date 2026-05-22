@@ -24,7 +24,7 @@ public class CnsltService implements EgovCnsltService {
         if (keyword == null || keyword.isEmpty()) {
             return cnsltManageRepository.findAll(Objects.requireNonNull(pageable)).map(CnsltManageDto::from);
         }
-        return cnsltManageRepository.findByCnsltSjContaining(keyword, Objects.requireNonNull(pageable))
+        return cnsltManageRepository.findByDscsnTtlContaining(keyword, Objects.requireNonNull(pageable))
                 .map(CnsltManageDto::from);
     }
 
@@ -42,11 +42,11 @@ public class CnsltService implements EgovCnsltService {
     public void insertCnslt(CnsltManageDto dto) {
         String id = "CNSLT_" + System.currentTimeMillis();
         cnsltManageRepository.save(Objects.requireNonNull(CnsltManage.builder()
-                .cnsltId(id)
-                .cnsltSj(dto.getCnsltSj())
-                .cnsltCn(dto.getCnsltCn())
-                .othbcAt(dto.getOthbcAt())
-                .writngPassword(dto.getWritngPassword())
+                .dscsnId(id)
+                .dscsnTtl(dto.getDscsnTtl())
+                .dscsnCn(dto.getDscsnCn())
+                .rlsYn(dto.getRlsYn())
+                .wrtPswd(dto.getWrtPswd())
                 .wrterNm(dto.getWrterNm())
                 .build()));
     }
@@ -54,9 +54,9 @@ public class CnsltService implements EgovCnsltService {
     @Override
     @Transactional
     public void updateCnslt(CnsltManageDto dto) {
-        CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(dto.getCnsltId()))
+        CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(dto.getDscsnId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getCnsltSj(), dto.getCnsltCn(), dto.getOthbcAt(), dto.getWritngPassword(),
+        entity.update(dto.getDscsnTtl(), dto.getDscsnCn(), dto.getRlsYn(), dto.getWrtPswd(),
                 null, null, null, null, null, null,
                 null, null, dto.getWrterNm(), null);
     }

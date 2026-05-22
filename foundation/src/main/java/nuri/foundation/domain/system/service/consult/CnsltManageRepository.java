@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CnsltManageRepository extends JpaRepository<CnsltManage, String> {
-    Page<CnsltManage> findByCnsltSjContaining(String keyword, Pageable pageable);
+    Page<CnsltManage> findByDscsnTtlContaining(String keyword, Pageable pageable);
 }

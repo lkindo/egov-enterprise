@@ -1,15 +1,14 @@
 package nuri.foundation.domain.system.service.survey;
+
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 설문조사 정보 엔티티
- * 매핑 테이블: NQUSTNRINFO (현대화 통합)
+ * 설문조사 정보 엔티티 (물리 DB 명세 100% 일치)
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -19,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-public class QustnrInfo extends BaseEntity {
+public class SurveyInfo extends BaseEntity {
 
     @Id
     @Column(name = "srvy_id", length = 20)
@@ -29,10 +28,10 @@ public class QustnrInfo extends BaseEntity {
     private String srvyTtl;
 
     @Column(name = "srvy_prps", length = 1000)
-    private String srvyPrpsCn;
+    private String srvyPrps;
 
     @Column(name = "srvy_wrt_gd_cn", length = 4000)
-    private String srvyGuidCn;
+    private String srvyWrtGdCn;
 
     @Column(name = "srvy_bgng_ymd", length = 8)
     private String srvyBgngYmd;
@@ -41,19 +40,19 @@ public class QustnrInfo extends BaseEntity {
     private String srvyEndYmd;
 
     @Column(name = "srvy_trgt", length = 1000)
-    private String srvyTrgtCn;
+    private String srvyTrgt;
 
     @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
-    private String srvyTmplatId;
+    private String srvyTmpltId;
 
-    public void update(String srvyTtl, String srvyPrpsCn, String srvyGuidCn,
-            String srvyBgngYmd, String srvyEndYmd, String srvyTrgtCn, String srvyTmplatId) {
+    public void update(String srvyTtl, String srvyPrps, String srvyWrtGdCn,
+            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, String srvyTmpltId) {
         this.srvyTtl = srvyTtl;
-        this.srvyPrpsCn = srvyPrpsCn;
-        this.srvyGuidCn = srvyGuidCn;
+        this.srvyPrps = srvyPrps;
+        this.srvyWrtGdCn = srvyWrtGdCn;
         this.srvyBgngYmd = srvyBgngYmd;
         this.srvyEndYmd = srvyEndYmd;
-        this.srvyTrgtCn = srvyTrgtCn;
-        this.srvyTmplatId = srvyTmplatId;
+        this.srvyTrgt = srvyTrgt;
+        this.srvyTmpltId = srvyTmpltId;
     }
 }

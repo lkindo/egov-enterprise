@@ -2,10 +2,10 @@ package nuri.foundation.api.controller.system.service.survey;
 
 import nuri.foundation.test.BaseControllerTest;
 import nuri.foundation.service.system.service.survey.EgovSurveyService;
-import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyInfoDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyTemplateDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyArticleDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyQuestionDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,11 +37,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void getTemplates_ShouldReturnPagedTemplates() throws Exception {
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatId("TMPLAT_001")
-                .srvyTmplatCn("만족도 설문 템플릿")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltId("TMPLAT_001")
+                .srvyTmpltExpln("만족도 설문 템플릿")
                 .build();
-        Page<QustnrTmplatDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
+        Page<SurveyTemplateDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
 
         when(surveyService.getTmplatList(eq("만족도"), any(Pageable.class))).thenReturn(page);
 
@@ -56,9 +56,9 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void getTemplate_ShouldReturnTemplateDetail() throws Exception {
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatId("TMPLAT_001")
-                .srvyTmplatCn("만족도 설문 템플릿")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltId("TMPLAT_001")
+                .srvyTmpltExpln("만족도 설문 템플릿")
                 .build();
 
         when(surveyService.getTmplat("TMPLAT_001")).thenReturn(dto);
@@ -72,11 +72,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void insertTemplate_ShouldSucceed() throws Exception {
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatCn("신규 만족도 템플릿")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltExpln("신규 만족도 템플릿")
                 .build();
 
-        doNothing().when(surveyService).insertTmplat(any(QustnrTmplatDto.class));
+        doNothing().when(surveyService).insertTmplat(any(SurveyTemplateDto.class));
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/templates")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -84,16 +84,16 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).insertTmplat(any(QustnrTmplatDto.class));
+        verify(surveyService, times(1)).insertTmplat(any(SurveyTemplateDto.class));
     }
 
     @Test
     public void updateTemplate_ShouldSucceed() throws Exception {
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatCn("수정 만족도 템플릿")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltExpln("수정 만족도 템플릿")
                 .build();
 
-        doNothing().when(surveyService).updateTmplat(any(QustnrTmplatDto.class));
+        doNothing().when(surveyService).updateTmplat(any(SurveyTemplateDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/surveys/templates/TMPLAT_001")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).updateTmplat(argThat(t -> "TMPLAT_001".equals(t.getSrvyTmplatId())));
+        verify(surveyService, times(1)).updateTmplat(argThat(t -> "TMPLAT_001".equals(t.getSrvyTmpltId())));
     }
 
     @Test
@@ -119,11 +119,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void getSurveys_ShouldReturnPagedSurveys() throws Exception {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyId("SRVY_001")
                 .srvyTtl("2026년 상반기 임직원 만족도 조사")
                 .build();
-        Page<QustnrInfoDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
+        Page<SurveyInfoDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
 
         when(surveyService.getSurveyList(eq("상반기"), any(Pageable.class))).thenReturn(page);
 
@@ -138,7 +138,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void getSurvey_ShouldReturnSurveyDetail() throws Exception {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyId("SRVY_001")
                 .srvyTtl("2026년 상반기 임직원 만족도 조사")
                 .build();
@@ -154,11 +154,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void insertSurvey_ShouldSucceed() throws Exception {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyTtl("신규 설문조사")
                 .build();
 
-        doNothing().when(surveyService).insertSurvey(any(QustnrInfoDto.class));
+        doNothing().when(surveyService).insertSurvey(any(SurveyInfoDto.class));
 
         mockMvc.perform(post("/api/v1/admin/system/surveys")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -166,16 +166,16 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).insertSurvey(any(QustnrInfoDto.class));
+        verify(surveyService, times(1)).insertSurvey(any(SurveyInfoDto.class));
     }
 
     @Test
     public void updateSurvey_ShouldSucceed() throws Exception {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyTtl("수정 설문조사")
                 .build();
 
-        doNothing().when(surveyService).updateSurvey(any(QustnrInfoDto.class));
+        doNothing().when(surveyService).updateSurvey(any(SurveyInfoDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/surveys/SRVY_001")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -201,9 +201,9 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void getQuestions_ShouldReturnList() throws Exception {
-        QustnrQesitmDto dto = QustnrQesitmDto.builder()
-                .srvyQitemId("Q_001")
-                .srvyQitemCn("현재 직무에 만족하십니까?")
+        SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .srvyQstnId("Q_001")
+                .qstnCn("현재 직무에 만족하십니까?")
                 .build();
 
         when(surveyService.getQuestionList("SRVY_001")).thenReturn(Collections.singletonList(dto));
@@ -217,11 +217,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void insertQuestion_ShouldSucceed() throws Exception {
-        QustnrQesitmDto dto = QustnrQesitmDto.builder()
-                .srvyQitemCn("직무 만족도 질문")
+        SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .qstnCn("직무 만족도 질문")
                 .build();
 
-        doNothing().when(surveyService).insertQuestion(any(QustnrQesitmDto.class));
+        doNothing().when(surveyService).insertQuestion(any(SurveyQuestionDto.class));
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/SRVY_001/questions")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -234,11 +234,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void updateQuestion_ShouldSucceed() throws Exception {
-        QustnrQesitmDto dto = QustnrQesitmDto.builder()
-                .srvyQitemCn("직무 만족도 질문 수정")
+        SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .qstnCn("직무 만족도 질문 수정")
                 .build();
 
-        doNothing().when(surveyService).updateQuestion(any(QustnrQesitmDto.class));
+        doNothing().when(surveyService).updateQuestion(any(SurveyQuestionDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/surveys/SRVY_001/questions/Q_001")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -246,7 +246,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).updateQuestion(argThat(q -> "SRVY_001".equals(q.getSrvyId()) && "Q_001".equals(q.getSrvyQitemId())));
+        verify(surveyService, times(1)).updateQuestion(argThat(q -> "SRVY_001".equals(q.getSrvyId()) && "Q_001".equals(q.getSrvyQstnId())));
     }
 
     @Test
@@ -264,11 +264,11 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void insertItem_ShouldSucceed() throws Exception {
-        QustnrIemDto dto = QustnrIemDto.builder()
-                .srvyItemCn("매우 만족")
+        SurveyArticleDto dto = SurveyArticleDto.builder()
+                .artclCn("매우 만족")
                 .build();
 
-        doNothing().when(surveyService).insertItem(any(QustnrIemDto.class));
+        doNothing().when(surveyService).insertItem(any(SurveyArticleDto.class));
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/questions/Q_001/items")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -276,16 +276,16 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).insertItem(argThat(i -> "Q_001".equals(i.getSrvyQitemId())));
+        verify(surveyService, times(1)).insertItem(argThat(i -> "Q_001".equals(i.getSrvyQstnId())));
     }
 
     @Test
     public void updateItem_ShouldSucceed() throws Exception {
-        QustnrIemDto dto = QustnrIemDto.builder()
-                .srvyItemCn("매우 만족 수정")
+        SurveyArticleDto dto = SurveyArticleDto.builder()
+                .artclCn("매우 만족 수정")
                 .build();
 
-        doNothing().when(surveyService).updateItem(any(QustnrIemDto.class));
+        doNothing().when(surveyService).updateItem(any(SurveyArticleDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/surveys/questions/items/ITEM_001")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -293,7 +293,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).updateItem(argThat(i -> "ITEM_001".equals(i.getSrvyItemId())));
+        verify(surveyService, times(1)).updateItem(argThat(i -> "ITEM_001".equals(i.getSrvyArtclId())));
     }
 
     @Test

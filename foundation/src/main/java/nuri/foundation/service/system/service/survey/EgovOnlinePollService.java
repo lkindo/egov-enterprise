@@ -1,6 +1,6 @@
 package nuri.foundation.service.system.service.survey;
 
-import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
+import nuri.foundation.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,10 +13,10 @@ public interface EgovOnlinePollService {
     void updatePoll(OnlinePollManageDto dto);
     void deletePoll(String pollId);
 
-    List<OnlinePollItemDto> getPollItemList(String pollId);
-    void insertPollItem(OnlinePollItemDto dto);
-    void updatePollItem(OnlinePollItemDto dto);
-    void deletePollItem(String pollIemId);
+    List<OnlinePollArticleDto> getPollItemList(String pollId);
+    void insertPollItem(OnlinePollArticleDto dto);
+    void updatePollItem(OnlinePollArticleDto dto);
+    void deletePollItem(String pollArtclId);
 
-    void vote(String pollId, String pollIemId, String userId);
+    void vote(String pollId, String pollArtclId, String userId);
 }

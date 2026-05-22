@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, String> {
-    List<OnlinePollManage> findByPollDsuseYnAndPollAutoDsuseYn(String dsuseYn, String autoDsuseYn);
+    List<OnlinePollManage> findByPollDsuseYnAndPollAtmcDsuseYn(String dsuseYn, String atmcDsuseYn);
 
     @Query("SELECT p FROM OnlinePollManage p WHERE LOWER(p.pollNm) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<OnlinePollManage> findByPollNmContaining(@Param("keyword") String keyword, Pageable pageable);

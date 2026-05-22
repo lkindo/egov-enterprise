@@ -2,7 +2,7 @@ package nuri.foundation.service.system.service.survey;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.system.service.survey.*;
-import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
+import nuri.foundation.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class OnlinePollServiceTest {
     @Mock
     private OnlinePollManageRepository pollManageRepository;
     @Mock
-    private OnlinePollItemRepository pollItemRepository;
+    private OnlinePollArticleRepository pollItemRepository;
     @Mock
     private OnlinePollResultRepository pollResultRepository;
 
@@ -86,13 +86,13 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         
-        OnlinePollItem item = OnlinePollItem.builder().pollIemId("I1").pollManage(entity).pollIemNm("Item 1").build();
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclId("I1").pollManage(entity).pollArtclNm("Item 1").build();
         given(pollItemRepository.findByPollManagePollId("P1")).willReturn(List.of(item));
 
         OnlinePollManageDto result = onlinePollService.getPoll("P1");
 
         assertThat(result.getPollId()).isEqualTo("P1");
-        assertThat(result.getPollItems()).hasSize(1);
+        assertThat(result.getPollArticles()).hasSize(1);
     }
 
     @Test
@@ -107,10 +107,10 @@ class OnlinePollServiceTest {
     void insertPoll() {
         try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            OnlinePollItemDto itemDto = OnlinePollItemDto.builder().pollIemNm("Item").build();
+            OnlinePollArticleDto itemDto = OnlinePollArticleDto.builder().pollArtclNm("Item").build();
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollNm("New Poll")
-                    .pollItems(List.of(itemDto))
+                    .pollArticles(List.of(itemDto))
                     .build();
 
             onlinePollService.insertPoll(dto);
@@ -127,20 +127,20 @@ class OnlinePollServiceTest {
             OnlinePollManage entity = OnlinePollManage.builder()
                     .pollId("P1")
                     .pollNm("Old")
-                    .pollItems(new ArrayList<>())
+                    .pollArticles(new ArrayList<>())
                     .build();
             given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollId("P1")
                     .pollNm("New")
-                    .pollItems(List.of(OnlinePollItemDto.builder().pollIemNm("New Item").build()))
+                    .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclNm("New Item").build()))
                     .build();
 
             onlinePollService.updatePoll(dto);
 
             assertThat(entity.getPollNm()).isEqualTo("New");
-            assertThat(entity.getPollItems()).hasSize(1);
+            assertThat(entity.getPollArticles()).hasSize(1);
         }
     }
 
@@ -237,28 +237,28 @@ class OnlinePollServiceTest {
         OnlinePollManage poll = OnlinePollManage.builder().pollId("P1").build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(poll));
         
-        OnlinePollItemDto dto = OnlinePollItemDto.builder().pollId("P1").pollIemNm("Item").build();
+        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollId("P1").pollArtclNm("Item").build();
         onlinePollService.insertPollItem(dto);
-        verify(pollItemRepository, times(1)).save(any(OnlinePollItem.class));
+        verify(pollItemRepository, times(1)).save(any(OnlinePollArticle.class));
     }
 
     @Test
     @DisplayName("설문 항목 수정 - 성공")
     void updatePollItem_Success() {
-        OnlinePollItem entity = OnlinePollItem.builder().pollIemId("I1").pollIemNm("Old").build();
+        OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
         given(pollItemRepository.findById("I1")).willReturn(Optional.of(entity));
 
-        OnlinePollItemDto dto = OnlinePollItemDto.builder().pollIemId("I1").pollIemNm("New").build();
+        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I1").pollArtclNm("New").build();
         onlinePollService.updatePollItem(dto);
 
-        assertThat(entity.getPollIemNm()).isEqualTo("New");
+        assertThat(entity.getPollArtclNm()).isEqualTo("New");
     }
 
     @Test
     @DisplayName("설문 항목 수정 - 실패 (데이터 없음)")
     void updatePollItem_Fail() {
         given(pollItemRepository.findById("I99")).willReturn(Optional.empty());
-        OnlinePollItemDto dto = OnlinePollItemDto.builder().pollIemId("I99").build();
+        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I99").build();
         assertThrows(BusinessException.class, () -> onlinePollService.updatePollItem(dto));
     }
 

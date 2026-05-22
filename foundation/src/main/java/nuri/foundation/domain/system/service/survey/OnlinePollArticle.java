@@ -12,34 +12,31 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 온라인 폴 항목 엔티티
- * 매핑 테이블: TB_ONLN_POLL_ARTCL
+ * 온라인 폴 항목 엔티티 (표준화)
+ * 매핑 테이블: tb_onln_poll_artcl
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_onln_poll_artcl")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-public class OnlinePollItem extends BaseEntity {
+public class OnlinePollArticle extends BaseEntity {
 
     @Id
     @Column(name = "poll_artcl_id", length = 20)
-    private String pollIemId;
+    private String pollArtclId;
 
     @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
-    @jakarta.persistence.JoinColumn(name = "POLL_ID")
+    @jakarta.persistence.JoinColumn(name = "poll_id")
     private OnlinePollManage pollManage;
 
     @Column(name = "poll_artcl_nm", length = 100, nullable = false)
-    private String pollIemNm;
+    private String pollArtclNm;
 
-    public void update(String pollIemNm) {
-        this.pollIemNm = pollIemNm;
+    public void update(String pollArtclNm) {
+        this.pollArtclNm = pollArtclNm;
     }
-
-    // legacy getters for compatibility
-    public String getPollIemId() { return pollIemId; }
-    public String getPollIemNm() { return pollIemNm; }
 }

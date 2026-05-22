@@ -2,10 +2,10 @@ package nuri.foundation.service.system.service.survey;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.system.service.survey.*;
-import nuri.foundation.service.system.service.survey.dto.QustnrIemDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrInfoDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrQesitmDto;
-import nuri.foundation.service.system.service.survey.dto.QustnrTmplatDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyArticleDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyInfoDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyQuestionDto;
+import nuri.foundation.service.system.service.survey.dto.SurveyTemplateDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,13 +36,13 @@ class SurveyServiceTest {
     private SurveyService surveyService;
 
     @Mock
-    private QustnrTmplatRepository tmplatRepository;
+    private SurveyTemplateRepository tmplatRepository;
     @Mock
-    private QustnrInfoRepository infoRepository;
+    private SurveyInfoRepository infoRepository;
     @Mock
-    private QustnrQesitmRepository qesitmRepository;
+    private SurveyQuestionRepository qesitmRepository;
     @Mock
-    private QustnrIemRepository iemRepository;
+    private SurveyArticleRepository iemRepository;
 
     // ==========================================
     // 1. 설문 템플릿 테스트
@@ -52,37 +52,37 @@ class SurveyServiceTest {
     @DisplayName("설문 템플릿 목록 조회 - 키워드 없음")
     void getTmplatList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").srvyTmplatTypeCd("Type1").build();
+        SurveyTemplate tmplat = SurveyTemplate.builder().srvyTmpltId("T1").srvyTmpltTypeCd("Type1").build();
         given(tmplatRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(tmplat)));
 
-        Page<QustnrTmplatDto> result = surveyService.getTmplatList(null, pageable);
+        Page<SurveyTemplateDto> result = surveyService.getTmplatList(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSrvyTmplatId()).isEqualTo("T1");
+        assertThat(result.getContent().get(0).getSrvyTmpltId()).isEqualTo("T1");
     }
 
     @Test
     @DisplayName("설문 템플릿 목록 조회 - 키워드 있음")
     void getTmplatList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").srvyTmplatTypeCd("Type1").build();
-        given(tmplatRepository.findBySrvyTmplatTypeCdContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(tmplat)));
+        SurveyTemplate tmplat = SurveyTemplate.builder().srvyTmpltId("T1").srvyTmpltTypeCd("Type1").build();
+        given(tmplatRepository.findBySrvyTmpltTypeCdContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(tmplat)));
 
-        Page<QustnrTmplatDto> result = surveyService.getTmplatList("Keyword", pageable);
+        Page<SurveyTemplateDto> result = surveyService.getTmplatList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(tmplatRepository).findBySrvyTmplatTypeCdContaining(eq("Keyword"), any());
+        verify(tmplatRepository).findBySrvyTmpltTypeCdContaining(eq("Keyword"), any());
     }
 
     @Test
     @DisplayName("설문 템플릿 상세 조회 - 성공")
     void getTmplat_Success() {
-        QustnrTmplat tmplat = QustnrTmplat.builder().srvyTmplatId("T1").build();
+        SurveyTemplate tmplat = SurveyTemplate.builder().srvyTmpltId("T1").build();
         given(tmplatRepository.findById("T1")).willReturn(Optional.of(tmplat));
 
-        QustnrTmplatDto result = surveyService.getTmplat("T1");
+        SurveyTemplateDto result = surveyService.getTmplat("T1");
 
-        assertThat(result.getSrvyTmplatId()).isEqualTo("T1");
+        assertThat(result.getSrvyTmpltId()).isEqualTo("T1");
     }
 
     @Test
@@ -98,34 +98,34 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 템플릿 등록 - 성공")
     void insertTmplat_Success() {
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatTypeCd("TYPE_A")
-                .srvyTmplatImgPath("/img/test.png")
-                .srvyTmplatCn("내용")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltTypeCd("TYPE_A")
+                .srvyTmpltPathNm("/img/test.png")
+                .srvyTmpltExpln("내용")
                 .build();
 
         surveyService.insertTmplat(dto);
 
-        verify(tmplatRepository, times(1)).save(any(QustnrTmplat.class));
+        verify(tmplatRepository, times(1)).save(any(SurveyTemplate.class));
     }
 
     @Test
     @DisplayName("설문 템플릿 수정 - 성공")
     void updateTmplat_Success() {
-        QustnrTmplat tmplat = QustnrTmplat.builder()
-                .srvyTmplatId("T1")
-                .srvyTmplatTypeCd("OLD")
+        SurveyTemplate tmplat = SurveyTemplate.builder()
+                .srvyTmpltId("T1")
+                .srvyTmpltTypeCd("OLD")
                 .build();
         given(tmplatRepository.findById("T1")).willReturn(Optional.of(tmplat));
 
-        QustnrTmplatDto dto = QustnrTmplatDto.builder()
-                .srvyTmplatId("T1")
-                .srvyTmplatTypeCd("NEW")
+        SurveyTemplateDto dto = SurveyTemplateDto.builder()
+                .srvyTmpltId("T1")
+                .srvyTmpltTypeCd("NEW")
                 .build();
 
         surveyService.updateTmplat(dto);
 
-        assertThat(tmplat.getSrvyTmplatTypeCd()).isEqualTo("NEW");
+        assertThat(tmplat.getSrvyTmpltTypeCd()).isEqualTo("NEW");
     }
 
     @Test
@@ -133,7 +133,7 @@ class SurveyServiceTest {
     void updateTmplat_NotFound_ShouldThrowBusinessException() {
         given(tmplatRepository.findById("T1")).willReturn(Optional.empty());
 
-        QustnrTmplatDto dto = QustnrTmplatDto.builder().srvyTmplatId("T1").build();
+        SurveyTemplateDto dto = SurveyTemplateDto.builder().srvyTmpltId("T1").build();
 
         assertThatThrownBy(() -> surveyService.updateTmplat(dto))
                 .isInstanceOf(BusinessException.class);
@@ -154,10 +154,10 @@ class SurveyServiceTest {
     @DisplayName("설문 정보 목록 조회 - 키워드 없음")
     void getSurveyList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrInfo info = QustnrInfo.builder().srvyId("S1").srvyTtl("Subject").build();
+        SurveyInfo info = SurveyInfo.builder().srvyId("S1").srvyTtl("Subject").build();
         given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(info)));
 
-        Page<QustnrInfoDto> result = surveyService.getSurveyList(null, pageable);
+        Page<SurveyInfoDto> result = surveyService.getSurveyList(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
     }
@@ -166,10 +166,10 @@ class SurveyServiceTest {
     @DisplayName("설문 정보 목록 조회 - 키워드 있음")
     void getSurveyList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        QustnrInfo info = QustnrInfo.builder().srvyId("S1").srvyTtl("Subject").build();
+        SurveyInfo info = SurveyInfo.builder().srvyId("S1").srvyTtl("Subject").build();
         given(infoRepository.findBySrvyTtlContaining(eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(info)));
 
-        Page<QustnrInfoDto> result = surveyService.getSurveyList("Keyword", pageable);
+        Page<SurveyInfoDto> result = surveyService.getSurveyList("Keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(infoRepository).findBySrvyTtlContaining(eq("Keyword"), any());
@@ -178,10 +178,10 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 상세 조회 - 성공")
     void getSurvey_Success() {
-        QustnrInfo info = QustnrInfo.builder().srvyId("S1").build();
+        SurveyInfo info = SurveyInfo.builder().srvyId("S1").build();
         given(infoRepository.findById("S1")).willReturn(Optional.of(info));
 
-        QustnrInfoDto result = surveyService.getSurvey("S1");
+        SurveyInfoDto result = surveyService.getSurvey("S1");
 
         assertThat(result.getSrvyId()).isEqualTo("S1");
     }
@@ -198,7 +198,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 등록 - 성공")
     void insertSurvey_Success() {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyTtl("Subject")
                 .srvyBgngYmd("2026-01-01")
                 .srvyEndYmd("2026-01-31")
@@ -206,13 +206,13 @@ class SurveyServiceTest {
 
         surveyService.insertSurvey(dto);
 
-        verify(infoRepository, times(1)).save(any(QustnrInfo.class));
+        verify(infoRepository, times(1)).save(any(SurveyInfo.class));
     }
 
     @Test
     @DisplayName("설문 정보 등록 - 기간 역전 시 예외 검증")
     void insertSurvey_InvalidDates_ShouldThrowException() {
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyTtl("Subject")
                 .srvyBgngYmd("2026-01-31") // 시작일이 더 늦음
                 .srvyEndYmd("2026-01-01")
@@ -226,13 +226,13 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 수정 - 성공")
     void updateSurvey_Success() {
-        QustnrInfo info = QustnrInfo.builder()
+        SurveyInfo info = SurveyInfo.builder()
                 .srvyId("S1")
                 .srvyTtl("OLD")
                 .build();
         given(infoRepository.findById("S1")).willReturn(Optional.of(info));
 
-        QustnrInfoDto dto = QustnrInfoDto.builder()
+        SurveyInfoDto dto = SurveyInfoDto.builder()
                 .srvyId("S1")
                 .srvyTtl("NEW")
                 .srvyBgngYmd("2026-01-01")
@@ -249,7 +249,7 @@ class SurveyServiceTest {
     void updateSurvey_NotFound_ShouldThrowBusinessException() {
         given(infoRepository.findById("S1")).willReturn(Optional.empty());
 
-        QustnrInfoDto dto = QustnrInfoDto.builder().srvyId("S1").build();
+        SurveyInfoDto dto = SurveyInfoDto.builder().srvyId("S1").build();
 
         assertThatThrownBy(() -> surveyService.updateSurvey(dto))
                 .isInstanceOf(BusinessException.class);
@@ -269,28 +269,28 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 목록 조회")
     void getQuestionList() {
-        QustnrQesitm question = QustnrQesitm.builder().srvyQitemId("Q1").srvyId("S1").srvyQitemSn(1L).build();
-        given(qesitmRepository.findBySrvyIdOrderBySrvyQitemSnAsc("S1")).willReturn(List.of(question));
+        SurveyQuestion question = SurveyQuestion.builder().srvyQstnId("Q1").srvyId("S1").qstnSn(1L).build();
+        given(qesitmRepository.findBySrvyIdOrderByQstnSnAsc("S1")).willReturn(List.of(question));
 
-        QustnrIem item = QustnrIem.builder().srvyItemId("I1").srvyQitemId("Q1").srvyItemSn(1L).build();
-        given(iemRepository.findBySrvyQitemIdOrderBySrvyItemSnAsc("Q1")).willReturn(List.of(item));
+        SurveyArticle item = SurveyArticle.builder().srvyArtclId("I1").srvyQstnId("Q1").artclSn(1L).build();
+        given(iemRepository.findBySrvyQstnIdOrderByArtclSnAsc("Q1")).willReturn(List.of(item));
 
-        List<QustnrQesitmDto> result = surveyService.getQuestionList("S1");
+        List<SurveyQuestionDto> result = surveyService.getQuestionList("S1");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getSrvyQitemId()).isEqualTo("Q1");
+        assertThat(result.get(0).getSrvyQstnId()).isEqualTo("Q1");
         assertThat(result.get(0).getItems()).hasSize(1);
     }
 
     @Test
     @DisplayName("설문 문항 상세 조회 - 성공")
     void getQuestion_Success() {
-        QustnrQesitm question = QustnrQesitm.builder().srvyQitemId("Q1").build();
+        SurveyQuestion question = SurveyQuestion.builder().srvyQstnId("Q1").build();
         given(qesitmRepository.findById("Q1")).willReturn(Optional.of(question));
 
-        QustnrQesitmDto result = surveyService.getQuestion("Q1");
+        SurveyQuestionDto result = surveyService.getQuestion("Q1");
 
-        assertThat(result.getSrvyQitemId()).isEqualTo("Q1");
+        assertThat(result.getSrvyQstnId()).isEqualTo("Q1");
     }
 
     @Test
@@ -305,41 +305,41 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 등록 - 성공")
     void insertQuestion_Success() {
-        QustnrQesitmDto dto = QustnrQesitmDto.builder()
+        SurveyQuestionDto dto = SurveyQuestionDto.builder()
                 .srvyId("S1")
-                .srvyQitemSn(2L)
-                .srvyQitemTypeCd("CHOICE")
-                .srvyQitemCn("질문")
+                .qstnSn(2L)
+                .qstnTypeCd("CHOICE")
+                .qstnCn("질문")
                 .maxChcCnt(1)
-                .srvyTmplatId("T1")
+                .srvyTmpltId("T1")
                 .build();
 
         surveyService.insertQuestion(dto);
 
-        verify(qesitmRepository, times(1)).save(any(QustnrQesitm.class));
+        verify(qesitmRepository, times(1)).save(any(SurveyQuestion.class));
     }
 
     @Test
     @DisplayName("설문 문항 수정 - 성공")
     void updateQuestion_Success() {
-        QustnrQesitm question = QustnrQesitm.builder()
-                .srvyQitemId("Q1")
-                .srvyQitemCn("OLD")
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnId("Q1")
+                .qstnCn("OLD")
                 .build();
         given(qesitmRepository.findById("Q1")).willReturn(Optional.of(question));
 
-        QustnrQesitmDto dto = QustnrQesitmDto.builder()
-                .srvyQitemId("Q1")
-                .srvyQitemCn("NEW")
-                .srvyQitemSn(5L)
-                .srvyQitemTypeCd("TEXT")
+        SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .srvyQstnId("Q1")
+                .qstnCn("NEW")
+                .qstnSn(5L)
+                .qstnTypeCd("TEXT")
                 .maxChcCnt(1)
                 .build();
 
         surveyService.updateQuestion(dto);
 
-        assertThat(question.getSrvyQitemCn()).isEqualTo("NEW");
-        assertThat(question.getSrvyQitemSn()).isEqualTo(5L);
+        assertThat(question.getQstnCn()).isEqualTo("NEW");
+        assertThat(question.getQstnSn()).isEqualTo(5L);
     }
 
     @Test
@@ -347,7 +347,7 @@ class SurveyServiceTest {
     void updateQuestion_NotFound_ShouldThrowBusinessException() {
         given(qesitmRepository.findById("Q1")).willReturn(Optional.empty());
 
-        QustnrQesitmDto dto = QustnrQesitmDto.builder().srvyQitemId("Q1").build();
+        SurveyQuestionDto dto = SurveyQuestionDto.builder().srvyQstnId("Q1").build();
 
         assertThatThrownBy(() -> surveyService.updateQuestion(dto))
                 .isInstanceOf(BusinessException.class);
@@ -367,52 +367,52 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 항목 목록 조회")
     void getItemList_Success() {
-        QustnrIem item = QustnrIem.builder().srvyItemId("I1").srvyQitemId("Q1").srvyItemSn(1L).build();
-        given(iemRepository.findBySrvyQitemIdOrderBySrvyItemSnAsc("Q1")).willReturn(List.of(item));
+        SurveyArticle item = SurveyArticle.builder().srvyArtclId("I1").srvyQstnId("Q1").artclSn(1L).build();
+        given(iemRepository.findBySrvyQstnIdOrderByArtclSnAsc("Q1")).willReturn(List.of(item));
 
-        List<QustnrIemDto> result = surveyService.getItemList("Q1");
+        List<SurveyArticleDto> result = surveyService.getItemList("Q1");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getSrvyItemId()).isEqualTo("I1");
+        assertThat(result.get(0).getSrvyArtclId()).isEqualTo("I1");
     }
 
     @Test
     @DisplayName("설문 항목 등록 - 성공")
     void insertItem_Success() {
-        QustnrIemDto dto = QustnrIemDto.builder()
-                .srvyQitemId("Q1")
+        SurveyArticleDto dto = SurveyArticleDto.builder()
+                .srvyQstnId("Q1")
                 .srvyId("S1")
-                .srvyItemSn(3L)
-                .srvyItemCn("항목 3")
+                .artclSn(3L)
+                .artclCn("항목 3")
                 .etcAnsYn("N")
-                .srvyTmplatId("T1")
+                .srvyTmpltId("T1")
                 .build();
 
         surveyService.insertItem(dto);
 
-        verify(iemRepository, times(1)).save(any(QustnrIem.class));
+        verify(iemRepository, times(1)).save(any(SurveyArticle.class));
     }
 
     @Test
     @DisplayName("설문 항목 수정 - 성공")
     void updateItem_Success() {
-        QustnrIem item = QustnrIem.builder()
-                .srvyItemId("I1")
-                .srvyItemCn("OLD")
+        SurveyArticle item = SurveyArticle.builder()
+                .srvyArtclId("I1")
+                .artclCn("OLD")
                 .build();
         given(iemRepository.findById("I1")).willReturn(Optional.of(item));
 
-        QustnrIemDto dto = QustnrIemDto.builder()
-                .srvyItemId("I1")
-                .srvyItemCn("NEW")
-                .srvyItemSn(2L)
+        SurveyArticleDto dto = SurveyArticleDto.builder()
+                .srvyArtclId("I1")
+                .artclCn("NEW")
+                .artclSn(2L)
                 .etcAnsYn("Y")
                 .build();
 
         surveyService.updateItem(dto);
 
-        assertThat(item.getSrvyItemCn()).isEqualTo("NEW");
-        assertThat(item.getSrvyItemSn()).isEqualTo(2L);
+        assertThat(item.getArtclCn()).isEqualTo("NEW");
+        assertThat(item.getArtclSn()).isEqualTo(2L);
         assertThat(item.getEtcAnsYn()).isEqualTo("Y");
     }
 
@@ -421,7 +421,7 @@ class SurveyServiceTest {
     void updateItem_NotFound_ShouldThrowBusinessException() {
         given(iemRepository.findById("I1")).willReturn(Optional.empty());
 
-        QustnrIemDto dto = QustnrIemDto.builder().srvyItemId("I1").build();
+        SurveyArticleDto dto = SurveyArticleDto.builder().srvyArtclId("I1").build();
 
         assertThatThrownBy(() -> surveyService.updateItem(dto))
                 .isInstanceOf(BusinessException.class);

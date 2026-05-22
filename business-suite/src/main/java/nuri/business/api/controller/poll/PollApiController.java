@@ -3,7 +3,7 @@ package nuri.business.api.controller.poll;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.service.system.service.survey.OnlinePollService;
-import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
+import nuri.foundation.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -72,14 +72,14 @@ public class PollApiController {
     public ResponseEntity<ApiResponse<Void>> vote(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String pollId,
-            @PathVariable String pollIemId) {
-        pollService.vote(pollId, pollIemId, userDetails.getUsername());
+            @PathVariable("pollIemId") String pollArtclId) {
+        pollService.vote(pollId, pollArtclId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 목록 조회", description = "특정 설문의 항목 목록을 조회합니다.")
     @GetMapping("/{pollId}/items")
-    public ResponseEntity<ApiResponse<List<OnlinePollItemDto>>> getPollItems(@PathVariable String pollId) {
+    public ResponseEntity<ApiResponse<List<OnlinePollArticleDto>>> getPollItems(@PathVariable String pollId) {
         return ResponseEntity.ok(ApiResponse.success(pollService.getPollItemList(pollId)));
     }
 }

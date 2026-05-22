@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * 설문 템플릿 엔티티 (물리 DB 명세 100% 일치)
+ */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_srvy_tmplt")
@@ -15,27 +18,27 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-public class QustnrTmplat extends BaseEntity {
+public class SurveyTemplate extends BaseEntity {
 
     @Id
     @Column(name = "srvy_tmplt_id", length = 20)
-    private String srvyTmplatId;
+    private String srvyTmpltId;
 
     @Column(name = "srvy_tmplt_type_cd", length = 12)
-    private String srvyTmplatTypeCd;
+    private String srvyTmpltTypeCd;
 
     @Column(name = "srvy_tmplt_expln", length = 4000)
-    private String srvyTmplatCn;
+    private String srvyTmpltExpln;
 
     @Column(name = "srvy_tmplt_path_nm", length = 100)
-    private String srvyTmplatImgPath;
+    private String srvyTmpltPathNm;
 
     @Column(name = "srvy_tmplt_img_info")
-    private byte[] srvyTmplatImgInfo;
+    private byte[] srvyTmpltImgInfo;
 
-    public void update(String srvyTmplatTypeCd, String srvyTmplatImgPath, String srvyTmplatCn) {
-        this.srvyTmplatTypeCd = srvyTmplatTypeCd;
-        this.srvyTmplatImgPath = srvyTmplatImgPath;
-        this.srvyTmplatCn = srvyTmplatCn;
+    public void update(String srvyTmpltTypeCd, String srvyTmpltPathNm, String srvyTmpltExpln) {
+        this.srvyTmpltTypeCd = srvyTmpltTypeCd;
+        this.srvyTmpltPathNm = srvyTmpltPathNm;
+        this.srvyTmpltExpln = srvyTmpltExpln;
     }
 }

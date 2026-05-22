@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface QustnrTmplatRepository extends JpaRepository<QustnrTmplat, String> {
-    Optional<QustnrTmplat> findBySrvyTmplatId(String srvyTmplatId);
-    Page<QustnrTmplat> findBySrvyTmplatTypeCdContaining(String keyword, Pageable pageable);
+public interface SurveyTemplateRepository extends JpaRepository<SurveyTemplate, String> {
+    Optional<SurveyTemplate> findBySrvyTmpltId(String srvyTmpltId);
+    Page<SurveyTemplate> findBySrvyTmpltTypeCdContaining(String keyword, Pageable pageable);
 }
