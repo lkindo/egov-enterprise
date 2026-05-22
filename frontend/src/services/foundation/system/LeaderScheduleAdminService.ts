@@ -12,6 +12,7 @@ export interface LeaderSchedule {
   schdulBgnde: string;
   schdulEndde: string;
   reptitSeCode?: string;
+  schdlPlcNm?: string;
 }
 
 export interface LeaderStatus {

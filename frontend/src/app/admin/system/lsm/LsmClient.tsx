@@ -46,6 +46,16 @@ export default function LsmClient({
  )
  },
  {
+ header: '일정 장소',
+ accessor: (item) => (
+ <div className="flex items-center gap-2">
+ <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm font-sans">
+ {item.schdlPlcNm || '장소 미지정'}
+ </span>
+ </div>
+ )
+ },
+ {
  header: '기간',
  accessor: (item) => (
  <div className="flex flex-col text-xs font-mono text-slate-500">

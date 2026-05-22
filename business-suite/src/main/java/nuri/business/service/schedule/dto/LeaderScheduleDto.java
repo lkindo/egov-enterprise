@@ -86,6 +86,7 @@ public class LeaderScheduleDto {
                 .schdlEndYmd(entity.getSchdlEndYmd())
                 .schdlPicId(entity.getSchdlPicId())
                 .schdlSeCd(entity.getSchdlSeCd())
+                .schdlPlcNm(entity.getSchdlPlcNm())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

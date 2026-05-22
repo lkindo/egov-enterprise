@@ -53,6 +53,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(name = "use_yn", length = 1)
     private String useYn = "Y";
 
+    @Column(name = "user_id", length = 20)
+    private String userId;
+
+    @Column(name = "user_nm", length = 100)
+    private String userNm;
+
     public void update(Integer stsfdgLevel, String stsfdgCn, String password) {
         this.dgstfnScr = stsfdgLevel;
         this.dgstfnCn = stsfdgCn;
@@ -94,6 +100,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
     public String getNttId() { return nttId; }
     public void setNttId(String v) { this.nttId = v; }
 
+    // legacy aliases for frontend compatibility
+    public String getWrterId() { return userId; }
+    public void setWrterId(String v) { this.userId = v; }
+    public String getWrterNm() { return userNm; }
+    public void setWrterNm(String v) { this.userNm = v; }
+
     public static abstract class SatisfactionBuilder<C extends Satisfaction, B extends SatisfactionBuilder<C, B>> extends BaseEntityBuilder<C, B> {
         private Long dgstfnSn;
         private String nttId;
@@ -124,6 +136,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
         public B nttId(String nttId) {
             this.nttId = nttId;
             return self();
+        }
+        public B wrterId(String wrterId) {
+            return this.userId(wrterId);
+        }
+        public B wrterNm(String wrterNm) {
+            return this.userNm(wrterNm);
         }
     }
 }

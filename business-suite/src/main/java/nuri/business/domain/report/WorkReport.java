@@ -38,6 +38,12 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(name = "user_id", length = 20)
     private String userId;
 
+    @Column(name = "rpt_stts_cd", length = 12)
+    private String rptSttsCd;
+
+    @Column(name = "rpt_ymd", length = 8)
+    private String rptYmd;
+
     public void update(String rptTtl, String rptCn, String atchFileId, String rptSeCd) {
         this.rptTtl = rptTtl;
         this.rptCn = rptCn;
@@ -49,6 +55,12 @@ public class WorkReport extends BaseEntity implements Serializable {
     public String getReprtId() { return rptId; }
     public String getReprtTtl() { return rptTtl; }
     public String getReprtCn() { return rptCn; }
+
+    // legacy aliases for frontend compatibility
+    public String getReprtSttusCode() { return rptSttsCd; }
+    public void setReprtSttusCode(String v) { this.rptSttsCd = v; }
+    public String getReprtDe() { return rptYmd; }
+    public void setReprtDe(String v) { this.rptYmd = v; }
 
     // ----- [Legacy Aliases for Backward Compatibility] -----
 
@@ -108,6 +120,8 @@ public class WorkReport extends BaseEntity implements Serializable {
         private String rptCn;
         private String rptSeCd;
         private String userId;
+        private String rptSttsCd;
+        private String rptYmd;
 
         @Deprecated
         public B reportId(String reportId) {
@@ -136,6 +150,16 @@ public class WorkReport extends BaseEntity implements Serializable {
         @Deprecated
         public B wrterId(String wrterId) {
             this.userId = wrterId;
+            return self();
+        }
+
+        public B reprtSttusCode(String reprtSttusCode) {
+            this.rptSttsCd = reprtSttusCode;
+            return self();
+        }
+
+        public B reprtDe(String reprtDe) {
+            this.rptYmd = reprtDe;
             return self();
         }
     }

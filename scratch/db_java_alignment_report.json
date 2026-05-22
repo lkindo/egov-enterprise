@@ -1,0 +1,139 @@
+{
+  "missingTables": [],
+  "mismatchedColumns": [
+    {
+      "className": "class",
+      "tableName": "tb_adbk_info",
+      "fieldName": "rlsScpCd",
+      "columnName": "rls_scp_cd",
+      "line": 38,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java",
+      "reason": "Java Entity maps to DB column that does NOT exist physically in the table."
+    },
+    {
+      "className": "class",
+      "tableName": "tb_bbs_master",
+      "fieldName": "ansYn",
+      "columnName": "ans_yn",
+      "line": 80,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+      "reason": "Java Entity maps to DB column that does NOT exist physically in the table."
+    },
+    {
+      "className": "class",
+      "tableName": "tb_bbs_master",
+      "fieldName": "stsfdgYn",
+      "columnName": "stsfdg_yn",
+      "line": 84,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+      "reason": "Java Entity maps to DB column that does NOT exist physically in the table."
+    }
+  ],
+  "missingJavaFields": [
+    {
+      "tableName": "tb_bbs_item",
+      "className": "class",
+      "columnName": "evnt_dt",
+      "dataType": "timestamp without time zone",
+      "maxLength": null,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java"
+    },
+    {
+      "tableName": "tb_file_detail",
+      "className": "class",
+      "columnName": "atch_file_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java"
+    },
+    {
+      "tableName": "tb_email_dsptch_manage",
+      "className": "class",
+      "columnName": "dsptch_dt",
+      "dataType": "timestamp without time zone",
+      "maxLength": null,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java"
+    },
+    {
+      "tableName": "tb_note_rcptn",
+      "className": "class",
+      "columnName": "note_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java"
+    },
+    {
+      "tableName": "tb_note_rcptn",
+      "className": "class",
+      "columnName": "note_sndng_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java"
+    },
+    {
+      "tableName": "tb_note_sndng",
+      "className": "class",
+      "columnName": "note_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java"
+    },
+    {
+      "tableName": "tb_sms_rcptn",
+      "className": "class",
+      "columnName": "rcptn_telno",
+      "dataType": "character varying",
+      "maxLength": 13,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java"
+    },
+    {
+      "tableName": "tb_sms_rcptn",
+      "className": "class",
+      "columnName": "sms_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\SmsRecptn.java"
+    },
+    {
+      "tableName": "tb_rward_manage",
+      "className": "class",
+      "columnName": "aprv_dt",
+      "dataType": "timestamp without time zone",
+      "maxLength": null,
+      "filePath": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\operation\\RewardManage.java"
+    },
+    {
+      "tableName": "tb_cmnty_user_map",
+      "className": "class",
+      "columnName": "cmnty_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUser.java"
+    },
+    {
+      "tableName": "tb_cmnty_user_map",
+      "className": "class",
+      "columnName": "user_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\content\\community\\CommunityUser.java"
+    },
+    {
+      "tableName": "tb_onln_poll_artcl",
+      "className": "class",
+      "columnName": "poll_id",
+      "dataType": "character varying",
+      "maxLength": 20,
+      "filePath": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\OnlinePollArticle.java"
+    },
+    {
+      "tableName": "tb_srvy_tmplt",
+      "className": "class",
+      "columnName": "srvy_tmplt_img_info",
+      "dataType": "bytea",
+      "maxLength": null,
+      "filePath": "foundation\\src\\main\\java\\nuri\\foundation\\domain\\system\\service\\survey\\SurveyTemplate.java"
+    }
+  ],
+  "sizeMismatches": []
+}

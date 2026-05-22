@@ -56,6 +56,7 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                     .schdlBgngYmd(dto.getSchdlBgngYmd())
                     .schdlEndYmd(dto.getSchdlEndYmd())
                     .schdlPicId(dto.getSchdlPicId())
+                    .schdlPlcNm(dto.getSchdlPlcNm())
                     .createdBy(userId)
                     .build();
             leaderScheduleRepository.save(entity);
@@ -80,7 +81,8 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                 dto.getSchdlImprtCd(),
                 dto.getSchdlBgngYmd(),
                 dto.getSchdlEndYmd(),
-                dto.getSchdlPicId());
+                dto.getSchdlPicId(),
+                dto.getSchdlPlcNm());
         
         entity.setLastModifiedBy(userId);
     }
@@ -124,6 +126,7 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                 .schdlCn(entity.getSchdlCn())
                 .schdlBgngYmd(entity.getSchdlBgngYmd())
                 .schdlEndYmd(entity.getSchdlEndYmd())
+                .schdlPlcNm(entity.getSchdlPlcNm())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

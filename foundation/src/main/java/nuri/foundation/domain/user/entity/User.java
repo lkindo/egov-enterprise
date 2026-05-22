@@ -38,7 +38,7 @@ public class User extends BaseEntity implements Serializable {
     private String userId;
 
     @Builder.Default
-    @Column(name = "user_type_cd", nullable = false, length = 10)
+    @Column(name = "user_type_cd", nullable = false, length = 12)
     @JsonProperty("userType")
     private String userTypeCd = "EMP";
 
@@ -197,7 +197,7 @@ public class User extends BaseEntity implements Serializable {
 
     // ■ 상태 및 감사
     @Builder.Default
-    @Column(name = "user_stts_cd", length = 30)
+    @Column(name = "user_stts_cd", length = 12)
     @JsonProperty("userSttsCd")
     private String userSttsCd = "P";
 

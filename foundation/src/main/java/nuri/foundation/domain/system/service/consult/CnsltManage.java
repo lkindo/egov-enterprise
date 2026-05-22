@@ -74,7 +74,7 @@ public class CnsltManage extends BaseEntity {
     @Builder.Default
     private Integer inqCnt = 0;
 
-    @Column(name = "qna_proc_stts_cd", length = 3)
+    @Column(name = "qna_proc_stts_cd", length = 12)
     @Builder.Default
     private String qnaProcSttsCd = "1";
 

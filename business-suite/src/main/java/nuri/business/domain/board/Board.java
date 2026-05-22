@@ -88,7 +88,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "evnt_dt")
     private java.time.LocalDateTime evntDt;
 
-    @Column(name = "qna_stts_cd", length = 10)
+    @Column(name = "qna_stts_cd", length = 12)
     @Builder.Default
     private String qnaSttsCd = "OPEN";
 
@@ -99,11 +99,19 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer likeCnt = 0;
     
-    @Transient
+    @Column(name = "ans_yn", length = 1)
+    @Builder.Default
+    private String ansYn = "N";
+
+    @Column(name = "ntc_yn", length = 1)
+    @Builder.Default
+    private String ntcYn = "N";
+
+    @Column(name = "cmnt_cnt")
     @Builder.Default
     private Integer commentCnt = 0;
     
-    @Transient
+    @Column(name = "file_cnt")
     @Builder.Default
     private Integer fileCnt = 0;
 
@@ -177,4 +185,10 @@ public class Board extends BaseEntity implements Serializable {
     public void setQnaCategory(String v) { this.qnaCatCd = v; }
     public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
     public void setParnts(String v) { this.upPstId = v; }
+
+    // legacy aliases for frontend compatibility
+    public String getAnswerAt() { return ansYn; }
+    public void setAnswerAt(String v) { this.ansYn = v; }
+    public String getNoticeAt() { return ntcYn; }
+    public void setNoticeAt(String v) { this.ntcYn = v; }
 }

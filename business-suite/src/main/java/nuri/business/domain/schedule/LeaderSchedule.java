@@ -50,8 +50,11 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
     @Column(name = "schdl_pic_id", length = 20)
     private String schdlPicId;
 
+    @Column(name = "schdl_plc_nm", length = 100)
+    private String schdlPlcNm;
+
     public void update(String schdlSeCd, String leaderId, String schdlNm, String schdlCn,
-                       String reptSeCd, String schdlImprtCd, String schdlBgngYmd, String schdlEndYmd, String schdlPicId) {
+                       String reptSeCd, String schdlImprtCd, String schdlBgngYmd, String schdlEndYmd, String schdlPicId, String schdlPlcNm) {
         this.schdlSeCd = schdlSeCd;
         this.leaderId = leaderId;
         this.schdlNm = schdlNm;
@@ -61,5 +64,6 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
         this.schdlBgngYmd = schdlBgngYmd;
         this.schdlEndYmd = schdlEndYmd;
         this.schdlPicId = schdlPicId;
+        this.schdlPlcNm = schdlPlcNm;
     }
 }
