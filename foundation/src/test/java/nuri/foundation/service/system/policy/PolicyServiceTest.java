@@ -31,7 +31,7 @@ class PolicyServiceTest {
     @DisplayName("정책 목록 조회 성공")
     void getPolicies_Success() {
         // given
-        SystemPolicy policy = SystemPolicy.builder().policyType("COPYRIGHT").title("Title").build();
+        SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").plcyTtl("Title").build();
         given(systemPolicyRepository.findAll()).willReturn(List.of(policy));
 
         // when
@@ -39,14 +39,14 @@ class PolicyServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo("COPYRIGHT");
+        assertThat(result.get(0).getPlcyTypeCd()).isEqualTo("COPYRIGHT");
     }
 
     @Test
     @DisplayName("정책 상세 조회 성공")
     void getPolicy_Success() {
         // given
-        SystemPolicy policy = SystemPolicy.builder().policyType("COPYRIGHT").title("Title").build();
+        SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").plcyTtl("Title").build();
         given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.of(policy));
 
         // when
@@ -54,21 +54,21 @@ class PolicyServiceTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("Title");
+        assertThat(result.get().getPlcyTtl()).isEqualTo("Title");
     }
 
     @Test
     @DisplayName("정책 수정 성공 - 기존 데이터 있음")
     void updatePolicy_Existing() {
         // given
-        SystemPolicy policy = SystemPolicy.builder().policyType("COPYRIGHT").build();
+        SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").build();
         given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.of(policy));
 
         // when
         policyService.updatePolicy("COPYRIGHT", "New Title", "New Content");
 
         // then
-        assertThat(policy.getTitle()).isEqualTo("New Title");
+        assertThat(policy.getPlcyTtl()).isEqualTo("New Title");
         verify(systemPolicyRepository).save(policy);
     }
 

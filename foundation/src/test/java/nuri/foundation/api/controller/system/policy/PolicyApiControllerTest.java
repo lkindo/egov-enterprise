@@ -55,7 +55,11 @@ class PolicyApiControllerTest {
     @Test
     @DisplayName("정책 상세 조회 성공 - 데이터 있음")
     void testGetPolicy_WithData() throws Exception {
-        PolicyService.Policy policy = new PolicyService.Policy("copyright", "저작권", "내용");
+        PolicyService.Policy policy = PolicyService.Policy.builder()
+                .plcyTypeCd("copyright")
+                .plcyTtl("저작권")
+                .plcyCn("내용")
+                .build();
         when(policyService.getPolicy("copyright")).thenReturn(Optional.of(policy));
 
         mockMvc.perform(get("/api/v1/admin/system/policies/copyright"))
