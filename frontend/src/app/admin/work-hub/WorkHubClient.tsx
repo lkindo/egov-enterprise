@@ -115,7 +115,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.reprtSj}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">DATE: {item.reprtDe}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">작성일: {item.reprtDe}</span>
         </div>
       )
     },
@@ -145,8 +145,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       />
 
       <HubHeader
-        title="Works &"
-        highlight="Intelligence"
+        title="업무 및"
+        highlight="인텔리전스"
         subtitle="전사 업무 프로세스 및 비즈니스 데이터 자산을 통합 관리합니다."
         icon={Briefcase}
         actions={
@@ -158,7 +158,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                  className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
                  onClick={() => setTab('job')}
                >
-                 WORKFLOW
+                 워크플로우
                </Button>
                <Button
                  variant="ghost"
@@ -166,7 +166,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                  className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
                  onClick={() => setTab('report')}
                >
-                 ASSETS
+                 자산
                </Button>
              </div>
             <Button className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
@@ -179,8 +179,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       <HubMetricGrid>
         <HubMetricCard title="업무 노드" value={jobs.length} icon={Layers} color="primary" />
         <HubMetricCard title="보고 데이터" value={reports.length} icon={FileText} color="amber" />
-        <HubMetricCard title="시스템 상태" value="Normal" icon={Activity} color="emerald" status="안전함" />
-        <HubMetricCard title="동기화 빈도" value="DAILY" icon={RefreshCcw} color="indigo" />
+        <HubMetricCard title="시스템 상태" value="정상" icon={Activity} color="emerald" status="안전함" />
+        <HubMetricCard title="동기화 빈도" value="매일" icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard

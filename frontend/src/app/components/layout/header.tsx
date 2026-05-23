@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
+import { HeaderSearchParamSync } from './HeaderSearchParamSync';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   1000000: LayoutGrid, // 워크스페이스
@@ -45,66 +46,7 @@ const DOMAIN_ROUTE_MAP: Record<number, string> = {
   9000000: '/admin/system/menus',
 };
 
-function HeaderSearchParamSync({ menus, activeMenuNo, setActiveMenuNo }: { menus: MenuInfo[], activeMenuNo: number | null, setActiveMenuNo: (no: number) => void }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const searchBbsId = searchParams?.get('bbsId');
 
-  useEffect(() => {
-    if (menus.length === 0) return;
-
-    const currentPath = pathname;
-    
-    const matchTopMenu = () => {
-      if (searchBbsId) {
-        for (const m of menus) {
-          const hasBbsMatch = m.children?.some(c => {
-            if (String(c.modernRoute || '').includes(`bbsId=${searchBbsId}`)) return true;
-            return c.children?.some(cc => String(cc.modernRoute || '').includes(`bbsId=${searchBbsId}`));
-          });
-          if (hasBbsMatch || String(m.modernRoute || '').includes(`bbsId=${searchBbsId}`)) {
-            return m.menuNo;
-          }
-        }
-      }
-
-      let bestMatch = { menuNo: null as number | null, score: 0 };
-
-      const calculateScore = (route?: string) => {
-        if (!route) return 0;
-        const pureRoute = route.split('?')[0];
-        if (currentPath === pureRoute) return 10000;
-        if (currentPath.startsWith(pureRoute + '/') || (pureRoute !== '/' && currentPath === pureRoute)) {
-          return pureRoute.length;
-        }
-        return 0;
-      };
-
-      for (const m of menus) {
-        let menuMaxScore = calculateScore(m.modernRoute);
-        m.children?.forEach(c => {
-          menuMaxScore = Math.max(menuMaxScore, calculateScore(c.modernRoute));
-          c.children?.forEach(cc => {
-            menuMaxScore = Math.max(menuMaxScore, calculateScore(cc.modernRoute));
-          });
-        });
-
-        if (menuMaxScore > bestMatch.score) {
-          bestMatch = { menuNo: m.menuNo, score: menuMaxScore };
-        }
-      }
-
-      return bestMatch.menuNo;
-    };
-
-    const matchedNo = matchTopMenu();
-    if (matchedNo && matchedNo !== activeMenuNo) {
-      setActiveMenuNo(matchedNo);
-    }
-  }, [pathname, searchBbsId, menus, activeMenuNo, setActiveMenuNo]);
-
-  return null;
-}
 
 export function Header({ 
   initialMenus = [],
@@ -135,7 +77,14 @@ export function Header({
       </React.Suspense>
       <div className="flex h-11 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 메뉴 열기/닫기">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="lg:hidden text-muted-foreground mr-1" 
+          onClick={toggleSidebar} 
+          aria-label="사이드바 메뉴 열기/닫기"
+          aria-expanded={isSidebarOpen}
+        >
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 

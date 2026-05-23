@@ -71,7 +71,7 @@ const InsertDeptJobPage = () => {
                                 <span className="text-xs font-bold tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
                             </div>
                             <CardTitle className="text-3xl font-bold tracking-tighter leading-none ">
-                                Dispatch New Task
+                                새 업무 기안
                             </CardTitle>
                             <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed mx-auto md:mx-0">
                                 부서의 새로운 업무를 정의하고 할당합니다. <br />명확한 목표 설정을 통해 효율적인 작업을 시작하세요.
@@ -84,7 +84,7 @@ const InsertDeptJobPage = () => {
                         {/* Task Title */}
                         <div className="space-y-6 group">
                             <Label htmlFor="deptJobNm" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
-                                <span className="w-2 h-2 rounded-lg bg-primary" /> Core Task Designation
+                                <span className="w-2 h-2 rounded-lg bg-primary" /> 핵심 업무명 지정
                             </Label>
                             <Input
                                 id="deptJobNm"
@@ -99,13 +99,13 @@ const InsertDeptJobPage = () => {
                         {/* Priority Selection */}
                         <div className="space-y-6 group">
                             <Label htmlFor="priort" className="text-xs font-bold tracking-[0.3em] text-slate-400 flex items-center gap-3">
-                                <AlertCircle className="w-4 h-4 text-primary" /> Strategic Priority Ranking
+                                <AlertCircle className="w-4 h-4 text-primary" /> 전략적 우선순위 등급
                             </Label>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {[
-                                    { value: '1', label: 'CRITICAL', desc: 'Immediate Action' },
-                                    { value: '2', label: 'STANDARD', desc: 'Planned Schedule' },
-                                    { value: '3', label: 'DEFERRED', desc: 'Low Urgency' }
+                                    { value: '1', label: '긴급', desc: '즉각 조치' },
+                                    { value: '2', label: '일반', desc: '계획된 일정' },
+                                    { value: '3', label: '보류', desc: '낮은 시급성' }
                                 ].map((p) => (
                                     <button
                                         key={p.value}
@@ -126,7 +126,7 @@ const InsertDeptJobPage = () => {
                         {/* Task Description */}
                         <div className="space-y-6 group">
                             <Label htmlFor="deptJobCn" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
-                                <FileText className="w-4 h-4" /> Detailed Specifications
+                                <FileText className="w-4 h-4" /> 상세 업무 내용
                             </Label>
                             <Textarea
                                 id="deptJobCn"
@@ -154,17 +154,17 @@ const InsertDeptJobPage = () => {
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-8 py-20 border-t border-slate-50 bg-slate-50/30 px-12 rounded-b-[3.5rem]">
                         <Link href="/smart-toolkit/dept-job/selectDeptJobList">
                             <Button type="button" variant="ghost" className="h-11 px-16 font-bold tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-lg border-2 border-transparent hover:border-rose-50">
-                                <ArrowLeft className="w-6 h-6 mr-4" /> Discard & Return
+                                <ArrowLeft className="w-6 h-6 mr-4" /> 취소 및 돌아가기
                             </Button>
                         </Link>
                         <Button type="submit" className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-lg" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-3 animate-pulse">
-                                    <div className="w-3 h-3 bg-white rounded-lg" /> Dispatching...
+                                    <div className="w-3 h-3 bg-white rounded-lg" /> 업무 배포 중...
                                 </span>
                             ) : (
                                 <>
-                                    <Send className="w-6 h-6" /> Deploy New Task
+                                    <Send className="w-6 h-6" /> 업무 배포하기
                                 </>
                             )}
                         </Button>

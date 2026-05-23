@@ -126,8 +126,8 @@ export default function AdminDashboardPage() {
  return (
  <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 px-4 md:px-0 pb-20 animate-in fade-in duration-700">
  <HubHeader
- title="Admin"
- highlight="Intelligence Center"
+ title="관리자"
+ highlight="인텔리전스 센터"
  subtitle="시스템 전반의 오퍼레이션 상태, 지능형 데이터 분석 및 보안 거버넌스 통합 관제 패널"
  icon={LayoutDashboard}
  actions={
@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
  />
  <DashboardStatCard
  title="보안 거버넌스"
- value={`${authorsData?.total || 0} ROLES`}
+ value={`${authorsData?.total || 0}개 역할`}
  icon={<ShieldCheck className="w-5 h-5" />}
  trend="보호됨"
  color="emerald"
@@ -181,18 +181,18 @@ export default function AdminDashboardPage() {
  />
  <DashboardStatCard
  title="운영 인텔리전스"
- value="OPERATIONAL"
+ value="운영 중"
  icon={<Box className="w-5 h-5" />}
- trend="HEALTHY"
+ trend="정상"
  color="amber"
  link="/admin/system/programs"
  description="모듈 및 리소스 오케스트레이션"
  />
  <DashboardStatCard
  title="업무 인텔리전스"
- value={auditData?.total || "LIVE"}
+ value={auditData?.total || "실시간"}
  icon={<Activity className="w-5 h-5" />}
- trend="REALTIME"
+ trend="실시간"
  color="rose"
  link="/admin/system/audit"
  description="실시간 보안 감사 히스토리 분석"
@@ -207,7 +207,7 @@ export default function AdminDashboardPage() {
  <TrendingUp size={24} />
  </div>
  <div>
- <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h2>
+ <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">활동 인텔리전스</h2>
  <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
  </div>
  </div>
@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
  <Users size={24} />
  </div>
  <div>
- <h2 className="text-lg font-bold text-foreground tracking-tight">Identity Cluster</h2>
+ <h2 className="text-lg font-bold text-foreground tracking-tight">권한 그룹 통계</h2>
  <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">사용자 권한 그룹 분포</p>
  </div>
  </div>
@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
  </div>
 
  <div className="h-[240px] w-full flex items-end gap-1 px-2">
- <RealtimeSparkline data={MOCK_METRICS.cpu} color="var(--primary)" label="CPU Usage" />
+ <RealtimeSparkline data={MOCK_METRICS.cpu} color="var(--primary)" label="CPU 사용률" />
  </div>
  </div>
 
@@ -272,13 +272,13 @@ export default function AdminDashboardPage() {
  </div>
  <span className="text-sm font-bold text-foreground">데이터베이스</span>
  </div>
- <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold px-3 py-1">HEALTHY</Badge>
+ <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold px-3 py-1">정상</Badge>
  </div>
 
  <div className="flex items-end justify-between">
  <div className="space-y-1">
  <p className="text-3xl font-bold tracking-tighter">2.4 TB</p>
- <p className="text-xs font-bold text-muted-foreground uppercase">Storage occupied: 64%</p>
+ <p className="text-xs font-bold text-muted-foreground uppercase">스토리지 사용량: 64%</p>
  </div>
  <div className="w-20 h-11">
  <GaugeChart value={64} color="#3B82F6" title="거버넌스 감사 추적" />
@@ -296,14 +296,14 @@ export default function AdminDashboardPage() {
  </div>
  <div className="flex items-center gap-1 text-emerald-800">
  <TrendingUp size={12} />
- <span className="text-xs font-bold uppercase">-4MS OPTIMIZED</span>
+ <span className="text-xs font-bold uppercase">-4ms 최적화됨</span>
  </div>
  </div>
 
  <div className="flex items-end justify-between">
  <div className="space-y-1">
  <p className="text-3xl font-bold tracking-tighter uppercase">12 ms</p>
- <p className="text-xs font-bold text-slate-600 uppercase">Response time (Seoul Hub)</p>
+ <p className="text-xs font-bold text-slate-600 uppercase">응답 속도 (서울 허브)</p>
  </div>
  <div className="w-24 h-1 font-bold bg-emerald-500 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
  </div>
@@ -318,9 +318,9 @@ export default function AdminDashboardPage() {
  <div className="p-2 bg-slate-900 rounded-lg text-white shadow-xl">
  <Clock size={18} />
  </div>
- <h2 className="text-sm font-bold text-foreground uppercase tracking-widest leading-none">Audit History</h2>
+ <h2 className="text-sm font-bold text-foreground uppercase tracking-widest leading-none">보안 감사 이력</h2>
  </div>
- <Link href="/admin/system/audit" className="text-xs font-bold text-primary hover:underline uppercase tracking-tighter underline-offset-4 decoration-primary/30">Explore All</Link>
+ <Link href="/admin/system/audit" className="text-xs font-bold text-primary hover:underline uppercase tracking-tighter underline-offset-4 decoration-primary/30">전체 보기</Link>
  </div>
 
  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -333,8 +333,8 @@ export default function AdminDashboardPage() {
  <AlertCircle size={20} />
  </div>
  <div>
- <p className="text-xs font-bold text-slate-900 group-hover:text-white uppercase tracking-tight">Integrity Probe</p>
- <p className="text-xs font-bold text-slate-600">Last check: 2 hours ago</p>
+ <p className="text-xs font-bold text-slate-900 group-hover:text-white uppercase tracking-tight">무결성 검사</p>
+ <p className="text-xs font-bold text-slate-600">최근 검사: 2시간 전</p>
  </div>
  </div>
  </div>
@@ -347,8 +347,8 @@ export default function AdminDashboardPage() {
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
  <Zap size={120} />
  </div>
- <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">Strategic Bulletin</h3>
- <p className="text-2xl font-bold tracking-tighter mb-6 ">Global Strategy Notice</p>
+ <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">전략 게시판</h3>
+ <p className="text-2xl font-bold tracking-tighter mb-6 ">글로벌 보안 전략 공지</p>
  <p className="text-xs font-medium text-indigo-200 leading-relaxed uppercase">
  시스템 전반의 글로벌 보안 전략 및 정책 업데이트가 완료되었습니다. <br />
  데이터 오케스트레이션 엔진의 최적화 상태를 확인하세요.
@@ -358,8 +358,8 @@ export default function AdminDashboardPage() {
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
  <Cpu size={120} />
  </div>
- <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">Resource Allocation</h3>
- <p className="text-2xl font-bold tracking-tighter mb-6 ">Resource Provisioning</p>
+ <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">자원 할당</h3>
+ <p className="text-2xl font-bold tracking-tighter mb-6 ">자원 프로비저닝</p>
  <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
  컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
  현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.

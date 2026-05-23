@@ -146,11 +146,9 @@ export default function DeptSchedulePage() {
                     </TableHeader>
                     <TableBody>
                         {schedules.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium uppercase tracking-widest">
-                                    [NO_SCHEDULE_DATA_FOUND] 데이터가 없습니다.
+                                <TableCell colSpan={5} className="h-32 text-center text-slate-400 font-bold tracking-tight opacity-40">
+                                    등록된 부서 일정이 존재하지 않습니다.
                                 </TableCell>
-                            </TableRow>
                         ) : (
                             schedules.map((schedule, index) => (
                                 <TableRow key={schedule.schdulId} className="hover:bg-slate-50/50 transition-colors">

@@ -61,7 +61,7 @@ export default function SurveyResponseDetailPage() {
                     <CardContent className="space-y-6 relative z-10">
                         <div className="space-y-1">
                             <p className="text-3xl font-bold tracking-tighter">{response?.respondNm}</p>
-                            <p className="text-xs font-bold text-slate-400">Respondent Profile</p>
+                            <p className="text-xs font-bold text-slate-400">응답자 프로필</p>
                         </div>
                         <div className="space-y-4 pt-4 border-t border-white/10">
                             <div className="flex items-center gap-3">
@@ -70,7 +70,7 @@ export default function SurveyResponseDetailPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-sm font-bold underline underline-offset-4 decoration-emerald-500/30">_ 검증된 수신</span>
+                                <span className="text-sm font-bold underline underline-offset-4 decoration-emerald-500/30">검증된 응답</span>
                             </div>
                         </div>
                     </CardContent>

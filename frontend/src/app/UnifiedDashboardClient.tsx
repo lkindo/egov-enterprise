@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
 import { motion } from 'framer-motion';
 import { useMessage } from '@/hooks/useMessage';
@@ -118,10 +119,10 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => router.push('/admin/community/boards')}
-            aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
+            aria-label={t('dashboard.createNewPost') || '새 게시글 작성'}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border border-border/60 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-lg font-bold hover:bg-muted transition-all shadow-sm"
           >
-            <Plus size={20} /> 새 포스팅
+            <Plus size={20} /> 새 게시글 작성
           </motion.button>
         </div>
       </motion.div>
@@ -271,26 +272,4 @@ export default function UnifiedDashboardClient({
   );
 }
 
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-12 pb-20 animate-pulse">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-48 rounded-lg opacity-40" />
-          <Skeleton className="h-11 w-96 rounded-lg opacity-50" />
-          <Skeleton className="h-6 w-[500px] rounded-lg opacity-30" />
-        </div>
-        <div className="flex gap-4">
-          <Skeleton className="h-11 w-48 rounded-lg opacity-30" />
-          <Skeleton className="h-11 w-48 rounded-lg opacity-40" />
-        </div>
-      </div>
-      <Skeleton className="h-[250px] w-full rounded-lg opacity-20" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={`dash-skeleton-item-${i}`} className="h-[320px] rounded-lg opacity-20" />
-        ))}
-      </div>
-    </div>
-  );
-}
+

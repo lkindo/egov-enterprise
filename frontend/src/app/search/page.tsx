@@ -18,7 +18,7 @@ const IntegratedSearchPage = () => {
                 <div className="space-y-4 relative">
                     <div className="flex items-center justify-center gap-3 mb-2">
                         <Database className="text-primary w-5 h-5 animate-pulse" />
-                        <span className="text-xs font-bold text-primary uppercase tracking-[0.4em] font-mono">Neural Search Indexing</span>
+                        <span className="text-xs font-bold text-primary uppercase tracking-[0.4em] font-mono">통합 신경망 검색 분석</span>
                     </div>
                     <h2 className="text-4xl font-bold tracking-tighter text-slate-900 leading-tight">데이터 인구조사 분석 중...</h2>
                     <p className="text-sm font-bold text-slate-300 max-w-xs mx-auto tracking-tight uppercase leading-relaxed font-mono">실시간 분산 검색 인덱스에서 최적의 파라미터를 추출하고 있습니다.</p>

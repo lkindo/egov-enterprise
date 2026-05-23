@@ -193,7 +193,7 @@ export default function ApprovalHubClient() {
             </div>
             <div className="relative z-10 flex flex-col items-end gap-1">
                 <Badge variant={item.status === 'Y' ? 'success' : item.status === 'N' ? 'destructive' : 'secondary'} className="text-xs font-bold px-2 py-0">
-                    {item.status === 'Y' ? 'APPROVED' : item.status === 'N' ? 'REJECTED' : 'PENDING'}
+                    {item.status === 'Y' ? '승인 완료' : item.status === 'N' ? '반려됨' : '대기 중'}
                 </Badge>
                 <p className="text-xs font-bold opacity-30 tracking-tight">작성자: {item.applicantId}</p>
             </div>
@@ -253,19 +253,19 @@ export default function ApprovalHubClient() {
               <CardContent className="p-4 space-y-2">
                 <NavButton 
                   icon={<Inbox size={20} />} 
-                  label="Pending" 
+                  label="대기 중인 결재" 
                   active={activeTab === 'PENDING'} 
                   onClick={() => setActiveTab('PENDING')} 
                 />
                 <NavButton 
                   icon={<History size={20} />} 
-                  label="My History" 
+                  label="결재 처리 이력" 
                   active={activeTab === 'HISTORY'} 
                   onClick={() => setActiveTab('HISTORY')} 
                 />
                 <NavButton 
                   icon={<History size={20} />} 
-                  label="Archive" 
+                  label="결재 문서 보관함" 
                   active={activeTab === 'ARCHIVE'} 
                   onClick={() => setActiveTab('ARCHIVE')} 
                 />
@@ -305,7 +305,7 @@ export default function ApprovalHubClient() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input 
                     className="pl-12 h-11 bg-white/50 border-white/20 rounded-lg text-sm font-bold shadow-inner" 
-                    placeholder="Search requests..."
+                    placeholder="결재 요청 검색..."
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
                   />
@@ -341,7 +341,7 @@ export default function ApprovalHubClient() {
                             <span className="text-xs font-bold text-slate-300 tracking-tight">#{selectedItem.approvalId}</span>
                           </div>
                           <h2 className="text-4xl font-bold text-slate-900 tracking-tighter leading-none">
-                            {selectedItem.jobTypeNm || 'General Approval Request'}
+                            {selectedItem.jobTypeNm || '일반 결재 요청'}
                           </h2>
                         </div>
                         
@@ -351,14 +351,14 @@ export default function ApprovalHubClient() {
                               onClick={() => handleAction(selectedItem, 'Y')}
                               className="h-11 px-10 rounded-lg bg-emerald-500 text-white font-bold shadow-2xl shadow-emerald-500/30 hover:bg-emerald-600 hover:-translate-y-1 transition-all gap-2 border-none"
                             >
-                              <Check size={20} /> APPROVE
+                              <Check size={20} /> 결재 승인
                             </Button>
                             <Button 
                               variant="destructive"
                               onClick={() => handleAction(selectedItem, 'N')}
                               className="h-11 px-10 rounded-lg font-bold shadow-2xl shadow-rose-500/30 hover:-translate-y-1 transition-all gap-2 border-none"
                             >
-                              <X size={20} /> REJECT
+                              <X size={20} /> 결재 반려
                             </Button>
                           </div>
                         )}
@@ -379,15 +379,15 @@ export default function ApprovalHubClient() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         <DetailSection 
                           icon={<User size={18} />} 
-                          title="Originating Identity" 
+                          title="기안자 신원 정보" 
                           value={selectedItem.applicantId} 
-                          desc="Authenticated User Node" 
+                          desc="인증 완료 사용자" 
                         />
                         <DetailSection 
                           icon={<Calendar size={18} />} 
-                          title="Execution Timestamp" 
+                          title="기안 일시" 
                           value={selectedItem.requestDate} 
-                          desc="Clock Synchronized" 
+                          desc="표준 시간 동기화 완료" 
                         />
                       </div>
 
@@ -418,8 +418,8 @@ export default function ApprovalHubClient() {
                   <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
                     <ShieldCheck size={56} className="text-slate-100 group-hover:text-primary transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-300 tracking-tighter mb-4">_ 트랜잭션 선택</h3>
-                  <p className="text-xs font-bold text-slate-200 tracking-tight">암호화 선택 대기 중</p>
+                  <h3 className="text-3xl font-bold text-slate-300 tracking-tighter mb-4">_ 결재 문서 선택</h3>
+                  <p className="text-xs font-bold text-slate-200 tracking-tight">상세 내역 대기 중</p>
                 </div>
               )}
             </AnimatePresence>

@@ -54,7 +54,8 @@ function LoginContent() {
             toast.success("인증 성공: 보안 세션이 성공적으로 수립되었습니다.");
             
             setTimeout(() => {
-                window.location.href = redirectUrl;
+                router.replace(redirectUrl);
+                router.refresh();
             }, 500);
         } catch (err: any) {
             console.error(err);

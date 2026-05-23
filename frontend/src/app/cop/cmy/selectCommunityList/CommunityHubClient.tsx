@@ -54,7 +54,7 @@ export default function CommunityHubClient({
 
   const columns: Column<CommunityVO>[] = [
     {
-      header: 'COMMUNITY_ID',
+      header: '커뮤니티',
       accessor: (item) => (
         <div className="flex items-center gap-6 py-2">
           <div className="w-14 h-11 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary font-bold text-xs shadow-lg group-hover:rotate-6 transition-transform">
@@ -72,7 +72,7 @@ export default function CommunityHubClient({
       )
     },
     {
-      header: 'INTRODUCTION',
+      header: '소개',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md">
           "{item.cmmntyIntrcn || '등록된 소개 정보가 없습니다.'}"
@@ -80,7 +80,7 @@ export default function CommunityHubClient({
       )
     },
     {
-      header: 'GOVERNANCE',
+      header: '관리자',
       accessor: (item) => (
         <div className="inline-flex items-center gap-3 px-5 py-2 bg-slate-50 border border-slate-100 rounded-[var(--radius-hub-item)] text-slate-600 font-bold text-xs tracking-tight">
           <ShieldCheck size={14} className="text-primary" /> {item.frstRegisterNm}
@@ -88,7 +88,7 @@ export default function CommunityHubClient({
       )
     },
     {
-      header: 'CREATED_AT',
+      header: '개설일',
       accessor: (item) => (
         <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
           <Calendar size={14} /> {item.frstRegisterPnttm?.substring(0, 10)}
@@ -96,7 +96,7 @@ export default function CommunityHubClient({
       )
     },
     {
-      header: 'ACTION',
+      header: '이동',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmmntyId}`}>
           <Button variant="ghost" size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all group">
@@ -116,8 +116,8 @@ export default function CommunityHubClient({
         />
 
         <HubHeader
-          title="Community"
-          highlight="Fabric"
+          title="커뮤니티"
+          highlight="공간"
           subtitle="전사 소모임 및 지식 공유 커뮤니티 통합 아카이브"
           icon={Globe}
           actions={
@@ -153,13 +153,13 @@ export default function CommunityHubClient({
                 <MessageSquare size={120} className="text-primary" />
               </div>
               <div className="relative z-10 space-y-2">
-                <span className="text-xs font-bold text-primary tracking-tight">_ Statistical Matrix</span>
-                <h4 className="text-3xl font-bold tracking-tighter text-slate-900">Community<br />Pulse</h4>
+                <span className="text-xs font-bold text-primary tracking-tight">통계 분석 매트릭스</span>
+                <h4 className="text-3xl font-bold tracking-tighter text-slate-900">커뮤니케이션<br />활동성</h4>
               </div>
               <div className="space-y-6 relative z-10">
-                <MetricItem label="Active Nodes" value={data?.total || 0} />
-                <MetricItem label="Daily Interactions" value="1.2k+" />
-                <MetricItem label="Knowledge Assets" value="4.8k+" />
+                <MetricItem label="활성 커뮤니티" value={data?.total || 0} />
+                <MetricItem label="일일 상호작용" value="1.2k+" />
+                <MetricItem label="지식 자산 건수" value="4.8k+" />
               </div>
             </div>
 
@@ -173,7 +173,7 @@ export default function CommunityHubClient({
           {/* Main List Area */}
           <div className="col-span-12 lg:col-span-9">
             <HubSectionCard
-              title="Identity Stream"
+              title="등록 공간 스트림"
               description="활성화된 커뮤니티 객체들의 실시간 데이터 매트릭스입니다"
               icon={Users}
             >
@@ -183,7 +183,7 @@ export default function CommunityHubClient({
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
                       className="pl-16 h-11 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500"
-                      placeholder="Search for space..."
+                      placeholder="커뮤니티 검색..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
                     />
@@ -198,7 +198,7 @@ export default function CommunityHubClient({
                         className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all group shadow-sm"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
-                        SYNCHRONIZE
+                        동기화
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">

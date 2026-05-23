@@ -59,7 +59,7 @@ export default function CreateDeptJobPage() {
             <div className="relative z-10 space-y-2">
                 <div className="flex items-center gap-2 px-3 py-1 bg-white/10 w-fit rounded-lg border border-white/10 mb-4">
                     <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-                    <span className="text-xs font-bold tracking-widest uppercase">Dept Job System</span>
+                    <span className="text-xs font-bold tracking-widest uppercase">부서 업무 시스템</span>
                 </div>
                 <CardTitle className="text-3xl font-bold tracking-tighter">부서 업무 등록</CardTitle>
                 <p className="text-slate-400 font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
@@ -88,9 +88,9 @@ export default function CreateDeptJobPage() {
                   <SelectValue placeholder="순위 선택" />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg border-none shadow-2xl">
-                  <SelectItem value="1" className="font-bold py-3">🔴 높음 (High)</SelectItem>
-                  <SelectItem value="2" className="font-bold py-3">🟡 보통 (Medium)</SelectItem>
-                  <SelectItem value="3" className="font-bold py-3">🟢 낮음 (Low)</SelectItem>
+                  <SelectItem value="1" className="font-bold py-3">🔴 높음</SelectItem>
+                  <SelectItem value="2" className="font-bold py-3">🟡 보통</SelectItem>
+                  <SelectItem value="3" className="font-bold py-3">🟢 낮음</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -186,24 +186,10 @@
     font-family: inherit;
   }
 
-  /* Global Theme-Aware Overrides (Smart Theming) */
-  /* Text colors */
-  .text-slate-950, .text-slate-900, .text-gray-900, .text-black { @apply dark:text-slate-50; }
-  .text-slate-800, .text-gray-800 { @apply dark:text-slate-100; }
-  .text-slate-700, .text-gray-700 { @apply dark:text-slate-200; }
-  .text-slate-600, .text-gray-600 { @apply dark:text-slate-300; }
-  .text-slate-500, .text-gray-500 { @apply dark:text-slate-400; }
-  .text-slate-400, .text-gray-400 { @apply dark:text-slate-500; }
-
-  /* Background colors that should invert or dim in dark mode */
-  .bg-white { @apply dark:bg-slate-950; }
-  .bg-slate-50, .bg-gray-50 { @apply dark:bg-slate-900/50; }
-  .bg-slate-100, .bg-gray-100 { @apply dark:bg-slate-900; }
-  
-  /* Border colors */
-  .border-slate-100, .border-gray-100 { @apply dark:border-slate-800; }
-  .border-slate-200, .border-gray-200 { @apply dark:border-slate-700; }
-  .border-slate-300, .border-gray-300 { @apply dark:border-slate-600; }
+  /* 
+   * [Refactored] Redundant apply-based utility dark overrides removed. 
+   * Leveraged Tailwind 4.0 CSS Variable Theme Autoclass mapping instead to avoid priority collision.
+   */
 }
 
 @layer utilities {

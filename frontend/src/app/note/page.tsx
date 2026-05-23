@@ -136,7 +136,7 @@ export default function NotePage() {
                     <Sparkles size={120} className="text-primary" />
                 </div>
                 <div className="relative z-10 space-y-4">
-                    <h4 className="text-xs font-bold text-primary uppercase tracking-[0.4em]">Personal Messaging</h4>
+                    <h4 className="text-xs font-bold text-primary uppercase tracking-[0.4em]">개인 쪽지 송수신</h4>
                     <h3 className="text-3xl font-bold tracking-tighter leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
                 </div>
           </div>
@@ -239,12 +239,12 @@ export default function NotePage() {
               <div className="space-y-4">
                     <div className="flex items-center gap-3">
                          <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
-                         <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">Message_Body_Node</span>
+                         <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">쪽지 상세 데이터</span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>
                     <div className="flex items-center gap-4 pt-2">
                          <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                             {tab === 'received' ? `FR: ${selectedNote.trnsmitterId}` : `TO: ${selectedNote.rcverId}`}
+                             {tab === 'received' ? `발신: ${selectedNote.trnsmitterId}` : `수신: ${selectedNote.rcverId}`}
                          </div>
                          <div className="text-xs font-bold text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.sendDt}</div>
                     </div>

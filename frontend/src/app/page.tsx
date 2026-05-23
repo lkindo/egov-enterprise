@@ -3,8 +3,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import client from '@/lib/api/client';
-import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardTask } from '@/types/foundation/dashboard';
+import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 
 /**
  * P2: Dynamic Import for Heavy Dashboard Client
@@ -74,27 +74,5 @@ export default async function UnifiedDashboardPage() {
     <Suspense fallback={<DashboardSkeleton />}>
       <UnifiedDashboardClient dataPromise={dataPromise} />
     </Suspense>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-8 pb-10 animate-pulse">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-32 rounded-lg" />
-          <Skeleton className="h-12 w-64 rounded-lg" />
-          <Skeleton className="h-4 w-96 rounded-lg" />
-        </div>
-        <div className="flex gap-3 w-full lg:w-auto">
-          <Skeleton className="h-11 w-full lg:w-40 rounded-lg" />
-          <Skeleton className="h-11 w-full lg:w-40 rounded-lg" />
-        </div>
-      </div>
-      <Skeleton className="h-[200px] w-full rounded-lg" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={`page-skeleton-${i}`} className="h-48 rounded-lg" />)}
-      </div>
-    </div>
   );
 }

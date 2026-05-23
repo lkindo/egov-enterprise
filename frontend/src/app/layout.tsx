@@ -38,6 +38,13 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
+      {/* Skip Navigation: 본문 바로가기 링크 추가 (웹 접근성 준수) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-slate-900 focus:text-white focus:px-5 focus:py-3 focus:rounded-[var(--radius-hub-item)] focus:font-bold focus:shadow-2xl focus:border focus:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
+      >
+        본문 바로가기
+      </a>
       <Suspense fallback={<div className="h-11 border-b border-slate-100 bg-white/80" />}>
         <Header menusPromise={menusPromise} />
       </Suspense>
@@ -45,10 +52,15 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<aside className="hidden lg:block w-72 border-r bg-card h-full" />}>
           <Sidebar menusPromise={menusPromise} />
         </Suspense>
-        <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden">
+        {/* id="main-content" 및 tabIndex={-1} 속성을 주입하여 Skip Navigation 타겟 바인딩 (포커스 outline은 기본 제거) */}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden outline-none"
+        >
           <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
-              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-slate-500 font-medium">Loading page content...</div>}>
+              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-slate-500 font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
                 {children}
               </Suspense>
             </PageTransition>
@@ -79,7 +91,7 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <GlobalUIComponents />
       </Suspense>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">Loading Application...</div>}>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">애플리케이션을 준비하는 중...</div>}>
         <AppShell>
           {children}
         </AppShell>
@@ -95,7 +107,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -103,7 +115,7 @@ export default function RootLayout({
           disableTransitionOnChange
           enableColorScheme
         >
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">Initializing Session...</div>}>
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
             <ProvidersWithAuth>
               {children}
             </ProvidersWithAuth>
