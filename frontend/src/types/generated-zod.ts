@@ -32,7 +32,7 @@ export const ApiResponseVoidSchema = z.object({
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().optional(),
 });
 export type ApiResponseVoid = z.infer<typeof ApiResponseVoidSchema>;
@@ -556,7 +556,7 @@ export type PopupDto = z.infer<typeof PopupDtoSchema>;
 // ==========================================================================
 // MenuDto Schema
 // ==========================================================================
-export const MenuDtoSchema = z.object({
+export const MenuDtoSchema: z.ZodType<any> = z.object({
   id: z.number().optional(),
   menuNo: z.number().optional(),
   menuNm: z.string().optional(),
@@ -570,7 +570,7 @@ export const MenuDtoSchema = z.object({
   relateImageNm: z.string().optional(),
   modernRoute: z.string().optional(),
   creatPersonId: z.string().optional(),
-  children: z.array(z.lazy(() => MenuDtoSchema)).optional(),
+  children: z.array(z.lazy((): z.ZodType<any> => MenuDtoSchema)).optional(),
 });
 export type MenuDto = z.infer<typeof MenuDtoSchema>;
 
@@ -1595,7 +1595,7 @@ export const ApiResponseMapStringObjectSchema = z.object({
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().optional(),
 });
 export type ApiResponseMapStringObject = z.infer<typeof ApiResponseMapStringObjectSchema>;
@@ -2564,7 +2564,7 @@ export const ApiResponseMapStringStringSchema = z.object({
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().optional(),
 });
 export type ApiResponseMapStringString = z.infer<typeof ApiResponseMapStringStringSchema>;

@@ -231,44 +231,45 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             initial={{ y: 100, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.95 }}
-            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] flex items-center justify-between min-w-[500px] max-w-[90vw] p-2 bg-slate-900/90 dark:bg-slate-900/95 backdrop-blur-2xl text-white rounded-[var(--radius-hub-section)] shadow-2xl border border-white/10 overflow-hidden"
+            className="fixed bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-[100] flex flex-col sm:flex-row items-center justify-between w-[95vw] sm:w-auto sm:min-w-[580px] max-w-[95vw] p-3 sm:p-2 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-2xl text-white rounded-2xl shadow-2xl border border-white/10 overflow-hidden gap-3 sm:gap-0"
             role="toolbar"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
-            <div className="flex items-center gap-6 px-6 relative z-10">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold opacity-40 tracking-[0.3em] uppercase">_ Selection_Active</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-primary">{selectedIds.size}</span>
-                  <span className="text-xs font-bold opacity-60 uppercase tracking-widest">items selected</span>
+            
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 px-3 sm:px-6 relative z-10 w-full sm:w-auto">
+              <div className="flex flex-col items-center sm:items-start shrink-0">
+                <span className="text-[10px] font-black opacity-40 tracking-[0.3em] uppercase">선택 항목 제어</span>
+                <div className="flex items-center gap-1.5 leading-none mt-1">
+                  <span className="text-lg sm:text-xl font-black text-primary leading-none">{selectedIds.size}</span>
+                  <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">개 선택됨</span>
                 </div>
               </div>
               
-              <div className="h-10 w-px bg-white/10" />
+              <div className="hidden sm:block h-10 w-px bg-white/10" />
               
-              <div className="flex gap-2 p-1">
+              <div className="flex flex-wrap items-center justify-center gap-2 p-0.5 w-full sm:w-auto">
                 {bulkActions.map((action, idx) => (
                   <Button
                     key={`bulk-action-${idx}`}
                     size="sm"
-                    className="h-12 px-6 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group"
+                    className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group whitespace-nowrap"
                     onClick={() => action.onClick(selectedItems)}
                   >
-                    {action.icon && <span className="group-hover:scale-110 transition-transform">{action.icon}</span>}
-                    {action.label.toUpperCase()}
+                    {action.icon && <span className="group-hover:scale-110 transition-transform shrink-0">{action.icon}</span>}
+                    {action.label}
                   </Button>
                 ))}
               </div>
             </div>
 
-            <div className="pr-2 relative z-10">
+            <div className="px-3 sm:pr-2 relative z-10 w-full sm:w-auto text-center shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                className="h-12 px-6 rounded-[var(--radius-hub-item)] text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+                className="w-full sm:w-auto h-10 sm:h-12 px-6 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
               >
-                Clear All
+                전체 해제
               </Button>
             </div>
           </motion.div>

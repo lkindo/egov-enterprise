@@ -68,7 +68,7 @@ export default function PrivacyPolicyClient({
  onClick={() => setIsEditing(false)}
  className="h-11 px-8 rounded-lg bg-white border-2 border-slate-100 text-slate-400 font-bold text-xs tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition-all shadow-xl active:scale-95 px-6"
  >
- CANCEL_CHANGES
+ 변경 취소
  </Button>
  <Button
  onClick={handleSave}
@@ -76,7 +76,7 @@ export default function PrivacyPolicyClient({
  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
  {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />} 
- COMMIT_SPECIFICATION
+ 정책 반영
  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
  </Button>
  </>
@@ -85,7 +85,7 @@ export default function PrivacyPolicyClient({
  onClick={() => setIsEditing(true)}
  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
- <FileCode size={20} /> POLICY_SPEC_OVERRIDE
+ <FileCode size={20} /> 정책 명세 덮어쓰기
  </Button>
  )}
  </div>
@@ -93,10 +93,10 @@ export default function PrivacyPolicyClient({
  />
 
  <HubMetricGrid>
- <HubMetricCard title="COMPLIANCE_STATUS" value="CERTIFIED" icon={ClipboardCheck} color="emerald" status="ONLINE" />
- <HubMetricCard title="PRIVACY_LEVEL" value="TIER_1" icon={ShieldAlert} color="primary" />
- <HubMetricCard title="AUDIT_PROBE" value="활성" icon={SearchCode} color="indigo" />
- <HubMetricCard title="REGULATORY_SYNC" value="99.8%" icon={Gavel} color="amber" />
+ <HubMetricCard title="규범 인증 상태" value="인증 완료" icon={ClipboardCheck} color="emerald" status="ONLINE" />
+ <HubMetricCard title="개인정보 등급" value="1등급 (최상위)" icon={ShieldAlert} color="primary" />
+ <HubMetricCard title="감사 모니터링" value="활성" icon={SearchCode} color="indigo" />
+ <HubMetricCard title="법적 정합성" value="99.8%" icon={Gavel} color="amber" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-12">
@@ -116,7 +116,7 @@ export default function PrivacyPolicyClient({
 
  <div className="space-y-8">
  <div className="space-y-3">
- <label className="text-xs font-bold text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block text-left">Governance_Probing</label>
+ <label className="text-xs font-bold text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block text-left">거버넌스 상태 진단</label>
  <div className="p-8 rounded-lg bg-white/5 border border-white/5 space-y-4">
  <div className="flex items-center justify-between">
  <span className="text-xs font-bold text-white/40 uppercase tracking-widest ">마지막 커밋</span>
@@ -128,7 +128,7 @@ export default function PrivacyPolicyClient({
  </div>
  <div className="flex items-center justify-between">
  <span className="text-xs font-bold text-white/40 uppercase tracking-widest ">가용성</span>
- <span className="text-xs font-bold text-indigo-400 font-mono tracking-widest uppercase ">PUBLIC_SYNC</span>
+ <span className="text-xs font-bold text-indigo-400 font-mono tracking-widest uppercase ">실시간 동기화</span>
  </div>
  </div>
  </div>
@@ -156,7 +156,7 @@ export default function PrivacyPolicyClient({
  <div className="space-y-4">
  <div className="flex items-center gap-3 px-2">
  <div className="w-2 h-2 rounded-lg bg-primary" />
- <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">Policy_Identifier_Title</label>
+ <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">정책 식별자 명칭</label>
  </div>
  {isEditing ? (
  <Input
@@ -173,7 +173,7 @@ export default function PrivacyPolicyClient({
  <div className="space-y-4 pt-4 border-t border-slate-100">
  <div className="flex items-center gap-3 px-2">
  <div className="w-2 h-2 rounded-lg bg-primary" />
- <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">Policy_Raw_Specification</label>
+ <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">데이터 보호 규정 원문</label>
  </div>
  {isEditing ? (
  <Textarea

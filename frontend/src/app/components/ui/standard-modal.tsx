@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,12 @@ export function StandardModal({
   footer,
   maxWidth = 'md'
 }: StandardModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Prevent scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +42,7 @@ export function StandardModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
+  if (!mounted) return null;
 
   const maxWidthClasses = {
     sm: 'max-w-sm',
@@ -47,8 +55,8 @@ export function StandardModal({
     '5xl': 'max-w-5xl',
   };
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto">
       <div 
         className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
@@ -58,7 +66,7 @@ export function StandardModal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "bg-card border border-border rounded-lg shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
+          "bg-card border border-border rounded-lg shadow-xl w-full flex flex-col max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-4rem)] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50 my-auto",
           maxWidthClasses[maxWidth]
         )}
       >
@@ -76,7 +84,7 @@ export function StandardModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 scrollbar-thin">
           {children}
         </div>
 
@@ -87,6 +95,7 @@ export function StandardModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

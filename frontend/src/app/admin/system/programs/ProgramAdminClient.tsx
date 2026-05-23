@@ -187,7 +187,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
  <Settings size={16} />
  </Button>
  </TooltipTrigger>
@@ -198,7 +198,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
  <Tooltip>
  <TooltipTrigger asChild>
- <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.progrmFileNm)}>
+ <Button size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.progrmFileNm)}>
  <Trash2 size={16} />
  </Button>
  </TooltipTrigger>

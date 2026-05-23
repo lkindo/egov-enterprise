@@ -57,7 +57,18 @@ export function SessionExpiryWarning() {
   }, [logout]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setShowWarning(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+      return;
+    }
 
     const WARNING_THRESHOLD = 5 * 60 * 1000; // 만료 5분 전 경고
     const CHECK_INTERVAL = 30 * 1000; // 30초마다 체크

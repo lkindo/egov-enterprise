@@ -12,11 +12,14 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const isNew = data.isNew !== false;
+    
+    // isNew 플래그를 백엔드 전송 DTO 객체에서 배제
+    const { isNew: _, ...pureData } = data;
 
     if (isNew) {
-      await codeAdminService.createDetailCode(data as CmmnDetailCode, config);
+      await codeAdminService.createDetailCode(pureData as CmmnDetailCode, config);
     } else {
-      await codeAdminService.updateDetailCode(data.codeId!, data.code!, data as CmmnDetailCode, config);
+      await codeAdminService.updateDetailCode(pureData.codeId!, pureData.code!, pureData as CmmnDetailCode, config);
     }
 
     revalidatePath('/admin/system/common-code');
@@ -51,12 +54,16 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+    
     const isNew = data.isNew !== false;
+    
+    // isNew 플래그를 백엔드 전송 DTO 객체에서 배제
+    const { isNew: _, ...pureData } = data;
 
     if (isNew) {
-      await codeAdminService.createClCode(data, config);
+      await codeAdminService.createClCode(pureData, config);
     } else {
-      await codeAdminService.updateClCode(data.clCode!, data, config);
+      await codeAdminService.updateClCode(pureData.clCode!, pureData, config);
     }
 
     revalidatePath('/admin/system/common-code');
@@ -87,12 +94,16 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+    
     const isNew = data.isNew !== false;
+    
+    // isNew 플래그를 백엔드 전송 DTO 객체에서 배제
+    const { isNew: _, ...pureData } = data;
 
     if (isNew) {
-      await codeAdminService.createCmmnCode(data, config);
+      await codeAdminService.createCmmnCode(pureData, config);
     } else {
-      await codeAdminService.updateCmmnCode(data.codeId!, data, config);
+      await codeAdminService.updateCmmnCode(pureData.codeId!, pureData, config);
     }
 
     revalidatePath('/admin/system/common-code');

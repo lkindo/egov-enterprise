@@ -560,8 +560,8 @@ export default function DeptAdminClient({
 
  <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
  <div className="flex bg-white/5 p-1 rounded-lg">
- <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.orgnztId || '')))}><ChevronsUpDown size={14} className="mr-2" /> All_Expand</Button>
- <Button variant="ghost" className="flex-1 h-10 text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-2" /> All_Collapse</Button>
+ <Button className="flex-1 h-10 bg-transparent text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase border-none shadow-none" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.orgnztId || '')))}><ChevronsUpDown size={14} className="mr-2" /> 전체 펼치기</Button>
+ <Button className="flex-1 h-10 bg-transparent text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase border-none shadow-none" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-2" /> 전체 접기</Button>
  </div>
  {hasChanges && (
  <Button
@@ -570,7 +570,7 @@ export default function DeptAdminClient({
  className="w-full h-11 rounded-lg bg-emerald-500 text-white border-none font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-emerald-600 transition-all animate-in fade-in zoom-in duration-300"
  >
  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save size={16} className="mr-2" />} 
- SAVE_CHANGES
+ 변경사항 저장
  </Button>
  )}
  <Button

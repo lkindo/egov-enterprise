@@ -238,10 +238,10 @@ export default function UserManageClient() {
  </TableCell>
  <TableCell className="text-right">
  <div className="flex items-center justify-end gap-2">
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
  <Edit2 size={16} />
  </Button>
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-rose-500 hover:text-white transition-all text-rose-500">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
  <Trash2 size={16} />
  </Button>
  </div>

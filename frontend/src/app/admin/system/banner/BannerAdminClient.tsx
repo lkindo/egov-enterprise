@@ -17,6 +17,8 @@ import { Banner, Popup } from '@/types/foundation/banner';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { fileAdminService } from '@/services/foundation/system/FileAdminService';
+import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
+import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
 import {
  Plus,
  Image as ImageIcon,
@@ -156,17 +158,23 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  }, [isModalOpen, activeTab, editingItem, bannerForm, popupForm]);
 
- const { data: banners = initialBanners, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
- queryKey: ['admin-banners'],
- queryFn: async () => initialBanners,
- enabled: activeTab === 'banner'
- });
+  const { data: banners = initialBanners, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
+  queryKey: ['admin-banners'],
+  queryFn: async () => {
+    const res = await bannerAdminService.getBannerList({ pageUnit: 999 });
+    return (res.list || []) as Banner[];
+  },
+  enabled: activeTab === 'banner'
+  });
 
- const { data: popups = initialPopups, isLoading: isPopupsLoading, refetch: refetchPopups } = useQuery({
- queryKey: ['admin-popups'],
- queryFn: async () => initialPopups,
- enabled: activeTab === 'popup'
- });
+  const { data: popups = initialPopups, isLoading: isPopupsLoading, refetch: refetchPopups } = useQuery({
+  queryKey: ['admin-popups'],
+  queryFn: async () => {
+    const res = await popupAdminService.getPopupList({ pageUnit: 999 });
+    return (res.list || []) as Popup[];
+  },
+  enabled: activeTab === 'popup'
+  });
 
  const handleCreate = () => {
  setEditingItem(null);

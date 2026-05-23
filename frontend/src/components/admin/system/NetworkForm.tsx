@@ -153,7 +153,13 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                 />
 
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="outline" onClick={onCancel}>취소</Button>
+                    <button 
+                      type="button" 
+                      onClick={onCancel} 
+                      className="px-6 h-10 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium"
+                    >
+                      취소
+                    </button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? '저장 중...' : '저장하기'}
                     </Button>

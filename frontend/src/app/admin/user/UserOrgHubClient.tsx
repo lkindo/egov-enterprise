@@ -302,7 +302,7 @@ export default function UserOrgHubClient({
       title: '아이덴티티 삭제',
       message: '해당 사용자의 모든 접근 권한과 아이덴티티 프로필을 시스템에서 영구히 말소하시겠습니까?',
       variant: 'destructive',
-      confirmText: 'REVOKE_IDENTITY'
+      confirmText: '접근차단실행'
     });
 
     if (ok) {
@@ -323,7 +323,7 @@ export default function UserOrgHubClient({
       title: '일괄 신원 말소',
       message: `${userItems.length}명의 사용자를 시스템에서 영구히 삭제하시겠습니까?`,
       variant: 'destructive',
-      confirmText: 'BULK_REVOKE'
+      confirmText: '일괄말소실행'
     });
     if (ok) {
       const res = await bulkDeleteUsersAction(userItems.map(u => u.userId));
@@ -429,9 +429,13 @@ export default function UserOrgHubClient({
           <div className="flex gap-3 p-1 items-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="lg" aria-label="개인화 환경 설정" className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95">
+                <button 
+                  type="button"
+                  aria-label="개인화 환경 설정" 
+                  className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 flex items-center justify-center outline-none cursor-pointer"
+                >
                   <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
-                </Button>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 환경 설정
@@ -440,9 +444,7 @@ export default function UserOrgHubClient({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  size="lg" 
-                  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
+                <button 
                   onClick={() => {
                     setFormMode('create');
                     if (activeTab === 'DEPTS') {
@@ -451,10 +453,11 @@ export default function UserOrgHubClient({
                       setIsUserModalOpen(true);
                     }
                   }}
+                  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group flex items-center justify-center shrink-0 cursor-pointer outline-none"
                 >
                   {activeTab === 'DEPTS' ? <LayoutGrid size={18} /> : <UserPlus size={18} />}
-                  {activeTab === 'DEPTS' ? '부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
-                </Button>
+                  <span>{activeTab === 'DEPTS' ? '부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}</span>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 {activeTab === 'DEPTS' ? '새로운 부서 추가' : '새로운 사용자 생성'}
@@ -464,32 +467,16 @@ export default function UserOrgHubClient({
         }
       />
 
+      {/* --- Horizontal Premium Tab Controls --- */}
+      <div className="flex bg-slate-100/60 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 max-w-4xl w-full mb-10 relative z-10 shadow-sm">
+        <NavButton icon={<Users size={16} />} label="사용자" active={activeTab === 'USERS'} onClick={() => startTransition(() => { setActiveTab('USERS'); setSelectedItemId(null); })} />
+        <NavButton icon={<Network size={16} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => startTransition(() => { setActiveTab('DEPTS'); setSelectedItemId(null); })} />
+        <NavButton icon={<UserMinus size={16} />} label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => startTransition(() => { setActiveTab('ABSENCES'); setSelectedItemId(null); })} />
+        <NavButton icon={<ShieldCheck size={16} />} label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => startTransition(() => { setActiveTab('POLICIES'); setSelectedItemId(null); })} />
+      </div>
+
       <div className={cn("grid grid-cols-12 gap-8 min-h-[800px] transition-opacity duration-500", isPending && "opacity-60 pointer-events-none")}>
-        <div className="col-span-12 lg:col-span-3 space-y-6 flex flex-col h-full">
-          <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl p-3 flex flex-col gap-3">
-            <NavButton icon={<Users size={20} />} subLabel="Menu_01" label="사용자" active={activeTab === 'USERS'} onClick={() => startTransition(() => { setActiveTab('USERS'); setSelectedItemId(null); })} />
-            <NavButton icon={<Network size={20} />} subLabel="Menu_02" label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => startTransition(() => { setActiveTab('DEPTS'); setSelectedItemId(null); })} />
-            <NavButton icon={<UserMinus size={20} />} subLabel="Menu_03" label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => startTransition(() => { setActiveTab('ABSENCES'); setSelectedItemId(null); })} />
-            <NavButton icon={<ShieldCheck size={20} />} subLabel="Menu_04" label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => startTransition(() => { setActiveTab('POLICIES'); setSelectedItemId(null); })} />
-          </div>
-
-          <div className="mt-auto rounded-2xl bg-slate-900 text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group border-none">
-            <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-              <CloudLightning size={200} className="text-primary" />
-            </div>
-            <div className="relative z-10 space-y-4 text-center lg:text-left">
-              <div className="w-12 h-10 bg-white/10 rounded-xl flex items-center justify-center mx-auto lg:mx-0 border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
-                <Activity size={24} className="text-primary" />
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-xl font-black tracking-tighter leading-tight">사용자 통계</h4>
-                <p className="text-[10px] text-white/60 font-bold tracking-tight leading-relaxed uppercase">Real-time status synced</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className={cn("col-span-12 lg:col-span-4 h-full flex flex-col gap-6 transition-opacity duration-300", isPending && "opacity-50")}>
+        <div className={cn("col-span-12 lg:col-span-7 h-full flex flex-col gap-6 transition-opacity duration-300", isPending && "opacity-50")}>
           <HubSectionCard
             title={activeTab === 'DEPTS' ? "조직 구조" : "사용자 목록"}
             description="실시간으로 동기화되는 조직 및 사용자 명세입니다."
@@ -502,9 +489,14 @@ export default function UserOrgHubClient({
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" aria-label="서버 데이터 동기화" onClick={() => queryClient.invalidateQueries()} className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all group shadow-sm uppercase">
-                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> Sync
-                    </Button>
+                    <button 
+                      type="button"
+                      aria-label="서버 데이터 동기화" 
+                      onClick={() => queryClient.invalidateQueries()} 
+                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-slate-100 hover:bg-slate-900 text-slate-800 hover:text-white border border-slate-200/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
+                    >
+                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 동기화
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                     데이터 동기화
@@ -612,7 +604,7 @@ export default function UserOrgHubClient({
                                   className="w-full h-11 rounded-xl bg-emerald-500 text-white font-black text-xs tracking-widest shadow-lg hover:bg-emerald-600 transition-all gap-2 uppercase"
                                 >
                                   {isSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />} 
-                                  Save Structure
+                                  조직 계층 저장
                                 </Button>
                               </div>
                             )}
@@ -683,11 +675,11 @@ export default function UserOrgHubClient({
                         </h2>
                         <div className="flex gap-3">
                           <span className="bg-primary/5 text-primary text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border border-primary/10 shadow-sm flex items-center gap-2 uppercase">
-                            <ShieldCheck size={14} /> Verified
+                            <ShieldCheck size={14} /> 인증됨
                           </span>
                           {activeTab === 'ABSENCES' && (
                             <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border border-amber-200 shadow-sm animate-pulse uppercase">
-                              Away
+                              자리비움
                             </span>
                           )}
                         </div>
@@ -727,10 +719,15 @@ export default function UserOrgHubClient({
                           </div>
                           <div>
                             <h4 className="text-[10px] font-black text-slate-400 tracking-widest leading-none mb-1.5 uppercase">권한 프로토콜</h4>
-                            <p className="text-sm font-black text-slate-900 tracking-tighter uppercase leading-none">Access Matrix</p>
+                            <p className="text-sm font-black text-slate-900 tracking-tighter uppercase leading-none">접근 제어 정책</p>
                           </div>
                         </div>
-                        <Button variant="ghost" className="h-10 px-5 rounded-xl bg-slate-50 text-[10px] font-black text-primary gap-2 tracking-widest hover:bg-primary hover:text-white transition-all uppercase">Manage <ChevronRight size={14} /></Button>
+                        <button 
+                          type="button"
+                          className="h-10 px-5 rounded-xl bg-slate-100 hover:bg-slate-900 text-[10px] font-black text-slate-800 hover:text-white gap-2 transition-all uppercase flex items-center justify-center outline-none cursor-pointer"
+                        >
+                          권한 설정 <ChevronRight size={14} />
+                        </button>
                       </div>
                       <div className="flex flex-wrap gap-3">
                         {['ACCESS_CMS', 'SYSTEM_ADMIN', 'ANALYTICS', 'USER_DIRECTORY', 'SECURITY_AUDIT'].map(p => (
@@ -744,14 +741,15 @@ export default function UserOrgHubClient({
                   </div>
 
                   <div className="flex gap-4 pt-10 mt-auto border-t border-slate-100/50 relative z-10">
-                    <Button 
+                    <button 
+                      type="button"
                       onClick={handleDeleteUser}
-                      className="flex-1 h-10 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase"
+                      className="flex-1 h-10 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase outline-none cursor-pointer flex items-center justify-center"
                     >
-                      Revoke
-                    </Button>
+                      접근 차단
+                    </button>
                     <Button className="flex-[2] h-10 bg-slate-900 text-white rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase">
-                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> Save Changes
+                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> 변경사항 저장
                     </Button>
                   </div>
                 </div>
@@ -761,8 +759,8 @@ export default function UserOrgHubClient({
                 <div className="w-28 h-24 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
                   <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-200 tracking-tighter uppercase">No Selection</h3>
-                <p className="text-[10px] font-bold text-slate-300 tracking-tight mt-4 leading-relaxed max-w-[240px] uppercase tracking-widest">Select an entity from the stream to begin management</p>
+                <h3 className="text-3xl font-black text-slate-200 tracking-tighter uppercase">선택 대기 중</h3>
+                <p className="text-[10px] font-bold text-slate-300 tracking-tight mt-4 leading-relaxed max-w-[280px] uppercase tracking-widest">스트림에서 부서 또는 사용자를 선택하여 관리를 시작하십시오.</p>
                 <div className="mt-10 flex gap-4 opacity-10 grayscale">
                   <Fingerprint size={24} />
                   <Database size={24} />
@@ -848,7 +846,13 @@ export default function UserOrgHubClient({
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button variant="ghost" onClick={() => setIsBulkStatusModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight">CANCEL</Button>
+            <button 
+              type="button"
+              onClick={() => setIsBulkStatusModalOpen(false)} 
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            >
+              취소
+            </button>
             <Button 
               onClick={async () => {
                 setIsSaving(true);
@@ -870,7 +874,7 @@ export default function UserOrgHubClient({
               disabled={isSaving}
               className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'COMMIT_CHANGES'}
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '상태 일괄 적용'}
             </Button>
           </div>
         </div>
@@ -920,7 +924,13 @@ export default function UserOrgHubClient({
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button variant="ghost" onClick={() => setIsBulkMoveModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight">CANCEL</Button>
+            <button 
+              type="button"
+              onClick={() => setIsBulkMoveModalOpen(false)} 
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            >
+              취소
+            </button>
             <Button 
               onClick={async () => {
                 if (!targetDeptId) {
@@ -946,7 +956,7 @@ export default function UserOrgHubClient({
               disabled={isSaving}
               className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'EXECUTE_MIGRATION'}
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '부서 이동 실행'}
             </Button>
           </div>
         </div>
@@ -1001,7 +1011,13 @@ export default function UserOrgHubClient({
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button variant="ghost" onClick={() => setIsBulkRoleModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight">CANCEL</Button>
+            <button 
+              type="button"
+              onClick={() => setIsBulkRoleModalOpen(false)} 
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            >
+              취소
+            </button>
             <Button 
               onClick={async () => {
                 setIsSaving(true);
@@ -1023,7 +1039,7 @@ export default function UserOrgHubClient({
               disabled={isSaving}
               className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'UPDATE_AUTHORITY'}
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '권한 변경 실행'}
             </Button>
           </div>
         </div>
@@ -1034,38 +1050,31 @@ export default function UserOrgHubClient({
   );
 }
 
-function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.ReactNode, subLabel: string, label: string, active: boolean, onClick: () => void }) {
+function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={onClick}
-          className={cn(
-            "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
-            active
-              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10"
-              : "bg-transparent border-transparent hover:bg-slate-50 text-slate-600 hover:text-slate-900"
-          )}
-        >
-          <div className={cn(
-            "w-14 h-11 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10",
-            active ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
-          )}>
-            {icon}
-          </div>
-          <div className="flex flex-col text-left relative z-10">
-            <span className={cn("text-xs font-bold tracking-tight mb-1 opacity-100", active && "opacity-100 ")}>_ {subLabel}</span>
-            <span className="text-md font-bold tracking-tighter leading-tight">{label}</span>
-          </div>
-          {active && (
-            <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-lg blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="right" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-        {label} 섹션으로 이동
-      </TooltipContent>
-    </Tooltip>
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-300 relative overflow-hidden",
+        active
+          ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10 scale-[1.02] z-10"
+          : "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-white/40"
+      )}
+    >
+      <span className={cn(
+        "transition-colors shrink-0",
+        active ? "text-primary" : "text-slate-400"
+      )}>
+        {icon}
+      </span>
+      <span>{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="activeTabGlow"
+          className="absolute right-0 top-0 w-16 h-16 bg-primary/20 rounded-full blur-2xl opacity-40 -mr-8 -mt-8 pointer-events-none" 
+        />
+      )}
+    </button>
   );
 }
 

@@ -66,7 +66,7 @@ export interface CmmnClCode {
   clCode: string;
   clCodeNm: string;
   clCodeDc: string;
-  useAt: 'Y' | 'N';
+  useYn: 'Y' | 'N';
   frstRegisterId?: string;
   lastUpdusrId?: string;
 }
@@ -75,7 +75,7 @@ export interface CmmnCode {
   codeId: string;
   codeIdNm: string;
   codeIdDc: string;
-  useAt: 'Y' | 'N';
+  useYn: 'Y' | 'N';
   clCode: string;
   clCodeNm?: string;
 }
@@ -85,7 +85,7 @@ export interface CmmnDetailCode {
   code: string;
   codeNm: string;
   codeDc: string;
-  useAt: 'Y' | 'N';
+  useYn: 'Y' | 'N';
   codeIdNm?: string;
 }
 

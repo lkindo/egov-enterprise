@@ -60,6 +60,7 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
+import { z } from 'zod';
 import { 
  saveCodeDetail, 
  deleteCodeDetail,
@@ -73,6 +74,14 @@ import {
 import { DomainCluster, GroupCode } from '@/types/foundation/code';
 
 const INDENTATION_WIDTH = 24;
+
+// 공통코드 상세 등록/수정 전용 Zod 스키마 (useAt 및 codeId 누락 폼 불일치 완전 해소)
+const codeDetailFormSchema = z.object({
+ code: z.string().min(1, '코드 식별자는 필수입니다.'),
+ codeNm: z.string().min(1, '표기 레이블은 필수입니다.'),
+ useYn: z.enum(['Y', 'N']).default('Y'),
+ codeDc: z.string().optional()
+});
 
 const dropAnimation: DropAnimation = {
  sideEffects: defaultDropAnimationSideEffects({
@@ -214,11 +223,11 @@ export default function CommonCodeClient({
  const [activeId, setActiveId] = useState<string | null>(null);
  const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
 
- const form = useAppForm(codeDetailSchema, {
+ const form = useAppForm(codeDetailFormSchema, {
  defaultValues: {
  code: '',
  codeNm: '',
- useAt: 'Y',
+ useYn: 'Y',
  codeDc: ''
  }
  });
@@ -229,14 +238,14 @@ export default function CommonCodeClient({
  form.reset({
  code: editingDetail.code,
  codeNm: editingDetail.codeNm,
- useAt: (editingDetail.useAt as 'Y' | 'N') || 'Y',
+ useYn: (editingDetail.useYn as 'Y' | 'N') || 'Y',
  codeDc: editingDetail.codeDc || ''
  });
  } else {
  form.reset({
  code: '',
  codeNm: '',
- useAt: 'Y',
+ useYn: 'Y',
  codeDc: ''
  });
  }
@@ -411,6 +420,8 @@ export default function CommonCodeClient({
  const res = await deleteCodeDetail(null, { codeId: selectedGroup.codeId, code });
  if (res.success) {
  toast(res.message, 'success');
+ // 삭제 성공 후 우측 구성 명세 목록 실시간 리로드
+ loadGroupDetails(selectedGroup);
  } else {
  toast(res.message, 'error');
  }
@@ -433,7 +444,7 @@ export default function CommonCodeClient({
  try {
  const res = await saveCodeDetail(null, {
  ...values,
- useAt: values.useAt as 'Y' | 'N',
+ useYn: values.useYn as 'Y' | 'N',
  codeId: selectedGroup?.codeId || '',
  isNew: !editingDetail
  });
@@ -441,6 +452,10 @@ export default function CommonCodeClient({
  if (res.success) {
  toast(res.message, 'success');
  setIsOpen(false);
+ // 저장 성공 후 우측 구성 명세 목록 실시간 리로드
+ if (selectedGroup) {
+   loadGroupDetails(selectedGroup);
+ }
  } else {
  toast(res.message, 'error');
  }
@@ -467,7 +482,7 @@ export default function CommonCodeClient({
  },
  {
  header: '상태',
- accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useAt === 'Y' ? '사용 중' : '미사용'} />,
+ accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} />,
  className: 'w-32 py-4'
  },
  {
@@ -765,7 +780,7 @@ export default function CommonCodeClient({
  <div className="space-y-8">
  <ShadcnFormField
  control={form.control}
- name="useAt"
+ name="useYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">

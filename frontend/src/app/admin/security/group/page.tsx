@@ -322,7 +322,13 @@ export default function GroupManagePage() {
  </FormField>
 
  <div className="flex gap-6 pt-4">
- <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
+  <button 
+    type="button"
+    onClick={() => setIsDialogOpen(false)} 
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+  >
+    취소
+  </button>
  <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
  {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
  <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>

@@ -169,7 +169,7 @@ export const InsightBanner: React.FC = () => {
  />
  ))}
  </div>
- <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
  <Maximize2 size={16} />
  </Button>
  </div>
@@ -177,4 +177,3 @@ export const InsightBanner: React.FC = () => {
  </div>
  );
 };
-

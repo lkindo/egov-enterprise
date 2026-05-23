@@ -99,7 +99,7 @@ export default function CommunityHubClient({
       header: '이동',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmmntyId}`}>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all group">
+          <Button size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-slate-100 border border-slate-200/60 text-slate-800 hover:bg-slate-900 hover:text-white transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>

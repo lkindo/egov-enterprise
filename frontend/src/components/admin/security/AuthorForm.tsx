@@ -132,7 +132,13 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
         />
 
         <div className="flex w-full gap-6 pt-4 border-t border-slate-100">
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
+          <button 
+            type="button" 
+            onClick={onCancel} 
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+          >
+            취소
+          </button>
           <Button
             type="submit"
             disabled={isSubmitting}
