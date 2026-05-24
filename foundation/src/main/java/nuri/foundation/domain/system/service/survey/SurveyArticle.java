@@ -24,22 +24,21 @@ public class SurveyArticle extends BaseEntity {
     @Column(name = "srvy_artcl_id", length = 20)
     private String srvyArtclId;
 
-    @Column(name = "srvy_qstn_id", length = 20)
+    @Column(length = 20)
     private String srvyQstnId;
 
-    @Column(name = "srvy_id", length = 20)
+    @Column(length = 20)
     private String srvyId;
 
-    @Column(name = "artcl_sn")
     private Long artclSn;
 
-    @Column(name = "artcl_cn", length = 4000)
+    @Column(length = 4000)
     private String artclCn;
 
-    @Column(name = "etc_ans_yn", length = 1)
+    @Column(length = 1)
     private String etcAnsYn;
 
-    @Column(name = "srvy_tmplt_id", length = 20)
+    @Column(length = 20)
     private String srvyTmpltId;
 
     public void update(Long artclSn, String artclCn, String etcAnsYn) {

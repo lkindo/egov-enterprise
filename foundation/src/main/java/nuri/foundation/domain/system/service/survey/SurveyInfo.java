@@ -24,25 +24,25 @@ public class SurveyInfo extends BaseEntity {
     @Column(name = "srvy_id", length = 20)
     private String srvyId;
 
-    @Column(name = "srvy_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String srvyTtl;
 
-    @Column(name = "srvy_prps", length = 1000)
+    @Column(length = 1000)
     private String srvyPrps;
 
-    @Column(name = "srvy_wrt_gd_cn", length = 4000)
+    @Column(length = 4000)
     private String srvyWrtGdCn;
 
-    @Column(name = "srvy_bgng_ymd", length = 8)
+    @Column(length = 8)
     private String srvyBgngYmd;
 
-    @Column(name = "srvy_end_ymd", length = 8)
+    @Column(length = 8)
     private String srvyEndYmd;
 
-    @Column(name = "srvy_trgt", length = 1000)
+    @Column(length = 1000)
     private String srvyTrgt;
 
-    @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String srvyTmpltId;
 
     public void update(String srvyTtl, String srvyPrps, String srvyWrtGdCn,
