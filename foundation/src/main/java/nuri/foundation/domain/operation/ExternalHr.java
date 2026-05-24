@@ -16,50 +16,53 @@ import java.time.LocalDateTime;
 public class ExternalHr {
 
     @Id
+    // [JPA 복합키 식별자-외래키 컬럼 공유 규칙]
+    // evntId는 복합키 식별자 필드이자, 하단의 @ManyToOne event 연관관계 필드의 @JoinColumn("EVNT_ID")과 
+    // 동일한 실제 물리 DB 컬럼(evnt_id)을 공유(Shared Column Mapping)하고 있습니다.
+    // 명시적인 name = "evnt_id" 지정을 누락하면, Hibernate는 두 프로퍼티 간의 물리 컬럼 병합을 
+    // 인식하지 못해 DuplicateMappingException을 유발하므로 이 name 속성은 반드시 명시적으로 보존해야 합니다.
     @Column(name = "evnt_id", length = 20)
     private String evntId;
 
     @Id
-    @Column(name = "otsd_hr_id", length = 20)
+    @Column(length = 20)
     private String otsdHrId;
 
-    @Column(name = "gndr_cd", length = 12)
+    @Column(length = 12)
     private String gndrCd;
 
-    @Column(name = "otsd_hr_nm", length = 100)
+    @Column(length = 100)
     private String otsdHrNm;
 
-    @Column(name = "cr_type_cd", length = 12)
+    @Column(length = 12)
     private String crTypeCd;
 
-    @Column(name = "ogdp_inst_nm", length = 100)
+    @Column(length = 100)
     private String ogdpInstNm;
 
-    @Column(name = "brdt_ymd", length = 8)
+    @Column(length = 8)
     private String brdtYmd;
 
-    @Column(name = "area_no", length = 4)
+    @Column(length = 4)
     private String areaNo;
 
-    @Column(name = "md_telno", length = 4)
+    @Column(length = 4)
     private String mdTelno;
 
-    @Column(name = "end_telno", length = 4)
+    @Column(length = 4)
     private String endTelno;
 
-    @Column(name = "eml_addr", length = 100)
+    @Column(length = 100)
     private String emlAddr;
 
-    @Column(name = "crt_dt")
     private LocalDateTime crtDt;
 
-    @Column(name = "frst_rgtr_id", length = 20)
+    @Column(length = 20)
     private String frstRgtrId;
 
-    @Column(name = "mdfcn_dt")
     private LocalDateTime mdfcnDt;
 
-    @Column(name = "last_mdfr_id", length = 20)
+    @Column(length = 20)
     private String lastMdfrId;
 
     // ----- [Legacy Getter Aliases] -----
