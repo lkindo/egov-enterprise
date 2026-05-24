@@ -38,170 +38,166 @@ public class User extends BaseEntity implements Serializable {
     private String userId;
 
     @Builder.Default
-    @Column(name = "user_type_cd", nullable = false, length = 12)
+    @Column(nullable = false, length = 12)
     @JsonProperty("userType")
     private String userTypeCd = "EMP";
 
-    @Column(name = "user_nm", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     @NonNull
     @JsonProperty("userNm")
     private String userNm;
 
-    @Column(name = "pswd", nullable = false, length = 300)
+    @Column(nullable = false, length = 300)
     @NonNull
     @JsonProperty("pswd")
     private String pswd;
 
-    @Column(name = "pswd_hint", length = 300)
+    @Column(length = 300)
     @JsonProperty("pswdHint")
     private String pswdHint;
 
-    @Column(name = "pswd_cnsr", length = 300)
+    @Column(length = 300)
     @JsonProperty("passwordCnsr")
     private String pswdCnsr;
 
-    @Column(name = "chg_pswd_last_dt")
     @JsonProperty("passwordUpdateDate")
     private LocalDateTime chgPswdLastDt;
 
-    @Column(name = "chg_pwd_cnt")
     @JsonProperty("changePasswordCount")
     private Integer chgPwdCnt;
 
     @Builder.Default
-    @Column(name = "lck_yn", length = 1)
+    @Column(length = 1)
     @JsonProperty("lckYn")
     private String lckYn = "N";
 
-    @Column(name = "lck_cnt")
     @JsonProperty("lockCount")
     private Integer lckCnt;
 
-    @Column(name = "lck_last_pnttm")
     @JsonProperty("lockLastDate")
     private LocalDateTime lckLastPnttm;
 
-    @Column(name = "otp_secret", length = 32)
+    @Column(length = 32)
     @JsonProperty("otpSecret")
     private String otpSecret;
 
-    @Column(name = "crtfc_dn_value", length = 100)
+    @Column(length = 100)
     @JsonProperty("subDn")
     private String crtfcDnValue;
 
     // ■ 개인 정보
-    @Column(name = "rrno", length = 256)
+    @Column(length = 256)
     @JsonProperty("ihidnum")
     private String rrno;
 
-    @Column(name = "gndr_cd", length = 30)
+    @Column(length = 30)
     @JsonProperty("gndrCd")
     private String gndrCd;
 
-    @Column(name = "brth_ymd", length = 8)
+    @Column(length = 8)
     @JsonProperty("brthYmd")
     private String brthYmd;
 
-    @Column(name = "eml_addr", length = 50)
+    @Column(length = 50)
     @JsonProperty("emlAddr")
     private String emlAddr;
 
-    @Column(name = "mbl_telno", length = 20)
+    @Column(length = 20)
     @JsonProperty("mblTelno")
     private String mblTelno;
 
     // ■ 주소 정보
-    @Column(name = "zip", length = 5)
+    @Column(length = 5)
     @JsonProperty("zip")
     private String zip;
 
-    @Column(name = "base_addr", length = 300)
+    @Column(length = 300)
     @JsonProperty("homeAddr")
     private String baseAddr;
 
-    @Column(name = "dtl_addr", length = 300)
+    @Column(length = 300)
     @JsonProperty("daddr")
     private String dtlAddr;
 
-    @Column(name = "area_no", length = 4)
+    @Column(length = 4)
     @JsonProperty("areaNo")
     private String areaNo;
 
-    @Column(name = "middle_telno", length = 4)
+    @Column(length = 4)
     @JsonProperty("homemiddleTelno")
     private String middleTelno;
 
-    @Column(name = "end_telno", length = 4)
+    @Column(length = 4)
     @JsonProperty("homeendTelno")
     private String endTelno;
 
-    @Column(name = "fax_no", length = 30)
+    @Column(length = 30)
     @JsonProperty("faxNo")
     private String faxNo;
 
-    @Column(name = "office_telno", length = 20)
+    @Column(length = 20)
     @JsonProperty("officeTelno")
     private String officeTelno;
 
     // ■ 조직 및 권한
-    @Column(name = "group_id", length = 30)
+    @Column(length = 30)
     @JsonProperty("groupId")
     private String groupId;
 
-    @Column(name = "ognz_id", length = 20)
+    @Column(length = 20)
     @JsonProperty("orgnztId")
     private String ognzId;
 
-    @Column(name = "pstinst_cd", length = 30)
+    @Column(length = 30)
     @JsonProperty("insttCode")
     private String pstinstCd;
 
-    @Column(name = "empl_no", length = 20)
+    @Column(length = 20)
     @JsonProperty("emplNo")
     private String emplNo;
 
-    @Column(name = "ofcps_nm", length = 300)
+    @Column(length = 300)
     @JsonProperty("ofcpsNm")
     private String ofcpsNm;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", length = 50)
+    @Column(length = 50)
     @JsonProperty("role")
     private Role role = Role.USER;
 
     // ■ 기업 전용 (nullable)
-    @Column(name = "bizr_no", length = 10)
+    @Column(length = 10)
     @JsonProperty("bizrno")
     private String bizrNo;
 
-    @Column(name = "jurir_no", length = 13)
+    @Column(length = 13)
     @JsonProperty("jurirno")
     private String jurirNo;
 
-    @Column(name = "cmpny_nm", length = 300)
+    @Column(length = 300)
     @JsonProperty("cmpnyNm")
     private String cmpnyNm;
 
-    @Column(name = "rprsv_nm", length = 100)
+    @Column(length = 100)
     @JsonProperty("cxfc")
     private String rprsvNm;
 
-    @Column(name = "induty_cd", length = 30)
+    @Column(length = 30)
     @JsonProperty("indutyCode")
     private String indutyCd;
 
-    @Column(name = "ent_se_cd", length = 12)
+    @Column(length = 12)
     @JsonProperty("entrprsSeCode")
     private String entSeCd;
 
     // ■ 상태 및 감사
     @Builder.Default
-    @Column(name = "user_stts_cd", length = 12)
+    @Column(length = 12)
     @JsonProperty("userSttsCd")
     private String userSttsCd = "P";
 
-    @Column(name = "sbscrb_ymd", updatable = false, length = 8)
+    @Column(updatable = false, length = 8)
     @JsonProperty("sbscrbYmd")
     private String sbscrbYmd;
 

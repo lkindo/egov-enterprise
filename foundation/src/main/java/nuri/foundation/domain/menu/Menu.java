@@ -38,34 +38,33 @@ public class Menu extends BaseEntity {
         }
     }
 
-    @Column(name = "menu_nm", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String menuNm;
 
-    @Column(name = "prgrm_file_nm", length = 100)
+    @Column(length = 100)
     private String prgrmFileNm;
 
-    @Column(name = "up_menu_sn")
     private Long upMenuSn;
 
-    @Column(name = "menu_ordr", nullable = false)
+    @Column(nullable = false)
     private Integer menuOrdr;
 
-    @Column(name = "menu_expln", length = 4000)
+    @Column(length = 4000)
     private String menuExpln;
 
-    @Column(name = "rel_img_path", length = 100)
+    @Column(length = 100)
     private String relImgPath;
 
-    @Column(name = "rel_img_nm", length = 100)
+    @Column(length = 100)
     private String relImgNm;
 
     /**
      * 현대적 Next.js 라우트 (예: /admin/system/menus)
      */
-    @Column(name = "modern_route", length = 500)
+    @Column(length = 500)
     private String modernRoute;
 
-    @Column(name = "route_mdfcn_yn", length = 1)
+    @Column(length = 1)
     private String routeMdfcnYn;
 
     /**
