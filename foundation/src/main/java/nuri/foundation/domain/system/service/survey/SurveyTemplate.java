@@ -24,16 +24,15 @@ public class SurveyTemplate extends BaseEntity {
     @Column(name = "srvy_tmplt_id", length = 20)
     private String srvyTmpltId;
 
-    @Column(name = "srvy_tmplt_type_cd", length = 12)
+    @Column(length = 12)
     private String srvyTmpltTypeCd;
 
-    @Column(name = "srvy_tmplt_expln", length = 4000)
+    @Column(length = 4000)
     private String srvyTmpltExpln;
 
-    @Column(name = "srvy_tmplt_path_nm", length = 100)
+    @Column(length = 100)
     private String srvyTmpltPathNm;
 
-    @Column(name = "srvy_tmplt_img_info")
     private byte[] srvyTmpltImgInfo;
 
     public void update(String srvyTmpltTypeCd, String srvyTmpltPathNm, String srvyTmpltExpln) {

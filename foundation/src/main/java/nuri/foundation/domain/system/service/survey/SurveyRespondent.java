@@ -25,31 +25,31 @@ public class SurveyRespondent extends BaseEntity {
     @Column(name = "srvy_rspdnt_id", length = 20)
     private String srvyRspdntId;
 
-    @Column(name = "srvy_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String srvyId;
 
-    @Column(name = "srvy_tmplt_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String srvyTmpltId;
 
-    @Column(name = "gndr_cd", length = 12)
+    @Column(length = 12)
     private String gndrCd;
 
-    @Column(name = "cr_type_cd", length = 12)
+    @Column(length = 12)
     private String crTypeCd;
 
-    @Column(name = "rspdnt_nm", length = 100)
+    @Column(length = 100)
     private String rspdntNm;
 
-    @Column(name = "brdt", length = 8)
+    @Column(length = 8)
     private String brdt;
 
-    @Column(name = "rgn_telno", length = 4)
+    @Column(length = 4)
     private String rgnTelno;
 
-    @Column(name = "mid_telno", length = 4)
+    @Column(length = 4)
     private String midTelno;
 
-    @Column(name = "end_telno", length = 4)
+    @Column(length = 4)
     private String endTelno;
 
     public void update(String gndrCd, String crTypeCd, String rspdntNm, String brdt,
