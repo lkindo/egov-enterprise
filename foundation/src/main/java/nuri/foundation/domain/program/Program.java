@@ -21,16 +21,16 @@ public class Program extends BaseEntity {
     @Column(name = "prgrm_file_nm", length = 100)
     private String prgrmFileNm;
 
-    @Column(name = "prgrm_strg_path", length = 1000)
+    @Column(length = 1000)
     private String prgrmStrgPath;
 
-    @Column(name = "prgrm_korn_nm", length = 100)
+    @Column(length = 100)
     private String prgrmKornNm;
 
-    @Column(name = "url", length = 1000)
+    @Column(length = 1000)
     private String url;
 
-    @Column(name = "prgrm_expln", length = 4000)
+    @Column(length = 4000)
     private String prgrmExpln;
 
     public void update(String prgrmStrgPath, String prgrmKornNm, String url, String prgrmExpln) {

@@ -30,10 +30,10 @@ public class SystemPolicy extends BaseEntity {
     @Column(name = "plcy_type_cd", length = 12)
     private String plcyTypeCd;
 
-    @Column(name = "plcy_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String plcyTtl;
 
-    @Column(name = "plcy_cn", columnDefinition = "text", nullable = false, length = 4000)
+    @Column(columnDefinition = "text", nullable = false, length = 4000)
     private String plcyCn;
 
     public void update(String plcyTtl, String plcyCn) {

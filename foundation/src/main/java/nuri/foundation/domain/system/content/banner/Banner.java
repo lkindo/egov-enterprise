@@ -27,25 +27,24 @@ public class Banner extends BaseEntity {
     @Column(name = "bnr_id", length = 20)
     private String bnrId;
 
-    @Column(name = "bnr_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String bnrNm;
 
-    @Column(name = "link_url", length = 512)
+    @Column(length = 512)
     private String linkUrl;
 
-    @Column(name = "bnr_img_nm", length = 100)
+    @Column(length = 100)
     private String bnrImgNm;
 
-    @Column(name = "bnr_expln", length = 4000)
+    @Column(length = 4000)
     private String bnrExpln;
 
-    @Column(name = "sort_ordr")
     private Integer sortOrdr;
 
-    @Column(name = "rflt_yn", length = 1)
+    @Column(length = 1)
     private String rfltYn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     public void update(String bnrNm, String linkUrl, String bnrImgNm,
