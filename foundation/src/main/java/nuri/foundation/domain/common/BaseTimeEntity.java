@@ -43,11 +43,10 @@ public abstract class BaseTimeEntity {
     }
 
     @CreatedDate
-    @Column(name = "crt_dt", updatable = false)
+    @Column(updatable = false)
     protected LocalDateTime crtDt;
 
     @LastModifiedDate
-    @Column(name = "mdfcn_dt")
     protected LocalDateTime mdfcnDt;
 
     // ----- [Legacy Aliases for createdDate & lastModifiedDate] -----
