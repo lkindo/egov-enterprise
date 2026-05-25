@@ -48,8 +48,8 @@ public class CnsltApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].cnsltId").value("CNSLT_001"))
-                .andExpect(jsonPath("$.data.list[0].cnsltSj").value("시스템 연동 문의"))
+                .andExpect(jsonPath("$.data.list[0].dscsnId").value("CNSLT_001"))
+                .andExpect(jsonPath("$.data.list[0].dscsnTtl").value("시스템 연동 문의"))
                 .andExpect(jsonPath("$.data.list[0].wrterNm").value("홍길동"));
     }
 
@@ -69,8 +69,8 @@ public class CnsltApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.cnsltId").value("CNSLT_001"))
-                .andExpect(jsonPath("$.data.cnsltSj").value("시스템 연동 문의"));
+                .andExpect(jsonPath("$.data.dscsnId").value("CNSLT_001"))
+                .andExpect(jsonPath("$.data.dscsnTtl").value("시스템 연동 문의"));
     }
 
     @Test

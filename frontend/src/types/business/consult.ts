@@ -1,16 +1,25 @@
 import { SearchParams } from '../foundation/system';
 
 export interface CnsltVO {
-  cnsltId?: string;
-  cnsltSj: string;
-  cnsltCn: string;
-  othbcAt?: string;
-  writngPassword?: string;
+  dscsnId?: string;
+  dscsnTtl: string;
+  dscsnCn: string;
+  rlsYn?: string;
+  wrtPswd?: string;
   wrterNm: string;
-  inqireCo?: number;
-  qnaProcessSttusCode?: string;
-  managtCn?: string;
-  managtDe?: string;
+  areaNo?: string;
+  mdTelno?: string;
+  endTelno?: string;
+  mblFrstTelno?: string;
+  mblMdTelno?: string;
+  mblEndTelno?: string;
+  emlAddr?: string;
+  emlAnsYn?: string;
+  inqCnt?: number;
+  qnaProcSttsCd?: string;
+  atchFileId?: string;
+  procCn?: string;
+  mngYmd?: string;
   createdBy?: string;
   createdDate?: string;
 }

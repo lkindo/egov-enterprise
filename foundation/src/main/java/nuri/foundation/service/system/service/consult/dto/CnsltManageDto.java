@@ -2,7 +2,6 @@ package nuri.foundation.service.system.service.consult.dto;
 
 import nuri.foundation.domain.system.service.consult.CnsltManage;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,89 +12,70 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Consultation Management DTO")
+@Schema(description = "상담 관리 DTO")
 public class CnsltManageDto {
 
-    @Schema(description = "Consultation ID")
-    @JsonProperty("cnsltId")
+    @Schema(description = "상담 ID")
     private String dscsnId;
 
-    @Schema(description = "Consultation Subject")
-    @JsonProperty("cnsltSj")
+    @Schema(description = "상담 제목")
     private String dscsnTtl;
 
-    @Schema(description = "Consultation Content")
-    @JsonProperty("cnsltCn")
+    @Schema(description = "상담 내용")
     private String dscsnCn;
 
-    @Schema(description = "Public Status")
-    @JsonProperty("othbcAt")
+    @Schema(description = "공개 여부")
     private String rlsYn;
 
-    @Schema(description = "Writing Password")
-    @JsonProperty("writngPassword")
+    @Schema(description = "작성 비밀번호")
     private String wrtPswd;
 
-    @Schema(description = "Writer Name")
-    @JsonProperty("wrterNm")
+    @Schema(description = "작성자명")
     private String wrterNm;
 
-    @Schema(description = "Area No")
-    @JsonProperty("areaNo")
+    @Schema(description = "지역 번호")
     private String areaNo;
 
-    @Schema(description = "Middle Telno")
-    @JsonProperty("middleTelno")
+    @Schema(description = "중간 전화번호")
     private String mdTelno;
 
-    @Schema(description = "End Telno")
-    @JsonProperty("endTelno")
+    @Schema(description = "끝 전화번호")
     private String endTelno;
 
-    @Schema(description = "First Moblphon No")
-    @JsonProperty("firstMoblphonNo")
+    @Schema(description = "최초 이동전화 번호")
     private String mblFrstTelno;
 
-    @Schema(description = "Middle Mbtlnum")
-    @JsonProperty("middleMbtlnum")
+    @Schema(description = "중간 이동전화 번호")
     private String mblMdTelno;
 
-    @Schema(description = "End Mbtlnum")
-    @JsonProperty("endMbtlnum")
+    @Schema(description = "끝 이동전화 번호")
     private String mblEndTelno;
 
-    @Schema(description = "Email Address")
-    @JsonProperty("emailAdres")
+    @Schema(description = "이메일 주소")
     private String emlAddr;
 
-    @Schema(description = "Email Answer YN")
-    @JsonProperty("emailAnswerAt")
+    @Schema(description = "이메일 답변 여부")
     private String emlAnsYn;
 
-    @Schema(description = "Inquiry Count")
-    @JsonProperty("inqireCo")
+    @Schema(description = "조회수")
     private Integer inqCnt;
 
-    @Schema(description = "Process Status Code")
-    @JsonProperty("qnaProcessSttusCode")
+    @Schema(description = "처리 상태 코드")
     private String qnaProcSttsCd;
 
-    @Schema(description = "Attachment File ID")
-    @JsonProperty("atchFileId")
+    @Schema(description = "첨부파일 ID")
     private String atchFileId;
 
-    @Schema(description = "Management Content")
-    @JsonProperty("managtCn")
+    @Schema(description = "처리 내용")
     private String procCn;
 
-    @Schema(description = "Management Date")
-    @JsonProperty("managtDe")
+    @Schema(description = "처리 일자")
     private String mngYmd;
 
-    @Schema(description = "Created By ID")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @Schema(description = "Created Date")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static CnsltManageDto from(CnsltManage entity) {
