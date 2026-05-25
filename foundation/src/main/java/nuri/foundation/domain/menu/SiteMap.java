@@ -25,13 +25,13 @@ public class SiteMap extends BaseEntity {
     @Column(name = "mpng_crt_id", length = 20)
     private String mpngCrtId;
 
-    @Column(name = "crtr_id", length = 20)
+    @Column(length = 20)
     private String crtrId;
 
-    @Column(name = "mpng_file_nm", length = 100)
+    @Column(length = 100)
     private String mpngFileNm;
 
-    @Column(name = "mpng_file_path", length = 1000)
+    @Column(length = 1000)
     private String mpngFilePath;
 
     public SiteMap(String mpngCrtId, String crtrId, String mpngFileNm, String mpngFilePath) {

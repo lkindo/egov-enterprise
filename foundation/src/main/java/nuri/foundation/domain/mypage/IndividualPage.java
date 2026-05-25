@@ -24,13 +24,13 @@ public class IndividualPage extends BaseEntity {
     @Column(name = "page_id", length = 20)
     private String pageId;
 
-    @Column(name = "page_ttl", length = 300, nullable = false)
+    @Column(length = 300, nullable = false)
     private String pageTtl;
 
-    @Column(name = "page_expln", length = 4000)
+    @Column(length = 4000)
     private String pageExpln;
 
-    @Column(name = "user_id", length = 30, nullable = false)
+    @Column(length = 30, nullable = false)
     private String userId;
 
     public void update(String pageTtl, String pageExpln) {

@@ -27,16 +27,14 @@ public class DtaUseStats extends BaseEntity {
     @Column(name = "dta_use_stats_id", length = 20)
     private String dtaUseStatsId;
 
-    @Column(name = "bbs_id", length = 20)
+    @Column(length = 20)
     private String bbsId;
 
-    @Column(name = "ntt_id")
     private Long nttId;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
-    @Column(name = "file_sn")
     private Integer fileSn;
 
 }

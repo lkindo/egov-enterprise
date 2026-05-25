@@ -25,12 +25,12 @@ public class ReprtStats extends BaseEntity {
     @Column(name = "reprt_id", length = 20)
     private String reprtId;
 
-    @Column(name = "reprt_nm", length = 255)
+    @Column(length = 255)
     private String reprtNm;
 
-    @Column(name = "reprt_sttus", length = 1)
+    @Column(length = 1)
     private String reprtSttus;
 
-    @Column(name = "reprt_type", length = 1)
+    @Column(length = 1)
     private String reprtType;
 }

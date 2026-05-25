@@ -20,10 +20,10 @@ public class BkmkMenu extends BaseEntity {
     @EmbeddedId
     private BkmkMenuId id;
 
-    @Column(name = "menu_nm", length = 60)
+    @Column(length = 60)
     private String menuNm;
 
-    @Column(name = "progrm_stre_path", length = 100)
+    @Column(length = 100)
     private String progrmStrePath;
 
     public BkmkMenu(BkmkMenuId id, String menuNm, String progrmStrePath) {
