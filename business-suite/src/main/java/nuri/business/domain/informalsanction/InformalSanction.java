@@ -27,25 +27,24 @@ public class InformalSanction extends BaseEntity {
     @Column(name = "ifml_atrz_id", length = 20)
     private String ifmlAtrzId;
 
-    @Column(name = "task_se_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String taskSeCd;
 
-    @Column(name = "aplcnt_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String aplcntId;
 
-    @Column(name = "req_ymd", length = 8)
+    @Column(length = 8)
     private String reqYmd;
 
-    @Column(name = "aprvr_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String aprvrId;
 
-    @Column(name = "aprv_yn", length = 1)
+    @Column(length = 1)
     private String aprvYn;
 
-    @Column(name = "atrz_dt")
     private LocalDateTime atrzDt;
 
-    @Column(name = "rjct_rsn_cn", length = 4000)
+    @Column(length = 4000)
     private String rjctRsnCn;
 
     public void update(String taskSeCd, String reqYmd, String aprvrId) {

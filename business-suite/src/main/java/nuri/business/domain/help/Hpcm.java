@@ -25,15 +25,15 @@ public class Hpcm extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("hpcmId")
     private String hlpId;
 
-    @Column(name = "hlp_se_cd", length = 3, nullable = false)
+    @Column(length = 3, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("hpcmSeCode")
     private String hlpSeCd;
 
-    @Column(name = "hlp_dfn", length = 1000, nullable = false)
+    @Column(length = 1000, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("hpcmDf")
     private String hlpDfn;
 
-    @Column(name = "hlp_expln", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     @com.fasterxml.jackson.annotation.JsonProperty("hpcmDc")
     private String hlpExpln;
 

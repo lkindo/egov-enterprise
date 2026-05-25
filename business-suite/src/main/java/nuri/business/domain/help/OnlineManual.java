@@ -25,19 +25,19 @@ public class OnlineManual extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("onlineMnlId")
     private String onlnMnlId;
 
-    @Column(name = "onln_mnl_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("onlineMnlNm")
     private String onlnMnlNm;
 
-    @Column(name = "onln_mnl_se_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("onlineMnlSeCode")
     private String onlnMnlSeCd;
 
-    @Column(name = "onln_mnl_dfn", length = 1000)
+    @Column(length = 1000)
     @com.fasterxml.jackson.annotation.JsonProperty("onlineMnlDf")
     private String onlnMnlDfn;
 
-    @Column(name = "onln_mnl_expln", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("onlineMnlDc")
     private String onlnMnlExpln;
 
