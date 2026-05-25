@@ -23,14 +23,13 @@ public class DeptJobBox extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxId")
     private String deptTaskBoxId;
 
-    @Column(name = "dept_task_box_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxNm")
     private String deptTaskBoxNm;
 
-    @Column(name = "dept_id", length = 20)
+    @Column(length = 20)
     private String deptId;
 
-    @Column(name = "sort_ordr")
     @com.fasterxml.jackson.annotation.JsonProperty("indictOrdr")
     private Integer sortOrdr;
 

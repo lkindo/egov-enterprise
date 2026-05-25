@@ -18,27 +18,27 @@ public class DeptJob extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobId")
     private String deptTaskId;
 
-    @Column(name = "dept_task_box_id", length = 20)
+    @Column(length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxId")
     private String deptTaskBoxId;
 
-    @Column(name = "dept_task_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobNm")
     private String deptTaskNm;
 
-    @Column(name = "dept_task_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobCn")
     private String deptTaskCn;
 
-    @Column(name = "pic_id", length = 20)
+    @Column(length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("chargerId")
     private String picId;
 
-    @Column(name = "prrty_rnk", length = 12)
+    @Column(length = 12)
     @com.fasterxml.jackson.annotation.JsonProperty("priort")
     private String prrtyRnk; // 1: 높음, 2: 보통, 3: 낮음
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     public void update(String deptJobbxId, String deptJobNm, String deptJobCn, String chargerId, String priort,

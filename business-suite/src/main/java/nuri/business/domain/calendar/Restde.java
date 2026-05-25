@@ -26,19 +26,19 @@ public class Restde extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("restdeNo")
     private Integer hldySn;
 
-    @Column(name = "hldy_ymd", length = 8)
+    @Column(length = 8)
     @com.fasterxml.jackson.annotation.JsonProperty("restdeDe")
     private String hldyYmd;
 
-    @Column(name = "hldy_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("restdeNm")
     private String hldyNm;
 
-    @Column(name = "hldy_expln", length = 4000)
+    @Column(length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("restdeDc")
     private String hldyExpln;
 
-    @Column(name = "hldy_se_cd", length = 12)
+    @Column(length = 12)
     @com.fasterxml.jackson.annotation.JsonProperty("restdeSeCode")
     private String hldySeCd;
 
