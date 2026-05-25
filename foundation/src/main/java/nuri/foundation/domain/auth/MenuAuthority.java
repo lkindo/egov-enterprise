@@ -19,7 +19,7 @@ public class MenuAuthority extends BaseEntity {
     @EmbeddedId
     private MenuAuthorityId id;
 
-    @Column(name = "mapng_crt_id", length = 20)
+    @Column(length = 20)
     private String mapngCrtId;
 
     @Embeddable

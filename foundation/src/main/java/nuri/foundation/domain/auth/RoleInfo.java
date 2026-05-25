@@ -18,19 +18,18 @@ public class RoleInfo extends BaseEntity {
     @Column(name = "role_id", length = 30)
     private String roleId;
 
-    @Column(name = "role_nm", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String roleNm;
 
-    @Column(name = "role_patrn", length = 300)
+    @Column(length = 300)
     private String rolePatrn;
 
-    @Column(name = "role_expln", length = 4000)
+    @Column(length = 4000)
     private String roleExpln;
 
-    @Column(name = "role_type_cd", length = 12)
+    @Column(length = 12)
     private String roleTypeCd;
 
-    @Column(name = "role_sort")
     private Integer roleSort;
 
     @Column(name = "role_crt_ymd")

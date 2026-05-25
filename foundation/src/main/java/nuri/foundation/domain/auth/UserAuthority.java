@@ -22,11 +22,11 @@ public class UserAuthority extends BaseEntity implements Serializable {
     @NonNull
     private String scrtyDcsnTrgtId;
 
-    @Column(name = "authrt_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     @NonNull
     private String authrtId;
 
-    @Column(name = "mbr_type_cd", length = 12)
+    @Column(length = 12)
     private String mbrTypeCd;
 
     public void update(@NonNull String authrtId, String mbrTypeCd) {

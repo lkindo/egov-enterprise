@@ -21,14 +21,14 @@ public class Authority extends BaseEntity implements java.io.Serializable {
     @NonNull
     private String authrtCd;
 
-    @Column(name = "authrt_nm", nullable = false, length = 300)
+    @Column(nullable = false, length = 300)
     @NonNull
     private String authrtNm;
 
-    @Column(name = "authrt_expln", length = 4000)
+    @Column(length = 4000)
     private String authrtExpln;
 
-    @Column(name = "authrt_crt_ymd", length = 8)
+    @Column(length = 8)
     @Builder.Default
     private String authrtCrtYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
 
