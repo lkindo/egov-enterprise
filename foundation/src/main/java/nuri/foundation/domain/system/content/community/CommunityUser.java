@@ -21,13 +21,13 @@ public class CommunityUser extends BaseEntity implements Serializable {
     @EmbeddedId
     private CommunityUserId id;
 
-    @Column(name = "mngr_yn", length = 1)
+    @Column(length = 1)
     private String mngrYn;
 
-    @Column(name = "join_ymd", length = 8)
+    @Column(length = 8)
     private String joinYmd;
 
-    @Column(name = "whdwl_ymd", length = 8)
+    @Column(length = 8)
     private String whdwlYmd;
 
     // ----- [Legacy Getter Aliases] -----
@@ -43,10 +43,10 @@ public class CommunityUser extends BaseEntity implements Serializable {
         }
     }
 
-    @Column(name = "mbr_stts_cd", length = 12)
+    @Column(length = 12)
     private String mbrSttsCd;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     public void approve() {

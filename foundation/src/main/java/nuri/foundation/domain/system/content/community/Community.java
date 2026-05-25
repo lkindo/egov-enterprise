@@ -25,19 +25,19 @@ public class Community extends BaseEntity implements Serializable {
     @Column(name = "cmnty_id", length = 20, nullable = false)
     private String cmntyId;
 
-    @Column(name = "cmnty_nm", length = 100)
+    @Column(length = 100)
     private String cmntyNm;
 
-    @Column(name = "cmnty_intro_cn", length = 4000)
+    @Column(length = 4000)
     private String cmntyIntroCn;
 
-    @Column(name = "reg_se_cd", length = 12)
+    @Column(length = 12)
     private String regSeCd;
 
-    @Column(name = "tmplt_id", length = 20)
+    @Column(length = 20)
     private String tmpltId;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     // ----- [Legacy Getter Aliases] -----

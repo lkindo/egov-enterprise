@@ -20,10 +20,10 @@ public class OrganizationManage extends BaseEntity {
     @Column(name = "ognz_id", length = 20)
     private String ognzId;
 
-    @Column(name = "ognz_nm", length = 100)
+    @Column(length = 100)
     private String ognzNm;
 
-    @Column(name = "ognz_expln", length = 4000)
+    @Column(length = 4000)
     private String ognzExpln;
 
     // ----- [Legacy Aliases for Backward Compatibility] -----

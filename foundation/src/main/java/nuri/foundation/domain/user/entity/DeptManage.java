@@ -27,10 +27,10 @@ public class DeptManage extends BaseEntity {
     @Column(name = "ognz_id", length = 20)
     private String ognzId;
 
-    @Column(name = "ognz_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String ognzNm;
 
-    @Column(name = "ognz_expln", length = 4000)
+    @Column(length = 4000)
     private String ognzExpln;
 
     public void update(String ognzNm, String ognzExpln) {
