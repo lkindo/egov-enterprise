@@ -30,28 +30,28 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(name = "ans_sn")
     private Long ansSn;
 
-    @Column(name = "pst_id", length = 20)
+    @Column(length = 20)
     private String pstId;
 
-    @Column(name = "bbs_id", length = 20)
+    @Column(length = 20)
     private String bbsId;
 
-    @Column(name = "wrter_id", length = 20)
+    @Column(length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("writerId")
     private String wrterId;
 
-    @Column(name = "wrter_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("writerNm")
     private String wrterNm;
 
-    @Column(name = "pswd", length = 200)
+    @Column(length = 200)
     @com.fasterxml.jackson.annotation.JsonProperty("password")
     private String pswd;
 
-    @Column(name = "ans_cn", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String ansCn;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String useYn = "Y";
 

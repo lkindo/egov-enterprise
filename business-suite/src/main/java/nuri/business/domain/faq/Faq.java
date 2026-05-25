@@ -25,24 +25,23 @@ public class Faq extends BaseEntity {
     @Column(name = "faq_id", length = 20)
     private String faqId;
 
-    @Column(name = "qstn_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("qestnTtl")
     private String qstnTtl;
 
-    @Column(name = "qstn_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("qestnCn")
     private String qstnCn;
 
-    @Column(name = "ans_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("answerCn")
     private String ansCn;
 
-    @Column(name = "inq_cnt")
     @Builder.Default
     @com.fasterxml.jackson.annotation.JsonProperty("inqireCo")
     private Integer inqCnt = 0;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     public void update(String qestnTtl, String qestnCn, String answerCn, String atchFileId) {

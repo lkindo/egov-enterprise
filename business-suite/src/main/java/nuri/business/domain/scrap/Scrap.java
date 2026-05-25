@@ -24,22 +24,22 @@ public class Scrap extends BaseEntity {
     @Column(name = "scrap_id", length = 20)
     private String scrapId;
 
-    @Column(name = "bbs_id", length = 20)
+    @Column(length = 20)
     private String bbsId;
 
-    @Column(name = "pst_id", length = 20)
+    @Column(length = 20)
     private String pstId;
 
-    @Column(name = "scrap_nm", length = 100)
+    @Column(length = 100)
     private String scrapNm;
 
-    @Column(name = "scrap_url", length = 1000)
+    @Column(length = 1000)
     private String scrapUrl;
 
-    @Column(name = "scrap_expln", length = 4000)
+    @Column(length = 4000)
     private String scrapExpln;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String useYn = "Y";
 
