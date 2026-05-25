@@ -24,13 +24,13 @@ public class Note extends BaseEntity {
     @Column(name = "note_id", length = 20)
     private String noteId;
 
-    @Column(name = "note_ttl", length = 100)
+    @Column(length = 100)
     private String noteTtl;
 
-    @Column(name = "note_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     private String noteCn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     // ----- [Legacy Getter Aliases for Backwards Compatibility] -----

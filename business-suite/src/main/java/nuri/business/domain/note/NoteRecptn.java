@@ -32,13 +32,13 @@ public class NoteRecptn extends BaseEntity {
     @JoinColumn(name = "NOTE_SNDNG_ID")
     private NoteTrnsmit noteDsptch;
 
-    @Column(name = "rcvr_id", length = 20)
+    @Column(length = 20)
     private String rcvrId;
 
-    @Column(name = "open_yn", length = 1)
+    @Column(length = 1)
     private String openYn;
 
-    @Column(name = "rcptn_se_cd", length = 12)
+    @Column(length = 12)
     private String rcptnSeCd;
 
     // ----- [Legacy Getter Aliases for Backwards Compatibility] -----

@@ -29,10 +29,10 @@ public class NoteTrnsmit extends BaseEntity {
     @JoinColumn(name = "NOTE_ID")
     private Note note;
 
-    @Column(name = "sndr_id", length = 20)
+    @Column(length = 20)
     private String sndrId;
 
-    @Column(name = "del_yn", length = 1)
+    @Column(length = 1)
     private String delYn;
 
     // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
