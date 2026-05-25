@@ -82,13 +82,13 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.locator(`text=${testName}`).first().click();
             await page.waitForTimeout(1000);
 
-            // The button text is "Revoke" in UserOrgHubClient.tsx
-            const deleteBtn = page.locator('button:has-text("Revoke")').first();
+            // The button text is "접근 차단"
+            const deleteBtn = page.locator('button:has-text("접근 차단")').first();
             await expect(deleteBtn).toBeVisible({ timeout: 10000 });
             await deleteBtn.click();
 
-            // Confirm Text is "REVOKE_IDENTITY"
-            const confirmBtn = page.locator('button:has-text("REVOKE_IDENTITY")').first();
+            // Confirm Text is "접근차단실행"
+            const confirmBtn = page.locator('button:has-text("접근차단실행")').first();
             await expect(confirmBtn).toBeVisible({ timeout: 5000 });
             await confirmBtn.click();
 
@@ -122,7 +122,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // Section_02: DEPTS tab
             // After click, table shows column header "TOPOLOGY_NODE"
             console.log('>>> Step 2: Switching to Section_02 (DEPTS tab)');
-            const deptTab = page.locator('button:has-text("Menu_02")').first();
+            const deptTab = page.locator('button:has-text("부서 관리")').first();
             await expect(deptTab).toBeVisible({ timeout: 20000 });
             await deptTab.click({ force: true });
             // Wait for Framer Motion animation + data load
@@ -134,7 +134,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // NOTE: ABSENCES tab still shows the user list (same data, just filtered view)
             // Verify tab is activated by checking its CSS class "bg-slate-900" (active state)
             console.log('>>> Step 3: Switching to Section_03 (ABSENCES tab)');
-            const absenceTab = page.locator('button:has-text("Menu_03")').first();
+            const absenceTab = page.locator('button:has-text("부재 관리")').first();
             await expect(absenceTab).toBeVisible({ timeout: 10000 });
             await absenceTab.click({ force: true });
             await page.waitForTimeout(1000);

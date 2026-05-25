@@ -16,8 +16,8 @@ export class ObservabilityPage {
 
     async verifyMetrics() {
         // Wait for ANY of the core metrics to appear (case-insensitive)
-        await this.page.waitForSelector('text=/Global Traffic|System Latency|Error Rate/i', { state: 'visible', timeout: 15000 });
-        const cards = this.page.locator('div').filter({ hasText: /Global Traffic|System Latency|Error Rate/i });
+        await this.page.waitForSelector('text=/글로벌 트래픽|시스템 지연시간|에러 발생률/i', { state: 'visible', timeout: 15000 });
+        const cards = this.page.locator('div').filter({ hasText: /글로벌 트래픽|시스템 지연시간|에러 발생률/i });
         await expect(cards.first()).toBeVisible();
     }
 
@@ -45,7 +45,7 @@ export class ObservabilityPage {
 
     async refresh() {
         console.log('[E2E] Clicking Live Sync button...');
-        const syncBtn = this.page.getByRole('button', { name: /Live Sync/i });
+        const syncBtn = this.page.getByRole('button', { name: /실시간 동기화/i });
         await syncBtn.click();
         await this.page.waitForTimeout(1000);
     }

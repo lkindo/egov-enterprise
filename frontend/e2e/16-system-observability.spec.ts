@@ -16,10 +16,10 @@ test.describe('Tier 16: System Observability & Intelligence', () => {
         
         // Verify specific metrics are visible
         const page = obsPage['page'];
-        await expect(page.getByText('Global Traffic', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('System Latency', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('Error Rate', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('Node Load', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('글로벌 트래픽', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('시스템 지연시간', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('에러 발생률', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('노드 부하율', { exact: false }).first()).toBeVisible();
     });
 
     test('should verify system topology visualization', async () => {

@@ -49,7 +49,7 @@ export class ProductivitySuitePage {
 
     async verifyCalendarSynchronization() {
         console.log(`>>> Verifying Calendar Module`);
-        await expect(this.page.getByRole('heading', { name: /워크플로우 허브|Works & Intelligence/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: /워크플로우 및 자산 관리|업무 및/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
     // 부서 업무 (Dept Job)
@@ -69,7 +69,7 @@ export class ProductivitySuitePage {
 
     async verifyWorkflowHubTabs() {
         console.log(`>>> Verifying Workflow Hub Tabs`);
-        await expect(this.page.getByRole('button', { name: 'WORKFLOW' })).toBeVisible();
-        await expect(this.page.getByRole('button', { name: 'ASSETS' })).toBeVisible();
+        await expect(this.page.getByRole('button', { name: '워크플로우' })).toBeVisible();
+        await expect(this.page.getByRole('button', { name: '자산' })).toBeVisible();
     }
 }
