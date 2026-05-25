@@ -34,27 +34,27 @@ public class FileDetail extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("fileSn")
     private Integer atchFileSeq;
 
-    @Column(name = "file_strg_path", length = 1000)
+    @Column(length = 1000)
     @com.fasterxml.jackson.annotation.JsonProperty("fileStreCours")
     private String fileStrgPath; // 파일저장경로
 
-    @Column(name = "strg_file_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("streFileNm")
     private String strgFileNm; // 저장파일명
 
-    @Column(name = "orgnl_file_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("orignlFileNm")
     private String orgnlFileNm; // 원본파일명
 
-    @Column(name = "file_estn", length = 20)
+    @Column(length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("fileExtsn")
     private String fileEstn; // 확장자
 
-    @Column(name = "file_sz")
+    @Column
     @com.fasterxml.jackson.annotation.JsonProperty("fileMg")
     private Long fileSz; // 파일크기
 
-    @Column(name = "file_cn", length = 4000)
+    @Column(length = 4000)
     private String fileCn; // 파일내용
 
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,

@@ -30,23 +30,23 @@ public class MainImage extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("imageId")
     private String imgId;
 
-    @Column(name = "img_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("imageNm")
     private String imgNm;
 
-    @Column(name = "main_img_file_path", length = 50)
+    @Column(length = 50)
     @com.fasterxml.jackson.annotation.JsonProperty("image")
     private String mainImgFilePath;
 
-    @Column(name = "img_file_nm", length = 100)
+    @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("imageFile")
     private String imgFileNm;
 
-    @Column(name = "main_img_expln", length = 4000)
+    @Column(length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("imageDc")
     private String mainImgExpln;
 
-    @Column(name = "rflt_yn", length = 1)
+    @Column(length = 1)
     @com.fasterxml.jackson.annotation.JsonProperty("reflctAt")
     private String rfltYn;
 

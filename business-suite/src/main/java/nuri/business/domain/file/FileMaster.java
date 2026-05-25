@@ -25,7 +25,7 @@ public class FileMaster extends BaseEntity {
     @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
-    @Column(name = "use_yn", nullable = false, length = 1)
+    @Column(nullable = false, length = 1)
     private String useYn;
 
     @Builder.Default
