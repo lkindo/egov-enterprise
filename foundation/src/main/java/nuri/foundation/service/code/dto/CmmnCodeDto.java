@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
@@ -15,36 +14,31 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Common Code DTO")
+@Schema(description = "공통 코드 DTO")
 public class CmmnCodeDto {
 
-    @Schema(description = "Code ID")
-    @JsonProperty("codeId")
+    @Schema(description = "코드 ID")
     private String cdId;
 
-    @Schema(description = "Code ID Name")
-    @JsonProperty("codeIdNm")
+    @Schema(description = "코드 ID명")
     private String cdIdNm;
 
-    @Schema(description = "Code ID Description")
-    @JsonProperty("codeIdDc")
+    @Schema(description = "코드 ID 설명")
     private String cdIdExpln;
 
-    @Schema(description = "Classification Code")
-    @JsonProperty("clCode")
+    @Schema(description = "분류코드")
     private String clsfCd;
 
-    @Schema(description = "Classification Code Name")
-    @JsonProperty("clCodeNm")
+    @Schema(description = "분류코드명")
     private String clsfCdNm;
 
-    @Schema(description = "Use Y/N")
+    @Schema(description = "사용여부")
     private String useYn;
 
-    @Schema(description = "First Register ID")
+    @Schema(description = "최초등록자 ID")
     private String frstRegisterId;
 
-    @Schema(description = "Last Updater ID")
+    @Schema(description = "최종수정자 ID")
     private String lastUpdusrId;
 
     // Compatibility Getters/Setters for legacy java references

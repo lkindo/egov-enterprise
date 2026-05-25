@@ -59,9 +59,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
  const stats = useMemo(() => {
  const totalCount = total || 0;
- const legalDist = (data || []).filter((item: any) => item?.administZoneSe === '1').length;
- const adminDist = (data || []).filter((item: any) => item?.administZoneSe === '2').length;
- const syncStatus = ((data || []).filter((item: any) => item?.useAt === 'Y').length / ((data || []).length || 1) * 100).toFixed(0);
+ const legalDist = (data || []).filter((item: any) => item?.admdstSeCd === '1').length;
+ const adminDist = (data || []).filter((item: any) => item?.admdstSeCd === '2').length;
+ const syncStatus = ((data || []).filter((item: any) => item?.useYn === 'Y').length / ((data || []).length || 1) * 100).toFixed(0);
  
  return { totalCount, legalDist, adminDist, syncStatus };
  }, [total, data]);
@@ -75,7 +75,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <MapPin size={18} />
  </div>
  <div className="flex flex-col gap-0.5">
- <span className="font-black text-slate-900 tracking-tighter text-xs uppercase">{item.administZoneCode}</span>
+ <span className="font-black text-slate-900 tracking-tighter text-xs uppercase">{item.admdstCd}</span>
  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ADMIN_CODE</span>
  </div>
  </div>
@@ -87,9 +87,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  accessor: (item: any) => (
  <div className={cn(
  "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
- item.administZoneSe === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-500 border-slate-200'
+ item.admdstSeCd === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-500 border-slate-200'
  )}>
- {item.administZoneSe === '1' ? '법정동' : '행정동'}
+ {item.admdstSeCd === '1' ? '법정동' : '행정동'}
  </div>
  ),
  className: 'w-24 py-4'
@@ -98,7 +98,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  header: '행정구역명', 
  accessor: (item: any) => (
  <div className="flex flex-col gap-0.5 py-4">
- <span className="font-black text-slate-900 tracking-tighter text-sm leading-tight uppercase">{item.administZoneNm}</span>
+ <span className="font-black text-slate-900 tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
  <div className="flex items-center gap-1.5 mt-1">
  <Compass size={10} className="text-primary opacity-40" />
  <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase leading-none">Namespace</span>
@@ -111,7 +111,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  header: '상위 코드', 
  accessor: (item: any) => (
  <div className="font-black text-slate-400 tabular-nums tracking-widest text-[10px] uppercase">
- {item.upperAdministZoneCode || 'ROOT'}
+ {item.upAdmdstCd || 'ROOT'}
  </div>
  ), 
  className: 'w-32 py-4' 
@@ -119,7 +119,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  { 
  header: '상태', 
  accessor: (item: any) => (
- <HubStatusBadge status={item.useAt === 'Y' ? '활성' : '중단'} />
+ <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} />
  ),
  className: 'w-24 py-4'
  },

@@ -26,9 +26,9 @@ export function flattenCodeTree(clusters: DomainCluster[]): FlattenedCodeNode[] 
     if (cluster.groups) {
       cluster.groups.forEach(group => {
         flattened.push({
-          id: (group as any).codeId || '',
+          id: (group as any).cdId || '',
           parentId: cluster.id,
-          name: (group as any).codeIdNm || '',
+          name: (group as any).cdIdNm || '',
           type: 'group',
           data: group,
           depth: 1

@@ -1,7 +1,7 @@
 package nuri.foundation.service.code.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,72 +11,73 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "기관코드 정보 DTO")
 public class InstitutionCodeDto {
 
-    @JsonProperty("insttCode")
+    @Schema(description = "기관코드")
     private String instCd;
 
-    @JsonProperty("allInsttNm")
+    @Schema(description = "전체기관명")
     private String allInstNm;
 
-    @JsonProperty("lowestInsttNm")
+    @Schema(description = "최하위기관명")
     private String lwtrkInstNm;
 
-    @JsonProperty("insttAbrvNm")
+    @Schema(description = "기관약칭명")
     private String instAbbrNm;
 
-    @JsonProperty("odr")
+    @Schema(description = "차수")
     private String odr;
 
-    @JsonProperty("ord")
+    @Schema(description = "서열")
     private String ord;
 
-    @JsonProperty("insttOdr")
+    @Schema(description = "기관차수")
     private String instCycl;
 
-    @JsonProperty("bestInsttCode")
+    @Schema(description = "최상위기관코드")
     private String topInstCd;
 
-    @JsonProperty("upperInsttCode")
+    @Schema(description = "상위기관코드")
     private String upInstCd;
 
-    @JsonProperty("reprsntInsttCode")
+    @Schema(description = "대표기관코드")
     private String rprsInstCd;
 
-    @JsonProperty("insttTyLclas")
+    @Schema(description = "기관유형대분류")
     private String instTypeLclsf;
 
-    @JsonProperty("insttTyMclas")
+    @Schema(description = "기관유형중분류")
     private String instTypeMclsf;
 
-    @JsonProperty("insttTySclas")
+    @Schema(description = "기관유형소분류")
     private String instTypeSclsf;
 
-    @JsonProperty("telno")
+    @Schema(description = "전화번호")
     private String telno;
 
-    @JsonProperty("fxnum")
+    @Schema(description = "팩스번호")
     private String faxNo;
 
-    @JsonProperty("creatDe")
+    @Schema(description = "생성일자")
     private String crtYmd;
 
-    @JsonProperty("ablDe")
+    @Schema(description = "폐지일자")
     private String ablYmd;
 
-    @JsonProperty("ablEnnc")
+    @Schema(description = "폐지여부")
     private String ablYn;
 
-    @JsonProperty("changede")
+    @Schema(description = "변경일자")
     private String chgYmd;
 
-    @JsonProperty("changeTime")
+    @Schema(description = "변경시간")
     private String chgTm;
 
-    @JsonProperty("bsisDe")
+    @Schema(description = "기준일자")
     private String crtrYmd;
 
-    @JsonProperty("sortOrdr")
+    @Schema(description = "정렬순서")
     private Integer sortSeq;
 
     // --- Legacy Compatibility Getters & Setters ---

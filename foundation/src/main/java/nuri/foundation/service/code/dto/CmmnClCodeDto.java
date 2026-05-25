@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
@@ -15,28 +14,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Common Classification Code Info")
+@Schema(description = "공통 분류 코드 정보 DTO")
 public class CmmnClCodeDto {
 
-    @Schema(description = "Classification Code")
-    @JsonProperty("clCode")
+    @Schema(description = "분류코드")
     private String clsfCd;
 
-    @Schema(description = "Classification Code Name")
-    @JsonProperty("clCodeNm")
+    @Schema(description = "분류코드명")
     private String clsfCdNm;
 
-    @Schema(description = "Classification Code Description")
-    @JsonProperty("clCodeDc")
+    @Schema(description = "분류코드설명")
     private String clsfCdExpln;
 
-    @Schema(description = "Use Y/N")
+    @Schema(description = "사용여부")
     private String useYn;
 
-    @Schema(description = "First Register ID")
+    @Schema(description = "최초등록자 ID")
     private String frstRegisterId;
 
-    @Schema(description = "Last Updater ID")
+    @Schema(description = "최종수정자 ID")
     private String lastUpdusrId;
 
     // Compatibility Getters/Setters for legacy java references

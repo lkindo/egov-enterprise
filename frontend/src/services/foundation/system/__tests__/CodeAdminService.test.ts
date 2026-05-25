@@ -30,13 +30,13 @@ describe('CodeAdminService', () => {
     });
 
     it('createClCode should call post', async () => {
-      const data = { clCode: 'CL01', clCodeNm: 'Test' };
+      const data = { clsfCd: 'CL01', clsfCdNm: 'Test' };
       await codeAdminService.createClCode(data as any);
       expect(client.post).toHaveBeenCalledWith('admin/system/codes/cl', data, undefined);
     });
 
     it('updateClCode should handle string clCode', async () => {
-      const data = { clCode: 'CL01', clCodeNm: 'Updated' };
+      const data = { clsfCd: 'CL01', clsfCdNm: 'Updated' };
       await codeAdminService.updateClCode('CL01', data as any);
       expect(client.put).toHaveBeenCalledWith('admin/system/codes/cl/CL01', data, undefined);
     });
@@ -56,7 +56,7 @@ describe('CodeAdminService', () => {
     });
 
     it('updateCmmnCode should use codeId from data', async () => {
-      const data = { codeId: 'GRP01', codeIdNm: 'Group' };
+      const data = { cdId: 'GRP01', cdIdNm: 'Group' };
       await codeAdminService.updateCmmnCode('GRP01', data as any);
       expect(client.put).toHaveBeenCalledWith('admin/system/codes/cmmn/GRP01', data, undefined);
     });

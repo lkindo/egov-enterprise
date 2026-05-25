@@ -2,20 +2,19 @@ package nuri.foundation.service.code.dto;
 
 import nuri.foundation.domain.code.CommonCode;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@Schema(description = "Description")
+@Schema(description = "공통코드 DTO")
 public record CommonCodeDto(
-        @Schema(description = "Description") @JsonProperty("codeGroupId") String cdId,
+        @Schema(description = "코드그룹 ID") String cdId,
 
-        @Schema(description = "Description") @JsonProperty("code") String dtlCd,
+        @Schema(description = "코드") String dtlCd,
 
-        @Schema(description = "Description") @JsonProperty("codeNm") String dtlCdNm,
+        @Schema(description = "코드명") String dtlCdNm,
 
-        @Schema(description = "Description") @JsonProperty("codeDc") String dtlCdExpln,
+        @Schema(description = "코드설명") String dtlCdExpln,
 
-        @Schema(description = "Description") @JsonProperty("useAt") String useYn) {
+        @Schema(description = "사용여부") String useYn) {
 
     // Compatibility Getters for legacy java references
     @JsonIgnore

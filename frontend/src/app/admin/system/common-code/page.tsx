@@ -32,7 +32,7 @@ export default async function CommonCodePage({
       codeAdminService.getClCodeList({ pageUnit: 999 }, axiosConfig),
       codeAdminService.getCmmnCodeList({ pageUnit: 999 }, axiosConfig),
       groupId 
-        ? codeAdminService.getDetailCodeList({ codeId: groupId, pageUnit: 999 }, axiosConfig) 
+        ? codeAdminService.getDetailCodeList({ cdId: groupId, pageUnit: 999 }, axiosConfig) 
         : Promise.resolve({ list: [], total: 0, page: 1, size: 10, totalPage: 1 } as PageResponse<CmmnDetailCode>)
     ]);
 

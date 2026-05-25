@@ -63,30 +63,30 @@ export interface SearchParams {
 
 // Common Code
 export interface CmmnClCode {
-  clCode: string;
-  clCodeNm: string;
-  clCodeDc: string;
+  clsfCd: string;
+  clsfCdNm: string;
+  clsfCdExpln: string;
   useYn: 'Y' | 'N';
   frstRegisterId?: string;
   lastUpdusrId?: string;
 }
 
 export interface CmmnCode {
-  codeId: string;
-  codeIdNm: string;
-  codeIdDc: string;
+  cdId: string;
+  cdIdNm: string;
+  cdIdExpln: string;
   useYn: 'Y' | 'N';
-  clCode: string;
-  clCodeNm?: string;
+  clsfCd: string;
+  clsfCdNm?: string;
 }
 
 export interface CmmnDetailCode {
-  codeId: string;
-  code: string;
-  codeNm: string;
-  codeDc: string;
+  cdId: string;
+  dtlCd: string;
+  dtlCdNm: string;
+  dtlCdExpln: string;
   useYn: 'Y' | 'N';
-  codeIdNm?: string;
+  cdIdNm?: string;
 }
 
 // Menu

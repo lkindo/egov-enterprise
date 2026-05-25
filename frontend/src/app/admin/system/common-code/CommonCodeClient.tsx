@@ -77,10 +77,10 @@ const INDENTATION_WIDTH = 24;
 
 // 공통코드 상세 등록/수정 전용 Zod 스키마 (useAt 및 codeId 누락 폼 불일치 완전 해소)
 const codeDetailFormSchema = z.object({
- code: z.string().min(1, '코드 식별자는 필수입니다.'),
- codeNm: z.string().min(1, '표기 레이블은 필수입니다.'),
+ dtlCd: z.string().min(1, '코드 식별자는 필수입니다.'),
+ dtlCdNm: z.string().min(1, '표기 레이블은 필수입니다.'),
  useYn: z.enum(['Y', 'N']).default('Y'),
- codeDc: z.string().optional()
+ dtlCdExpln: z.string().optional()
 });
 
 const dropAnimation: DropAnimation = {
@@ -225,10 +225,10 @@ export default function CommonCodeClient({
 
  const form = useAppForm(codeDetailFormSchema, {
  defaultValues: {
- code: '',
- codeNm: '',
+ dtlCd: '',
+ dtlCdNm: '',
  useYn: 'Y',
- codeDc: ''
+ dtlCdExpln: ''
  }
  });
 
@@ -236,17 +236,17 @@ export default function CommonCodeClient({
  if (isModalOpen) {
  if (editingDetail) {
  form.reset({
- code: editingDetail.code,
- codeNm: editingDetail.codeNm,
+ dtlCd: editingDetail.dtlCd,
+ dtlCdNm: editingDetail.dtlCdNm,
  useYn: (editingDetail.useYn as 'Y' | 'N') || 'Y',
- codeDc: editingDetail.codeDc || ''
+ dtlCdExpln: editingDetail.dtlCdExpln || ''
  });
  } else {
  form.reset({
- code: '',
- codeNm: '',
+ dtlCd: '',
+ dtlCdNm: '',
  useYn: 'Y',
- codeDc: ''
+ dtlCdExpln: ''
  });
  }
  }
@@ -259,13 +259,13 @@ export default function CommonCodeClient({
 
  return safeClCodes.map(cl => ({
  ...cl,
- id: cl.clCode || '',
- name: cl.clCodeNm || '',
+ id: cl.clsfCd || '',
+ name: cl.clsfCdNm || '',
  groups: safeGroups
- .filter(g => g.clCode === cl.clCode)
+ .filter(g => g.clsfCd === cl.clsfCd)
  .map(g => ({
  ...g,
- details: g.codeId === selectedGroupId ? safeDetails : []
+ details: g.cdId === selectedGroupId ? safeDetails : []
  })) as GroupCode[]
  })) as DomainCluster[];
  }, [clCodes, groups, details, selectedGroupId]);
@@ -344,15 +344,15 @@ export default function CommonCodeClient({
 
  // 1. Fetch details from API with robust filtering parameters
  const res = await codeAdminService.getDetailCodeList({
- codeId: group.codeId,
- searchKeyword: group.codeId,
+ cdId: group.cdId,
+ searchKeyword: group.cdId,
  searchCondition: '1',
  pageUnit: 999
  });
 
  // Failsafe: Filter details on client side just in case backend returns all items
  const fetchedDetails = (res.list || []).filter(item =>
- item && (item as CmmnDetailCode).codeId === group.codeId
+ item && (item as CmmnDetailCode).cdId === group.cdId
  );
 
  // 2. Update state directly
@@ -370,10 +370,10 @@ export default function CommonCodeClient({
  // Synchronize initial state from props
  useEffect(() => {
  if (selectedGroupId && (initialClusters || []).length > 0) {
- if (!selectedGroup || selectedGroup.codeId !== selectedGroupId) {
- const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.codeId === selectedGroupId));
+ if (!selectedGroup || selectedGroup.cdId !== selectedGroupId) {
+ const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.cdId === selectedGroupId));
  if (cluster) {
- const group = (cluster.groups || []).find(g => g?.codeId === selectedGroupId);
+ const group = (cluster.groups || []).find(g => g?.cdId === selectedGroupId);
  if (group) {
  setSelectedClusterId(cluster.id);
  setSelectedGroup({ ...group, details: (details || []) as CmmnDetailCode[] });
@@ -405,7 +405,7 @@ export default function CommonCodeClient({
  setIsOpen(true);
  };
 
- const handleDeleteDetail = async (code: string) => {
+ const handleDeleteDetail = async (dtlCd: string) => {
  if (!selectedGroup) return;
 
  const ok = await confirm({
@@ -417,7 +417,7 @@ export default function CommonCodeClient({
 
  if (ok) {
  try {
- const res = await deleteCodeDetail(null, { codeId: selectedGroup.codeId, code });
+ const res = await deleteCodeDetail(null, { cdId: selectedGroup.cdId, dtlCd });
  if (res.success) {
  toast(res.message, 'success');
  // 삭제 성공 후 우측 구성 명세 목록 실시간 리로드
@@ -445,7 +445,7 @@ export default function CommonCodeClient({
  const res = await saveCodeDetail(null, {
  ...values,
  useYn: values.useYn as 'Y' | 'N',
- codeId: selectedGroup?.codeId || '',
+ cdId: selectedGroup?.cdId || '',
  isNew: !editingDetail
  });
 
@@ -467,15 +467,15 @@ export default function CommonCodeClient({
  const columns: Column<CmmnDetailCode>[] = [
  {
  header: '코드',
- accessor: (item: CmmnDetailCode) => <span className="font-black text-slate-700 tracking-tight text-xs">{item.code}</span>,
+ accessor: (item: CmmnDetailCode) => <span className="font-black text-slate-700 tracking-tight text-xs">{item.dtlCd}</span>,
  className: 'w-24 py-4'
  },
  {
  header: '코드 명칭',
  accessor: (item: CmmnDetailCode) => (
  <div className="flex flex-col gap-0.5">
- <span className="font-black text-slate-900 tracking-tighter text-sm">{item.codeNm}</span>
- <span className="text-[10px] font-bold text-slate-400 line-clamp-1 uppercase tracking-tight">{item.codeDc || 'No description available'}</span>
+ <span className="font-black text-slate-900 tracking-tighter text-sm">{item.dtlCdNm}</span>
+ <span className="text-[10px] font-bold text-slate-400 line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || 'No description available'}</span>
  </div>
  ),
  className: 'py-4'
@@ -504,7 +504,7 @@ export default function CommonCodeClient({
  variant="ghost"
  size="icon"
  className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
- onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
+ onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.dtlCd); }}
  >
  <Trash2 size={14} />
  </Button>
@@ -578,7 +578,7 @@ export default function CommonCodeClient({
  <SortableCodeNode
  key={node.id}
  node={node}
- isSelected={node.type === 'cluster' ? selectedClusterId === node.id : selectedGroup?.codeId === node.id}
+ isSelected={node.type === 'cluster' ? selectedClusterId === node.id : selectedGroup?.cdId === node.id}
  onClick={() => {
  if (node.type === 'cluster') {
  setSelectedClusterId(node.id);
@@ -624,14 +624,14 @@ export default function CommonCodeClient({
  <div className="space-y-1.5">
  <div className="flex items-center gap-3">
  <h2 className="text-xl font-black tracking-tighter text-slate-900 uppercase">
- {selectedGroup.codeIdNm}
+ {selectedGroup.cdIdNm}
  </h2>
  <div className="px-2.5 py-1 rounded-lg bg-white/60 border border-white/80 text-[10px] font-black text-slate-400 tracking-widest shadow-sm">
- {selectedGroup.codeId}
+ {selectedGroup.cdId}
  </div>
  </div>
  <p className="text-xs font-bold text-slate-500 ">
- {selectedGroup.codeIdDc || '정의된 명세가 없습니다.'}
+ {selectedGroup.cdIdExpln || '정의된 명세가 없습니다.'}
  </p>
  </div>
  </div>
@@ -731,13 +731,13 @@ export default function CommonCodeClient({
  상위 그룹 식별자
  </label>
  <div className="h-11 flex items-center px-6 rounded-lg bg-slate-100 border-none font-mono text-xs font-bold shadow-inner text-slate-600">
- {selectedGroup?.codeId}
+ {selectedGroup?.cdId}
  </div>
  </div>
 
  <ShadcnFormField
  control={form.control}
- name="code"
+ name="dtlCd"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
@@ -758,7 +758,7 @@ export default function CommonCodeClient({
 
  <ShadcnFormField
  control={form.control}
- name="codeNm"
+ name="dtlCdNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
@@ -812,7 +812,7 @@ export default function CommonCodeClient({
 
  <ShadcnFormField
  control={form.control}
- name="codeDc"
+ name="dtlCdExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">

@@ -4162,9 +4162,9 @@ export interface components {
             rptSttsCd?: string;
             rptYmd?: string;
             rptTypeCd?: string;
-            reprtTtl?: string;
             reprtId?: string;
             reprtCn?: string;
+            reprtTtl?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4184,12 +4184,12 @@ export interface components {
             roleName?: string;
             lockAt?: string;
             authorCode?: string;
-            enabled?: boolean;
-            credentialsNonExpired?: boolean;
-            accountNonExpired?: boolean;
             username?: string;
+            enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
             accountNonLocked?: boolean;
+            credentialsNonExpired?: boolean;
+            accountNonExpired?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4206,11 +4206,11 @@ export interface components {
             gndrCd?: string;
             brthYmd?: string;
             areaNo?: string;
-            homemiddleTelno?: string;
-            homeendTelno?: string;
-            mberTyCode?: string;
+            homeMiddleTelno?: string;
+            homeEndTelno?: string;
+            mberTypeCd?: string;
             faxNo?: string;
-            insttCode?: string;
+            insttCd?: string;
             orgnztId?: string;
             groupId?: string;
             homeAddr?: string;
@@ -4227,18 +4227,18 @@ export interface components {
             /** Format: date-time */
             createdDate?: string;
             password?: string;
-            lockAt?: string;
             passwordCnsr?: string;
             passwordHint?: string;
             emailAdres?: string;
-            brth?: string;
-            fxnum?: string;
+            lockAt?: string;
             detailAdres?: string;
             homeadres?: string;
             sexdstnCode?: string;
-            offmTelno?: string;
-            moblphonNo?: string;
+            brth?: string;
+            fxnum?: string;
             userSttusCode?: string;
+            moblphonNo?: string;
+            offmTelno?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4260,9 +4260,9 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
-            nttId?: string;
             /** Format: date-time */
             createdDate?: string;
+            nttId?: string;
         };
         ScheduleDto: {
             schdlId?: string;
@@ -4289,11 +4289,11 @@ export interface components {
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
             /** @description 설문 항목 ID */
-            pollIemId?: string;
+            pollArtclId?: string;
             /** @description 설문 ID */
             pollId?: string;
             /** @description 설문 항목 명 */
-            pollIemNm?: string;
+            pollArtclNm?: string;
             /**
              * Format: int64
              * @description 투표 수
@@ -4314,15 +4314,15 @@ export interface components {
             /** @description 설문 제목 */
             pollNm?: string;
             /** @description 설문 시작일 */
-            pollBeginDe?: string;
+            pollBgngYmd?: string;
             /** @description 설문 종료일 */
-            pollEndDe?: string;
+            pollEndYmd?: string;
             /** @description 설문 종류 코드 */
-            pollKindCode?: string;
+            pollKndCd?: string;
             /** @description 설문 폐기 여부 */
             pollDsuseYn?: string;
             /** @description 설문 자동 폐기 여부 */
-            pollAutoDsuseYn?: string;
+            pollAtmcDsuseYn?: string;
             /** @description 생성자 ID */
             createdBy?: string;
             /**
@@ -4331,8 +4331,7 @@ export interface components {
              */
             createdDate?: string;
             /** @description 설문 항목 목록 */
-            pollItems?: components["schemas"]["OnlinePollArticleDto"][];
-            pollTtl?: string;
+            pollArticles?: components["schemas"]["OnlinePollArticleDto"][];
         };
         /** @description 메모보고 정보 */
         MemoReportDto: {
@@ -4365,10 +4364,10 @@ export interface components {
              * @description 생성일시
              */
             createdDate?: string;
+            frstRegisterId?: string;
             rptId?: string;
             rptCn?: string;
             rptTtl?: string;
-            frstRegisterId?: string;
             rptYmd?: string;
             reprtId?: string;
             reprtCn?: string;
@@ -4481,9 +4480,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
+            mnlDc?: string;
             mnlNm?: string;
             mnlId?: string;
-            mnlDc?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -4619,104 +4618,104 @@ export interface components {
         };
         /** @description 설문항목 DTO (표준화) */
         SurveyArticleDto: {
-            /** @description 설문항목아이디 */
-            srvyItemId?: string;
-            /** @description 설문문항아이디 */
-            srvyQitemId?: string;
-            /** @description 설문아이디 */
+            /** @description 설문 항목 ID */
+            srvyArtclId?: string;
+            /** @description 설문 문항 ID */
+            srvyQstnId?: string;
+            /** @description 설문 ID */
             srvyId?: string;
             /**
              * Format: int64
-             * @description 항목순번
+             * @description 항목 순번
              */
-            srvyItemSn?: number;
-            /** @description 항목내용 */
-            srvyItemCn?: string;
-            /** @description 기타답변여부 */
+            artclSn?: number;
+            /** @description 항목 내용 */
+            artclCn?: string;
+            /** @description 기타 답변 여부 */
             etcAnsYn?: string;
-            /** @description 설문템플릿아이디 */
-            srvyTmplatId?: string;
-            /** @description 등록자 */
+            /** @description 설문 템플릿 ID */
+            srvyTmpltId?: string;
+            /** @description 등록자 ID */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description 등록일시
+             * @description 등록 일시
              */
             createdDate?: string;
         };
         /** @description 설문문항 DTO (표준화) */
         SurveyQuestionDto: {
-            /** @description 설문문항아이디 */
-            srvyQitemId?: string;
-            /** @description 설문아이디 */
+            /** @description 설문 문항 ID */
+            srvyQstnId?: string;
+            /** @description 설문 ID */
             srvyId?: string;
             /**
              * Format: int64
-             * @description 질문순번
+             * @description 질문 순번
              */
-            srvyQitemSn?: number;
-            /** @description 질문유형코드 */
-            srvyQitemTypeCd?: string;
-            /** @description 질문내용 */
-            srvyQitemCn?: string;
+            qstnSn?: number;
+            /** @description 질문 유형 코드 */
+            qstnTypeCd?: string;
+            /** @description 질문 내용 */
+            qstnCn?: string;
             /**
              * Format: int32
-             * @description 최대선택수
+             * @description 최대 선택 수
              */
             maxChcCnt?: number;
-            /** @description 설문템플릿아이디 */
-            srvyTmplatId?: string;
-            /** @description 등록자 */
+            /** @description 설문 템플릿 ID */
+            srvyTmpltId?: string;
+            /** @description 등록자 ID */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description 등록일시
+             * @description 등록 일시
              */
             createdDate?: string;
-            /** @description 설문항목목록 */
+            /** @description 설문 항목 목록 */
             items?: components["schemas"]["SurveyArticleDto"][];
         };
         /** @description 설문정보 DTO (표준화) */
         SurveyInfoDto: {
-            /** @description 설문아이디 */
+            /** @description 설문 ID */
             srvyId?: string;
-            /** @description 설문제목 */
+            /** @description 설문 제목 */
             srvyTtl?: string;
-            /** @description 설문목적 */
-            srvyPrpsCn?: string;
-            /** @description 설문작성안내내용 */
-            srvyGuidCn?: string;
-            /** @description 설문시작일자 */
+            /** @description 설문 목적 */
+            srvyPrps?: string;
+            /** @description 설문 작성 안내 내용 */
+            srvyWrtGdCn?: string;
+            /** @description 설문 시작 일자 */
             srvyBgngYmd?: string;
-            /** @description 설문종료일자 */
+            /** @description 설문 종료 일자 */
             srvyEndYmd?: string;
-            /** @description 설문대상 */
-            srvyTrgtCn?: string;
-            /** @description 설문템플릿아이디 */
-            srvyTmplatId?: string;
-            /** @description 등록자 */
+            /** @description 설문 대상 */
+            srvyTrgt?: string;
+            /** @description 설문 템플릿 ID */
+            srvyTmpltId?: string;
+            /** @description 등록자 ID */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description 등록일시
+             * @description 등록 일시
              */
             createdDate?: string;
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
-            /** @description 설문템플릿아이디 */
-            srvyTmplatId?: string;
-            /** @description 설문템플릿유형코드 */
-            srvyTmplatTypeCd?: string;
-            /** @description 설문템플릿이미지경로 */
-            srvyTmplatImgPath?: string;
-            /** @description 설문템플릿내용 */
-            srvyTmplatCn?: string;
-            /** @description 등록자 */
+            /** @description 설문 템플릿 ID */
+            srvyTmpltId?: string;
+            /** @description 설문 템플릿 유형 코드 */
+            srvyTmpltTypeCd?: string;
+            /** @description 설문 템플릿 이미지 경로 명 */
+            srvyTmpltPathNm?: string;
+            /** @description 설문 템플릿 설명 내용 */
+            srvyTmpltExpln?: string;
+            /** @description 등록자 ID */
             createdBy?: string;
             /**
              * Format: date-time
-             * @description 등록일시
+             * @description 등록 일시
              */
             createdDate?: string;
         };
@@ -4729,37 +4728,43 @@ export interface components {
             roleSort?: string;
             creatDt?: string;
         };
+        /** @description 프로그램 정보 DTO */
         ProgramDto: {
-            progrmFileNm?: string;
-            progrmStrePath?: string;
-            progrmKoreanNm?: string;
+            /** @description 프로그램 파일 명칭 */
+            prgrmFileNm?: string;
+            /** @description 프로그램 저장 경로 */
+            prgrmStrgPath?: string;
+            /** @description 프로그램 한글 명칭 */
+            prgrmKornNm?: string;
+            /** @description 프로그램 URL */
             url?: string;
-            progrmDc?: string;
+            /** @description 프로그램 설명 */
+            prgrmExpln?: string;
         };
-        /** @description 팝업 정보 */
+        /** @description 팝업 정보 DTO */
         PopupDto: {
             /** @description 팝업 ID */
             popupId?: string;
             /** @description 팝업 제목 */
-            popupTitleName?: string;
+            popupTtlNm?: string;
             /** @description 파일 URL */
             fileUrl?: string;
             /** @description 팝업 가로 위치 */
-            popupWidthLocation?: string;
+            popupWdthPstn?: string;
             /** @description 팝업 세로 위치 */
-            popupHeightLocation?: string;
+            popupVrtcPstn?: string;
             /** @description 팝업 높이 크기 */
-            popupHeightSize?: string;
+            popupVrtcSz?: string;
             /** @description 팝업 너비 크기 */
-            popupWidthSize?: string;
+            popupWdthSz?: string;
             /** @description 게시 시작일 */
-            noticeBeginDate?: string;
+            ntceBgnde?: string;
             /** @description 게시 종료일 */
-            noticeEndDate?: string;
+            ntceEndde?: string;
             /** @description 그만보기 여부 */
-            isStopView?: string;
+            stopvewSetupYn?: string;
             /** @description 게시 여부 */
-            isNotice?: string;
+            ntceYn?: string;
             /** @description 생성자 ID */
             createdBy?: string;
             /**
@@ -4791,13 +4796,13 @@ export interface components {
              * @description 프로그램 파일 명칭
              * @example EgovMain
              */
-            progrmFileNm?: string;
+            prgrmFileNm?: string;
             /**
              * Format: int64
              * @description 상위 메뉴 번호
              * @example 0
              */
-            upperMenuSn?: number;
+            upMenuSn?: number;
             /**
              * Format: int64
              * @description 상위 메뉴 ID
@@ -4824,12 +4829,12 @@ export interface components {
              * @description 관련 이미지 경로
              * @example /images/menu/
              */
-            relateImagePath?: string;
+            relImgPath?: string;
             /**
              * @description 관련 이미지 명칭
              * @example icon_system.png
              */
-            relateImageNm?: string;
+            relImgNm?: string;
             /**
              * @description 현대화된 라우트 경로 (Next.js)
              * @example /admin/system
@@ -4839,7 +4844,7 @@ export interface components {
              * @description 생성자 ID
              * @example admin
              */
-            creatPersonId?: string;
+            crtrId?: string;
             /** @description 하위 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
@@ -4855,9 +4860,6 @@ export interface components {
             regYn?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
-            ipAdres?: string;
-            emplyrNm?: string;
-            dplctLoginAt?: string;
             otpEnabledAt?: string;
             startTime?: string;
             ipInfo?: string;
@@ -4865,6 +4867,9 @@ export interface components {
             endTime?: string;
             emplyrId?: string;
             dplctPermAt?: string;
+            dplctLoginAt?: string;
+            emplyrNm?: string;
+            ipAdres?: string;
         };
         InternetSvcGuidanceDto: {
             intnetSvcId?: string;
@@ -4897,72 +4902,88 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description Common Detail Code Info */
+        /** @description 공통 상세 코드 정보 DTO */
         CmmnDetailCodeDto: {
-            /** @description Code ID */
-            codeId?: string;
-            /** @description Code ID Name */
-            codeIdNm?: string;
-            /** @description Detail Code */
-            code?: string;
-            /** @description Detail Code Name */
-            codeNm?: string;
-            /** @description Detail Code Description */
-            codeDc?: string;
-            /** @description Use Y/N */
+            /** @description 코드 ID */
+            cdId?: string;
+            /** @description 코드 ID명 */
+            cdIdNm?: string;
+            /** @description 상세코드 */
+            dtlCd?: string;
+            /** @description 상세코드명 */
+            dtlCdNm?: string;
+            /** @description 상세코드설명 */
+            dtlCdExpln?: string;
+            /** @description 사용여부 */
             useYn?: string;
-            /** @description First Register ID */
+            /** @description 최초등록자 ID */
             frstRegisterId?: string;
-            /** @description Last Updater ID */
+            /** @description 최종수정자 ID */
             lastUpdusrId?: string;
         };
-        /** @description Common Code DTO */
+        /** @description 공통 코드 DTO */
         CmmnCodeDto: {
-            /** @description Code ID */
-            codeId?: string;
-            /** @description Code ID Name */
-            codeIdNm?: string;
-            /** @description Code ID Description */
-            codeIdDc?: string;
-            /** @description Classification Code */
-            clCode?: string;
-            /** @description Classification Code Name */
-            clCodeNm?: string;
-            /** @description Use Y/N */
+            /** @description 코드 ID */
+            cdId?: string;
+            /** @description 코드 ID명 */
+            cdIdNm?: string;
+            /** @description 코드 ID 설명 */
+            cdIdExpln?: string;
+            /** @description 분류코드 */
+            clsfCd?: string;
+            /** @description 분류코드명 */
+            clsfCdNm?: string;
+            /** @description 사용여부 */
             useYn?: string;
-            /** @description First Register ID */
+            /** @description 최초등록자 ID */
             frstRegisterId?: string;
-            /** @description Last Updater ID */
+            /** @description 최종수정자 ID */
             lastUpdusrId?: string;
         };
-        /** @description Common Classification Code Info */
+        /** @description 공통 분류 코드 정보 DTO */
         CmmnClCodeDto: {
-            /** @description Classification Code */
-            clCode?: string;
-            /** @description Classification Code Name */
-            clCodeNm?: string;
-            /** @description Classification Code Description */
-            clCodeDc?: string;
-            /** @description Use Y/N */
+            /** @description 분류코드 */
+            clsfCd?: string;
+            /** @description 분류코드명 */
+            clsfCdNm?: string;
+            /** @description 분류코드설명 */
+            clsfCdExpln?: string;
+            /** @description 사용여부 */
             useYn?: string;
-            /** @description First Register ID */
+            /** @description 최초등록자 ID */
             frstRegisterId?: string;
-            /** @description Last Updater ID */
+            /** @description 최종수정자 ID */
             lastUpdusrId?: string;
         };
+        /** @description 행정코드 정보 DTO */
         AdministCodeDto: {
-            administZoneCode?: string;
-            administZoneSe?: string;
-            administZoneNm?: string;
-            upperAdministZoneCode?: string;
+            /** @description 행정구역코드 */
+            admdstCd?: string;
+            /** @description 행정구역구분 */
+            admdstSeCd?: string;
+            /** @description 행정구역명 */
+            admdstZoneNm?: string;
+            /** @description 상위행정구역코드 */
+            upAdmdstCd?: string;
+            /** @description 사용여부 */
             useYn?: string;
-            creatDe?: string;
-            ablDe?: string;
+            /** @description 생성일자 */
+            crtYmd?: string;
+            /** @description 폐지일자 */
+            ablYmd?: string;
+            /** @description 생성자 ID */
             createdBy?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 생성일시
+             */
             createdDate?: string;
+            /** @description 수정자 ID */
             lastModifiedBy?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 수정일시
+             */
             lastModifiedDate?: string;
         };
         BoardMasterDto: {
@@ -4992,38 +5013,38 @@ export interface components {
             stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
-            bbsAttrCd?: string;
-            bbsAttrbCode?: string;
-            bbsIntroCn?: string;
-            replyPsblYn?: string;
-            bbsTyCode?: string;
-            fileAtchPosblAt?: string;
-            bbsIntrcn?: string;
-            replyPosblAt?: string;
-            bbsNm?: string;
             useAt?: string;
+            bbsAttrbCode?: string;
+            replyPosblAt?: string;
+            fileAtchPosblAt?: string;
+            bbsAttrCd?: string;
+            replyPsblYn?: string;
+            bbsIntrcn?: string;
+            bbsTyCode?: string;
+            bbsNm?: string;
+            bbsIntroCn?: string;
         };
         /** @description 배너 정보 */
         BannerDto: {
             /** @description 배너 ID */
-            bannerId?: string;
+            bnrId?: string;
             /** @description 배너 명칭 */
-            bannerNm?: string;
+            bnrNm?: string;
             /** @description 링크 URL */
             linkUrl?: string;
             /** @description 배너 이미지 경로 */
-            bannerImage?: string;
+            bnrImgNm?: string;
             /** @description 배너 설명 */
-            bannerDc?: string;
+            bnrExpln?: string;
             /**
              * Format: int32
              * @description 정렬 순서
              */
             sortOrdr?: number;
             /** @description 반영 여부 */
-            reflctAt?: string;
+            rfltYn?: string;
             /** @description 배너 이미지 파일 ID */
-            bannerImageFile?: string;
+            atchFileId?: string;
             /** @description 생성자 ID */
             createdBy?: string;
             /**
@@ -5039,27 +5060,25 @@ export interface components {
             authorCreatDe?: string;
         };
         EventInfoDto: {
-            eventId?: string;
-            eventNm?: string;
-            bsnsYear?: string;
-            eventCn?: string;
-            eventBeginDe?: string;
-            eventEndDe?: string;
+            evntId?: string;
+            bizCd?: string;
+            bizYr?: string;
+            evntCn?: string;
+            evntBgngYmd?: string;
+            evntEndYmd?: string;
             /** Format: int64 */
-            psncpa?: number;
-            chargerNm?: string;
-            prparetgCn?: string;
-            eventTyCode?: string;
-            eventConfmAt?: string;
-            eventConfmDe?: string;
+            evntUseCnt?: number;
+            picNm?: string;
+            prepMttr?: string;
+            evntTypeCd?: string;
+            evntAprvYn?: string;
+            evntAprvYmd?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
-            rceptBeginDe?: string;
-            rceptEndDe?: string;
         };
         CommunityDto: {
             cmntyId?: string;
@@ -5339,15 +5358,15 @@ export interface components {
             frstRegisterId?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
-            lastModifiedDate?: string;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
+            frstRegistPnttm?: string;
             /** Format: date-time */
             createdDate?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
+            lastModifiedDate?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegisterPnttm?: string;
             /** Format: date-time */
             lastUpdusrPnttm?: string;
         };
@@ -5372,39 +5391,75 @@ export interface components {
             authorCode?: string;
             authrtId?: string;
         };
+        /** @description 기관코드 수신 정보 DTO */
         InstitutionCodeRecptnDto: {
+            /** @description 발생일자 */
             ocrnYmd?: string;
-            insttCode?: string;
-            /** Format: int64 */
-            opertSn?: number;
-            changeSeCode?: string;
-            processSe?: string;
-            etcCode?: string;
-            allInsttNm?: string;
-            lowestInsttNm?: string;
-            insttAbrvNm?: string;
+            /** @description 기관코드 */
+            instCd?: string;
+            /**
+             * Format: int64
+             * @description 작업일련번호
+             */
+            jobSn?: number;
+            /** @description 변경구분코드 */
+            chgSeCd?: string;
+            /** @description 처리구분 */
+            procSe?: string;
+            /** @description 기타코드 */
+            etcCd?: string;
+            /** @description 전체기관명 */
+            allInstNm?: string;
+            /** @description 최하위기관명 */
+            lwtrkInstNm?: string;
+            /** @description 기관약칭명 */
+            instAbbrNm?: string;
+            /** @description 차수 */
             odr?: string;
+            /** @description 서열 */
             ord?: string;
-            insttOdr?: string;
-            bestInsttCode?: string;
-            upperInsttCode?: string;
-            reprsntInsttCode?: string;
-            insttTyLclas?: string;
-            insttTyMclas?: string;
-            insttTySclas?: string;
+            /** @description 기관차수 */
+            instCycl?: string;
+            /** @description 최상위기관코드 */
+            topInstCd?: string;
+            /** @description 상위기관코드 */
+            upInstCd?: string;
+            /** @description 대표기관코드 */
+            rprsInstCd?: string;
+            /** @description 기관유형대분류 */
+            instTypeLclsf?: string;
+            /** @description 기관유형중분류 */
+            instTypeMclsf?: string;
+            /** @description 기관유형소분류 */
+            instTypeSclsf?: string;
+            /** @description 전화번호 */
             telno?: string;
-            fxnum?: string;
-            creatDe?: string;
-            ablDe?: string;
-            ablEnnc?: string;
-            changede?: string;
-            changeTime?: string;
-            bsisDe?: string;
-            /** Format: int32 */
-            sortOrdr?: number;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
-            frstRegisterId?: string;
+            /** @description 팩스번호 */
+            faxNo?: string;
+            /** @description 생성일자 */
+            crtYmd?: string;
+            /** @description 폐지일자 */
+            ablYmd?: string;
+            /** @description 폐지여부 */
+            ablYn?: string;
+            /** @description 변경일자 */
+            chgYmd?: string;
+            /** @description 변경시간 */
+            chgTm?: string;
+            /** @description 기준일자 */
+            crtrYmd?: string;
+            /**
+             * Format: int32
+             * @description 정렬순서
+             */
+            sortSeq?: number;
+            /**
+             * Format: date-time
+             * @description 최초등록일시
+             */
+            crtDt?: string;
+            /** @description 최초등록자 ID */
+            frstRgtrId?: string;
         };
         /** @description 상담 관리 DTO */
         CnsltManageDto: {
@@ -5488,12 +5543,12 @@ export interface components {
             /** @description 검색어 */
             searchWrd?: string;
             /** Format: date-time */
-            trnsmitPnttm?: string;
-            /** Format: date-time */
-            frstRegisterPnttm?: string;
+            frstRegistPnttm?: string;
             frstRegisterId?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
+            frstRegisterPnttm?: string;
+            /** Format: date-time */
+            trnsmitPnttm?: string;
         };
         /** @description SMS 수신 정보 DTO */
         SmsRecptnDto: {
@@ -5528,17 +5583,17 @@ export interface components {
             lastUpdtPnttm?: string;
         };
         ExternalHrDto: {
-            eventId?: string;
-            extrlHrId?: string;
-            sexdstnCode?: string;
-            extrlHrNm?: string;
-            occpTyCode?: string;
-            psitnInsttNm?: string;
-            brthdy?: string;
+            evntId?: string;
+            otsdHrId?: string;
+            gndrCd?: string;
+            otsdHrNm?: string;
+            crTypeCd?: string;
+            ogdpInstNm?: string;
+            brdtYmd?: string;
             areaNo?: string;
-            middleTelno?: string;
+            mdTelno?: string;
             endTelno?: string;
-            emailAdres?: string;
+            emlAddr?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             frstRegisterId?: string;
@@ -5592,8 +5647,8 @@ export interface components {
             recordCountPerPage?: number;
             searchKeywordFrom?: string;
             searchKeywordTo?: string;
-            searchEndDe?: string;
             searchBgnDe?: string;
+            searchEndDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
@@ -6367,31 +6422,31 @@ export interface components {
             isExpired?: string;
             bbsTtl?: string;
             id?: string;
-            /** Format: int32 */
-            fileCo?: number;
+            password?: string;
             /** Format: int32 */
             commentCo?: number;
-            password?: string;
-            ntcrNm?: string;
             useAt?: string;
-            nttId?: string;
-            nttCn?: string;
-            nttSj?: string;
-            /** Format: int64 */
-            nttNo?: number;
-            ntcrId?: string;
-            /** Format: int32 */
-            likeCo?: number;
-            /** Format: int32 */
-            inqireCo?: number;
             qnaStatus?: string;
             qnaCategory?: string;
+            /** Format: int32 */
+            inqireCo?: number;
             /** Format: date-time */
             createdDate?: string;
-            parnts?: string;
-            ntceBgngYmd?: string;
+            /** Format: int64 */
+            nttNo?: number;
+            nttSj?: string;
+            nttCn?: string;
+            ntcrNm?: string;
+            /** Format: int32 */
+            likeCo?: number;
+            ntcrId?: string;
+            nttId?: string;
             ntceEndYmd?: string;
             sjBoldYn?: string;
+            ntceBgngYmd?: string;
+            parnts?: string;
+            /** Format: int32 */
+            fileCo?: number;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -6844,16 +6899,29 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        /** @description 메뉴 생성 DTO */
         MenuCreateDto: {
-            /** Format: int64 */
-            menuNo?: number;
-            mapCreatId?: string;
-            authorCode?: string;
-            authorNm?: string;
-            authorDc?: string;
-            authorCreatDe?: string;
-            creatPersonId?: string;
-            /** Format: int32 */
+            /**
+             * Format: int64
+             * @description 메뉴 번호
+             */
+            menuSn?: number;
+            /** @description 맵 생성 ID */
+            mapngCrtId?: string;
+            /** @description 권한 코드 */
+            authrtCd?: string;
+            /** @description 권한명 */
+            authrtNm?: string;
+            /** @description 권한 설명 */
+            authrtExpln?: string;
+            /** @description 권한 생성일 */
+            authrtCrtYmd?: string;
+            /** @description 생성자 ID */
+            crtrId?: string;
+            /**
+             * Format: int32
+             * @description 메뉴 생성 여부 (1 이상: 생성됨, 0: 미생성)
+             */
             chkYeoBu?: number;
         };
         ApiResponsePageResponseMenuCreateDto: {
@@ -6917,11 +6985,11 @@ export interface components {
             dmndUserId?: string;
             rqesterIp?: string;
             ocrnYmd?: string;
-            occrrncDe?: string;
+            rqesterId?: string;
             processTime?: string;
             processSeCode?: string;
             requstId?: string;
-            rqesterId?: string;
+            occrrncDe?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -6951,9 +7019,9 @@ export interface components {
             errOccrrAt?: string;
             errorCode?: string;
             creatDt?: string;
-            loginDt?: string;
             errorOccrrAt?: string;
             occrrncDe?: string;
+            loginDt?: string;
         };
         PageResponseLoginLogDto: {
             list?: components["schemas"]["LoginLogDto"][];
@@ -7142,30 +7210,55 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        /** @description 기관코드 정보 DTO */
         InstitutionCodeDto: {
-            insttCode?: string;
-            allInsttNm?: string;
-            lowestInsttNm?: string;
-            insttAbrvNm?: string;
+            /** @description 기관코드 */
+            instCd?: string;
+            /** @description 전체기관명 */
+            allInstNm?: string;
+            /** @description 최하위기관명 */
+            lwtrkInstNm?: string;
+            /** @description 기관약칭명 */
+            instAbbrNm?: string;
+            /** @description 차수 */
             odr?: string;
+            /** @description 서열 */
             ord?: string;
-            insttOdr?: string;
-            bestInsttCode?: string;
-            upperInsttCode?: string;
-            reprsntInsttCode?: string;
-            insttTyLclas?: string;
-            insttTyMclas?: string;
-            insttTySclas?: string;
+            /** @description 기관차수 */
+            instCycl?: string;
+            /** @description 최상위기관코드 */
+            topInstCd?: string;
+            /** @description 상위기관코드 */
+            upInstCd?: string;
+            /** @description 대표기관코드 */
+            rprsInstCd?: string;
+            /** @description 기관유형대분류 */
+            instTypeLclsf?: string;
+            /** @description 기관유형중분류 */
+            instTypeMclsf?: string;
+            /** @description 기관유형소분류 */
+            instTypeSclsf?: string;
+            /** @description 전화번호 */
             telno?: string;
-            fxnum?: string;
-            creatDe?: string;
-            ablDe?: string;
-            ablEnnc?: string;
-            changede?: string;
-            changeTime?: string;
-            bsisDe?: string;
-            /** Format: int32 */
-            sortOrdr?: number;
+            /** @description 팩스번호 */
+            faxNo?: string;
+            /** @description 생성일자 */
+            crtYmd?: string;
+            /** @description 폐지일자 */
+            ablYmd?: string;
+            /** @description 폐지여부 */
+            ablYn?: string;
+            /** @description 변경일자 */
+            chgYmd?: string;
+            /** @description 변경시간 */
+            chgTm?: string;
+            /** @description 기준일자 */
+            crtrYmd?: string;
+            /**
+             * Format: int32
+             * @description 정렬순서
+             */
+            sortSeq?: number;
         };
         PageResponseInstitutionCodeDto: {
             list?: components["schemas"]["InstitutionCodeDto"][];

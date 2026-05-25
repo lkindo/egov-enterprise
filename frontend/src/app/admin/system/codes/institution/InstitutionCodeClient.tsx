@@ -77,13 +77,13 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  };
 
  const handleProcess = async (item: InstitutionCodeRecptn) => {
- if (!confirm(`${item.allInsttNm} 코드를 반영하시겠습니까?`)) return;
+ if (!confirm(`${item.allInstNm} 코드를 반영하시겠습니까?`)) return;
  
  try {
  await codeAdminService.processInstitutionCodeRecptn({
- occrrncDe: item.occrrncDe,
- insttCode: item.insttCode,
- opertSn: item.opertSn
+ ocrnYmd: item.ocrnYmd,
+ instCd: item.instCd,
+ jobSn: item.jobSn
  });
  toast('성공적으로 반영되었습니다.', 'success');
  loadReceptionData();
@@ -109,7 +109,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  <Building2 size={18} />
  </div>
  <div>
- <span className="font-black tracking-tighter text-slate-900 block text-xs uppercase leading-none">{item.insttCode}</span>
+ <span className="font-black tracking-tighter text-slate-900 block text-xs uppercase leading-none">{item.instCd}</span>
  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-60">INST_CODE</span>
  </div>
  </div>
@@ -119,7 +119,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  { 
  header: '기관 명칭', 
  accessor: (item: InstitutionCode) => (
- <span className="font-black text-slate-900 text-sm tracking-tight">{item.allInsttNm}</span>
+ <span className="font-black text-slate-900 text-sm tracking-tight">{item.allInstNm}</span>
  ),
  className: 'py-4'
  },
@@ -127,7 +127,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  header: '최하위 기관', 
  accessor: (item: InstitutionCode) => (
  <div className="px-3 py-1 bg-slate-100/50 border border-slate-200/50 rounded-lg w-fit shadow-sm">
- <span className="text-[10px] font-black text-primary tracking-widest uppercase">{item.lowestInsttNm}</span>
+ <span className="text-[10px] font-black text-primary tracking-widest uppercase">{item.lwtrkInstNm}</span>
  </div>
  ),
  className: 'w-40 py-4'
@@ -147,12 +147,12 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  accessor: (item: InstitutionCode) => (
  <div className={cn(
  "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit shadow-sm",
- item.ablEnnc === '0' 
+ item.ablYn === '0' 
  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
  : "bg-slate-100 text-slate-400 border-border/50"
  )}>
- <div className={cn("w-1.5 h-1.5 rounded-full", item.ablEnnc === '0' ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
- <span className="text-[10px] font-black tracking-widest uppercase">{item.ablEnnc === '0' ? '사용 중' : '폐지'}</span>
+ <div className={cn("w-1.5 h-1.5 rounded-full", item.ablYn === '0' ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+ <span className="text-[10px] font-black tracking-widest uppercase">{item.ablYn === '0' ? '사용 중' : '폐지'}</span>
  </div>
  ),
  className: 'w-24 py-4'
@@ -165,7 +165,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  accessor: (item: InstitutionCodeRecptn) => (
  <div className="flex items-center gap-2 font-black text-[10px] text-slate-400 tracking-widest uppercase">
  <History size={14} className="text-primary opacity-40" />
- {item.occrrncDe}
+ {item.ocrnYmd}
  </div>
  ),
  className: 'w-40 py-4' 
@@ -177,12 +177,12 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shadow-inner">
  <Database size={16} />
  </div>
- <span className="font-black tracking-tighter text-slate-900 uppercase text-xs">{item.insttCode}</span>
+ <span className="font-black tracking-tighter text-slate-900 uppercase text-xs">{item.instCd}</span>
  </div>
  ),
  className: 'w-40 py-4' 
  },
- { header: '기관 명칭', accessor: (item) => <span className="font-black text-sm text-slate-900">{item.allInsttNm}</span>, className: 'py-4' },
+ { header: '기관 명칭', accessor: (item) => <span className="font-black text-sm text-slate-900">{item.allInstNm}</span>, className: 'py-4' },
  { 
  header: '변경 구분', 
  accessor: (item: InstitutionCodeRecptn) => {
@@ -191,7 +191,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  '2': { label: '수정', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
  '3': { label: '정제', color: 'bg-rose-500/10 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
  };
- const config = typeMap[item.changeSeCode] || typeMap['1'];
+ const config = typeMap[item.chgSeCd] || typeMap['1'];
  return (
  <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-lg border w-fit font-black text-[10px] tracking-widest uppercase shadow-sm", config.color)}>
  {config.icon}
@@ -206,12 +206,12 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  accessor: (item: InstitutionCodeRecptn) => (
  <div className={cn(
  "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit shadow-sm",
- item.processSe === '1' 
+ item.procSe === '1' 
  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
  : "bg-amber-500/10 text-amber-600 border-amber-500/20"
  )}>
- {item.processSe === '1' ? <CheckCircle2 size={12} /> : <Clock size={12} className="animate-spin duration-[3s]" />}
- <span className="text-[10px] font-black tracking-widest uppercase">{item.processSe === '1' ? '완료' : '대기'}</span>
+ {item.procSe === '1' ? <CheckCircle2 size={12} /> : <Clock size={12} className="animate-spin duration-[3s]" />}
+ <span className="text-[10px] font-black tracking-widest uppercase">{item.procSe === '1' ? '완료' : '대기'}</span>
  </div>
  ),
  className: 'w-24 py-4'
@@ -219,7 +219,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  {
  header: '관리',
  accessor: (item: InstitutionCodeRecptn) => (
- item.processSe !== '1' && (
+ item.procSe !== '1' && (
  <Button 
  onClick={() => handleProcess(item)}
  className="h-9 px-5 rounded-lg bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 active:scale-95"
@@ -262,8 +262,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
 
  <HubMetricGrid>
  <HubMetricCard title="전체 노드" value={total} icon={Database} color="primary" />
- <HubMetricCard title="활성 상태" value={data.filter(i => i.ablEnnc === '0').length || 0} icon={ShieldCheck} color="emerald" />
- <HubMetricCard title="대기 큐" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "Pending" : "Normal"} />
+ <HubMetricCard title="활성 상태" value={data.filter(i => i.ablYn === '0').length || 0} icon={ShieldCheck} color="emerald" />
+ <HubMetricCard title="대기 큐" value={receptionData.filter(i => i.procSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.procSe !== '1').length > 0 ? "Pending" : "Normal"} />
  <HubMetricCard title="동기화망" value="안전" icon={Zap} color="indigo" />
  </HubMetricGrid>
 

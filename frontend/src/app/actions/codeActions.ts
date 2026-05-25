@@ -19,7 +19,7 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
     if (isNew) {
       await codeAdminService.createDetailCode(pureData as CmmnDetailCode, config);
     } else {
-      await codeAdminService.updateDetailCode(pureData.codeId!, pureData.code!, pureData as CmmnDetailCode, config);
+      await codeAdminService.updateDetailCode(pureData.cdId!, pureData.dtlCd!, pureData as CmmnDetailCode, config);
     }
 
     revalidatePath('/admin/system/common-code');
@@ -31,13 +31,13 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
   }
 }
 
-export async function deleteCodeDetail(prevState: unknown, { codeId, code }: { codeId: string, code: string }) {
+export async function deleteCodeDetail(prevState: unknown, { cdId, dtlCd }: { cdId: string, dtlCd: string }) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await codeAdminService.deleteDetailCode(codeId, code, config);
+    await codeAdminService.deleteDetailCode(cdId, dtlCd, config);
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 삭제되었습니다.' };
@@ -63,7 +63,7 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
     if (isNew) {
       await codeAdminService.createClCode(pureData, config);
     } else {
-      await codeAdminService.updateClCode(pureData.clCode!, pureData, config);
+      await codeAdminService.updateClCode(pureData.clsfCd!, pureData, config);
     }
 
     revalidatePath('/admin/system/common-code');
@@ -74,12 +74,12 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
   }
 }
 
-export async function deleteClCode(prevState: unknown, clCode: string) {
+export async function deleteClCode(prevState: unknown, clsfCd: string) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    await codeAdminService.deleteClCode(clCode, config);
+    await codeAdminService.deleteClCode(clsfCd, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '분류 코드가 삭제되었습니다.' };
   } catch (error: any) {
@@ -103,7 +103,7 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
     if (isNew) {
       await codeAdminService.createCmmnCode(pureData, config);
     } else {
-      await codeAdminService.updateCmmnCode(pureData.codeId!, pureData, config);
+      await codeAdminService.updateCmmnCode(pureData.cdId!, pureData, config);
     }
 
     revalidatePath('/admin/system/common-code');
@@ -114,12 +114,12 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
   }
 }
 
-export async function deleteCmmnCode(prevState: unknown, codeId: string) {
+export async function deleteCmmnCode(prevState: unknown, cdId: string) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    await codeAdminService.deleteCmmnCode(codeId, config);
+    await codeAdminService.deleteCmmnCode(cdId, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통 코드가 삭제되었습니다.' };
   } catch (error: any) {
@@ -138,8 +138,8 @@ export async function saveCmmnCodeHierarchyAction(flattenedNodes: any[]): Promis
     const submitData = flattenedNodes
       .filter(node => node.type === 'group')
       .map((node, index) => ({
-        codeId: node.id,
-        clCode: node.parentId,
+        cdId: node.id,
+        clsfCd: node.parentId,
         ordr: index + 1 // 순서 필드가 있다면 반영
       }));
 
