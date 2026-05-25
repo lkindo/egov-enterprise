@@ -47,8 +47,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             
             console.log('>>> Step 3: Verifying Task & Activity Lists');
             // Update to match current Dashboard UI
-            await expect(page.locator('text=Audit History').first()).toBeVisible();
-            await expect(page.locator('text=Activity Intelligence').first()).toBeVisible();
+            await expect(page.locator('text=보안 감사 이력').first()).toBeVisible();
+            await expect(page.locator('text=활동 인텔리전스').first()).toBeVisible();
         });
 
         test('Global Layout & Navigation Mapping', async ({ page }) => {
