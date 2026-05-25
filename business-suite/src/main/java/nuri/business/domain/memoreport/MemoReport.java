@@ -21,31 +21,31 @@ public class MemoReport extends BaseEntity {
     @Column(name = "rpt_id", length = 20)
     private String rptId;
 
-    @Column(name = "rpt_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String rptTtl;
 
-    @Column(name = "memo_rpt_ymd", length = 8)
+    @Column(length = 8)
     private String memoRptYmd;
 
-    @Column(name = "user_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String userId;
 
-    @Column(name = "rptr_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String rptrId;
 
-    @Column(name = "rpt_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     private String rptCn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
-    @Column(name = "drctn_mttr", length = 2000)
+    @Column(length = 2000)
     private String drctnMttr;
 
-    @Column(name = "drctn_mttr_reg_dt", length = 20)
+    @Column(length = 20)
     private String drctnMttrRegDt;
 
-    @Column(name = "rptr_inq_dt", length = 20)
+    @Column(length = 20)
     private String rptrInqDt;
 
     public void update(String rptTtl, String memoRptYmd, String userId, String rptrId,

@@ -23,25 +23,25 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(name = "rpt_id", length = 20)
     private String rptId;
 
-    @Column(name = "rpt_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String rptTtl;
 
-    @Column(name = "rpt_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     private String rptCn;
 
     @Transient
     private String atchFileId;
 
-    @Column(name = "rpt_se_cd", length = 12)
+    @Column(length = 12)
     private String rptSeCd;
 
-    @Column(name = "user_id", length = 20)
+    @Column(length = 20)
     private String userId;
 
-    @Column(name = "rpt_stts_cd", length = 12)
+    @Column(length = 12)
     private String rptSttsCd;
 
-    @Column(name = "rpt_ymd", length = 8)
+    @Column(length = 8)
     private String rptYmd;
 
     public void update(String rptTtl, String rptCn, String atchFileId, String rptSeCd) {
