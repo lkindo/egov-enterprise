@@ -50,7 +50,7 @@ class AdministCodeServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getAdministZoneNm()).isEqualTo("서울특별시");
+        assertThat(result.getContent().get(0).getAdmdstZoneNm()).isEqualTo("서울특별시");
     }
 
     @Test

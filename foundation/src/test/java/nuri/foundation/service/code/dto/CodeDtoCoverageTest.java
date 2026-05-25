@@ -11,16 +11,16 @@ class CodeDtoCoverageTest {
     @DisplayName("CmmnClCodeDto 커버리지")
     void cmmnClCodeDto_Coverage() {
         CmmnClCodeDto dto = new CmmnClCodeDto();
-        dto.setClCode("C1");
-        dto.setClCodeNm("N1");
-        dto.setClCodeDc("D1");
+        dto.setClsfCd("C1");
+        dto.setClsfCdNm("N1");
+        dto.setClsfCdExpln("D1");
         dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
-        assertThat(dto.getClCode()).isEqualTo("C1");
-        assertThat(dto.getClCodeNm()).isEqualTo("N1");
-        assertThat(dto.getClCodeDc()).isEqualTo("D1");
+        assertThat(dto.getClsfCd()).isEqualTo("C1");
+        assertThat(dto.getClsfCdNm()).isEqualTo("N1");
+        assertThat(dto.getClsfCdExpln()).isEqualTo("D1");
         assertThat(dto.getUseYn()).isEqualTo("Y");
         assertThat(dto.getFrstRegisterId()).isEqualTo("U1");
         assertThat(dto.getLastUpdusrId()).isEqualTo("U2");
@@ -30,17 +30,17 @@ class CodeDtoCoverageTest {
     @DisplayName("CmmnCodeDto 커버리지")
     void cmmnCodeDto_Coverage() {
         CmmnCodeDto dto = new CmmnCodeDto();
-        dto.setClCode("C1");
-        dto.setClCodeNm("N1");
-        dto.setCodeId("G1");
-        dto.setCodeIdNm("GN1");
-        dto.setCodeIdDc("GD1");
+        dto.setClsfCd("C1");
+        dto.setClsfCdNm("N1");
+        dto.setCdId("G1");
+        dto.setCdIdNm("GN1");
+        dto.setCdIdExpln("GD1");
         dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
-        assertThat(dto.getClCode()).isEqualTo("C1");
-        assertThat(dto.getCodeId()).isEqualTo("G1");
+        assertThat(dto.getClsfCd()).isEqualTo("C1");
+        assertThat(dto.getCdId()).isEqualTo("G1");
         assertThat(dto.getUseYn()).isEqualTo("Y");
     }
 
@@ -48,18 +48,18 @@ class CodeDtoCoverageTest {
     @DisplayName("CmmnDetailCodeDto 커버리지")
     void cmmnDetailCodeDto_Coverage() {
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
-        dto.setCodeId("G1");
-        dto.setCodeIdNm("GN1");
-        dto.setCode("C1");
-        dto.setCodeNm("CN1");
-        dto.setCodeDc("CD1");
+        dto.setCdId("G1");
+        dto.setCdIdNm("GN1");
+        dto.setDtlCd("C1");
+        dto.setDtlCdNm("CN1");
+        dto.setDtlCdExpln("CD1");
         dto.setUseYn("Y");
         dto.setFrstRegisterId("U1");
         dto.setLastUpdusrId("U2");
 
-        assertThat(dto.getCodeId()).isEqualTo("G1");
-        assertThat(dto.getCode()).isEqualTo("C1");
-        assertThat(dto.getCodeNm()).isEqualTo("CN1");
+        assertThat(dto.getCdId()).isEqualTo("G1");
+        assertThat(dto.getDtlCd()).isEqualTo("C1");
+        assertThat(dto.getDtlCdNm()).isEqualTo("CN1");
     }
 
     @Test
@@ -72,13 +72,10 @@ class CodeDtoCoverageTest {
                 .build();
 
         assertThat(dto.getAdmdstCd()).isEqualTo("110");
-        assertThat(dto.getAdministZoneCode()).isEqualTo("110");
         assertThat(dto.getAdmdstZoneNm()).isEqualTo("Seoul");
-        assertThat(dto.getAdministZoneNm()).isEqualTo("Seoul");
         assertThat(dto.getUseYn()).isEqualTo("Y");
         
         AdministCodeDto fullDto = new AdministCodeDto("1", "S", "N", "U", "Y", "C", "A", "CB", null, "MB", null);
-        assertThat(fullDto.getAdministZoneCode()).isEqualTo("1");
         assertThat(fullDto.getAdmdstCd()).isEqualTo("1");
     }
 }

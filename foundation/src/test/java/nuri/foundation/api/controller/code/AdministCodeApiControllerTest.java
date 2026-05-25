@@ -70,7 +70,7 @@ class AdministCodeApiControllerTest {
     @DisplayName("행정코드 상세 조회")
     void getAdministCodeDetail() throws Exception {
         AdministCodeDto dto = new AdministCodeDto();
-        dto.setAdministZoneCode("A1");
+        dto.setAdmdstCd("A1");
         when(administCodeService.getAdministCodeDetail("A1")).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/administ/A1")
@@ -83,7 +83,7 @@ class AdministCodeApiControllerTest {
     @DisplayName("행정코드 등록 (익명)")
     void createAdministCode_Anonymous() throws Exception {
         AdministCodeDto dto = new AdministCodeDto();
-        dto.setAdministZoneCode("A1");
+        dto.setAdmdstCd("A1");
 
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +100,7 @@ class AdministCodeApiControllerTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         AdministCodeDto dto = new AdministCodeDto();
-        dto.setAdministZoneCode("A1");
+        dto.setAdmdstCd("A1");
 
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ class AdministCodeApiControllerTest {
     @DisplayName("행정코드 수정")
     void updateAdministCode() throws Exception {
         AdministCodeDto dto = new AdministCodeDto();
-        dto.setAdministZoneCode("A1");
+        dto.setAdmdstCd("A1");
 
         mockMvc.perform(put("/api/v1/admin/system/codes/administ/A1")
                 .contentType(MediaType.APPLICATION_JSON)

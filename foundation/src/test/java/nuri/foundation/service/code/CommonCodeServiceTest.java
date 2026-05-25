@@ -90,7 +90,7 @@ class CommonCodeServiceTest {
         List<CmmnClCodeDto> result = commonCodeService.selectCmmnClCodeList(searchVO);
 
         assertEquals(1, result.size());
-        assertEquals("CL1", result.get(0).getClCode());
+        assertEquals("CL1", result.get(0).getClsfCd());
     }
 
     @Test
@@ -118,7 +118,7 @@ class CommonCodeServiceTest {
         List<CmmnCodeDto> result = commonCodeService.selectCmmnCodeList(searchVO);
 
         assertEquals(1, result.size());
-        assertEquals("GRP1", result.get(0).getCodeId());
+        assertEquals("GRP1", result.get(0).getCdId());
     }
 
     @Test

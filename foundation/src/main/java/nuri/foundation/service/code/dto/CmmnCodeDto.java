@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 @Getter
 @Setter
 @Builder
@@ -41,55 +39,5 @@ public class CmmnCodeDto {
     @Schema(description = "최종수정자 ID")
     private String lastUpdusrId;
 
-    // Compatibility Getters/Setters for legacy java references
-    @JsonIgnore
-    public String getCodeId() {
-        return cdId;
-    }
-
-    @JsonIgnore
-    public void setCodeId(String codeId) {
-        this.cdId = codeId;
-    }
-
-    @JsonIgnore
-    public String getCodeIdNm() {
-        return cdIdNm;
-    }
-
-    @JsonIgnore
-    public void setCodeIdNm(String codeIdNm) {
-        this.cdIdNm = codeIdNm;
-    }
-
-    @JsonIgnore
-    public String getCodeIdDc() {
-        return cdIdExpln;
-    }
-
-    @JsonIgnore
-    public void setCodeIdDc(String codeIdDc) {
-        this.cdIdExpln = codeIdDc;
-    }
-
-    @JsonIgnore
-    public String getClCode() {
-        return clsfCd;
-    }
-
-    @JsonIgnore
-    public void setClCode(String clCode) {
-        this.clsfCd = clCode;
-    }
-
-    @JsonIgnore
-    public String getClCodeNm() {
-        return clsfCdNm;
-    }
-
-    @JsonIgnore
-    public void setClCodeNm(String clCodeNm) {
-        this.clsfCdNm = clCodeNm;
-    }
 }
 

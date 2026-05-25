@@ -63,7 +63,7 @@ class CommonCodeApiControllerTest {
     @DisplayName("공통코드 상세 조회")
     void getCmmnCode() throws Exception {
         CmmnCodeDto dto = new CmmnCodeDto();
-        dto.setCodeId("TEST");
+        dto.setCdId("TEST");
         when(commonCodeService.selectCmmnCodeDetail(any(CmmnCodeDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/cmmn/TEST")
