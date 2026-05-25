@@ -21,13 +21,13 @@ public class CommonCodeCategory extends BaseEntity {
     @Column(name = "clsf_cd", length = 12)
     private String clsfCd;
 
-    @Column(name = "clsf_cd_nm", length = 100)
+    @Column(length = 100)
     private String clsfCdNm;
 
-    @Column(name = "clsf_cd_expln", length = 4000)
+    @Column(length = 4000)
     private String clsfCdExpln;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     public CommonCodeCategory(String clsfCd, String clsfCdNm, String clsfCdExpln, String useYn, String frstRegisterId) {

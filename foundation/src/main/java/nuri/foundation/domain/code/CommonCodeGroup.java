@@ -26,17 +26,17 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     @NonNull
     private String cdId;
 
-    @Column(name = "cd_id_nm", length = 100)
+    @Column(length = 100)
     @NonNull
     private String cdIdNm;
 
-    @Column(name = "cd_id_expln", length = 4000)
+    @Column(length = 4000)
     private String cdIdExpln;
 
-    @Column(name = "clsf_cd", length = 12)
+    @Column(length = 12)
     private String clsfCd;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     public CommonCodeGroup(@NonNull String cdId, @NonNull String cdIdNm, String cdIdExpln, String clsfCd,

@@ -21,22 +21,22 @@ public class AdministCode extends BaseEntity {
     @Column(name = "admdst_cd", length = 12)
     private String admdstCd;
 
-    @Column(name = "admdst_se_cd", length = 12)
+    @Column(length = 12)
     private String admdstSeCd;
 
-    @Column(name = "admdst_zone_nm", length = 100)
+    @Column(length = 100)
     private String admdstZoneNm;
 
-    @Column(name = "up_admdst_cd", length = 12)
+    @Column(length = 12)
     private String upAdmdstCd;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
-    @Column(name = "crt_ymd", length = 8)
+    @Column(length = 8)
     private String crtYmd;
 
-    @Column(name = "abl_ymd", length = 8)
+    @Column(length = 8)
     private String ablYmd;
 
     public void update(String admdstSeCd, String admdstZoneNm, String upAdmdstCd, 

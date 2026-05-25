@@ -22,34 +22,34 @@ public class InstitutionCodeRecptnLog {
     @EmbeddedId
     private InstitutionCodeRecptnLogId id;
 
-    @Column(name = "chg_se_cd", length = 12)
+    @Column(length = 12)
     private String chgSeCd;
 
-    @Column(name = "proc_se", length = 1)
+    @Column(length = 1)
     private String procSe;
 
-    @Column(name = "etc_cd", length = 20)
+    @Column(length = 20)
     private String etcCd;
 
-    @Column(name = "all_inst_nm", length = 100)
+    @Column(length = 100)
     private String allInstNm;
 
     @Column(name = "lwst_inst_nm", length = 100)
     private String lwtrkInstNm;
 
-    @Column(name = "inst_abbr_nm", length = 100)
+    @Column(length = 100)
     private String instAbbrNm;
 
-    @Column(name = "odr", length = 2)
+    @Column(length = 2)
     private String odr;
 
-    @Column(name = "ord", length = 3)
+    @Column(length = 3)
     private String ord;
 
-    @Column(name = "inst_cycl", length = 2)
+    @Column(length = 2)
     private String instCycl;
 
-    @Column(name = "top_inst_cd", length = 20)
+    @Column(length = 20)
     private String topInstCd;
 
     @Column(name = "upr_inst_cd", length = 20)
@@ -58,52 +58,50 @@ public class InstitutionCodeRecptnLog {
     @Column(name = "reprs_inst_cd", length = 20)
     private String rprsInstCd;
 
-    @Column(name = "inst_type_lclsf", length = 2)
+    @Column(length = 2)
     private String instTypeLclsf;
 
-    @Column(name = "inst_type_mclsf", length = 2)
+    @Column(length = 2)
     private String instTypeMclsf;
 
-    @Column(name = "inst_type_sclsf", length = 2)
+    @Column(length = 2)
     private String instTypeSclsf;
 
-    @Column(name = "telno", length = 20)
+    @Column(length = 20)
     private String telno;
 
-    @Column(name = "fax_no", length = 20)
+    @Column(length = 20)
     private String faxNo;
 
-    @Column(name = "crt_ymd", length = 8)
+    @Column(length = 8)
     private String crtYmd;
 
-    @Column(name = "abl_ymd", length = 8)
+    @Column(length = 8)
     private String ablYmd;
 
-    @Column(name = "abl_yn", length = 1)
+    @Column(length = 1)
     private String ablYn;
 
-    @Column(name = "chg_ymd", length = 8)
+    @Column(length = 8)
     private String chgYmd;
 
-    @Column(name = "chg_tm", length = 20)
+    @Column(length = 20)
     private String chgTm;
 
-    @Column(name = "crtr_ymd", length = 8)
+    @Column(length = 8)
     private String crtrYmd;
 
     @Column(name = "sort_ordr")
     private Integer sortSeq;
 
-    @Column(name = "crt_dt")
     private LocalDateTime crtDt;
 
-    @Column(name = "frst_rgtr_id", length = 20)
+    @Column(length = 20)
     private String frstRgtrId;
 
-    @Column(name = "mdfcn_dt")
     private LocalDateTime mdfcnDt;
 
-    @Column(name = "last_mdfr_id", length = 20)
+    @Column(length = 20)
     private String lastMdfrId;
 
     @Embeddable

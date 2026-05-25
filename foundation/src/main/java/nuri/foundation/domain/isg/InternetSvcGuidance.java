@@ -24,13 +24,13 @@ public class InternetSvcGuidance extends BaseEntity {
     @Column(name = "itnt_svc_id", length = 20)
     private String itntSvcId;
 
-    @Column(name = "itnt_svc_nm", length = 100)
+    @Column(length = 100)
     private String itntSvcNm;
 
-    @Column(name = "itnt_svc_expln", length = 4000)
+    @Column(length = 4000)
     private String itntSvcExpln;
 
-    @Column(name = "rflt_yn", length = 1)
+    @Column(length = 1)
     private String rfltYn;
 
     public void update(String itntSvcNm, String itntSvcExpln, String rfltYn) {

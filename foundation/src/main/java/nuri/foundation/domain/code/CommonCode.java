@@ -32,14 +32,14 @@ public class CommonCode extends BaseEntity implements Serializable {
     @NonNull
     private String dtlCd; // 상세코드 -> dtlCd로 표준화
 
-    @Column(name = "dtl_cd_nm", length = 100)
+    @Column(length = 100)
     @NonNull
     private String dtlCdNm; // 상세코드명 -> dtlCdNm으로 표준화
 
-    @Column(name = "dtl_cd_expln", length = 4000)
+    @Column(length = 4000)
     private String dtlCdExpln; // 상세코드설명 -> dtlCdExpln으로 표준화
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn; // 사용여부 (Y/N)
 
     public CommonCode(@NonNull String cdId, @NonNull String dtlCd, @NonNull String dtlCdNm, String dtlCdExpln,
