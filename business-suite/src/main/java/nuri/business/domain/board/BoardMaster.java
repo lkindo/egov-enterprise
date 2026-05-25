@@ -31,55 +31,54 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
-    @Column(name = "bbs_ttl", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String bbsTtl;
 
-    @Column(name = "bbs_expln", length = 4000)
+    @Column(length = 4000)
     private String bbsExpln;
 
-    @Column(name = "bbs_type_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String bbsTypeCd;
 
-    @Column(name = "bbs_atrb_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String bbsAtrbCd;
 
-    @Column(name = "ans_psblty_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String ansPsbltyYn = "N";
 
-    @Column(name = "file_atch_psblty_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     @Builder.Default
     private String fileAtchPsbltyYn = "N";
 
-    @Column(name = "atch_psblty_file_qty", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Integer atchPsbltyFileQty = 0;
 
-    @Column(name = "atch_psblty_file_sz")
     private Long atchPsbltyFileSz;
 
-    @Column(name = "use_yn", nullable = false, length = 1)
+    @Column(nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "tmplt_id", length = 20)
+    @Column(length = 20)
     private String tmpltId;
 
-    @Column(name = "blog_id", length = 20)
+    @Column(length = 20)
     private String blogId;
 
-    @Column(name = "blog_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String blogYn = "N";
 
-    @Column(name = "cmnty_id", length = 20)
+    @Column(length = 20)
     private String cmntyId;
 
-    @Column(table = "tb_bbs_master_optn", name = "ans_yn", length = 1)
+    @Column(table = "tb_bbs_master_optn", length = 1)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(table = "tb_bbs_master_optn", name = "stsfdg_yn", length = 1)
+    @Column(table = "tb_bbs_master_optn", length = 1)
     @Builder.Default
     private String stsfdgYn = "N";
 

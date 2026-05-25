@@ -32,11 +32,11 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     @Column(name = "trgt_id", length = 20)
     private String trgtId;
 
-    @Column(name = "rgstr_se_cd", length = 12)
+    @Column(length = 12)
     @com.fasterxml.jackson.annotation.JsonProperty("registSeCode")
     private String rgstrSeCd;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     public BoardUse(String bbsId, String trgtId, String rgstrSeCd, String useYn) {

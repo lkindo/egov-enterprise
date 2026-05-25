@@ -28,82 +28,76 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(name = "bbs_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String bbsId;
 
-    @Column(name = "ans_sn")
     private Long ansSn;
 
-    @Column(name = "pst_ttl", length = 100)
+    @Column(length = 100)
     private String pstTtl;
 
-    @Column(name = "pst_cn", length = 4000)
+    @Column(length = 4000)
     private String pstCn;
 
-    @Column(name = "up_pst_id", length = 20)
+    @Column(length = 20)
     private String upPstId;
 
-    @Column(name = "sort_ordr")
     private Long sortOrdr;
 
-    @Column(name = "ttl_bold_yn", length = 1)
+    @Column(length = 1)
     private String ttlBoldYn;
 
-    @Column(name = "ans_lvl")
     @Builder.Default
     private Integer ansLvl = 0;
 
-    @Column(name = "inq_cnt")
     @Builder.Default
     private Integer inqCnt = 0;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "pst_bgng_ymd", length = 20)
+    @Column(length = 20)
     private String pstBgngYmd;
 
-    @Column(name = "pst_end_ymd", length = 20)
+    @Column(length = 20)
     private String pstEndYmd;
 
-    @Column(name = "user_id", length = 20)
+    @Column(length = 20)
     private String userId;
 
-    @Column(name = "user_nm", length = 100)
+    @Column(length = 100)
     private String userNm;
 
-    @Column(name = "pswd", length = 200)
+    @Column(length = 200)
     private String pswd;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
-    @Column(name = "scrt_yn", length = 1)
+    @Column(length = 1)
     private String scrtYn;
 
-    @Column(name = "blog_id", length = 20)
+    @Column(length = 20)
     private String blogId;
 
-    @Column(name = "evnt_dt")
     private java.time.LocalDateTime evntDt;
 
-    @Column(name = "qna_stts_cd", length = 12)
+    @Column(length = 12)
     @Builder.Default
     private String qnaSttsCd = "OPEN";
 
-    @Column(name = "qna_cat_cd", length = 12)
+    @Column(length = 12)
     private String qnaCatCd;
 
-    @Column(name = "like_cnt")
     @Builder.Default
     private Integer likeCnt = 0;
     
-    @Column(name = "ans_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(name = "ntc_yn", length = 1)
+    @Column(length = 1)
     @Builder.Default
     private String ntcYn = "N";
 
@@ -111,7 +105,6 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer commentCnt = 0;
     
-    @Column(name = "file_cnt")
     @Builder.Default
     private Integer fileCnt = 0;
 
