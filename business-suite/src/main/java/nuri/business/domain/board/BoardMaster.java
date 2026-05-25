@@ -74,11 +74,11 @@ public class BoardMaster extends BaseEntity {
     @Column(length = 20)
     private String cmntyId;
 
-    @Column(table = "tb_bbs_master_optn", length = 1)
+    @Column(table = "tb_bbs_master_optn", name = "ans_yn", length = 1)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(table = "tb_bbs_master_optn", length = 1)
+    @Column(table = "tb_bbs_master_optn", name = "stsfdg_yn", length = 1)
     @Builder.Default
     private String stsfdgYn = "N";
 
