@@ -169,7 +169,7 @@ export default function OnlinePollParticipateClient() {
  <div className="space-y-4">
  {pollItems.map((item, idx) => (
  <PollItem 
- key={item.pollArtclId} 
+ key={item.pollArtclId || `poll-item-${idx}`} 
  item={item} 
  totalVotes={pollItems.reduce((sum, i) => sum + (i.pollIemCo || 0), 0)}
  isSelected={selectedItemId === item.pollArtclId}
