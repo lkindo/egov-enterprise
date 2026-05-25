@@ -21,10 +21,10 @@ public class Sms extends BaseEntity {
     @Column(name = "sms_id", length = 20)
     private String smsId;
 
-    @Column(name = "sndng_telno", length = 13, nullable = false)
+    @Column(length = 13, nullable = false)
     private String sndngTelno;
 
-    @Column(name = "sndng_cn", length = 4000)
+    @Column(length = 4000)
     private String sndngCn;
 
     // ----- [Legacy Aliases for Backward Compatibility] -----

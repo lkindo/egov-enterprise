@@ -25,25 +25,24 @@ public class SentMail extends BaseEntity {
     @Column(name = "msg_id", length = 20)
     private String msgId;
 
-    @Column(name = "eml_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String emlTtl;
 
-    @Column(name = "eml_cn", length = 4000)
+    @Column(length = 4000)
     private String emlCn;
 
-    @Column(name = "sndpty_nm", length = 100)
+    @Column(length = 100)
     private String sndptyNm;
 
-    @Column(name = "rcvr_nm", length = 100)
+    @Column(length = 100)
     private String rcvrNm;
 
-    @Column(name = "dsptch_rslt_cd", length = 12)
+    @Column(length = 12)
     private String dsptchRsltCd;
 
-    @Column(name = "dsptch_dt")
     private java.time.LocalDateTime dsptchDt;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     // ----- [Legacy Getter Aliases for Backwards Compatibility] -----

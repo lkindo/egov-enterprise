@@ -24,26 +24,25 @@ public class Notification extends BaseEntity {
     @Column(name = "noti_sn", length = 20)
     private String notiSn;
 
-    @Column(name = "noti_ttl_nm", length = 100)
+    @Column(length = 100)
     private String notiTtlNm;
 
-    @Column(name = "noti_cn", length = 4000)
+    @Column(length = 4000)
     private String notiCn;
 
-    @Column(name = "rcvr_id", length = 20)
+    @Column(length = 20)
     private String rcvrId;
 
     @Builder.Default
-    @Column(name = "read_yn", length = 1)
+    @Column(length = 1)
     private String readYn = "N";
 
-    @Column(name = "link_url", length = 1000)
+    @Column(length = 1000)
     private String linkUrl;
 
-    @Column(name = "noti_dt")
     private LocalDateTime notiDt;
 
-    @Column(name = "noti_ivl_val", length = 100)
+    @Column(length = 100)
     private String notiIvlVal;
 
     public void markAsRead() {
