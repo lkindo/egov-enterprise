@@ -30,33 +30,33 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @com.fasterxml.jackson.annotation.JsonProperty("stsfdgId")
     private Long dgstfnSn;
 
-    @Column(name = "bbs_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String bbsId;
 
-    @Column(name = "ntt_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("pstId")
     private String nttId;
 
-    @Column(name = "dgstfn_scr", nullable = false)
+    @Column(nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("stsfdgLevel")
     private Integer dgstfnScr;
 
-    @Column(name = "dgstfn_cn", length = 4000)
+    @Column(length = 4000)
     @com.fasterxml.jackson.annotation.JsonProperty("stsfdgCn")
     private String dgstfnCn;
 
-    @Column(name = "pswd", length = 200)
+    @Column(length = 200)
     @com.fasterxml.jackson.annotation.JsonProperty("password")
     private String pswd;
 
     @Builder.Default
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn = "Y";
 
-    @Column(name = "user_id", length = 20)
+    @Column(length = 20)
     private String userId;
 
-    @Column(name = "user_nm", length = 100)
+    @Column(length = 100)
     private String userNm;
 
     public void update(Integer stsfdgLevel, String stsfdgCn, String password) {
