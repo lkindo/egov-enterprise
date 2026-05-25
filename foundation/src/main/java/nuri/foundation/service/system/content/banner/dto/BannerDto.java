@@ -4,7 +4,6 @@ import nuri.foundation.domain.system.content.banner.Banner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @Setter
@@ -13,35 +12,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Builder
 @Schema(description = "배너 정보")
 public class BannerDto {
-    @JsonProperty("bannerId")
     @Schema(description = "배너 ID")
     private String bnrId;
 
-    @JsonProperty("bannerNm")
     @Schema(description = "배너 명칭")
     private String bnrNm;
 
-    @JsonProperty("linkUrl")
     @Schema(description = "링크 URL")
     private String linkUrl;
 
-    @JsonProperty("bannerImage")
     @Schema(description = "배너 이미지 경로")
     private String bnrImgNm;
 
-    @JsonProperty("bannerDc")
     @Schema(description = "배너 설명")
     private String bnrExpln;
 
-    @JsonProperty("sortOrdr")
     @Schema(description = "정렬 순서")
     private Integer sortOrdr;
 
-    @JsonProperty("reflctAt")
     @Schema(description = "반영 여부")
     private String rfltYn;
 
-    @JsonProperty("bannerImageFile")
     @Schema(description = "배너 이미지 파일 ID")
     private String atchFileId;
 

@@ -61,11 +61,11 @@ import {
 } from '@/components/ui/form';
 
 const bannerSchema = z.object({
- bannerNm: z.string().min(1, '배너 명칭은 필수 입력 사항입니다.'),
+ bnrNm: z.string().min(1, '배너 명칭은 필수 입력 사항입니다.'),
  linkUrl: z.string().optional(),
  sortOrdr: z.coerce.number().min(0, '정렬 순서는 0 이상의 숫자여야 합니다.'),
- reflctAt: z.enum(['Y', 'N']),
- bannerDc: z.string().optional(),
+ rfltYn: z.enum(['Y', 'N']),
+ bnrExpln: z.string().optional(),
 });
 
 const popupSchema = z.object({
@@ -108,11 +108,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  const bannerForm = useAppForm(bannerSchema, {
  defaultValues: {
- bannerNm: '',
+ bnrNm: '',
  linkUrl: '',
  sortOrdr: 0,
- reflctAt: 'Y',
- bannerDc: ''
+ rfltYn: 'Y',
+ bnrExpln: ''
  }
  });
 
@@ -135,11 +135,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  if (activeTab === 'banner') {
  const item = editingItem as Banner;
  bannerForm.reset({
- bannerNm: item?.bannerNm || '',
+ bnrNm: item?.bnrNm || '',
  linkUrl: item?.linkUrl || '',
  sortOrdr: item?.sortOrdr || 0,
- reflctAt: (item?.reflctAt as 'Y' | 'N') || 'Y',
- bannerDc: item?.bannerDc || ''
+ rfltYn: (item?.rfltYn as 'Y' | 'N') || 'Y',
+ bnrExpln: item?.bnrExpln || ''
  });
  } else {
  const item = editingItem as Popup;
@@ -218,24 +218,24 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  try {
  const data = {
  ...values,
- reflctAt: values.reflctAt as "Y" | "N"
+ rfltYn: values.rfltYn as "Y" | "N"
  } as any;
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
  const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
  if (uploadedFileId) {
- data.bannerImageFile = uploadedFileId;
- data.bannerImage = formFiles[0].name;
+ data.atchFileId = uploadedFileId;
+ data.bnrImgNm = formFiles[0].name;
  }
  } else if (editingItem) {
- data.bannerImageFile = (editingItem as Banner).bannerImageFile;
- data.bannerImage = (editingItem as Banner).bannerImage;
+ data.atchFileId = (editingItem as Banner).atchFileId;
+ data.bnrImgNm = (editingItem as Banner).bnrImgNm;
  }
 
  const res = await saveBannerAction(null, {
  mode: editingItem ? 'edit' : 'create',
  data: data as Banner,
- id: (editingItem as Banner)?.bannerId
+ id: (editingItem as Banner)?.bnrId
  });
 
  if (res.success) {
@@ -258,7 +258,6 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  stopvewSetupYn: values.stopvewSetupYn as "Y" | "N",
  ntceBgnde: values.ntceBgnde,
  ntceEndde: values.ntceEndde,
- // Explicitly convert to string for Backend DTO
  popupWdthPstn: String(values.popupWdthPstn),
  popupVrtcPstn: String(values.popupVrtcPstn),
  popupWdthSz: String(values.popupWdthSz),
@@ -267,7 +266,6 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
- // FileAdminService.uploadFiles returns a string (atchFileId)
  const uploadedFileId = typeof uploadRes === 'string' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
  
  if (uploadedFileId) {
@@ -301,9 +299,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  accessor: (item: Banner) => (
  <div className="w-56 h-24 bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-100 shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
- {item.bannerImageFile && (
+ {item.atchFileId && (
  <Image
- src={`/api/v1/files/download?fileId=${item.bannerImageFile}`}
+ src={`/api/v1/files/download?fileId=${item.atchFileId}`}
  className="object-cover z-10 group-hover/img:scale-110 transition-transform duration-1000"
  alt="banner"
  fill
@@ -321,9 +319,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  header: '배너 자산 명칭',
  accessor: (item: Banner) => (
  <div className="flex flex-col gap-1.5 py-4">
- <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.bannerNm}</span>
+ <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.bnrNm}</span>
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">ID: {item.bannerId}</span>
+ <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">ID: {item.bnrId}</span>
  {item.linkUrl && (
  <span className="text-xs font-bold text-primary/60 flex items-center gap-1.5 lowercase">
  <ExternalLink size={10} /> {item.linkUrl}
@@ -345,7 +343,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '게시 상태',
  accessor: (item: Banner | Popup) => {
- const isLive = 'reflctAt' in item ? item.reflctAt === 'Y' : item.ntceYn === 'Y';
+ const isLive = 'rfltYn' in item ? item.rfltYn === 'Y' : item.ntceYn === 'Y';
  return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} />;
  },
  className: 'w-32'
@@ -358,7 +356,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-200 transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} />
  </Button>
- <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bannerId)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId)}>
  <Trash2 size={16} />
  </Button>
  </div>
@@ -446,7 +444,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  />
 
  <HubMetricGrid>
- <HubMetricCard title="활성 배너" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
+ <HubMetricCard title="활성 배너" value={banners.filter(b => b.rfltYn === 'Y').length} icon={ImageIcon} color="primary" />
  <HubMetricCard title="활성 팝업" value={popups.filter(p => p.ntceYn === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
  <HubMetricCard title="예약 자산" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
  <HubMetricCard title="전체 자산" value={banners.length + popups.length} icon={Layers} color="indigo" />
@@ -520,7 +518,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  data={activeTab === 'banner' ? banners : popups}
  loading={activeTab === 'banner' ? isBannersLoading : isPopupsLoading}
  onRetry={() => activeTab === 'banner' ? refetchBanners() : refetchPopups()}
- keyField={(activeTab === 'banner' ? 'bannerId' : 'popupId') as any}
+ keyField={(activeTab === 'banner' ? 'bnrId' : 'popupId') as any}
  emptyMessage={`등록된 ${activeTab === 'banner' ? '배너' : '팝업'} 자산이 존재하지 않습니다.`}
  className="border-none bg-transparent"
  />
@@ -557,7 +555,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="space-y-8">
  <ShadcnFormField
  control={bannerForm.control}
- name="bannerNm"
+ name="bnrNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
@@ -602,7 +600,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  />
  <ShadcnFormField
  control={bannerForm.control}
- name="reflctAt"
+ name="rfltYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
@@ -624,7 +622,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <ShadcnFormField
  control={bannerForm.control}
- name="bannerDc"
+ name="bnrExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
@@ -648,14 +646,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <p className="text-xs font-bold text-slate-400 px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
- {(editingItem as Banner)?.bannerImageFile && (
+ {(editingItem as Banner)?.atchFileId && (
  <div className="p-8 rounded-lg bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
  <SearchCode size={20} className="text-primary" />
  </div>
- <span className="font-mono text-xs font-bold tracking-tighter text-white/80 truncate">{(editingItem as Banner).bannerImage}</span>
+ <span className="font-mono text-xs font-bold tracking-tighter text-white/80 truncate">{(editingItem as Banner).bnrImgNm}</span>
  </div>
  </div>
  )}

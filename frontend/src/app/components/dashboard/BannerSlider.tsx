@@ -57,15 +57,15 @@ export function BannerSlider() {
   }
 
   const currentBanner = banners[currentIndex];
-  const imageUrl = (currentBanner.bannerImage && currentBanner.bannerImage.startsWith('http'))
-    ? currentBanner.bannerImage
-    : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
+  const imageUrl = (currentBanner.bnrImgNm && currentBanner.bnrImgNm.startsWith('http'))
+    ? currentBanner.bnrImgNm
+    : `/api/v1/files/download?fileId=${currentBanner.atchFileId || currentBanner.bnrImgNm}`;
 
   return (
     <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-lg bg-slate-900 shadow-lg">
       <Image
         src={imageUrl}
-        alt={currentBanner.bannerNm}
+        alt={currentBanner.bnrNm}
         fill
         sizes="100vw"
         className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
@@ -75,17 +75,17 @@ export function BannerSlider() {
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
         <h2 className="text-2xl md:text-3xl font-bold mb-2 animate-in slide-in-from-left duration-500">
-          {currentBanner.bannerNm}
+          {currentBanner.bnrNm}
         </h2>
         <p className="text-sm md:text-base text-slate-200 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
-          {currentBanner.bannerDc}
+          {currentBanner.bnrExpln}
         </p>
         {currentBanner.linkUrl && (
           <a
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${currentBanner.bannerNm} 자세히 보기 새창 열림`}
+            aria-label={`${currentBanner.bnrNm} 자세히 보기 새창 열림`}
             className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
             자세히 보기 <ExternalLink size={14} />
@@ -113,7 +113,7 @@ export function BannerSlider() {
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {banners.map((banner, idx) => (
               <button
-                key={`banner-dot-${banner.bannerId || idx}`}
+                key={`banner-dot-${banner.bnrId || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(

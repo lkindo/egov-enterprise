@@ -1,12 +1,12 @@
 export interface Banner {
-    bannerId: string;
-    bannerNm: string;
+    bnrId: string;
+    bnrNm: string;
     linkUrl: string;
-    bannerImage: string;
-    bannerDc?: string;
+    bnrImgNm: string;
+    bnrExpln?: string;
     sortOrdr: number;
-    reflctAt: 'Y' | 'N';
-    bannerImageFile?: string;
+    rfltYn: 'Y' | 'N';
+    atchFileId?: string;
     createdBy?: string;
     createdDate?: string;
 }
