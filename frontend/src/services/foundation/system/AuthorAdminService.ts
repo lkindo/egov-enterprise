@@ -4,10 +4,10 @@ import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { MenuByAuthority } from '@/types/foundation/security';
 
 export interface AuthorInfo {
-  authorCode: string;
-  authorNm: string;
-  authorDc?: string;
-  authorCreatDe?: string;
+  authrtCd: string;
+  authrtNm: string;
+  authrtExpln?: string;
+  authrtCrtYmd?: string;
 }
 
 /**

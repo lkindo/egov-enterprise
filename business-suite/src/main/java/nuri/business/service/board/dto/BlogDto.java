@@ -1,9 +1,8 @@
 package nuri.business.service.board.dto;
 
 import nuri.business.domain.board.Blog;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 @Getter
@@ -11,41 +10,43 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "블로그 정보 DTO")
 public class BlogDto {
+    @Schema(description = "블로그 ID")
     private String blogId;
+
+    @Schema(description = "게시판 ID")
     private String bbsId;
+
+    @Schema(description = "블로그 제목")
     private String blogTtl;
+
+    @Schema(description = "블로그 소개 내용")
     private String blogIntroCn;
 
-    @JsonProperty("regTypeCd")
+    @Schema(description = "등록 구분 코드")
     private String regSeCd;
 
-    @JsonProperty("tmplatId")
+    @Schema(description = "템플릿 ID")
     private String tmpltId;
 
+    @Schema(description = "사용 여부")
     private String useYn;
+
+    @Schema(description = "최초 등록자 ID")
     private String frstRegisterId;
+
+    @Schema(description = "최초 등록 일시")
     private LocalDateTime frstRegisterPnttm;
+
+    @Schema(description = "최종 수정자 ID")
     private String lastUpdusrId;
+
+    @Schema(description = "최종 수정 일시")
     private LocalDateTime lastUpdtPnttm;
+
+    @Schema(description = "블로그 여부")
     private String blogYn;
-
-    // legacy
-    public String getBlogNm() { return blogTtl; }
-    public void setBlogNm(String v) { this.blogTtl = v; }
-    public String getBlogIntrcn() { return blogIntroCn; }
-    public void setBlogIntrcn(String v) { this.blogIntroCn = v; }
-    public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
-    public LocalDateTime getLastUpdusrPnttm() { return lastUpdtPnttm; }
-
-    @JsonIgnore
-    public String getRegTypeCd() { return regSeCd; }
-    @JsonIgnore
-    public void setRegTypeCd(String v) { this.regSeCd = v; }
-    @JsonIgnore
-    public String getTmplatId() { return tmpltId; }
-    @JsonIgnore
-    public void setTmplatId(String v) { this.tmpltId = v; }
 
     public static BlogDto from(Blog entity) {
         if (entity == null)
@@ -66,3 +67,4 @@ public class BlogDto {
                 .build();
     }
 }
+

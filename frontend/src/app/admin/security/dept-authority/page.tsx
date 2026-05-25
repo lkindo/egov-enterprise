@@ -79,10 +79,10 @@ export default function DeptAuthorityPage() {
  const loading = deptsLoading || rolesLoading;
 
  const saveMutation = useMutation({
- mutationFn: (authorCode: string) =>
+ mutationFn: (authrtId: string) =>
  deptAuthorityAdminService.updateDeptAuthorities({
  deptId: selectedDept!,
- authorCode,
+ authrtId,
  allMembers: true
  }),
  onSuccess: () => {
@@ -93,50 +93,50 @@ export default function DeptAuthorityPage() {
  });
 
  const columns: Column<AuthorInfo>[] = [
- {
- header: '정책 프로파일 ID',
- accessor: (item: AuthorInfo) => (
- <div className="flex flex-col gap-0.5">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
- <span className="font-mono text-xs font-bold text-primary tracking-widest uppercase">{item.authorCode}</span>
- </div>
- ),
- className: 'w-48'
- },
- {
- header: '권한 아키텍처 명칭',
- accessor: (item: AuthorInfo) => (
- <div className="flex flex-col gap-0.5 py-2">
- <span className="font-bold text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authorDc || '규정 명세 없음'}</span>
- </div>
- )
- },
- {
- header: 'SELECTION',
- className: 'text-center w-32',
- accessor: (item: AuthorInfo) => {
- const isSelected = selectedAuthorCode === item.authorCode;
- return (
- <div className="flex justify-center">
- <button
- type="button"
- onClick={(e) => {
- e.stopPropagation();
- setSelectedAuthorCode(item.authorCode);
- }}
- className={cn(
- "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
- isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
- )}
- >
- <CheckCircle size={16} className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
- </button>
- </div>
- );
- }
- }
- ];
+    {
+      header: '정책 프로파일 ID',
+      accessor: (item: AuthorInfo) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">POLICY_UID</span>
+          <span className="font-mono text-xs font-bold text-primary tracking-widest uppercase">{item.authrtCd}</span>
+        </div>
+      ),
+      className: 'w-48'
+    },
+    {
+      header: '권한 아키텍처 명칭',
+      accessor: (item: AuthorInfo) => (
+        <div className="flex flex-col gap-0.5 py-2">
+          <span className="font-bold text-foreground tracking-tight text-md uppercase leading-tight">{item.authrtNm}</span>
+          <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[300px] leading-none">{item.authrtExpln || '규정 명세 없음'}</span>
+        </div>
+      )
+    },
+    {
+      header: 'SELECTION',
+      className: 'text-center w-32',
+      accessor: (item: AuthorInfo) => {
+        const isSelected = selectedAuthorCode === item.authrtCd;
+        return (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedAuthorCode(item.authrtCd);
+              }}
+              className={cn(
+                "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
+                isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
+              )}
+            >
+              <CheckCircle size={16} className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
+            </button>
+          </div>
+        );
+      }
+    }
+  ];
 
  const handleSave = () => {
  if (!selectedDept) {
@@ -311,17 +311,17 @@ export default function DeptAuthorityPage() {
  </div>
  </div>
 
- <div className="min-h-[500px] bg-white rounded-lg border-2 border-slate-50 p-4">
- <StandardDataTable
- columns={columns}
- data={roles}
- loading={loading}
- keyField="authorCode"
- emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
- onRowClick={(item) => setSelectedAuthorCode(item.authorCode)}
- className="border-none bg-transparent"
- />
- </div>
+    <div className="min-h-[500px] bg-white rounded-lg border-2 border-slate-50 p-4">
+      <StandardDataTable
+        columns={columns}
+        data={roles}
+        loading={loading}
+        keyField="authrtCd"
+        emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
+        onRowClick={(item) => setSelectedAuthorCode(item.authrtCd)}
+        className="border-none bg-transparent"
+      />
+    </div>
 
  <div className="p-8 flex items-center gap-6 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100">
  <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-slate-100">

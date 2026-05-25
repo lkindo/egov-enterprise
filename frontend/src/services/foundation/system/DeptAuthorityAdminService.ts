@@ -1,9 +1,9 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
 export interface DeptAuthorBatchRequest {
   deptId: string;
-  authorCode: string;
+  authrtId: string;
   allMembers: boolean;
   userIds?: string[];
 }
@@ -13,8 +13,8 @@ export interface DeptAuthorProjection {
   deptNm: string;
   userId: string;
   userNm: string;
-  authorCode: string;
-  uniqId: string;
+  authrtId: string;
+  scrtyDcsnTrgtId: string;
   regYn: string;
 }
 

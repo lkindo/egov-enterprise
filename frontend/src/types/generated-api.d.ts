@@ -4184,12 +4184,12 @@ export interface components {
             roleName?: string;
             lockAt?: string;
             authorCode?: string;
+            accountNonLocked?: boolean;
             username?: string;
             enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
-            accountNonLocked?: boolean;
-            credentialsNonExpired?: boolean;
             accountNonExpired?: boolean;
+            credentialsNonExpired?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4226,19 +4226,19 @@ export interface components {
             lckYn?: string;
             /** Format: date-time */
             createdDate?: string;
+            moblphonNo?: string;
+            emailAdres?: string;
+            userSttusCode?: string;
+            offmTelno?: string;
             password?: string;
             passwordCnsr?: string;
             passwordHint?: string;
-            emailAdres?: string;
             lockAt?: string;
+            fxnum?: string;
+            brth?: string;
             detailAdres?: string;
             homeadres?: string;
             sexdstnCode?: string;
-            brth?: string;
-            fxnum?: string;
-            userSttusCode?: string;
-            moblphonNo?: string;
-            offmTelno?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4260,9 +4260,9 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
+            nttId?: string;
             /** Format: date-time */
             createdDate?: string;
-            nttId?: string;
         };
         ScheduleDto: {
             schdlId?: string;
@@ -4368,9 +4368,9 @@ export interface components {
             rptId?: string;
             rptCn?: string;
             rptTtl?: string;
+            reprtCn?: string;
             rptYmd?: string;
             reprtId?: string;
-            reprtCn?: string;
             rptUserId?: string;
             reprtTtl?: string;
             rptInqDt?: string;
@@ -4427,32 +4427,32 @@ export interface components {
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
             /** @description 비정형 결재 ID */
-            informalSanctionId?: string;
+            ifmlAtrzId?: string;
             /** @description 업무 구분 코드 */
-            jobSeCode?: string;
+            taskSeCd?: string;
             /** @description 업무 구분 명 */
-            jobSeNm?: string;
+            taskSeNm?: string;
             /** @description 신청자 ID */
-            applicantId?: string;
+            aplcntId?: string;
             /** @description 신청자 명 */
-            applicantNm?: string;
+            aplcntNm?: string;
             /** @description 신청 일자 */
-            requestDe?: string;
+            reqYmd?: string;
             /** @description 결재자 ID */
-            sanctionerId?: string;
+            aprvrId?: string;
             /** @description 결재자 명 */
-            sanctionerNm?: string;
+            aprvrNm?: string;
             /** @description 결재자 조직 명 */
-            sanctionerOrgnztNm?: string;
+            aprvrOrgnztNm?: string;
             /** @description 승인 여부 */
-            confmAt?: string;
+            aprvYn?: string;
             /**
              * Format: date-time
              * @description 결재 일시
              */
-            sanctionDt?: string;
+            atrzDt?: string;
             /** @description 반려 사유 */
-            returnResn?: string;
+            rjctRsnCn?: string;
             /** @description 등록자 ID */
             createdBy?: string;
             /**
@@ -4480,9 +4480,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-            mnlDc?: string;
             mnlNm?: string;
             mnlId?: string;
+            mnlDc?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -4533,11 +4533,11 @@ export interface components {
              * @description 수정일시
              */
             lastUpdusrPnttm?: string;
+            qestnSj?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
-            qestnSj?: string;
         };
         DeptJobBoxDto: {
             deptJobbxId?: string;
@@ -4564,43 +4564,64 @@ export interface components {
             commentCn?: string;
             createdDate?: string;
         };
+        /** @description 휴일 관리 정보 DTO */
         RestdeDto: {
-            /** Format: int32 */
-            restdeNo?: number;
-            restdeDe?: string;
-            restdeNm?: string;
-            restdeDc?: string;
-            restdeSeCode?: string;
+            /**
+             * Format: int32
+             * @description 휴일 일련번호
+             * @example 1
+             */
+            hldySn?: number;
+            /**
+             * @description 휴일 일자
+             * @example 2026-05-25
+             */
+            hldyYmd?: string;
+            /**
+             * @description 휴일 명칭
+             * @example 석가탄신일
+             */
+            hldyNm?: string;
+            /**
+             * @description 휴일 설명
+             * @example 음력 4월 8일
+             */
+            hldyExpln?: string;
+            /**
+             * @description 휴일 구분 코드
+             * @example 01
+             */
+            hldySeCd?: string;
         };
-        /** @description Board Post Save Request */
+        /** @description 게시글 저장 요청 */
         BoardSaveRequest: {
-            /** @description Board ID */
+            /** @description 게시판 ID */
             bbsId: string;
-            /** @description Post Subject */
+            /** @description 게시글 제목 */
             pstTtl: string;
-            /** @description Post Content */
+            /** @description 게시글 내용 */
             pstCn: string;
-            /** @description Notice Start Date */
-            bgngYmd?: string;
-            /** @description Notice End Date */
-            endYmd?: string;
-            /** @description Attached File ID */
+            /** @description 게시 시작일자 */
+            pstBgngYmd?: string;
+            /** @description 게시 종료일자 */
+            pstEndYmd?: string;
+            /** @description 첨부파일 ID */
             atchFileId?: string;
-            /** @description Event Date (ISO-8601) */
-            eventDate?: string;
-            /** @description Q&A Status (OPEN/SOLVED) */
+            /** @description 행사 일자 */
+            evntDt?: string;
+            /** @description Q&A 상태 코드 (OPEN/SOLVED) */
             qnaSttsCd?: string;
-            /** @description Q&A Category */
+            /** @description Q&A 카테고리 */
             qnaCatCd?: string;
-            /** @description Secret Flag (Y/N) */
-            secretYn?: string;
-            /** @description Use Flag (Y/N) */
+            /** @description 비밀글 여부 (Y/N) */
+            scrtYn?: string;
+            /** @description 사용 여부 (Y/N) */
             useYn?: string;
-            /** @description Author ID */
+            /** @description 작성자 ID */
             userId?: string;
-            /** @description Author Name */
+            /** @description 작성자 명 */
             userNm?: string;
-            /** @description Post Password */
+            /** @description 게시글 비밀번호 */
             pswd?: string;
         };
         MyPageContentDto: {
@@ -4719,13 +4740,42 @@ export interface components {
              */
             createdDate?: string;
         };
+        /** @description 롤 관리 정보 DTO */
         RoleManageDto: {
-            roleCode?: string;
+            /**
+             * @description 롤코드 (롤 ID)
+             * @example ROLE_USER
+             */
+            roleId?: string;
+            /**
+             * @description 롤명
+             * @example 일반사용자 롤
+             */
             roleNm?: string;
-            rolePttrn?: string;
-            roleDc?: string;
-            roleTy?: string;
+            /**
+             * @description 롤패턴 (URL 또는 메소드)
+             * @example /admin/**
+             */
+            rolePatrn?: string;
+            /**
+             * @description 롤설명
+             * @example 관리자 페이지 접근 제한 롤
+             */
+            roleExpln?: string;
+            /**
+             * @description 롤유형
+             * @example url
+             */
+            roleTypeCd?: string;
+            /**
+             * @description 롤정렬순서
+             * @example 1
+             */
             roleSort?: string;
+            /**
+             * @description 등록일시
+             * @example 2026-05-25 20:46:00
+             */
             creatDt?: string;
         };
         /** @description 프로그램 정보 DTO */
@@ -4867,8 +4917,8 @@ export interface components {
             endTime?: string;
             emplyrId?: string;
             dplctPermAt?: string;
-            dplctLoginAt?: string;
             emplyrNm?: string;
+            dplctLoginAt?: string;
             ipAdres?: string;
         };
         InternetSvcGuidanceDto: {
@@ -5013,16 +5063,16 @@ export interface components {
             stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
-            useAt?: string;
-            bbsAttrbCode?: string;
-            replyPosblAt?: string;
             fileAtchPosblAt?: string;
+            replyPosblAt?: string;
+            bbsIntrcn?: string;
+            bbsAttrbCode?: string;
+            bbsTyCode?: string;
             bbsAttrCd?: string;
             replyPsblYn?: string;
-            bbsIntrcn?: string;
-            bbsTyCode?: string;
             bbsNm?: string;
             bbsIntroCn?: string;
+            useAt?: string;
         };
         /** @description 배너 정보 */
         BannerDto: {
@@ -5053,11 +5103,28 @@ export interface components {
              */
             createdDate?: string;
         };
+        /** @description 권한 관리 정보 DTO */
         AuthorManageDto: {
-            authorCode: string;
-            authorNm: string;
-            authorDc?: string;
-            authorCreatDe?: string;
+            /**
+             * @description 권한코드
+             * @example ROLE_USER
+             */
+            authrtCd: string;
+            /**
+             * @description 권한명
+             * @example 일반사용자
+             */
+            authrtNm: string;
+            /**
+             * @description 권한설명
+             * @example 일반 사용자 기본 권한
+             */
+            authrtExpln?: string;
+            /**
+             * @description 권한생성일자
+             * @example 2026-05-25
+             */
+            authrtCrtYmd?: string;
         };
         EventInfoDto: {
             evntId?: string;
@@ -5093,30 +5160,98 @@ export interface components {
             frstRegisterNm?: string;
             frstRegisterPnttm?: string;
         };
+        /** @description 주소록 정보 DTO */
         AddressBookDto: {
+            /** @description 주소록 ID */
             adbkId?: string;
+            /**
+             * @description 주소록 명칭
+             * @example 마케팅팀 주소록
+             */
             adbkNm: string;
+            /**
+             * @description 공개 범위 코드
+             * @example PUB
+             */
             rlsScopeCd: string;
+            /**
+             * @description 대상 조직 ID
+             * @example ORGNZT_0000000000001
+             */
             trgetOrgnztId?: string;
-            useAt?: string;
+            /**
+             * @description 사용 여부
+             * @example Y
+             */
+            useYn?: string;
+            /**
+             * @description 작성자 ID
+             * @example USRCNFRM_00000000001
+             */
             wrterId?: string;
-            nameCards?: components["schemas"]["AddressBookUserDto"][];
+            /** @description 주소록 내 연락처 목록 */
+            adbkMan?: components["schemas"]["AddressBookUserDto"][];
+            /** @description 최초 등록자 ID */
             frstRegisterId?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
             frstRegistPnttm?: string;
+            /** @description 최종 수정자 ID */
             lastUpdusrId?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 최종 수정 일시
+             */
             lastUpdtPnttm?: string;
         };
+        /** @description 주소록 연락처 정보 DTO */
         AddressBookUserDto: {
-            adbkUserId?: string;
+            /**
+             * @description 주소록 구성원 ID
+             * @example ADBKU_0000000000001
+             */
+            adbkConstntId?: string;
+            /**
+             * @description 주소록 ID
+             * @example ADBK_000000000000001
+             */
             adbkId?: string;
+            /**
+             * @description 사용자 ID
+             * @example USRCNFRM_00000000001
+             */
             userId?: string;
-            userNm?: string;
+            /**
+             * @description 구성원명
+             * @example 홍길동
+             */
+            nm?: string;
+            /**
+             * @description 이메일 주소
+             * @example user@example.com
+             */
             emlAddr?: string;
+            /**
+             * @description 집 전화번호
+             * @example 02-1234-5678
+             */
             homeTelno?: string;
+            /**
+             * @description 휴대전화 번호
+             * @example 010-1234-5678
+             */
             mblTelno?: string;
-            officeTelno?: string;
+            /**
+             * @description 사무실 전화번호
+             * @example 02-987-6543
+             */
+            ofcTelno?: string;
+            /**
+             * @description 팩스 번호
+             * @example 02-111-2222
+             */
             faxNo?: string;
         };
         /** @description 회원가입 요청 DTO */
@@ -5229,8 +5364,8 @@ export interface components {
             frstRegisterPnttm?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
-            trnsmitterNm?: string;
             trnsmitterId?: string;
+            trnsmitterNm?: string;
             /** Format: date-time */
             sendDt?: string;
         };
@@ -5333,10 +5468,27 @@ export interface components {
              */
             otpCode?: number;
         };
+        /** @description 사용자 권한 정보 DTO */
         UserAuthorityDto: {
-            uniqId: string;
-            authorCode: string;
-            mberTyCode?: string;
+            /**
+             * @description 보안 고유 ID (사용자 고유 ID)
+             * @example USRCNFRM_00000000001
+             */
+            scrtyDcsnTrgtId: string;
+            /**
+             * @description 부여할 권한 코드
+             * @example ROLE_USER
+             */
+            authrtId: string;
+            /**
+             * @description 회원 유형 코드
+             * @example USR01
+             */
+            mbrTypeCd?: string;
+            /**
+             * @description 사용자 명
+             * @example 홍길동
+             */
             userNm?: string;
         };
         Template: {
@@ -5351,24 +5503,24 @@ export interface components {
             mdfcnDt?: string;
             createdBy?: string;
             lastModifiedBy?: string;
-            tmplatId?: string;
             tmplatCours?: string;
             tmplatNm?: string;
             tmplatSeCode?: string;
+            tmplatId?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
-            /** Format: date-time */
             createdDate?: string;
             /** Format: date-time */
-            lastModifiedDate?: string;
+            lastUpdusrPnttm?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
             /** Format: date-time */
-            lastUpdusrPnttm?: string;
+            lastModifiedDate?: string;
         };
         /** @description 부서별 권한 일괄 할당 요청 */
         DeptAuthorBatchRequest: {
@@ -5378,18 +5530,17 @@ export interface components {
              */
             deptId?: string;
             /**
+             * @description 부서에 부여할 권한 코드
+             * @example ROLE_USER
+             */
+            authrtId?: string;
+            /**
              * @description 부서 내 모든 사용자에게 적용 여부
              * @example true
              */
             allMembers?: boolean;
             /** @description allMembers가 false인 경우 적용할 사용자 ID 목록 */
             userIds?: string[];
-            /**
-             * @description 부서에 부여할 권한 코드
-             * @example ROLE_USER
-             */
-            authorCode?: string;
-            authrtId?: string;
         };
         /** @description 기관코드 수신 정보 DTO */
         InstitutionCodeRecptnDto: {
@@ -5543,10 +5694,10 @@ export interface components {
             /** @description 검색어 */
             searchWrd?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
+            frstRegisterPnttm?: string;
             frstRegisterId?: string;
             /** Format: date-time */
-            frstRegisterPnttm?: string;
+            frstRegistPnttm?: string;
             /** Format: date-time */
             trnsmitPnttm?: string;
         };
@@ -5647,8 +5798,8 @@ export interface components {
             recordCountPerPage?: number;
             searchKeywordFrom?: string;
             searchKeywordTo?: string;
-            searchBgnDe?: string;
             searchEndDe?: string;
+            searchBgnDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
@@ -6423,30 +6574,30 @@ export interface components {
             bbsTtl?: string;
             id?: string;
             password?: string;
-            /** Format: int32 */
-            commentCo?: number;
-            useAt?: string;
-            qnaStatus?: string;
-            qnaCategory?: string;
-            /** Format: int32 */
-            inqireCo?: number;
-            /** Format: date-time */
-            createdDate?: string;
-            /** Format: int64 */
-            nttNo?: number;
-            nttSj?: string;
-            nttCn?: string;
-            ntcrNm?: string;
-            /** Format: int32 */
-            likeCo?: number;
-            ntcrId?: string;
-            nttId?: string;
             ntceEndYmd?: string;
             sjBoldYn?: string;
             ntceBgngYmd?: string;
+            /** Format: int32 */
+            inqireCo?: number;
+            /** Format: int32 */
+            commentCo?: number;
+            nttSj?: string;
+            nttId?: string;
+            ntcrId?: string;
             parnts?: string;
+            ntcrNm?: string;
+            nttCn?: string;
+            /** Format: int32 */
+            likeCo?: number;
+            /** Format: int64 */
+            nttNo?: number;
             /** Format: int32 */
             fileCo?: number;
+            /** Format: date-time */
+            createdDate?: string;
+            qnaStatus?: string;
+            qnaCategory?: string;
+            useAt?: string;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -6985,11 +7136,11 @@ export interface components {
             dmndUserId?: string;
             rqesterIp?: string;
             ocrnYmd?: string;
+            occrrncDe?: string;
             rqesterId?: string;
-            processTime?: string;
             processSeCode?: string;
             requstId?: string;
-            occrrncDe?: string;
+            processTime?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -7155,8 +7306,6 @@ export interface components {
             authrtId?: string;
             scrtyDcsnTrgtId?: string;
             regYn?: string;
-            uniqId?: string;
-            authorCode?: string;
         };
         PageResponseDeptAuthorProjection: {
             list?: components["schemas"]["DeptAuthorProjection"][];

@@ -1,6 +1,6 @@
 package nuri.foundation.service.auth.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,14 +13,20 @@ import org.springframework.lang.NonNull;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "사용자 권한 정보 DTO")
 public class UserAuthorityDto {
-    @JsonProperty("uniqId")
+    @Schema(description = "보안 고유 ID (사용자 고유 ID)", example = "USRCNFRM_00000000001")
     @NonNull
     private String scrtyDcsnTrgtId;
-    @JsonProperty("authorCode")
+
+    @Schema(description = "부여할 권한 코드", example = "ROLE_USER")
     @NonNull
     private String authrtId;
-    @JsonProperty("mberTyCode")
+
+    @Schema(description = "회원 유형 코드", example = "USR01")
     private String mbrTypeCd;
+
+    @Schema(description = "사용자 명", example = "홍길동")
     private String userNm; // For display purposes if needed
 }
+

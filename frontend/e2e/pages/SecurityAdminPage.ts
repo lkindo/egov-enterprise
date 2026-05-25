@@ -19,9 +19,9 @@ export class SecurityAdminPage {
         await this.page.locator('button:has-text("신규 보안 아키텍처 설정")').first().click();
         await this.page.waitForTimeout(1000); // Wait for modal animation
         
-        await this.page.locator('#authorCode').fill(authCode);
-        await this.page.locator('#authorNm').fill(authNm);
-        await this.page.locator('#authorDc').fill(`${authNm} description for E2E`);
+        await this.page.locator('#authrtCd').fill(authCode);
+        await this.page.locator('#authrtNm').fill(authNm);
+        await this.page.locator('#authrtExpln').fill(`${authNm} description for E2E`);
         
         console.log(`>>> Clicking '권한 배포' button`);
         await this.page.locator('button:has-text("권한 배포")').click({ force: true });
@@ -65,13 +65,13 @@ export class SecurityAdminPage {
         await this.page.getByRole('button', { name: /신규 보안 롤 설정/i }).click();
         await this.page.waitForTimeout(1000); // Wait for modal animation
         
-        await this.page.locator('#roleCode').fill(roleCode);
+        await this.page.locator('#roleId').fill(roleCode);
         await this.page.locator('#roleNm').fill(roleNm);
-        await this.page.locator('#rolePtn').fill('/**'); 
-        await this.page.locator('#roleDc').fill(`${roleNm} description for E2E`);
+        await this.page.locator('#rolePatrn').fill('/**'); 
+        await this.page.locator('#roleExpln').fill(`${roleNm} description for E2E`);
         
         // Select type (e.g., URL)
-        await this.page.locator('#roleTyp').selectOption('url');
+        await this.page.locator('#roleTypeCd').selectOption('url');
         await this.page.locator('#roleSort').fill('1');
         
         console.log(`>>> Clicking '롤 아키텍처 배포' button`);

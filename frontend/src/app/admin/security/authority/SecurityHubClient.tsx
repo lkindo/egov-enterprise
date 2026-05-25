@@ -171,7 +171,7 @@ export default function SecurityHubClient({
         await authorAdminService.createAuthor(values as AuthorInfo);
         toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
       } else {
-        await authorAdminService.updateAuthor(values.authorCode, values as AuthorInfo);
+        await authorAdminService.updateAuthor(values.authrtCd, values as AuthorInfo);
         toast('보안 권한 아키텍처가 성공적으로 수정되었습니다.', 'success');
       }
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
@@ -210,9 +210,9 @@ export default function SecurityHubClient({
     try {
       const allMappings = new Map<string, Set<number>>();
       const promises = (authorities as AuthorInfo[]).map(async (auth) => {
-        const menus = await authorAdminService.getAuthorMenus(auth.authorCode);
+        const menus = await authorAdminService.getAuthorMenus(auth.authrtCd);
         const menuList = Array.isArray(menus) ? menus : [];
-        allMappings.set(auth.authorCode, new Set(menuList.map(m => m.menuNo)));
+        allMappings.set(auth.authrtCd, new Set(menuList.map(m => m.menuNo)));
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
@@ -305,16 +305,16 @@ export default function SecurityHubClient({
       accessor: (auth) => (
         <div className="flex items-center justify-between w-full group/role-item py-1">
           <div className="flex flex-col gap-1">
-            <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authorCode ? "text-white" : "text-slate-900")}>
-              {auth.authorNm}
+            <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authrtCd ? "text-white" : "text-slate-900")}>
+              {auth.authrtNm}
             </span>
-            <span className={cn("text-xs font-bold tracking-tight ", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
-              {auth.authorCode}
+            <span className={cn("text-xs font-bold tracking-tight ", selectedAuthorCode === auth.authrtCd ? "text-white/30" : "text-slate-300")}>
+              {auth.authrtCd}
             </span>
           </div>
-          <div className={cn("flex gap-1", selectedAuthorCode === auth.authorCode ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
+          <div className={cn("flex gap-1", selectedAuthorCode === auth.authrtCd ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
             <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-lg transition-all"><Settings size={12} /></button>
-            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"><Trash2 size={12} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authrtCd); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"><Trash2 size={12} /></button>
           </div>
         </div>
       )
@@ -406,7 +406,7 @@ export default function SecurityHubClient({
     ));
   };
 
-  const currentAuth = (authorities as AuthorInfo[]).find((a) => a.authorCode === selectedAuthorCode);
+  const currentAuth = (authorities as AuthorInfo[]).find((a) => a.authrtCd === selectedAuthorCode);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -549,8 +549,8 @@ export default function SecurityHubClient({
                       loading={isAuthorsLoading}
                       error={authorsError as Error | null}
                       onRetry={() => refetchAuthors()}
-                      onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authorCode)}
-                      keyField="authorCode"
+                      onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authrtCd)}
+                      keyField="authrtCd"
                       isPremium={false}
                       className="border-none bg-transparent"
                       pagination={{

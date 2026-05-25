@@ -1,20 +1,20 @@
 // Security Management Types
 
 export interface AuthorManage {
- authorCode: string;
- authorNm: string;
- authorDc: string;
- authorCreatDe?: string;
+ authrtCd: string;
+ authrtNm: string;
+ authrtExpln: string;
+ authrtCrtYmd?: string;
 }
 
 export interface RoleManage {
- roleCode: string;
+ roleId: string;
  roleNm: string;
- rolePtn: string;
- roleDc: string;
- roleTyp: string;
+ rolePatrn: string;
+ roleExpln: string;
+ roleTypeCd: string;
  roleSort: string;
- roleCreatDe?: string;
+ creatDt?: string;
 }
 
 export interface GroupManage {

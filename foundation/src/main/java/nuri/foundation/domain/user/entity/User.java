@@ -1,6 +1,5 @@
 package nuri.foundation.domain.user.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,176 +28,135 @@ public class User extends BaseEntity implements Serializable {
     @Id
     @Column(name = "esntl_id", length = 20)
     @NonNull
-    @JsonProperty("esntlId")
     private String esntlId;
 
     @Column(name = "user_id", nullable = false, length = 20, unique = true)
     @NonNull
-    @JsonProperty("userId")
     private String userId;
 
     @Builder.Default
     @Column(nullable = false, length = 12)
-    @JsonProperty("userType")
     private String userTypeCd = "EMP";
 
     @Column(nullable = false, length = 100)
     @NonNull
-    @JsonProperty("userNm")
     private String userNm;
 
     @Column(nullable = false, length = 300)
     @NonNull
-    @JsonProperty("pswd")
     private String pswd;
 
     @Column(length = 300)
-    @JsonProperty("pswdHint")
     private String pswdHint;
 
     @Column(length = 300)
-    @JsonProperty("passwordCnsr")
     private String pswdCnsr;
 
-    @JsonProperty("passwordUpdateDate")
     private LocalDateTime chgPswdLastDt;
 
-    @JsonProperty("changePasswordCount")
     private Integer chgPwdCnt;
 
     @Builder.Default
     @Column(length = 1)
-    @JsonProperty("lckYn")
     private String lckYn = "N";
 
-    @JsonProperty("lockCount")
     private Integer lckCnt;
 
-    @JsonProperty("lockLastDate")
     private LocalDateTime lckLastPnttm;
 
     @Column(length = 32)
-    @JsonProperty("otpSecret")
     private String otpSecret;
 
     @Column(length = 100)
-    @JsonProperty("subDn")
     private String crtfcDnValue;
 
     // ■ 개인 정보
     @Column(length = 256)
-    @JsonProperty("ihidnum")
     private String rrno;
 
     @Column(length = 30)
-    @JsonProperty("gndrCd")
     private String gndrCd;
 
     @Column(length = 8)
-    @JsonProperty("brthYmd")
     private String brthYmd;
 
     @Column(length = 50)
-    @JsonProperty("emlAddr")
     private String emlAddr;
 
     @Column(length = 20)
-    @JsonProperty("mblTelno")
     private String mblTelno;
 
     // ■ 주소 정보
     @Column(length = 5)
-    @JsonProperty("zip")
     private String zip;
 
     @Column(length = 300)
-    @JsonProperty("homeAddr")
     private String baseAddr;
 
     @Column(length = 300)
-    @JsonProperty("daddr")
     private String dtlAddr;
 
     @Column(length = 4)
-    @JsonProperty("areaNo")
     private String areaNo;
 
     @Column(length = 4)
-    @JsonProperty("homemiddleTelno")
     private String middleTelno;
 
     @Column(length = 4)
-    @JsonProperty("homeendTelno")
     private String endTelno;
 
     @Column(length = 30)
-    @JsonProperty("faxNo")
     private String faxNo;
 
     @Column(length = 20)
-    @JsonProperty("officeTelno")
     private String officeTelno;
 
     // ■ 조직 및 권한
     @Column(length = 30)
-    @JsonProperty("groupId")
     private String groupId;
 
     @Column(length = 20)
-    @JsonProperty("orgnztId")
     private String ognzId;
 
     @Column(length = 30)
-    @JsonProperty("insttCode")
     private String pstinstCd;
 
     @Column(length = 20)
-    @JsonProperty("emplNo")
     private String emplNo;
 
     @Column(length = 300)
-    @JsonProperty("ofcpsNm")
     private String ofcpsNm;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 50)
-    @JsonProperty("role")
     private Role role = Role.USER;
 
     // ■ 기업 전용 (nullable)
     @Column(length = 10)
-    @JsonProperty("bizrno")
     private String bizrNo;
 
     @Column(length = 13)
-    @JsonProperty("jurirno")
     private String jurirNo;
 
     @Column(length = 300)
-    @JsonProperty("cmpnyNm")
     private String cmpnyNm;
 
     @Column(length = 100)
-    @JsonProperty("cxfc")
     private String rprsvNm;
 
     @Column(length = 30)
-    @JsonProperty("indutyCode")
     private String indutyCd;
 
     @Column(length = 12)
-    @JsonProperty("entrprsSeCode")
     private String entSeCd;
 
     // ■ 상태 및 감사
     @Builder.Default
     @Column(length = 12)
-    @JsonProperty("userSttsCd")
     private String userSttsCd = "P";
 
     @Column(updatable = false, length = 8)
-    @JsonProperty("sbscrbYmd")
     private String sbscrbYmd;
 
     public void update(String userNm, String pswdHint, String pswdCnsr,
@@ -342,3 +300,4 @@ public class User extends BaseEntity implements Serializable {
     public String getFxnum() { return faxNo; }
     public void setFxnum(String v) { this.faxNo = v; }
 }
+

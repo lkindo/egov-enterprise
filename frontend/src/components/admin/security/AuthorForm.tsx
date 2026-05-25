@@ -18,14 +18,14 @@ import { cn } from '@/lib/utils';
 import { Zap, Key, ShieldCheck, Binary } from 'lucide-react';
 
 export const authorSchema = z.object({
-  authorCode: z.string()
+  authrtCd: z.string()
     .min(1, '권한 코드는 필수입니다.')
     .max(30, '권한 코드는 30자 이내여야 합니다.')
     .regex(/^[A-Z0-9_]+$/, '영문 대문자, 숫자, 언더바(_)만 가능합니다.'),
-  authorNm: z.string()
+  authrtNm: z.string()
     .min(1, '권한 명칭은 필수입니다.')
     .max(60, '권한 명칭은 60자 이내여야 합니다.'),
-  authorDc: z.string()
+  authrtExpln: z.string()
     .max(200, '내용이 너무 깁니다. (최대 200자)')
     .optional()
     .or(z.literal('')),
@@ -43,9 +43,9 @@ interface AuthorFormProps {
 export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorFormProps) {
   const form = useAppForm(authorSchema, {
     defaultValues: {
-      authorCode: initialData?.authorCode || '',
-      authorNm: initialData?.authorNm || '',
-      authorDc: initialData?.authorDc || '',
+      authrtCd: initialData?.authrtCd || '',
+      authrtNm: initialData?.authrtNm || '',
+      authrtExpln: initialData?.authrtExpln || '',
     },
   });
 
@@ -57,7 +57,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <FormField
             control={form.control}
-            name="authorCode"
+            name="authrtCd"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
@@ -68,7 +68,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                   <FormControl>
                     <Input
                       {...field}
-                      id="authorCode"
+                      id="authrtCd"
                       disabled={mode === 'edit'}
                       className={cn(
                         "h-11 rounded-lg border-2 text-md font-bold italic tracking-widest uppercase shadow-inner pl-16 pt-0",
@@ -84,7 +84,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
           />
           <FormField
             control={form.control}
-            name="authorNm"
+            name="authrtNm"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
@@ -95,7 +95,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                   <FormControl>
                     <Input
                       {...field}
-                      id="authorNm"
+                      id="authrtNm"
                       className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
                       placeholder="역할 명칭 입력 (MAX_60)"
                     />
@@ -109,7 +109,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
 
         <FormField
           control={form.control}
-          name="authorDc"
+          name="authrtExpln"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
@@ -120,7 +120,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                 <FormControl>
                   <textarea
                     {...field}
-                    id="authorDc"
+                    id="authrtExpln"
                     className="min-h-[160px] w-full pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                     placeholder="상세 명세 입력... (최대 200자)"
                   />
@@ -152,3 +152,4 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
     </Form>
   );
 }
+

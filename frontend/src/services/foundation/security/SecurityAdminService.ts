@@ -24,7 +24,7 @@ export class AuthorityAdminService extends AdminService {
   }
 
   async updateAuthor(author: Partial<AuthorManage>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${author.authorCode}`, author, config);
+    return this.put<void>(`/${author.authrtCd}`, author, config);
   }
 
   async deleteAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<void> {
@@ -58,7 +58,7 @@ export class RoleAdminService extends AdminService {
   }
 
   async updateRole(role: Partial<RoleManage>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${role.roleCode}`, role, config);
+    return this.put<void>(`/${role.roleId}`, role, config);
   }
 
   async deleteRole(roleCode: string, config?: AxiosRequestConfig): Promise<void> {

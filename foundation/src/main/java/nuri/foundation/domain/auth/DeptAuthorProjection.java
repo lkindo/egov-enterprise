@@ -1,6 +1,5 @@
 package nuri.foundation.domain.auth;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -15,18 +14,7 @@ public class DeptAuthorProjection {
     private String userNm;
 
     private String authrtId;
-
-    @JsonProperty("authorCode")
-    public String getAuthorCode() {
-        return authrtId;
-    }
-
     private String scrtyDcsnTrgtId;
-
-    @JsonProperty("uniqId")
-    public String getUniqId() {
-        return scrtyDcsnTrgtId;
-    }
-    
     private String regYn;
 }
+

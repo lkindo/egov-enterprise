@@ -53,7 +53,7 @@ class RoleManageServiceTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRoleCode()).isEqualTo("ROLE_USER");
+        assertThat(result.get(0).getRoleId()).isEqualTo("ROLE_USER");
         verify(roleInfoRepository).findAll(any(Pageable.class));
     }
 
@@ -74,7 +74,7 @@ class RoleManageServiceTest {
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getRoleCode()).isEqualTo(roleCode);
+        assertThat(result.getRoleId()).isEqualTo(roleCode);
         verify(roleInfoRepository).findById(roleCode);
     }
 

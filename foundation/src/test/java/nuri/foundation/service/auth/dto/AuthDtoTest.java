@@ -28,11 +28,5 @@ class AuthDtoTest {
         assertThat(dto.getRoleTypeCd()).isEqualTo("URL");
         assertThat(dto.getRoleSort()).isEqualTo("1");
         assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
-
-        // Legacy compatibility getters
-        assertThat(dto.getRoleCode()).isEqualTo("ROLE_USER");
-        assertThat(dto.getRolePttrn()).isEqualTo("/api/**");
-        assertThat(dto.getRoleDc()).isEqualTo("사용자 권한");
-        assertThat(dto.getRoleTy()).isEqualTo("URL");
     }
 }

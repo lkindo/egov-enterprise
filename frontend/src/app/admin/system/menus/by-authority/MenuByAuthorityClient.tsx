@@ -105,7 +105,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  });
  };
 
- const currentAuth = authorities.find((a: AuthorInfo) => a.authorCode === selectedAuthority);
+ const currentAuth = authorities.find((a: AuthorInfo) => a.authrtCd === selectedAuthority);
 
  const renderMenuTree = (menus: MenuByAuthority[], depth: number = 0) => {
  return menus.map((menu, idx) => {
@@ -216,11 +216,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-slate-900 text-white">
  {authorities.map((auth: AuthorInfo) => (
  <SelectItem 
- key={auth.authorCode} 
- value={auth.authorCode}
+ key={auth.authrtCd} 
+ value={auth.authrtCd}
  className="rounded-lg h-12 font-bold text-xs tracking-widest uppercase focus:bg-primary focus:text-white mb-1"
  >
- {auth.authorNm} ({auth.authorCode})
+ {auth.authrtNm} ({auth.authrtCd})
  </SelectItem>
  ))}
  </SelectContent>
