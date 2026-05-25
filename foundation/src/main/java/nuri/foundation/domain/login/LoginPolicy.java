@@ -32,22 +32,22 @@ public class LoginPolicy extends BaseEntity {
     @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "ip_addr", length = 30)
+    @Column(length = 30)
     private String ipAddr;
 
-    @Column(name = "dpcn_prm_yn", length = 1)
+    @Column(length = 1)
     private String dpcnPrmYn;
 
-    @Column(name = "lmt_yn", length = 1)
+    @Column(length = 1)
     private String lmtYn;
 
-    @Column(name = "bgng_tm", length = 6)
+    @Column(length = 6)
     private String bgngTm; // HHmmss
 
-    @Column(name = "end_tm", length = 6)
+    @Column(length = 6)
     private String endTm; // HHmmss
 
-    @Column(name = "otp_use_yn", length = 1)
+    @Column(length = 1)
     private String otpUseYn;
 
     public void update(String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {

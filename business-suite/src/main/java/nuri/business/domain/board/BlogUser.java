@@ -29,19 +29,19 @@ public class BlogUser extends BaseEntity {
     @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "mngr_yn", length = 1)
+    @Column(length = 1)
     private String mngrYn;
 
-    @Column(name = "join_ymd", length = 8)
+    @Column(length = 8)
     private String joinYmd;
 
-    @Column(name = "whdwl_ymd", length = 8)
+    @Column(length = 8)
     private String whdwlYmd;
 
-    @Column(name = "mbr_stts_cd", length = 12)
+    @Column(length = 12)
     private String mbrSttsCd;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     @Transient
