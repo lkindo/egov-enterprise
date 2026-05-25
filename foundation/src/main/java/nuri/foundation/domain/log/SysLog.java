@@ -25,34 +25,34 @@ public class SysLog extends BaseEntity {
     @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "srvc_nm", length = 100)
+    @Column(length = 100)
     private String srvcNm;
 
-    @Column(name = "mthd_nm", length = 100)
+    @Column(length = 100)
     private String mthdNm;
 
-    @Column(name = "prcs_se_cd", length = 12)
+    @Column(length = 12)
     private String prcsSeCd;
 
-    @Column(name = "prcs_tm", length = 14)
+    @Column(length = 14)
     private String prcsTm;
 
-    @Column(name = "dmnd_user_id", length = 20)
+    @Column(length = 20)
     private String dmndUserId;
 
-    @Column(name = "dmnd_user_ip_addr", length = 30)
+    @Column(length = 30)
     private String dmndUserIpAddr;
 
-    @Column(name = "ocrn_ymd", length = 8)
+    @Column(length = 8)
     private String ocrnYmd;
 
-    @Column(name = "rspns_cd", length = 12)
+    @Column(length = 12)
     private String rspnsCd;
 
-    @Column(name = "err_cd", length = 12)
+    @Column(length = 12)
     private String errCd;
 
-    @Column(name = "err_se_cd", length = 12)
+    @Column(length = 12)
     private String errSeCd;
 
     public SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,

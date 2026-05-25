@@ -25,16 +25,16 @@ public class WebLog extends BaseEntity {
     @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "url", length = 1000)
+    @Column(length = 1000)
     private String url;
 
-    @Column(name = "dmnd_user_id", length = 20)
+    @Column(length = 20)
     private String dmndUserId;
 
-    @Column(name = "dmnd_user_ip_addr", length = 30)
+    @Column(length = 30)
     private String dmndUserIpAddr;
 
-    @Column(name = "occr_ymd", length = 8)
+    @Column(length = 8)
     private String occrYmd;
 
     @jakarta.persistence.Transient

@@ -25,19 +25,18 @@ public class PrivacyLog extends BaseEntity {
     @Column(name = "dmnd_id", length = 20)
     private String dmndId;
 
-    @Column(name = "inq_dt")
     private LocalDateTime inqDt;
 
-    @Column(name = "srvc_nm", length = 100)
+    @Column(length = 100)
     private String srvcNm;
 
-    @Column(name = "inq_info", length = 255)
+    @Column(length = 255)
     private String inqInfo;
 
-    @Column(name = "dmnd_user_id", length = 20)
+    @Column(length = 20)
     private String dmndUserId;
 
-    @Column(name = "dmnd_user_ip_addr", length = 30)
+    @Column(length = 30)
     private String dmndUserIpAddr;
 
     public static abstract class PrivacyLogBuilder<C extends PrivacyLog, B extends PrivacyLogBuilder<C, B>> extends BaseEntityBuilder<C, B> {

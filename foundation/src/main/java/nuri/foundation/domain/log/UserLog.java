@@ -48,22 +48,16 @@ public class UserLog extends BaseEntity {
     @Column(name = "mthd_nm", length = 100)
     private String mthdNm;
 
-    @Column(name = "crt_cnt")
     private Integer crtCnt;
 
-    @Column(name = "mdfcn_cnt")
     private Integer mdfcnCnt;
 
-    @Column(name = "inq_cnt")
     private Integer inqCnt;
 
-    @Column(name = "del_cnt")
     private Integer delCnt;
 
-    @Column(name = "otpt_cnt")
     private Integer otptCnt;
 
-    @Column(name = "err_cnt")
     private Integer errCnt;
 
     public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
