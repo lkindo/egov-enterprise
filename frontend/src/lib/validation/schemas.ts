@@ -51,8 +51,8 @@ export const menuSchema = z.object({
 
 // --- 게시판 마스터 스키마 ---
 export const boardMasterSchema = z.object({
-  bbsTtl: z.string().min(1, '게시판 명칭은 필수입니다.'),
-  bbsIntroCn: z.string().min(1, '게시판 소개는 필수입니다.'),
+  bbsTtl: z.string().min(1, '게시판 명칭은 필수입니다.').max(100, '게시판 명칭은 100자 이내여야 합니다.'),
+  bbsIntroCn: z.string().min(1, '게시판 소개는 필수입니다.').max(4000, '게시판 소개는 4000자 이내여야 합니다.'),
   bbsTypeCd: z.string().min(1, '게시판 유형은 필수입니다.'),
   bbsAttrCd: z.string().min(1, '게시판 속성은 필수입니다.'),
   replyPsblYn: z.enum(['Y', 'N']),
@@ -65,14 +65,14 @@ export const boardMasterSchema = z.object({
 // --- 게시물 (BBS) 상세 스키마 ---
 export const boardSchema = z.object({
   pstId: z.number().optional(),
-  bbsId: z.string().min(1, '게시판 ID는 필수입니다.'),
-  pstTtl: z.string().min(1, '제목은 필수이며 유효해야 합니다.'),
-  nttCn: z.string().min(1, '내용을 입력해 주세요.'),
+  bbsId: z.string().min(1, '게시판 ID는 필수입니다.').max(20, '게시판 ID는 20자 이내여야 합니다.'),
+  pstTtl: z.string().min(1, '제목은 필수이며 유효해야 합니다.').max(100, '제목은 100자 이내여야 합니다.'),
+  nttCn: z.string().min(1, '내용을 입력해 주세요.').max(4000, '내용은 4000자 이내여야 합니다.'),
   ntceBgnde: z.string().optional(),
   ntceEndde: z.string().optional(),
-  password: z.string().optional(),
+  password: z.string().optional().or(z.string().max(200, '비밀번호는 200자 이내여야 합니다.')),
   ntcrId: z.string().optional(),
-  ntcrNm: z.string().optional(),
+  ntcrNm: z.string().optional().or(z.string().max(60, '작성자 명은 60자 이내여야 합니다.')),
   noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),
   useYn: z.enum(['Y', 'N']).optional(),

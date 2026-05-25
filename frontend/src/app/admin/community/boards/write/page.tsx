@@ -136,6 +136,7 @@ export default function BoardWritePage() {
  {...field}
  placeholder="BBS_0000000000000001"
  className="h-11 rounded-lg bg-slate-50/50 border-slate-100 font-bold text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ maxLength={20}
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />
@@ -156,6 +157,7 @@ export default function BoardWritePage() {
  {...field}
  placeholder="게시물의 핵심 제목을 입력하십시오."
  className="h-11 rounded-lg font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+ maxLength={100}
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />
@@ -182,6 +184,7 @@ export default function BoardWritePage() {
  {...field}
  placeholder="본문 내용을 상세히 기술하십시오. 마크다운 및 HTML 파싱을 지원합니다."
  className="min-h-[400px] p-10 rounded-lg border-2 border-slate-50 bg-slate-50/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
+ maxLength={4000}
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />

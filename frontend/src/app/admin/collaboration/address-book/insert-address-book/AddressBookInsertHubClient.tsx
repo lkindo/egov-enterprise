@@ -41,10 +41,22 @@ export default function AddressBookInsertHubClient() {
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
- if (!form.adbkNm.trim()) {
- toast('이름을 입력해 주세요.', 'error');
- return;
- }
+    if (!form.adbkNm.trim()) {
+      toast('이름을 입력해 주세요.', 'error');
+      return;
+    }
+    if (form.adbkNm.length > 100) {
+      toast('이름은 100자 이내여야 합니다.', 'error');
+      return;
+    }
+    if (form.telNo && form.telNo.replace(/-/g, '').length > 11) {
+      toast('전화번호는 11자 이내여야 합니다.', 'error');
+      return;
+    }
+    if (form.email && form.email.length > 50) {
+      toast('이메일은 50자 이내여야 합니다.', 'error');
+      return;
+    }
 
  setIsSubmitting(true);
  const payload = {
@@ -106,16 +118,17 @@ export default function AddressBookInsertHubClient() {
  </div>
  <span className="text-xs font-bold tracking-tight text-slate-400">Primary_Identity_Label</span>
  </div>
- <Input
- value={form.adbkNm}
- onChange={(e) => setForm({ ...form, adbkNm: e.target.value })}
- className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight"
- placeholder="성명을 입력하십시오..."
- aria-label="주소록 명칭"
- data-testid="identity-name-input"
- required
- autoFocus
- />
+    <Input
+      value={form.adbkNm}
+      onChange={(e) => setForm({ ...form, adbkNm: e.target.value })}
+      className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight"
+      placeholder="성명을 입력하십시오..."
+      aria-label="주소록 명칭"
+      data-testid="identity-name-input"
+      maxLength={100}
+      required
+      autoFocus
+    />
  <div className="h-[1px] w-full bg-gradient-to-r from-primary/40 to-transparent" />
  </div>
  </div>
@@ -127,29 +140,31 @@ export default function AddressBookInsertHubClient() {
  <Phone className="text-primary" size={18} />
  <span className="text-xs font-bold text-slate-400 tracking-tight">Comm_Link_Protocol</span>
  </div>
- <Input
- value={form.telNo}
- onChange={(e) => setForm({ ...form, telNo: e.target.value })}
- className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
- placeholder="010-0000-0000"
- aria-label="전화번호"
- data-testid="identity-tel-input"
- />
+    <Input
+      value={form.telNo}
+      onChange={(e) => setForm({ ...form, telNo: e.target.value })}
+      className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+      placeholder="010-0000-0000"
+      aria-label="전화번호"
+      data-testid="identity-tel-input"
+      maxLength={15}
+    />
  </div>
  <div className="hub-card-premium p-8 bg-slate-50 border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">
  <Mail className="text-primary" size={18} />
  <span className="text-xs font-bold text-slate-400 tracking-tight">Electronic_Mail_Node</span>
  </div>
- <Input
- type="email"
- value={form.email}
- onChange={(e) => setForm({ ...form, email: e.target.value })}
- className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
- placeholder="example@egov.com"
- aria-label="이메일"
- data-testid="identity-email-input"
- />
+    <Input
+      type="email"
+      value={form.email}
+      onChange={(e) => setForm({ ...form, email: e.target.value })}
+      className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+      placeholder="example@egov.com"
+      aria-label="이메일"
+      data-testid="identity-email-input"
+      maxLength={50}
+    />
  </div>
  </div>
 
