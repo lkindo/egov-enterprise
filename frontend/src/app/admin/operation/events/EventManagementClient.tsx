@@ -282,6 +282,7 @@ export default function EventManagementClient() {
  placeholder="행사 명칭을 입력하십시오"
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
+ maxLength={30}
  />
  </div>
  <div className="col-span-2 space-y-2">
@@ -292,6 +293,7 @@ export default function EventManagementClient() {
  placeholder="상세 내용을 입력하십시오"
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
+ maxLength={4000}
  />
  </div>
  <div className="space-y-2">
@@ -322,6 +324,7 @@ export default function EventManagementClient() {
  onChange={(e) => setForm({...form, evntUseCnt: parseInt(e.target.value) || 0})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
+ min={0}
  />
  </div>
  <div className="space-y-2">

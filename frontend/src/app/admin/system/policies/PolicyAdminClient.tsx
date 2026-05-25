@@ -29,9 +29,10 @@ import {
 } from '@/components/ui/form';
 
 const policySchema = z.object({
- plcyTtl: z.string().min(1, '정책 제목은 필수입니다.'),
- plcyCn: z.string().min(1, '정책 내용은 필수입니다.')
+ plcyTtl: z.string().min(1, '정책 제목은 필수입니다.').max(100, '정책 제목은 최대 100자 이하로 입력하십시오.'),
+ plcyCn: z.string().min(1, '정책 내용은 필수입니다.').max(4000, '정책 내용은 최대 4000자 이하로 입력하십시오.')
 });
+
 
 type PolicyFormValues = z.infer<typeof policySchema>;
 
