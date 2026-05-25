@@ -2,12 +2,12 @@ export interface MenuInfo {
  menuNo: number;
  menuNm: string;
  upperMenuId: number;
- upperMenuNo: number;
+ upMenuSn: number;
  menuOrdr: number;
  menuDc?: string;
- relateImagePath?: string;
- relateImageNm?: string;
- progrmFileNm?: string;
+ relImgPath?: string;
+ relImgNm?: string;
+ prgrmFileNm?: string;
  chkURL?: string; // Derived from program URL
  modernRoute?: string;
  children?: MenuInfo[];

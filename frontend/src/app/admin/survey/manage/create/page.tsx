@@ -29,9 +29,9 @@ export default function CreatePollPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<OnlinePollManageVO>({
     pollNm: '',
-    pollBeginDe: '',
-    pollEndDe: '',
-    pollKindCode: '001', // Default 001
+    pollBgngYmd: '',
+    pollEndYmd: '',
+    pollKndCd: '001', // Default 001
     pollDsuseYn: 'N',
   });
 
@@ -51,13 +51,13 @@ export default function CreatePollPage() {
 
     const payload = {
       ...formData,
-      pollBeginDe: format(beginDate, 'yyyy-MM-dd'),
-      pollEndDe: format(endDate, 'yyyy-MM-dd'),
-      pollItems: [
-        { pollIemNm: '매우 만족 (Highly Satisfied)' },
-        { pollIemNm: '만족 (Satisfied)' },
-        { pollIemNm: '보통 (Neutral)' },
-        { pollIemNm: '불만족 (Unsatisfied)' }
+      pollBgngYmd: format(beginDate, 'yyyy-MM-dd'),
+      pollEndYmd: format(endDate, 'yyyy-MM-dd'),
+      pollArticles: [
+        { pollArtclNm: '매우 만족 (Highly Satisfied)' },
+        { pollArtclNm: '만족 (Satisfied)' },
+        { pollArtclNm: '보통 (Neutral)' },
+        { pollArtclNm: '불만족 (Unsatisfied)' }
       ]
     };
 
@@ -162,8 +162,8 @@ export default function CreatePollPage() {
           <div className="space-y-3">
             <Label className="text-sm font-bold text-slate-500 ml-1">설문 유형</Label>
             <Select
-              value={formData.pollKindCode}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, pollKindCode: value }))}
+              value={formData.pollKndCd}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, pollKndCd: value }))}
             >
               <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
                 <SelectValue placeholder="유형 선택" />

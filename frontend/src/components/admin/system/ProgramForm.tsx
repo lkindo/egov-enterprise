@@ -38,10 +38,10 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 
 const formSchema = z.object({
-  progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
-  progrmStrePath: z.string().min(1, { message: "저장경로는 필수입니다." }),
-  progrmKoreanNm: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
-  progrmDc: z.string().optional(),
+  prgrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
+  prgrmStrgPath: z.string().min(1, { message: "저장경로는 필수입니다." }),
+  prgrmKornNm: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
+  prgrmExpln: z.string().optional(),
   url: z.string().min(1, { message: "URL은 필수입니다." }),
 });
 
@@ -60,10 +60,10 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
   const form = useAppForm(formSchema, {
     defaultValues: {
-      progrmFileNm: data?.progrmFileNm || '',
-      progrmStrePath: data?.progrmStrePath || '/',
-      progrmKoreanNm: data?.progrmKoreanNm || '',
-      progrmDc: data?.progrmDc || '',
+      prgrmFileNm: data?.prgrmFileNm || '',
+      prgrmStrgPath: data?.prgrmStrgPath || '/',
+      prgrmKornNm: data?.prgrmKornNm || '',
+      prgrmExpln: data?.prgrmExpln || '',
       url: data?.url || '/',
     },
   });
@@ -71,7 +71,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
   const onSubmit = async (values: ProgramFormValues) => {
     try {
       if (isEdit) {
-        await programAdminService.updateProgram(data.progrmFileNm!, values as ProgrmManage);
+        await programAdminService.updateProgram(data.prgrmFileNm!, values as ProgrmManage);
         toast.success('프로그램 정보가 수정되었습니다.');
       } else {
         await programAdminService.createProgram(values as ProgrmManage);
@@ -86,7 +86,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
   };
 
   const handleDelete = async () => {
-    if (!data?.progrmFileNm) return;
+    if (!data?.prgrmFileNm) return;
     
     const ok = await confirm({
       title: '프로그램 영구 삭제',
@@ -96,7 +96,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
     if (ok) {
       try {
-        await programAdminService.deleteProgram(data.progrmFileNm);
+        await programAdminService.deleteProgram(data.prgrmFileNm);
         toast.success('프로그램이 삭제되었습니다.');
         onSuccess();
         onOpenChange(false);
@@ -123,7 +123,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="progrmFileNm"
+            name="prgrmFileNm"
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
@@ -145,7 +145,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
           <div className="grid grid-cols-2 gap-6">
             <FormField
               control={form.control}
-              name="progrmKoreanNm"
+              name="prgrmKornNm"
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
@@ -185,7 +185,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
           <FormField
             control={form.control}
-            name="progrmStrePath"
+            name="prgrmStrgPath"
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
@@ -205,7 +205,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
           <FormField
             control={form.control}
-            name="progrmDc"
+            name="prgrmExpln"
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">

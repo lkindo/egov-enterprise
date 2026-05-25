@@ -1,27 +1,29 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ⑤씪님Poll 정보 ?명꽣?섏씠님 */
+ * 온라인설문(OnlinePoll) 정보 DTO 인터페이스
+ */
 export interface OnlinePollDto {
   pollId?: string;
   pollNm: string;
-  pollBeginDe: string;
-  pollEndDe: string;
-  pollKindCode: string;
+  pollBgngYmd: string;
+  pollEndYmd: string;
+  pollKndCd: string;
   pollDsuseYn: string;
-  pollAutoDsuseYn?: string;
-  pollItems?: OnlinePollItemDto[];
+  pollAtmcDsuseYn?: string;
+  pollArticles?: OnlinePollItemDto[];
   frstRegisterId?: string;
   createdDate?: string;
 }
 
 /**
- * ⑤씪님Poll 님ぉ ?명꽣?섏씠님 */
+ * 온라인설문 항목(OnlinePollItem) DTO 인터페이스
+ */
 export interface OnlinePollItemDto {
-  pollIemId?: string;
-  pollIemNm: string;
+  pollArtclId?: string;
+  pollArtclNm: string;
   pollIemCo?: number;
 }
 

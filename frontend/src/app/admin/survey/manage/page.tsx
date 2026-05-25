@@ -62,7 +62,7 @@ export default function PollManagePage() {
       header: '설문 기간',
       accessor: (poll) => (
         <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
-          {poll.pollBeginDe} ~ {poll.pollEndDe}
+          {poll.pollBgngYmd} ~ {poll.pollEndYmd}
         </span>
       ),
       className: 'w-48'
@@ -71,7 +71,7 @@ export default function PollManagePage() {
       header: '상태',
       accessor: (poll) => {
         const today = new Date();
-        const end = new Date(poll.pollEndDe);
+        const end = new Date(poll.pollEndYmd);
         const isActive = end >= today;
         return (
           <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${isActive
@@ -132,7 +132,7 @@ export default function PollManagePage() {
 
       <HubMetricGrid>
         <HubMetricCard title="전체 설문" value={data?.total || 0} icon={Layers} color="primary" />
-        <HubMetricCard title="진행중" value={polls.filter(p => new Date(p.pollEndDe) >= new Date()).length} icon={Zap} color="emerald" status="활성" />
+        <HubMetricCard title="진행중" value={polls.filter(p => new Date(p.pollEndYmd) >= new Date()).length} icon={Zap} color="emerald" status="활성" />
         <HubMetricCard title="참여 노드" value="2.4k" icon={Activity} color="indigo" />
         <HubMetricCard title="데이터 상태" value="Normal" icon={RefreshCcw} color="amber" />
       </HubMetricGrid>

@@ -96,18 +96,18 @@ export interface MenuManage {
   menuNm: string;
   upperMenuId: number;
   menuDc: string;
-  relateImageNm: string;
-  relateImagePath: string;
-  progrmFileNm: string;
+  relImgNm: string;
+  relImgPath: string;
+  prgrmFileNm: string;
   useAt?: 'Y' | 'N';
 }
 
 // Program
 export interface ProgrmManage {
-  progrmFileNm: string;
-  progrmStrePath: string;
-  progrmKoreanNm: string;
-  progrmDc: string;
+  prgrmFileNm: string;
+  prgrmStrgPath: string;
+  prgrmKornNm: string;
+  prgrmExpln: string;
   url: string;
 }
 

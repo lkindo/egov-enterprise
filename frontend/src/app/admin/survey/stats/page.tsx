@@ -136,7 +136,7 @@ export default function SurveyStatsPage() {
                     </TableCell>
                     <TableCell className="text-center py-6 uppercase">
                         <div className="inline-flex items-center gap-2 text-slate-500 font-bold text-xs uppercase text-center">
-                          <Calendar className="w-3.5 h-3.5 opacity-40 text-amber-500" /> {poll.pollBeginDe} ~ {poll.pollEndDe}
+                          <Calendar className="w-3.5 h-3.5 opacity-40 text-amber-500" /> {poll.pollBgngYmd} ~ {poll.pollEndYmd}
                         </div>
                     </TableCell>
                     <TableCell className="text-center py-6">

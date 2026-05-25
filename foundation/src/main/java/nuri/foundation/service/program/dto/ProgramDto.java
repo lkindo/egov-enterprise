@@ -1,6 +1,6 @@
 package nuri.foundation.service.program.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,19 +10,20 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "프로그램 정보 DTO")
 public class ProgramDto {
-    @JsonProperty("progrmFileNm")
+    @Schema(description = "프로그램 파일 명칭")
     private String prgrmFileNm;
 
-    @JsonProperty("progrmStrePath")
+    @Schema(description = "프로그램 저장 경로")
     private String prgrmStrgPath;
 
-    @JsonProperty("progrmKoreanNm")
+    @Schema(description = "프로그램 한글 명칭")
     private String prgrmKornNm;
 
+    @Schema(description = "프로그램 URL")
     private String url;
 
-    @JsonProperty("progrmDc")
+    @Schema(description = "프로그램 설명")
     private String prgrmExpln;
 }
-

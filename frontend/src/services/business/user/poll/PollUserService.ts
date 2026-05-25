@@ -51,7 +51,7 @@ export class PollUserService extends ApiService {
 
   /** 설문 참여(투표) */
   async participatePoll(participation: OnlinePollPartcptnVO, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/${participation.pollId}/vote/${participation.pollIemId}`, null, config);
+    return this.post(`/${participation.pollId}/vote/${participation.pollArtclId}`, null, config);
   }
 }
 

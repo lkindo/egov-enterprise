@@ -1,11 +1,11 @@
-﻿import { PaginationInfo } from './system';
+import { PaginationInfo } from './system';
 
 export interface Program {
-  progrmFileNm: string;
-  progrmStrePath: string;
-  progrmKoreanNm: string;
+  prgrmFileNm: string;
+  prgrmStrgPath: string;
+  prgrmKornNm: string;
   url: string;
-  progrmDc?: string;
+  prgrmExpln?: string;
   // Audit Fields (Newly synchronized via Full-Stack Survey)
   frstRegisterId?: string;
   frstRegisterPnttm?: string;

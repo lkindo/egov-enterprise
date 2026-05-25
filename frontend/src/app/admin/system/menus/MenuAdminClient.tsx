@@ -209,12 +209,12 @@ const SortableMenuNode = ({
                                 )}>
                                     ID: {item.menuNo}
                                 </span>
-                                {item.progrmFileNm && (
+                                {item.prgrmFileNm && (
                                     <span className={cn(
                                       "text-[10px] flex items-center gap-1 font-black uppercase tracking-widest",
                                        depth === 0 ? "text-slate-400" : "text-primary opacity-100"
                                     )}>
-                                        <LinkIcon size={10} /> {item.progrmFileNm}
+                                        <LinkIcon size={10} /> {item.prgrmFileNm}
                                     </span>
                                 )}
                             </div>
@@ -350,7 +350,7 @@ export default function MenuAdminClient({
 
   const form = useAppForm(menuSchema, {
     defaultValues: {
-      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, progrmFileNm: '', modernRoute: '', menuDc: ''
+      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuDc: ''
     }
   });
 
@@ -411,18 +411,18 @@ export default function MenuAdminClient({
 
   const handleOpenCreate = (parentId: number = 0) => {
     setMode('create');
-    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, progrmFileNm: '', modernRoute: '', menuDc: '' });
+    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuDc: '' });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
     setMode('edit');
-    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upperMenuNo ?? menu.upperMenuId ?? 0, progrmFileNm: menu.progrmFileNm || '', modernRoute: menu.modernRoute || '', menuDc: menu.menuDc || '' });
+    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuDc: menu.menuDc || '' });
     setIsOpen(true);
   };
 
   const onFormSubmit = async (values: MenuFormValues) => {
-    const res = await saveMenuAction(null, { mode, data: { ...values, upperMenuNo: values.upperMenuId } as any });
+    const res = await saveMenuAction(null, { mode, data: { ...values, upMenuSn: values.upperMenuId } as any });
     if (res.success) { toast(res.message, 'success'); setIsOpen(false); router.refresh(); }
     else { toast(res.message, 'error'); }
   };
@@ -431,7 +431,7 @@ export default function MenuAdminClient({
     try {
       setIsSaving(true);
       const submitData = flattenedMenus.map((item, idx) => ({
-        menuNo: item.menuNo, menuOrdr: idx + 1, upperMenuNo: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, progrmFileNm: item.progrmFileNm || '', modernRoute: item.modernRoute || '', menuDc: item.menuDc || '', id: item.menuNo
+        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuDc: item.menuDc || '', id: item.menuNo
       }));
       const res = await updateMenuOrdersAction(submitData as any);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }

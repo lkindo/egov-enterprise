@@ -61,7 +61,7 @@ export default function OnlinePollParticipateClient() {
  setSelectedPoll(poll);
  setSelectedItemId(null);
  
- if (todayStr > (poll.pollEndDe || '9999-12-31')) {
+ if (todayStr > (poll.pollEndYmd || '9999-12-31')) {
  setViewMode('result');
  } else {
  setViewMode('vote');
@@ -82,7 +82,7 @@ export default function OnlinePollParticipateClient() {
  try {
  await pollUserService.participatePoll({
  pollId: selectedPoll.pollId!,
- pollIemId: selectedItemId
+ pollArtclId: selectedItemId
  });
  toast.success('투표가 성공적으로 반영되었습니다.');
  // Refresh items to show new counts
@@ -152,7 +152,7 @@ export default function OnlinePollParticipateClient() {
  </div>
  <div className="px-4 py-1 bg-primary/20 rounded-lg border border-primary/20 flex items-center gap-2">
  <Calendar size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-tighter uppercase font-mono ">{selectedPoll.pollBeginDe} - {selectedPoll.pollEndDe}</span>
+ <span className="text-xs font-bold tracking-tighter uppercase font-mono ">{selectedPoll.pollBgngYmd} - {selectedPoll.pollEndYmd}</span>
  </div>
  </div>
  <h2 className="text-4xl font-bold tracking-tighter leading-none">{selectedPoll.pollNm}</h2>
@@ -169,11 +169,11 @@ export default function OnlinePollParticipateClient() {
  <div className="space-y-4">
  {pollItems.map((item, idx) => (
  <PollItem 
- key={item.pollIemId} 
+ key={item.pollArtclId} 
  item={item} 
  totalVotes={pollItems.reduce((sum, i) => sum + (i.pollIemCo || 0), 0)}
- isSelected={selectedItemId === item.pollIemId}
- onSelect={() => viewMode === 'vote' && setSelectedItemId(item.pollIemId!)}
+ isSelected={selectedItemId === item.pollArtclId}
+ onSelect={() => viewMode === 'vote' && setSelectedItemId(item.pollArtclId!)}
  mode={viewMode}
  index={idx}
  testId={`poll-item-${idx}`}
@@ -211,7 +211,7 @@ export default function OnlinePollParticipateClient() {
 }
 
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
- const isClosed = todayStr > (poll.pollEndDe || '9999-12-31');
+ const isClosed = todayStr > (poll.pollEndYmd || '9999-12-31');
 
  
  return (
@@ -235,7 +235,7 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  <h3 className="text-2xl font-bold tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
  <div className="flex items-center gap-3 font-mono text-xs font-bold text-slate-400 tracking-tighter ">
  <Calendar size={14} className="opacity-40" />
- {poll.pollBeginDe} <span className="opacity-20">/</span> {poll.pollEndDe}
+ {poll.pollBgngYmd} <span className="opacity-20">/</span> {poll.pollEndYmd}
  </div>
  </div>
 
@@ -278,7 +278,7 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  <span className={cn(
  "text-lg font-bold tracking-tight uppercase",
  isSelected ? "text-primary" : "text-slate-900"
- )}>{item.pollIemNm}</span>
+ )}>{item.pollArtclNm}</span>
  </div>
  {mode === 'result' && (
  <div className="text-right">

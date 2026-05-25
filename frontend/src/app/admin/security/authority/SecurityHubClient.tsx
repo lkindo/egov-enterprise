@@ -151,10 +151,10 @@ export default function SecurityHubClient({
     });
 
     map.forEach(node => {
-      if (node.upperMenuNo === 0 || !map.has(node.upperMenuNo)) {
+      if (node.upMenuSn === 0 || !map.has(node.upMenuSn)) {
         roots.push(node);
       } else {
-        const parent = map.get(node.upperMenuNo);
+        const parent = map.get(node.upMenuSn);
         if (parent) {
           parent.children = parent.children || [];
           parent.children.push(node);

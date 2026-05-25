@@ -5,19 +5,19 @@ import { AxiosRequestConfig } from 'axios';
 export interface Menu {
   menuNo: number;
   menuNm: string;
-  progrmFileNm: string;
-  upperMenuNo: number;
+  prgrmFileNm: string;
+  upMenuSn: number;
   menuOrdr: number;
   menuDc: string;
-  relateImagePath: string;
-  relateImageNm: string;
+  relImgPath: string;
+  relImgNm: string;
   modernRoute?: string;
 }
 
 export interface MenuCreate {
-  authorCode: string;
-  menuNo: number;
-  creatPersonId: string;
+  authrtCd: string;
+  menuSn: number;
+  crtrId: string;
 }
 
 /**

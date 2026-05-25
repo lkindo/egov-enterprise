@@ -29,6 +29,6 @@ export interface MenuByAuthority {
  menuNm: string;
  upperMenuId: number;
  menuOrdr: number;
- progrmFileNm: string;
+ prgrmFileNm: string;
  children?: MenuByAuthority[];
 }

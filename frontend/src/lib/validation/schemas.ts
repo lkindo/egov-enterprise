@@ -15,18 +15,18 @@ export const commonRules = {
 export const pollSchema = z.object({
   pollId: z.string().optional(),
   pollNm: z.string().min(1, '설문 주제는 필수입니다.'),
-  pollBeginDe: z.string().min(1, '시작일은 필수입니다.'),
-  pollEndDe: z.string().min(1, '종료일은 필수입니다.'),
-  pollKindCode: z.string(),
+  pollBgngYmd: z.string().min(1, '시작일은 필수입니다.'),
+  pollEndYmd: z.string().min(1, '종료일은 필수입니다.'),
+  pollKndCd: z.string(),
   pollDsuseYn: z.string().optional().default('N'),
 }).refine(data => {
-  if (data.pollBeginDe && data.pollEndDe) {
-    return new Date(data.pollEndDe) >= new Date(data.pollBeginDe);
+  if (data.pollBgngYmd && data.pollEndYmd) {
+    return new Date(data.pollEndYmd) >= new Date(data.pollBgngYmd);
   }
   return true;
 }, {
   message: '종료일은 시작일보다 빠를 수 없습니다.',
-  path: ['pollEndDe']
+  path: ['pollEndYmd']
 });
 
 // --- SMS 관리 스키마 ---
@@ -40,11 +40,11 @@ export const smsSchema = z.object({
 export const menuSchema = z.object({
   menuNo: z.coerce.number().min(1, '메뉴 번호는 필수입니다.'),
   menuNm: z.string().min(1, '메뉴 명칭은 필수입니다.'),
-  progrmFileNm: z.string().optional(),
+  prgrmFileNm: z.string().optional(),
   menuOrdr: z.coerce.number().min(0),
   menuDc: z.string().optional(),
-  relateImagePath: z.string().optional(),
-  relateImageNm: z.string().optional(),
+  relImgPath: z.string().optional(),
+  relImgNm: z.string().optional(),
   upperMenuId: z.coerce.number().optional().default(0),
   modernRoute: z.string().optional(),
 });

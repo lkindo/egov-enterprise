@@ -30,7 +30,7 @@ interface Author {
 interface Menu {
  menuNo: number;
  menuNm: string;
- upperMenuNo: number;
+ upMenuSn: number;
 }
 
 interface SecurityMatrixVisualizerProps {
@@ -163,9 +163,9 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="flex items-center gap-4">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
- menu.upperMenuNo === 0 ? "bg-amber-50 text-amber-500" : "bg-slate-50 text-slate-400"
+ menu.upMenuSn === 0 ? "bg-amber-50 text-amber-500" : "bg-slate-50 text-slate-400"
  )}>
- {menu.upperMenuNo === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
+ {menu.upMenuSn === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
  </div>
  <div className="flex flex-col min-w-0">
  <span className="text-sm font-bold text-slate-900 truncate tracking-tight">{menu.menuNm}</span>

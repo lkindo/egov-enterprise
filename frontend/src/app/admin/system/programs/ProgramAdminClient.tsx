@@ -46,21 +46,21 @@ import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 
 const programSchema = z.object({
- progrmFileNm: z.string()
+ prgrmFileNm: z.string()
  .min(1, '파일명은 필수입니다.')
  .max(60, '파일명은 60자 이내여야 합니다.'),
- progrmStrePath: z.string()
+ prgrmStrgPath: z.string()
  .max(100, '경로가 너무 깁니다. (최대 100자)')
  .optional()
  .or(z.literal('')),
- progrmKoreanNm: z.string()
+ prgrmKornNm: z.string()
  .min(1, '프로그램 명칭은 필수입니다.')
  .max(60, '명칭은 60자 이내여야 합니다.'),
  url: z.string()
  .min(1, '엔드포인트 URL은 필수입니다.')
  .startsWith('/', 'URL은 /로 시작해야 합니다.')
  .max(100, 'URL은 100자 이내여야 합니다.'),
- progrmDc: z.string()
+ prgrmExpln: z.string()
  .max(200, '설명이 너무 깁니다. (최대 200자)')
  .optional()
  .or(z.literal('')),
@@ -79,11 +79,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  
  const form = useAppForm(programSchema, {
  defaultValues: {
- progrmFileNm: '',
- progrmStrePath: '',
- progrmKoreanNm: '',
+ prgrmFileNm: '',
+ prgrmStrgPath: '',
+ prgrmKornNm: '',
  url: '',
- progrmDc: ''
+ prgrmExpln: ''
  }
  });
 
@@ -115,7 +115,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
  const handleOpenCreate = () => {
  setMode('create');
- form.reset({ progrmFileNm: '', progrmStrePath: '', progrmKoreanNm: '', url: '', progrmDc: '' });
+ form.reset({ prgrmFileNm: '', prgrmStrgPath: '', prgrmKornNm: '', url: '', prgrmExpln: '' });
  setIsOpen(true);
  };
 
@@ -153,7 +153,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Cpu size={20} />
  </div>
  <div className="text-left">
- <span className="font-bold tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmKoreanNm}</span>
+ <span className="font-bold tracking-tighter text-foreground block text-md uppercase leading-none">{item.prgrmKornNm}</span>
  <span className="text-xs font-bold text-slate-600 tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
  </div>
  </div>
@@ -164,7 +164,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  accessor: (item: Program) => (
  <div className="flex justify-start">
  <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
- <span className="text-xs font-bold text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
+ <span className="text-xs font-bold text-primary tracking-tight font-mono">{item.prgrmFileNm}</span>
  </div>
  </div>
  ),
@@ -198,7 +198,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.progrmFileNm)}>
+ <Button size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.prgrmFileNm)}>
  <Trash2 size={16} />
  </Button>
  </TooltipTrigger>

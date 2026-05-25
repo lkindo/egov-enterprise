@@ -11,8 +11,6 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
@@ -64,26 +62,18 @@ public class UserDto {
     @Size(max = 4, message = "지역번호는 최대 4 자입니다")
     private String areaNo;
 
-    @JsonProperty("homemiddleTelno")
-    @JsonAlias({"homemiddleTelno", "homeMiddleTelno"})
     @Size(max = 4, message = "전화번호 중간자리는 최대 4 자입니다")
     private String homeMiddleTelno;
 
-    @JsonProperty("homeendTelno")
-    @JsonAlias({"homeendTelno", "homeEndTelno"})
     @Size(max = 4, message = "전화번호 끝자리는 최대 4 자입니다")
     private String homeEndTelno;
 
-    @JsonProperty("mberTyCode")
-    @JsonAlias({"mberTyCode", "mberTypeCd"})
     @Size(max = 20, message = "회원 유형 코드는 최대 20 자입니다")
     private String mberTypeCd;
 
     @Size(max = 11, message = "팩스 번호는 최대 11 자입니다")
     private String faxNo;
 
-    @JsonProperty("insttCode")
-    @JsonAlias({"insttCode", "insttCd"})
     @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
     private String insttCd;
 

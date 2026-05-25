@@ -63,7 +63,7 @@ export const listToTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
   flatMenus.forEach((m) => {
     if (!m || !m.menuNo) return;
     const item = map[m.menuNo];
-    const parentId = m.upperMenuNo ?? m.upperMenuId ?? 0;
+    const parentId = m.upMenuSn ?? m.upperMenuId ?? 0;
 
     if (parentId === 0 || !map[parentId]) {
       roots.push(item);

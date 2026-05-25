@@ -57,11 +57,11 @@ export default function OnlinePollAdminClient({
  const [isAddOpen, setIsAddOpen] = useState(false);
  const [newPoll, setNewPoll] = useState<OnlinePollDto>({
  pollNm: '',
- pollBeginDe: format(new Date(), 'yyyy-MM-dd'),
- pollEndDe: format(new Date(new Date().setDate(new Date().getDate() + 7)), 'yyyy-MM-dd'),
- pollKindCode: 'POLL01',
+ pollBgngYmd: format(new Date(), 'yyyy-MM-dd'),
+ pollEndYmd: format(new Date(new Date().setDate(new Date().getDate() + 7)), 'yyyy-MM-dd'),
+ pollKndCd: 'POLL01',
  pollDsuseYn: 'N',
- pollItems: [{ pollIemNm: '' }, { pollIemNm: '' }]
+ pollArticles: [{ pollArtclNm: '' }, { pollArtclNm: '' }]
  });
 
  const handleRefresh = async () => {
@@ -80,19 +80,19 @@ export default function OnlinePollAdminClient({
  const handleAddItem = () => {
  setNewPoll(prev => ({
  ...prev,
- pollItems: [...(prev.pollItems || []), { pollIemNm: '' }]
+ pollArticles: [...(prev.pollArticles || []), { pollArtclNm: '' }]
  }));
  };
 
  const handleRemoveItem = (index: number) => {
  setNewPoll(prev => ({
  ...prev,
- pollItems: prev.pollItems?.filter((_, i) => i !== index)
+ pollArticles: prev.pollArticles?.filter((_, i) => i !== index)
  }));
  };
 
  const handleAdd = async () => {
- if (!newPoll.pollNm || !newPoll.pollItems?.every(item => item.pollIemNm)) {
+ if (!newPoll.pollNm || !newPoll.pollArticles?.every(item => item.pollArtclNm)) {
  toast.error('설문 명과 모든 항목 내용을 입력해주세요.');
  return;
  }
@@ -130,14 +130,14 @@ export default function OnlinePollAdminClient({
  accessor: (item: OnlinePollDto) => (
  <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground/60 tracking-tighter ">
  <Calendar size={14} className="text-primary opacity-40" />
- {item.pollBeginDe} <span className="text-xs opacity-20 mx-1">/</span> {item.pollEndDe}
+ {item.pollBgngYmd} <span className="text-xs opacity-20 mx-1">/</span> {item.pollEndYmd}
  </div>
  )
  },
  {
  header: '참여 분석',
  accessor: (item: OnlinePollDto) => {
- const totalVotes = item.pollItems?.reduce((sum, i) => sum + (i.pollIemCo || 0), 0) || 0;
+ const totalVotes = item.pollArticles?.reduce((sum, i) => sum + (i.pollIemCo || 0), 0) || 0;
  return (
  <div className="flex items-center gap-6 min-w-[200px]">
  <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
@@ -162,10 +162,10 @@ export default function OnlinePollAdminClient({
  let variant = 'closed';
  
  if (item.pollDsuseYn === 'N') {
- if (today < (item.pollBeginDe || '')) {
+ if (today < (item.pollBgngYmd || '')) {
  status = '예정';
  variant = 'scheduled';
- } else if (today > (item.pollEndDe || '')) {
+ } else if (today > (item.pollEndYmd || '')) {
  status = '종료';
  variant = 'closed';
  } else {
@@ -320,8 +320,8 @@ export default function OnlinePollAdminClient({
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
- value={newPoll.pollBeginDe}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollBeginDe: e.target.value }))}
+ value={newPoll.pollBgngYmd}
+ onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: e.target.value }))}
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </div>
@@ -332,8 +332,8 @@ export default function OnlinePollAdminClient({
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
- value={newPoll.pollEndDe}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndDe: e.target.value }))}
+ value={newPoll.pollEndYmd}
+ onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: e.target.value }))}
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </div>
@@ -355,7 +355,7 @@ export default function OnlinePollAdminClient({
  </button>
  </div>
  <div className="space-y-4">
- {newPoll.pollItems?.map((item, index) => (
+ {newPoll.pollArticles?.map((item, index) => (
  <motion.div 
  initial={{ opacity: 0, x: -20 }}
  animate={{ opacity: 1, x: 0 }}
@@ -369,11 +369,11 @@ export default function OnlinePollAdminClient({
  <div className="flex-1 relative">
  <Input
  placeholder={`항목 ${index + 1} 내용...`}
- value={item.pollIemNm}
+ value={item.pollArtclNm}
  onChange={(e) => {
- const items = [...(newPoll.pollItems || [])];
- items[index].pollIemNm = e.target.value;
- setNewPoll(prev => ({ ...prev, pollItems: items }));
+ const items = [...(newPoll.pollArticles || [])];
+ items[index].pollArtclNm = e.target.value;
+ setNewPoll(prev => ({ ...prev, pollArticles: items }));
  }}
  className="h-11 px-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
  />

@@ -29,9 +29,9 @@ export default function PollDetailPage() {
     const router = useRouter();
     const [formData, setFormData] = useState<OnlinePollManageVO>({
         pollNm: '',
-        pollBeginDe: '',
-        pollEndDe: '',
-        pollKindCode: '001', // Default 001
+        pollBgngYmd: '',
+        pollEndYmd: '',
+        pollKndCd: '001', // Default 001
         pollDsuseYn: 'N',
     });
 
@@ -46,8 +46,8 @@ export default function PollDetailPage() {
 
         const payload = {
             ...formData,
-            pollBeginDe: format(beginDate, 'yyyy-MM-dd'),
-            pollEndDe: format(endDate, 'yyyy-MM-dd'),
+            pollBgngYmd: format(beginDate, 'yyyy-MM-dd'),
+            pollEndYmd: format(endDate, 'yyyy-MM-dd'),
         };
 
         try {
@@ -151,8 +151,8 @@ export default function PollDetailPage() {
                     <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-500 ml-1">설문 유형</Label>
                         <Select
-                            value={formData.pollKindCode}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, pollKindCode: value }))}
+                            value={formData.pollKndCd}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, pollKndCd: value }))}
                         >
                             <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
                                 <SelectValue placeholder="유형 선택" />

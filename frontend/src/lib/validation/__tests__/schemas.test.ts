@@ -7,9 +7,9 @@ describe('Standardized Validation Schemas', () => {
     it('should validate correct poll data', () => {
       const validData = {
         pollNm: '2024 하반기 설문',
-        pollBeginDe: '2024-01-01',
-        pollEndDe: '2024-12-31',
-        pollKindCode: '001',
+        pollBgngYmd: '2024-01-01',
+        pollEndYmd: '2024-12-31',
+        pollKndCd: '001',
       };
       const result = pollSchema.safeParse(validData);
       expect(result.success).toBe(true);
@@ -18,9 +18,9 @@ describe('Standardized Validation Schemas', () => {
     it('should reject empty title', () => {
       const invalidData = {
         pollNm: '',
-        pollBeginDe: '2024-01-01',
-        pollEndDe: '2024-12-31',
-        pollKindCode: '001',
+        pollBgngYmd: '2024-01-01',
+        pollEndYmd: '2024-12-31',
+        pollKndCd: '001',
       };
       const result = pollSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
@@ -34,9 +34,9 @@ describe('Standardized Validation Schemas', () => {
     it('should reject if end date is before start date', () => {
       const invalidData = {
         pollNm: '날짜 오류 테스트',
-        pollBeginDe: '2024-12-31',
-        pollEndDe: '2024-01-01',
-        pollKindCode: '001',
+        pollBgngYmd: '2024-12-31',
+        pollEndYmd: '2024-01-01',
+        pollKndCd: '001',
       };
       const result = pollSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
@@ -81,7 +81,7 @@ describe('Standardized Validation Schemas', () => {
       const validData = {
         menuNo: '1001',
         menuNm: 'Dashboard',
-        progrmFileNm: 'DashboardSvc.js',
+        prgrmFileNm: 'DashboardSvc.js',
         menuOrdr: 1,
       };
       const result = menuSchema.safeParse(validData);
@@ -92,7 +92,7 @@ describe('Standardized Validation Schemas', () => {
       const dataWithStingOrder = {
         menuNo: '1001',
         menuNm: 'Dashboard',
-        progrmFileNm: 'DashboardSvc.js',
+        prgrmFileNm: 'DashboardSvc.js',
         menuOrdr: '10',
       };
       const result = menuSchema.safeParse(dataWithStingOrder);

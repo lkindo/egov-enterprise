@@ -1,7 +1,6 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.OnlinePollManage;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,43 +18,33 @@ import java.util.stream.Collectors;
 @Schema(description = "온라인 설문 관리 DTO (표준화)")
 public class OnlinePollManageDto {
 
-    @JsonProperty("pollId")
     @Schema(description = "설문 ID")
     private String pollId;
 
-    @JsonProperty("pollNm")
     @Schema(description = "설문 제목")
     private String pollNm;
 
-    @JsonProperty("pollBeginDe")
     @Schema(description = "설문 시작일")
     private String pollBgngYmd;
 
-    @JsonProperty("pollEndDe")
     @Schema(description = "설문 종료일")
     private String pollEndYmd;
 
-    @JsonProperty("pollKindCode")
     @Schema(description = "설문 종류 코드")
     private String pollKndCd;
 
-    @JsonProperty("pollDsuseYn")
     @Schema(description = "설문 폐기 여부")
     private String pollDsuseYn;
 
-    @JsonProperty("pollAutoDsuseYn")
     @Schema(description = "설문 자동 폐기 여부")
     private String pollAtmcDsuseYn;
 
-    @JsonProperty("createdBy")
     @Schema(description = "생성자 ID")
     private String createdBy;
 
-    @JsonProperty("createdDate")
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
-    @JsonProperty("pollItems")
     @Schema(description = "설문 항목 목록")
     private List<OnlinePollArticleDto> pollArticles;
 
@@ -76,8 +65,4 @@ public class OnlinePollManageDto {
                         Collections.emptyList())
                 .build();
     }
-
-    // legacy 호환성 수호
-    @JsonProperty("pollTtl")
-    public String getPollTtl() { return pollNm; }
 }

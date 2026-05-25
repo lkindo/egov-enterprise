@@ -42,7 +42,7 @@ import ProgramAdminClient from '../ProgramAdminClient';
 describe('ProgramAdminClient Component', () => {
   const mockInitialData = {
     list: [
-      { progrmFileNm: 'PROG_1', progrmKoreanNm: '프로그램_하나', url: '/url/1', progrmStrePath: '/path/1', progrmDc: 'Desc 1' },
+      { prgrmFileNm: 'PROG_1', prgrmKornNm: '프로그램_하나', url: '/url/1', prgrmStrgPath: '/path/1', prgrmExpln: 'Desc 1' },
     ],
     total: 1
   } as any;

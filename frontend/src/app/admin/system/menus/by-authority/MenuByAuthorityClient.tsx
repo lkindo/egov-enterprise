@@ -147,7 +147,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  "font-bold text-sm tracking-tight truncate",
  hasChildren ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
  )}>{menu.menuNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.progrmFileNm || 'NODE_ENDPOINT'}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || 'NODE_ENDPOINT'}</span>
  </div>
  
  <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-slate-100 shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">

@@ -1,7 +1,6 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.OnlinePollArticle;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,27 +15,21 @@ import java.time.LocalDateTime;
 @Schema(description = "온라인 설문 항목 DTO (표준화)")
 public class OnlinePollArticleDto {
 
-    @JsonProperty("pollIemId")
     @Schema(description = "설문 항목 ID")
     private String pollArtclId;
 
-    @JsonProperty("pollId")
     @Schema(description = "설문 ID")
     private String pollId;
 
-    @JsonProperty("pollIemNm")
     @Schema(description = "설문 항목 명")
     private String pollArtclNm;
 
-    @JsonProperty("pollIemCo")
     @Schema(description = "투표 수")
     private Long pollIemCo;
 
-    @JsonProperty("createdBy")
     @Schema(description = "생성자 ID")
     private String createdBy;
 
-    @JsonProperty("createdDate")
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 

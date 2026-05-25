@@ -24,7 +24,7 @@ export async function saveProgramAction(prevState: unknown, { mode, data }: Save
         if (mode === 'create') {
             await programAdminService.createProgram(data, axiosConfig);
         } else {
-            await programAdminService.updateProgram(data.progrmFileNm, data, axiosConfig);
+            await programAdminService.updateProgram(data.prgrmFileNm, data, axiosConfig);
         }
 
         revalidatePath('/admin/system/programs');
