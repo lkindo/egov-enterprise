@@ -77,10 +77,10 @@ const INDENTATION_WIDTH = 24;
 
 // 공통코드 상세 등록/수정 전용 Zod 스키마 (useAt 및 codeId 누락 폼 불일치 완전 해소)
 const codeDetailFormSchema = z.object({
- dtlCd: z.string().min(1, '코드 식별자는 필수입니다.'),
- dtlCdNm: z.string().min(1, '표기 레이블은 필수입니다.'),
+ dtlCd: z.string().min(1, '코드 식별자는 필수입니다.').max(12, '상세코드는 12자 이하로 입력해주세요.'),
+ dtlCdNm: z.string().min(1, '표기 레이블은 필수입니다.').max(100, '상세코드명은 100자 이하로 입력해주세요.'),
  useYn: z.enum(['Y', 'N']).default('Y'),
- dtlCdExpln: z.string().optional()
+ dtlCdExpln: z.string().max(4000, '상세코드 설명은 4000자 이하로 입력해주세요.').optional()
 });
 
 const dropAnimation: DropAnimation = {
@@ -747,8 +747,9 @@ export default function CommonCodeClient({
  <Input
  {...field}
  readOnly={!!editingDetail}
+ maxLength={12}
  className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
- placeholder="Unique code indicator"
+ placeholder="Unique code indicator (최대 12자)"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
@@ -767,8 +768,9 @@ export default function CommonCodeClient({
  <FormControl>
  <Input
  {...field}
+ maxLength={100}
  className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
- placeholder="레이블 명칭 입력"
+ placeholder="레이블 명칭 입력 (최대 100자)"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
@@ -821,8 +823,9 @@ export default function CommonCodeClient({
  <FormControl>
  <textarea
  {...field}
+ maxLength={4000}
  className="w-full min-h-[160px] p-6 rounded-lg border-none bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
- placeholder="코드 사용처 및 시스템 제약 조건 설명..."
+ placeholder="코드 사용처 및 시스템 제약 조건 설명... (최대 4000자)"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
