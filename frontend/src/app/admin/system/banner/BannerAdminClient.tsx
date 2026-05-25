@@ -252,23 +252,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  const onPopupSubmit = async (values: any) => {
  try {
- const formatDate = (dateStr: string, timeSuffix: string) => {
- if (!dateStr) return '';
- // Remove all non-numeric characters
- const cleanDate = dateStr.replace(/\D/g, '');
- // If we have at least 8 digits, take the first 8 (yyyyMMdd)
- if (cleanDate.length >= 8) {
- return cleanDate.substring(0, 8) + timeSuffix;
- }
- return dateStr; // Fallback
- };
-
  const data = {
  ...values,
  ntceYn: values.ntceYn as "Y" | "N",
  stopvewSetupYn: values.stopvewSetupYn as "Y" | "N",
- ntceBgnde: formatDate(values.ntceBgnde, '0000'),
- ntceEndde: formatDate(values.ntceEndde, '2359'),
+ ntceBgnde: values.ntceBgnde,
+ ntceEndde: values.ntceEndde,
  // Explicitly convert to string for Backend DTO
  popupWdthPstn: String(values.popupWdthPstn),
  popupVrtcPstn: String(values.popupVrtcPstn),

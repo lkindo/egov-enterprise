@@ -1,7 +1,6 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.SurveyTemplate;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,28 +15,22 @@ import java.time.LocalDateTime;
 @Schema(description = "설문템플릿 DTO (표준화)")
 public class SurveyTemplateDto {
 
-    @JsonProperty("srvyTmplatId")
-    @Schema(description = "설문템플릿아이디")
+    @Schema(description = "설문 템플릿 ID")
     private String srvyTmpltId;
 
-    @JsonProperty("srvyTmplatTypeCd")
-    @Schema(description = "설문템플릿유형코드")
+    @Schema(description = "설문 템플릿 유형 코드")
     private String srvyTmpltTypeCd;
 
-    @JsonProperty("srvyTmplatImgPath")
-    @Schema(description = "설문템플릿이미지경로")
+    @Schema(description = "설문 템플릿 이미지 경로 명")
     private String srvyTmpltPathNm;
 
-    @JsonProperty("srvyTmplatCn")
-    @Schema(description = "설문템플릿내용")
+    @Schema(description = "설문 템플릿 설명 내용")
     private String srvyTmpltExpln;
 
-    @JsonProperty("createdBy")
-    @Schema(description = "등록자")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @JsonProperty("createdDate")
-    @Schema(description = "등록일시")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static SurveyTemplateDto from(SurveyTemplate entity) {

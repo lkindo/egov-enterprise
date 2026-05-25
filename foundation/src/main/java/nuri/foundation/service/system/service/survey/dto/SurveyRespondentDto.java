@@ -1,7 +1,7 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.SurveyRespondent;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,54 +9,55 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 설문 응답자 DTO (표준화 및 @JsonProperty 가드)
+ * 설문 응답자 DTO (표준화)
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "설문 응답자 DTO")
 public class SurveyRespondentDto {
 
-    @JsonProperty("srvyRspdId")
+    @Schema(description = "설문 응답자 ID")
     private String srvyRspdntId;
 
-    @JsonProperty("srvyId")
+    @Schema(description = "설문 ID")
     private String srvyId;
 
-    @JsonProperty("srvyTmplatId")
+    @Schema(description = "설문 템플릿 ID")
     private String srvyTmpltId;
 
-    @JsonProperty("gndrCd")
+    @Schema(description = "성별 코드")
     private String gndrCd;
 
-    @JsonProperty("jobTypeCd")
+    @Schema(description = "직업 유형 코드")
     private String crTypeCd;
 
-    @JsonProperty("rspdNm")
+    @Schema(description = "응답자 명")
     private String rspdntNm;
 
-    @JsonProperty("brthYmd")
+    @Schema(description = "생년월일")
     private String brdt;
 
-    @JsonProperty("areaTelno")
+    @Schema(description = "지역 전화번호")
     private String rgnTelno;
 
-    @JsonProperty("midTelno")
+    @Schema(description = "국번 전화번호")
     private String midTelno;
 
-    @JsonProperty("endTelno")
+    @Schema(description = "개별 전화번호")
     private String endTelno;
 
-    @JsonProperty("frstRegisterId")
+    @Schema(description = "최초 등록자 ID")
     private String frstRegisterId;
 
-    @JsonProperty("frstRegisterPnttm")
+    @Schema(description = "최초 등록 일시")
     private LocalDateTime frstRegisterPnttm;
 
-    @JsonProperty("lastUpdusrId")
+    @Schema(description = "최종 수정자 ID")
     private String lastUpdusrId;
 
-    @JsonProperty("lastUpdusrPnttm")
+    @Schema(description = "최종 수정 일시")
     private LocalDateTime lastUpdusrPnttm;
 
     public static SurveyRespondentDto from(SurveyRespondent entity) {

@@ -38,7 +38,7 @@ export default function SurveyListPage() {
       header: '설문 제목',
       accessor: (item: Survey) => (
         <div className="font-bold text-foreground group-hover:text-primary transition-colors">
-          {item.qestnrSj}
+          {item.srvyTtl}
         </div>
       )
     },
@@ -47,7 +47,7 @@ export default function SurveyListPage() {
       accessor: (item: Survey) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar size={12} />
-          {item.qestnrBeginDe} ~ {item.qestnrEndDe}
+          {item.srvyBgngYmd} ~ {item.srvyEndYmd}
         </div>
       )
     },
@@ -58,7 +58,7 @@ export default function SurveyListPage() {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/survey/${item.qestnrId}`);
+            router.push(`/survey/${item.srvyId}`);
           }}
           className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-all"
         >
@@ -87,7 +87,7 @@ export default function SurveyListPage() {
           columns={columns}
           data={data}
           loading={loading}
-          onRowClick={(item) => router.push(`/survey/${item.qestnrId}`)}
+          onRowClick={(item) => router.push(`/survey/${item.srvyId}`)}
           emptyMessage="등록된 설문 조사가 없습니다."
         />
       </div>

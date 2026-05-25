@@ -1,59 +1,59 @@
 export interface Survey {
-  qestnrId: string;
-  qestnrSj: string;
-  qestnrPurps: string;
-  qestnrWritngGuidanceCn: string;
-  qestnrTrget: string;
-  qestnrBeginDe: string;
-  qestnrEndDe: string;
-  qestnrTmplatId?: string;
+  srvyId: string;
+  srvyTtl: string;
+  srvyPrps: string;
+  srvyWrtGdCn: string;
+  srvyTrgt: string;
+  srvyBgngYmd: string;
+  srvyEndYmd: string;
+  srvyTmpltId?: string;
   createdBy?: string;
   createdDate: string;
 }
 
 export interface SurveyQuestion {
-  qestnrQesitmId: string;
-  qestnrId: string;
-  qestnSn: number;
-  qestnTyCode: string;
-  qestnCn: string;
-  mxmmChoiseCo: number;
-  qestnrTmplatId: string;
+  srvyQstnId: string;
+  srvyId: string;
+  qstnSn: number;
+  qstnTypeCd: string;
+  qstnCn: string;
+  maxChcCnt: number;
+  srvyTmpltId: string;
   createdBy: string;
   createdDate: string;
   items: SurveyAnswer[];
 }
 
 export interface SurveyAnswer {
-  qustnrIemId: string;
-  qestnrQesitmId: string;
-  qestnrId: string;
-  iemSn: number;
-  iemCn: string;
-  etcAnswerAt: string;
-  qestnrTmplatId: string;
+  srvyArtclId: string;
+  srvyQstnId: string;
+  srvyId: string;
+  artclSn: number;
+  artclCn: string;
+  etcAnsYn: string;
+  srvyTmpltId: string;
   createdBy: string;
   createdDate: string;
 }
 
 export interface SurveyResultStats {
-  iemCn: string;
+  artclCn: string;
   count: number;
   percentage: number;
 }
 
 export interface QustnrRespondInfo {
-  qestnrQesrspnsId: string;
-  qestnrId: string;
-  qestnrQesitmId: string;
-  qestnrTmplatId: string;
-  qustnrIemId: string;
-  respondAnswerCn: string;
-  respondNm: string;
-  etcAnswerCn: string;
+  srvyRspnsId: string;
+  srvyId: string;
+  srvyQstnId: string;
+  srvyTmpltId: string;
+  srvyArtclId: string;
+  rspdntAnsCn: string;
+  rspnsNm: string;
+  etcAnsCn: string;
   createdBy: string;
   createdDate: string;
-  qestnrSj?: string; // Optinally included in detail responses
+  srvyTtl?: string; // Optionally included in detail responses
 }
 
 export interface QustnrRespondInfoVO {

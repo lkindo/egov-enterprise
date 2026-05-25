@@ -1,7 +1,6 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.SurveyResult;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,44 +15,34 @@ import java.time.LocalDateTime;
 @Schema(description = "설문결과 DTO (표준화)")
 public class SurveyResultDto {
 
-    @JsonProperty("srvyRspdId")
-    @Schema(description = "설문응답아이디")
+    @Schema(description = "설문 응답 ID")
     private String srvyRspnsId;
 
-    @JsonProperty("srvyQitemId")
-    @Schema(description = "설문문항아이디")
+    @Schema(description = "설문 문항 ID")
     private String srvyQstnId;
 
-    @JsonProperty("srvyId")
-    @Schema(description = "설문아이디")
+    @Schema(description = "설문 ID")
     private String srvyId;
 
-    @JsonProperty("srvyTmplatId")
-    @Schema(description = "설문템플릿아이디")
+    @Schema(description = "설문 템플릿 ID")
     private String srvyTmpltId;
 
-    @JsonProperty("srvyItemId")
-    @Schema(description = "설문항목아이디")
+    @Schema(description = "설문 항목 ID")
     private String srvyArtclId;
 
-    @JsonProperty("rspdAnsCn")
-    @Schema(description = "응답답변내용")
+    @Schema(description = "응답 답변 내용")
     private String rspdntAnsCn;
 
-    @JsonProperty("rspdNm")
-    @Schema(description = "응답자명")
+    @Schema(description = "응답자 명")
     private String rspnsNm;
 
-    @JsonProperty("etcAnsCn")
-    @Schema(description = "기타답변내용")
+    @Schema(description = "기타 답변 내용")
     private String etcAnsCn;
 
-    @JsonProperty("createdBy")
-    @Schema(description = "등록자")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @JsonProperty("createdDate")
-    @Schema(description = "등록일시")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static SurveyResultDto from(SurveyResult entity) {

@@ -18,19 +18,19 @@ import { Loader2, ArrowLeft, BarChart3, PieChart, Activity } from 'lucide-react'
 function StatsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialQestnrId = searchParams.get('qestnrId') || '';
-  const [qestnrId, setQestnrId] = useState(initialQestnrId);
+  const initialSrvyId = searchParams.get('srvyId') || searchParams.get('qestnrId') || '';
+  const [srvyId, setSrvyId] = useState(initialSrvyId);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['survey-stats', initialQestnrId],
-    queryFn: () => getSurveyStats({ qestnrId: initialQestnrId, type: '1' }),
-    enabled: !!initialQestnrId,
+    queryKey: ['survey-stats', initialSrvyId],
+    queryFn: () => getSurveyStats({ srvyId: initialSrvyId, type: '1' }),
+    enabled: !!initialSrvyId,
     retry: false,
   }) as any;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/survey/stats?qestnrId=${qestnrId}`);
+    router.push(`/survey/stats?srvyId=${srvyId}`);
   };
 
   return (
@@ -55,9 +55,9 @@ function StatsContent() {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
-              placeholder="설문지 ID 입력 (예: QUSTR_00000000000001)"
-              value={qestnrId}
-              onChange={(e) => setQestnrId(e.target.value)}
+              placeholder="설문지 ID 입력 (예: QESTNR_1700000000000)"
+              value={srvyId}
+              onChange={(e) => setSrvyId(e.target.value)}
               className="max-w-md"
             />
             <Button type="submit">조회</Button>
@@ -65,7 +65,7 @@ function StatsContent() {
         </CardContent>
       </Card>
 
-      {!initialQestnrId && (
+      {!initialSrvyId && (
         <div className="text-center py-20 border-2 border-dashed rounded-lg">
           <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">설문지 ID를 입력하여 통계를 확인하세요.</p>
@@ -97,23 +97,23 @@ function StatsContent() {
                       <span className="bg-primary text-primary-foreground w-6 h-6 rounded-lg flex items-center justify-center text-sm mr-3">
                         {idx + 1}
                       </span>
-                      {stat.qestnCn}
+                      {stat.qstnCn}
                     </CardTitle>
                     <div className="text-sm font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded ">
-                      {stat.qestnTyCode === '1' ? '객관식' : '주관식'}
+                      {stat.qstnTypeCd === '1' ? '객관식' : '주관식'}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="space-y-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{stat.iemCn || '주관식 답변'}</span>
-                      <span className="text-muted-foreground">{stat.respondCnt || 0} 명 ({stat.qustnrPercent || 0}%)</span>
+                      <span className="font-medium">{stat.artclCn || '주관식 답변'}</span>
+                      <span className="text-muted-foreground">{stat.count || 0} 명 ({stat.percentage || 0}%)</span>
                     </div>
                     <div className="w-full bg-muted rounded-lg h-2.5 overflow-hidden">
                       <div
                         className="bg-primary h-2.5 rounded-lg transition-all duration-500"
-                        style={{ width: `${stat.qustnrPercent || 0}%` }}
+                        style={{ width: `${stat.percentage || 0}%` }}
                       ></div>
                     </div>
                   </div>

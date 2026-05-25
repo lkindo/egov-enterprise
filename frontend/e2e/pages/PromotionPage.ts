@@ -40,10 +40,10 @@ export class PromotionPage {
 
         // Mandatory Coordinates and Size
         console.log('>>> [Promotion] Setting coordinates and size...');
-        await this.page.locator('input[name="popupWidthLocation"]').fill('100');
-        await this.page.locator('input[name="popupHeightLocation"]').fill('100');
-        await this.page.locator('input[name="popupWidthSize"]').fill('400');
-        await this.page.locator('input[name="popupHeightSize"]').fill('400');
+        await this.page.locator('input[name="popupWdthPstn"]').fill('100');
+        await this.page.locator('input[name="popupVrtcPstn"]').fill('100');
+        await this.page.locator('input[name="popupWdthSz"]').fill('400');
+        await this.page.locator('input[name="popupVrtcSz"]').fill('400');
 
         await this.uploadImage();
         await this.clickSubmitAndWait();

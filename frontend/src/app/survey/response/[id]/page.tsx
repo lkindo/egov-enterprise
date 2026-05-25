@@ -60,7 +60,7 @@ export default function SurveyResponseDetailPage() {
                     </CardHeader>
                     <CardContent className="space-y-6 relative z-10">
                         <div className="space-y-1">
-                            <p className="text-3xl font-bold tracking-tighter">{response?.respondNm}</p>
+                            <p className="text-3xl font-bold tracking-tighter">{response?.rspnsNm}</p>
                             <p className="text-xs font-bold text-slate-400">응답자 프로필</p>
                         </div>
                         <div className="space-y-4 pt-4 border-t border-white/10">
@@ -79,14 +79,14 @@ export default function SurveyResponseDetailPage() {
                 <Card className="md:col-span-2 border-none shadow-xl">
                     <CardHeader className="border-b bg-muted/20">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 제목: {response?.qestnrSj || '설문 정보 없음'}
+                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 제목: {response?.srvyTtl || '설문 정보 없음'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-8">
                         <div className="space-y-3">
                             <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
                             <div className="p-6 rounded-lg bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
-                                {response?.respondAnswerCn || '응답 내용이 등록되지 않았습니다.'}
+                                {response?.rspdntAnsCn || '응답 내용이 등록되지 않았습니다.'}
                             </div>
                         </div>
 

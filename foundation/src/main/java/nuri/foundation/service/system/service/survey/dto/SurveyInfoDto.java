@@ -1,7 +1,6 @@
 package nuri.foundation.service.system.service.survey.dto;
 
 import nuri.foundation.domain.system.service.survey.SurveyInfo;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,44 +15,34 @@ import java.time.LocalDateTime;
 @Schema(description = "설문정보 DTO (표준화)")
 public class SurveyInfoDto {
 
-    @JsonProperty("srvyId")
-    @Schema(description = "설문아이디")
+    @Schema(description = "설문 ID")
     private String srvyId;
 
-    @JsonProperty("srvyTtl")
-    @Schema(description = "설문제목")
+    @Schema(description = "설문 제목")
     private String srvyTtl;
 
-    @JsonProperty("srvyPrpsCn")
-    @Schema(description = "설문목적")
+    @Schema(description = "설문 목적")
     private String srvyPrps;
 
-    @JsonProperty("srvyGuidCn")
-    @Schema(description = "설문작성안내내용")
+    @Schema(description = "설문 작성 안내 내용")
     private String srvyWrtGdCn;
 
-    @JsonProperty("srvyBgngYmd")
-    @Schema(description = "설문시작일자")
+    @Schema(description = "설문 시작 일자")
     private String srvyBgngYmd;
 
-    @JsonProperty("srvyEndYmd")
-    @Schema(description = "설문종료일자")
+    @Schema(description = "설문 종료 일자")
     private String srvyEndYmd;
 
-    @JsonProperty("srvyTrgtCn")
-    @Schema(description = "설문대상")
+    @Schema(description = "설문 대상")
     private String srvyTrgt;
 
-    @JsonProperty("srvyTmplatId")
-    @Schema(description = "설문템플릿아이디")
+    @Schema(description = "설문 템플릿 ID")
     private String srvyTmpltId;
 
-    @JsonProperty("createdBy")
-    @Schema(description = "등록자")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @JsonProperty("createdDate")
-    @Schema(description = "등록일시")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static SurveyInfoDto from(SurveyInfo entity) {
