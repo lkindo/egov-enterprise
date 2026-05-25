@@ -1,18 +1,23 @@
 import client from '@/lib/api/client';
 
 export interface EventInfo {
-  eventId: string;
-  eventNm: string;
-  eventCn: string;
-  eventBeginDe: string;
-  eventEndDe: string;
-  psncpa: number;
-  rceptBeginDe: string;
-  rceptEndDe: string;
+  evntId: string;
+  bizCd: string;     // Mapping eventNm to bizCd
+  evntCn: string;
+  evntBgngYmd: string; // Mapping eventBeginDe to evntBgngYmd
+  evntEndYmd: string;  // Mapping eventEndDe to evntEndYmd
+  evntUseCnt: number;  // Mapping psncpa to evntUseCnt
+  bizYr?: string;
+  picNm?: string;
+  prepMttr?: string;
+  evntTypeCd?: string;
+  evntAprvYn?: string;
+  evntAprvYmd?: string;
   frstRegisterId?: string;
   frstRegisterPnttm?: string;
   lastUpdtPnttm?: string;
 }
+
 
 export interface PageResponse<T> {
   list: T[];

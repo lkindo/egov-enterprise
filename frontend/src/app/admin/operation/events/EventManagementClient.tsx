@@ -31,13 +31,11 @@ export default function EventManagementClient() {
  const size = 10;
  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
  const [form, setForm] = useState<Partial<EventInfo>>({
- eventNm: '',
- eventCn: '',
- eventBeginDe: '',
- eventEndDe: '',
- psncpa: 0,
- rceptBeginDe: '',
- rceptEndDe: ''
+ bizCd: '',
+ evntCn: '',
+ evntBgngYmd: '',
+ evntEndYmd: '',
+ evntUseCnt: 0
  });
 
  // --- Data Fetching ---
@@ -58,13 +56,11 @@ export default function EventManagementClient() {
  queryClient.invalidateQueries({ queryKey: ['events-list'] });
  setIsCreateModalOpen(false);
  setForm({
- eventNm: '',
- eventCn: '',
- eventBeginDe: '',
- eventEndDe: '',
- psncpa: 0,
- rceptBeginDe: '',
- rceptEndDe: ''
+ bizCd: '',
+ evntCn: '',
+ evntBgngYmd: '',
+ evntEndYmd: '',
+ evntUseCnt: 0
  });
  },
  onError: () => {
@@ -85,7 +81,8 @@ export default function EventManagementClient() {
 
  const handleSubmit = (e: React.FormEvent) => {
  e.preventDefault();
- createMutation.mutate(form);
+ const bizYr = form.evntBgngYmd ? form.evntBgngYmd.substring(0, 4) : new Date().getFullYear().toString();
+ createMutation.mutate({ ...form, bizYr });
  };
 
  const handleDelete = (eventId: string) => {
@@ -110,10 +107,10 @@ export default function EventManagementClient() {
  accessor: (event) => (
  <div className="flex flex-col gap-1 py-1">
  <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
- {event.eventNm}
+ {event.bizCd}
  </span>
  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
- {event.eventBeginDe} ~ {event.eventEndDe}
+ {event.evntBgngYmd} ~ {event.evntEndYmd}
  </span>
  </div>
  )
@@ -122,7 +119,7 @@ export default function EventManagementClient() {
  header: '참여 정원',
  accessor: (event) => (
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-slate-600 tabular-nums">{event.psncpa}</span>
+ <span className="text-xs font-bold text-slate-600 tabular-nums">{event.evntUseCnt}</span>
  <span className="text-[10px] font-bold text-slate-300 tracking-tighter uppercase">명</span>
  </div>
  ),
@@ -133,7 +130,7 @@ export default function EventManagementClient() {
  accessor: (event) => (
  <div className="flex flex-col">
  <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
- {event.rceptBeginDe} ~ {event.rceptEndDe}
+ {event.evntBgngYmd} ~ {event.evntEndYmd}
  </span>
  </div>
  ),
@@ -148,7 +145,7 @@ export default function EventManagementClient() {
  variant="ghost" 
  size="icon" 
  data-testid="delete-event-btn"
- onClick={() => handleDelete(event.eventId)}
+ onClick={() => handleDelete(event.evntId)}
  className="w-10 h-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors"
  >
  <Trash2 size={16} />
@@ -208,7 +205,7 @@ export default function EventManagementClient() {
  data={displayItems as any}
  loading={isLoading}
  emptyMessage="식별된 데이터 유닛이 존재하지 않습니다."
- keyField="eventId"
+ keyField="evntId"
  isPremium={true}
  className="bg-transparent border-none shadow-none"
  pagination={{
@@ -280,8 +277,8 @@ export default function EventManagementClient() {
  <div className="col-span-2 space-y-2">
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Event_Name</Label>
  <Input 
- value={form.eventNm}
- onChange={(e) => setForm({...form, eventNm: e.target.value})}
+ value={form.bizCd}
+ onChange={(e) => setForm({...form, bizCd: e.target.value})}
  placeholder="행사 명칭을 입력하십시오"
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
@@ -290,8 +287,8 @@ export default function EventManagementClient() {
  <div className="col-span-2 space-y-2">
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Detailed_Description</Label>
  <Input 
- value={form.eventCn}
- onChange={(e) => setForm({...form, eventCn: e.target.value})}
+ value={form.evntCn}
+ onChange={(e) => setForm({...form, evntCn: e.target.value})}
  placeholder="상세 내용을 입력하십시오"
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
@@ -301,8 +298,8 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Start_Date</Label>
  <Input 
  type="date"
- value={form.eventBeginDe}
- onChange={(e) => setForm({...form, eventBeginDe: e.target.value})}
+ value={form.evntBgngYmd}
+ onChange={(e) => setForm({...form, evntBgngYmd: e.target.value})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
  />
@@ -311,8 +308,8 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">End_Date</Label>
  <Input 
  type="date"
- value={form.eventEndDe}
- onChange={(e) => setForm({...form, eventEndDe: e.target.value})}
+ value={form.evntEndYmd}
+ onChange={(e) => setForm({...form, evntEndYmd: e.target.value})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
  />
@@ -321,8 +318,8 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Capacity (PSNCPA)</Label>
  <Input 
  type="number"
- value={form.psncpa}
- onChange={(e) => setForm({...form, psncpa: parseInt(e.target.value)})}
+ value={form.evntUseCnt}
+ onChange={(e) => setForm({...form, evntUseCnt: parseInt(e.target.value) || 0})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
  />
@@ -331,8 +328,8 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
  <Input 
  type="date"
- value={form.rceptBeginDe}
- onChange={(e) => setForm({...form, rceptBeginDe: e.target.value})}
+ value={form.evntBgngYmd || ''}
+ onChange={(e) => setForm({...form, evntBgngYmd: e.target.value})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
  />
@@ -341,8 +338,8 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
  <Input 
  type="date"
- value={form.rceptEndDe}
- onChange={(e) => setForm({...form, rceptEndDe: e.target.value})}
+ value={form.evntEndYmd || ''}
+ onChange={(e) => setForm({...form, evntEndYmd: e.target.value})}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
  required
  />
