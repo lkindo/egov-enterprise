@@ -23,34 +23,34 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
     @Column(name = "schdl_id", length = 20)
     private String schdlId;
 
-    @Column(name = "schdl_se_cd", length = 12)
+    @Column(length = 12)
     private String schdlSeCd;
 
-    @Column(name = "leader_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String leaderId;
 
-    @Column(name = "schdl_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String schdlNm;
 
-    @Column(name = "schdl_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     private String schdlCn;
 
-    @Column(name = "rept_se_cd", length = 12)
+    @Column(length = 12)
     private String reptSeCd;
 
-    @Column(name = "schdl_imprt_cd", length = 12)
+    @Column(length = 12)
     private String schdlImprtCd;
 
-    @Column(name = "schdl_bgng_ymd", length = 8)
+    @Column(length = 8)
     private String schdlBgngYmd;
 
-    @Column(name = "schdl_end_ymd", length = 8)
+    @Column(length = 8)
     private String schdlEndYmd;
 
-    @Column(name = "schdl_pic_id", length = 20)
+    @Column(length = 20)
     private String schdlPicId;
 
-    @Column(name = "schdl_plc_nm", length = 100)
+    @Column(length = 100)
     private String schdlPlcNm;
 
     public void update(String schdlSeCd, String leaderId, String schdlNm, String schdlCn,

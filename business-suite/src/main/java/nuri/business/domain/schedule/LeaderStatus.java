@@ -29,7 +29,7 @@ public class LeaderStatus extends BaseEntity {
     @Column(name = "leader_id", length = 20)
     private String leaderId;
 
-    @Column(name = "leader_stts_cd", length = 12)
+    @Column(length = 12)
     private String leaderSttsCd;
 
     public void updateStatus(String leaderSttsCd) {

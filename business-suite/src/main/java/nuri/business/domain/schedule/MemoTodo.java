@@ -21,19 +21,19 @@ public class MemoTodo extends BaseEntity {
     @Column(name = "todo_id", length = 20)
     private String todoId;
 
-    @Column(name = "todo_ttl", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String todoTtl;
 
-    @Column(name = "todo_cn", length = 4000)
+    @Column(length = 4000)
     private String todoCn;
 
-    @Column(name = "todo_bgng_tm", length = 6)
+    @Column(length = 6)
     private String todoBgngTm;
 
-    @Column(name = "todo_end_tm", length = 6)
+    @Column(length = 6)
     private String todoEndTm;
 
-    @Column(name = "user_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String userId;
 
     public void update(String todoTtl, String todoBgngTm, String todoEndTm, String todoCn) {

@@ -23,41 +23,41 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(name = "schdl_id", length = 20)
     private String schdlId;
 
-    @Column(name = "schdl_se_cd", length = 12)
+    @Column(length = 12)
     private String schdlSeCd;
 
-    @Column(name = "schdl_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String schdlNm;
 
-    @Column(name = "schdl_cn", columnDefinition = "TEXT", length = 4000)
+    @Column(columnDefinition = "TEXT", length = 4000)
     private String schdlCn;
 
-    @Column(name = "rept_se_cd", length = 12)
+    @Column(length = 12)
     private String reptSeCd;
 
-    @Column(name = "schdl_bgng_ymd", length = 8)
+    @Column(length = 8)
     private String schdlBgngYmd;
 
-    @Column(name = "schdl_end_ymd", length = 8)
+    @Column(length = 8)
     private String schdlEndYmd;
 
     @Transient
     private String schdlIpAddr;
 
-    @Column(name = "schdl_pic_id", length = 20)
+    @Column(length = 20)
     private String schdlPicId;
 
-    @Column(name = "atch_file_id", length = 30)
+    @Column(length = 30)
     private String atchFileId;
     
     // Additional fields used in service
-    @Column(name = "schdl_dept_id", length = 20)
+    @Column(length = 20)
     private String schdlDeptId;
-    @Column(name = "schdl_knd_cd", length = 12)
+    @Column(length = 12)
     private String schdlKndCd;
-    @Column(name = "schdl_plc_nm", length = 100)
+    @Column(length = 100)
     private String schdlPlcNm;
-    @Column(name = "schdl_imprt_cd", length = 12)
+    @Column(length = 12)
     private String schdlImprtCd;
 
     public void update(String schdlNm, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
