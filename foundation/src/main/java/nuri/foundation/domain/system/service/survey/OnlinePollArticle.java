@@ -33,7 +33,7 @@ public class OnlinePollArticle extends BaseEntity {
     @jakarta.persistence.JoinColumn(name = "poll_id")
     private OnlinePollManage pollManage;
 
-    @Column(name = "poll_artcl_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String pollArtclNm;
 
     public void update(String pollArtclNm) {
