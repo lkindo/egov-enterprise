@@ -4162,9 +4162,9 @@ export interface components {
             rptSttsCd?: string;
             rptYmd?: string;
             rptTypeCd?: string;
-            reprtId?: string;
-            reprtCn?: string;
             reprtTtl?: string;
+            reprtCn?: string;
+            reprtId?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4184,12 +4184,12 @@ export interface components {
             roleName?: string;
             lockAt?: string;
             authorCode?: string;
-            accountNonLocked?: boolean;
-            username?: string;
-            enabled?: boolean;
             authorities?: components["schemas"]["GrantedAuthority"][];
+            accountNonLocked?: boolean;
             accountNonExpired?: boolean;
             credentialsNonExpired?: boolean;
+            username?: string;
+            enabled?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4226,19 +4226,19 @@ export interface components {
             lckYn?: string;
             /** Format: date-time */
             createdDate?: string;
-            moblphonNo?: string;
             emailAdres?: string;
+            passwordHint?: string;
+            passwordCnsr?: string;
+            homeadres?: string;
+            detailAdres?: string;
+            sexdstnCode?: string;
+            fxnum?: string;
+            lockAt?: string;
+            brth?: string;
             userSttusCode?: string;
+            moblphonNo?: string;
             offmTelno?: string;
             password?: string;
-            passwordCnsr?: string;
-            passwordHint?: string;
-            lockAt?: string;
-            fxnum?: string;
-            brth?: string;
-            detailAdres?: string;
-            homeadres?: string;
-            sexdstnCode?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4364,16 +4364,16 @@ export interface components {
              * @description 생성일시
              */
             createdDate?: string;
-            frstRegisterId?: string;
-            rptId?: string;
-            rptCn?: string;
-            rptTtl?: string;
+            reprtTtl?: string;
+            rptUserId?: string;
             reprtCn?: string;
             rptYmd?: string;
             reprtId?: string;
-            rptUserId?: string;
-            reprtTtl?: string;
             rptInqDt?: string;
+            rptCn?: string;
+            rptId?: string;
+            rptTtl?: string;
+            frstRegisterId?: string;
         };
         /** @description Description */
         MainImageDto: {
@@ -4480,9 +4480,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-            mnlNm?: string;
             mnlId?: string;
             mnlDc?: string;
+            mnlNm?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -4535,9 +4535,9 @@ export interface components {
             lastUpdusrPnttm?: string;
             qestnSj?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
-            /** Format: date-time */
             lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
         };
         DeptJobBoxDto: {
             deptJobbxId?: string;
@@ -4910,16 +4910,16 @@ export interface components {
             regYn?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
-            otpEnabledAt?: string;
             startTime?: string;
             ipInfo?: string;
-            lmttAt?: string;
             endTime?: string;
+            lmttAt?: string;
             emplyrId?: string;
             dplctPermAt?: string;
+            ipAdres?: string;
+            otpEnabledAt?: string;
             emplyrNm?: string;
             dplctLoginAt?: string;
-            ipAdres?: string;
         };
         InternetSvcGuidanceDto: {
             intnetSvcId?: string;
@@ -5063,16 +5063,16 @@ export interface components {
             stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
-            fileAtchPosblAt?: string;
+            useAt?: string;
+            bbsNm?: string;
             replyPosblAt?: string;
-            bbsIntrcn?: string;
-            bbsAttrbCode?: string;
-            bbsTyCode?: string;
             bbsAttrCd?: string;
             replyPsblYn?: string;
-            bbsNm?: string;
+            bbsTyCode?: string;
+            fileAtchPosblAt?: string;
+            bbsIntrcn?: string;
+            bbsAttrbCode?: string;
             bbsIntroCn?: string;
-            useAt?: string;
         };
         /** @description 배너 정보 */
         BannerDto: {
@@ -5126,25 +5126,88 @@ export interface components {
              */
             authrtCrtYmd?: string;
         };
+        /** @description 행사 정보 상세 DTO */
         EventInfoDto: {
+            /**
+             * @description 행사 ID
+             * @example EVT_1716611000000
+             */
             evntId?: string;
+            /**
+             * @description 행사 명칭
+             * @example 사내 인공지능 해커톤 캠페인
+             */
             bizCd?: string;
+            /**
+             * @description 행사 연도
+             * @example 2026
+             */
             bizYr?: string;
+            /**
+             * @description 행사 상세내용
+             * @example 기업용 차세대 거울 동기화 실증을 위한 전사 활동입니다.
+             */
             evntCn?: string;
+            /**
+             * @description 행사 시작일
+             * @example 2026-05-25
+             */
             evntBgngYmd?: string;
+            /**
+             * @description 행사 종료일
+             * @example 2026-05-26
+             */
             evntEndYmd?: string;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description 참여 정원 (Capacity)
+             * @example 150
+             */
             evntUseCnt?: number;
+            /**
+             * @description 담당자명
+             * @example 홍길동
+             */
             picNm?: string;
+            /**
+             * @description 준비 사항
+             * @example 개인 노트북 지참 및 API 토큰 설정
+             */
             prepMttr?: string;
+            /**
+             * @description 행사 유형 코드
+             * @example EVT01
+             */
             evntTypeCd?: string;
+            /**
+             * @description 승인 여부
+             * @example Y
+             */
             evntAprvYn?: string;
+            /**
+             * @description 승인 일자
+             * @example 2026-05-25
+             */
             evntAprvYmd?: string;
+            /**
+             * @description 최초 등록자 ID
+             * @example webmaster
+             */
             frstRegisterId?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
             frstRegisterPnttm?: string;
+            /**
+             * @description 최종 수정자 ID
+             * @example webmaster
+             */
             lastUpdusrId?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 최종 수정 일시
+             */
             lastUpdtPnttm?: string;
         };
         CommunityDto: {
@@ -5277,9 +5340,9 @@ export interface components {
             pswdCrans?: string;
             /** @description 사용자 역할 */
             role?: string;
-            password?: string;
-            passwordCnsr?: string;
             passwordHint?: string;
+            passwordCnsr?: string;
+            password?: string;
         };
         ApiResponseUserResponse: {
             success?: boolean;
@@ -5364,10 +5427,10 @@ export interface components {
             frstRegisterPnttm?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
-            trnsmitterId?: string;
-            trnsmitterNm?: string;
             /** Format: date-time */
             sendDt?: string;
+            trnsmitterNm?: string;
+            trnsmitterId?: string;
         };
         /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
@@ -5503,24 +5566,24 @@ export interface components {
             mdfcnDt?: string;
             createdBy?: string;
             lastModifiedBy?: string;
-            tmplatCours?: string;
             tmplatNm?: string;
             tmplatSeCode?: string;
+            tmplatCours?: string;
             tmplatId?: string;
-            frstRegisterId?: string;
             lastUpdusrId?: string;
+            frstRegisterId?: string;
+            /** Format: date-time */
+            lastModifiedDate?: string;
             /** Format: date-time */
             createdDate?: string;
             /** Format: date-time */
-            lastUpdusrPnttm?: string;
-            /** Format: date-time */
-            frstRegistPnttm?: string;
+            frstRegisterPnttm?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
             /** Format: date-time */
-            frstRegisterPnttm?: string;
+            frstRegistPnttm?: string;
             /** Format: date-time */
-            lastModifiedDate?: string;
+            lastUpdusrPnttm?: string;
         };
         /** @description 부서별 권한 일괄 할당 요청 */
         DeptAuthorBatchRequest: {
@@ -5695,11 +5758,11 @@ export interface components {
             searchWrd?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
+            /** Format: date-time */
+            trnsmitPnttm?: string;
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
-            /** Format: date-time */
-            trnsmitPnttm?: string;
         };
         /** @description SMS 수신 정보 DTO */
         SmsRecptnDto: {
@@ -5798,8 +5861,8 @@ export interface components {
             recordCountPerPage?: number;
             searchKeywordFrom?: string;
             searchKeywordTo?: string;
-            searchEndDe?: string;
             searchBgnDe?: string;
+            searchEndDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
@@ -6572,32 +6635,32 @@ export interface components {
             eventDateStr?: string;
             isExpired?: string;
             bbsTtl?: string;
-            id?: string;
-            password?: string;
-            ntceEndYmd?: string;
-            sjBoldYn?: string;
-            ntceBgngYmd?: string;
-            /** Format: int32 */
-            inqireCo?: number;
-            /** Format: int32 */
-            commentCo?: number;
-            nttSj?: string;
-            nttId?: string;
             ntcrId?: string;
             parnts?: string;
-            ntcrNm?: string;
+            nttSj?: string;
             nttCn?: string;
-            /** Format: int32 */
-            likeCo?: number;
+            ntcrNm?: string;
+            nttId?: string;
             /** Format: int64 */
             nttNo?: number;
             /** Format: int32 */
+            likeCo?: number;
+            useAt?: string;
+            /** Format: int32 */
+            inqireCo?: number;
+            ntceBgngYmd?: string;
+            sjBoldYn?: string;
+            ntceEndYmd?: string;
+            /** Format: int32 */
             fileCo?: number;
+            /** Format: int32 */
+            commentCo?: number;
+            id?: string;
+            password?: string;
+            qnaStatus?: string;
             /** Format: date-time */
             createdDate?: string;
-            qnaStatus?: string;
             qnaCategory?: string;
-            useAt?: string;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -6965,9 +7028,9 @@ export interface components {
             timestamp?: string;
         };
         Policy: {
-            id?: string;
-            title?: string;
-            content?: string;
+            plcyTypeCd?: string;
+            plcyTtl?: string;
+            plcyCn?: string;
         };
         ApiResponseMapStringString: {
             success?: boolean;
@@ -7136,11 +7199,11 @@ export interface components {
             dmndUserId?: string;
             rqesterIp?: string;
             ocrnYmd?: string;
-            occrrncDe?: string;
-            rqesterId?: string;
             processSeCode?: string;
             requstId?: string;
             processTime?: string;
+            rqesterId?: string;
+            occrrncDe?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -7170,9 +7233,9 @@ export interface components {
             errOccrrAt?: string;
             errorCode?: string;
             creatDt?: string;
-            errorOccrrAt?: string;
-            occrrncDe?: string;
             loginDt?: string;
+            occrrncDe?: string;
+            errorOccrrAt?: string;
         };
         PageResponseLoginLogDto: {
             list?: components["schemas"]["LoginLogDto"][];
