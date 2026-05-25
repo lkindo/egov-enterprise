@@ -13,16 +13,16 @@ export interface Banner {
 
 export interface Popup {
     popupId: string;
-    popupTitleName: string;
+    popupTtlNm: string;
     fileUrl: string;
-    popupWidthLocation: string;
-    popupHeightLocation: string;
-    popupHeightSize: string;
-    popupWidthSize: string;
-    noticeBeginDate: string;
-    noticeEndDate: string;
-    isStopView: 'Y' | 'N';
-    isNotice: 'Y' | 'N';
+    popupWdthPstn: string;
+    popupVrtcPstn: string;
+    popupVrtcSz: string;
+    popupWdthSz: string;
+    ntceBgnde: string;
+    ntceEndde: string;
+    stopvewSetupYn: 'Y' | 'N';
+    ntceYn: 'Y' | 'N';
     createdBy?: string;
     createdDate?: string;
 }

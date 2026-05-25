@@ -119,9 +119,9 @@ async function cleanup() {
         params: { searchWrd: 'E2E', size: 100 } 
       });
       const popups = popupsRes.data.data?.list || popupsRes.data.data?.content || [];
-      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
+      const testPopups = popups.filter((p: any) => p.popupTtlNm?.startsWith('E2E Popup') || p.popupTtlNm?.startsWith('Debug'));
       for (const popup of testPopups) {
-        process.stdout.write(`  - Deleting Popup: ${popup.popupTitleName} (${popup.popupId})... `);
+        process.stdout.write(`  - Deleting Popup: ${popup.popupTtlNm} (${popup.popupId})... `);
         await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupId}`, { headers });
         console.log('DONE');
       }

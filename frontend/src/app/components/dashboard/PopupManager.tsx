@@ -57,15 +57,15 @@ export function PopupManager() {
                         key={`popup-${popup.popupId}-${idx}`}
                         className="fixed z-[9999] bg-white shadow-2xl rounded-lg overflow-hidden border animate-in zoom-in duration-300"
                         style={{
-                            top: `${popup.popupHeightLocation}px`,
-                            left: `${popup.popupWidthLocation}px`,
-                            width: `${popup.popupWidthSize}px`,
-                            height: `${popup.popupHeightSize}px`,
+                            top: `${popup.popupVrtcPstn}px`,
+                            left: `${popup.popupWdthPstn}px`,
+                            width: `${popup.popupWdthSz}px`,
+                            height: `${popup.popupVrtcSz}px`,
                         }}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b">
-                            <span className="text-sm font-bold truncate">{popup.popupTitleName}</span>
+                            <span className="text-sm font-bold truncate">{popup.popupTtlNm}</span>
                             <button
                                 onClick={() => closePopup(popup.popupId)}
                                 className="p-1 hover:bg-muted rounded-lg transition-colors"
@@ -80,7 +80,7 @@ export function PopupManager() {
                             <div className="relative w-full min-h-[300px] h-full">
                                 <Image
                                     src={popup.fileUrl || '/api/placeholder/400/300'}
-                                    alt={popup.popupTitleName}
+                                    alt={popup.popupTtlNm}
                                     fill
                                     unoptimized
                                     className="object-contain"
