@@ -21,7 +21,7 @@ public class UserAbsence extends BaseEntity {
     @Column(name = "user_id", length = 20)
     private String userId;
 
-    @Column(name = "user_absn_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     private String userAbsnYn; // Y: 부재, N: 정상
 
     public void updateAbsence(String userAbsnYn) {

@@ -25,20 +25,20 @@ public class MyPageContent extends BaseEntity {
     @Column(name = "cntnts_id", length = 20)
     private String cntntsId;
 
-    @Column(name = "cntnts_nm", length = 100)
+    @Column(length = 100)
     private String cntntsNm;
 
-    @Column(name = "cntc_url", length = 255)
+    @Column(length = 255)
     private String cntcUrl;
 
-    @Column(name = "cntnts_use_yn", length = 1)
+    @Column(length = 1)
     @com.fasterxml.jackson.annotation.JsonProperty("cntntsUseAt")
     private String cntntsUseYn;
 
-    @Column(name = "cntnts_link_url", length = 255)
+    @Column(length = 255)
     private String cntntsLinkUrl;
 
-    @Column(name = "cntnts_dc", length = 255)
+    @Column(length = 255)
     private String cntntsDc;
 
     public void update(String cntntsNm, String cntcUrl, String cntntsUseYn, String cntntsLinkUrl, String cntntsDc) {
