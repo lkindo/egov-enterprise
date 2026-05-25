@@ -29,7 +29,7 @@ describe('PolicyAdminService', () => {
   });
 
   it('updatePolicy should call correct endpoint with data', async () => {
-    const data = { title: 'Updated Title', content: 'Updated Content' };
+    const data = { plcyTtl: 'Updated Title', plcyCn: 'Updated Content' };
     await policyAdminService.updatePolicy('privacy', data);
     expect(client.put).toHaveBeenCalledWith('admin/system/policies/privacy', data, undefined);
   });

@@ -1,11 +1,10 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import type { AxiosRequestConfig } from 'axios';
 
 export interface SystemPolicy {
-  id?: string;
-  type: string;
-  title: string;
-  content: string;
+  plcyTypeCd?: string;
+  plcyTtl?: string;
+  plcyCn?: string;
 }
 
 /**

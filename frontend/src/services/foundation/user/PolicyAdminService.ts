@@ -1,13 +1,13 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
 /**
  * 정책 정보 DTO
  */
 export interface PolicyDto {
-  type: string;
-  title: string;
-  content: string;
+  plcyTypeCd?: string;
+  plcyTtl?: string;
+  plcyCn?: string;
 }
 
 class PolicyAdminService extends AdminService {

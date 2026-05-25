@@ -2,8 +2,6 @@ package nuri.foundation.service.system.policy;
 
 import nuri.foundation.domain.system.policy.SystemPolicy;
 import nuri.foundation.domain.system.policy.SystemPolicyRepository;
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,16 +36,8 @@ public class PolicyService {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Policy {
-        @JsonProperty("id")
-        @JsonAlias({"id", "plcyTypeCd"})
         private String plcyTypeCd;
-
-        @JsonProperty("title")
-        @JsonAlias({"title", "plcyTtl"})
         private String plcyTtl;
-
-        @JsonProperty("content")
-        @JsonAlias({"content", "plcyCn"})
         private String plcyCn;
     }
 

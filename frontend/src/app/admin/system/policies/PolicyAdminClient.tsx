@@ -29,8 +29,8 @@ import {
 } from '@/components/ui/form';
 
 const policySchema = z.object({
- title: z.string().min(1, '정책 제목은 필수입니다.'),
- content: z.string().min(1, '정책 내용은 필수입니다.')
+ plcyTtl: z.string().min(1, '정책 제목은 필수입니다.'),
+ plcyCn: z.string().min(1, '정책 내용은 필수입니다.')
 });
 
 type PolicyFormValues = z.infer<typeof policySchema>;
@@ -43,8 +43,8 @@ export default function PolicyAdminClient() {
 
  const form = useAppForm(policySchema, {
  defaultValues: {
- title: '',
- content: ''
+ plcyTtl: '',
+ plcyCn: ''
  }
  });
 
@@ -68,8 +68,8 @@ export default function PolicyAdminClient() {
  const handleEdit = (policy: SystemPolicy) => {
  setSelectedPolicy(policy);
  form.reset({
- title: policy.title,
- content: policy.content
+ plcyTtl: policy.plcyTtl || '',
+ plcyCn: policy.plcyCn || ''
  });
  setIsEditModalOpen(true);
  };
@@ -77,9 +77,9 @@ export default function PolicyAdminClient() {
  const onFormSubmit = async (values: PolicyFormValues) => {
  if (!selectedPolicy) return;
  try {
- await policyAdminService.updatePolicy(selectedPolicy.type || selectedPolicy.id || '', {
- title: values.title,
- content: values.content
+ await policyAdminService.updatePolicy(selectedPolicy.plcyTypeCd || '', {
+ plcyTtl: values.plcyTtl,
+ plcyCn: values.plcyCn
  });
  toast.success('정책이 성공적으로 수정되었습니다');
  setIsEditModalOpen(false);
@@ -98,19 +98,19 @@ export default function PolicyAdminClient() {
  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
  <Settings size={14} />
  </div>
- <span className="font-bold tracking-tighter uppercase">{item.id || item.type}</span>
+ <span className="font-bold tracking-tighter uppercase">{item.plcyTypeCd}</span>
  </div>
  )
  },
  {
  header: '정책 제목',
- accessor: (item) => <span className="font-bold text-slate-700 text-left block">{item.title}</span>
+ accessor: (item) => <span className="font-bold text-slate-700 text-left block">{item.plcyTtl}</span>
  },
  {
  header: '내용 요약',
  accessor: (item) => (
  <div className="max-w-xs truncate text-muted-foreground opacity-60 text-left">
- {item.content.replace(/<[^>]*>?/gm, '').substring(0, 50)}...
+ {(item.plcyCn || '').replace(/<[^>]*>?/gm, '').substring(0, 50)}...
  </div>
  )
  },
@@ -156,7 +156,7 @@ export default function PolicyAdminClient() {
  columns={columns} 
  data={policies} 
  loading={loading}
- keyField="type"
+ keyField="plcyTypeCd"
  emptyMessage="등록된 시스템 정책이 없습니다."
  />
  </div>
@@ -167,7 +167,7 @@ export default function PolicyAdminClient() {
  <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
  <DialogHeader>
  <DialogTitle className="text-2xl font-bold flex items-center gap-3">
- <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.id || selectedPolicy?.type}</span>
+ <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.plcyTypeCd}</span>
  </DialogTitle>
  </DialogHeader>
  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg text-xs font-bold tracking-widest uppercase">
@@ -180,7 +180,7 @@ export default function PolicyAdminClient() {
  <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
  <ShadcnFormField
  control={form.control}
- name="title"
+ name="plcyTtl"
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
@@ -198,7 +198,7 @@ export default function PolicyAdminClient() {
 
  <ShadcnFormField
  control={form.control}
- name="content"
+ name="plcyCn"
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>

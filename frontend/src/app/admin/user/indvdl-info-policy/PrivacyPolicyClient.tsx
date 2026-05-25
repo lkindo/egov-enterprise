@@ -160,13 +160,13 @@ export default function PrivacyPolicyClient({
  </div>
  {isEditing ? (
  <Input
- value={policy.title}
- onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
+ value={policy.plcyTtl || ''}
+ onChange={(e) => setPolicy(prev => ({ ...prev, plcyTtl: e.target.value }))}
  className="h-11 px-10 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-xl font-bold tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
  placeholder="프로토콜 명칭 정의"
  />
  ) : (
- <h3 className="text-4xl font-bold text-slate-900 px-2 tracking-tighter leading-none uppercase text-left">{policy.title}</h3>
+ <h3 className="text-4xl font-bold text-slate-900 px-2 tracking-tighter leading-none uppercase text-left">{policy.plcyTtl}</h3>
  )}
  </div>
 
@@ -177,8 +177,8 @@ export default function PrivacyPolicyClient({
  </div>
  {isEditing ? (
  <Textarea
- value={policy.content}
- onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
+ value={policy.plcyCn || ''}
+ onChange={(e) => setPolicy(prev => ({ ...prev, plcyCn: e.target.value }))}
  className="min-h-[550px] p-12 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar text-left font-sans"
  placeholder="데이터 보호 규정 상세 명세를 입력하십시오..."
  />
@@ -188,7 +188,7 @@ export default function PrivacyPolicyClient({
  <Shield size={240} className="text-primary" />
  </div>
  <div className="relative z-10 font-sans">
- {policy.content}
+ {policy.plcyCn}
  </div>
  </div>
  )}
@@ -200,4 +200,3 @@ export default function PrivacyPolicyClient({
  </div>
  );
 }
-

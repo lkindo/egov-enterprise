@@ -23,9 +23,9 @@ export default function PolicyViewPage() {
           console.error('Failed to load policy:', err);
           // Fallback static defaults if API fails
           setPolicy({
-            type: type as string,
-            title: type === 'privacy' ? '개인정보 처리 방침' : '약관 및 정책',
-            content: '정책 내용을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
+            plcyTypeCd: type as string,
+            plcyTtl: type === 'privacy' ? '개인정보 처리 방침' : '약관 및 정책',
+            plcyCn: '정책 내용을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
           });
         })
         .finally(() => setLoading(false));
@@ -44,7 +44,7 @@ export default function PolicyViewPage() {
   return (
     <div className="container mx-auto py-20 px-6 max-w-4xl animate-in slide-in-from-bottom-5 duration-700">
       <HubHeader 
-        title={policy?.title || '시스템 정책'} 
+        title={policy?.plcyTtl || '시스템 정책'} 
         subtitle="POLICY & LEGAL"
         icon={Scale}
         className="mb-12"
@@ -54,7 +54,7 @@ export default function PolicyViewPage() {
         <CardContent className="p-12">
           <div 
             className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy?.content || '') }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy?.plcyCn || '') }}
           />
         </CardContent>
       </Card>
