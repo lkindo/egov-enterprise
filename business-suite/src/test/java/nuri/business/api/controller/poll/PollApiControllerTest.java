@@ -149,7 +149,7 @@ class PollApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].pollIemId").value("ITEM_001"))
-                .andExpect(jsonPath("$.data[0].pollIemNm").value("항목 1"));
+                .andExpect(jsonPath("$.data[0].pollArtclId").value("ITEM_001"))
+                .andExpect(jsonPath("$.data[0].pollArtclNm").value("항목 1"));
     }
 }

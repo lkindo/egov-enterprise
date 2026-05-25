@@ -55,7 +55,7 @@ public class DeptAuthorityApiControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].deptCode").value("ORGNZT_0000000000001"))
                 .andExpect(jsonPath("$.data.list[0].userNm").value("홍길동"))
-                .andExpect(jsonPath("$.data.list[0].authorCode").value("ROLE_USER"));
+                .andExpect(jsonPath("$.data.list[0].authrtId").value("ROLE_USER"));
     }
 
     @Test

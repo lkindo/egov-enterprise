@@ -69,7 +69,7 @@ class InstitutionCodeApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/INST1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.insttCode").value("INST1"));
+                .andExpect(jsonPath("$.data.instCd").value("INST1"));
     }
 
     @Test
@@ -90,7 +90,7 @@ class InstitutionCodeApiControllerTest {
     void processInstitutionCodeRecptn_Anonymous() throws Exception {
         mockMvc.perform(post("/api/v1/admin/system/codes/institution/receptions/process")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"ocrnYmd\":\"20240101\", \"insttCode\":\"I1\", \"opertSn\":1}")
+                .content("{\"ocrnYmd\":\"20240101\", \"instCd\":\"I1\", \"opertSn\":1}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

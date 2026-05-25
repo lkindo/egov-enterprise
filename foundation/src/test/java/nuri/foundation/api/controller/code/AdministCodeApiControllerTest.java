@@ -76,7 +76,7 @@ class AdministCodeApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/codes/administ/A1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.administZoneCode").value("A1"));
+                .andExpect(jsonPath("$.data.admdstCd").value("A1"));
     }
 
     @Test

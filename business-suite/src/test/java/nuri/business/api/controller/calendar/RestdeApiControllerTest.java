@@ -64,11 +64,11 @@ class RestdeApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list").isArray())
-                .andExpect(jsonPath("$.data.list[0].restdeNo").value(1))
-                .andExpect(jsonPath("$.data.list[0].restdeDe").value("20260525"))
-                .andExpect(jsonPath("$.data.list[0].restdeNm").value("석가탄신일"))
-                .andExpect(jsonPath("$.data.list[0].restdeDc").value("부처님오신날"))
-                .andExpect(jsonPath("$.data.list[0].restdeSeCode").value("01"));
+                .andExpect(jsonPath("$.data.list[0].hldySn").value(1))
+                .andExpect(jsonPath("$.data.list[0].hldyYmd").value("20260525"))
+                .andExpect(jsonPath("$.data.list[0].hldyNm").value("석가탄신일"))
+                .andExpect(jsonPath("$.data.list[0].hldyExpln").value("부처님오신날"))
+                .andExpect(jsonPath("$.data.list[0].hldySeCd").value("01"));
     }
 
     @Test
@@ -89,11 +89,11 @@ class RestdeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.restdeNo").value(2))
-                .andExpect(jsonPath("$.data.restdeDe").value("20261225"))
-                .andExpect(jsonPath("$.data.restdeNm").value("성탄절"))
-                .andExpect(jsonPath("$.data.restdeDc").value("크리스마스"))
-                .andExpect(jsonPath("$.data.restdeSeCode").value("02"));
+                .andExpect(jsonPath("$.data.hldySn").value(2))
+                .andExpect(jsonPath("$.data.hldyYmd").value("20261225"))
+                .andExpect(jsonPath("$.data.hldyNm").value("성탄절"))
+                .andExpect(jsonPath("$.data.hldyExpln").value("크리스마스"))
+                .andExpect(jsonPath("$.data.hldySeCd").value("02"));
     }
 
     private Authentication getMockAuthentication() {

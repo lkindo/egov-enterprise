@@ -50,8 +50,8 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].srvyTmplatId").value("TMPLAT_001"))
-                .andExpect(jsonPath("$.data.list[0].srvyTmplatCn").value("만족도 설문 템플릿"));
+                .andExpect(jsonPath("$.data.list[0].srvyTmpltId").value("TMPLAT_001"))
+                .andExpect(jsonPath("$.data.list[0].srvyTmpltExpln").value("만족도 설문 템플릿"));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.srvyTmplatId").value("TMPLAT_001"));
+                .andExpect(jsonPath("$.data.srvyTmpltId").value("TMPLAT_001"));
     }
 
     @Test
@@ -212,7 +212,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].srvyQitemId").value("Q_001"));
+                .andExpect(jsonPath("$.data[0].srvyQstnId").value("Q_001"));
     }
 
     @Test

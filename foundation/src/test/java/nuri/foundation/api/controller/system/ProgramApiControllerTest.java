@@ -70,7 +70,7 @@ class ProgramApiControllerTest {
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/programs/PROG_01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.progrmFileNm").value("PROG_01"));
+                .andExpect(jsonPath("$.data.prgrmFileNm").value("PROG_01"));
     }
 
     @Test

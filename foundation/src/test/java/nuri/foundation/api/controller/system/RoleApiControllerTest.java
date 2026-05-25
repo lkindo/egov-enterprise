@@ -46,14 +46,14 @@ class RoleApiControllerTest extends BaseControllerTest {
     void testGetRole() throws Exception {
         // Given
         RoleManageDto dto = new RoleManageDto();
-        dto.setRoleCode("ROLE_WEB_001");
+        dto.setRoleId("ROLE_WEB_001");
         dto.setRoleNm("웹 게시판 접근");
         when(roleManageService.selectRole("ROLE_WEB_001")).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/roles/ROLE_WEB_001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.roleCode").value("ROLE_WEB_001"));
+                .andExpect(jsonPath("$.data.roleId").value("ROLE_WEB_001"));
     }
 
     @Test
@@ -61,7 +61,7 @@ class RoleApiControllerTest extends BaseControllerTest {
     void testCreateRole() throws Exception {
         // Given
         RoleManageDto dto = new RoleManageDto();
-        dto.setRoleCode("ROLE_NEW");
+        dto.setRoleId("ROLE_NEW");
         dto.setRoleNm("신규 롤");
 
         // When & Then

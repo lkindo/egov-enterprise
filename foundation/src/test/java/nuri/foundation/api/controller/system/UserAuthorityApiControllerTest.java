@@ -56,7 +56,7 @@ class UserAuthorityApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/user-authorities")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[{\"uniqId\":\"USER1\", \"authorCode\":\"ROLE_ADMIN\"}]"))
+                        .content("[{\"scrtyDcsnTrgtId\":\"USER1\", \"authrtId\":\"ROLE_ADMIN\"}]"))
                 .andExpect(status().isOk());
     }
 

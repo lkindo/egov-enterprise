@@ -69,7 +69,7 @@ class CommonCodeApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/codes/cmmn/TEST")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.codeId").value("TEST"));
+                .andExpect(jsonPath("$.data.cdId").value("TEST"));
     }
 
     @Test

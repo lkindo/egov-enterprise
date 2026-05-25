@@ -59,7 +59,7 @@ class AuthorApiControllerTest extends BaseControllerTest {
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/authorities/ROLE_ADMIN"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.authorCode").value("ROLE_ADMIN"));
+                .andExpect(jsonPath("$.data.authrtCd").value("ROLE_ADMIN"));
     }
 
     @Test
