@@ -25,37 +25,36 @@ public class RewardManage extends BaseEntity {
     @Column(name = "rwrd_id", length = 20)
     private String rwrdId;
 
-    @Column(name = "rwrd_user_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String rwrdUserId;
 
-    @Column(name = "rwrd_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String rwrdCd;
 
-    @Column(name = "rwrd_ymd", length = 8)
+    @Column(length = 8)
     private String rwrdYmd;
 
-    @Column(name = "rwrd_nm", length = 100)
+    @Column(length = 100)
     private String rwrdNm;
 
-    @Column(name = "cntrb_cn", length = 4000)
+    @Column(length = 4000)
     private String cntrbCn;
 
-    @Column(name = "atrzr_id", length = 20)
+    @Column(length = 20)
     private String atrzrId;
 
-    @Column(name = "confm_yn", length = 1)
+    @Column(length = 1)
     private String confmYn;
 
-    @Column(name = "aprv_dt")
     private java.time.LocalDateTime aprvDt;
 
-    @Column(name = "rtn_rsn_cn", length = 4000)
+    @Column(length = 4000)
     private String rtnRsnCn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
-    @Column(name = "ifml_atrz_id", length = 20)
+    @Column(length = 20)
     private String ifmlAtrzId;
 
     // ----- [Legacy Getter Aliases] -----
