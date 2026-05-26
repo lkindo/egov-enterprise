@@ -365,7 +365,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         @Transactional
         public Integer incrementLike(@NonNull String bbsId, @NonNull String pstId) {
                 Board board = boardRepository
-                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
+                                .findByPstIdWithPessimisticLock(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 board.increaseLikeCnt();

@@ -37,4 +37,12 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
 
         @Query("SELECT b.userNm FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn GROUP BY b.userNm ORDER BY COUNT(b) DESC LIMIT 1")
         String findTopContributorByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
+
+        @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
+        Optional<Board> findByPstIdWithPessimisticLock(@Param("pstId") String pstId);
+
+        @org.springframework.data.jpa.repository.Modifying
+        @Query("UPDATE Board b SET b.likeCnt = COALESCE(b.likeCnt, 0) + 1 WHERE b.pstId = :pstId")
+        int incrementLikeCntAtomic(@Param("pstId") String pstId);
 }

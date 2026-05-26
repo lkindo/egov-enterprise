@@ -94,15 +94,15 @@ export class SurveyPage {
 
         const payload = {
             pollNm: title,
-            pollBeginDe: fmt(beginDe),
-            pollEndDe: fmt(endDe),
-            pollKindCode: '001',
+            pollBgngYmd: fmt(beginDe),
+            pollEndYmd: fmt(endDe),
+            pollKndCd: '001',
             pollDsuseYn: 'N',
-            pollItems: [
-                { pollIemNm: '매우 만족 (Highly Satisfied)' },
-                { pollIemNm: '만족 (Satisfied)' },
-                { pollIemNm: '보통 (Neutral)' },
-                { pollIemNm: '불만족 (Unsatisfied)' }
+            pollArticles: [
+                { pollArtclNm: '매우 만족 (Highly Satisfied)' },
+                { pollArtclNm: '만족 (Satisfied)' },
+                { pollArtclNm: '보통 (Neutral)' },
+                { pollArtclNm: '불만족 (Unsatisfied)' }
             ]
         };
 
@@ -212,8 +212,8 @@ export class SurveyPage {
             throw new Error(`voteByPollId: no items found for poll ${pollId}`);
         }
 
-        const firstItemId = items[0].pollIemId;
-        console.log(`>>> Voting on poll ${pollId}, item ${firstItemId} (${items[0].pollIemNm})`);
+        const firstItemId = items[0].pollArtclId;
+        console.log(`>>> Voting on poll ${pollId}, item ${firstItemId} (${items[0].pollArtclNm})`);
 
         // Cast vote via API
         const voteResult = await this.page.evaluate(async ({ pid, iid, token }: { pid: string, iid: string, token: string }) => {

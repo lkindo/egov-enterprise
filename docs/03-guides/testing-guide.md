@@ -505,8 +505,9 @@ PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_te
 
 - [CI/CD 파이프라인 가이드](./cicd-pipeline.md)
 - [E2E 테스트 가이드 (상세)](./e2e-test-guide.md)
+- [E2E 범위 외 정밀 검증 가이드 (Non-E2E)](./non-e2e-verification-guide.md)
 - [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
 ---
-*Last Updated: 2026-05-21 (Updated via Antigravity — Production-ready Git Pre-Push Hook Installer & Regex Clean SchemaDumper Integrated)*
+*Last Updated: 2026-05-26 (Updated via Antigravity — Production-ready Git Pre-Push Hook Installer & Non-E2E Verification Guide Integrated)*
 
