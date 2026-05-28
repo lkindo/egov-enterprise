@@ -201,4 +201,59 @@ class AuthorManageServiceImplTest {
         List<RoleDto> result = authorManageService.selectAuthorRoleList("A1");
         assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("롤 등록 - roleSort가 있는 경우")
+    void insertRole_WithRoleSort() {
+        RoleDto dto = RoleDto.builder().roleId("R1").roleNm("RN1").roleSort("10").build();
+        authorManageService.insertRole(dto);
+        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleSort() == 10));
+    }
+
+    @Test
+    @DisplayName("롤 등록 - roleSort가 empty인 경우")
+    void insertRole_EmptyRoleSort() {
+        RoleDto dto = RoleDto.builder().roleId("R1").roleNm("RN1").roleSort("").build();
+        authorManageService.insertRole(dto);
+        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleSort() == null));
+    }
+
+    @Test
+    @DisplayName("롤 수정 - roleSort가 있는 경우")
+    void updateRole_WithRoleSort() {
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("Old").build();
+        given(roleInfoRepository.findById("R1")).willReturn(Optional.of(role));
+
+        RoleDto dto = RoleDto.builder().roleId("R1").roleNm("New").roleSort("20").build();
+        authorManageService.updateRole(dto);
+        assertThat(role.getRoleSort()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("toAuthorDto 변환 - createdDe 포맷 변환")
+    void toAuthorDto_DateFormat() {
+        Authority auth1 = Authority.builder().authrtCd("A1").authrtNm("N1").authrtCrtYmd("20230528").build();
+        Authority auth2 = Authority.builder().authrtCd("A2").authrtNm("N2").authrtCrtYmd("2023-05-28").build();
+        Authority auth3 = Authority.builder().authrtCd("A3").authrtNm("N3").authrtCrtYmd(null).build();
+        
+        given(authorityRepository.findAll()).willReturn(List.of(auth1, auth2, auth3));
+
+        List<AuthorDto> result = authorManageService.selectAuthorList();
+        
+        assertThat(result.get(0).getAuthrtCrtYmd()).isEqualTo("2023-05-28"); // 변환됨
+        assertThat(result.get(1).getAuthrtCrtYmd()).isEqualTo("2023-05-28"); // 변환 안됨 (이미 - 포함)
+        assertThat(result.get(2).getAuthrtCrtYmd()).isNull(); // 널 처리
+    }
+
+    @Test
+    @DisplayName("toRoleDto 변환 - 값 있는 경우")
+    void toRoleDto_WithValues() {
+        RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("RN1").roleSort(5).build();
+        role.setCreatedDate(java.time.LocalDateTime.now());
+        given(roleInfoRepository.findAll()).willReturn(List.of(role));
+
+        List<RoleDto> result = authorManageService.selectRoleList();
+        assertThat(result.get(0).getRoleSort()).isEqualTo("5");
+        assertThat(result.get(0).getRoleCrtYmd()).isNotNull();
+    }
 }

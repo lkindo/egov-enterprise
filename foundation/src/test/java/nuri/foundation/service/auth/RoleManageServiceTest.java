@@ -168,4 +168,68 @@ class RoleManageServiceTest {
         // Then
         verify(roleInfoRepository).deleteAllByIdInBatch(anyList());
     }
+
+    @Test
+    @DisplayName("롤 목록 조회 - pageUnit이 0 이하일 경우 10으로 설정")
+    void selectRoleList_PageUnitZeroTest() {
+        BaseSearchDto searchVO = new BaseSearchDto();
+        searchVO.setPageIndex(1);
+        searchVO.setPageUnit(0);
+        
+        RoleInfo roleInfo = RoleInfo.builder().roleId("ROLE_USER").build();
+        Page<RoleInfo> page = new PageImpl<>(Collections.singletonList(roleInfo));
+        
+        when(roleInfoRepository.findAll(any(Pageable.class))).thenReturn(page);
+        
+        List<RoleManageDto> result = roleManageService.selectRoleList(searchVO);
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("롤 등록 - roleId가 empty string일 경우 UUID 생성, roleSort 있는 경우")
+    void insertRole_EmptyId_WithSortTest() {
+        RoleManageDto dto = RoleManageDto.builder()
+                .roleId("")
+                .roleNm("Empty ID Role")
+                .roleSort("99")
+                .build();
+
+        roleManageService.insertRole(dto);
+        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleSort() == 99 && entity.getRoleId().startsWith("ROLE_")));
+    }
+
+    @Test
+    @DisplayName("롤 수정 - roleSort 있는 경우")
+    void updateRole_WithSortTest() {
+        String roleCode = "ROLE_TARGET";
+        RoleManageDto dto = RoleManageDto.builder()
+                .roleId(roleCode)
+                .roleNm("Updated Name")
+                .roleSort("100")
+                .build();
+        RoleInfo roleInfo = mock(RoleInfo.class);
+        
+        when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(roleInfo));
+
+        roleManageService.updateRole(dto);
+        verify(roleInfo).update(any(), any(), any(), any(), eq(100));
+    }
+
+    @Test
+    @DisplayName("DTO 변환 - roleSort, createdDate 있는 경우")
+    void toDto_WithValuesTest() {
+        String roleCode = "ROLE_ADMIN";
+        RoleInfo roleInfo = RoleInfo.builder()
+                .roleId(roleCode)
+                .roleSort(5)
+                .build();
+        roleInfo.setCreatedDate(java.time.LocalDateTime.now());
+        
+        when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(roleInfo));
+
+        RoleManageDto result = roleManageService.selectRole(roleCode);
+
+        assertThat(result.getRoleSort()).isEqualTo("5");
+        assertThat(result.getCreatDt()).isNotNull();
+    }
 }

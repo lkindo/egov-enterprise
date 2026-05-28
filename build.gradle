@@ -204,6 +204,7 @@ tasks.register('jacocoRootReport', JacocoReport) {
             "**/*VO.class",
             "**/*DAO.class",
             "**/*Mapper.class",
+            "**/*MapperImpl.class",
             "**/*Initializer.class",
             "**/*Advice.class"
         ])

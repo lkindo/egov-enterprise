@@ -91,4 +91,24 @@ class EgovFileScrtyTest {
         assertThat(isCorrect).isTrue();
         assertThat(isWrong).isFalse();
     }
+
+    @Test
+    @DisplayName("파일 암호화/복호화 - 존재하지 않거나 디렉터리인 경우")
+    void testEncryptDecryptFileInvalid() throws Exception {
+        Path notExist = tempDir.resolve("notExist.txt");
+        boolean encRes = EgovFileScrty.encryptFile(notExist.toString(), tempDir.resolve("target.txt").toString());
+        assertThat(encRes).isFalse();
+
+        boolean decRes = EgovFileScrty.decryptFile(tempDir.toString(), tempDir.resolve("target.txt").toString());
+        assertThat(decRes).isFalse();
+    }
+
+    @Test
+    @DisplayName("null 입력 처리 테스트")
+    void testNullInputs() throws Exception {
+        assertThat(EgovFileScrty.encodeBinary(null)).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null)).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null, "id")).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null, "salt".getBytes())).isEqualTo("");
+    }
 }

@@ -122,8 +122,67 @@ class InstitutionCodeServiceTest {
         verify(logEntity).updateProcessSe(eq("1"), anyString());
     }
 
-    // Helper static class if needed or import
-    private static class InstitutionCodeRecptnLogId extends InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId {
+    @Test
+    @DisplayName("기관코드 목록 전체 개수 조회")
+    void selectInstitutionCodeListTotCnt() {
+        when(institutionCodeRepository.count()).thenReturn(5L);
+        int count = institutionCodeService.selectInstitutionCodeListTotCnt(new BaseSearchDto());
+        assertThat(count).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("기관코드 수신 내역 등록")
+    void insertInstitutionCodeRecptn() {
+        InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
+                .instCd("INST1")
+                .chgSeCd("I")
+                .build();
+        
+        institutionCodeService.insertInstitutionCodeRecptn(dto);
+        verify(institutionCodeRecptnLogRepository).save(any(InstitutionCodeRecptnLog.class));
+    }
+
+    @Test
+    @DisplayName("기관코드 등록 - 성공")
+    void insertInstitutionCode_Success() {
+        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
+        when(institutionCodeRepository.existsById("INST2")).thenReturn(false);
+        
+        institutionCodeService.insertInstitutionCode(dto);
+        verify(institutionCodeRepository).save(any(InstitutionCode.class));
+    }
+
+    @Test
+    @DisplayName("기관코드 등록 - 중복 예외 발생")
+    void insertInstitutionCode_Duplicate() {
+        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
+        when(institutionCodeRepository.existsById("INST2")).thenReturn(true);
+        
+        org.junit.jupiter.api.Assertions.assertThrows(nuri.foundation.core.exception.BusinessException.class, 
+            () -> institutionCodeService.insertInstitutionCode(dto));
+    }
+
+    @Test
+    @DisplayName("기관코드 수정")
+    void updateInstitutionCode() {
+        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").allInstNm("Update").build();
+        InstitutionCode entity = mock(InstitutionCode.class);
+        when(institutionCodeRepository.findById("INST2")).thenReturn(Optional.of(entity));
+        
+        institutionCodeService.updateInstitutionCode(dto);
+        verify(entity).update(eq("Update"), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("기관코드 삭제")
+    void deleteInstitutionCode() {
+        InstitutionCodeDto dto = InstitutionCodeDto.builder().instCd("INST2").build();
+        institutionCodeService.deleteInstitutionCode(dto);
+        verify(institutionCodeRepository).deleteById("INST2");
+    }
+
+    // Helper static class
+    private static class InstitutionCodeRecptnLogId extends nuri.foundation.domain.code.InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId {
         public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
             super(ocrnYmd, instCd, jobSn);
         }

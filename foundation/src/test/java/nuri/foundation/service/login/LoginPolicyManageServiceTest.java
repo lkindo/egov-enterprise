@@ -186,4 +186,45 @@ class LoginPolicyManageServiceTest {
         
         verify(loginPolicyRepository).save(any(LoginPolicy.class));
     }
+
+    @Test
+    @DisplayName("로그인 정책 유효성 검증 - IP 빈 문자열")
+    void validateLoginPolicyIpEmptyTest() {
+        LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("").lmtYn("N").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
+    }
+
+    @Test
+    @DisplayName("로그인 정책 유효성 검증 - BgngTm, EndTm 빈 문자열 및 null")
+    void validateLoginPolicyTimeEmptyNullTest() {
+        LoginPolicy policy = LoginPolicy.builder().userId("USER1").lmtYn("N").bgngTm("").endTm("12:00").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
+        
+        policy = LoginPolicy.builder().userId("USER1").lmtYn("N").bgngTm("12:00").endTm("").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
+    }
+
+    @Test
+    @DisplayName("로그인 정책 유효성 검증 - 콜론 없는 4자리 시간 처리")
+    void validateLoginPolicyTimeNoColonTest() {
+        LocalTime now = LocalTime.now();
+        LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
+        LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
+
+        String start = startTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
+        String end = endTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
+
+        LoginPolicy policy = LoginPolicy.builder()
+                .userId("USER1")
+                .lmtYn("N")
+                .bgngTm(start)
+                .endTm(end)
+                .build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
+    }
 }

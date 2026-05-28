@@ -229,4 +229,33 @@ class AuthApiControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("getClientIp - 모든 헤더가 unknown 일 때")
+    void testGetClientIp_UnknownHeaders() throws Exception {
+        LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
+        when(authService.login(any(), anyString())).thenReturn(TokenResponse.builder().build());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("X-Forwarded-For", "unknown")
+                .header("Proxy-Client-IP", "unknown")
+                .header("WL-Proxy-Client-IP", "unknown")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 인증된 상태")
+    void testLogoutAuthenticated() throws Exception {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("Logged out successfully"));
+
+        SecurityContextHolder.clearContext();
+    }
 }

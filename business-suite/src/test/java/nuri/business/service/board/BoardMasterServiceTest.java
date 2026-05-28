@@ -245,13 +245,53 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("포틀릿용 블로그 목록 조회")
+    @DisplayName("포틀릿 블로그 목록 조회")
     void getBlogListPortlet() {
-        Blog blog = Blog.builder().blogId("BLOG_01").build();
-        given(blogRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(blog)));
+        Blog blog = Blog.builder().blogId("BLOG01").blogTtl("블로그1").build();
+        when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
 
         List<BlogDto> result = boardMasterService.getBlogListPortlet();
 
         assertThat(result).hasSize(1);
+        assertThat(result.get(0).getBlogId()).isEqualTo("BLOG01");
+    }
+
+    @Test
+    @DisplayName("게시판 수정 - DTO 값이 모두 null일 때 기존 엔티티 값 유지")
+    void updateBoardMaster_NullDtoValues() {
+        BoardMaster entity = BoardMaster.builder()
+                .bbsId("BBSMSTR_000000000001")
+                .bbsTtl("Old Title")
+                .bbsExpln("Old Expln")
+                .ansPsbltyYn("N")
+                .fileAtchPsbltyYn("N")
+                .atchPsbltyFileQty(1)
+                .atchPsbltyFileSz(100L)
+                .tmpltId("TMPLT_001")
+                .useYn("Y")
+                .ansYn("Y")
+                .stsfdgYn("N")
+                .build();
+        when(boardMasterRepository.findById("BBSMSTR_000000000001")).thenReturn(Optional.of(entity));
+
+        BoardMasterDto dto = new BoardMasterDto();
+        dto.setBbsId("BBSMSTR_000000000001");
+        // 전부 null인 상태로 update
+        boardMasterService.updateBoardMaster("user01", dto);
+
+        // 엔티티 값이 보존되는지 확인
+        assertThat(entity.getBbsTtl()).isEqualTo("Old Title");
+        assertThat(entity.getBbsExpln()).isEqualTo("Old Expln");
+        assertThat(entity.getAnsPsbltyYn()).isEqualTo("N");
+        assertThat(entity.getAtchPsbltyFileQty()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("게시판 생성 - bbsId가 이미 있는 경우")
+    void createBoardMaster_WithId() {
+        BoardMasterDto dto = new BoardMasterDto();
+        dto.setBbsId("CUSTOM_BBS_ID");
+        boardMasterService.createBoardMaster("user01", dto);
+        verify(boardMasterRepository).save(any(BoardMaster.class));
     }
 }

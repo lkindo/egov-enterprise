@@ -118,5 +118,15 @@ class MenuServiceIntegrationTest {
         // Then
         assertThat(hierarchy).isNotEmpty();
         assertThat(hierarchy.get(0).getChildren()).isNotEmpty();
+        
+        // 커버리지 확보를 위한 추가 메서드 호출 (searchMenus)
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        assertThat(menuRepository.searchMenus("ROOT", pageable)).isNotNull();
+        assertThat(menuRepository.searchMenus(null, pageable)).isNotNull();
+        assertThat(menuRepository.searchMenus("", pageable)).isNotNull();
+
+        // selectMainMenuHead, selectMainMenuLeft 커버리지
+        assertThat(menuRepository.selectMainMenuHead("test_user_uniqId")).isNotNull();
+        assertThat(menuRepository.selectMainMenuLeft("test_user_uniqId")).isNotNull();
     }
 }

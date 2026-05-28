@@ -4,6 +4,7 @@ import nuri.foundation.support.IntegrationTest;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.foundation.domain.user.repository.UserInfRepository;
 import nuri.foundation.service.user.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +28,7 @@ class UserServiceIntegrationTest {
 
     @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
+    @Autowired private UserInfRepository userInfRepository;
     @Autowired private UserAuthorityRepository userAuthorityRepository;
     @Autowired private jakarta.persistence.EntityManager entityManager;
     @Autowired private CacheManager cacheManager;
@@ -60,6 +62,27 @@ class UserServiceIntegrationTest {
 
         // Then
         assertThat(users).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("사용자 목록 페이지 조회 및 검색 조건 테스트")
+    void getPagedUserListTest() {
+        // Given
+        createUser("user1", "사용자1", "ROLE_ADMIN");
+        entityManager.flush();
+        entityManager.clear();
+
+        // When & Then
+        // 1. searchKeyword 없음
+        assertThat(userService.getPagedUserList(null, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userService.getPagedUserList("", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+
+        // 2. 검색 조건 테스트를 위해 UserInfRepository 직접 호출
+        assertThat(userInfRepository.selectUserList("0", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userInfRepository.selectUserList("USER_NM", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userInfRepository.selectUserList("99", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userInfRepository.selectUserList("0", "", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
+        assertThat(userInfRepository.selectUserList(null, null, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
     }
 
     private void createUser(String userId, String name, String role) {

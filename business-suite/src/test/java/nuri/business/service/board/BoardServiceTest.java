@@ -23,18 +23,24 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import java.io.IOException;
+import org.springframework.test.context.ActiveProfiles;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+import nuri.business.service.board.dto.BoardSaveRequest;
+import java.io.IOException;
+
+@org.junit.jupiter.api.extension.ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class BoardServiceTest {
 
     private BoardService boardService;
@@ -102,6 +108,54 @@ class BoardServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
     }
+
+    @Test
+    @DisplayName("게시글 수정 - 관리자가 아니지만 본인인 경우")
+    void updateBoard_Self_Success() {
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user1"));
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+
+        Board board = mock(Board.class);
+        given(board.getUserId()).willReturn("user1");
+        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        
+        BoardSaveRequest updateDto = new BoardSaveRequest(
+            "BBS1", "update", "content", null, null, null, null, null, null, null, null, null, null, null
+        );
+
+        boardService.updatePost("BBS1", "1", updateDto);
+        // board.update(...) gets called with fallbacks
+        verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 타인이며 관리자도 아닌 경우 예외")
+    void updateBoard_Fail_NoAuth() {
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+
+        Board board = mock(Board.class);
+        given(board.getUserId()).willReturn("user1");
+        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+
+        BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null, null, null);
+        assertThrows(BusinessException.class, () -> boardService.updatePost("BBS1", "1", req));
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 - 타인이며 관리자도 아닌 경우 예외")
+    void deleteBoard_Fail_NoAuth() {
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+
+        Board board = mock(Board.class);
+        given(board.getUserId()).willReturn("user1");
+        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+
+        assertThrows(BusinessException.class, () -> boardService.deletePost("BBS1", "1", "user2"));
+    }
+
+
 
     @Test
     @DisplayName("게시판 통계 조회")
@@ -551,5 +605,70 @@ class BoardServiceTest {
         // when & then
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", "999"))
                 .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
+    void updatePost_AccessDenied() {
+        String pstId = "1";
+        Board board = Board.builder().pstId(pstId).userId("owner").build();
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
+
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
+    void deletePost_AccessDenied() {
+        String pstId = "1";
+        Board board = Board.builder().pstId(pstId).userId("owner").build();
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
+
+        assertThatThrownBy(() -> boardService.deletePost("BBS_01", pstId, "other_user"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("파일 업로드 메서드에서 files가 null 이거나 비어있을 때")
+    void fileUploadMethods_EmptyFiles() throws IOException {
+        String userId = "user1";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, "OLD_ATCH", null, null, null, null, null, null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        
+        // create
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.getNextNttId()).willReturn(1L);
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().pstId("1").build());
+        given(boardRepository.save(any())).willReturn(Board.builder().pstId("1").build());
+        
+        boardService.createPostWithFiles(userId, request, null);
+        boardService.createPostWithFiles(userId, request, Collections.emptyList());
+        
+        // update
+        Board board = Board.builder().pstId("1").userId(userId).build();
+        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        
+        boardService.updatePostWithFiles("BBS_01", "1", request, null);
+        boardService.updatePostWithFiles("BBS_01", "1", request, Collections.emptyList());
+
+        // reply
+        Board parent = Board.builder().pstId("1").sortOrdr(100L).ansLvl(0).build();
+        given(boardRepository.findById("1")).willReturn(Optional.of(parent));
+        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
+                .willReturn(Board.builder().pstId("2").build());
+        
+        boardService.replyPostWithFiles(userId, "1", request, null);
+        boardService.replyPostWithFiles(userId, "1", request, Collections.emptyList());
+
+        verify(fileService, never()).uploadFiles(any());
+        verify(fileService, never()).updateFiles(any(), any());
     }
 }

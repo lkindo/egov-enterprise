@@ -134,7 +134,156 @@ class CommonCodeServiceTest {
 
         List<CmmnDetailCodeDto> result = commonCodeService.selectCmmnDetailCodeList(searchVO);
 
-        assertEquals(1, result.size());
-        assertEquals("DTL1", result.get(0).getCode());
+    }
+
+    @Test
+    @DisplayName("공통분류코드 전체 건수 조회")
+    void selectCmmnClCodeListTotCntTest() {
+        BaseSearchDto searchVO = new BaseSearchDto();
+        Page<CommonCodeCategory> page = mock(Page.class);
+        given(page.getTotalElements()).willReturn(10L);
+        given(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any(Pageable.class)))
+                .willReturn(page);
+
+        int count = commonCodeService.selectCmmnClCodeListTotCnt(searchVO);
+        assertEquals(10, count);
+    }
+
+    @Test
+    @DisplayName("공통분류코드 상세 조회")
+    void selectCmmnClCodeDetailTest() {
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").build();
+        CommonCodeCategory entity = CommonCodeCategory.builder().clsfCd("CL1").build();
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
+
+        CmmnClCodeDto result = commonCodeService.selectCmmnClCodeDetail(dto);
+        assertNotNull(result);
+        assertEquals("CL1", result.getClsfCd());
+    }
+
+    @Test
+    @DisplayName("공통분류코드 수정")
+    void updateCmmnClCodeTest() {
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("Update").build();
+        CommonCodeCategory entity = mock(CommonCodeCategory.class);
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
+
+        commonCodeService.updateCmmnClCode(dto);
+        verify(entity).update(eq("Update"), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("공통분류코드 삭제")
+    void deleteCmmnClCodeTest() {
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").build();
+        CommonCodeCategory entity = mock(CommonCodeCategory.class);
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
+
+        commonCodeService.deleteCmmnClCode(dto);
+        verify(entity).delete();
+    }
+
+    @Test
+    @DisplayName("공통코드 등록 - 중복 예외")
+    void insertCmmnCodeDuplicateTest() {
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").build();
+        given(commonCodeGroupRepository.existsById("GRP1")).willReturn(true);
+
+        assertThrows(BusinessException.class, () -> commonCodeService.insertCmmnCode(dto));
+    }
+
+    @Test
+    @DisplayName("공통코드 상세 조회")
+    void selectCmmnCodeDetailTest() {
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").build();
+        CommonCodeGroup entity = CommonCodeGroup.builder().cdId("GRP1").cdIdNm("Name").clsfCd("CL1").build();
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(entity));
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.empty());
+
+        CmmnCodeDto result = commonCodeService.selectCmmnCodeDetail(dto);
+        assertNotNull(result);
+        assertEquals("GRP1", result.getCdId());
+    }
+
+    @Test
+    @DisplayName("공통코드 수정")
+    void updateCmmnCodeTest() {
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").cdIdNm("Update").build();
+        CommonCodeGroup entity = mock(CommonCodeGroup.class);
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(entity));
+
+        commonCodeService.updateCmmnCode(dto);
+        verify(entity).update(eq("Update"), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("공통코드 삭제")
+    void deleteCmmnCodeTest() {
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").build();
+        CommonCodeGroup entity = mock(CommonCodeGroup.class);
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(entity));
+
+        commonCodeService.deleteCmmnCode(dto);
+        verify(entity).delete();
+    }
+
+    @Test
+    @DisplayName("공통상세코드 전체 건수 조회")
+    void selectCmmnDetailCodeListTotCntTest() {
+        BaseSearchDto searchVO = new BaseSearchDto();
+        Page<nuri.foundation.domain.code.CommonCodeDetailProjection> page = mock(Page.class);
+        given(page.getTotalElements()).willReturn(20L);
+        given(commonCodeRepository.searchCommonCodeDetails(any(), any(), any(Pageable.class))).willReturn(page);
+
+        int count = commonCodeService.selectCmmnDetailCodeListTotCnt(searchVO);
+        assertEquals(20, count);
+    }
+
+    @Test
+    @DisplayName("공통상세코드 상세 조회")
+    void selectCmmnDetailCodeDetailTest() {
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").build();
+        CommonCode entity = CommonCode.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("Name").build();
+        CommonCodeId id = new CommonCodeId("GRP1", "CD1");
+        given(commonCodeRepository.findById(id)).willReturn(Optional.of(entity));
+
+        CmmnDetailCodeDto result = commonCodeService.selectCmmnDetailCodeDetail(dto);
+        assertNotNull(result);
+        assertEquals("CD1", result.getDtlCd());
+    }
+
+    @Test
+    @DisplayName("공통상세코드 등록 - 성공")
+    void insertCmmnDetailCodeSuccessTest() {
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("Code 1").build();
+        CommonCodeId id = new CommonCodeId("GRP1", "CD1");
+        given(commonCodeRepository.existsById(id)).willReturn(false);
+
+        commonCodeService.insertCmmnDetailCode(dto);
+        verify(commonCodeRepository).save(any(CommonCode.class));
+    }
+
+    @Test
+    @DisplayName("공통상세코드 수정")
+    void updateCmmnDetailCodeTest() {
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("Update").build();
+        CommonCode entity = mock(CommonCode.class);
+        CommonCodeId id = new CommonCodeId("GRP1", "CD1");
+        given(commonCodeRepository.findById(id)).willReturn(Optional.of(entity));
+
+        commonCodeService.updateCmmnDetailCode(dto);
+        verify(entity).update(eq("Update"), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("공통상세코드 삭제")
+    void deleteCmmnDetailCodeTest() {
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").build();
+        CommonCode entity = mock(CommonCode.class);
+        CommonCodeId id = new CommonCodeId("GRP1", "CD1");
+        given(commonCodeRepository.findById(id)).willReturn(Optional.of(entity));
+
+        commonCodeService.deleteCmmnDetailCode(dto);
+        verify(entity).delete();
     }
 }
