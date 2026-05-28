@@ -1,5 +1,7 @@
 package nuri.business.service.sms.dto;
 
+import jakarta.validation.constraints.*;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import nuri.business.domain.sms.Sms;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,6 +21,7 @@ import java.util.List;
 public class SmsDto {
 
     @Schema(description = "SMS ID")
+    @Size(max = 20)
     private String smsId;
 
     @Schema(description = "발신 번호")

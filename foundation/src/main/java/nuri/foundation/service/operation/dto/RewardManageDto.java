@@ -1,5 +1,7 @@
 package nuri.foundation.service.operation.dto;
 
+import jakarta.validation.constraints.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +24,7 @@ public class RewardManageDto {
     private String confmAt;
     private LocalDateTime sanctnDt;
     private String returnResn;
+    @Size(max = 30)
     private String atchFileId;
     private String informlSanctnId;
     private String frstRegisterId;

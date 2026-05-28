@@ -1,5 +1,7 @@
 package nuri.foundation.service.code.dto;
 
+import jakarta.validation.constraints.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.Builder;
@@ -25,5 +27,7 @@ public class CodeDto {
     private String codeDc;
 
     @Schema(description = "사용여부", example = "Y")
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
 }

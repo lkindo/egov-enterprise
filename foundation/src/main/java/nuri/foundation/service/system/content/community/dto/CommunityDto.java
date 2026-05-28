@@ -1,5 +1,7 @@
 package nuri.foundation.service.system.content.community.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.foundation.domain.system.content.community.Community;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,13 +14,17 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityDto {
+    @Size(max = 20)
     private String cmntyId;
     private String cmntyTtl;
+    @Size(max = 4000)
     private String cmntyIntroCn;
     private String regTypeCd;
     private String regTypeCdNm;
     private String tmplatId;
     private String tmplatNm;
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
     private String frstRegisterId;
     private String frstRegisterNm;

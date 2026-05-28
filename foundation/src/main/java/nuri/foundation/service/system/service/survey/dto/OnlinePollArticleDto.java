@@ -1,5 +1,7 @@
 package nuri.foundation.service.system.service.survey.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.foundation.domain.system.service.survey.OnlinePollArticle;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -16,12 +18,18 @@ import java.time.LocalDateTime;
 public class OnlinePollArticleDto {
 
     @Schema(description = "설문 항목 ID")
+    @Size(max = 20)
+    @NotBlank
     private String pollArtclId;
 
     @Schema(description = "설문 ID")
+    @Size(max = 20)
+    @NotBlank
     private String pollId;
 
     @Schema(description = "설문 항목 명")
+    @Size(max = 100)
+    @NotBlank
     private String pollArtclNm;
 
     @Schema(description = "투표 수")

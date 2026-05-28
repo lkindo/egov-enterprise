@@ -78,6 +78,7 @@ class CommonCodeApiControllerTest {
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
         dto.setCodeId("C1");
         dto.setCode("D1");
+        dto.setUseYn("Y");
 
         mockMvc.perform(post("/api/v1/admin/system/codes/detail")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -91,6 +92,7 @@ class CommonCodeApiControllerTest {
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
         dto.setCodeId("C1");
         dto.setCode("D1");
+        dto.setUseYn("Y");
 
         mockMvc.perform(put("/api/v1/admin/system/codes/detail/C1/D1")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -1,5 +1,7 @@
 package nuri.business.service.deptjob.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.deptjob.DeptJobBox;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -13,6 +15,7 @@ public class DeptJobBoxDto {
 
     private String deptJobbxId;
     private String deptJobbxNm;
+    @Size(max = 20)
     private String deptId;
     private String deptNm;
     private Integer indictOrdr;

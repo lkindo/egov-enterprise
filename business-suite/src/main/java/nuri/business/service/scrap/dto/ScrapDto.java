@@ -1,5 +1,7 @@
 package nuri.business.service.scrap.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.scrap.Scrap;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,14 +19,23 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScrapDto {
+    @Size(max = 20)
     private String scrapId;
+    @Size(max = 20)
     private String bbsId;
+    @Size(max = 20)
     private String pstId;
+    @Size(max = 100)
     private String scrapNm;
+    @Size(max = 1000)
     private String scrapUrl;
     private String scrapDc;
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
     private String uniqId;
+    @Size(max = 20)
+    @NotBlank
     private String userId; 
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;

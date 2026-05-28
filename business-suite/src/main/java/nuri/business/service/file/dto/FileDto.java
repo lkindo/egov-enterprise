@@ -1,5 +1,7 @@
 package nuri.business.service.file.dto;
 
+import jakarta.validation.constraints.*;
+
 import lombok.Builder;
 import lombok.Getter;
 
@@ -9,6 +11,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class FileDto {
+    @Size(max = 30)
     private String atchFileId;
     private Integer fileSn;
     private String fileStreCours;
@@ -16,6 +19,7 @@ public class FileDto {
     private String orignlFileNm;
     private String fileExtsn;
     private Long fileMg;
+    @Size(max = 4000)
     private String fileCn;
     private String createdDate;
 }

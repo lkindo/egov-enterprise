@@ -1,5 +1,7 @@
 package nuri.business.service.report.dto;
 
+import jakarta.validation.constraints.*;
+
 import lombok.*;
 
 @Getter
@@ -12,9 +14,13 @@ public class WorkReportDto {
     private String reportSubject;
     private String reportContents;
     private String reprtSe;
+    @Size(max = 1)
     private String wrterId;
+    @Size(max = 30)
     private String atchFileId;
+    @Size(max = 12)
     private String rptSttsCd;
+    @Size(max = 8)
     private String rptYmd;
     private String rptTypeCd;
 

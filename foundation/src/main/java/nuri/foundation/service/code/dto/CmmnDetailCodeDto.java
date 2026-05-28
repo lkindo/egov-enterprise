@@ -1,5 +1,7 @@
 package nuri.foundation.service.code.dto;
 
+import jakarta.validation.constraints.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,21 +20,28 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class CmmnDetailCodeDto {
 
     @Schema(description = "코드 ID")
+    @Size(max = 20)
     private String cdId;
 
     @Schema(description = "코드 ID명")
+    @Size(max = 100)
     private String cdIdNm;
 
     @Schema(description = "상세코드")
+    @Size(max = 12)
     private String dtlCd;
 
     @Schema(description = "상세코드명")
+    @Size(max = 100)
     private String dtlCdNm;
 
     @Schema(description = "상세코드설명")
+    @Size(max = 4000)
     private String dtlCdExpln;
 
     @Schema(description = "사용여부")
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
 
     @Schema(description = "최초등록자 ID")

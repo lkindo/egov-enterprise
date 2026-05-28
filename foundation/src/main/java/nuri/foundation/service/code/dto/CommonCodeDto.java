@@ -1,5 +1,7 @@
 package nuri.foundation.service.code.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.foundation.domain.code.CommonCode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonIgnore;

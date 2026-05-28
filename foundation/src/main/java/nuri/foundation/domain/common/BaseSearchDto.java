@@ -1,6 +1,8 @@
 /* IDE Re-indexing Trigger */
 package nuri.foundation.domain.common;
 
+import jakarta.validation.constraints.*;
+
 
 import lombok.Getter;
 import lombok.Setter;

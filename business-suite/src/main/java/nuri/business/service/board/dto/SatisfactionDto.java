@@ -1,5 +1,7 @@
 package nuri.business.service.board.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.board.Satisfaction;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -11,13 +13,17 @@ import java.time.LocalDateTime;
 @Builder
 public class SatisfactionDto {
     private Long satisfactionId;
+    @Size(max = 20)
     private String bbsId;
+    @Size(max = 20)
     private String pstId;
     private String stsfdgCn;
     private Integer stsfdgLevel;
     private String writerId;
     private String writerNm;
     private String password;
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
     private LocalDateTime createdDate;
 

@@ -1,5 +1,7 @@
 package nuri.foundation.service.template.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.foundation.domain.template.Template;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +17,8 @@ public class TemplateDto {
     private String tmplatNm;
     private String tmplatCours;
     private String tmplatSeCode;
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;

@@ -1,5 +1,7 @@
 package nuri.foundation.service.log.dto;
 
+import jakarta.validation.constraints.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LoginLogDto {
     /** 로그 ID */
+    @Size(max = 20)
     private String logId;
     /** 접속 ID */
     private String loginId;

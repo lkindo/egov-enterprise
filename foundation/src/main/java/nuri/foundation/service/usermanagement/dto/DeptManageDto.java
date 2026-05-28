@@ -1,5 +1,7 @@
 package nuri.foundation.service.usermanagement.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.foundation.domain.user.entity.DeptManage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

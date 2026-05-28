@@ -1,5 +1,7 @@
 package nuri.foundation.service.auth.dto;
 
+import jakarta.validation.constraints.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,9 +17,12 @@ import java.util.List;
 public class DeptAuthorBatchRequest {
 
     @Schema(description = "부서 아이디 (부서 코드)", example = "ORGNZT_0000000000001")
+    @Size(max = 20)
     private String deptId;
 
     @Schema(description = "부서에 부여할 권한 코드", example = "ROLE_USER")
+    @Size(max = 20)
+    @NotBlank
     private String authrtId;
 
     @Schema(description = "부서 내 모든 사용자에게 적용 여부", example = "true")

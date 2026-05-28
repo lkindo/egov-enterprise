@@ -1,5 +1,7 @@
 package nuri.business.service.mail.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.mail.SentMail;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -36,6 +38,7 @@ public class SentMailDto {
     private String sndngDe;
 
     @Schema(description = "Description")
+    @Size(max = 30)
     private String atchFileId;
 
     public static SentMailDto from(SentMail entity) {

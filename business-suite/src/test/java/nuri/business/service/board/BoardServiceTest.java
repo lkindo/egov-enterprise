@@ -241,7 +241,7 @@ class BoardServiceTest {
         String pstId = "1";
         Board board = Board.builder().pstId(pstId).likeCnt(0).build();
 
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        given(boardRepository.findByPstIdWithPessimisticLock(pstId)).willReturn(Optional.of(board));
 
         // when
         Integer result = boardService.incrementLike(bbsId, pstId);

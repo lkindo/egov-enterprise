@@ -1,5 +1,7 @@
 package nuri.business.service.faq.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.faq.Faq;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 public class FaqDto {
 
     @Schema(description = "FAQ ID")
+    @Size(max = 20)
     private String faqId;
 
     @Schema(description = "질문제목")
@@ -31,6 +34,7 @@ public class FaqDto {
     private Integer inqireCo;
 
     @Schema(description = "첨부파일 ID")
+    @Size(max = 30)
     private String atchFileId;
 
     @Schema(description = "등록자 ID")

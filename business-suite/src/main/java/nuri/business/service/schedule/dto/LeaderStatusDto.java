@@ -1,5 +1,7 @@
 package nuri.business.service.schedule.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.schedule.LeaderStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 public class LeaderStatusDto {
 
     @Schema(description = "간부아이디")
+    @Size(max = 20)
     private String leaderId;
 
     @Schema(description = "간부명")
@@ -26,6 +29,7 @@ public class LeaderStatusDto {
 
     @Schema(description = "간부상태코드")
     @com.fasterxml.jackson.annotation.JsonProperty("leaderSttus")
+    @Size(max = 12)
     private String leaderSttsCd;
 
     @Schema(description = "간부상태명")

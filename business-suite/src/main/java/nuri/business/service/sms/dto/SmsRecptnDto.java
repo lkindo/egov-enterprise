@@ -1,5 +1,7 @@
 package nuri.business.service.sms.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.sms.SmsRecptn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -15,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class SmsRecptnDto {
 
     @Schema(description = "SMS ID")
+    @Size(max = 20)
     private String smsId;
 
     @Schema(description = "수신 번호")

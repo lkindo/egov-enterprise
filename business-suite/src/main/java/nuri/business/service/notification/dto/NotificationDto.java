@@ -1,5 +1,7 @@
 package nuri.business.service.notification.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.notification.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

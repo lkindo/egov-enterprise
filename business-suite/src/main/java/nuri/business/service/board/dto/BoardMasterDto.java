@@ -1,5 +1,7 @@
 package nuri.business.service.board.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.board.BoardMaster;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,10 +15,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BoardMasterDto {
 
+    @Size(max = 20)
     private String bbsId;
+    @Size(max = 100)
+    @NotBlank
     private String bbsTtl;
+    @Size(max = 4000)
     private String bbsExpln;
+    @Size(max = 12)
+    @NotBlank
     private String bbsTypeCd;
+    @Size(max = 12)
+    @NotBlank
     private String bbsAtrbCd;
     @com.fasterxml.jackson.annotation.JsonProperty("ansPsblYn")
     private String ansPsbltyYn;
@@ -28,17 +38,24 @@ public class BoardMasterDto {
     private Integer atchPsbltyFileQty;
 
     @com.fasterxml.jackson.annotation.JsonProperty("atchPsblFileSize")
+    @NotNull
     private Long atchPsbltyFileSz;
 
     @com.fasterxml.jackson.annotation.JsonProperty("tmplatId")
+    @Size(max = 20)
     private String tmpltId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdusrPnttm;
+    @Size(max = 1)
+    @NotBlank
     private String useYn;
+    @Size(max = 20)
     private String cmntyId;
+    @Size(max = 20)
     private String blogId;
+    @Size(max = 1)
     private String blogYn;
     @com.fasterxml.jackson.annotation.JsonProperty("commentYn")
     private String ansYn;

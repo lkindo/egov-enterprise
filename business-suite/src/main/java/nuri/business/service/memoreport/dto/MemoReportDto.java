@@ -1,5 +1,7 @@
 package nuri.business.service.memoreport.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.memoreport.MemoReport;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -28,6 +30,7 @@ public class MemoReportDto {
     private String writerId;
 
     @Schema(description = "작성자명")
+    @Size(max = 100)
     private String wrterNm;
 
     @Schema(description = "보고대상자아이디")
@@ -40,6 +43,7 @@ public class MemoReportDto {
     private String reportContents;
 
     @Schema(description = "첨부파일아이디")
+    @Size(max = 30)
     private String atchFileId;
 
     @Schema(description = "지시사항내용")

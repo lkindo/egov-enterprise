@@ -1,5 +1,7 @@
 package nuri.business.service.image.dto;
 
+import jakarta.validation.constraints.*;
+
 import nuri.business.domain.image.MainImage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
