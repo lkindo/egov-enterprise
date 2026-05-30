@@ -1,8 +1,8 @@
 package nuri.api.config;
 
-import nuri.foundation.security.iam.EgovAuthenticationProvider;
-import nuri.foundation.security.jwt.JwtAuthenticationFilter;
-import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.business.security.iam.EgovAuthenticationProvider;
+import nuri.business.security.jwt.JwtAuthenticationFilter;
+import nuri.business.security.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,13 +29,13 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import nuri.foundation.security.service.EgovPasswordEncoder;
+import nuri.business.security.service.EgovPasswordEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile("!mock-security-test & (default | local | dev | prod | security-test | e2e | test)")
+@Profile("!mock-security & !mock-security-test & (default | local | dev | prod | security-test | e2e | test)")
 @EnableWebSecurity
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 @Slf4j

@@ -1,7 +1,7 @@
 package nuri.web.board;
 
-import nuri.business.api.controller.board.BoardApiController;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.api.controller.business.board.BoardApiController;
+import nuri.business.core.exception.GlobalExceptionHandler;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import org.junit.jupiter.api.BeforeEach;

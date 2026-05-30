@@ -1,6 +1,6 @@
 package nuri.api.interceptor;
 
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.security.service.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

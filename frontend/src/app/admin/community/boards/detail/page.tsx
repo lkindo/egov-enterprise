@@ -1,12 +1,6 @@
 import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import { BoardDetailClient } from './BoardDetailClient';
 import { getInitialBoardDetailData } from './BoardDetailServer';
-
-// Optimization: Dynamic Import for Client Component
-const BoardDetailClient = dynamic(() => import('./BoardDetailClient').then(mod => mod.BoardDetailClient), {
-  ssr: true,
-  loading: () => <BoardDetailSkeleton />
-});
 
 function BoardDetailSkeleton() {
   return (

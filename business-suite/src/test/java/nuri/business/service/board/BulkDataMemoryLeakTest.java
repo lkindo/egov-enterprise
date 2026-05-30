@@ -1,12 +1,12 @@
 package nuri.business.service.board;
 
-import nuri.TestApplication;
+import nuri.business.TestApplication;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
-import nuri.foundation.security.config.TestSecurityConfig;
-import nuri.foundation.core.config.TestMessagingConfig;
+import nuri.business.security.config.TestSecurityConfig;
+import nuri.business.core.config.TestMessagingConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.security.test.context.support.WithMockUser;
+import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ class BulkDataMemoryLeakTest {
 
     @Test
     @DisplayName("성능/메모리 검증 - 30,000건 벌크 데이터 프로세싱 시 힙 메모리 누수 및 OOM 방어 무결성 보증")
-    @WithMockUser(username = "tester", roles = {"ADMIN"})
+    @WithMockCustomUser(username = "tester", role = "ADMIN", esntlId = "tester")
     void bulkDataProcessing_memoryLeakPrevention_verified() {
         Runtime runtime = Runtime.getRuntime();
 

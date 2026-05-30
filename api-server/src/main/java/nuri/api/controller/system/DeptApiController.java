@@ -1,9 +1,9 @@
 package nuri.api.controller.system;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.service.usermanagement.EgovDeptManageService;
-import nuri.foundation.service.usermanagement.dto.DeptManageDto;
+import nuri.business.core.response.PageResponse;
+import nuri.business.service.usermanagement.EgovDeptManageService;
+import nuri.business.service.usermanagement.dto.DeptManageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

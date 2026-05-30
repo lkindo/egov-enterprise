@@ -1,6 +1,6 @@
 package nuri.business.domain.board;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,8 +28,13 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "pst_id", length = 20)
     private String pstId;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "bbs_id", nullable = false, length = 20)
     private String bbsId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bbs_id", referencedColumnName = "bbs_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private BoardMaster boardMaster;
 
     private Long ansSn;
 
@@ -72,8 +77,13 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 200)
     private String pswd;
 
-    @Column(length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.file.FileMaster fileMaster;
 
     @Column(length = 1)
     private String scrtYn;
@@ -107,6 +117,10 @@ public class Board extends BaseEntity implements Serializable {
     
     @Builder.Default
     private Integer fileCnt = 0;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<nuri.business.domain.comment.Comment> comments = new java.util.ArrayList<>();
 
     public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String pstBgngYmd,
             String pstEndYmd, String atchFileId, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {

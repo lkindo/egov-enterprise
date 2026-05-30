@@ -1,8 +1,8 @@
 package nuri.api.controller.system;
 
-import nuri.foundation.test.BaseControllerTest;
-import nuri.foundation.service.usermanagement.EgovDeptManageService;
-import nuri.foundation.service.usermanagement.dto.DeptManageDto;
+import nuri.business.test.BaseControllerTest;
+import nuri.business.service.usermanagement.EgovDeptManageService;
+import nuri.business.service.usermanagement.dto.DeptManageDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;

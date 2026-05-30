@@ -17,6 +17,8 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+  autoconfigure:
+    exclude: org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration, org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration, org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -44,10 +46,15 @@ spring:
         maxSize: 8
   ai:
     openai:
-      enabled: false
-      api-key: dummy-key-for-test
+      chat:
+        enabled: false
+      embedding:
+        enabled: false
     ollama:
-      enabled: false
+      chat:
+        enabled: false
+      embedding:
+        enabled: false
 
 springdoc:
   api-docs:

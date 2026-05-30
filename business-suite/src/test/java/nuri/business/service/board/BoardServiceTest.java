@@ -10,8 +10,8 @@ import nuri.business.service.board.event.PostCreatedEvent;
 import nuri.business.service.file.EgovFileService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.service.user.EgovUserService;
-import nuri.foundation.service.user.dto.UserDto;
+import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,12 +64,12 @@ class BoardServiceTest {
     @Mock
     private Timer.Sample sample;
 
-    private MockedStatic<nuri.foundation.security.util.SecurityUtil> securityUtilMock;
+    private MockedStatic<nuri.business.security.util.SecurityUtil> securityUtilMock;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        securityUtilMock = mockStatic(nuri.foundation.security.util.SecurityUtil.class);
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
+        securityUtilMock = mockStatic(nuri.business.security.util.SecurityUtil.class);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
         meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
         boardService = new BoardService(
                 boardRepository,
@@ -112,8 +112,8 @@ class BoardServiceTest {
     @Test
     @DisplayName("게시글 수정 - 관리자가 아니지만 본인인 경우")
     void updateBoard_Self_Success() {
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user1"));
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user1"));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -131,8 +131,8 @@ class BoardServiceTest {
     @Test
     @DisplayName("게시글 수정 - 타인이며 관리자도 아닌 경우 예외")
     void updateBoard_Fail_NoAuth() {
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -145,8 +145,8 @@ class BoardServiceTest {
     @Test
     @DisplayName("게시글 삭제 - 타인이며 관리자도 아닌 경우 예외")
     void deleteBoard_Fail_NoAuth() {
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
-        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user2"));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -259,7 +259,7 @@ class BoardServiceTest {
         Board board = Board.builder().pstId(pstId).pstTtl("Old").userId(userId).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, pstId, request);
@@ -278,7 +278,7 @@ class BoardServiceTest {
         Board board = Board.builder().pstId(pstId).useYn("Y").userId(userId).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.deletePost(bbsId, pstId, "user1");
@@ -501,7 +501,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, pstId, request);
@@ -521,7 +521,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, pstId, request);
@@ -545,7 +545,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().pstId(pstId).userId("user1").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
 
         // when
@@ -571,7 +571,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().pstId(pstId).userId("user1").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
 
         // when
         boardService.updatePostWithFiles(bbsId, pstId, request, files);
@@ -613,7 +613,7 @@ class BoardServiceTest {
         String pstId = "1";
         Board board = Board.builder().pstId(pstId).userId("owner").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
 
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null, null, null);
 
@@ -628,7 +628,7 @@ class BoardServiceTest {
         String pstId = "1";
         Board board = Board.builder().pstId(pstId).userId("owner").build();
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("other_user"));
 
         assertThatThrownBy(() -> boardService.deletePost("BBS_01", pstId, "other_user"))
                 .isInstanceOf(BusinessException.class)
@@ -654,7 +654,7 @@ class BoardServiceTest {
         // update
         Board board = Board.builder().pstId("1").userId(userId).build();
         given(boardRepository.findById("1")).willReturn(Optional.of(board));
-        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
         
         boardService.updatePostWithFiles("BBS_01", "1", request, null);
         boardService.updatePostWithFiles("BBS_01", "1", request, Collections.emptyList());

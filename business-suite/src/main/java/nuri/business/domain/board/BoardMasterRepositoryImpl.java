@@ -1,6 +1,6 @@
 package nuri.business.domain.board;
 
-import nuri.foundation.domain.code.QCommonCode;
+import nuri.business.domain.code.QCommonCode;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Wildcard;

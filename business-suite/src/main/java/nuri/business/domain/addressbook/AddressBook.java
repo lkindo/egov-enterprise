@@ -3,7 +3,7 @@ package nuri.business.domain.addressbook;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,9 +28,19 @@ import lombok.experimental.SuperBuilder;
 })
 public class AddressBook extends BaseEntity {
 
+    @lombok.Builder.Default
+    @OneToMany(mappedBy = "addressBook", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AddressBookUser> addressBookUsers = new java.util.ArrayList<>();
+
     @Id
     @Column(name = "adbk_id", length = 20)
     private String adbkId;
+
+    public void addAddressBookUser(AddressBookUser user) {
+        this.addressBookUsers.add(user);
+        // 빌더 호환 등으로 연관 관계 세팅
+        // (AddressBookUser 내 getAddressBook() 혹은 리플렉션/롬복 대응)
+    }
 
     @Column(length = 100, nullable = false)
     private String adbkNm;

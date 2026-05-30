@@ -1,6 +1,6 @@
 package nuri.business.domain.organization;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

@@ -112,7 +112,17 @@
 
 > 본 조항은 글로벌 룰셋 §3(버그 수정 프로세스) 및 §7(Ralph Loop)을 본 프로젝트 맥락으로 오버라이드한다.
 
-빌드 실패, 컴파일 에러, 혹은 E2E/단위 테스트 실패가 감지되면 에이전트는 무작위적인 코드 수정 시도를 즉각 중단하고, 아래 **4단계 자가 성찰 프로세스**를 거쳐 응답 창에 `[SELF-REFLECTION REPORT]` 블록을 강제로 출력한 뒤 행동을 개시한다. **1~4단계 전체를 1회 "성찰 루프"로 정의한다.**
+### ⚠ [절대 규범] 진입 제한 조건 (Trigger Constraint)
+에이전트는 오직 명백한 빌드 실패(BUILD FAILED), 컴파일 에러, 또는 테스트 실패 로그가 **물리적인 증거(실패 로그 및 예외 메시지 등)로 검출 및 증명되었을 때에만** 본 리포트를 강제 출력한다.
+
+* **출력 금지 예외 상황 (Ignore Case)**:
+  1. 단순 진행 상황 질의 및 아키텍처 탐색 단계 (L0 등급)
+  2. `./gradlew test` 등 빌드/테스트가 **그린 패스(Green Pass)로 성공**한 단계
+  3. 사용자의 아키텍처 설계 피드백 및 단순 질문 답변 단계
+  위 상황에서는 본 리포트를 절대로 출력하지 않으며, 성찰 리포트 블록 없이 담백한 기술적 답변만 제공한다.
+
+### 0단계: 상태 검증 (State Assertion)
+- 에이전트는 성찰 리포트 출력 직전, "지금 맞닥뜨린 빌드/테스트 결과에 실제 실패(Failure)나 오류가 존재하는가?"를 검증한다. 판정 결과가 '아니오'일 경우 즉시 리포트 출력을 완전히 생략하고 일반 응답으로 분기한다.
 
 ```mermaid
 graph TD
@@ -145,6 +155,6 @@ graph TD
 - 가설에 따라 최소한의 코드만 수정하고, 빌드/테스트를 재실행하여 검증한다. 동일 에러로 3회 연속 성찰 루프가 실패하면 글로벌 §7.3 에스컬레이션 규정을 적용한다.
 
 ---
-*Last Updated: 2026-05-18 (Updated via Antigravity — Harness Evolution: Self-Reflective Debug Loop 2.0 Integrated)*
+*Last Updated: 2026-05-30 (Updated via Antigravity — Triggered-only Reflection Mechanism & State Assertion Integrated)*
 
 

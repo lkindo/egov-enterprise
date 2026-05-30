@@ -1,8 +1,8 @@
 package nuri.business.service.menu;
 
-import nuri.foundation.service.menu.MenuService;
-import nuri.foundation.service.menu.dto.MenuDto;
-import nuri.foundation.service.menu.dto.MenuUIContext;
+import nuri.business.service.menu.MenuService;
+import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.menu.dto.MenuUIContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

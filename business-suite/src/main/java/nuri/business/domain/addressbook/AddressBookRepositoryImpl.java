@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static nuri.business.domain.addressbook.QAddressBook.addressBook;
-import static nuri.foundation.domain.user.entity.QUser.user;
+import static nuri.business.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {

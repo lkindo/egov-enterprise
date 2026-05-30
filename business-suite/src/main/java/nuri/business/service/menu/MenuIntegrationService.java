@@ -1,8 +1,8 @@
 package nuri.business.service.menu;
 
-import nuri.foundation.service.menu.MenuService;
-import nuri.foundation.service.menu.dto.MenuDto;
-import nuri.foundation.service.menu.dto.MenuUIContext;
+import nuri.business.service.menu.MenuService;
+import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.menu.dto.MenuUIContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

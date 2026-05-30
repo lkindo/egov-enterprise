@@ -2,7 +2,7 @@ package nuri.business.domain.notification;
 
 import jakarta.persistence.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
@@ -30,8 +30,13 @@ public class Notification extends BaseEntity {
     @Column(length = 4000)
     private String notiCn;
 
-    @Column(length = 20)
+    @Column(name = "rcvr_id", length = 20)
     private String rcvrId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rcvr_id", referencedColumnName = "esntl_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.user.entity.User receiver;
 
     @Builder.Default
     @Column(length = 1)

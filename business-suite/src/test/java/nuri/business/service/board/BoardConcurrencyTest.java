@@ -1,12 +1,12 @@
 package nuri.business.service.board;
 
-import nuri.TestApplication;
+import nuri.business.TestApplication;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
-import nuri.foundation.security.config.TestSecurityConfig;
-import nuri.foundation.core.config.TestMessagingConfig;
+import nuri.business.security.config.TestSecurityConfig;
+import nuri.business.core.config.TestMessagingConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.security.test.context.support.WithMockUser;
+import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -92,7 +92,7 @@ class BoardConcurrencyTest {
 
     @Test
     @DisplayName("고부하 동시성 검증 - 100명이 동시에 좋아요 누를 시 비관적 락을 통해 추천수가 유실 없이 정확히 100만큼 증가함")
-    @WithMockUser(username = "tester", roles = {"USER"})
+    @WithMockCustomUser(username = "tester", role = "USER", esntlId = "tester")
     void incrementLike_concurrencySafelyControlled() throws InterruptedException {
         // Given: 100개의 동시 요청 준비
         int threadCount = 100;

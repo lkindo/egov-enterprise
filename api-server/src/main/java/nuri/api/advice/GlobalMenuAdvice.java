@@ -1,7 +1,7 @@
 package nuri.api.advice;
 
 import nuri.business.service.menu.MenuIntegrationService;
-import nuri.foundation.service.menu.dto.MenuUIContext;
+import nuri.business.service.menu.dto.MenuUIContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

@@ -1,10 +1,10 @@
 package nuri.business.service.mail;
 
-import nuri.TestApplication;
+import nuri.business.TestApplication;
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
-import nuri.foundation.security.config.TestSecurityConfig;
-import nuri.foundation.core.config.TestMessagingConfig;
+import nuri.business.security.config.TestSecurityConfig;
+import nuri.business.core.config.TestMessagingConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

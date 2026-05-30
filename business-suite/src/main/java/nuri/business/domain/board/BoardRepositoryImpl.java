@@ -12,7 +12,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Optional;
-import nuri.foundation.domain.user.entity.QUser;
+import nuri.business.domain.user.entity.QUser;
 
 public class BoardRepositoryImpl implements BoardRepositoryCustom {
 

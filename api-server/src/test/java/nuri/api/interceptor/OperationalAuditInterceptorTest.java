@@ -1,6 +1,6 @@
 package nuri.api.interceptor;
 
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.security.service.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

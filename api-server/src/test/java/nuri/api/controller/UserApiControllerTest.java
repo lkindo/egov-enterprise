@@ -3,11 +3,11 @@ package nuri.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.service.CustomUserDetails;
-import nuri.foundation.service.user.EgovUserService;
-import nuri.foundation.service.user.dto.*;
-import nuri.foundation.test.BaseControllerTest;
+import nuri.business.core.response.PageResponse;
+import nuri.business.security.service.CustomUserDetails;
+import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.dto.*;
+import nuri.business.test.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -258,8 +258,8 @@ public class UserApiControllerTest extends BaseControllerTest {
     void updateUsersRole() throws Exception {
         BulkRoleRequest req = new BulkRoleRequest();
         req.setUserIds(List.of("user1"));
-        req.setRole(nuri.foundation.domain.user.entity.Role.ADMIN);
-        doNothing().when(userService).updateUsersRole(any(), eq(nuri.foundation.domain.user.entity.Role.ADMIN));
+        req.setRole(nuri.business.domain.user.entity.Role.ADMIN);
+        doNothing().when(userService).updateUsersRole(any(), eq(nuri.business.domain.user.entity.Role.ADMIN));
 
         mockMvc.perform(patch("/api/v1/admin/system/users/role")
                 .contentType(MediaType.APPLICATION_JSON)

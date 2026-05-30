@@ -1,7 +1,7 @@
 package nuri.business.domain.board;
 
-import nuri.foundation.domain.code.CommonCode;
-import nuri.foundation.domain.code.CommonCodeRepository;
+import nuri.business.domain.code.CommonCode;
+import nuri.business.domain.code.CommonCodeRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +19,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import nuri.foundation.domain.config.JpaConfig;
-import nuri.foundation.security.audit.LoginUserAuditorAware;
+import nuri.business.domain.config.JpaConfig;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import org.springframework.context.annotation.Import;
 
 @DataJpaTest

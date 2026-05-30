@@ -1,6 +1,6 @@
 package nuri.business.domain.deptjob;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -18,9 +18,14 @@ public class DeptJob extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobId")
     private String deptTaskId;
 
-    @Column(length = 20)
+    @Column(name = "dept_jobbx_id", length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxId")
     private String deptTaskBoxId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dept_jobbx_id", referencedColumnName = "dept_task_box_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private DeptJobBox deptJobBox;
 
     @Column(length = 100)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobNm")
@@ -38,8 +43,13 @@ public class DeptJob extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("priort")
     private String prrtyRnk; // 1: 높음, 2: 보통, 3: 낮음
 
-    @Column(length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.file.FileMaster fileMaster;
 
     public void update(String deptJobbxId, String deptJobNm, String deptJobCn, String chargerId, String priort,
             String atchFileId) {

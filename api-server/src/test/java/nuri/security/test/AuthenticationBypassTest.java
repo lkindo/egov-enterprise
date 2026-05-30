@@ -3,7 +3,7 @@ package nuri.security.test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import nuri.business.security.annotation.WithMockCustomUser;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -57,7 +57,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @WithMockUser(roles = "USER")
+  @WithMockCustomUser(role = "USER")
   @DisplayName("권한이 없는 사용자가 어드민 엔드포인트 접근 시 403 Forbidden 반환")
   void unauthorizedUser_toAdminEndpoint_returns403() throws Exception {
     // Given

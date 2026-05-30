@@ -1,7 +1,7 @@
 package nuri.api.config;
 
 import nuri.api.interceptor.OperationalAuditInterceptor;
-import nuri.foundation.security.resolver.LoginUserArgumentResolver;
+import nuri.business.security.resolver.LoginUserArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;

@@ -1,8 +1,8 @@
 package nuri.business.support;
 
-import nuri.TestApplication;
-import nuri.foundation.security.config.TestSecurityConfig;
-import nuri.foundation.core.config.TestMessagingConfig;
+import nuri.business.TestApplication;
+import nuri.business.security.config.TestSecurityConfig;
+import nuri.business.core.config.TestMessagingConfig;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;

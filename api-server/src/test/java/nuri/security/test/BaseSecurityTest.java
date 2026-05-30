@@ -1,7 +1,7 @@
 package nuri.security.test;
 
-import nuri.foundation.security.jwt.JwtTokenProvider;
-import nuri.foundation.service.user.UserService;
+import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.business.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;

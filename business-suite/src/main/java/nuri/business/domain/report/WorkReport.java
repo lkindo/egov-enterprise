@@ -1,6 +1,6 @@
 package nuri.business.domain.report;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -29,7 +29,7 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(columnDefinition = "TEXT", length = 4000)
     private String rptCn;
 
-    @Transient
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
 
     @Column(length = 12)

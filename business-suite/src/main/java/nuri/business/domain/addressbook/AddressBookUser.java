@@ -1,5 +1,5 @@
 package nuri.business.domain.addressbook;
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.AllArgsConstructor;
@@ -28,11 +28,16 @@ public class AddressBookUser extends BaseEntity {
     @Column(name = "adbk_constnt_id", length = 20)
     private String adbkConstntId;
 
-    @Column(length = 20, nullable = false)
-    private String adbkId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adbk_id", nullable = false)
+    private AddressBook addressBook;
 
     @Column(length = 20)
     private String userId;
+
+    public String getAdbkId() {
+        return this.addressBook != null ? this.addressBook.getAdbkId() : null;
+    }
 
     // @Column(name = "rls_scp_cd", length = 30)
     // private String rlsScpCd;
@@ -54,4 +59,11 @@ public class AddressBookUser extends BaseEntity {
 
     @Column(length = 11)
     private String faxNo;
+
+    public static abstract class AddressBookUserBuilder<C extends AddressBookUser, B extends AddressBookUserBuilder<C, B>> extends BaseEntityBuilder<C, B> {
+        public B adbkId(String adbkId) {
+            this.addressBook(AddressBook.builder().adbkId(adbkId).build());
+            return self();
+        }
+    }
 }

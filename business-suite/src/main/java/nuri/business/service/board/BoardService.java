@@ -2,7 +2,7 @@ package nuri.business.service.board;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardDetailResult;
 import nuri.business.domain.board.BoardMaster;
@@ -14,8 +14,8 @@ import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
 import nuri.business.service.file.EgovFileService;
-import nuri.foundation.service.user.EgovUserService;
-import nuri.foundation.service.user.dto.UserDto;
+import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.dto.UserDto;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -290,9 +290,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
-                String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN");
+                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole("ADMIN");
 
                 if (!isAdmin && !currentUserId.equals(board.getUserId())) {
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
@@ -350,9 +350,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
-                String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN");
+                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole("ADMIN");
 
                 if (!isAdmin && !currentUserId.equals(board.getUserId())) {
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);

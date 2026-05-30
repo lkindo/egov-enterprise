@@ -2,7 +2,7 @@ package nuri.business.service.file;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.storage.FileStorageService;
 import nuri.business.domain.file.FileDetail;
 import nuri.business.domain.file.FileDetailId;

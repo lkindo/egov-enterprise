@@ -3,7 +3,8 @@ package nuri.business.domain.comment;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.io.Serializable;
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
+import nuri.business.domain.board.Board;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -30,8 +31,13 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(name = "ans_sn")
     private Long ansSn;
 
-    @Column(length = 20)
+    @Column(name = "pst_id", length = 20)
     private String pstId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pst_id", referencedColumnName = "pst_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Board board;
 
     @Column(length = 20)
     private String bbsId;

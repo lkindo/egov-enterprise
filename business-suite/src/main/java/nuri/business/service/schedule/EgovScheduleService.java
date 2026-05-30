@@ -1,7 +1,7 @@
 package nuri.business.service.schedule;
 
 import nuri.business.service.schedule.dto.ScheduleDto;
-import nuri.foundation.domain.common.BaseSearchDto;
+import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;

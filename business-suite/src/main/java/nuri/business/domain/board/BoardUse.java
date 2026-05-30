@@ -3,7 +3,7 @@ import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.experimental.SuperBuilder;
 
-import nuri.foundation.domain.common.BaseTimeEntity;
+import nuri.business.domain.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

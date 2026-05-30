@@ -1,9 +1,9 @@
 package nuri.config;
 
-import nuri.foundation.domain.auth.UserAuthority;
-import nuri.foundation.domain.auth.UserAuthorityRepository;
-import nuri.foundation.domain.user.entity.User;
-import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.business.domain.auth.UserAuthority;
+import nuri.business.domain.auth.UserAuthorityRepository;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import jakarta.annotation.PostConstruct;

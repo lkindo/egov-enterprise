@@ -1,10 +1,10 @@
 package nuri.api.controller;
 
-import nuri.foundation.test.BaseControllerTest;
+import nuri.business.test.BaseControllerTest;
 
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.business.service.user.UserService;
+import nuri.business.service.user.dto.UserResponse;
+import nuri.business.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;

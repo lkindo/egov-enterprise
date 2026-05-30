@@ -2,7 +2,7 @@ package nuri.business.service.deptjob;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 
 // import java.util.List;
@@ -11,7 +11,7 @@ import nuri.business.domain.deptjob.DeptJobBoxRepository;
 
 // import nuri.business.domain.deptjob.QDeptJob;
 import nuri.business.domain.organization.OrganizationManageRepository;
-import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;

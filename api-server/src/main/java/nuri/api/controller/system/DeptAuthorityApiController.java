@@ -1,11 +1,11 @@
 package nuri.api.controller.system;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.domain.auth.DeptAuthorProjection;
-import nuri.foundation.domain.common.BaseSearchDto;
-import nuri.foundation.service.auth.UserAuthorityManageService;
-import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
+import nuri.business.core.response.PageResponse;
+import nuri.business.domain.auth.DeptAuthorProjection;
+import nuri.business.domain.common.BaseSearchDto;
+import nuri.business.service.auth.UserAuthorityManageService;
+import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

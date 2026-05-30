@@ -1,7 +1,7 @@
 package nuri.api.config;
 
-import nuri.foundation.security.iam.EgovAuthenticationProvider;
-import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.business.security.iam.EgovAuthenticationProvider;
+import nuri.business.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
+import nuri.business.security.annotation.WithMockCustomUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,19 +24,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import nuri.api.controller.UserApiController;
-import nuri.foundation.service.user.UserService;
+import nuri.business.service.user.EgovUserService;
 import org.springframework.data.domain.PageImpl;
 import java.util.Collections;
 import nuri.api.interceptor.OperationalAuditInterceptor;
+import nuri.business.support.ControllerTestSupport;
 
 @WebMvcTest(controllers = UserApiController.class)
-@ActiveProfiles({ "prod", "test", "security-test" })
-@ContextConfiguration(classes = { ApiSecurityConfig.class, UserApiController.class })
+@ActiveProfiles({ "test", "security-test" })
+@ContextConfiguration(classes = { ApiSecurityConfig.class })
 @DisplayName("ApiSecurityConfig 설정 테스트")
-public class ApiSecurityConfigTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+public class ApiSecurityConfigTest extends ControllerTestSupport {
 
     @MockitoBean
     private EgovAuthenticationProvider egovAuthenticationProvider;
@@ -45,7 +43,7 @@ public class ApiSecurityConfigTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
-    private UserService userService;
+    private EgovUserService userService;
 
     @MockitoBean
     private OperationalAuditInterceptor operationalAuditInterceptor;
@@ -95,7 +93,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockCustomUser(role = "USER")
     @DisplayName("일반 사용자 권한 - 관리자 API 접근 - 403 반환")
     void forbiddenAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/system/users"))
@@ -103,7 +101,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockCustomUser(role = "ADMIN")
     @DisplayName("관리자 권한 - 관리자 API 접근 - 성공")
     void adminAccessTest() throws Exception {
         when(userService.getPagedUserList(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));

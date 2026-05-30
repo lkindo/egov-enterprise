@@ -9,7 +9,7 @@ import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;

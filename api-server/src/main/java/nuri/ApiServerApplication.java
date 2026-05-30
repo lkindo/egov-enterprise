@@ -23,7 +23,7 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
                                 }),
 
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-                                                nuri.foundation.security.config.SecurityConfig.class
+                                                nuri.business.security.config.SecurityConfig.class
                                 }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),

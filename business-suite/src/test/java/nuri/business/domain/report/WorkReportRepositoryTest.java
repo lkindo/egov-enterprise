@@ -1,6 +1,6 @@
 package nuri.business.domain.report;
 
-import nuri.foundation.support.PersistenceTestSupport;
+import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

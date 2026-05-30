@@ -2,7 +2,6 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
-    id 'java-test-fixtures'
     id 'jacoco'
 }
 
@@ -14,30 +13,12 @@ repositories {
 // IDE가 이 경로를 자동으로 인식하도록 맡기는 것이 클래스 중복 오류를 방지하는 가장 좋은 방법입니다.
 
 dependencies {
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
     api 'org.springframework.boot:spring-boot-starter-validation'
-    api 'org.springframework.boot:spring-boot-starter-security'
-    api 'org.springframework.boot:spring-boot-starter-web'
-    api 'org.springframework.boot:spring-boot-starter-websocket'
     api 'org.springframework.boot:spring-boot-starter-cache'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api libs.caffeine
     api 'com.bucket4j:bucket4j_jdk17-core:8.18.0'
     api 'com.warrenstrange:googleauth:1.5.0'
-
-
-    // JWT
-    api libs.jjwt.api
-    runtimeOnly libs.jjwt.impl
-    runtimeOnly libs.jjwt.jackson
-
-    // Domain & JPA & QueryDSL
-    api 'org.springframework.data:spring-data-envers'
-    api 'org.hibernate.orm:hibernate-envers'
-    api 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
-    annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
-    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
-    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 
     // API Docs / Validation / MapStruct
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
@@ -100,21 +81,6 @@ dependencies {
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
     testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.16'
 
-    testImplementation testFixtures(project(':foundation'))
-    
-    // testFixtures - 테스트 공통 코드를 다른 모듈에서 사용할 수 있도록 함
-    testFixturesApi project(':foundation')
-    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
-    testFixturesApi 'org.springframework.security:spring-security-test'
-    testFixturesApi 'com.h2database:h2'
-    testFixturesApi 'org.flywaydb:flyway-core'
-    testFixturesApi 'org.testcontainers:postgresql:1.20.4'
-    testFixturesApi 'org.testcontainers:jdbc:1.20.4'
-    
-    // AI Mock 설정을 위해 testFixtures에서도 AI 라이브러리 참조 허용
-    testFixturesApi platform(libs.spring.ai.bom)
-    testFixturesApi libs.spring.ai.openai
-    testFixturesApi libs.spring.ai.ollama
 }
 
 test {

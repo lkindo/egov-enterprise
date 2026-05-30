@@ -2,7 +2,7 @@ package nuri.business.domain.calendar;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -18,6 +18,12 @@ import lombok.experimental.SuperBuilder;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_hldy_info")
+@AttributeOverrides({
+    @AttributeOverride(name = "createdBy", column = @Column(name = "frst_rgtr_id", updatable = false, length = 20)),
+    @AttributeOverride(name = "lastModifiedBy", column = @Column(name = "last_mdfr_id", length = 20)),
+    @AttributeOverride(name = "crtDt", column = @Column(name = "crt_dt", updatable = false)),
+    @AttributeOverride(name = "mdfcnDt", column = @Column(name = "mdfcn_dt"))
+})
 public class Restde extends BaseEntity {
 
     @Id
@@ -43,10 +49,24 @@ public class Restde extends BaseEntity {
     private String hldySeCd;
 
     public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode) {
+        validateDateFormat(restdeDe);
         this.hldyYmd = restdeDe;
         this.hldyNm = restdeNm;
         this.hldyExpln = restdeDc;
         this.hldySeCd = restdeSeCode;
+    }
+
+    private void validateDateFormat(String ymd) {
+        if (ymd == null || ymd.length() != 8) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                "날짜 형식은 8자리 YYYYMMDD 여야 합니다.", nuri.foundation.core.exception.ErrorCode.INVALID_INPUT_VALUE);
+        }
+        try {
+            java.time.format.DateTimeFormatter.BASIC_ISO_DATE.parse(ymd);
+        } catch (Exception e) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                "유효하지 않은 날짜 형식입니다: " + ymd, nuri.foundation.core.exception.ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     // ----- [Legacy Getter/Setter & Builder Aliases] -----

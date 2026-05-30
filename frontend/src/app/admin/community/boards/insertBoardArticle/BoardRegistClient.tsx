@@ -92,6 +92,11 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
     }
   }, [hasDraft, restoreDraft, toast, pstId, form]);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const onSubmit = async (values: BoardFormValues) => {
     // Debug log removed for Zero-Tolerance clean console requirement
     if (!values.pstCn || values.pstCn === '<p></p>') {
@@ -133,6 +138,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       setIsSubmitting(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-16 pb-24 pt-8 min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin w-8 h-8 text-primary" />
+      </div>
+    );
+  }
 
   return (
     <motion.div 

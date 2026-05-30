@@ -7,7 +7,7 @@ import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;

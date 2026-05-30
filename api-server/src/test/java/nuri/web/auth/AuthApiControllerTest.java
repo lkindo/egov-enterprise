@@ -1,11 +1,11 @@
 package nuri.web.auth;
 
-import nuri.foundation.api.auth.AuthApiController;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.auth.AuthService;
-import nuri.foundation.service.auth.dto.LoginRequest;
-import nuri.foundation.service.auth.dto.TokenResponse;
-import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.api.controller.foundation.auth.AuthApiController;
+import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.business.service.auth.AuthService;
+import nuri.business.service.auth.dto.LoginRequest;
+import nuri.business.service.auth.dto.TokenResponse;
+import nuri.business.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,14 +27,14 @@ class AuthApiControllerTest {
     private MockMvc mockMvc;
     private AuthService authService;
     private JwtTokenProvider jwtTokenProvider;
-    private nuri.foundation.service.user.UserService userService;
+    private nuri.business.service.user.UserService userService;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         authService = mock(AuthService.class);
         jwtTokenProvider = mock(JwtTokenProvider.class);
-        userService = mock(nuri.foundation.service.user.UserService.class);
+        userService = mock(nuri.business.service.user.UserService.class);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(authService, jwtTokenProvider, userService))
                 .setControllerAdvice(new GlobalExceptionHandler())

@@ -1,8 +1,8 @@
 package nuri.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nuri.foundation.domain.user.entity.User;
-import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

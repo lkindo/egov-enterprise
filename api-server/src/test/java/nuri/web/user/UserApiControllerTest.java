@@ -1,6 +1,6 @@
 package nuri.web.user;
 
-import nuri.foundation.test.BaseControllerTest;
+import nuri.business.test.BaseControllerTest;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,11 +13,11 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import nuri.api.controller.UserApiController;
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.service.user.UserService;
+import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.user.dto.UserResponse;
+import nuri.business.service.user.dto.UserSignupRequest;
+import nuri.business.security.service.CustomUserDetails;
 import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;

@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class SanctionEventListener {
 
-    private final nuri.foundation.service.user.EgovUserService userService;
+    private final nuri.business.service.user.EgovUserService userService;
     private final nuri.business.service.sms.SmsService smsService;
     private final nuri.business.service.mail.MailService mailService;
 
-    public SanctionEventListener(nuri.foundation.service.user.EgovUserService userService,
+    public SanctionEventListener(nuri.business.service.user.EgovUserService userService,
                                 nuri.business.service.sms.SmsService smsService,
                                 nuri.business.service.mail.MailService mailService) {
         this.userService = userService;
@@ -32,7 +32,7 @@ public class SanctionEventListener {
                 event.getInformalSanctionId(), event.getApplicantId(), event.getNewStatus(), event.getReason());
         
         try {
-            nuri.foundation.service.user.dto.UserDto user = userService.getUserById(event.getApplicantId());
+            nuri.business.service.user.dto.UserDto user = userService.getUserById(event.getApplicantId());
             if (user == null) {
                 log.warn("Applicant not found: {}", event.getApplicantId());
                 return;

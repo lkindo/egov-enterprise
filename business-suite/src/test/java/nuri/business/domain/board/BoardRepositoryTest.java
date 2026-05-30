@@ -13,8 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.ActiveProfiles;
-import nuri.foundation.domain.config.JpaConfig;
-import nuri.foundation.security.audit.LoginUserAuditorAware;
+import nuri.business.domain.config.JpaConfig;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;

@@ -5,8 +5,8 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
 import nuri.business.domain.informalsanction.SanctionStatus;
-import nuri.foundation.service.code.EgovCommonCodeService;
-import nuri.foundation.service.code.dto.CommonCodeDto;
+import nuri.business.service.code.EgovCommonCodeService;
+import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -87,7 +87,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
@@ -109,7 +109,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
@@ -130,7 +130,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (결재자 본인)
-        String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAprvrId())) {
             throw new BusinessException("접근 권한이 없습니다.", ErrorCode.ACCESS_DENIED);

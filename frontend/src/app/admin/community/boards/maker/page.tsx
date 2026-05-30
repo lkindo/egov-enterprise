@@ -1,10 +1,15 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
-import { BoardMakerWizard } from './components/BoardMakerWizard';
+import dynamic from 'next/dynamic';
+
+const BoardMakerWizard = dynamic(
+  () => import('./components/BoardMakerWizard').then(mod => mod.BoardMakerWizard),
+  { ssr: false }
+);
 
 /**
- * 게시님鍮뚮뜑 留덈쾿님페이지 (Admin)
+ * 게시판 빌더 마법사 페이지 (Admin)
  * /admin/community/boards/maker
  */
 export default function BoardMakerPage() {
@@ -14,4 +19,3 @@ export default function BoardMakerPage() {
     </div>
   );
 }
-

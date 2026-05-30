@@ -3,7 +3,7 @@ package nuri.business.service.informalsanction;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
-import nuri.foundation.service.code.EgovCommonCodeService;
+import nuri.business.service.code.EgovCommonCodeService;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import nuri.business.domain.informalsanction.SanctionStatus;
-import nuri.foundation.security.util.SecurityUtil;
+import nuri.business.security.util.SecurityUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 

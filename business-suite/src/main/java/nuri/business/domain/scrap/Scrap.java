@@ -1,6 +1,6 @@
 package nuri.business.domain.scrap;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -27,8 +27,13 @@ public class Scrap extends BaseEntity {
     @Column(length = 20)
     private String bbsId;
 
-    @Column(length = 20)
+    @Column(name = "pst_id", length = 20)
     private String pstId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pst_id", referencedColumnName = "pst_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.board.Board board;
 
     @Column(length = 100)
     private String scrapNm;

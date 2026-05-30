@@ -1,9 +1,9 @@
 package nuri.performance;
 
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.business.service.user.UserService;
+import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.user.dto.UserResponse;
+import nuri.business.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,10 +22,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.security.service.CustomUserDetails;
 
 
-import nuri.foundation.support.IntegrationTest;
+import nuri.business.support.IntegrationTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 

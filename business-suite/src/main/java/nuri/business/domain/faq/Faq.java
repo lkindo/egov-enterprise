@@ -1,6 +1,6 @@
 package nuri.business.domain.faq;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -41,8 +41,13 @@ public class Faq extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("inqireCo")
     private Integer inqCnt = 0;
 
-    @Column(length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.file.FileMaster fileMaster;
 
     public void update(String qestnTtl, String qestnCn, String answerCn, String atchFileId) {
         this.qstnTtl = qestnTtl;

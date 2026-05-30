@@ -1,6 +1,6 @@
 package nuri.business.domain.mail;
 
-import nuri.foundation.domain.common.BaseEntity;
+import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.experimental.SuperBuilder;
@@ -42,8 +42,13 @@ public class SentMail extends BaseEntity {
 
     private java.time.LocalDateTime dsptchDt;
 
-    @Column(length = 20)
+    @Column(name = "atch_file_id", length = 20)
     private String atchFileId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.file.FileMaster fileMaster;
 
     // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
 

@@ -1,10 +1,10 @@
 package nuri.api.controller.system;
 
-import nuri.foundation.test.BaseControllerTest;
-import nuri.foundation.domain.auth.DeptAuthorProjection;
-import nuri.foundation.domain.common.BaseSearchDto;
-import nuri.foundation.service.auth.UserAuthorityManageService;
-import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
+import nuri.business.test.BaseControllerTest;
+import nuri.business.domain.auth.DeptAuthorProjection;
+import nuri.business.domain.common.BaseSearchDto;
+import nuri.business.service.auth.UserAuthorityManageService;
+import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;

@@ -1,11 +1,11 @@
 package nuri.api.controller;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.LoginUser;
-import nuri.foundation.security.service.CustomUserDetails;
-import nuri.foundation.service.user.EgovUserService;
-import nuri.foundation.service.user.dto.*;
+import nuri.business.core.response.PageResponse;
+import nuri.business.security.annotation.LoginUser;
+import nuri.business.security.service.CustomUserDetails;
+import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 
 import io.swagger.v3.oas.annotations.Parameter;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -57,6 +57,20 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   });
 
   const tmplatId = (masterInfo as any)?.tmplatId || (masterInfo as any)?.tmplat_id || 'TMPLT_LIST';
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
+        <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-lg animate-spin" />
+        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">Initializing Knowledge Node...</p>
+      </div>
+    );
+  }
 
   if (!article) {
     return (

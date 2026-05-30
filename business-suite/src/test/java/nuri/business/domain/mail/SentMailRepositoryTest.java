@@ -2,8 +2,8 @@ package nuri.business.domain.mail;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
-import nuri.foundation.domain.config.JpaConfig;
-import nuri.foundation.security.audit.LoginUserAuditorAware;
+import nuri.business.domain.config.JpaConfig;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

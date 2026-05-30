@@ -5,7 +5,7 @@ import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.core.service.BaseAbstractService;
+import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -123,7 +123,7 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     }
 
     @Override
-    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull nuri.foundation.domain.common.BaseSearchDto searchVO) {
+    public List<java.util.Map<String, Object>> selectEmpLyrPopup(@NonNull nuri.business.domain.common.BaseSearchDto searchVO) {
         return java.util.Collections.emptyList();
     }
 

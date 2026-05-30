@@ -1,7 +1,7 @@
 package nuri.config;
 
-import nuri.foundation.security.jwt.JwtAuthenticationFilter;
-import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.business.security.jwt.JwtAuthenticationFilter;
+import nuri.business.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -52,7 +52,7 @@ public class SecurityTestConfig {
                 return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         }
         @Bean
-        public nuri.foundation.security.service.EgovPasswordEncoder egovPasswordEncoder() {
-                return new nuri.foundation.security.service.EgovPasswordEncoder();
+        public nuri.business.security.service.EgovPasswordEncoder egovPasswordEncoder() {
+                return new nuri.business.security.service.EgovPasswordEncoder();
         }
 }

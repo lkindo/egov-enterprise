@@ -1,6 +1,6 @@
 package nuri.openapi;
 
-import nuri.foundation.support.IntegrationTest;
+import nuri.business.support.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @IntegrationTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"test"})
 @org.springframework.test.context.TestPropertySource(properties = {
     "springdoc.api-docs.enabled=true",
     "springdoc.swagger-ui.enabled=true"

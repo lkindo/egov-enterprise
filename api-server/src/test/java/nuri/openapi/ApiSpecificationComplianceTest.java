@@ -2,10 +2,10 @@ package nuri.openapi;
 
 import nuri.api.controller.UserApiController;
 import nuri.api.interceptor.OperationalAuditInterceptor;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
+import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.business.service.user.UserService;
+import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.user.dto.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
