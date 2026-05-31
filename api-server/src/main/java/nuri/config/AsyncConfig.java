@@ -34,6 +34,7 @@ public class AsyncConfig {
         executor.setAwaitTerminationSeconds(60);
         // 큐 고갈 시 거부 전략: 호출한 스레드에서 처리하여 안정성 확보
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setTaskDecorator(new nuri.foundation.core.config.ThreadLocalCopyTaskDecorator());
         executor.initialize();
         return executor;
     }

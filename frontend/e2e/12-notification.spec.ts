@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/base-test';
 import { NotificationPage } from './pages/NotificationPage';
 import fs from 'fs';
 import path from 'path';
@@ -81,7 +81,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         console.log('>>> Notification workflow verified successfully!');
     });
 
-    test('Notification: Long Content and UI Stability', async ({ request, page }) => {
+    test('Notification: Long Content and UI Stability', async ({ request, page, layoutGuard }) => {
         const testTitle = `Looong_Title_${Date.now()}`;
         const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
 
@@ -105,6 +105,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         const contentText = await contentLocator.textContent();
         expect(contentText?.length).toBeGreaterThan(50);
         
+        // 디자인 숨통 정량 검증 가드 실행 (여백 40% 체크)
+        await layoutGuard.verifyBreathingRatio('div.group', 'Notification Item Drawer');
+
         await notificationPage.closeNotificationDrawer();
     });
 

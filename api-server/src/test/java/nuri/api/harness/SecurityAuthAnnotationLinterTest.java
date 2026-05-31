@@ -104,8 +104,12 @@ class SecurityAuthAnnotationLinterTest {
                 boolean hasSecured = AnnotationUtils.findAnnotation(method, Secured.class) != null ||
                                       AnnotationUtils.findAnnotation(controllerClass, Secured.class) != null;
 
+                // 4.2 커스텀 PermitAllRoute 어노테이션이 선언되어 있는지도 확인
+                boolean hasPermitAllRoute = AnnotationUtils.findAnnotation(method, nuri.foundation.core.annotation.PermitAllRoute.class) != null ||
+                                            AnnotationUtils.findAnnotation(controllerClass, nuri.foundation.core.annotation.PermitAllRoute.class) != null;
+
                 // 5. 어떠한 권한 검증 어노테이션도 없으면 위반 처리
-                if (!hasPreAuthorize && !hasSecured) {
+                if (!hasPreAuthorize && !hasSecured && !hasPermitAllRoute) {
                     violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] @PreAuthorize(\"hasRole('...')\") 또는 @PreAuthorize(\"isAuthenticated()\")를 기입하십시오.",
                             controllerClass.getSimpleName(), method.getName(), pattern));
                 }

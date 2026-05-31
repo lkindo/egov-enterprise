@@ -27,6 +27,7 @@ public class AsyncConfig {
         executor.setMaxPoolSize(10);       // 최대 가동 스레드
         executor.setQueueCapacity(500);    // 대기 큐 용량
         executor.setThreadNamePrefix("LogAsync-");
+        executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
         executor.initialize();
         return executor;
     }

@@ -15,6 +15,14 @@ public class QueryCountInspector {
         queryCounter.set(new QueryCounter());
     }
 
+    public static QueryCounter getCounterObject() {
+        return queryCounter.get();
+    }
+
+    public static void setCounterObject(QueryCounter counter) {
+        queryCounter.set(counter);
+    }
+
     public static void increment(String sql) {
         QueryCounter counter = queryCounter.get();
         if (counter != null) {
