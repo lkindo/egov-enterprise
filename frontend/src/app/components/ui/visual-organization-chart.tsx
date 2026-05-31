@@ -244,7 +244,7 @@ export function VisualOrganizationChart() {
  </div>
  <div className="flex gap-2">
  <Button className="rounded-lg h-11 w-14 p-0 shadow-lg shadow-primary/20 animate-bounce-subtle"><Mail size={20} /></Button>
- <Button variant="outline" className="rounded-lg h-11 w-14 border-2 hover:bg-primary/5"><MoreHorizontal size={20} /></Button>
+ <Button variant="outline" className="rounded-lg h-11 w-14 border-2 hover:text-primary hover:bg-primary/5"><MoreHorizontal size={20} /></Button>
  </div>
  </div>
  </div>

@@ -118,7 +118,7 @@ export function SmartFormBuilder() {
  </Button>
  </div>
  <div className="h-6 w-px bg-muted mx-2" />
- <Button variant="outline" className="rounded-lg font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
+ <Button variant="outline" className="rounded-lg font-bold h-11 px-6 border-2 hover:text-primary hover:bg-primary/5 gap-2">
  <Eye size={18} /> 프리뷰 </Button>
  <Button className="rounded-lg font-bold h-11 px-8 shadow-xl shadow-primary/20 gap-2">
  <Save size={18} /> 서식 저장 </Button>

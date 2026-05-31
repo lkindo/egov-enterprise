@@ -1,28 +1,27 @@
-package nuri.service.stats;
+package nuri.business.service.stats;
 
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.board.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 실시간 대시보드 통계 서비스
- * 로컬 메모리(AtomicInteger)를 활용하여 실시간 지표를 집계하고 WebSocket으로 브로드캐스트한다.
+ * 실시간 대시보드 통계 서비스 (비즈니스 수위트 레이어)
+ * 백엔드 헌법 제1조 2항 및 제5조에 의거하여 외부 기술 사양(SimpMessageSendingOperations)과
+ * 물리적 결합을 완벽하게 끊어내고, Spring ApplicationEventPublisher를 이용해 이벤트를 발행하도록 격리 설계됨.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RealTimeDashboardService {
 
-    private final SimpMessageSendingOperations messagingTemplate;
     private final NotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 실시간 통계 데이터 관리(로컬 메모리 활용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
@@ -30,7 +29,7 @@ public class RealTimeDashboardService {
     private final AtomicInteger todayNewPosts = new AtomicInteger(0);
 
     /**
-     * 게시글 작성 이벤트 핸들러 (Point 22: 이벤트 활용)
+     * 게시글 작성 이벤트 핸들러
      */
     @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
@@ -39,21 +38,28 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 실시간 데이터 브로드캐스트 (5초 주기)
+     * 실시간 데이터 발행 (5초 주기)
+     * 직접 WebSocket으로 쏘는 대신 이벤트를 발행하여 api-server 측 리스너로 책임 격리
      */
     @Scheduled(fixedRate = 5000)
     public void broadcastRealTimeStats() {
         try {
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("activeUsers", activeUsers.get());
-            stats.put("visitsPerMinute", visitsPerMinute.get());
-            stats.put("newPosts", todayNewPosts.get());
-            stats.put("alerts", getPendingAlertsCount());
+            int currentActiveUsers = activeUsers.get();
+            int currentVisits = visitsPerMinute.get();
+            int currentPosts = todayNewPosts.get();
+            int pendingAlerts = getPendingAlertsCount();
 
-            messagingTemplate.convertAndSend("/topic/dashboard/stats", stats);
-            log.debug("Real-time stats broadcasted: {}", stats);
+            DashboardStatsUpdatedEvent event = new DashboardStatsUpdatedEvent(
+                currentActiveUsers,
+                currentVisits,
+                currentPosts,
+                pendingAlerts
+            );
+
+            eventPublisher.publishEvent(event);
+            log.debug("Published real-time stats event: {}", event);
         } catch (Exception e) {
-            log.error("Error broadcasting real-time stats", e);
+            log.error("Error publishing real-time stats event", e);
         }
     }
 
@@ -73,7 +79,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 처리 대기 중인 알림 수 조회 (임시 로직)
+     * 처리 대기 중인 알림 수 조회
      */
     private int getPendingAlertsCount() {
         try {

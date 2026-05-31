@@ -1,4 +1,4 @@
-package nuri.service.stats;
+package nuri.business.service.stats;
 
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.board.event.PostCreatedEvent;
@@ -8,9 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
-
-import java.util.Map;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -20,7 +18,7 @@ import static org.mockito.Mockito.*;
 class RealTimeDashboardServiceTest {
 
     @Mock
-    private SimpMessageSendingOperations messagingTemplate;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private NotificationRepository notificationRepository;
@@ -31,22 +29,22 @@ class RealTimeDashboardServiceTest {
     @Test
     @DisplayName("게시글 작성 이벤트 처리 확인")
     void handlePostCreated_IncrementsCount() {
-        // PostCreatedEvent(Object source, String bbsId, String nttId, String userId)
         PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", "1", "user01");
         realTimeDashboardService.handlePostCreated(event);
         realTimeDashboardService.broadcastRealTimeStats();
-        verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), argThat((Map<String, Object> m) -> (Integer)m.get("newPosts") == 1));
+        
+        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.newPosts() == 1));
     }
 
     @Test
-    @DisplayName("실시간 통계 브로드캐스트 확인")
+    @DisplayName("실시간 통계 이벤트 발행 확인")
     void broadcastRealTimeStats_Success() {
         when(notificationRepository.countByIsRead("N")).thenReturn(5L);
 
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
 
-        verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), anyMap());
+        verify(eventPublisher).publishEvent(any(DashboardStatsUpdatedEvent.class));
         verify(notificationRepository).countByIsRead("N");
     }
 
@@ -57,7 +55,7 @@ class RealTimeDashboardServiceTest {
         realTimeDashboardService.decrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
 
-        verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), argThat((Map<String, Object> m) -> (Integer)m.get("activeUsers") == 0));
+        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.activeUsers() == 0));
     }
 
     @Test
@@ -67,7 +65,7 @@ class RealTimeDashboardServiceTest {
         realTimeDashboardService.resetVisitsCounter();
         realTimeDashboardService.broadcastRealTimeStats();
 
-        verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), argThat((Map<String, Object> m) -> (Integer)m.get("visitsPerMinute") == 0));
+        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.visitsPerMinute() == 0));
     }
 
     @Test
@@ -75,6 +73,6 @@ class RealTimeDashboardServiceTest {
     void getPendingAlertsCount_Exception_ReturnsZero() {
         when(notificationRepository.countByIsRead("N")).thenThrow(new RuntimeException("DB Error"));
         realTimeDashboardService.broadcastRealTimeStats();
-        verify(messagingTemplate).convertAndSend(eq("/topic/dashboard/stats"), argThat((Map<String, Object> m) -> (Integer)m.get("alerts") == 0));
+        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.alerts() == 0));
     }
 }

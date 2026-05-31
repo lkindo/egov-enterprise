@@ -105,12 +105,14 @@ public class JwtTokenProvider {
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        Cookie cookie = new Cookie("refreshToken", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure); 
-        cookie.setPath("/");
-        cookie.setMaxAge((int) (refreshTokenValidityInMilliseconds / 1000));
-        response.addCookie(cookie);
+        org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(refreshTokenValidityInMilliseconds / 1000)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 
     public String resolveRefreshToken(HttpServletRequest request) {
@@ -123,12 +125,14 @@ public class JwtTokenProvider {
     }
 
     public void removeRefreshTokenCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refreshToken", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 
     public SecretKey getKeyForTest() {

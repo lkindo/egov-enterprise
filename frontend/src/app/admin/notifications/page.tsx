@@ -28,10 +28,10 @@ export default function NotificationsPage() {
         breadcrumbs={[{ label: '시스템 관리' }, { label: '메시징 센터' }]}
         actions={
           <div className="flex gap-3">
-            <Button variant="outline" className="rounded-lg h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition-all">
+            <Button variant="outline" className="rounded-lg h-11 px-6 border-2 gap-2 font-bold hover:text-primary hover:bg-primary/5 transition-all">
               <BarChart3 size={18} /> 분석 리포트
             </Button>
-            <Button variant="outline" className="rounded-lg h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition-all">
+            <Button variant="outline" className="rounded-lg h-11 px-6 border-2 gap-2 font-bold hover:text-primary hover:bg-primary/5 transition-all">
               <Settings size={18} /> 채널 설정
             </Button>
             <Button

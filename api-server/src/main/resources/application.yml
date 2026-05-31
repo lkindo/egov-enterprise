@@ -4,6 +4,13 @@ spring:
   main:
     lazy-initialization: false
     allow-bean-definition-overriding: true
+  mail:
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 3000
+          timeout: 3000
+          writetimeout: 3000
   jackson:
     serialization:
       fail-on-empty-beans: false

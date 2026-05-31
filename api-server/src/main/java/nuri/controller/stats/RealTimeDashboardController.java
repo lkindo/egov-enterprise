@@ -1,6 +1,6 @@
 package nuri.controller.stats;
 
-import nuri.service.stats.RealTimeDashboardService;
+import nuri.business.service.stats.RealTimeDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;

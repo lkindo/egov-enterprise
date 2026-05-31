@@ -9,7 +9,7 @@ interface PremiumSearchInputProps extends React.InputHTMLAttributes<HTMLInputEle
 }
 
 export function PremiumSearchInput({
-  placeholder = "?먯궛 寃님..",
+  placeholder = "자산 명칭 검색..",
   className,
   onSearch,
   ...props

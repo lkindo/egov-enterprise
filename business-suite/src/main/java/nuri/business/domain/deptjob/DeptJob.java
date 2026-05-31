@@ -18,12 +18,12 @@ public class DeptJob extends BaseEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobId")
     private String deptTaskId;
 
-    @Column(name = "dept_jobbx_id", length = 20)
+    @Column(name = "dept_task_box_id", length = 20)
     @com.fasterxml.jackson.annotation.JsonProperty("deptJobbxId")
     private String deptTaskBoxId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dept_jobbx_id", referencedColumnName = "dept_task_box_id", insertable = false, updatable = false,
+    @JoinColumn(name = "dept_task_box_id", referencedColumnName = "dept_task_box_id", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private DeptJobBox deptJobBox;
 

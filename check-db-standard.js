@@ -19,6 +19,7 @@ const violations = {
 };
 
 const prefixPattern = /^(tb|vw|sq|fn|sp|tr)_[a-z0-9_]+$/;
+const EXCLUDED_TABLES = ['ecopseq', 'ids', 'revinfo'];
 
 function checkFile(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
@@ -30,7 +31,7 @@ function checkFile(filePath) {
         const tableMatch = line.match(/@Table\s*\(\s*name\s*=\s*["']([^"']+)["']/);
         if (tableMatch) {
             const name = tableMatch[1];
-            if (!prefixPattern.test(name)) {
+            if (!EXCLUDED_TABLES.includes(name) && !prefixPattern.test(name)) {
                 fileViolations.push(`L${i+1}: @Table name "${name}" violates standard.`);
             }
         }

@@ -122,13 +122,14 @@ public class GlobalExceptionHandler {
 
     /**
      * 최상위 공통 예외 처리
+     * 백엔드 헌법 제7조 2항 및 정보 노출(Information Disclosure) 취약점 방어를 위해
+     * 내부 상세 메시지는 서버 로그(log.error)로만 남기고, 클라이언트 응답은 마스킹하여 반환.
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
-        log.error(">>> Internal Server Error: {}", e.getMessage(), e);
-        String debugMessage = "예기치 않은 서버 오류: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+        log.error(">>> Internal Server Error: {} - ExceptionType: {}", e.getMessage(), e.getClass().getName(), e);
         return new ResponseEntity<>(
-                ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, debugMessage),
+                ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다. 지속될 경우 관리자에게 문의해 주세요."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

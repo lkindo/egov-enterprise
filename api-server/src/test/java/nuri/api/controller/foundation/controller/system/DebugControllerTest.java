@@ -22,6 +22,6 @@ public class DebugControllerTest extends BaseControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Debug: This is a forced 500 error for verification.")));
+                .andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다. 지속될 경우 관리자에게 문의해 주세요."));
     }
 }

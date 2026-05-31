@@ -97,7 +97,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  onChange={(e) => setFilter(e.target.value)}
  />
  </div>
- <Button variant="outline" size="icon" className="rounded-lg border-2 h-11 w-11 hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
+  <Button variant="outline" size="icon" className="rounded-lg border-2 h-11 w-11 hover:text-primary hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
  </div>
  </div>
 
@@ -194,8 +194,8 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <Button variant="ghost" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
  분석 리포트 생성
  </Button>
- <Button variant="outline" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 border-2 hover:bg-primary/5">
- <Monitor size={16} /> 시각화 검증 </Button>
+  <Button variant="outline" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 border-2 hover:text-primary hover:bg-primary/5">
+  <Monitor size={16} /> 시각화 검증 </Button>
  <Button size="sm" className="rounded-lg font-bold h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
  <RotateCcw size={16} /> 스냅샷 롤백
  </Button>

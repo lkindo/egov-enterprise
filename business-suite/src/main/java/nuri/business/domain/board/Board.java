@@ -122,6 +122,9 @@ public class Board extends BaseEntity implements Serializable {
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<nuri.business.domain.comment.Comment> comments = new java.util.ArrayList<>();
 
+    @Version
+    private Integer version;
+
     public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String pstBgngYmd,
             String pstEndYmd, String atchFileId, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {
         this.pstTtl = pstTtl;

@@ -156,8 +156,8 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline" size="icon" className="rounded-lg border-2 hover:bg-primary/5"><Download size={18} /></Button>
-                    <Button variant="outline" size="icon" className="rounded-lg border-2 hover:bg-primary/5"><ColumnsIcon size={18} /></Button>
+                    <Button variant="outline" size="icon" className="rounded-lg border-2 hover:text-primary hover:bg-primary/5"><Download size={18} /></Button>
+                    <Button variant="outline" size="icon" className="rounded-lg border-2 hover:text-primary hover:bg-primary/5"><ColumnsIcon size={18} /></Button>
                 </div>
             </div>
 

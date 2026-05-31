@@ -38,6 +38,12 @@ spring:
   mail:
     host: localhost
     port: 25
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 3000
+          timeout: 3000
+          writetimeout: 3000
 
   # File Upload
   servlet:
