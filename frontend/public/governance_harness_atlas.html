@@ -1720,9 +1720,9 @@
       {
         num: 1,
         title: "JPA SQL N+1 성능 초소형 방어벽 (JPA N+1 SQL Inspector)",
-        desc: "통합 테스트 실행 도중 각 스레드별로 발행되는 SQL 쿼리 개수를 Hibernate Interceptor로 자동 계측하여, N+1 쿼리 누수가 발생하거나 임계치(최대 10개)를 위반하면 테스트를 즉시 실패 처리하는 성능 가드레일입니다. 쿼리 릭(Query Leak)을 컴파일/테스트 단계에서 100% 원천 차단하여 프로덕션 부하를 최대 90% 저감합니다.",
+        desc: "통합 테스트 실행 도중 각 스레드별로 발행되는 SQL 쿼리 개수를 Hibernate Interceptor로 자동 계측하여, N+1 쿼리 누수가 발생하거나 임계치(최대 10개)를 위반하면 테스트를 즉시 실패 처리하는 성능 가드레일입니다. 리플렉션 기반 ThreadLocalCopyTaskDecorator를 활용해 비동기 스레드 풀(logExecutor, taskExecutor) 전파 누수까지 100% 원천 계측 및 감지합니다.",
         badge1: "Backend", badge2: "Performance", type1: "primary", type2: "success",
-        impl: "QueryCountInspector.java (foundation), QueryCountGuardrailIntegrationTest.java (business-suite)",
+        impl: "QueryCountInspector.java (business-suite testFixtures), ThreadLocalCopyTaskDecorator.java (foundation)",
         doc: "jpa-performance-guardrail.md", docLink: "../docs/02-architecture/jpa-performance-guardrail.md",
         color: "linear-gradient(90deg, var(--accent-warning), var(--accent-danger))"
       },
@@ -1756,18 +1756,18 @@
       {
         num: 5,
         title: "Spring Security API 권한 제어 유실 방지 하네스 (Auth Role Guardrail)",
-        desc: "커스텀 API 컨트롤러 패키지 하위의 모든 HTTP 엔드포인트 메서드에 @PreAuthorize 또는 @Secured 등 명시적인 권한 어노테이션 지정을 강제합니다. 누락 감지 시 JUnit 빌드 타임에 테스트를 즉시 실패 처리(Hard-Stop)하여 제로데이 API 인가 노출 가능성을 0.00%로 완벽 밀봉합니다.",
+        desc: "커스텀 API 컨트롤러 패키지 하위의 모든 HTTP 엔드포인트 메서드에 @PreAuthorize 또는 @Secured 등 명시적인 권한 어노테이션 지정을 강제합니다. 누락 감지 시 JUnit 빌드 타임에 테스트를 즉시 실패 처리(Hard-Stop)하여 제로데이 API 인가 노출 가능성을 0.00%로 완벽 밀봉하며, 커스텀 @PermitAllRoute 어노테이션 선언으로 정합적 퍼블릭 라우팅 인가를 완수합니다.",
         badge1: "Backend", badge2: "Security", badge3: "Hard-Stop", type1: "primary", type2: "error", type3: "success",
-        impl: "SecurityAuthAnnotationLinterTest.java (api-server)",
+        impl: "SecurityAuthAnnotationLinterTest.java (api-server), PermitAllRoute.java (foundation)",
         doc: "security-hardening-playbook.md", docLink: "../docs/03-guides/security-hardening-playbook.md",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-primary))"
       },
       {
         num: 6,
-        title: "Playwright 자가 치유 셀렉터 에이전트 (Playwright Self-Healing Selector Agent)",
-        desc: "E2E 테스트 시 마이크로 UI 변경이나 CSS 리팩토링으로 주 셀렉터(Primary Selector)가 유실되어 테스트 빌드가 깨지는 취약성을 원천 해소합니다. 감지 실패 시, 즉각 텍스트 힌트, ARIA 시맨틱 롤(Role), 그리고 폼 휴리스틱 스캔 루프를 순차 기동하여 동적으로 엘리먼트를 실시간 치유(Heal)하고, 치유 내역을 콘솔에 보고해 빌드를 무결하게 완수시킵니다. 테스트 유지보수(Maintenance) 비용을 85% 이상 획기적으로 감축합니다.",
+        title: "Playwright 자가 치유 셀렉터 및 디자인 숨통 에이전트 (Playwright Self-Healing & Layout Guard)",
+        desc: "E2E 테스트 시 마이크로 UI 변경이나 CSS 리팩토링으로 주 셀렉터(Primary Selector)가 유실되어 테스트 빌드가 깨지는 취약성을 원천 해소합니다. 또한, LayoutBreathingGuard 픽스처를 탑재하여 Next.js 렌더링 지연(Timing Issue)을 극복하고, UI 컴포넌트 면적당 텍스트 비율 및 40% 숨통 여백 비율 미달 여부를 실시간 계측하여 텔레메트리 보고서를 출력합니다.",
         badge1: "E2E", badge2: "Resilience", badge3: "Self-Healing", type1: "cyan", type2: "secondary", type3: "success",
-        impl: "self-healing-agent.ts, base-test.ts (frontend/e2e/fixtures)",
+        impl: "self-healing-agent.ts, layout-breathing-guard.ts, base-test.ts (frontend/e2e/fixtures)",
         doc: "frontend/e2e/specs/ 하위 전체 브라우저 테스트 케이스 매핑", docLink: null,
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-success))"
       },
