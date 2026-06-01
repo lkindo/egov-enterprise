@@ -1,7 +1,6 @@
 package nuri.business.service.help.dto;
 
 import jakarta.validation.constraints.*;
-
 import nuri.business.domain.help.OnlineManual;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,28 +13,36 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "온라인 메뉴얼 DTO")
 public class OnlineManualDto {
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 20)
+    @Schema(description = "온라인 메뉴얼 ID")
     private String onlineMnlId;
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 100)
+    @Schema(description = "온라인 메뉴얼 명")
     private String onlineMnlNm;
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 12)
+    @Schema(description = "온라인 메뉴얼 구분코드")
     private String onlineMnlSeCode;
 
-    @Schema(description = "Description")
+    @Size(max = 1000)
+    @Schema(description = "온라인 메뉴얼 정의")
     private String onlineMnlDf;
 
-    @Schema(description = "Description")
+    @Size(max = 4000)
+    @Schema(description = "온라인 메뉴얼 설명")
     private String onlineMnlDc;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public String getMnlId() { return onlineMnlId; }

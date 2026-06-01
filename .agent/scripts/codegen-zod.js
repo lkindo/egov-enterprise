@@ -26,14 +26,18 @@ function getSchemaNameFromRef(ref) {
 }
 
 // 헬퍼 함수: 개별 프로퍼티를 Zod 코드로 변환
-function convertPropertyToZod(propName, prop, requiredList = []) {
+function convertPropertyToZod(propName, prop, requiredList = [], currentSchemaName = '') {
   let zodChain = '';
   const isRequired = requiredList.includes(propName);
 
   // $ref가 직접 정의된 경우
   if (prop.$ref) {
     const refSchema = getSchemaNameFromRef(prop.$ref);
-    zodChain = `z.lazy(() => ${refSchema}Schema)`;
+    if (refSchema === currentSchemaName) {
+      zodChain = `z.any()`;
+    } else {
+      zodChain = `z.lazy(() => ${refSchema}Schema)`;
+    }
   } else {
     switch (prop.type) {
       case 'string':
@@ -67,9 +71,13 @@ function convertPropertyToZod(propName, prop, requiredList = []) {
         if (prop.items) {
           if (prop.items.$ref) {
             const refSchema = getSchemaNameFromRef(prop.items.$ref);
-            zodChain = `z.array(z.lazy(() => ${refSchema}Schema))`;
+            if (refSchema === currentSchemaName) {
+              zodChain = `z.array(z.any())`;
+            } else {
+              zodChain = `z.array(z.lazy(() => ${refSchema}Schema))`;
+            }
           } else {
-            const itemType = convertPropertyToZod('', prop.items, []);
+            const itemType = convertPropertyToZod('', prop.items, [], currentSchemaName);
             zodChain = `z.array(${itemType})`;
           }
         } else {
@@ -81,11 +89,11 @@ function convertPropertyToZod(propName, prop, requiredList = []) {
           const nestedProps = [];
           const nestedRequired = prop.required || [];
           for (const [subName, subProp] of Object.entries(prop.properties)) {
-            nestedProps.push(`  ${subName}: ${convertPropertyToZod(subName, subProp, nestedRequired)}`);
+            nestedProps.push(`  ${subName}: ${convertPropertyToZod(subName, subProp, nestedRequired, currentSchemaName)}`);
           }
           zodChain = `z.object({\n  ${nestedProps.join(',\n  ')}\n})`;
         } else {
-          zodChain = 'z.record(z.any())';
+          zodChain = 'z.record(z.string(), z.any())';
         }
         break;
       default:
@@ -130,7 +138,7 @@ for (const schemaName of schemaNames) {
     codeLines.push(`export const ${schemaName}Schema = z.object({`);
     
     for (const [propName, prop] of Object.entries(schema.properties)) {
-      const zodProp = convertPropertyToZod(propName, prop, requiredList);
+      const zodProp = convertPropertyToZod(propName, prop, requiredList, schemaName);
       codeLines.push(`  ${propName}: ${zodProp},`);
     }
     

@@ -2,8 +2,6 @@
 package nuri.business.domain.common;
 
 import jakarta.validation.constraints.*;
-
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -22,12 +20,15 @@ public class BaseSearchDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 검색조건 (Category/Type) */
+    @Size(max = 255)
     private String searchCondition = "";
 
     /** 검색어 (Keyword) */
+    @Size(max = 255)
     private String searchKeyword = "";
 
     /** 검색사용여부 */
+    @Size(max = 1)
     private String searchUseYn = "";
 
     /** 현재페이지 (1-based) */

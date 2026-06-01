@@ -1,7 +1,6 @@
 package nuri.business.service.image.dto;
 
 import jakarta.validation.constraints.*;
-
 import nuri.business.domain.image.MainImage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,31 +13,39 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "메인 이미지 DTO")
 public class MainImageDto {
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 20)
+    @Schema(description = "이미지 ID")
     private String imageId;
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 100)
+    @Schema(description = "이미지 명")
     private String imageNm;
 
-    @Schema(description = "Description")
+    @Size(max = 50)
+    @Schema(description = "이미지 경로")
     private String image;
 
-    @Schema(description = "Description")
+    @Size(max = 100)
+    @Schema(description = "이미지 파일명")
     private String imageFile;
 
-    @Schema(description = "Description")
+    @Size(max = 4000)
+    @Schema(description = "이미지 설명")
     private String imageDc;
 
-    @Schema(description = "Description")
+    @Size(max = 1)
+    @Schema(description = "반영 여부")
     private String reflctAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static MainImageDto from(MainImage entity) {

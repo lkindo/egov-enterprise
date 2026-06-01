@@ -88,12 +88,12 @@ public class BoardMaster extends BaseEntity {
         }
     }
 
-    // --- [Transient Mirroring 기법을 통한 레거시 호환성 보장] ---
-    @Transient
+    // --- [JPA Mapping & Transient Mirroring 동기화] ---
+    @Column(name = "ans_yn", length = 1, nullable = false)
     @Builder.Default
     private String ansYn = "N";
 
-    @Transient
+    @Column(name = "stsfdg_yn", length = 1, nullable = false)
     @Builder.Default
     private String stsfdgYn = "N";
 
@@ -172,9 +172,6 @@ public class BoardMaster extends BaseEntity {
     // ----- [Legacy Getter/Setter & Builder Aliases] -----
 
     public String getAnsYn() {
-        if (this.option != null) {
-            return this.option.getAnsYn();
-        }
         return this.ansYn != null ? this.ansYn : "N";
     }
 
@@ -185,9 +182,6 @@ public class BoardMaster extends BaseEntity {
     }
 
     public String getStsfdgYn() {
-        if (this.option != null) {
-            return this.option.getStsfdgYn();
-        }
         return this.stsfdgYn != null ? this.stsfdgYn : "N";
     }
 

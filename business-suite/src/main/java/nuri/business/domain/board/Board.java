@@ -113,7 +113,7 @@ public class Board extends BaseEntity implements Serializable {
 
     @Column(name = "cmnt_cnt")
     @Builder.Default
-    private Integer commentCnt = 0;
+    private Integer cmntCnt = 0;
     
     @Builder.Default
     private Integer fileCnt = 0;
@@ -201,4 +201,7 @@ public class Board extends BaseEntity implements Serializable {
     public void setAnswerAt(String v) { this.ansYn = v; }
     public String getNoticeAt() { return ntcYn; }
     public void setNoticeAt(String v) { this.ntcYn = v; }
+
+    public Integer getCommentCnt() { return cmntCnt; }
+    public void setCommentCnt(Integer v) { this.cmntCnt = v; }
 }

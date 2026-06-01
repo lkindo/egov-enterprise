@@ -8,15 +8,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Schema(description = "공통코드 DTO")
 public record CommonCodeDto(
-        @Schema(description = "코드그룹 ID") String cdId,
+        @NotBlank @Size(max = 20) @Schema(description = "코드그룹 ID") String cdId,
 
-        @Schema(description = "코드") String dtlCd,
+        @NotBlank @Size(max = 12) @Schema(description = "코드") String dtlCd,
 
-        @Schema(description = "코드명") String dtlCdNm,
+        @NotBlank @Size(max = 100) @Schema(description = "코드명") String dtlCdNm,
 
-        @Schema(description = "코드설명") String dtlCdExpln,
+        @Size(max = 4000) @Schema(description = "코드설명") String dtlCdExpln,
 
-        @Schema(description = "사용여부") String useYn) {
+        @NotBlank @Size(max = 1) @Schema(description = "사용여부") String useYn) {
 
     // Compatibility Getters for legacy java references
     @JsonIgnore

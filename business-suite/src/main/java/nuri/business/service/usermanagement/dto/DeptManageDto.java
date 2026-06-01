@@ -1,7 +1,6 @@
 package nuri.business.service.usermanagement.dto;
 
 import jakarta.validation.constraints.*;
-
 import nuri.business.domain.user.entity.DeptManage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,22 +13,27 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "부서 정보 DTO")
 public class DeptManageDto {
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 20)
+    @Schema(description = "부서 ID")
     private String orgnztId;
 
-    @Schema(description = "Description")
+    @NotBlank
+    @Size(max = 100)
+    @Schema(description = "부서 명")
     private String orgnztNm;
 
-    @Schema(description = "Description")
+    @Size(max = 4000)
+    @Schema(description = "부서 설명")
     private String orgnztDc;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static DeptManageDto from(DeptManage entity) {

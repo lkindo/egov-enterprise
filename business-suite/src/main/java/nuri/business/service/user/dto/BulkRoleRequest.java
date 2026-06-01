@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 public class BulkRoleRequest {
     @NotEmpty(message = "사용자 ID 목록은 필수입니다.")
+    @NotNull
     private List<String> userIds;
 
     @NotNull(message = "권한은 필수입니다.")

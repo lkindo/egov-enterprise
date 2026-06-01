@@ -1,7 +1,6 @@
 package nuri.business.service.stats.dto;
 
 import jakarta.validation.constraints.*;
-
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,9 +11,15 @@ import lombok.Getter;
 @Builder
 public class StatsDto {
     // 검색조건
-    String fromDate;
+    @Size(max = 20)
+    private String fromDate;
+
+    @Size(max = 20)
     private String toDate;
+
+    @Size(max = 20)
     private String statsKind;
+
     private String detailStatsKind;
     private String pdKind;
 
@@ -25,7 +30,7 @@ public class StatsDto {
     private int minStatsCo;
 
     // CRUD 통계
-    int creatCo;
+    private int creatCo;
     private int inqireCo;
     private int updtCo;
     private int deleteCo;
@@ -33,7 +38,7 @@ public class StatsDto {
     private int errorCo;
 
     // 게시물 통계
-    int totInqireCo;
+    private int totInqireCo;
     private float avrgInqireCo;
     private String mxmmInqireBbsId;
     private String mxmmInqireBbsNm;

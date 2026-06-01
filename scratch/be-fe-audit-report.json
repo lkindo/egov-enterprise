@@ -1,0 +1,25 @@
+{
+  "missingInZod": [],
+  "missingInOpenApi": [],
+  "requiredMismatches": [
+    {
+      "dtoName": "BulkStatusRequest",
+      "fieldName": "userIds",
+      "beRequired": true,
+      "feRequired": false
+    },
+    {
+      "dtoName": "BulkRoleRequest",
+      "fieldName": "userIds",
+      "beRequired": true,
+      "feRequired": false
+    },
+    {
+      "dtoName": "BulkDeptMoveRequest",
+      "fieldName": "userIds",
+      "beRequired": true,
+      "feRequired": false
+    }
+  ],
+  "countMismatches": []
+}

@@ -1,7 +1,6 @@
 package nuri.business.service.notification.dto;
 
 import jakarta.validation.constraints.*;
-
 import nuri.business.domain.notification.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,15 +13,41 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "사용자 알림 DTO")
 public class NotificationDto {
+
+    @NotBlank
+    @Size(max = 20)
+    @Schema(description = "알림 일련번호")
     private String ntfcNo;
+
+    @Size(max = 100)
+    @Schema(description = "알림 제목")
     private String ntfcSj;
+
+    @Size(max = 4000)
+    @Schema(description = "알림 내용")
     private String ntfcCn;
+
+    @Schema(description = "알림 일시")
     private LocalDateTime ntfcTime;
+
+    @Size(max = 100)
+    @Schema(description = "알림 주기 설정")
     private String bhNtfcIntrvl;
+
+    @Size(max = 20)
+    @Schema(description = "수신자 ID")
     private String receiverId;
+
+    @Size(max = 1)
+    @Schema(description = "읽음 여부")
     private String isRead;
-    private String uniqId; // For linkUrl mapping
+
+    @Size(max = 1000)
+    @Schema(description = "링크 URL")
+    private String uniqId;
+
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 

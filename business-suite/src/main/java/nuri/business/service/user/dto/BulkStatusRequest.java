@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 public class BulkStatusRequest {
     @NotEmpty(message = "사용자 ID 목록은 필수입니다.")
+    @NotNull
     private List<String> userIds;
 
     @NotNull(message = "상태 코드는 필수입니다.")

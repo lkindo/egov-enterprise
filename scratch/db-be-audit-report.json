@@ -1,0 +1,1051 @@
+{
+  "missingTables": [],
+  "columnMismatches": [
+    {
+      "className": "RoleInfo",
+      "tableName": "tb_role_info",
+      "fieldName": "creatDt",
+      "columnName": "creat_dt",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\RoleInfo.java"
+    },
+    {
+      "className": "Board",
+      "tableName": "tb_bbs_item",
+      "fieldName": "commentCnt",
+      "columnName": "comment_cnt",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "ansYn",
+      "columnName": "ans_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "stsfdgYn",
+      "columnName": "stsfdg_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "GroupManage",
+      "tableName": "tb_authrt_group_info",
+      "fieldName": "groupCreatDe",
+      "columnName": "group_creat_de",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\group\\GroupManage.java"
+    },
+    {
+      "className": "WebLog",
+      "tableName": "tb_web_log",
+      "fieldName": "prcsTm",
+      "columnName": "prcs_tm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\WebLog.java"
+    }
+  ],
+  "nullableMismatches": [
+    {
+      "className": "AddressBook",
+      "tableName": "tb_adbk_manage",
+      "fieldName": "adbkId",
+      "columnName": "adbk_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBook.java"
+    },
+    {
+      "className": "AddressBookUser",
+      "tableName": "tb_adbk_info",
+      "fieldName": "adbkConstntId",
+      "columnName": "adbk_constnt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\addressbook\\AddressBookUser.java"
+    },
+    {
+      "className": "AuthorityRole",
+      "tableName": "tb_authrt_role_map",
+      "fieldName": "authority",
+      "columnName": "authrt_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\AuthorityRole.java"
+    },
+    {
+      "className": "AuthorityRole",
+      "tableName": "tb_authrt_role_map",
+      "fieldName": "roleInfo",
+      "columnName": "role_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\AuthorityRole.java"
+    },
+    {
+      "className": "AuthorityRole",
+      "tableName": "tb_authrt_role_map",
+      "fieldName": "authrtCd",
+      "columnName": "authrt_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\AuthorityRole.java"
+    },
+    {
+      "className": "AuthorityRole",
+      "tableName": "tb_authrt_role_map",
+      "fieldName": "roleCd",
+      "columnName": "role_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\AuthorityRole.java"
+    },
+    {
+      "className": "MenuAuthority",
+      "tableName": "tb_menu_crt_dtl",
+      "fieldName": "authrtCd",
+      "columnName": "authrt_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\MenuAuthority.java"
+    },
+    {
+      "className": "MenuAuthority",
+      "tableName": "tb_menu_crt_dtl",
+      "fieldName": "menuSn",
+      "columnName": "menu_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\MenuAuthority.java"
+    },
+    {
+      "className": "RoleInfo",
+      "tableName": "tb_role_info",
+      "fieldName": "roleId",
+      "columnName": "role_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\auth\\RoleInfo.java"
+    },
+    {
+      "className": "Blog",
+      "tableName": "tb_blog_info",
+      "fieldName": "blogId",
+      "columnName": "blog_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Blog.java"
+    },
+    {
+      "className": "BlogUser",
+      "tableName": "tb_blog_user_map",
+      "fieldName": "blogId",
+      "columnName": "blog_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java"
+    },
+    {
+      "className": "BlogUser",
+      "tableName": "tb_blog_user_map",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java"
+    },
+    {
+      "className": "BlogUser",
+      "tableName": "tb_blog_user_map",
+      "fieldName": "blogId",
+      "columnName": "blog_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java"
+    },
+    {
+      "className": "BlogUser",
+      "tableName": "tb_blog_user_map",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BlogUser.java"
+    },
+    {
+      "className": "Board",
+      "tableName": "tb_bbs_item",
+      "fieldName": "pstId",
+      "columnName": "pst_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Board.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "bbsId",
+      "columnName": "bbs_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "fileAtchPsbltyYn",
+      "columnName": "file_atch_psblty_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "atchPsbltyFileQty",
+      "columnName": "atch_psblty_file_qty",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "useYn",
+      "columnName": "use_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java"
+    },
+    {
+      "className": "BoardMasterOption",
+      "tableName": "tb_bbs_master_optn",
+      "fieldName": "bbsId",
+      "columnName": "bbs_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMasterOption.java"
+    },
+    {
+      "className": "BoardMasterOption",
+      "tableName": "tb_bbs_master_optn",
+      "fieldName": "boardMaster",
+      "columnName": "bbs_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMasterOption.java"
+    },
+    {
+      "className": "BoardUse",
+      "tableName": "tb_bbs_use_info",
+      "fieldName": "bbsId",
+      "columnName": "bbs_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java"
+    },
+    {
+      "className": "BoardUse",
+      "tableName": "tb_bbs_use_info",
+      "fieldName": "trgtId",
+      "columnName": "trgt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardUse.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "dgstfnSn",
+      "columnName": "dgstfn_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "nttId",
+      "columnName": "ntt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "dgstfnScr",
+      "columnName": "dgstfn_scr",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "dgstfnSn",
+      "columnName": "dgstfn_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "nttId",
+      "columnName": "ntt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Satisfaction",
+      "tableName": "tb_dgstfn_info",
+      "fieldName": "dgstfnScr",
+      "columnName": "dgstfn_scr",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Satisfaction.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltId",
+      "columnName": "tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltNm",
+      "columnName": "tmplt_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltPath",
+      "columnName": "tmplt_path",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "useYn",
+      "columnName": "use_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltSeCd",
+      "columnName": "tmplt_se_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltId",
+      "columnName": "tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltNm",
+      "columnName": "tmplt_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltPath",
+      "columnName": "tmplt_path",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltSeCd",
+      "columnName": "tmplt_se_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\Template.java"
+    },
+    {
+      "className": "Restde",
+      "tableName": "tb_hldy_info",
+      "fieldName": "hldySn",
+      "columnName": "hldy_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java"
+    },
+    {
+      "className": "Restde",
+      "tableName": "tb_hldy_info",
+      "fieldName": "hldySn",
+      "columnName": "hldy_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\calendar\\Restde.java"
+    },
+    {
+      "className": "AdministCode",
+      "tableName": "tb_admdst_cd",
+      "fieldName": "admdstCd",
+      "columnName": "admdst_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\AdministCode.java"
+    },
+    {
+      "className": "CommonCodeCategory",
+      "tableName": "tb_com_clsf_cd",
+      "fieldName": "clsfCd",
+      "columnName": "clsf_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\CommonCodeCategory.java"
+    },
+    {
+      "className": "InstitutionCode",
+      "tableName": "tb_inst_cd",
+      "fieldName": "instCd",
+      "columnName": "inst_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\InstitutionCode.java"
+    },
+    {
+      "className": "InstitutionCodeRecptnLog",
+      "tableName": "tb_inst_cd_rcptn_log",
+      "fieldName": "ocrnYmd",
+      "columnName": "ocrn_ymd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\InstitutionCodeRecptnLog.java"
+    },
+    {
+      "className": "InstitutionCodeRecptnLog",
+      "tableName": "tb_inst_cd_rcptn_log",
+      "fieldName": "instCd",
+      "columnName": "inst_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\InstitutionCodeRecptnLog.java"
+    },
+    {
+      "className": "InstitutionCodeRecptnLog",
+      "tableName": "tb_inst_cd_rcptn_log",
+      "fieldName": "jobSn",
+      "columnName": "job_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\code\\InstitutionCodeRecptnLog.java"
+    },
+    {
+      "className": "Comment",
+      "tableName": "tb_bbs_comment",
+      "fieldName": "ansSn",
+      "columnName": "ans_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\comment\\Comment.java"
+    },
+    {
+      "className": "DeptJob",
+      "tableName": "tb_dept_task_info",
+      "fieldName": "deptTaskId",
+      "columnName": "dept_task_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java"
+    },
+    {
+      "className": "DeptJob",
+      "tableName": "tb_dept_task_info",
+      "fieldName": "deptTaskId",
+      "columnName": "dept_task_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJob.java"
+    },
+    {
+      "className": "DeptJobBox",
+      "tableName": "tb_dept_job_bx",
+      "fieldName": "deptTaskBoxId",
+      "columnName": "dept_task_box_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java"
+    },
+    {
+      "className": "DeptJobBox",
+      "tableName": "tb_dept_job_bx",
+      "fieldName": "deptTaskBoxId",
+      "columnName": "dept_task_box_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\deptjob\\DeptJobBox.java"
+    },
+    {
+      "className": "Faq",
+      "tableName": "tb_faq_info",
+      "fieldName": "faqId",
+      "columnName": "faq_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java"
+    },
+    {
+      "className": "Faq",
+      "tableName": "tb_faq_info",
+      "fieldName": "qstnTtl",
+      "columnName": "qstn_ttl",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java"
+    },
+    {
+      "className": "Faq",
+      "tableName": "tb_faq_info",
+      "fieldName": "qstnTtl",
+      "columnName": "qstn_ttl",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\faq\\Faq.java"
+    },
+    {
+      "className": "FileDetail",
+      "tableName": "tb_file_detail",
+      "fieldName": "atchFileSeq",
+      "columnName": "atch_file_seq",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java"
+    },
+    {
+      "className": "FileDetail",
+      "tableName": "tb_file_detail",
+      "fieldName": "atchFileSeq",
+      "columnName": "atch_file_seq",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileDetail.java"
+    },
+    {
+      "className": "FileMaster",
+      "tableName": "tb_file_master",
+      "fieldName": "atchFileId",
+      "columnName": "atch_file_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java"
+    },
+    {
+      "className": "FileMaster",
+      "tableName": "tb_file_master",
+      "fieldName": "useYn",
+      "columnName": "use_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\file\\FileMaster.java"
+    },
+    {
+      "className": "GroupManage",
+      "tableName": "tb_authrt_group_info",
+      "fieldName": "groupId",
+      "columnName": "group_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\group\\GroupManage.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpId",
+      "columnName": "hlp_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpSeCd",
+      "columnName": "hlp_se_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpDfn",
+      "columnName": "hlp_dfn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpId",
+      "columnName": "hlp_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpSeCd",
+      "columnName": "hlp_se_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "Hpcm",
+      "tableName": "tb_hlp_info",
+      "fieldName": "hlpDfn",
+      "columnName": "hlp_dfn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\Hpcm.java"
+    },
+    {
+      "className": "OnlineManual",
+      "tableName": "tb_onln_mnl_info",
+      "fieldName": "onlnMnlId",
+      "columnName": "onln_mnl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java"
+    },
+    {
+      "className": "OnlineManual",
+      "tableName": "tb_onln_mnl_info",
+      "fieldName": "onlnMnlId",
+      "columnName": "onln_mnl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\help\\OnlineManual.java"
+    },
+    {
+      "className": "MainImage",
+      "tableName": "tb_main_image",
+      "fieldName": "imgId",
+      "columnName": "img_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java"
+    },
+    {
+      "className": "MainImage",
+      "tableName": "tb_main_image",
+      "fieldName": "imgNm",
+      "columnName": "img_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java"
+    },
+    {
+      "className": "MainImage",
+      "tableName": "tb_main_image",
+      "fieldName": "imgId",
+      "columnName": "img_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java"
+    },
+    {
+      "className": "MainImage",
+      "tableName": "tb_main_image",
+      "fieldName": "imgNm",
+      "columnName": "img_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\image\\MainImage.java"
+    },
+    {
+      "className": "InformalSanction",
+      "tableName": "tb_ifml_atrz_info",
+      "fieldName": "version",
+      "columnName": "version",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java"
+    },
+    {
+      "className": "InformalSanction",
+      "tableName": "tb_ifml_atrz_info",
+      "fieldName": "ifmlAtrzId",
+      "columnName": "ifml_atrz_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\informalsanction\\InformalSanction.java"
+    },
+    {
+      "className": "InternetSvcGuidance",
+      "tableName": "tb_intrn_svc",
+      "fieldName": "itntSvcId",
+      "columnName": "itnt_svc_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\isg\\InternetSvcGuidance.java"
+    },
+    {
+      "className": "LoginLog",
+      "tableName": "tb_login_log",
+      "fieldName": "logId",
+      "columnName": "log_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\LoginLog.java"
+    },
+    {
+      "className": "PrivacyLog",
+      "tableName": "tb_privacy_log",
+      "fieldName": "dmndId",
+      "columnName": "dmnd_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\PrivacyLog.java"
+    },
+    {
+      "className": "PrivacyLog",
+      "tableName": "tb_privacy_log",
+      "fieldName": "dmndId",
+      "columnName": "dmnd_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\PrivacyLog.java"
+    },
+    {
+      "className": "SysLog",
+      "tableName": "tb_sys_log",
+      "fieldName": "dmndId",
+      "columnName": "dmnd_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\SysLog.java"
+    },
+    {
+      "className": "UserLog",
+      "tableName": "tb_user_log",
+      "fieldName": "vnUserMaster",
+      "columnName": "dmnd_user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\UserLog.java"
+    },
+    {
+      "className": "UserLog",
+      "tableName": "tb_user_log",
+      "fieldName": "ocrnYmd",
+      "columnName": "ocrn_ymd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\UserLog.java"
+    },
+    {
+      "className": "UserLog",
+      "tableName": "tb_user_log",
+      "fieldName": "dmndUserId",
+      "columnName": "dmnd_user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\UserLog.java"
+    },
+    {
+      "className": "UserLog",
+      "tableName": "tb_user_log",
+      "fieldName": "srvcNm",
+      "columnName": "srvc_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\UserLog.java"
+    },
+    {
+      "className": "UserLog",
+      "tableName": "tb_user_log",
+      "fieldName": "mthdNm",
+      "columnName": "mthd_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\UserLog.java"
+    },
+    {
+      "className": "WebLog",
+      "tableName": "tb_web_log",
+      "fieldName": "dmndId",
+      "columnName": "dmnd_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\log\\WebLog.java"
+    },
+    {
+      "className": "LoginPolicy",
+      "tableName": "tb_login_policy",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\login\\LoginPolicy.java"
+    },
+    {
+      "className": "SentMail",
+      "tableName": "tb_email_dsptch_manage",
+      "fieldName": "msgId",
+      "columnName": "msg_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mail\\SentMail.java"
+    },
+    {
+      "className": "MemoReport",
+      "tableName": "tb_memo_rpt_info",
+      "fieldName": "rptId",
+      "columnName": "rpt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\memoreport\\MemoReport.java"
+    },
+    {
+      "className": "BkmkMenu",
+      "tableName": "tb_bkmk_menu_mng_rslt",
+      "fieldName": "menuId",
+      "columnName": "menu_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\menu\\BkmkMenu.java"
+    },
+    {
+      "className": "BkmkMenu",
+      "tableName": "tb_bkmk_menu_mng_rslt",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\menu\\BkmkMenu.java"
+    },
+    {
+      "className": "Menu",
+      "tableName": "tb_menu_info",
+      "fieldName": "menuSn",
+      "columnName": "menu_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\menu\\Menu.java"
+    },
+    {
+      "className": "SiteMap",
+      "tableName": "tb_stmp_info",
+      "fieldName": "mpngCrtId",
+      "columnName": "mpng_crt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\menu\\SiteMap.java"
+    },
+    {
+      "className": "IndividualPage",
+      "tableName": "tb_indv_pg",
+      "fieldName": "pageId",
+      "columnName": "page_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mypage\\IndividualPage.java"
+    },
+    {
+      "className": "MyPageContent",
+      "tableName": "tb_indv_pg_conts",
+      "fieldName": "cntntsId",
+      "columnName": "cntnts_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\mypage\\MyPageContent.java"
+    },
+    {
+      "className": "Note",
+      "tableName": "tb_note_info",
+      "fieldName": "noteId",
+      "columnName": "note_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\Note.java"
+    },
+    {
+      "className": "NoteRecptn",
+      "tableName": "tb_note_rcptn",
+      "fieldName": "noteRcptnId",
+      "columnName": "note_rcptn_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteRecptn.java"
+    },
+    {
+      "className": "NoteTrnsmit",
+      "tableName": "tb_note_sndng",
+      "fieldName": "noteSndngId",
+      "columnName": "note_sndng_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\note\\NoteTrnsmit.java"
+    },
+    {
+      "className": "Notification",
+      "tableName": "tb_user_noti",
+      "fieldName": "notiSn",
+      "columnName": "noti_sn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\notification\\Notification.java"
+    },
+    {
+      "className": "EventInfo",
+      "tableName": "tb_event_info",
+      "fieldName": "evntId",
+      "columnName": "evnt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\operation\\EventInfo.java"
+    },
+    {
+      "className": "ExternalHr",
+      "tableName": "tb_extrl_hr_info",
+      "fieldName": "evntId",
+      "columnName": "evnt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\operation\\ExternalHr.java"
+    },
+    {
+      "className": "ExternalHr",
+      "tableName": "tb_extrl_hr_info",
+      "fieldName": "otsdHrId",
+      "columnName": "otsd_hr_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\operation\\ExternalHr.java"
+    },
+    {
+      "className": "ExternalHr",
+      "tableName": "tb_extrl_hr_info",
+      "fieldName": "event",
+      "columnName": "evnt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\operation\\ExternalHr.java"
+    },
+    {
+      "className": "RewardManage",
+      "tableName": "tb_rward_manage",
+      "fieldName": "rwrdId",
+      "columnName": "rwrd_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\operation\\RewardManage.java"
+    },
+    {
+      "className": "OrganizationManage",
+      "tableName": "tb_orgnzt_info",
+      "fieldName": "ognzId",
+      "columnName": "ognz_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java"
+    },
+    {
+      "className": "OrganizationManage",
+      "tableName": "tb_orgnzt_info",
+      "fieldName": "ognzId",
+      "columnName": "ognz_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\organization\\OrganizationManage.java"
+    },
+    {
+      "className": "Program",
+      "tableName": "tb_prgrm_lst",
+      "fieldName": "prgrmFileNm",
+      "columnName": "prgrm_file_nm",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\program\\Program.java"
+    },
+    {
+      "className": "WorkReport",
+      "tableName": "tb_rpt_info",
+      "fieldName": "rptId",
+      "columnName": "rpt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java"
+    },
+    {
+      "className": "WorkReport",
+      "tableName": "tb_rpt_info",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java"
+    },
+    {
+      "className": "WorkReport",
+      "tableName": "tb_rpt_info",
+      "fieldName": "rptId",
+      "columnName": "rpt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java"
+    },
+    {
+      "className": "WorkReport",
+      "tableName": "tb_rpt_info",
+      "fieldName": "rptTtl",
+      "columnName": "rpt_ttl",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java"
+    },
+    {
+      "className": "WorkReport",
+      "tableName": "tb_rpt_info",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\report\\WorkReport.java"
+    },
+    {
+      "className": "Diary",
+      "tableName": "tb_diary_info",
+      "fieldName": "diaryId",
+      "columnName": "diary_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Diary.java"
+    },
+    {
+      "className": "LeaderSchedule",
+      "tableName": "tb_leader_schdl",
+      "fieldName": "schdlId",
+      "columnName": "schdl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderSchedule.java"
+    },
+    {
+      "className": "LeaderStatus",
+      "tableName": "tb_leader_stts",
+      "fieldName": "leaderId",
+      "columnName": "leader_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\LeaderStatus.java"
+    },
+    {
+      "className": "MemoTodo",
+      "tableName": "tb_memo_todo_info",
+      "fieldName": "todoId",
+      "columnName": "todo_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\MemoTodo.java"
+    },
+    {
+      "className": "Schedule",
+      "tableName": "tb_schdl_info",
+      "fieldName": "schdlId",
+      "columnName": "schdl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\schedule\\Schedule.java"
+    },
+    {
+      "className": "Scrap",
+      "tableName": "tb_bbs_scrap",
+      "fieldName": "scrapId",
+      "columnName": "scrap_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\scrap\\Scrap.java"
+    },
+    {
+      "className": "Sms",
+      "tableName": "tb_sms_info",
+      "fieldName": "smsId",
+      "columnName": "sms_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java"
+    },
+    {
+      "className": "Sms",
+      "tableName": "tb_sms_info",
+      "fieldName": "sndngTelno",
+      "columnName": "sndng_telno",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\sms\\Sms.java"
+    },
+    {
+      "className": "DtaUseStats",
+      "tableName": "tb_dta_use_stats",
+      "fieldName": "dtaUseStatsId",
+      "columnName": "dta_use_stats_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\stats\\DtaUseStats.java"
+    },
+    {
+      "className": "ReprtStats",
+      "tableName": "tb_rptp_stats",
+      "fieldName": "reprtId",
+      "columnName": "reprt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\stats\\ReprtStats.java"
+    },
+    {
+      "className": "Banner",
+      "tableName": "tb_bnr_info",
+      "fieldName": "bnrId",
+      "columnName": "bnr_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\content\\banner\\Banner.java"
+    },
+    {
+      "className": "Popup",
+      "tableName": "tb_popup_info",
+      "fieldName": "popupId",
+      "columnName": "popup_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\content\\popup\\Popup.java"
+    },
+    {
+      "className": "SystemPolicy",
+      "tableName": "tb_plcy_manage",
+      "fieldName": "plcyTypeCd",
+      "columnName": "plcy_type_cd",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\policy\\SystemPolicy.java"
+    },
+    {
+      "className": "CnsltManage",
+      "tableName": "tb_dscsn_list",
+      "fieldName": "dscsnId",
+      "columnName": "dscsn_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\consult\\CnsltManage.java"
+    },
+    {
+      "className": "OnlinePollArticle",
+      "tableName": "tb_onln_poll_artcl",
+      "fieldName": "pollArtclId",
+      "columnName": "poll_artcl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\OnlinePollArticle.java"
+    },
+    {
+      "className": "OnlinePollManage",
+      "tableName": "tb_onln_poll_manage",
+      "fieldName": "pollId",
+      "columnName": "poll_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\OnlinePollManage.java"
+    },
+    {
+      "className": "OnlinePollResult",
+      "tableName": "tb_onln_poll_rslt",
+      "fieldName": "pollRsltId",
+      "columnName": "poll_rslt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\OnlinePollResult.java"
+    },
+    {
+      "className": "SurveyArticle",
+      "tableName": "tb_srvy_artcl",
+      "fieldName": "srvyArtclId",
+      "columnName": "srvy_artcl_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyArticle.java"
+    },
+    {
+      "className": "SurveyArticle",
+      "tableName": "tb_srvy_artcl",
+      "fieldName": "srvyQstnId",
+      "columnName": "srvy_qstn_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyArticle.java"
+    },
+    {
+      "className": "SurveyArticle",
+      "tableName": "tb_srvy_artcl",
+      "fieldName": "srvyId",
+      "columnName": "srvy_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyArticle.java"
+    },
+    {
+      "className": "SurveyArticle",
+      "tableName": "tb_srvy_artcl",
+      "fieldName": "srvyTmpltId",
+      "columnName": "srvy_tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyArticle.java"
+    },
+    {
+      "className": "SurveyInfo",
+      "tableName": "tb_srvy_info",
+      "fieldName": "srvyId",
+      "columnName": "srvy_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyInfo.java"
+    },
+    {
+      "className": "SurveyQuestion",
+      "tableName": "tb_srvy_qstn",
+      "fieldName": "srvyQstnId",
+      "columnName": "srvy_qstn_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyQuestion.java"
+    },
+    {
+      "className": "SurveyQuestion",
+      "tableName": "tb_srvy_qstn",
+      "fieldName": "srvyId",
+      "columnName": "srvy_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyQuestion.java"
+    },
+    {
+      "className": "SurveyQuestion",
+      "tableName": "tb_srvy_qstn",
+      "fieldName": "srvyTmpltId",
+      "columnName": "srvy_tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyQuestion.java"
+    },
+    {
+      "className": "SurveyRespondent",
+      "tableName": "tb_srvy_rspdnt",
+      "fieldName": "srvyRspdntId",
+      "columnName": "srvy_rspdnt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyRespondent.java"
+    },
+    {
+      "className": "SurveyResult",
+      "tableName": "tb_srvy_rslt",
+      "fieldName": "srvyRspnsId",
+      "columnName": "srvy_rspns_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyResult.java"
+    },
+    {
+      "className": "SurveyTemplate",
+      "tableName": "tb_srvy_tmplt",
+      "fieldName": "srvyTmpltId",
+      "columnName": "srvy_tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\system\\service\\survey\\SurveyTemplate.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltId",
+      "columnName": "tmplt_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\template\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "tmpltPath",
+      "columnName": "tmplt_path",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\template\\Template.java"
+    },
+    {
+      "className": "Template",
+      "tableName": "tb_tmplt_info",
+      "fieldName": "useYn",
+      "columnName": "use_yn",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\template\\Template.java"
+    },
+    {
+      "className": "DeptManage",
+      "tableName": "tb_orgnzt_info",
+      "fieldName": "ognzId",
+      "columnName": "ognz_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\user\\entity\\DeptManage.java"
+    },
+    {
+      "className": "UserAbsence",
+      "tableName": "tb_user_absn",
+      "fieldName": "userId",
+      "columnName": "user_id",
+      "file": "business-suite\\src\\main\\java\\nuri\\business\\domain\\user\\entity\\UserAbsence.java"
+    }
+  ],
+  "lengthMismatches": []
+}

@@ -29,7 +29,7 @@ public class RoleInfoRepositoryImpl implements RoleInfoRepositoryCustom {
                                                 roleInfo.roleTypeCd,
                                                 commonCode.dtlCdNm.as("roleTyNm"),
                                                 roleInfo.roleSort,
-                                                roleInfo.creatDt))
+                                                roleInfo.roleCrtYmd.as("creatDt")))
                                 .from(roleInfo)
                                 .leftJoin(commonCode).on(
                                                 commonCode.cdId.eq("COM029")
@@ -37,7 +37,7 @@ public class RoleInfoRepositoryImpl implements RoleInfoRepositoryCustom {
                                 .where(roleNmLike(searchKeyword))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(roleInfo.creatDt.desc())
+                                .orderBy(roleInfo.roleCrtYmd.desc())
                                 .fetch();
 
                 long total = queryFactory

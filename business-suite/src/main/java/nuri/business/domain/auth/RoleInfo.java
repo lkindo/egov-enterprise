@@ -34,7 +34,7 @@ public class RoleInfo extends BaseEntity {
 
     @Column(name = "role_crt_ymd")
     @Builder.Default
-    private LocalDate creatDt = LocalDate.now();
+    private LocalDate roleCrtYmd = LocalDate.now();
 
     /**
      * Updates the role information.

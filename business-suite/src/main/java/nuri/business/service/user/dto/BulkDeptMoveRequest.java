@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 public class BulkDeptMoveRequest {
     @NotEmpty(message = "사용자 ID 목록은 필수입니다.")
+    @NotNull
     private List<String> userIds;
 
     @NotNull(message = "부서 ID는 필수입니다.")

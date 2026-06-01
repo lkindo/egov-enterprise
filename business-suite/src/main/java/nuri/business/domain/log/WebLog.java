@@ -37,7 +37,7 @@ public class WebLog extends BaseEntity {
     @Column(length = 8)
     private String occrYmd;
 
-    @jakarta.persistence.Transient
+    @Column(name = "prcs_tm")
     private Long prcsTm;
 
     public WebLog(String dmndId, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {

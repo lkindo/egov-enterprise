@@ -30,7 +30,7 @@ public class GroupManage extends BaseEntity {
 
     @Column(name = "group_crt_ymd")
     @Builder.Default
-    private LocalDateTime groupCreatDe = LocalDateTime.now();
+    private LocalDateTime groupCrtYmd = LocalDateTime.now();
 
     public void update(String groupNm, String groupDc) {
         this.groupNm = groupNm;
@@ -39,6 +39,6 @@ public class GroupManage extends BaseEntity {
 
     // Helper for legacy string date
     public String getGroupCreatDeString() {
-        return groupCreatDe != null ? groupCreatDe.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "";
+        return groupCrtYmd != null ? groupCrtYmd.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "";
     }
 }
