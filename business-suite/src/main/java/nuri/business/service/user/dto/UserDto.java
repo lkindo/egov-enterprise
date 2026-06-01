@@ -118,45 +118,6 @@ public class UserDto {
 
     private LocalDateTime createdDate;
 
-    // ----- [Legacy Aliases] -----
-    public String getPassword() { return pswd; }
-    public String getPasswordHint() { return pswdHint; }
-    public String getPasswordCnsr() { return pswdCrans; }
-    public String getHomeadres() { return homeAddr; }
-    public String getDetailAdres() { return daddr; }
-    public String getSexdstnCode() { return gndrCd; }
-    public String getBrth() { return brthYmd; }
-    public String getFxnum() { return faxNo; }
-    public String getOffmTelno() { return officeTelno; }
-    public String getMoblphonNo() { return mblTelno; }
-    public String getEmailAdres() { return emlAddr; }
-    public String getUserSttusCode() { return userSttsCd; }
-    public String getLockAt() { return lckYn; }
-
-    @JsonIgnore
-    public String getMberTyCode() { return mberTypeCd; }
-
-    public void setPassword(String v) { this.pswd = v; }
-    public void setPasswordHint(String v) { this.pswdHint = v; }
-    public void setPasswordCnsr(String v) { this.pswdCrans = v; }
-    public void setHomeadres(String v) { this.homeAddr = v; }
-    public void setDetailAdres(String v) { this.daddr = v; }
-    public void setSexdstnCode(String v) { this.gndrCd = v; }
-    public void setBrth(String v) { this.brthYmd = v; }
-    public void setFxnum(String v) { this.faxNo = v; }
-    public void setOffmTelno(String v) { this.officeTelno = v; }
-    public void setMoblphonNo(String v) { this.mblTelno = v; }
-    public void setEmailAdres(String v) { this.emlAddr = v; }
-    public void setUserSttusCode(String v) { this.userSttsCd = v; }
-    public void setLockAt(String v) { this.lckYn = v; }
-
-    @JsonIgnore
-    public void setMberTyCode(String v) { this.mberTypeCd = v; }
-
-    // ----- [Standard CamelCase Accessors] -----
-    public String getMberTypeCd() { return mberTypeCd; }
-
-    public void setMberTypeCd(String v) { this.mberTypeCd = v; }
 
     public static UserDto from(nuri.business.domain.user.entity.User user) {
         if (user == null)
@@ -168,7 +129,7 @@ public class UserDto {
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .pswd(user.getPswd())
                 .pswdHint(user.getPswdHint())
-                .pswdCrans(user.getPswdCrans())
+                .pswdCrans(user.getPswdCnsr())
                 .emplNo(user.getEmplNo())
                 .gndrCd(user.getGndrCd())
                 .brthYmd(user.getBrthYmd())
@@ -177,16 +138,16 @@ public class UserDto {
                 .endTelno(user.getEndTelno())
                 .faxNo(user.getFaxNo())
                 .pstinstCd(user.getPstinstCd())
-                .orgnztId(user.getOrgnztId())
+                .orgnztId(user.getOgnzId())
                 .groupId(user.getGroupId())
-                .homeAddr(user.getHomeAddr())
-                .daddr(user.getDaddr())
+                .homeAddr(user.getBaseAddr())
+                .daddr(user.getDtlAddr())
                 .zip(user.getZip())
                 .officeTelno(user.getOfficeTelno())
                 .mblTelno(user.getMblTelno())
                 .emlAddr(user.getEmlAddr())
                 .ofcpsNm(user.getOfcpsNm())
-                .subDn(user.getSubDn())
+                .subDn(user.getCrtfcDnValue())
                 .userSttsCd(user.getUserSttsCd())
                 .lckYn(user.getLckYn())
                 .createdDate(user.getCreatedDate())

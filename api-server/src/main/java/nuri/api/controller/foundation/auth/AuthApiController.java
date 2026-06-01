@@ -74,7 +74,7 @@ public class AuthApiController {
             userData.put("name", userDto.getUserNm());
             userData.put("role", userDto.getRole());
             userData.put("userSe", userDto.getUserSe());
-            userData.put("email", userDto.getEmailAdres());
+            userData.put("email", userDto.getEmlAddr());
 
             return ApiResponse.success(userData);
         }

@@ -3,14 +3,14 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
 export interface LoginPolicy {
-  emplyrId: string;
-  emplyrNm: string;
-  ipInfo: string;
-  dplctPermAt: 'Y' | 'N';
-  lmttAt: 'Y' | 'N';
-  startTime?: string;
-  endTime?: string;
-  otpEnabledAt?: 'Y' | 'N';
+  userId: string;
+  userNm: string;
+  ipAddr: string;
+  dpcnPrmYn: 'Y' | 'N';
+  lmtYn: 'Y' | 'N';
+  bgngTm?: string;
+  endTm?: string;
+  otpUseYn?: 'Y' | 'N';
   regYn: 'Y' | 'N';
   lastUpdusrId?: string;
 }
@@ -36,18 +36,18 @@ class LoginPolicyAdminService extends AdminService {
   }
 
   /** 로그인 정책 상세 조회 */
-  async getLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<LoginPolicy> {
-    return this.get<LoginPolicy>(`/${emplyrId}`, config);
+  async getLoginPolicy(userId: string, config?: AxiosRequestConfig): Promise<LoginPolicy> {
+    return this.get<LoginPolicy>(`/${userId}`, config);
   }
 
   /** 로그인 정책 수정(등록/수정) */
-  async saveLoginPolicy(emplyrId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${emplyrId}`, data, config);
+  async saveLoginPolicy(userId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${userId}`, data, config);
   }
 
   /** 로그인 정책 삭제 */
-  async deleteLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${emplyrId}`, config);
+  async deleteLoginPolicy(userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${userId}`, config);
   }
 }
 

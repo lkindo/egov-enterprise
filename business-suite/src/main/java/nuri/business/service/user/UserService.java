@@ -207,9 +207,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 user.update(
                                 userDto.getUserNm(),
                                 user.getPswdHint(),
-                                user.getPswdCrans(),
+                                user.getPswdCnsr(),
                                 userDto.getEmplNo(),
-                                user.getIhidnum(),
+                                user.getRrno(),
                                 user.getGndrCd(),
                                 user.getBrthYmd(),
                                 userDto.getAreaNo(),
@@ -227,7 +227,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 userDto.getOrgnztId(),
                                 userDto.getPstinstCd(),
                                 user.getRole(),
-                                user.getSubDn());
+                                user.getCrtfcDnValue());
         }
 
         /**

@@ -32,7 +32,7 @@ export const pollSchema = z.object({
 // --- SMS 관리 스키마 ---
 export const smsSchema = z.object({
   trnsmitTelno: z.string().min(1, '발신 번호를 입력해 주세요.'),
-  recptnTelno: z.string().min(1, '수신 번호를 입력해 주세요.'),
+  rcptnTelno: z.string().min(1, '수신 번호를 입력해 주세요.'),
   trnsmitCn: z.string().min(1, '메시지 내용을 입력해 주세요.').max(80, '메시지는 80자 이내여야 합니다.'),
 });
 
@@ -54,8 +54,8 @@ export const boardMasterSchema = z.object({
   bbsTtl: z.string().min(1, '게시판 명칭은 필수입니다.').max(100, '게시판 명칭은 100자 이내여야 합니다.'),
   bbsIntroCn: z.string().min(1, '게시판 소개는 필수입니다.').max(4000, '게시판 소개는 4000자 이내여야 합니다.'),
   bbsTypeCd: z.string().min(1, '게시판 유형은 필수입니다.'),
-  bbsAttrCd: z.string().min(1, '게시판 속성은 필수입니다.'),
-  replyPsblYn: z.enum(['Y', 'N']),
+  bbsAtrbCd: z.string().min(1, '게시판 속성은 필수입니다.'),
+  ansPsblYn: z.enum(['Y', 'N']),
   fileAtchPsblYn: z.enum(['Y', 'N']),
   posblAtchFileNumber: z.coerce.number().min(0).max(10),
   tmplatId: z.string().min(1, '템플릿 선택은 필수입니다.'),
@@ -92,10 +92,10 @@ export const manualSchema = z.object({
 export const userManageSchema = z.object({
   userId: z.string().min(1, '아이디는 필수입니다.'),
   userNm: z.string().min(1, '성명은 필수입니다.'),
-  email: z.string().email('유효한 이메일 형식이 아닙니다.'),
-  userSttusCode: z.enum(['P', 'A', 'D']),
-  password: z.string().optional(),
-  moblphonNo: z.string().optional(),
+  emlAddr: z.string().email('유효한 이메일 형식이 아닙니다.'),
+  userSttsCd: z.enum(['P', 'A', 'D']),
+  pswd: z.string().optional(),
+  mblTelno: z.string().optional(),
   orgnztId: z.string().optional(),
   groupId: z.string().optional(),
 });

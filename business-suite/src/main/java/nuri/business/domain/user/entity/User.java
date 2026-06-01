@@ -250,59 +250,5 @@ public class User extends BaseEntity implements Serializable {
     public void updateOrgnztId(String ognzId) {
         this.ognzId = ognzId;
     }
-
-    // ----- [Legacy Aliases for Backwards Compatibility] -----
-    public String getUserType() { return userTypeCd; }
-    public void setUserType(String v) { this.userTypeCd = v; }
-    public String getPassword() { return pswd; }
-    public void setPassword(String v) { this.pswd = v; }
-    public String getPasswordHint() { return pswdHint; }
-    public void setPasswordHint(String v) { this.pswdHint = v; }
-    public String getPasswordCnsr() { return pswdCnsr; }
-    public void setPasswordCnsr(String v) { this.pswdCnsr = v; }
-    public String getPswdCrans() { return pswdCnsr; }
-    public void setPswdCrans(String v) { this.pswdCnsr = v; }
-    public LocalDateTime getPasswordUpdateDate() { return chgPswdLastDt; }
-    public void setPasswordUpdateDate(LocalDateTime v) { this.chgPswdLastDt = v; }
-    public Integer getChangePasswordCount() { return chgPwdCnt; }
-    public void setChangePasswordCount(Integer v) { this.chgPwdCnt = v; }
-    public String getLockAt() { return lckYn; }
-    public void setLockAt(String v) { this.lckYn = v; }
-    public Integer getLockCount() { return lckCnt; }
-    public void setLockCount(Integer v) { this.lckCnt = v; }
-    public LocalDateTime getLockLastDate() { return lckLastPnttm; }
-    public void setLockLastDate(LocalDateTime v) { this.lckLastPnttm = v; }
-    public String getSubDn() { return crtfcDnValue; }
-    public void setSubDn(String v) { this.crtfcDnValue = v; }
-    public String getIhidnum() { return rrno; }
-    public void setIhidnum(String v) { this.rrno = v; }
-    public String getHomeadres() { return baseAddr; }
-    public void setHomeadres(String v) { this.baseAddr = v; }
-    public String getDetailAdres() { return dtlAddr; }
-    public void setDetailAdres(String v) { this.dtlAddr = v; }
-    public String getHomeAddr() { return baseAddr; }
-    public void setHomeAddr(String v) { this.baseAddr = v; }
-    public String getDaddr() { return dtlAddr; }
-    public void setDaddr(String v) { this.dtlAddr = v; }
-    public String getOrgnztId() { return ognzId; }
-    public void setOrgnztId(String v) { this.ognzId = v; }
-    public String getBizrno() { return bizrNo; }
-    public void setBizrno(String v) { this.bizrNo = v; }
-    public String getJurirno() { return jurirNo; }
-    public void setJurirno(String v) { this.jurirNo = v; }
-    public String getCxfc() { return rprsvNm; }
-    public void setCxfc(String v) { this.rprsvNm = v; }
-    public String getIndutyCode() { return indutyCd; }
-    public void setIndutyCode(String v) { this.indutyCd = v; }
-    public String getEntrprsSeCode() { return entSeCd; }
-    public void setEntrprsSeCode(String v) { this.entSeCd = v; }
-    public String getStatusCode() { return userSttsCd; }
-    public void setStatusCode(String v) { this.userSttsCd = v; }
-    public String getSexdstnCode() { return gndrCd; }
-    public void setSexdstnCode(String v) { this.gndrCd = v; }
-    public String getBrth() { return brthYmd; }
-    public void setBrth(String v) { this.brthYmd = v; }
-    public String getFxnum() { return faxNo; }
-    public void setFxnum(String v) { this.faxNo = v; }
 }
 

@@ -38,11 +38,11 @@ import {
 } from '@/components/ui/form';
 
 const loginPolicySchema = z.object({
-  ipInfo: z.string().optional(),
-  lmttAt: z.enum(['Y', 'N']),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
-  otpEnabledAt: z.enum(['Y', 'N']),
+  ipAddr: z.string().optional(),
+  lmtYn: z.enum(['Y', 'N']),
+  bgngTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
+  endTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
+  otpUseYn: z.enum(['Y', 'N']),
 });
 
 type LoginPolicyFormValues = z.infer<typeof loginPolicySchema>;
@@ -56,11 +56,11 @@ export default function LoginPolicyAdminClient() {
 
   const form = useAppForm<typeof loginPolicySchema>(loginPolicySchema, {
     defaultValues: {
-      ipInfo: '',
-      lmttAt: 'N',
-      startTime: '',
-      endTime: '',
-      otpEnabledAt: 'N',
+      ipAddr: '',
+      lmtYn: 'N',
+      bgngTm: '',
+      endTm: '',
+      otpUseYn: 'N',
     }
   });
 
@@ -83,11 +83,11 @@ export default function LoginPolicyAdminClient() {
   const handleEdit = (policy: LoginPolicy) => {
     setSelectedPolicy(policy);
     form.reset({
-      ipInfo: policy.ipInfo || '',
-      lmttAt: policy.lmttAt || 'N',
-      startTime: policy.startTime || '',
-      endTime: policy.endTime || '',
-      otpEnabledAt: policy.otpEnabledAt || 'N',
+      ipAddr: policy.ipAddr || '',
+      lmtYn: policy.lmtYn || 'N',
+      bgngTm: policy.bgngTm || '',
+      endTm: policy.endTm || '',
+      otpUseYn: policy.otpUseYn || 'N',
     });
     setIsEditModalOpen(true);
   };
@@ -95,7 +95,7 @@ export default function LoginPolicyAdminClient() {
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
     if (!selectedPolicy) return;
     try {
-      await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.emplyrId, values as Partial<LoginPolicy>);
+      await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
       toast.success('로그인 정책이 성공적으로 업데이트되었습니다.');
       setIsEditModalOpen(false);
       fetchData();
@@ -113,8 +113,8 @@ export default function LoginPolicyAdminClient() {
             <User size={18} />
           </div>
           <div className="text-left">
-            <span className="font-bold tracking-tight text-foreground block text-sm">{item.emplyrNm}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.emplyrId}</span>
+            <span className="font-bold tracking-tight text-foreground block text-sm">{item.userNm}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.userId}</span>
           </div>
         </div>
       )
@@ -124,7 +124,7 @@ export default function LoginPolicyAdminClient() {
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Globe size={12} className="text-primary/40" />
-          <span className="text-xs font-mono font-bold">{item.ipInfo || '제한 없음'}</span>
+          <span className="text-xs font-mono font-bold">{item.ipAddr || '제한 없음'}</span>
         </div>
       )
     },
@@ -134,7 +134,7 @@ export default function LoginPolicyAdminClient() {
         <div className="flex items-center gap-2">
           <Clock size={12} className="text-amber-500/40" />
           <span className="text-xs font-bold">
-            {item.startTime && item.endTime ? `${item.startTime} ~ ${item.endTime}` : '24시간'}
+            {item.bgngTm && item.endTm ? `${item.bgngTm} ~ ${item.endTm}` : '24시간'}
           </span>
         </div>
       )
@@ -143,8 +143,8 @@ export default function LoginPolicyAdminClient() {
       header: '계정 제한',
       accessor: (item) => (
         <HubStatusBadge 
-          label={item.lmttAt === 'Y' ? '제한됨' : '정상'} 
-          variant={item.lmttAt === 'Y' ? 'error' : 'success'} 
+          label={item.lmtYn === 'Y' ? '제한됨' : '정상'} 
+          variant={item.lmtYn === 'Y' ? 'error' : 'success'} 
         />
       )
     },
@@ -152,9 +152,9 @@ export default function LoginPolicyAdminClient() {
       header: '2FA(OTP)',
       accessor: (item) => (
         <div className="flex items-center gap-2">
-          <Fingerprint size={12} className={item.otpEnabledAt === 'Y' ? 'text-emerald-500' : 'text-slate-300'} />
-          <span className={`text-xs font-bold tracking-widest ${item.otpEnabledAt === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
-            {item.otpEnabledAt === 'Y' ? 'ACTIVE' : 'DISABLED'}
+          <Fingerprint size={12} className={item.otpUseYn === 'Y' ? 'text-emerald-500' : 'text-slate-300'} />
+          <span className={`text-xs font-bold tracking-widest ${item.otpUseYn === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
+            {item.otpUseYn === 'Y' ? 'ACTIVE' : 'DISABLED'}
           </span>
         </div>
       )
@@ -170,8 +170,8 @@ export default function LoginPolicyAdminClient() {
     }
   ];
 
-  const otpEnabledCount = data.filter(p => p.otpEnabledAt === 'Y').length;
-  const restrictedCount = data.filter(p => p.lmttAt === 'Y').length;
+  const otpEnabledCount = data.filter(p => p.otpUseYn === 'Y').length;
+  const restrictedCount = data.filter(p => p.lmtYn === 'Y').length;
 
   return (
     <div className="p-10 space-y-12 animate-in fade-in duration-1000 text-left">
@@ -210,7 +210,7 @@ export default function LoginPolicyAdminClient() {
           columns={columns} 
           data={data} 
           loading={loading}
-          keyField="emplyrId"
+          keyField="userId"
           emptyMessage="등록된 로그인 정책이 없습니다."
           className="border-none bg-transparent"
         />
@@ -226,7 +226,7 @@ export default function LoginPolicyAdminClient() {
                   <Settings2 className="text-primary" /> 정책 프로파일링
                 </DialogTitle>
               </DialogHeader>
-              <p className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.emplyrId}</p>
+              <p className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.userId}</p>
             </div>
             <div className="w-14 h-11 rounded-lg bg-white/10 flex items-center justify-center border border-white/5">
               <User size={24} className="text-primary" />
@@ -238,7 +238,7 @@ export default function LoginPolicyAdminClient() {
               <div className="grid grid-cols-2 gap-8">
                 <FormField
                   control={form.control}
-                  name="ipInfo"
+                  name="ipAddr"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 제한 IP</FormLabel>
@@ -256,7 +256,7 @@ export default function LoginPolicyAdminClient() {
 
                 <FormField
                   control={form.control}
-                  name="startTime"
+                  name="bgngTm"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 시작 시간</FormLabel>
@@ -273,7 +273,7 @@ export default function LoginPolicyAdminClient() {
 
                 <FormField
                   control={form.control}
-                  name="endTime"
+                  name="endTm"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 종료 시간</FormLabel>
@@ -291,7 +291,7 @@ export default function LoginPolicyAdminClient() {
                 <div className="col-span-2 p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-6">
                   <FormField
                     control={form.control}
-                    name="lmttAt"
+                    name="lmtYn"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
@@ -312,7 +312,7 @@ export default function LoginPolicyAdminClient() {
 
                   <FormField
                     control={form.control}
-                    name="otpEnabledAt"
+                    name="otpUseYn"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">

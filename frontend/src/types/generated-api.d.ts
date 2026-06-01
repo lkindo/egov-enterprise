@@ -4163,8 +4163,8 @@ export interface components {
             rptYmd?: string;
             rptTypeCd?: string;
             reprtId?: string;
-            reprtCn?: string;
             reprtTtl?: string;
+            reprtCn?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4184,12 +4184,12 @@ export interface components {
             roleName?: string;
             lockAt?: string;
             authorCode?: string;
+            authorities?: components["schemas"]["GrantedAuthority"][];
             username?: string;
             enabled?: boolean;
             accountNonLocked?: boolean;
-            authorities?: components["schemas"]["GrantedAuthority"][];
-            accountNonExpired?: boolean;
             credentialsNonExpired?: boolean;
+            accountNonExpired?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
@@ -4226,19 +4226,6 @@ export interface components {
             lckYn?: string;
             /** Format: date-time */
             createdDate?: string;
-            password?: string;
-            lockAt?: string;
-            emailAdres?: string;
-            passwordHint?: string;
-            passwordCnsr?: string;
-            fxnum?: string;
-            brth?: string;
-            homeadres?: string;
-            sexdstnCode?: string;
-            detailAdres?: string;
-            userSttusCode?: string;
-            offmTelno?: string;
-            moblphonNo?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4363,15 +4350,15 @@ export interface components {
              * @description 생성일시
              */
             createdDate?: string;
-            frstRegisterId?: string;
             rptTtl?: string;
-            rptCn?: string;
             rptId?: string;
-            reprtCn?: string;
-            rptYmd?: string;
-            reprtId?: string;
-            reprtTtl?: string;
+            rptCn?: string;
+            frstRegisterId?: string;
             rptUserId?: string;
+            reprtTtl?: string;
+            reprtCn?: string;
+            reprtId?: string;
+            rptYmd?: string;
             rptInqDt?: string;
         };
         /** @description 메인 이미지 DTO */
@@ -4900,16 +4887,16 @@ export interface components {
             regYn?: string;
             frstRegisterId?: string;
             lastUpdusrId?: string;
-            ipAdres?: string;
             otpEnabledAt?: string;
-            endTime?: string;
-            lmttAt?: string;
-            ipInfo?: string;
             startTime?: string;
-            emplyrId?: string;
             dplctPermAt?: string;
+            emplyrId?: string;
+            lmttAt?: string;
+            endTime?: string;
+            ipInfo?: string;
             emplyrNm?: string;
             dplctLoginAt?: string;
+            ipAdres?: string;
         };
         InternetSvcGuidanceDto: {
             intnetSvcId?: string;
@@ -5323,8 +5310,8 @@ export interface components {
             /** @description 사용자 역할 */
             role?: string;
             password?: string;
-            passwordHint?: string;
             passwordCnsr?: string;
+            passwordHint?: string;
         };
         ApiResponseUserResponse: {
             success?: boolean;
@@ -5559,16 +5546,16 @@ export interface components {
             mdfcnDt?: string;
             frstRgtrId?: string;
             lastMdfrId?: string;
-            lastUpdusrId?: string;
             frstRegisterId?: string;
+            lastUpdusrId?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
-            /** Format: date-time */
-            lastUpdtPnttm?: string;
+            createdDate?: string;
             /** Format: date-time */
             lastModifiedDate?: string;
             /** Format: date-time */
-            createdDate?: string;
+            lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
             /** Format: date-time */
@@ -5841,8 +5828,8 @@ export interface components {
             recordCountPerPage?: number;
             searchKeywordFrom?: string;
             searchKeywordTo?: string;
-            searchEndDe?: string;
             searchBgnDe?: string;
+            searchEndDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;

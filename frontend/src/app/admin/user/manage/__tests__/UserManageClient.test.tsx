@@ -57,8 +57,8 @@ const renderWithClient = (ui: React.ReactElement) => {
 describe('UserManageClient Component', () => {
   const mockData = {
     list: [
-      { esntlId: '1', userId: 'user1', userNm: 'User One', emailAdres: 'user1@test.com', userSttusCode: 'A' },
-      { esntlId: '2', userId: 'user2', userNm: 'User Two', emailAdres: 'user2@test.com', userSttusCode: 'P' },
+      { esntlId: '1', userId: 'user1', userNm: 'User One', emlAddr: 'user1@test.com', userSttsCd: 'A' },
+      { esntlId: '2', userId: 'user2', userNm: 'User Two', emlAddr: 'user2@test.com', userSttsCd: 'P' },
     ],
     total: 2,
     page: 1,

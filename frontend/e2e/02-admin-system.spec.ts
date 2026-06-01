@@ -42,8 +42,8 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             console.log('>>> Step 3: Filling form fields');
             await page.locator('input[name="userId"]').fill(testId);
             await page.locator('input[name="userNm"]').fill(testName);
-            await page.locator('input[name="password"]').fill('Admin1234!');
-            await page.locator('input[name="emailAdres"]').fill(`${testId}@egov.kr`);
+            await page.locator('input[name="pswd"]').fill('Admin1234!');
+            await page.locator('input[name="emlAddr"]').fill(`${testId}@egov.kr`);
 
             // CRITICAL: Dept field is a native <select> tag, NOT a button/combobox
             console.log('>>> Step 3: Selecting department via native select');

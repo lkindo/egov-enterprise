@@ -108,10 +108,10 @@ public class UserApiController {
     public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody @Valid UserDto dto) {
         String resultId = userService.registerUser(
                 dto.getUserId(),
-                dto.getPassword(),
+                dto.getPswd(),
                 dto.getUserNm(),
-                dto.getPasswordHint(),
-                dto.getPasswordCnsr(),
+                dto.getPswdHint(),
+                dto.getPswdCrans(),
                 dto.getRole());
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }

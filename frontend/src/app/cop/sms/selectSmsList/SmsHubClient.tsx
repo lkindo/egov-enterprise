@@ -54,7 +54,7 @@ export default function SmsHubClient({
   
   const [newSms, setNewSms] = useState<SmsDto>({
     trnsmitTelno: '010-1234-5678',
-    recptnTelno: '',
+    rcptnTelno: '',
     trnsmitCn: '',
   });
 
@@ -66,18 +66,18 @@ export default function SmsHubClient({
 
   const sendMutation = useMutation({
     mutationFn: (sms: SmsDto) => {
-      // 백엔드 DTO에 정의되지 않은 recptnTelno 필드를 제거하고 recipients로 변환
-      const { recptnTelno, ...rest } = sms;
+      // 백엔드 DTO에 정의되지 않은 rcptnTelno 필드를 제거하고 recipients로 변환
+      const { rcptnTelno, ...rest } = sms;
       const payload = {
         ...rest,
-        recipients: recptnTelno ? [{ recptnTelno }] : (sms.recipients || [])
+        recipients: rcptnTelno ? [{ rcptnTelno }] : (sms.recipients || [])
       };
       return smsAdminService.sendSms(payload as any);
     },
     onSuccess: () => {
       toast('SMS가 성공적으로 전송되었습니다.', 'success');
       setIsDialogOpen(false);
-      setNewSms({ ...newSms, recptnTelno: '', trnsmitCn: '' });
+      setNewSms({ ...newSms, rcptnTelno: '', trnsmitCn: '' });
       queryClient.invalidateQueries({ queryKey: ['sms-list'] });
     },
     onError: (err: any) => {
@@ -106,7 +106,7 @@ export default function SmsHubClient({
             <Phone size={16} />
           </div>
           <span className="text-sm font-bold text-slate-900 tracking-tighter">
-            {item.recptnTelno}
+            {item.rcptnTelno}
           </span>
         </div>
       )
@@ -189,8 +189,8 @@ export default function SmsHubClient({
                                     <Input
                                         placeholder="010-0000-0000"
                                         className="pl-16 h-11 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200"
-                                        value={newSms.recptnTelno}
-                                        onChange={(e) => setNewSms({ ...newSms, recptnTelno: e.target.value })}
+                                        value={newSms.rcptnTelno}
+                                        onChange={(e) => setNewSms({ ...newSms, rcptnTelno: e.target.value })}
                                     />
                                 </div>
                             </div>

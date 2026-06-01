@@ -38,9 +38,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                                 .userId(user.getUserId())
                                 .esntlId(user.getEsntlId())
                                 .userNm(user.getUserNm())
-                                .password(user.getPassword())
+                                .password(user.getPswd())
                                 .roleName(user.getRole() != null ? user.getRole().name() : null)
-                                .lockAt(user.getLockAt())
+                                .lockAt(user.getLckYn())
                                 .authorCode(authorCode)
                                 .build();
         }

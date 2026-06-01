@@ -51,7 +51,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             validateAccountStatus(userEntity);
             
             boolean isMatched = false;
-            String encodedPassword = userEntity.getPassword();
+            String encodedPassword = userEntity.getPswd();
             
             log.info(">>> [EgovAuthenticationProvider] User found: {}, DB password hash: {}", userEntity.getUserId(), encodedPassword);
             
@@ -132,9 +132,9 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                     .userId(userEntity.getUserId())
                     .esntlId(userEntity.getEsntlId())
                     .userNm(userEntity.getUserNm())
-                    .password(userEntity.getPassword())
+                    .password(userEntity.getPswd())
                     .roleName(userEntity.getRole() != null ? userEntity.getRole().name() : null)
-                    .lockAt(userEntity.getLockAt())
+                    .lockAt(userEntity.getLckYn())
                     .authorCode(authorCode)
                     .build();
             return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
@@ -148,7 +148,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     }
 
     private void validateAccountStatus(User user) {
-        if ("Y".equalsIgnoreCase(user.getLockAt())) {
+        if ("Y".equalsIgnoreCase(user.getLckYn())) {
             throw new AccountStatusException("User account is locked.") {
                 private static final long serialVersionUID = 1L;
             };

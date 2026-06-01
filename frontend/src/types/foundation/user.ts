@@ -3,26 +3,26 @@
 export interface UserManage {
   userId: string;
   userNm: string;
-  password?: string;
-  passwordHint?: string;
-  passwordCnsr?: string;
-  emailAdres: string; // Aligned with backend emailAdres
+  pswd?: string;
+  pswdHint?: string;
+  pswdCrans?: string;
+  emlAddr: string; // Aligned with backend emlAddr
   groupId?: string;
-  userSttusCode: string;
+  userSttsCd: string;
   sbscrbDe?: string;
   esntlId?: string;
-  moblphonNo?: string;
+  mblTelno?: string;
   areaNo?: string;
   middleTelno?: string;
   endTelno?: string;
-  fxnum?: string; // Aligned with backend fxnum
+  faxNo?: string; // Aligned with backend faxNo
   zip?: string;
-  homeadres?: string; // Aligned with backend homeadres
-  detailAdres?: string;
+  homeAddr?: string; // Aligned with backend homeAddr
+  daddr?: string;
   orgnztId?: string;
   emplNo?: string;
-  sexdstnCode?: string;
-  brth?: string; // Aligned with backend brth
+  gndrCd?: string;
+  brthYmd?: string; // Aligned with backend brthYmd
   otpSecret?: string;
 }
 
@@ -44,7 +44,7 @@ export interface UserDto {
   emplNo?: string;
   ofcpsNm?: string;
   createdDate?: string;
-  emailAdres?: string;
-  moblphonNo?: string;
+  emlAddr?: string;
+  mblTelno?: string;
   otpSecret?: string;
 }

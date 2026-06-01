@@ -58,18 +58,4 @@ public class LoginPolicy extends BaseEntity {
         this.endTm = endTm;
         this.otpUseYn = otpUseYn;
     }
-
-    // Legacy aliases
-    public String getEmplyrId() { return userId; }
-    public String getIpInfo() { return ipAddr; }
-    public String getLmttAt() { return lmtYn; }
-    public String getDplctPermAt() { return dpcnPrmYn; }
-    public String getStartTime() { return bgngTm; }
-    public String getEndTime() { return endTm; }
-    public String getOtpEnabledAt() { return otpUseYn; }
-    
-    public void setEmplyrId(String v) { this.userId = v; }
-    public void setIpInfo(String v) { this.ipAddr = v; }
-    public void setLmttAt(String v) { this.lmtYn = v; }
-    public void setDplctPermAt(String v) { this.dpcnPrmYn = v; }
 }

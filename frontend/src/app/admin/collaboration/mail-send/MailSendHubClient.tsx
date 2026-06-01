@@ -202,7 +202,7 @@ export default function MailSendHubClient() {
                                 const newRecipient = { 
                                   id: user.emplyrId || user.userId || user.adbkId || user.ncrdId || user.id, 
                                   name: user.userNm || user.adbkNm || user.ncrdNm || user.nm || user.name,
-                                  email: user.emailAdres || user.email || ''
+                                  email: user.emlAddr || user.email || ''
                                 };
                                 if (!selectedRecipients.find(r => r.id === newRecipient.id)) {
                                   setSelectedRecipients(prev => [...prev, newRecipient]);
@@ -221,7 +221,7 @@ export default function MailSendHubClient() {
                                     {user.nm || user.userNm || user.adbkNm || user.ncrdNm}
                                   </span>
                                   <span className="text-xs text-slate-500">
-                                    {user.email || user.emailAdres || user.emplyrId || user.userId || user.adbkId || user.ncrdId}
+                                    {user.email || user.emlAddr || user.emplyrId || user.userId || user.adbkId || user.ncrdId}
                                   </span>
                                 </div>
                               </div>

@@ -218,7 +218,7 @@ export default function UserManageClient() {
  </div>
  <div className="flex flex-col">
  <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight leading-none mb-1">{user.userNm}</span>
- <span className="text-xs font-bold text-slate-400 leading-none">{user.userId} • {user.emailAdres}</span>
+ <span className="text-xs font-bold text-slate-400 leading-none">{user.userId} • {user.emlAddr}</span>
  </div>
  </div>
  </TableCell>

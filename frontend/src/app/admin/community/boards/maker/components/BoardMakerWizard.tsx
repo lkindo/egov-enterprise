@@ -130,7 +130,7 @@ const PERMISSIONS = [
 const formSchema = z.object({
  bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
  bbsIntroCn: z.string(),
- replyPsblYn: z.boolean(),
+ ansPsblYn: z.boolean(),
  fileAtchPsblYn: z.boolean(),
  atchPsblFileCnt: z.number(),
  atchPsblFileSize: z.number(),
@@ -158,7 +158,7 @@ export function BoardMakerWizard() {
  defaultValues: {
  bbsTtl: '',
  bbsIntroCn: '',
- replyPsblYn: false,
+ ansPsblYn: false,
  fileAtchPsblYn: true,
  atchPsblFileCnt: 3,
  atchPsblFileSize: 5242880, // 5MB
@@ -216,8 +216,8 @@ export function BoardMakerWizard() {
  bbsTtl: data.bbsTtl,
  bbsIntroCn: data.bbsIntroCn,
  bbsTypeCd: data.bbsTypeCd,
- bbsAttrCd: 'BBSA01', // Missing field causing 500 error
- replyPsblYn: data.replyPsblYn ? 'Y' : 'N',
+ bbsAtrbCd: 'BBSA01', // Missing field causing 500 error
+ ansPsblYn: data.ansPsblYn ? 'Y' : 'N',
  fileAtchPsblYn: data.fileAtchPsblYn ? 'Y' : 'N',
  atchPsblFileCnt: Number(data.atchPsblFileCnt),
  atchPsblFileSize: Number(data.atchPsblFileSize),
@@ -392,8 +392,8 @@ export function BoardMakerWizard() {
  <p className="text-xs text-slate-400 font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
  </div>
  <Switch
- checked={watch('replyPsblYn')}
- onCheckedChange={(checked) => setValue('replyPsblYn', checked)}
+ checked={watch('ansPsblYn')}
+ onCheckedChange={(checked) => setValue('ansPsblYn', checked)}
  className="data-[state=checked]:bg-primary scale-125"
  />
  </div>

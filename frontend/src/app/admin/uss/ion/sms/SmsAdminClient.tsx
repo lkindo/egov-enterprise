@@ -67,7 +67,7 @@ export default function SmsAdminClient({
   const form = useAppForm(smsSchema, {
     defaultValues: {
       trnsmitTelno: '02-1234-5678', // 발신번호 (기본값)
-      recptnTelno: '',
+      rcptnTelno: '',
       trnsmitCn: ''
     }
   });
@@ -263,7 +263,7 @@ export default function SmsAdminClient({
               <div className="p-12 space-y-10 relative z-10 text-left">
                 <FormField
                   control={form.control}
-                  name="recptnTelno"
+                  name="rcptnTelno"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">

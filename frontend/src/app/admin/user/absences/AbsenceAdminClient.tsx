@@ -97,11 +97,11 @@ export default function AbsenceAdminClient({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <Mail size={12} className="text-muted-foreground/30" />
-            <span className="text-xs font-bold text-muted-foreground tracking-tight uppercase ">{item.emailAdres || 'NOT_DECLARED'}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight uppercase ">{item.emlAddr || 'NOT_DECLARED'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Phone size={12} className="text-muted-foreground/30" />
-            <span className="text-xs font-bold text-muted-foreground/60 tracking-tighter">{item.moblphonNo || item.offmTelno || 'PROBING...'}</span>
+            <span className="text-xs font-bold text-muted-foreground/60 tracking-tighter">{item.mblTelno || item.officeTelno || 'PROBING...'}</span>
           </div>
         </div>
       )

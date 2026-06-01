@@ -705,8 +705,8 @@ export default function UserOrgHubClient({
 
                   <div className="flex-1 space-y-10 relative z-10">
                     <div className="grid grid-cols-2 gap-6">
-                      <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={(selectedItem as UserManage)?.emailAdres || (activeTab === 'DEPTS' ? '부서 공용' : '미지정')} />
-                      <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.moblphonNo || (selectedItem as Department)?.orgnztNm || '미등록'} />
+                      <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={(selectedItem as UserManage)?.emlAddr || (activeTab === 'DEPTS' ? '부서 공용' : '미지정')} />
+                      <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.mblTelno || (selectedItem as Department)?.orgnztNm || '미등록'} />
                       <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || '최상위'} />
                       <InfoBlock icon={<MapPin size={16} />} label="근무지" value="본사" />
                     </div>

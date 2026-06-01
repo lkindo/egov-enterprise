@@ -12,7 +12,7 @@ export interface SmsDto {
   trnsmitPnttm?: string;
   frstRegisterId?: string;
   createdDate?: string;
-  recptnTelno?: string;  // 수신 번호 (단일 수신 시 사용)
+  rcptnTelno?: string;  // 수신 번호 (단일 수신 시 사용)
   recipients?: SmsRecptnDto[]; // 수신자 목록 (다중 수신 시 사용)
 }
 
@@ -21,7 +21,7 @@ export interface SmsDto {
  */
 export interface SmsRecptnDto {
   smsId?: string;
-  recptnTelno: string; // 수신 번호
+  rcptnTelno: string; // 수신 번호
   resultCode?: string; // 결과 코드 (P: 대기, S: 성공, F: 실패)
   resultMssage?: string;
 }

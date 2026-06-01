@@ -4381,7 +4381,7 @@ export interface components {
  /** @description SMS ID */
  smsId?: string;
  /** @description Description */
- recptnTelno?: string;
+ rcptnTelno?: string;
  /** @description Description */
  resultCode?: string;
  /** @description Description */

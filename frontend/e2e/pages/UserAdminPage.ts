@@ -44,12 +44,12 @@ export class UserAdminPage {
           throw new Error(`[Field Mismatch] Backend returned 'content' instead of standardized 'list' for user data.`);
         }
         
-        // Check for specific field mapping standardization (emailAdres vs email)
+        // Check for specific field mapping standardization (emlAddr vs email)
         const items = data.list || [];
         if (items.length > 0) {
           const firstItem = items[0];
-          if ('email' in firstItem && !('emailAdres' in firstItem)) {
-             throw new Error(`[Field Mismatch] Backend returned 'email' instead of standardized 'emailAdres' for user data.`);
+          if ('email' in firstItem && !('emlAddr' in firstItem)) {
+             throw new Error(`[Field Mismatch] Backend returned 'email' instead of standardized 'emlAddr' for user data.`);
           }
         }
       }

@@ -13,11 +13,14 @@ public interface UserMapper {
 
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    @Mapping(target = "createdDate", source = "createdDate")
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().name() : null)")
     @Mapping(target = "userSe", ignore = true)
     @Mapping(target = "mberTypeCd", ignore = true)
-    @Mapping(target = "userSttsCd", source = "userSttsCd")
+    @Mapping(target = "pswdCrans", source = "pswdCnsr")
+    @Mapping(target = "orgnztId", source = "ognzId")
+    @Mapping(target = "homeAddr", source = "baseAddr")
+    @Mapping(target = "daddr", source = "dtlAddr")
+    @Mapping(target = "subDn", source = "crtfcDnValue")
     UserDto toDto(User user);
 
     @Mapping(target = "userId", source = "user.userId")
@@ -28,6 +31,11 @@ public interface UserMapper {
     @Mapping(target = "mberTypeCd", source = "authority.mbrTypeCd")
     @Mapping(target = "userSttsCd", source = "user.userSttsCd")
     @Mapping(target = "createdDate", source = "user.createdDate")
+    @Mapping(target = "pswdCrans", source = "user.pswdCnsr")
+    @Mapping(target = "orgnztId", source = "user.ognzId")
+    @Mapping(target = "homeAddr", source = "user.baseAddr")
+    @Mapping(target = "daddr", source = "user.dtlAddr")
+    @Mapping(target = "subDn", source = "user.crtfcDnValue")
     UserDto toDtoWithAuthority(User user, UserAuthority authority);
 
     UserResponse toResponse(User user);

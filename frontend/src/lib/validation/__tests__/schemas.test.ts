@@ -52,7 +52,7 @@ describe('Standardized Validation Schemas', () => {
     it('should validate message length within 80 chars', () => {
       const validData = {
         trnsmitTelno: '010-1234-5678',
-        recptnTelno: '010-5678-1234',
+        rcptnTelno: '010-5678-1234',
         trnsmitCn: '안녕하세요. 테스트 메시지입니다.',
       };
       const result = smsSchema.safeParse(validData);
@@ -63,7 +63,7 @@ describe('Standardized Validation Schemas', () => {
       const longMessage = 'A'.repeat(81);
       const invalidData = {
         trnsmitTelno: '010-1234-5678',
-        recptnTelno: '010-5678-1234',
+        rcptnTelno: '010-5678-1234',
         trnsmitCn: longMessage,
       };
       const result = smsSchema.safeParse(invalidData);

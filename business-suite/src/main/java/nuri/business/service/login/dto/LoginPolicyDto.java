@@ -48,17 +48,4 @@ public class LoginPolicyDto {
     private String frstRegisterId;
     /** 수정자 ID */
     private String lastUpdusrId;
-
-    // Compatibility getters
-    public String getEmplyrId() { return userId; }
-    public String getEmplyrNm() { return userNm; }
-    public String getIpInfo() { return ipAddr; }
-    public String getDplctPermAt() { return dpcnPrmYn; }
-    public String getLmttAt() { return lmtYn; }
-    public String getStartTime() { return bgngTm; }
-    public String getEndTime() { return endTm; }
-    public String getOtpEnabledAt() { return otpUseYn; }
-    
-    public String getIpAdres() { return ipAddr; }
-    public String getDplctLoginAt() { return dpcnPrmYn; }
 }

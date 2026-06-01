@@ -22,10 +22,10 @@ import { motion } from 'framer-motion';
 export const userSchema = z.object({
   userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
   userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
-  emailAdres: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
-  moblphonNo: z.string().optional().or(z.literal('')),
+  emlAddr: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
+  mblTelno: z.string().optional().or(z.literal('')),
   orgnztId: z.string().optional().or(z.literal('')),
-  password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
+  pswd: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
@@ -43,10 +43,10 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
     defaultValues: {
       userId: initialData?.userId || '',
       userNm: initialData?.userNm || '',
-      emailAdres: initialData?.emailAdres || '',
-      moblphonNo: initialData?.moblphonNo || '',
+      emlAddr: initialData?.emlAddr || '',
+      mblTelno: initialData?.mblTelno || '',
       orgnztId: initialData?.orgnztId || '',
-      password: '',
+      pswd: '',
     },
   });
 
@@ -117,7 +117,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormField
             control={form.control}
-            name="emailAdres"
+            name="emlAddr"
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
@@ -144,7 +144,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           />
           <FormField
             control={form.control}
-            name="moblphonNo"
+            name="mblTelno"
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
@@ -174,7 +174,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
         {mode === 'create' && (
           <FormField
             control={form.control}
-            name="password"
+            name="pswd"
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div

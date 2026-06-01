@@ -704,15 +704,8 @@ export const BoardMasterDtoSchema = z.object({
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
   useAt: z.string().optional(),
-  bbsAttrCd: z.string().optional(),
-  replyPsblYn: z.string().optional(),
-  bbsTyCode: z.string().optional(),
-  fileAtchPosblAt: z.string().optional(),
-  bbsIntrcn: z.string().optional(),
-  replyPosblAt: z.string().optional(),
-  bbsAttrbCode: z.string().optional(),
-  bbsNm: z.string().optional(),
   bbsIntroCn: z.string().optional(),
+  bbsNm: z.string().optional(),
 });
 export type BoardMasterDto = z.infer<typeof BoardMasterDtoSchema>;
 
@@ -1118,7 +1111,7 @@ export const SmsDtoSchema = z.object({
   smsId: z.string().min(0).max(20).optional(),
   trnsmitTelno: z.string().optional(),
   trnsmitCn: z.string().optional(),
-  recptnTelno: z.string().optional(),
+  rcptnTelno: z.string().optional(),
   recptnCnt: z.number().optional(),
   createdBy: z.string().optional(),
   createdDate: z.string().optional(),
@@ -1138,7 +1131,7 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
   smsId: z.string().min(0).max(20).optional(),
-  recptnTelno: z.string().optional(),
+  rcptnTelno: z.string().optional(),
   resultCode: z.string().optional(),
   resultMssage: z.string().optional(),
 });
