@@ -51,7 +51,7 @@ public class MainImageApiController {
     public ResponseEntity<ApiResponse<Void>> updateMainImage(
             @PathVariable String imageId,
             @RequestBody MainImageDto dto) {
-        dto.setImageId(imageId);
+        dto.setImgId(imageId);
         mainImageService.updateMainImage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

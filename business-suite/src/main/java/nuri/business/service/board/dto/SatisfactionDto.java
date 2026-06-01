@@ -12,15 +12,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class SatisfactionDto {
-    private Long satisfactionId;
+    private Long dgstfnSn;
     @Size(max = 20)
     private String bbsId;
     @Size(max = 20)
     private String pstId;
-    private String stsfdgCn;
-    private Integer stsfdgLevel;
-    private String writerId;
-    private String writerNm;
+    private String dgstfnCn;
+    private Integer dgstfnScr;
+    private String userId;
+    private String userNm;
     private String password;
     @Size(max = 1)
     @NotBlank
@@ -28,24 +28,19 @@ public class SatisfactionDto {
     private LocalDateTime createdDate;
 
     // legacy
-    public String getBoardId() { return bbsId; }
-    public void setBoardId(String v) { this.bbsId = v; }
-    public String getArticleId() { return pstId; }
-    public void setArticleId(String v) { this.pstId = v; }
-    public Integer getSatisfactionLevel() { return stsfdgLevel; }
-    public void setSatisfactionLevel(Integer v) { this.stsfdgLevel = v; }
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
     public static SatisfactionDto from(Satisfaction entity) {
         if (entity == null) return null;
         return SatisfactionDto.builder()
-                .satisfactionId(entity.getStsfdgId())
+                .dgstfnSn(entity.getDgstfnSn())
                 .bbsId(entity.getBbsId())
                 .pstId(entity.getPstId())
-                .stsfdgCn(entity.getStsfdgCn())
-                .stsfdgLevel(entity.getStsfdgLevel())
-                .writerId(entity.getCreatedBy())
+                .dgstfnCn(entity.getDgstfnCn())
+                .dgstfnScr(entity.getDgstfnScr())
+                .userId(entity.getUserId())
+                .userNm(entity.getUserNm())
+                .password(entity.getPswd())
                 .useYn(entity.getUseYn())
                 .createdDate(entity.getCreatedDate())
                 .build();

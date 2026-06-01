@@ -58,7 +58,7 @@ public class PopupDto {
     private String ntceYn;
 
     @Schema(description = "생성자 ID")
-    private String createdBy;
+    private String frstRgtrId;
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
@@ -77,7 +77,7 @@ public class PopupDto {
                 .ntceEndde(entity.getNtceEndde() != null ? entity.getNtceEndde().toString() : null)
                 .stopvewSetupYn(entity.getStopvewSetupYn())
                 .ntceYn(entity.getNtceYn())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

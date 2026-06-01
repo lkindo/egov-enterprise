@@ -44,8 +44,8 @@ public class RewardManageService {
                 .returnResn(dto.getReturnResn())
                 .atchFileId(dto.getAtchFileId())
                 .informlSanctnId(dto.getInformlSanctnId())
-                .createdBy(dto.getFrstRegisterId())
-                .lastModifiedBy(dto.getLastUpdusrId())
+                .frstRgtrId(dto.getFrstRegisterId())
+                .lastMdfrId(dto.getLastUpdusrId())
                 .build();
         return convertToDto(rewardManageRepository.save(reward));
     }
@@ -64,9 +64,9 @@ public class RewardManageService {
                 .returnResn(reward.getReturnResn())
                 .atchFileId(reward.getAtchFileId())
                 .informlSanctnId(reward.getInformlSanctnId())
-                .frstRegisterId(reward.getCreatedBy())
+                .frstRegisterId(reward.getFrstRgtrId())
                 .frstRegistPnttm(reward.getCreatedDate())
-                .lastUpdusrId(reward.getLastModifiedBy())
+                .lastUpdusrId(reward.getLastMdfrId())
                 .lastUpdtPnttm(reward.getLastModifiedDate())
                 .build();
     }

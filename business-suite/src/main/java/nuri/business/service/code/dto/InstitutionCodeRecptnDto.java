@@ -46,7 +46,7 @@ public class InstitutionCodeRecptnDto {
 
     @Schema(description = "최하위기관명")
     @Size(max = 100)
-    private String lwtrkInstNm;
+    private String lwstInstNm;
 
     @Schema(description = "기관약칭명")
     @Size(max = 100)
@@ -70,11 +70,11 @@ public class InstitutionCodeRecptnDto {
 
     @Schema(description = "상위기관코드")
     @Size(max = 20)
-    private String upInstCd;
+    private String uprInstCd;
 
     @Schema(description = "대표기관코드")
     @Size(max = 20)
-    private String rprsInstCd;
+    private String reprsInstCd;
 
     @Schema(description = "기관유형대분류")
     @Size(max = 2)
@@ -121,7 +121,7 @@ public class InstitutionCodeRecptnDto {
     private String crtrYmd;
 
     @Schema(description = "정렬순서")
-    private Integer sortSeq;
+    private Integer sortOrdr;
 
     @Schema(description = "최초등록일시")
     private LocalDateTime crtDt;
@@ -194,12 +194,12 @@ public class InstitutionCodeRecptnDto {
 
     @JsonIgnore
     public String getLowestInsttNm() {
-        return this.lwtrkInstNm;
+        return this.lwstInstNm;
     }
 
     @JsonIgnore
     public void setLowestInsttNm(String lowestInsttNm) {
-        this.lwtrkInstNm = lowestInsttNm;
+        this.lwstInstNm = lowestInsttNm;
     }
 
     @JsonIgnore
@@ -233,23 +233,23 @@ public class InstitutionCodeRecptnDto {
     }
 
     @JsonIgnore
-    public String getUpperInsttCode() {
-        return this.upInstCd;
+    public String getUprInstCd() {
+        return this.uprInstCd;
     }
 
     @JsonIgnore
-    public void setUpperInsttCode(String upperInsttCode) {
-        this.upInstCd = upperInsttCode;
+    public void setUprInstCd(String upperInsttCode) {
+        this.uprInstCd = upperInsttCode;
     }
 
     @JsonIgnore
-    public String getReprsntInsttCode() {
-        return this.rprsInstCd;
+    public String getReprsInstCd() {
+        return this.reprsInstCd;
     }
 
     @JsonIgnore
-    public void setReprsntInsttCode(String reprsntInsttCode) {
-        this.rprsInstCd = reprsntInsttCode;
+    public void setReprsInstCd(String reprsntInsttCode) {
+        this.reprsInstCd = reprsntInsttCode;
     }
 
     @JsonIgnore
@@ -354,12 +354,12 @@ public class InstitutionCodeRecptnDto {
 
     @JsonIgnore
     public Integer getSortOrdr() {
-        return this.sortSeq;
+        return this.sortOrdr;
     }
 
     @JsonIgnore
     public void setSortOrdr(Integer sortOrdr) {
-        this.sortSeq = sortOrdr;
+        this.sortOrdr = sortOrdr;
     }
 
     @JsonIgnore

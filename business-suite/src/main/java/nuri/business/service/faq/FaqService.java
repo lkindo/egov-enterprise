@@ -37,11 +37,11 @@ public class FaqService extends BaseAbstractService {
     public String createFaq(String userId, FaqDto dto) {
         Faq entity = Faq.builder()
                 .faqId(dto.getFaqId())
-                .qestnTtl(dto.getQestnTtl())
-                .qestnCn(dto.getQestnCn())
-                .answerCn(dto.getAnswerCn())
+                .qstnTtl(dto.getQstnTtl())
+                .qstnCn(dto.getQstnCn())
+                .ansCn(dto.getAnsCn())
                 .atchFileId(dto.getAtchFileId())
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         faqRepository.save(entity);
         return entity.getFaqId();
@@ -51,8 +51,8 @@ public class FaqService extends BaseAbstractService {
     public void updateFaq(String faqId, String userId, FaqDto dto) {
         Faq entity = faqRepository.findById(faqId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQestnTtl(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId());
-        entity.setLastModifiedBy(userId);
+        entity.update(dto.getQstnTtl(), dto.getQstnCn(), dto.getAnsCn(), dto.getAtchFileId());
+        entity.setLastMdfrId(userId);
     }
 
     @Transactional

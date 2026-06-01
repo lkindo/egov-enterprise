@@ -52,11 +52,11 @@ class StressTest {
     executorService = Executors.newFixedThreadPool(5);
 
     BoardDto defaultBoard = BoardDto.builder()
-        .nttId("1")
+        .pstId("1")
         .bbsId("BBS_001")
-        .nttSj("스트레스 테스트 게시글")
-        .ntcrNm("관리자")
-        .inqireCo(0)
+        .pstTtl("스트레스 테스트 게시글")
+        .userNm("관리자")
+        .inqCnt(0)
         .build();
     doReturn(new PageImpl<>(List.of(defaultBoard))).when(boardService).getBoardPosts(any(String.class), any(Pageable.class));
     doReturn(defaultBoard).when(boardService).getPostDetail(any(String.class), any(String.class));

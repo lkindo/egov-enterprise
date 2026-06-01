@@ -55,15 +55,15 @@ public class CommonCode extends BaseEntity implements Serializable {
         this.dtlCdNm = Objects.requireNonNull(dtlCdNm);
         this.dtlCdExpln = dtlCdExpln;
         this.useYn = useYn == null ? "Y" : useYn;
-        this.createdBy = frstRegisterId;
-        this.lastModifiedBy = frstRegisterId;
+        this.frstRgtrId = frstRegisterId;
+        this.lastMdfrId = frstRegisterId;
     }
 
     public void update(@NonNull String dtlCdNm, String dtlCdExpln, String useYn, String lastUpdusrId) {
         this.dtlCdNm = Objects.requireNonNull(dtlCdNm);
         this.dtlCdExpln = dtlCdExpln;
         this.useYn = useYn;
-        this.lastModifiedBy = lastUpdusrId;
+        this.lastMdfrId = lastUpdusrId;
     }
 
     public void delete() {

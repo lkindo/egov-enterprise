@@ -40,9 +40,7 @@ public class ScrapDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
-    // legacy
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
+
     public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
 
     public static ScrapDto from(Scrap entity) {

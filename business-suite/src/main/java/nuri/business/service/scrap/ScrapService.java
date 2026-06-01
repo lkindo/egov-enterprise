@@ -27,7 +27,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     @Override
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
         return scrapRepository
-                .findByCreatedByAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
+                .findByFrstRgtrIdAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
@@ -45,7 +45,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         Scrap entity = Scrap.builder()
                 .scrapId(scrapId)
                 .scrapNm(dto.getScrapNm())
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         scrapRepository.save(entity);
     }
@@ -56,7 +56,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(dto.getScrapId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getScrapNm(), entity.getScrapUrl(), entity.getScrapExpln(), entity.getUseYn());
-        entity.setLastModifiedBy(userId);
+        entity.setLastMdfrId(userId);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         return ScrapDto.builder()
                 .scrapId(entity.getScrapId())
                 .scrapNm(entity.getScrapNm())
-                .userId(entity.getCreatedBy())
+                .userId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .build();
     }

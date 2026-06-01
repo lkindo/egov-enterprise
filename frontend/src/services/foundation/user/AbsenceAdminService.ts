@@ -5,8 +5,8 @@ import { AdminService } from '@/services/core/ApiService';
  * 사용자 부재 정보 DTO
  */
 export interface UserAbsenceDto {
-  emplyrId: string;
-  userAbsnceAt: string; // Y: 부재 N: 정상
+  userId: string;
+  userAbsnYn: string; // Y: 부재 N: 정상
 }
 
 class AbsenceAdminService extends AdminService {
@@ -20,13 +20,13 @@ class AbsenceAdminService extends AdminService {
   }
 
   /** 부재 정보 상세 조회 */
-  async getAbsence(emplyrId: string, config?: AxiosRequestConfig) {
-    return this.get<UserAbsenceDto>(`/${emplyrId}`, config);
+  async getAbsence(userId: string, config?: AxiosRequestConfig) {
+    return this.get<UserAbsenceDto>(`/${userId}`, config);
   }
 
   /** 부재 정보 업데이트 */
-  async updateAbsence(emplyrId: string, userAbsnceAt: string, config?: AxiosRequestConfig) {
-    return this.put<void>(`/${emplyrId}`, { emplyrId, userAbsnceAt }, config);
+  async updateAbsence(userId: string, userAbsnYn: string, config?: AxiosRequestConfig) {
+    return this.put<void>(`/${userId}`, { userId, userAbsnYn }, config);
   }
 }
 

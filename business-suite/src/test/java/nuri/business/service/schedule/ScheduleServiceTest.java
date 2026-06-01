@@ -50,7 +50,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSchdlNm()).isEqualTo("Test Schedule");
+        assertThat(result.getContent().get(0).getSchdulNm()).isEqualTo("Test Schedule");
     }
 
     @Test
@@ -66,7 +66,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getSchdlId()).isEqualTo(schdlId);
+        assertThat(result.getSchdulId()).isEqualTo(schdlId);
     }
 
     @Test
@@ -75,8 +75,8 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdlNm("New Schedule")
-                .schdlSeCd("1")
+                .schdulNm("New Schedule")
+                .schdulSe("1")
                 .build();
 
         // when
@@ -94,8 +94,8 @@ class ScheduleServiceTest {
         String userId = "user1";
         Schedule existingEntity = Schedule.builder().schdlId(schdlId).schdlNm("Old Title").build();
         ScheduleDto updateDto = ScheduleDto.builder()
-                .schdlId(schdlId)
-                .schdlNm("New Title")
+                .schdulId(schdlId)
+                .schdulNm("New Title")
                 .build();
 
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
@@ -113,7 +113,7 @@ class ScheduleServiceTest {
         // given
         String schdlId = "S1";
         String userId = "user1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).createdBy(userId).build();
+        Schedule entity = Schedule.builder().schdlId(schdlId).frstRgtrId(userId).build();
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
         // when
@@ -128,7 +128,7 @@ class ScheduleServiceTest {
     void deleteSchedule_fail_notCreator() {
         // given
         String schdlId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).createdBy("creator").build();
+        Schedule entity = Schedule.builder().schdlId(schdlId).frstRgtrId("creator").build();
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
 
         // when & then

@@ -81,10 +81,11 @@ export const boardSchema = z.object({
 
 // --- 온라인 매뉴얼 스키마 ---
 export const manualSchema = z.object({
-  onlineMnlId: z.string().optional(),
-  onlineMnlNm: z.string().min(1, '매뉴얼 명칭은 필수입니다.'),
-  onlineMnlDc: z.string().min(1, '매뉴얼 설명은 필수입니다.'),
-  onlineMnlDf: z.string().min(1, '매뉴얼 경로는 필수입니다.'),
+  onlnMnlId: z.string().optional(),
+  onlnMnlNm: z.string().min(1, '매뉴얼 명칭은 필수입니다.'),
+  onlnMnlExpln: z.string().min(1, '매뉴얼 설명은 필수입니다.'),
+  onlnMnlDfn: z.string().min(1, '매뉴얼 경로는 필수입니다.'),
+  onlnMnlSeCd: z.string().default('GNR'),
 });
 
 // --- 사용자 관리 스키마 (Contract Testing 용) ---

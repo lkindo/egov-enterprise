@@ -48,11 +48,12 @@ class ScheduleTest {
                 .schdlBgngYmd("20260510")
                 .schdlEndYmd("20260515")
                 .build();
-        assertEquals("S3", schdl3.getSchdulId()); // legacy alias
-        assertEquals("Name3", schdl3.getSchdulNm()); // legacy alias
-        assertEquals("Content3", schdl3.getSchdulCn()); // legacy alias
-        assertEquals("20260510", schdl3.getSchdulBgnde()); // legacy alias
-        assertEquals("20260515", schdl3.getSchdulEndde()); // legacy alias
+        // 표준 필드 검증
+        assertEquals("S3", schdl3.getSchdlId());
+        assertEquals("Name3", schdl3.getSchdlNm());
+        assertEquals("Content3", schdl3.getSchdlCn());
+        assertEquals("20260510", schdl3.getSchdlBgngYmd());
+        assertEquals("20260515", schdl3.getSchdlEndYmd());
 
         // 4. 비즈니스 update() 메소드 검증
         schdl3.update("NewName", "NewCn", "NewSeCd", "20260601", "20260605", "NewRept", "NewPic", "NewAtch");

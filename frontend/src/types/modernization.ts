@@ -81,6 +81,8 @@ export interface BoardMasterDto {
   stsfdgYn?: string;
   // UI related fields (often joined in backend but may be missing in core DTO)
   bbsTyCodeNm?: string;
+  bbsTypeCdNm?: string; // 새롭게 정립된 카멜케이스 표준 조인 필드
+  bbsAtrbCdNm?: string; // 새롭게 정립된 카멜케이스 표준 조인 필드
   tmplatNm?: string;
   frstRegisterNm?: string;
 }

@@ -48,7 +48,7 @@ public class SanctionEventListener {
                         .trnsmitTelno("02-1234-5678") // 대표번호
                         .trnsmitCn(message)
                         .recipients(java.util.List.of(nuri.business.service.sms.dto.SmsRecptnDto.builder()
-                                .recptnTelno(user.getMblTelno())
+                                .rcptnTelno(user.getMblTelno())
                                 .build()))
                         .build();
                 smsService.sendSms("SYSTEM", smsDto);

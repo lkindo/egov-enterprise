@@ -64,14 +64,14 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .procSe("0")
                 .etcCd(dto.getEtcCd())
                 .allInstNm(dto.getAllInstNm())
-                .lwtrkInstNm(dto.getLwtrkInstNm())
+                .lwstInstNm(dto.getLwstInstNm())
                 .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
                 .instCycl(dto.getInstCycl())
                 .topInstCd(dto.getTopInstCd())
-                .upInstCd(dto.getUpInstCd())
-                .rprsInstCd(dto.getRprsInstCd())
+                .uprInstCd(dto.getUprInstCd())
+                .reprsInstCd(dto.getReprsInstCd())
                 .instTypeLclsf(dto.getInstTypeLclsf())
                 .instTypeMclsf(dto.getInstTypeMclsf())
                 .instTypeSclsf(dto.getInstTypeSclsf())
@@ -83,7 +83,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .chgYmd(dto.getChgYmd())
                 .chgTm(dto.getChgTm())
                 .crtrYmd(dto.getCrtrYmd())
-                .sortSeq(dto.getSortSeq())
+                .sortOrdr(dto.getSortOrdr())
                 .frstRgtrId("SYSTEM")
                 .build();
 
@@ -124,14 +124,14 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         InstitutionCode entity = InstitutionCode.builder()
                 .instCd(dto.getInstCd())
                 .allInstNm(dto.getAllInstNm())
-                .lwtrkInstNm(dto.getLwtrkInstNm())
+                .lwstInstNm(dto.getLwstInstNm())
                 .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
                 .instCycl(dto.getInstCycl())
                 .topInstCd(dto.getTopInstCd())
-                .upInstCd(dto.getUpInstCd())
-                .rprsInstCd(dto.getRprsInstCd())
+                .uprInstCd(dto.getUprInstCd())
+                .reprsInstCd(dto.getReprsInstCd())
                 .instTypeLclsf(dto.getInstTypeLclsf())
                 .instTypeMclsf(dto.getInstTypeMclsf())
                 .instTypeSclas(dto.getInstTypeSclsf())
@@ -143,8 +143,8 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .chgYmd(dto.getChgYmd())
                 .chgTm(dto.getChgTm())
                 .crtrYmd(dto.getCrtrYmd())
-                .sortSeq(dto.getSortSeq())
-                .createdBy("SYSTEM")
+                .sortOrdr(dto.getSortOrdr())
+                .frstRgtrId("SYSTEM")
                 .build();
         institutionCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
@@ -154,11 +154,11 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
     @PreAuthorize("hasRole('ADMIN')")
     public void updateInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
-            entity.update(dto.getAllInstNm(), dto.getLwtrkInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
-                    dto.getInstCycl(), dto.getTopInstCd(), dto.getUpInstCd(), dto.getRprsInstCd(),
+            entity.update(dto.getAllInstNm(), dto.getLwstInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
+                    dto.getInstCycl(), dto.getTopInstCd(), dto.getUprInstCd(), dto.getReprsInstCd(),
                     dto.getInstTypeLclsf(), dto.getInstTypeMclsf(), dto.getInstTypeSclsf(), dto.getTelno(),
                     dto.getFaxNo(), dto.getCrtYmd(), dto.getAblYmd(), dto.getAblYn(), dto.getChgYmd(),
-                    dto.getChgTm(), dto.getCrtrYmd(), dto.getSortSeq(), "SYSTEM");
+                    dto.getChgTm(), dto.getCrtrYmd(), dto.getSortOrdr(), "SYSTEM");
         });
     }
 
@@ -173,14 +173,14 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         return InstitutionCodeDto.builder()
                 .instCd(entity.getInstCd())
                 .allInstNm(entity.getAllInstNm())
-                .lwtrkInstNm(entity.getLwtrkInstNm())
+                .lwstInstNm(entity.getLwstInstNm())
                 .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
                 .instCycl(entity.getInstCycl())
                 .topInstCd(entity.getTopInstCd())
-                .upInstCd(entity.getUpInstCd())
-                .rprsInstCd(entity.getRprsInstCd())
+                .uprInstCd(entity.getUprInstCd())
+                .reprsInstCd(entity.getReprsInstCd())
                 .instTypeLclsf(entity.getInstTypeLclsf())
                 .instTypeMclsf(entity.getInstTypeMclsf())
                 .instTypeSclsf(entity.getInstTypeSclsf())
@@ -192,7 +192,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .chgYmd(entity.getChgYmd())
                 .chgTm(entity.getChgTm())
                 .crtrYmd(entity.getCrtrYmd())
-                .sortSeq(entity.getSortSeq())
+                .sortOrdr(entity.getSortOrdr())
                 .build();
     }
 
@@ -205,14 +205,14 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .procSe(entity.getProcSe())
                 .etcCd(entity.getEtcCd())
                 .allInstNm(entity.getAllInstNm())
-                .lwtrkInstNm(entity.getLwtrkInstNm())
+                .lwstInstNm(entity.getLwstInstNm())
                 .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
                 .instCycl(entity.getInstCycl())
                 .topInstCd(entity.getTopInstCd())
-                .upInstCd(entity.getUpInstCd())
-                .rprsInstCd(entity.getRprsInstCd())
+                .uprInstCd(entity.getUprInstCd())
+                .reprsInstCd(entity.getReprsInstCd())
                 .instTypeLclsf(entity.getInstTypeLclsf())
                 .instTypeMclsf(entity.getInstTypeMclsf())
                 .instTypeSclsf(entity.getInstTypeSclsf())
@@ -224,7 +224,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .chgYmd(entity.getChgYmd())
                 .chgTm(entity.getChgTm())
                 .crtrYmd(entity.getCrtrYmd())
-                .sortSeq(entity.getSortSeq())
+                .sortOrdr(entity.getSortOrdr())
                 .build();
     }
 }

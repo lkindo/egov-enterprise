@@ -284,14 +284,8 @@ public class User extends BaseEntity implements Serializable {
     public void setHomeAddr(String v) { this.baseAddr = v; }
     public String getDaddr() { return dtlAddr; }
     public void setDaddr(String v) { this.dtlAddr = v; }
-    public String getHomemiddleTelno() { return middleTelno; }
-    public void setHomemiddleTelno(String v) { this.middleTelno = v; }
-    public String getHomeendTelno() { return endTelno; }
-    public void setHomeendTelno(String v) { this.endTelno = v; }
     public String getOrgnztId() { return ognzId; }
     public void setOrgnztId(String v) { this.ognzId = v; }
-    public String getInsttCode() { return pstinstCd; }
-    public void setInsttCode(String v) { this.pstinstCd = v; }
     public String getBizrno() { return bizrNo; }
     public void setBizrno(String v) { this.bizrNo = v; }
     public String getJurirno() { return jurirNo; }

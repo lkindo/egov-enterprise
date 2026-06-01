@@ -32,8 +32,8 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
                 .rptSeCd(dto.getReprtSe())
                 .userId(dto.getWrterId())
                 .atchFileId(dto.getAtchFileId())
-                .createdBy(dto.getWrterId())
-                .lastModifiedBy(dto.getWrterId())
+                .frstRgtrId(dto.getWrterId())
+                .lastMdfrId(dto.getWrterId())
                 .build();
         workReportRepository.save(entity);
     }
@@ -44,7 +44,7 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(dto.getReportSubject(), dto.getReportContents(), dto.getAtchFileId(), dto.getReprtSe());
-        entity.setLastModifiedBy(dto.getWrterId());
+        entity.setLastMdfrId(dto.getWrterId());
     }
 
     @Transactional

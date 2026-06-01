@@ -45,11 +45,11 @@ class RestdeServiceTest {
         // given
         Pageable pageable = PageRequest.of(0, 10);
         Restde entity = Restde.builder()
-                .restdeNo(1)
-                .restdeDe("20260525")
-                .restdeNm("석가탄신일")
-                .restdeDc("부처님오신날")
-                .restdeSeCode("01")
+                .hldySn(1)
+                .hldyYmd("20260525")
+                .hldyNm("석가탄신일")
+                .hldyExpln("부처님오신날")
+                .hldySeCd("01")
                 .build();
         given(restdeRepository.searchRestde(anyString(), anyString(), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(entity)));
@@ -71,9 +71,9 @@ class RestdeServiceTest {
         // given
         Integer hldySn = 1;
         Restde entity = Restde.builder()
-                .restdeNo(hldySn)
-                .restdeDe("20261225")
-                .restdeNm("성탄절")
+                .hldySn(hldySn)
+                .hldyYmd("20261225")
+                .hldyNm("성탄절")
                 .build();
         given(restdeRepository.findById(hldySn)).willReturn(Optional.of(entity));
 
@@ -124,11 +124,11 @@ class RestdeServiceTest {
         // given
         Integer hldySn = 1;
         Restde existingEntity = Restde.builder()
-                .restdeNo(hldySn)
-                .restdeDe("20260101")
-                .restdeNm("신정")
-                .restdeDc("새해 첫날")
-                .restdeSeCode("01")
+                .hldySn(hldySn)
+                .hldyYmd("20260101")
+                .hldyNm("신정")
+                .hldyExpln("새해 첫날")
+                .hldySeCd("01")
                 .build();
 
         RestdeDto updateDto = RestdeDto.builder()
@@ -144,9 +144,9 @@ class RestdeServiceTest {
         restdeService.updateRestde(hldySn, updateDto);
 
         // then
-        assertThat(existingEntity.getRestdeNm()).isEqualTo("새해");
-        assertThat(existingEntity.getRestdeDc()).isEqualTo("새해 첫날 연휴");
-        assertThat(existingEntity.getRestdeSeCode()).isEqualTo("02");
+        assertThat(existingEntity.getHldyNm()).isEqualTo("새해");
+        assertThat(existingEntity.getHldyExpln()).isEqualTo("새해 첫날 연휴");
+        assertThat(existingEntity.getHldySeCd()).isEqualTo("02");
     }
 
     @Test
@@ -169,7 +169,7 @@ class RestdeServiceTest {
     void deleteRestde() {
         // given
         Integer hldySn = 1;
-        Restde entity = Restde.builder().restdeNo(hldySn).build();
+        Restde entity = Restde.builder().hldySn(hldySn).build();
         given(restdeRepository.findById(hldySn)).willReturn(Optional.of(entity));
 
         // when

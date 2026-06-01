@@ -40,13 +40,13 @@ public class RestdeServiceImpl implements RestdeService {
     public Integer createRestde(RestdeDto dto) {
         Objects.requireNonNull(dto);
         Restde entity = Restde.builder()
-                .restdeDe(dto.getHldyYmd())
-                .restdeNm(dto.getHldyNm())
-                .restdeDc(dto.getHldyExpln())
-                .restdeSeCode(dto.getHldySeCd())
+                .hldyYmd(dto.getHldyYmd())
+                .hldyNm(dto.getHldyNm())
+                .hldyExpln(dto.getHldyExpln())
+                .hldySeCd(dto.getHldySeCd())
                 .build();
         restdeRepository.save(entity);
-        return entity.getRestdeNo();
+        return entity.getHldySn();
     }
 
     @Override

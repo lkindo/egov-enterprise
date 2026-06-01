@@ -119,9 +119,9 @@ public class BoardMaster extends BaseEntity {
             this.option.setStsfdgYn(this.stsfdgYn);
         }
         if (this.optnFrstRgtrId != null) {
-            this.option.setCreatedBy(this.optnFrstRgtrId);
+            this.option.setFrstRgtrId(this.optnFrstRgtrId);
         } else {
-            this.option.setCreatedBy(this.getCreatedBy() != null ? this.getCreatedBy() : "webmaster");
+            this.option.setFrstRgtrId(this.getFrstRgtrId() != null ? this.getFrstRgtrId() : "webmaster");
         }
         if (this.optnCrtDt != null) {
             this.option.setCrtDt(this.optnCrtDt);
@@ -129,9 +129,9 @@ public class BoardMaster extends BaseEntity {
             this.option.setCrtDt(this.getCrtDt() != null ? this.getCrtDt() : LocalDateTime.now());
         }
         if (this.optnLastMdfrId != null) {
-            this.option.setLastModifiedBy(this.optnLastMdfrId);
+            this.option.setLastMdfrId(this.optnLastMdfrId);
         } else {
-            this.option.setLastModifiedBy(this.getLastModifiedBy() != null ? this.getLastModifiedBy() : "webmaster");
+            this.option.setLastMdfrId(this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster");
         }
         if (this.optnMdfcnDt != null) {
             this.option.setMdfcnDt(this.optnMdfcnDt);
@@ -150,9 +150,9 @@ public class BoardMaster extends BaseEntity {
             this.option.setStsfdgYn(this.stsfdgYn);
         }
         if (this.optnLastMdfrId != null) {
-            this.option.setLastModifiedBy(this.optnLastMdfrId);
+            this.option.setLastMdfrId(this.optnLastMdfrId);
         } else {
-            this.option.setLastModifiedBy(this.getLastModifiedBy() != null ? this.getLastModifiedBy() : "webmaster");
+            this.option.setLastMdfrId(this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster");
         }
         this.option.setMdfcnDt(LocalDateTime.now());
     }
@@ -162,9 +162,9 @@ public class BoardMaster extends BaseEntity {
         if (this.option != null) {
             this.ansYn = this.option.getAnsYn();
             this.stsfdgYn = this.option.getStsfdgYn();
-            this.optnFrstRgtrId = this.option.getCreatedBy();
+            this.optnFrstRgtrId = this.option.getFrstRgtrId();
             this.optnCrtDt = this.option.getCrtDt();
-            this.optnLastMdfrId = this.option.getLastModifiedBy();
+            this.optnLastMdfrId = this.option.getLastMdfrId();
             this.optnMdfcnDt = this.option.getMdfcnDt();
         }
     }
@@ -193,7 +193,7 @@ public class BoardMaster extends BaseEntity {
 
     public String getOptnFrstRegisterId() {
         if (this.option != null) {
-            return this.option.getCreatedBy();
+            return this.option.getFrstRgtrId();
         }
         return this.optnFrstRgtrId;
     }
@@ -201,7 +201,7 @@ public class BoardMaster extends BaseEntity {
     public void setOptnFrstRegisterId(String v) {
         this.optnFrstRgtrId = v;
         ensureOption();
-        this.option.setCreatedBy(v);
+        this.option.setFrstRgtrId(v);
     }
 
     public LocalDateTime getOptnFrstRegistPnttm() {
@@ -219,7 +219,7 @@ public class BoardMaster extends BaseEntity {
 
     public String getOptnLastUpdusrId() {
         if (this.option != null) {
-            return this.option.getLastModifiedBy();
+            return this.option.getLastMdfrId();
         }
         return this.optnLastMdfrId;
     }
@@ -227,7 +227,7 @@ public class BoardMaster extends BaseEntity {
     public void setOptnLastUpdusrId(String v) {
         this.optnLastMdfrId = v;
         ensureOption();
-        this.option.setLastModifiedBy(v);
+        this.option.setLastMdfrId(v);
     }
 
     public LocalDateTime getOptnLastUpdtPnttm() {
@@ -288,19 +288,4 @@ public class BoardMaster extends BaseEntity {
     public void delete() {
         this.useYn = "N";
     }
-
-    // legacy
-    public String getBbsNm() { return bbsTtl; }
-    public String getBbsTyCode() { return bbsTypeCd; }
-    public String getBbsAttrbCode() { return bbsAtrbCd; }
-    public String getReplyPosblAt() { return ansPsbltyYn; }
-    public String getFileAtchPosblAt() { return fileAtchPsbltyYn; }
-    public Integer getAtchPosblFileNumber() { return atchPsbltyFileQty; }
-    public String getBbsIntrcn() { return bbsExpln; }
-    public String getTmpltId() { return tmpltId; }
-    public Long getAtchPosblFileSize() { return atchPsbltyFileSz; }
-    public String getCommentAt() { return getAnsYn(); }
-    public String getStsfdgAt() { return getStsfdgYn(); }
-    public String getBbsAttrCd() { return bbsAtrbCd; }
-    public String getReplyPsblYn() { return ansPsbltyYn; }
 }

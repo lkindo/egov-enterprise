@@ -117,7 +117,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.atchPsbltyFileQty,
                 boardMaster.atchPsbltyFileSz,
                 boardMaster.ansPsbltyYn,
-                boardMaster.createdBy.as("frstRegisterId"),
+                boardMaster.frstRgtrId.as("frstRegisterId"),
                 boardMaster.useYn,
                 boardMaster.crtDt.as("createdDate")))
                 .from(boardMaster)

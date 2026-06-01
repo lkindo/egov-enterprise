@@ -46,7 +46,7 @@ class BoardEntityTest {
     @Test
     @DisplayName("카운트 업데이트 테스트")
     void countUpdateTest() {
-        Board board = Board.builder().commentCnt(0).fileCnt(0).build();
+        Board board = Board.builder().cmntCnt(0).fileCnt(0).build();
         
         board.setCommentCnt(5);
         assertThat(board.getCommentCnt()).isEqualTo(5);

@@ -34,7 +34,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.ansSn,
                                                  QBoard.board.pstCn,
                                                  QBoard.board.pswd,
-                                                 QBoard.board.createdBy.as("frstRegisterId"),
+                                                 QBoard.board.frstRgtrId.as("frstRegisterId"),
                                                  QUser.user.userNm.coalesce(QBoard.board.userNm).as("frstRegisterNm"),
                                                  QBoard.board.crtDt.as("createdDate"),
                                                  QBoard.board.pstBgngYmd,
@@ -56,7 +56,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoardMaster.boardMaster.atchPsbltyFileQty.as("atchPsbltyFileQty"),
                                                  QBoardMaster.boardMaster.bbsTtl.as("bbsTtl")))
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
                                 .where(QBoard.board.pstId.eq(pstId))
@@ -100,7 +100,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd))
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
                                 .where(builder)
                                 .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
@@ -110,7 +110,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 Long total = queryFactory
                                 .select(QBoard.board.count())
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
                                 .where(builder)
                                 .fetchOne();
 

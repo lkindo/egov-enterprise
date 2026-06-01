@@ -293,9 +293,9 @@ public class MenuService {
                 .relImgPath(vo.getRelImgPath())
                 .relImgNm(vo.getRelImgNm())
                 .modernRoute(vo.getModernRoute())
-                .createdBy("webmaster")
+                .frstRgtrId("webmaster")
                 .crtDt(java.time.LocalDateTime.now())
-                .lastModifiedBy("webmaster")
+                .lastMdfrId("webmaster")
                 .mdfcnDt(java.time.LocalDateTime.now())
                 .build();
         menuRepository.save(Objects.requireNonNull(menu));

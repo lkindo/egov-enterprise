@@ -20,10 +20,10 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
     void saveAndFind() {
         // given
         Template template = Template.builder()
-                .tmplatId("TMPLT_001")
-                .tmplatNm("테스트 템플릿")
-                .tmplatSeCode("TMS001")
-                .tmplatCours("/test/path")
+                .tmpltId("TMPLT_001")
+                .tmpltNm("테스트 템플릿")
+                .tmpltSeCd("TMS001")
+                .tmpltPath("/test/path")
                 .useYn("Y")
                 .build();
 
@@ -33,7 +33,7 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTmplatNm()).isEqualTo("테스트 템플릿");
+        assertThat(result.get().getTmpltNm()).isEqualTo("테스트 템플릿");
     }
 
     @Test
@@ -41,10 +41,10 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
     void update() {
         // given
         Template template = Template.builder()
-                .tmplatId("TMPLT_002")
-                .tmplatNm("구 템플릿")
-                .tmplatSeCode("TMS001")
-                .tmplatCours("/test/path")
+                .tmpltId("TMPLT_002")
+                .tmpltNm("구 템플릿")
+                .tmpltSeCd("TMS001")
+                .tmpltPath("/test/path")
                 .useYn("Y")
                 .build();
         templateRepository.save(template);
@@ -56,8 +56,8 @@ class TemplateRepositoryTest extends PersistenceTestSupport {
 
         // then
         Template result = templateRepository.findById("TMPLT_002").orElseThrow();
-        assertThat(result.getTmplatNm()).isEqualTo("신 템플릿");
-        assertThat(result.getTmplatSeCode()).isEqualTo("TMS002");
+        assertThat(result.getTmpltNm()).isEqualTo("신 템플릿");
+        assertThat(result.getTmpltSeCd()).isEqualTo("TMS002");
         assertThat(result.getUseYn()).isEqualTo("N");
     }
 }

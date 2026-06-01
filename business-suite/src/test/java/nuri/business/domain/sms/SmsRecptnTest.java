@@ -14,20 +14,20 @@ class SmsRecptnTest {
         // 1. 신규 표준 필드 빌더 및 Getter 검증
         SmsRecptn recptn = SmsRecptn.builder()
                 .smsId("SMS_001")
-                .recptnTelno("01011112222")
+                .rcptnTelno("01011112222")
                 .rsltCd("1000")
                 .rsltMsg("SUCCESS")
                 .build();
 
         assertThat(recptn.getSmsId()).isEqualTo("SMS_001");
-        assertThat(recptn.getRecptnTelno()).isEqualTo("01011112222");
+        assertThat(recptn.getRcptnTelno()).isEqualTo("01011112222");
         assertThat(recptn.getRsltCd()).isEqualTo("1000");
         assertThat(recptn.getRsltMsg()).isEqualTo("SUCCESS");
 
         // 2. 레거시 호환용 빌더 및 Getter 검증
         SmsRecptn legacyRecptn = SmsRecptn.builder()
                 .smsId("SMS_002")
-                .recptnTelno("01011112222")
+                .rcptnTelno("01011112222")
                 .resultCode("1000")
                 .resultMssage("SUCCESS")
                 .build();
@@ -43,7 +43,7 @@ class SmsRecptnTest {
     void updateResultTest() {
         SmsRecptn recptn = SmsRecptn.builder()
                 .smsId("SMS_001")
-                .recptnTelno("01011112222")
+                .rcptnTelno("01011112222")
                 .build();
 
         recptn.updateResult("2000", "FAIL");

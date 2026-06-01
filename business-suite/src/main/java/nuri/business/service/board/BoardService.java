@@ -170,7 +170,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.getUserNm() : "익명");
 
                         // DB 시퀀스를 사용하여 유니크한 ID 생성
-                        String pstIdToSet = String.valueOf(boardRepository.getNextNttId());
+                        String pstIdToSet = String.valueOf(boardRepository.getNextPstId());
 
                         Board board = boardMapper.toEntity(request, master.getBbsId(), userIdToSet, userNmToSet, sortOrdr);
                         board.setPstId(pstIdToSet);

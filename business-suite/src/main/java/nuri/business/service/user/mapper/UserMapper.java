@@ -18,9 +18,6 @@ public interface UserMapper {
     @Mapping(target = "userSe", ignore = true)
     @Mapping(target = "mberTypeCd", ignore = true)
     @Mapping(target = "userSttsCd", source = "userSttsCd")
-    @Mapping(target = "homeMiddleTelno", source = "middleTelno")
-    @Mapping(target = "homeEndTelno", source = "endTelno")
-    @Mapping(target = "insttCd", source = "pstinstCd")
     UserDto toDto(User user);
 
     @Mapping(target = "userId", source = "user.userId")
@@ -31,9 +28,6 @@ public interface UserMapper {
     @Mapping(target = "mberTypeCd", source = "authority.mbrTypeCd")
     @Mapping(target = "userSttsCd", source = "user.userSttsCd")
     @Mapping(target = "createdDate", source = "user.createdDate")
-    @Mapping(target = "homeMiddleTelno", source = "user.middleTelno")
-    @Mapping(target = "homeEndTelno", source = "user.endTelno")
-    @Mapping(target = "insttCd", source = "user.pstinstCd")
     UserDto toDtoWithAuthority(User user, UserAuthority authority);
 
     UserResponse toResponse(User user);

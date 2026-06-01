@@ -71,7 +71,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
                 .intnetSvcNm(isg.getItntSvcNm())
                 .intnetSvcDc(isg.getItntSvcExpln())
                 .reflctAt(isg.getRfltYn())
-                .userId(isg.getLastModifiedBy())
+                .userId(isg.getLastMdfrId())
                 .regDate(isg.getLastModifiedDate())
                 .build();
     }

@@ -43,11 +43,11 @@ public class RestdeDto {
             return null;
         }
         return RestdeDto.builder()
-                .hldySn(entity.getRestdeNo())
-                .hldyYmd(entity.getRestdeDe())
-                .hldyNm(entity.getRestdeNm())
-                .hldyExpln(entity.getRestdeDc())
-                .hldySeCd(entity.getRestdeSeCode())
+                .hldySn(entity.getHldySn())
+                .hldyYmd(entity.getHldyYmd())
+                .hldyNm(entity.getHldyNm())
+                .hldyExpln(entity.getHldyExpln())
+                .hldySeCd(entity.getHldySeCd())
                 .build();
     }
 }

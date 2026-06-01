@@ -36,7 +36,7 @@ public class OnlinePollArticleDto {
     private Long pollIemCo;
 
     @Schema(description = "생성자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
@@ -47,7 +47,7 @@ public class OnlinePollArticleDto {
                 .pollArtclId(entity.getPollArtclId())
                 .pollId(entity.getPollManage() != null ? entity.getPollManage().getPollId() : null)
                 .pollArtclNm(entity.getPollArtclNm())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

@@ -36,10 +36,10 @@ class DeptJobBoxServiceTest {
     @BeforeEach
     void setUp() {
         deptJobBox = DeptJobBox.builder()
-                .deptJobbxId("BOX1")
-                .deptJobbxNm("Test Box")
+                .deptTaskBoxId("BOX1")
+                .deptTaskBoxNm("Test Box")
                 .deptId("DEPT1")
-                .indictOrdr(1)
+                .sortOrdr(1)
                 .build();
     }
 
@@ -52,7 +52,7 @@ class DeptJobBoxServiceTest {
         Page<DeptJobBoxDto> result = deptJobBoxService.getDeptJobBoxList("keyword", PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("BOX1", result.getContent().get(0).getDeptJobbxId());
+        assertEquals("BOX1", result.getContent().get(0).getDeptTaskBoxId());
     }
 
     @Test
@@ -64,7 +64,7 @@ class DeptJobBoxServiceTest {
         Page<DeptJobBoxDto> result = deptJobBoxService.getDeptJobBoxListByDept("DEPT1", PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("BOX1", result.getContent().get(0).getDeptJobbxId());
+        assertEquals("BOX1", result.getContent().get(0).getDeptTaskBoxId());
     }
 
     @Test
@@ -75,7 +75,7 @@ class DeptJobBoxServiceTest {
         DeptJobBoxDto result = deptJobBoxService.getDeptJobBox("BOX1");
 
         assertNotNull(result);
-        assertEquals("BOX1", result.getDeptJobbxId());
+        assertEquals("BOX1", result.getDeptTaskBoxId());
     }
 
     @Test
@@ -92,9 +92,9 @@ class DeptJobBoxServiceTest {
     @DisplayName("부서함 생성")
     void createDeptJobBox() {
         DeptJobBoxDto dto = new DeptJobBoxDto();
-        dto.setDeptJobbxNm("New Box");
+        dto.setDeptTaskBoxNm("New Box");
         dto.setDeptId("DEPT2");
-        dto.setIndictOrdr(2);
+        dto.setSortOrdr(2);
 
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
@@ -110,13 +110,13 @@ class DeptJobBoxServiceTest {
         when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
-        dto.setDeptJobbxNm("Updated Box");
+        dto.setDeptTaskBoxNm("Updated Box");
         dto.setDeptId("DEPT1");
-        dto.setIndictOrdr(2);
+        dto.setSortOrdr(2);
 
         deptJobBoxService.updateDeptJobBox("BOX1", "user1", dto);
 
-        assertEquals("Updated Box", deptJobBox.getDeptJobbxNm());
+        assertEquals("Updated Box", deptJobBox.getDeptTaskBoxNm());
     }
 
     @Test

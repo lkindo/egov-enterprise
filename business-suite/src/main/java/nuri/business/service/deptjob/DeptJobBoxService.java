@@ -33,8 +33,8 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     }
 
     @Override
-    public DeptJobBoxDto getDeptJobBox(String deptJobbxId) {
-        return deptJobBoxRepository.findById(Objects.requireNonNull(deptJobbxId))
+    public DeptJobBoxDto getDeptJobBox(String deptTaskBoxId) {
+        return deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
                 .map(DeptJobBoxDto::fromEntity)
                 .orElse(null);
     }
@@ -44,10 +44,10 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     public String createDeptJobBox(String userId, DeptJobBoxDto dto) {
         String id = "DEPTJOB_" + System.currentTimeMillis();
         DeptJobBox entity = DeptJobBox.builder()
-                .deptJobbxId(id)
-                .deptJobbxNm(dto.getDeptJobbxNm())
+                .deptTaskBoxId(id)
+                .deptTaskBoxNm(dto.getDeptTaskBoxNm())
                 .deptId(dto.getDeptId())
-                .indictOrdr(dto.getIndictOrdr())
+                .sortOrdr(dto.getSortOrdr())
                 .build();
         deptJobBoxRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -55,19 +55,19 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
 
     @Override
     @Transactional
-    public void updateDeptJobBox(String deptJobbxId, String userId, DeptJobBoxDto dto) {
-        DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptJobbxId))
-                .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptJobbxId));
+    public void updateDeptJobBox(String deptTaskBoxId, String userId, DeptJobBoxDto dto) {
+        DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
+                .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptTaskBoxId));
 
         entity.update(
-                dto.getDeptJobbxNm(),
+                dto.getDeptTaskBoxNm(),
                 dto.getDeptId(),
-                dto.getIndictOrdr());
+                dto.getSortOrdr());
     }
 
     @Override
     @Transactional
-    public void deleteDeptJobBox(String deptJobbxId) {
-        deptJobBoxRepository.deleteById(Objects.requireNonNull(deptJobbxId));
+    public void deleteDeptJobBox(String deptTaskBoxId) {
+        deptJobBoxRepository.deleteById(Objects.requireNonNull(deptTaskBoxId));
     }
 }

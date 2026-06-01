@@ -34,7 +34,7 @@ public class SurveyTemplateDto {
     private String srvyTmpltExpln;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
@@ -46,7 +46,7 @@ public class SurveyTemplateDto {
                 .srvyTmpltTypeCd(entity.getSrvyTmpltTypeCd())
                 .srvyTmpltPathNm(entity.getSrvyTmpltPathNm())
                 .srvyTmpltExpln(entity.getSrvyTmpltExpln())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

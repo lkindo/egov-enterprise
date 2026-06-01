@@ -50,23 +50,6 @@ public class BoardDetailResult {
     private Integer atchPsbltyFileQty;
     private String bbsTtl;
 
-    // legacy / aliases
-    public String getNttId() { return pstId; }
-    public String getNttSj() { return pstTtl; }
-    public String getNtcrId() { return userId; }
-    public String getNtcrNm() { return userNm; }
-    public Long getNttNo() { return ansSn; }
-    public String getNttCn() { return pstCn; }
-    public String getPassword() { return pswd; }
-    public String getNtceBgngYmd() { return pstBgngYmd; }
-    public String getNtceEndYmd() { return pstEndYmd; }
-    public Integer getInqireCo() { return inqCnt; }
-    public Integer getLikeCo() { return likeCnt; }
-    public String getParnts() { return upPstId; }
-    public String getReplyPsblYn() { return ansPsbltyYn; }
-    public String getQnaStatus() { return qnaSttsCd; }
-    public String getQnaCategory() { return qnaCatCd; }
-    public String getSjBoldYn() { return ttlBoldYn; }
 
     public String getPstId() { return pstId; }
     public String getPstTtl() { return pstTtl; }

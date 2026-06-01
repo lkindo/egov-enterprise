@@ -38,9 +38,9 @@ class SatisfactionServiceTest {
         // given
         SatisfactionDto dto = SatisfactionDto.builder()
                 .bbsId("BBS_01")
-                .pstId("1")
-                .stsfdgLevel(5)
-                .stsfdgCn("Good")
+                .nttId("1")
+                .dgstfnScr(5)
+                .dgstfnCn("Good")
                 .build();
 
         // when
@@ -54,11 +54,11 @@ class SatisfactionServiceTest {
     @DisplayName("만족도 수정")
     void updateSatisfaction() {
         // given
-        Satisfaction existingEntity = Satisfaction.builder().stsfdgId(10L).build();
+        Satisfaction existingEntity = Satisfaction.builder().dgstfnSn(10L).build();
         SatisfactionDto dto = SatisfactionDto.builder()
-                .satisfactionId(10L)
-                .stsfdgLevel(4)
-                .stsfdgCn("Updated")
+                .dgstfnSn(10L)
+                .dgstfnScr(4)
+                .dgstfnCn("Updated")
                 .build();
 
         given(satisfactionRepository.findById(10L)).willReturn(Optional.of(existingEntity));
@@ -67,14 +67,14 @@ class SatisfactionServiceTest {
         satisfactionService.updateSatisfaction("user1", dto);
 
         // then
-        assertThat(existingEntity.getStsfdgLevel()).isEqualTo(4);
+        assertThat(existingEntity.getDgstfnScr()).isEqualTo(4);
     }
 
     @Test
     @DisplayName("만족도 삭제")
     void deleteSatisfaction() {
         // given
-        Satisfaction entity = Satisfaction.builder().stsfdgId(10L).build();
+        Satisfaction entity = Satisfaction.builder().dgstfnSn(10L).build();
         given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
 
         // when
@@ -88,7 +88,7 @@ class SatisfactionServiceTest {
     @DisplayName("만족도 목록 조회")
     void getSatisfactionList() {
         // given
-        Satisfaction entity = Satisfaction.builder().stsfdgId(1L).build();
+        Satisfaction entity = Satisfaction.builder().dgstfnSn(1L).build();
         given(satisfactionRepository.findByPstIdAndBbsIdAndUseYn(anyString(), anyString(), anyString()))
                 .willReturn(List.of(entity));
 

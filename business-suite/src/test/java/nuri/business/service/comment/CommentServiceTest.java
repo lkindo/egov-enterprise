@@ -57,7 +57,7 @@ class CommentServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getCommentCn()).isEqualTo("Test Comment");
+        assertThat(result.getContent().get(0).getAnsCn()).isEqualTo("Test Comment");
     }
 
     @Test
@@ -67,18 +67,18 @@ class CommentServiceTest {
         CommentDto request = CommentDto.builder()
                 .pstId("1")
                 .bbsId("BBS_01")
-                .writerId("user1")
-                .writerNm("Tester")
+                .wrterId("user1")
+                .wrterNm("Tester")
                 .password("1234")
-                .commentCn("New Comment")
+                .ansCn("New Comment")
                 .build();
         Comment savedComment = Comment.builder()
                 .ansSn(1L)
                 .pstId(request.getPstId())
                 .bbsId(request.getBbsId())
-                .writerId(request.getWriterId())
-                .writerNm(request.getWriterNm())
-                .ansCn(request.getCommentCn())
+                .wrterId(request.getWrterId())
+                .wrterNm(request.getWrterNm())
+                .ansCn(request.getAnsCn())
                 .build();
 
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);

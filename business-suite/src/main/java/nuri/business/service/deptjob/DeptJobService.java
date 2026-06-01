@@ -53,7 +53,7 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
             builder.and(deptJob.deptTaskBoxId.eq(deptJobbxId));
         } else if (deptId != null && !deptId.isEmpty()) {
             List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
-                    .map(box -> box.getDeptJobbxId())
+                    .map(box -> box.getDeptTaskBoxId())
                     .collect(Collectors.toList());
             if (!boxIds.isEmpty()) {
                 builder.and(deptJob.deptTaskBoxId.in(boxIds));
@@ -85,16 +85,16 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
     @Transactional
     public String createDeptJob(DeptJobDto dto) {
         DeptJob deptJob = DeptJob.builder()
-                .deptJobId(dto.getDeptJobId())
-                .deptJobbxId(dto.getDeptJobbxId())
-                .deptJobNm(dto.getDeptJobNm())
-                .deptJobCn(dto.getDeptJobCn())
-                .chargerId(dto.getChargerId())
-                .priort(dto.getPriort())
+                .deptTaskId(dto.getDeptTaskId())
+                .deptTaskBoxId(dto.getDeptTaskBoxId())
+                .deptTaskNm(dto.getDeptTaskNm())
+                .deptTaskCn(dto.getDeptTaskCn())
+                .picId(dto.getPicId())
+                .prrtyRnk(dto.getPrrtyRnk())
                 .atchFileId(dto.getAtchFileId())
                 .build();
         deptJobRepository.save(required(deptJob, "deptJob 는 null 일 수 없습니다"));
-        return deptJob.getDeptJobId();
+        return deptJob.getDeptTaskId();
     }
 
     @Override
@@ -103,11 +103,11 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         deptJob.update(
-                dto.getDeptJobbxId(),
-                dto.getDeptJobNm(),
-                dto.getDeptJobCn(),
-                dto.getChargerId(),
-                dto.getPriort(),
+                dto.getDeptTaskBoxId(),
+                dto.getDeptTaskNm(),
+                dto.getDeptTaskCn(),
+                dto.getPicId(),
+                dto.getPrrtyRnk(),
                 dto.getAtchFileId());
     }
 
@@ -120,16 +120,16 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
     private DeptJobDto toDto(DeptJob entity) {
         DeptJobDto dto = DeptJobDto.from(entity);
 
-        deptJobBoxRepository.findById(required(entity.getDeptJobbxId(), "entity.getDeptJobbxId() 는 null 일 수 없습니다"))
+        deptJobBoxRepository.findById(required(entity.getDeptTaskBoxId(), "entity.getDeptTaskBoxId() 는 null 일 수 없습니다"))
                 .ifPresent(box -> {
-                    dto.setDeptJobbxNm(box.getDeptJobbxNm());
+                    dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
                     dto.setDeptId(box.getDeptId());
                     organizationManageRepository.findById(required(box.getDeptId(), "box.getDeptId() 는 null 일 수 없습니다"))
                             .ifPresent(org -> dto.setDeptNm(org.getOgnzNm()));
                 });
 
-        userRepository.findByEsntlId(required(entity.getChargerId(), "entity.getChargerId() 는 null 일 수 없습니다"))
-                .ifPresent(user -> dto.setChargerNm(user.getUserNm()));
+        userRepository.findByEsntlId(required(entity.getPicId(), "entity.getPicId() 는 null 일 수 없습니다"))
+                .ifPresent(user -> dto.setPicNm(user.getUserNm()));
 
         return dto;
     }

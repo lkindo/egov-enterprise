@@ -70,7 +70,7 @@ public class SmsService implements EgovSmsService {
             for (SmsRecptnDto recptnDto : dto.getRecipients()) {
                 SmsRecptn recptn = SmsRecptn.builder()
                         .smsId(smsId)
-                        .recptnTelno(recptnDto.getRecptnTelno())
+                        .rcptnTelno(recptnDto.getRcptnTelno())
                         .rsltCd("P") // Pending
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));

@@ -45,7 +45,7 @@ public class SmsAsyncProcessor {
             try {
                 self.sendToRecipient(recptn, senderTel, content);
             } catch (Exception e) {
-                log.error("Final failure for SMS to: {}, error: {}", recptn.getRecptnTelno(), e.getMessage());
+                log.error("Final failure for SMS to: {}, error: {}", recptn.getRcptnTelno(), e.getMessage());
             }
         }
         
@@ -62,8 +62,8 @@ public class SmsAsyncProcessor {
     )
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendToRecipient(SmsRecptn recptn, String senderTel, String content) {
-        log.debug("Attempting to send SMS to: {}", recptn.getRecptnTelno());
-        boolean success = smsSender.send(recptn.getRecptnTelno(), content, senderTel);
+        log.debug("Attempting to send SMS to: {}", recptn.getRcptnTelno());
+        boolean success = smsSender.send(recptn.getRcptnTelno(), content, senderTel);
         
         if (success) {
             recptn.updateResult("S", "Success");
@@ -79,7 +79,7 @@ public class SmsAsyncProcessor {
      */
     @org.springframework.retry.annotation.Recover
     public void recoverSmsSending(Exception e, SmsRecptn recptn, String senderTel, String content) {
-        log.error("All retries failed for SMS to: {}, error: {}", recptn.getRecptnTelno(), e.getMessage());
+        log.error("All retries failed for SMS to: {}, error: {}", recptn.getRcptnTelno(), e.getMessage());
         recptn.updateResult("F", "Final Failure: " + e.getMessage());
         meterRegistry.counter("sms.dispatch.total", "result", "failure").increment();
     }

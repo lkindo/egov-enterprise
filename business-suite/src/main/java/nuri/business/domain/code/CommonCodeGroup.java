@@ -52,15 +52,15 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
         this.cdIdExpln = cdIdExpln;
         this.clsfCd = clsfCd;
         this.useYn = useYn == null ? "Y" : useYn;
-        this.createdBy = frstRegisterId;
-        this.lastModifiedBy = frstRegisterId;
+        this.frstRgtrId = frstRegisterId;
+        this.lastMdfrId = frstRegisterId;
     }
 
     public void update(@NonNull String cdIdNm, String cdIdExpln, String useYn, String lastUpdusrId) {
         this.cdIdNm = Objects.requireNonNull(cdIdNm);
         this.cdIdExpln = cdIdExpln;
         this.useYn = useYn;
-        this.lastModifiedBy = lastUpdusrId;
+        this.lastMdfrId = lastUpdusrId;
     }
 
     public void delete() {

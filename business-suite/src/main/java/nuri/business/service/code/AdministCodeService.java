@@ -41,7 +41,7 @@ public class AdministCodeService {
                 .upAdmdstCd(dto.getUpAdmdstCd())
                 .useYn(dto.getUseYn())
                 .crtYmd(dto.getCrtYmd())
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         return administCodeRepository.save(entity).getAdmdstCd();
     }
@@ -67,9 +67,9 @@ public class AdministCodeService {
                 .useYn(entity.getUseYn())
                 .crtYmd(entity.getCrtYmd())
                 .ablYmd(entity.getAblYmd())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
-                .lastModifiedBy(entity.getLastModifiedBy())
+                .lastMdfrId(entity.getLastMdfrId())
                 .lastModifiedDate(entity.getLastModifiedDate())
                 .build();
     }

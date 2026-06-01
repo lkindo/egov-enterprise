@@ -36,7 +36,7 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     public void updateAbsence(String userId, UserAbsenceDto dto) {
         UserAbsence absence = userAbsenceRepository.findById(userId)
                 .orElse(UserAbsence.builder().userId(userId).build());
-        absence.updateAbsence(dto.getUserAbsnceAt());
+        absence.updateAbsence(dto.getUserAbsnYn());
         userAbsenceRepository.save(absence);
     }
 }

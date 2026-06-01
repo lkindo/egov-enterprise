@@ -47,7 +47,7 @@ public class BannerDto {
     private String atchFileId;
 
     @Schema(description = "생성자 ID")
-    private String createdBy;
+    private String frstRgtrId;
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
@@ -62,7 +62,7 @@ public class BannerDto {
                 .sortOrdr(entity.getSortOrdr())
                 .rfltYn(entity.getRfltYn())
                 .atchFileId(entity.getAtchFileId())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

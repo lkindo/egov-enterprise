@@ -178,7 +178,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       ];
       return testLogs.find(t => t.id === idStr) || null;
     }
-    if (activeTab === 'COMMENTS') return comments.find(c => c.commentNo === selectedItemId);
+    if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.requstId) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.requstId) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.logId) === idStr);
@@ -261,20 +261,20 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2 w-full pr-4">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === c.commentNo ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-600"
+            selectedItemId === c.ansSn ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-600"
           )}>
             <MessageSquare size={20} />
           </div>
           <div className="flex-1 space-y-0.5 min-w-0">
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate", selectedItemId === c.commentNo ? "text-white" : "text-foreground")}>{c.commentCn}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate", selectedItemId === c.ansSn ? "text-white" : "text-foreground")}>{c.ansCn}</h4>
             <p className={cn("text-xs font-bold opacity-40 tracking-tight")}>USER_ID: {c.wrterId}</p>
           </div>
-          {selectedItemId === c.commentNo && (
+          {selectedItemId === c.ansSn && (
             <Button 
                 variant="ghost" 
                 size="icon" 
                 aria-label="댓글 삭제"
-                onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.commentNo); }} 
+                onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.ansSn); }} 
                 className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-lg transition-all relative z-10 shrink-0 h-10 w-10"
             >
               <Trash2 size={16} />
@@ -566,8 +566,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                         columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
                         data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
                         loading={activeTab === 'SECURITY' ? isAuditLoading : activeTab === 'SYSTEM' ? isSystemLoading : activeTab === 'LOGIN' ? isLoginLoading : isCommentLoading}
-                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.requstId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.commentNo)}
-                        keyField={activeTab === 'SECURITY' ? 'requstId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'commentNo'}
+                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.requstId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.ansSn)}
+                        keyField={activeTab === 'SECURITY' ? 'requstId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'ansSn'}
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
                         pagination={{

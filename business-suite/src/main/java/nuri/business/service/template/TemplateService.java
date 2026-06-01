@@ -37,13 +37,13 @@ public class TemplateService implements EgovTemplateService {
     }
 
     @Override
-    public Page<TemplateDto> getTemplatesByType(String tmplatSeCode, Pageable pageable) {
-        return templateRepository.findByTmpltSeCd(tmplatSeCode, pageable).map(TemplateDto::from);
+    public Page<TemplateDto> getTemplatesByType(String tmpltSeCd, Pageable pageable) {
+        return templateRepository.findByTmpltSeCd(tmpltSeCd, pageable).map(TemplateDto::from);
     }
 
     @Override
-    public TemplateDto getTemplate(String tmplatId) {
-        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
+    public TemplateDto getTemplate(String tmpltId) {
+        Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return TemplateDto.from(template);
     }
@@ -51,34 +51,34 @@ public class TemplateService implements EgovTemplateService {
     @Override
     @Transactional
     public String createTemplate(String userId, TemplateDto dto) {
-        String tmplatId = "TMPL_" + System.currentTimeMillis();
+        String tmpltId = "TMPL_" + System.currentTimeMillis();
 
         Template template = Template.builder()
-                .tmplatId(tmplatId)
-                .tmplatNm(dto.getTmplatNm())
-                .tmplatCours(dto.getTmplatCours())
-                .tmplatSeCode(dto.getTmplatSeCode())
+                .tmpltId(tmpltId)
+                .tmpltNm(dto.getTmpltNm())
+                .tmpltPath(dto.getTmpltPath())
+                .tmpltSeCd(dto.getTmpltSeCd())
                 .useYn(dto.getUseYn())
                 .build();
 
         templateRepository.save(Objects.requireNonNull(template));
-        return tmplatId;
+        return tmpltId;
     }
 
     @Override
     @Transactional
-    public void updateTemplate(String tmplatId, String userId, TemplateDto dto) {
-        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
+    public void updateTemplate(String tmpltId, String userId, TemplateDto dto) {
+        Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        template.update(dto.getTmplatNm(), dto.getTmplatCours(), dto.getTmplatSeCode(),
+        template.update(dto.getTmpltNm(), dto.getTmpltSeCd(), dto.getTmpltPath(),
                 dto.getUseYn());
     }
 
     @Override
     @Transactional
-    public void deleteTemplate(String tmplatId) {
-        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
+    public void deleteTemplate(String tmpltId) {
+        Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         templateRepository.delete(Objects.requireNonNull(template));
     }
@@ -91,8 +91,8 @@ public class TemplateService implements EgovTemplateService {
     }
 
     @Override
-    public List<TemplateDto> getActiveTemplatesByType(String tmplatSeCode) {
-        return templateRepository.findByTmpltSeCdAndUseYn(tmplatSeCode, "Y").stream()
+    public List<TemplateDto> getActiveTemplatesByType(String tmpltSeCd) {
+        return templateRepository.findByTmpltSeCdAndUseYn(tmpltSeCd, "Y").stream()
                 .map(TemplateDto::from)
                 .collect(Collectors.toList());
     }

@@ -39,7 +39,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBoxList_Success() throws Exception {
         // Given
-        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptJobbxId("BOX1").build()));
+        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build()));
         given(egovDeptJobBoxService.getDeptJobBoxList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -56,7 +56,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBox_Success() throws Exception {
         // Given
-        given(egovDeptJobBoxService.getDeptJobBox("BOX1")).willReturn(DeptJobBoxDto.builder().deptJobbxId("BOX1").build());
+        given(egovDeptJobBoxService.getDeptJobBox("BOX1")).willReturn(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/dept-jobs/boxes/BOX1")
@@ -80,7 +80,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
-                                .deptJobbxNm("Test Box")
+                                .deptTaskBoxNm("Test Box")
                                 .deptId("D1")
                                 .build())))
                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
-                                .deptJobbxNm("Updated Box")
+                                .deptTaskBoxNm("Updated Box")
                                 .deptId("D1")
                                 .build())))
                 .andExpect(status().isOk())

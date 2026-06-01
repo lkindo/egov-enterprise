@@ -54,18 +54,18 @@ class DeptJobServiceTest {
     @BeforeEach
     void setUp() {
         deptJobBox = DeptJobBox.builder()
-                .deptJobbxId("BOX1")
-                .deptJobbxNm("Test Box")
+                .deptTaskBoxId("BOX1")
+                .deptTaskBoxNm("Test Box")
                 .deptId("DEPT1")
                 .build();
 
         deptJob = DeptJob.builder()
-                .deptJobId("JOB1")
-                .deptJobbxId("BOX1")
-                .deptJobNm("Test Job")
-                .deptJobCn("Content")
-                .chargerId("USER1")
-                .priort("1")
+                .deptTaskId("JOB1")
+                .deptTaskBoxId("BOX1")
+                .deptTaskNm("Test Job")
+                .deptTaskCn("Content")
+                .picId("USER1")
+                .prrtyRnk("1")
                 .atchFileId("FILE1")
                 .build();
     }
@@ -134,9 +134,9 @@ class DeptJobServiceTest {
         DeptJobDto result = deptJobService.getDeptJob("JOB1");
 
         assertNotNull(result);
-        assertEquals("JOB1", result.getDeptJobId());
+        assertEquals("JOB1", result.getDeptTaskId());
         assertEquals("Test Dept", result.getDeptNm());
-        assertEquals("Test User", result.getChargerNm());
+        assertEquals("Test User", result.getPicNm());
     }
 
     @Test
@@ -151,9 +151,9 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 생성")
     void createDeptJob() {
         DeptJobDto dto = new DeptJobDto();
-        dto.setDeptJobId("JOB1");
-        dto.setDeptJobbxId("BOX1");
-        dto.setDeptJobNm("Test Job");
+        dto.setDeptTaskId("JOB1");
+        dto.setDeptTaskBoxId("BOX1");
+        dto.setDeptTaskNm("Test Job");
         
         when(deptJobRepository.save(any(DeptJob.class))).thenReturn(deptJob);
 
@@ -169,11 +169,11 @@ class DeptJobServiceTest {
         when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
         
         DeptJobDto dto = new DeptJobDto();
-        dto.setDeptJobNm("Updated Job");
+        dto.setDeptTaskNm("Updated Job");
 
         deptJobService.updateDeptJob("JOB1", dto);
 
-        assertEquals("Updated Job", deptJob.getDeptJobNm());
+        assertEquals("Updated Job", deptJob.getDeptTaskNm());
     }
 
     @Test

@@ -145,7 +145,7 @@ class BoardRepositoryTest {
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Low")
                 .inqCnt(10)
-                .commentCnt(1)
+                .cmntCnt(1)
                 .useYn("Y")
                 .build();
         boardRepository.save(articleLow);
@@ -157,7 +157,7 @@ class BoardRepositoryTest {
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("High")
                 .inqCnt(100)
-                .commentCnt(10)
+                .cmntCnt(10)
                 .useYn("Y")
                 .build();
         boardRepository.save(articleHigh);

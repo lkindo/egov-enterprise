@@ -42,7 +42,7 @@ class ScrapServiceTest {
         // Given
         PageRequest pageable = PageRequest.of(0, 10);
         Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Title").build();
-        given(scrapRepository.findByCreatedByAndUseYn(eq("user1"), eq("Y"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(scrapRepository.findByFrstRgtrIdAndUseYn(eq("user1"), eq("Y"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // When
         Page<ScrapDto> result = scrapService.getScrapList("user1", pageable);

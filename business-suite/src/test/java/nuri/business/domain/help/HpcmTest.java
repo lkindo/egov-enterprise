@@ -12,16 +12,16 @@ class HpcmTest {
     @DisplayName("Hpcm 빌더 및 초기화 테스트")
     void builderTest() {
         Hpcm hpcm = Hpcm.builder()
-                .hpcmId("HPCM_001")
-                .hpcmSeCode("001")
-                .hpcmDf("Help Definition")
-                .hpcmDc("Help Content")
-                .createdBy("admin")
+                .hlpId("HPCM_001")
+                .hlpSeCd("001")
+                .hlpDfn("Help Definition")
+                .hlpExpln("Help Content")
+                .frstRgtrId("admin")
                 .build();
 
-        assertThat(hpcm.getHpcmId()).isEqualTo("HPCM_001");
-        assertThat(hpcm.getHpcmSeCode()).isEqualTo("001");
-        assertThat(hpcm.getHpcmDf()).isEqualTo("Help Definition");
+        assertThat(hpcm.getHlpId()).isEqualTo("HPCM_001");
+        assertThat(hpcm.getHlpSeCd()).isEqualTo("001");
+        assertThat(hpcm.getHlpDfn()).isEqualTo("Help Definition");
         assertThat(hpcm.getFrstRegisterId()).isEqualTo("admin");
     }
 
@@ -29,13 +29,13 @@ class HpcmTest {
     @DisplayName("Hpcm 수정 테스트")
     void updateTest() {
         Hpcm hpcm = Hpcm.builder()
-                .hpcmId("HPCM_001")
-                .hpcmSeCode("001")
+                .hlpId("HPCM_001")
+                .hlpSeCd("001")
                 .build();
 
         hpcm.update("002", "New Df", "New Dc");
 
-        assertThat(hpcm.getHpcmSeCode()).isEqualTo("002");
-        assertThat(hpcm.getHpcmDf()).isEqualTo("New Df");
+        assertThat(hpcm.getHlpSeCd()).isEqualTo("002");
+        assertThat(hpcm.getHlpDfn()).isEqualTo("New Df");
     }
 }

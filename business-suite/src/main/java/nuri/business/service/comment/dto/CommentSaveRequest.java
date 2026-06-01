@@ -11,14 +11,10 @@ import lombok.*;
 @Builder
 public class CommentSaveRequest {
     @NotNull
-    private Long nttId;
+    private Long pstId;
     @NotBlank
     private String bbsId;
     @NotBlank
     private String cmntCn;
     private String password;
-
-    // legacy
-    public Long getPstId() { return nttId; }
-    public void setPstId(Long v) { this.nttId = v; }
 }

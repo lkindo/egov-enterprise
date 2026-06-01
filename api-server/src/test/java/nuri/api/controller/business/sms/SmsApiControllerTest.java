@@ -58,12 +58,12 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 수신자 목록 조회")
     void getSmsRecipients() throws Exception {
-        List<SmsRecptnDto> recipients = List.of(SmsRecptnDto.builder().recptnTelno("01012345678").build());
+        List<SmsRecptnDto> recipients = List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build());
         given(smsService.getSmsRecipients("SMS1")).willReturn(recipients);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms/SMS1/recipients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].recptnTelno").value("01012345678"));
+                .andExpect(jsonPath("$.data[0].rcptnTelno").value("01012345678"));
     }
 
     // sendSms 테스트는 @LoginUser 처리가 필요하므로 일단 주석 처리하거나 단순화

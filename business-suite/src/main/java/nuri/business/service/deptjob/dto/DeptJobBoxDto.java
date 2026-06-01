@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @Builder
 public class DeptJobBoxDto {
 
-    private String deptJobbxId;
-    private String deptJobbxNm;
+    private String deptTaskBoxId;
+    private String deptTaskBoxNm;
     @Size(max = 20)
     private String deptId;
     private String deptNm;
-    private Integer indictOrdr;
+    private Integer sortOrdr;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
@@ -28,23 +28,23 @@ public class DeptJobBoxDto {
         if (entity == null)
             return null;
         return DeptJobBoxDto.builder()
-                .deptJobbxId(entity.getDeptJobbxId())
-                .deptJobbxNm(entity.getDeptJobbxNm())
+                .deptTaskBoxId(entity.getDeptTaskBoxId())
+                .deptTaskBoxNm(entity.getDeptTaskBoxNm())
                 .deptId(entity.getDeptId())
-                .indictOrdr(entity.getIndictOrdr())
-                .frstRegisterId(entity.getCreatedBy())
+                .sortOrdr(entity.getSortOrdr())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }
 
     public DeptJobBox toEntity() {
         return DeptJobBox.builder()
-                .deptJobbxId(this.deptJobbxId)
-                .deptJobbxNm(this.deptJobbxNm)
+                .deptTaskBoxId(this.deptTaskBoxId)
+                .deptTaskBoxNm(this.deptTaskBoxNm)
                 .deptId(this.deptId)
-                .indictOrdr(this.indictOrdr)
+                .sortOrdr(this.sortOrdr)
                 .build();
     }
 }

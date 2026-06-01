@@ -19,31 +19,31 @@ public class MainImageDto {
     @NotBlank
     @Size(max = 20)
     @Schema(description = "이미지 ID")
-    private String imageId;
+    private String imgId;
 
     @NotBlank
     @Size(max = 100)
     @Schema(description = "이미지 명")
-    private String imageNm;
+    private String imgNm;
 
     @Size(max = 50)
     @Schema(description = "이미지 경로")
-    private String image;
+    private String mainImgFilePath;
 
     @Size(max = 100)
     @Schema(description = "이미지 파일명")
-    private String imageFile;
+    private String imgFileNm;
 
     @Size(max = 4000)
     @Schema(description = "이미지 설명")
-    private String imageDc;
+    private String mainImgExpln;
 
     @Size(max = 1)
     @Schema(description = "반영 여부")
-    private String reflctAt;
+    private String rfltYn;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
@@ -51,13 +51,13 @@ public class MainImageDto {
     public static MainImageDto from(MainImage entity) {
         if (entity == null) return null;
         return MainImageDto.builder()
-                .imageId(entity.getImageId())
-                .imageNm(entity.getImageNm())
-                .image(entity.getImage())
-                .imageFile(entity.getImageFile())
-                .imageDc(entity.getImageDc())
-                .reflctAt(entity.getReflctAt())
-                .createdBy(entity.getCreatedBy())
+                .imgId(entity.getImgId())
+                .imgNm(entity.getImgNm())
+                .mainImgFilePath(entity.getMainImgFilePath())
+                .imgFileNm(entity.getImgFileNm())
+                .mainImgExpln(entity.getMainImgExpln())
+                .rfltYn(entity.getRfltYn())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

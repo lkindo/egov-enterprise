@@ -85,11 +85,4 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlPicId = schdlPicId;
         this.reptSeCd = reptSeCd;
     }
-
-    // legacy aliases
-    public String getSchdulId() { return schdlId; }
-    public String getSchdulNm() { return schdlNm; }
-    public String getSchdulCn() { return schdlCn; }
-    public String getSchdulBgnde() { return schdlBgngYmd; }
-    public String getSchdulEndde() { return schdlEndYmd; }
 }

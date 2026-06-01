@@ -30,7 +30,8 @@ public class DtaUseStats extends BaseEntity {
     @Column(length = 20)
     private String bbsId;
 
-    private Long nttId;
+    @Column(name = "pst_id")
+    private Long pstId;
 
     @Column(length = 20)
     private String atchFileId;

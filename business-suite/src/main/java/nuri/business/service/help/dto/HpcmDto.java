@@ -19,25 +19,25 @@ public class HpcmDto {
     @NotBlank
     @Size(max = 20)
     @Schema(description = "도움말 ID")
-    private String hpcmId;
+    private String hlpId;
 
     @NotBlank
     @Size(max = 3)
     @Schema(description = "도움말 구분코드")
-    private String hpcmSeCode;
+    private String hlpSeCd;
 
     @NotBlank
     @Size(max = 1000)
     @Schema(description = "도움말 정의")
-    private String hpcmDf;
+    private String hlpDfn;
 
     @NotBlank
     @Size(max = 65535)
     @Schema(description = "도움말 설명")
-    private String hpcmDc;
+    private String hlpExpln;
 
     @Schema(description = "Description")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "Description")
     private LocalDateTime createdDate;
@@ -45,11 +45,11 @@ public class HpcmDto {
     public static HpcmDto from(Hpcm entity) {
         if (entity == null) return null;
         return HpcmDto.builder()
-                .hpcmId(entity.getHpcmId())
-                .hpcmSeCode(entity.getHpcmSeCode())
-                .hpcmDf(entity.getHpcmDf())
-                .hpcmDc(entity.getHpcmDc())
-                .createdBy(entity.getCreatedBy())
+                .hlpId(entity.getHlpId())
+                .hlpSeCd(entity.getHlpSeCd())
+                .hlpDfn(entity.getHlpDfn())
+                .hlpExpln(entity.getHlpExpln())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

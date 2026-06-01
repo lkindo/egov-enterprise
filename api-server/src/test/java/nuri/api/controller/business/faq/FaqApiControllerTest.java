@@ -40,7 +40,7 @@ class FaqApiControllerTest extends ControllerTestSupport {
     @DisplayName("FAQ 목록 조회 성공")
     void getFaqs_Success() throws Exception {
         // Given
-        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnTtl("Question").build()));
+        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qstnTtl("Question").build()));
         given(faqService.getFaqList(any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -55,7 +55,7 @@ class FaqApiControllerTest extends ControllerTestSupport {
     @DisplayName("FAQ 목록 키워드 조회 성공")
     void getFaqs_WithKeyword_Success() throws Exception {
         // Given
-        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnTtl("Keyword Question").build()));
+        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qstnTtl("Keyword Question").build()));
         given(faqService.getFaqList(eq("keyword"), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -64,14 +64,14 @@ class FaqApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].faqId").value("FAQ1"))
-                .andExpect(jsonPath("$.data.list[0].qestnSj").value("Keyword Question"));
+                .andExpect(jsonPath("$.data.list[0].qstnTtl").value("Keyword Question"));
     }
 
     @Test
     @DisplayName("FAQ 상세 조회 성공")
     void getFaq_Success() throws Exception {
         // Given
-        given(faqService.getFaq(anyString())).willReturn(FaqDto.builder().faqId("FAQ1").qestnTtl("Question").build());
+        given(faqService.getFaq(anyString())).willReturn(FaqDto.builder().faqId("FAQ1").qstnTtl("Question").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/faqs/FAQ1")
@@ -101,7 +101,7 @@ class FaqApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(post("/api/v1/faqs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"qestnSj\":\"Question\",\"qestnCn\":\"Content\"}")
+                .content("{\"qstnTtl\":\"Question\",\"qstnCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("FAQ1"));
@@ -116,7 +116,7 @@ class FaqApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(put("/api/v1/faqs/FAQ1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"qestnSj\":\"Updated Question\",\"qestnCn\":\"Updated Content\"}")
+                .content("{\"qstnTtl\":\"Updated Question\",\"qstnCn\":\"Updated Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

@@ -239,7 +239,7 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("블로그 사용자 여부 확인")
     void checkBlogUser() {
-        given(blogRepository.existsByCreatedBy("user1")).willReturn(true);
+        given(blogRepository.existsByFrstRgtrId("user1")).willReturn(true);
 
         assertThat(boardMasterService.checkBlogUser("user1")).isTrue();
     }

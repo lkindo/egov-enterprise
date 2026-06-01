@@ -12,17 +12,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class DeptJobDto {
-    private String deptJobId;
-    private String deptJobbxId;
-    private String deptJobbxNm;
+    private String deptTaskId;
+    private String deptTaskBoxId;
+    private String deptTaskBoxNm;
     @Size(max = 20)
     private String deptId;
     private String deptNm;
-    private String deptJobNm;
-    private String deptJobCn;
-    private String chargerId;
-    private String chargerNm;
-    private String priort;
+    private String deptTaskNm;
+    private String deptTaskCn;
+    private String picId;
+    private String picNm;
+    private String prrtyRnk;
     @Size(max = 30)
     private String atchFileId;
     private String frstRegisterId;
@@ -31,17 +31,19 @@ public class DeptJobDto {
     private LocalDateTime lastUpdtPnttm;
 
     public static DeptJobDto from(DeptJob entity) {
+        if (entity == null) return null;
         return DeptJobDto.builder()
-                .deptJobId(entity.getDeptJobId())
-                .deptJobbxId(entity.getDeptJobbxId())
-                .deptJobNm(entity.getDeptJobNm())
-                .deptJobCn(entity.getDeptJobCn())
-                .chargerId(entity.getChargerId())
-                .priort(entity.getPriort())
+                .deptTaskId(entity.getDeptTaskId())
+                .deptTaskBoxId(entity.getDeptTaskBoxId())
+                .deptTaskBoxNm(entity.getDeptJobBox() != null ? entity.getDeptJobBox().getDeptTaskBoxNm() : null)
+                .deptTaskNm(entity.getDeptTaskNm())
+                .deptTaskCn(entity.getDeptTaskCn())
+                .picId(entity.getPicId())
+                .prrtyRnk(entity.getPrrtyRnk())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }

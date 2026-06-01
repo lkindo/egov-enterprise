@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CommentDto {
-    private Long commentNo;
+    private Long ansSn;
     @Size(max = 20)
     private String pstId;
     @Size(max = 20)
     private String bbsId;
-    private String writerId;
-    private String writerNm;
+    private String wrterId;
+    private String wrterNm;
     private String password;
-    private String commentCn;
+    private String ansCn;
     private String createdDate;
 }

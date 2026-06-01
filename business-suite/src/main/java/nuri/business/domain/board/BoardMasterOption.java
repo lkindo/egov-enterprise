@@ -12,12 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-@AttributeOverrides({
-    @AttributeOverride(name = "createdBy", column = @Column(name = "frst_rgtr_id", updatable = false, length = 20)),
-    @AttributeOverride(name = "lastModifiedBy", column = @Column(name = "last_mdfr_id", length = 20)),
-    @AttributeOverride(name = "crtDt", column = @Column(name = "crt_dt", updatable = false)),
-    @AttributeOverride(name = "mdfcnDt", column = @Column(name = "mdfcn_dt"))
-})
+
 public class BoardMasterOption extends BaseEntity {
 
     @Id
@@ -45,11 +40,11 @@ public class BoardMasterOption extends BaseEntity {
         if (this.stsfdgYn == null) {
             this.stsfdgYn = "N";
         }
-        if (this.getCreatedBy() == null) {
-            this.setCreatedBy("webmaster");
+        if (this.getFrstRgtrId() == null) {
+            this.setFrstRgtrId("webmaster");
         }
-        if (this.getLastModifiedBy() == null) {
-            this.setLastModifiedBy("webmaster");
+        if (this.getLastMdfrId() == null) {
+            this.setLastMdfrId("webmaster");
         }
     }
 }

@@ -34,9 +34,9 @@ class MainImageServiceTest {
 
     private MainImage createMockImage(String id, String nm, String reflctAt) {
         return MainImage.builder()
-                .imageId(id)
-                .imageNm(nm)
-                .reflctAt(reflctAt)
+                .imgId(id)
+                .imgNm(nm)
+                .rfltYn(reflctAt)
                 .build();
     }
 
@@ -51,15 +51,15 @@ class MainImageServiceTest {
 
         // Keyword null
         Page<MainImageDto> result1 = mainImageService.getMainImageList(null, pageable);
-        assertEquals("IMG_1", result1.getContent().get(0).getImageId());
+        assertEquals("IMG_1", result1.getContent().get(0).getImgId());
 
         // Keyword empty
         Page<MainImageDto> result2 = mainImageService.getMainImageList("", pageable);
-        assertEquals("IMG_1", result2.getContent().get(0).getImageId());
+        assertEquals("IMG_1", result2.getContent().get(0).getImgId());
 
         // Keyword present
         Page<MainImageDto> result3 = mainImageService.getMainImageList("test", pageable);
-        assertEquals("IMG_2", result3.getContent().get(0).getImageId());
+        assertEquals("IMG_2", result3.getContent().get(0).getImgId());
     }
 
     @Test
@@ -79,7 +79,7 @@ class MainImageServiceTest {
     @Test
     @DisplayName("메인 이미지 추가 - 성공")
     void insertMainImage_success() {
-        MainImageDto dto = MainImageDto.builder().imageId("NEW").imageNm("Name").build();
+        MainImageDto dto = MainImageDto.builder().imgId("NEW").imgNm("Name").build();
         
         mainImageService.insertMainImage(dto);
 
@@ -93,13 +93,13 @@ class MainImageServiceTest {
         when(mainImageRepository.findById("IMG_1")).thenReturn(Optional.of(entity));
         when(mainImageRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
 
-        MainImageDto dto = MainImageDto.builder().imageId("IMG_1").imageNm("New").build();
+        MainImageDto dto = MainImageDto.builder().imgId("IMG_1").imgNm("New").build();
 
         // Success
         mainImageService.updateMainImage(dto);
         
         // Not Found
-        final MainImageDto nfDto = MainImageDto.builder().imageId("NOT_FOUND").build();
+        final MainImageDto nfDto = MainImageDto.builder().imgId("NOT_FOUND").build();
         assertThrows(BusinessException.class, () -> mainImageService.updateMainImage(nfDto));
     }
 
@@ -120,6 +120,6 @@ class MainImageServiceTest {
         List<MainImageDto> result = mainImageService.getReflectedMainImages();
 
         assertEquals(1, result.size());
-        assertEquals("IMG_Y", result.get(0).getImageId());
+        assertEquals("IMG_Y", result.get(0).getImgId());
     }
 }

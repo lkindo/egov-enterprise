@@ -43,17 +43,17 @@ class RestdeRepositoryTest {
     @BeforeEach
     void setUp() {
         Restde r1 = Restde.builder()
-                .restdeDe("20260101")
-                .restdeNm("New Year")
-                .restdeDc("New Year's Day")
-                .restdeSeCode("1")
+                .hldyYmd("20260101")
+                .hldyNm("New Year")
+                .hldyExpln("New Year's Day")
+                .hldySeCd("1")
                 .build();
         
         Restde r2 = Restde.builder()
-                .restdeDe("20260301")
-                .restdeNm("Independence Movement Day")
-                .restdeDc("March 1st Movement")
-                .restdeSeCode("2")
+                .hldyYmd("20260301")
+                .hldyNm("Independence Movement Day")
+                .hldyExpln("March 1st Movement")
+                .hldySeCd("2")
                 .build();
         
         em.persist(r1);
@@ -78,7 +78,7 @@ class RestdeRepositoryTest {
                 "1", "20260101", PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getRestdeNm()).isEqualTo("New Year");
+        assertThat(result.getContent().get(0).getHldyNm()).isEqualTo("New Year");
     }
 
     @Test
@@ -88,7 +88,7 @@ class RestdeRepositoryTest {
                 "2", "Movement", PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getRestdeDe()).isEqualTo("20260301");
+        assertThat(result.getContent().get(0).getHldyYmd()).isEqualTo("20260301");
     }
 
     @Test

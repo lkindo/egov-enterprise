@@ -94,7 +94,7 @@ class SmsServiceTest {
         SmsDto dto = SmsDto.builder()
                 .trnsmitTelno("01011112222")
                 .trnsmitCn("Test Message")
-                .recipients(List.of(SmsRecptnDto.builder().recptnTelno("01033334444").build()))
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         
         when(smsRepository.save(any(Sms.class))).thenAnswer(i -> i.getArgument(0));
@@ -114,7 +114,7 @@ class SmsServiceTest {
     @DisplayName("SMS 수신자 목록 조회 테스트")
     void getSmsRecipientsTest() {
         // Given
-        SmsRecptn recptn = SmsRecptn.builder().smsId("SMS_001").recptnTelno("01033334444").resultCode("S").build();
+        SmsRecptn recptn = SmsRecptn.builder().smsId("SMS_001").rcptnTelno("01033334444").resultCode("S").build();
         when(smsRecptnRepository.findByIdSmsId("SMS_001")).thenReturn(List.of(recptn));
 
         // When
@@ -122,7 +122,7 @@ class SmsServiceTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRecptnTelno()).isEqualTo("01033334444");
+        assertThat(result.get(0).getRcptnTelno()).isEqualTo("01033334444");
     }
 
     @Test

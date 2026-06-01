@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ScrapRepository extends JpaRepository<Scrap, String> {
-    Page<Scrap> findByCreatedByAndUseYn(String createdBy, String useYn, Pageable pageable);
+    Page<Scrap> findByFrstRgtrIdAndUseYn(String frstRgtrId, String useYn, Pageable pageable);
 }

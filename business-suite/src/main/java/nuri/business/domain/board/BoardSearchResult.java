@@ -35,18 +35,6 @@ public class BoardSearchResult {
     private String qnaCatCd;
     private Long ansSn;
 
-    // legacy / aliases
-    public String getNttId() { return pstId; }
-    public String getNttSj() { return pstTtl; }
-    public Long getNttNo() { return ansSn; }
-    public Integer getInqireCo() { return inqCnt; }
-    public Integer getLikeCo() { return likeCnt; }
-    public String getParnts() { return upPstId; }
-    public String getNtceBgngYmd() { return pstBgngYmd; }
-    public String getNtceEndYmd() { return pstEndYmd; }
-    public String getSjBoldYn() { return ttlBoldYn; }
-    public String getQnaStatus() { return qnaSttsCd; }
-    public String getQnaCategory() { return qnaCatCd; }
 
     public String getPstId() { return pstId; }
     public String getPstTtl() { return pstTtl; }

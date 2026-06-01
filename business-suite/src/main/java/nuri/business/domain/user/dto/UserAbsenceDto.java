@@ -11,8 +11,5 @@ public class UserAbsenceDto {
     @Size(max = 20)
     @NotBlank
     private String userId;
-    private String userAbsnceAt;
-
-    // legacy
-    public String getEmplyrId() { return userId; }
+    private String userAbsnYn;
 }

@@ -39,7 +39,7 @@ class TemplateServiceTest {
     void getTemplateList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Template template = Template.builder().tmplatId("TMPL_1").tmplatNm("Test").build();
+        Template template = Template.builder().tmpltId("TMPL_1").tmpltNm("Test").build();
         given(templateRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(template)));
 
         // when
@@ -47,7 +47,7 @@ class TemplateServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTmplatNm()).isEqualTo("Test");
+        assertThat(result.getContent().get(0).getTmpltNm()).isEqualTo("Test");
     }
 
     @Test
@@ -55,7 +55,7 @@ class TemplateServiceTest {
     void getTemplateList_WithKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Template template = Template.builder().tmplatId("TMPL_1").tmplatNm("KeywordTest").build();
+        Template template = Template.builder().tmpltId("TMPL_1").tmpltNm("KeywordTest").build();
         given(templateRepository.findByTmpltNmContaining("Keyword", pageable)).willReturn(new PageImpl<>(List.of(template)));
 
         // when
@@ -63,7 +63,7 @@ class TemplateServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTmplatNm()).isEqualTo("KeywordTest");
+        assertThat(result.getContent().get(0).getTmpltNm()).isEqualTo("KeywordTest");
     }
 
     @Test
@@ -80,12 +80,12 @@ class TemplateServiceTest {
     @Test
     @DisplayName("템플릿 단건 조회 - 성공")
     void getTemplate_Success() {
-        Template template = Template.builder().tmplatId("T1").build();
+        Template template = Template.builder().tmpltId("T1").build();
         given(templateRepository.findById("T1")).willReturn(Optional.of(template));
 
         TemplateDto dto = templateService.getTemplate("T1");
 
-        assertThat(dto.getTmplatId()).isEqualTo("T1");
+        assertThat(dto.getTmpltId()).isEqualTo("T1");
     }
 
     @Test
@@ -99,7 +99,7 @@ class TemplateServiceTest {
     @Test
     @DisplayName("템플릿 생성")
     void createTemplate() {
-        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/path").tmplatSeCode("C1").useYn("Y").build();
+        TemplateDto dto = TemplateDto.builder().tmpltNm("New").tmpltPath("/path").tmpltSeCd("C1").useYn("Y").build();
 
         String id = templateService.createTemplate("user1", dto);
 
@@ -113,16 +113,16 @@ class TemplateServiceTest {
         Template template = mock(Template.class);
         given(templateRepository.findById("T1")).willReturn(Optional.of(template));
 
-        TemplateDto dto = TemplateDto.builder().tmplatNm("New").tmplatCours("/n").tmplatSeCode("S").useYn("N").build();
+        TemplateDto dto = TemplateDto.builder().tmpltNm("New").tmpltPath("/n").tmpltSeCd("S").useYn("N").build();
         templateService.updateTemplate("T1", "user1", dto);
 
-        verify(template).update("New", "/n", "S", "N");
+        verify(template).update("New", "S", "/n", "N");
     }
 
     @Test
     @DisplayName("템플릿 삭제")
     void deleteTemplate() {
-        Template template = Template.builder().tmplatId("T1").build();
+        Template template = Template.builder().tmpltId("T1").build();
         given(templateRepository.findById("T1")).willReturn(Optional.of(template));
 
         templateService.deleteTemplate("T1");

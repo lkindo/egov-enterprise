@@ -21,7 +21,7 @@ public class SmsRecptnDto {
     private String smsId;
 
     @Schema(description = "수신 번호")
-    private String recptnTelno;
+    private String rcptnTelno;
 
     @Schema(description = "결과 코드 (P:대기, S:성공, F:실패)")
     private String resultCode;
@@ -33,7 +33,7 @@ public class SmsRecptnDto {
         if (entity == null) return null;
         return SmsRecptnDto.builder()
                 .smsId(entity.getSmsId())
-                .recptnTelno(entity.getRecptnTelno())
+                .rcptnTelno(entity.getRcptnTelno())
                 .resultCode(entity.getRsltCd())
                 .resultMssage(entity.getRsltMsg())
                 .build();

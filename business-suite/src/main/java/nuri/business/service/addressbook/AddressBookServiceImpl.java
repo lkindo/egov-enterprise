@@ -66,7 +66,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .trgetOrgnztId(dto.getTrgetOrgnztId())
                     .useYn("Y")
                     .wrterId(userId)
-                    .createdBy(userId)
+                    .frstRgtrId(userId)
                     .build();
 
             addressBookRepository.save(entity);
@@ -180,9 +180,9 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .trgetOrgnztId(entity.getTrgetOrgnztId())
                 .useYn(entity.getUseYn())
                 .wrterId(entity.getWrterId())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegistPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }

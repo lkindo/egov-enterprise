@@ -109,20 +109,17 @@ class BoardMasterTest {
                 .stsfdgYn("Y")
                 .build();
 
-        // Getter Aliases 검증
-        assertThat(master.getBbsNm()).isEqualTo("Notice A");
-        assertThat(master.getBbsTyCode()).isEqualTo("BBST02");
-        assertThat(master.getBbsAttrbCode()).isEqualTo("BBSA02");
-        assertThat(master.getBbsAttrCd()).isEqualTo("BBSA02");
-        assertThat(master.getReplyPosblAt()).isEqualTo("Y");
-        assertThat(master.getReplyPsblYn()).isEqualTo("Y");
-        assertThat(master.getFileAtchPosblAt()).isEqualTo("Y");
-        assertThat(master.getAtchPosblFileNumber()).isEqualTo(3);
-        assertThat(master.getAtchPosblFileSize()).isEqualTo(500L);
-        assertThat(master.getBbsIntrcn()).isEqualTo(master.getBbsExpln());
+        // 표준 필드 검증
+        assertThat(master.getBbsTtl()).isEqualTo("Notice A");
+        assertThat(master.getBbsTypeCd()).isEqualTo("BBST02");
+        assertThat(master.getBbsAtrbCd()).isEqualTo("BBSA02");
+        assertThat(master.getAnsPsbltyYn()).isEqualTo("Y");
+        assertThat(master.getFileAtchPsbltyYn()).isEqualTo("Y");
+        assertThat(master.getAtchPsbltyFileQty()).isEqualTo(3);
+        assertThat(master.getAtchPsbltyFileSz()).isEqualTo(500L);
         assertThat(master.getTmpltId()).isEqualTo("TMP_02");
-        assertThat(master.getCommentAt()).isEqualTo("Y");
-        assertThat(master.getStsfdgAt()).isEqualTo("Y");
+        assertThat(master.getAnsYn()).isEqualTo("Y");
+        assertThat(master.getStsfdgYn()).isEqualTo("Y");
 
         // Optn 관련 Getter/Setter 검증
         master.setOptnFrstRegisterId("admin");

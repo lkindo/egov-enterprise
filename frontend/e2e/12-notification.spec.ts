@@ -114,7 +114,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
     test('Notification: Hub Search and Filter Verification', async ({ page }) => {
         // Go to full notification hub if it exists (usually /admin/system/notifications or similar)
         console.log('>>> Navigating to Notification Hub');
-        await page.goto('/admin/system/notifications');
+        await page.goto('/admin/notifications');
         await page.waitForLoadState('networkidle');
 
         // Search for a known notification or use search input

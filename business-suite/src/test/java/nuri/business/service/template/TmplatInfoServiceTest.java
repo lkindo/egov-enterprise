@@ -51,7 +51,7 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 상세 조회")
     void selectTmplatInfoDetail() {
         // given
-        Template tmplat = Template.builder().tmplatId("TMPLT_001").build();
+        Template tmplat = Template.builder().tmpltId("TMPLT_001").build();
         when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(tmplat));
 
         // when
@@ -59,14 +59,14 @@ class TmplatInfoServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getTmplatId()).isEqualTo("TMPLT_001");
+        assertThat(result.getTmpltId()).isEqualTo("TMPLT_001");
     }
 
     @Test
     @DisplayName("템플릿 등록")
     void insertTmplatInfo() {
         // given
-        Template tmplat = Template.builder().tmplatNm("New Template").build();
+        Template tmplat = Template.builder().tmpltNm("New Template").build();
 
         // when
         tmplatInfoService.insertTmplatInfo(tmplat);

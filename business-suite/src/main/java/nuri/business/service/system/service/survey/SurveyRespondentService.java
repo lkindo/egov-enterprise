@@ -47,7 +47,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 .rgnTelno(dto.getRgnTelno())
                 .midTelno(dto.getMidTelno())
                 .endTelno(dto.getEndTelno())
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         surveyRespondentRepository.save(Objects.requireNonNull(entity));
         return id;

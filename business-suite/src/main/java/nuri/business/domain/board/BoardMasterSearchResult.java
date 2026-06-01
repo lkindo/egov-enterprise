@@ -22,15 +22,4 @@ public class BoardMasterSearchResult {
     private String useYn;
     private LocalDateTime createdDate;
 
-    // Compatibility getters
-    public String getTmplatId() { return tmpltId; }
-    public String getBbsIntroCn() { return bbsExpln; }
-    public String getBbsNm() { return bbsTtl; }
-    public String getBbsTyCode() { return bbsTypeCd; }
-    public String getBbsTyCodeNm() { return bbsTypeCdNm; }
-    public String getBbsAttrbCode() { return bbsAtrbCd; }
-    public String getBbsAttrbCodeNm() { return bbsAtrbCdNm; }
-    public String getBbsAttrCd() { return bbsAtrbCd; }
-    public String getBbsAttrCdNm() { return bbsAtrbCdNm; }
-    public String getUseAt() { return useYn; }
 }

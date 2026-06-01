@@ -36,7 +36,7 @@ public class CommentApiController {
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @PathVariable Long commentNo,
             @RequestBody CommentDto commentDto) {
-        commentService.updateComment(commentNo, commentDto.getCommentCn());
+        commentService.updateComment(commentNo, commentDto.getAnsCn());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

@@ -28,11 +28,5 @@ public class UserAbsence extends BaseEntity {
         this.userAbsnYn = userAbsnYn;
     }
 
-    // ----- [Legacy Aliases for Compatibility] -----
-    public String getUserAbsnceAt() { return userAbsnYn; }
-    public void setUserAbsnceAt(String v) { this.userAbsnYn = v; }
 
-    // legacy
-    public String getEmplyrId() { return userId; }
-    public void setEmplyrId(String v) { this.userId = v; }
 }

@@ -22,16 +22,16 @@ public class FaqDto {
     private String faqId;
 
     @Schema(description = "질문제목")
-    private String qestnTtl;
+    private String qstnTtl;
 
     @Schema(description = "질문내용")
-    private String qestnCn;
+    private String qstnCn;
 
     @Schema(description = "답변내용")
-    private String answerCn;
+    private String ansCn;
 
     @Schema(description = "조회수")
-    private Integer inqireCo;
+    private Integer inqCnt;
 
     @Schema(description = "첨부파일 ID")
     @Size(max = 30)
@@ -50,29 +50,20 @@ public class FaqDto {
     private LocalDateTime lastUpdusrPnttm;
 
     // legacy
-    public String getQestnSj() { return qestnTtl; }
-    public void setQestnSj(String v) { this.qestnTtl = v; }
-
-    public LocalDateTime getFrstRegistPnttm() {
-        return frstRegisterPnttm;
-    }
-
-    public LocalDateTime getLastUpdtPnttm() {
-        return lastUpdusrPnttm;
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
     public static FaqDto from(Faq entity) {
         if (entity == null) return null;
         return FaqDto.builder()
                 .faqId(entity.getFaqId())
-                .qestnTtl(entity.getQestnTtl())
-                .qestnCn(entity.getQestnCn())
-                .answerCn(entity.getAnswerCn())
-                .inqireCo(entity.getInqireCo())
+                .qstnTtl(entity.getQstnTtl())
+                .qstnCn(entity.getQstnCn())
+                .ansCn(entity.getAnsCn())
+                .inqCnt(entity.getInqCnt())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }

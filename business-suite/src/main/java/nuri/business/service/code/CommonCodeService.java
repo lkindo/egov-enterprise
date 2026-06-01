@@ -126,7 +126,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .clsfCdNm(required(dto.getClsfCdNm(), "dto.getClsfCdNm() 는 null 일 수 없습니다"))
                                 .clsfCdExpln(dto.getClsfCdExpln())
                                 .useYn(dto.getUseYn())
-                                .createdBy(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRegisterId())
                                 .build();
                 commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -209,7 +209,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .cdIdExpln(dto.getCdIdExpln())
                                 .clsfCd(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .useYn(dto.getUseYn())
-                                .createdBy(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRegisterId())
                                 .build();
                 commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -315,7 +315,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .dtlCdNm(required(dto.getDtlCdNm(), "dto.getDtlCdNm() 는 null 일 수 없습니다"))
                                 .dtlCdExpln(dto.getDtlCdExpln())
                                 .useYn(dto.getUseYn())
-                                .createdBy(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRegisterId())
                                 .build();
                 commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }

@@ -7,11 +7,12 @@ import { AxiosRequestConfig } from 'axios';
  * 온라인 매뉴얼 DTO
  */
 export interface ManualDto {
-  onlineMnlId?: string; // 온라인매뉴얼ID
-  onlineMnlNm: string; // 온라인매뉴얼명
-  onlineMnlDc: string; // 온라인매뉴얼설명
-  onlineMnlDf: string; // 온라인매뉴얼경로 (백엔드 필드명: onlineMnlDf)
-  frstRegisterId?: string; // 최초등록자ID
+  onlnMnlId?: string; // 온라인매뉴얼ID
+  onlnMnlNm: string; // 온라인매뉴얼명
+  onlnMnlExpln: string; // 온라인매뉴얼설명
+  onlnMnlDfn: string; // 온라인매뉴얼경로(정의)
+  onlnMnlSeCd?: string; // 온라인매뉴얼구분코드
+  createdBy?: string; // 최초등록자ID
   createdDate?: string; // 생성일시
 }
 

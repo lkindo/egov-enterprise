@@ -71,9 +71,9 @@ public class BlogDto {
                 .regSeCd(entity.getRegSeCd())
                 .tmpltId(entity.getTmpltId())
                 .useYn(entity.getUseYn())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .blogYn(entity.getBlogYn())
                 .build();

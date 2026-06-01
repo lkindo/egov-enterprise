@@ -23,8 +23,8 @@ public class SmsRecptn {
     private String rsltMsg;
 
     @Builder
-    public SmsRecptn(String smsId, String recptnTelno, String resultCode, String resultMssage, String rsltCd, String rsltMsg) {
-        this.id = new SmsRecptnId(smsId, recptnTelno);
+    public SmsRecptn(String smsId, String rcptnTelno, String resultCode, String resultMssage, String rsltCd, String rsltMsg) {
+        this.id = new SmsRecptnId(smsId, rcptnTelno);
         this.rsltCd = rsltCd != null ? rsltCd : resultCode;
         this.rsltMsg = rsltMsg != null ? rsltMsg : resultMssage;
     }
@@ -33,8 +33,8 @@ public class SmsRecptn {
         return id != null ? id.getSmsId() : null;
     }
 
-    public String getRecptnTelno() {
-        return id != null ? id.getRecptnTelno() : null;
+    public String getRcptnTelno() {
+        return id != null ? id.getRcptnTelno() : null;
     }
 
     public void updateResult(String rsltCd, String rsltMsg) {

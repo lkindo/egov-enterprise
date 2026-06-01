@@ -40,31 +40,31 @@ class HelpServiceTest {
     @DisplayName("도움말 목록 조회 테스트")
     void getHpcmList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
-        Hpcm entity = Hpcm.builder().hpcmId("ID").hpcmDf("Definition").build();
+        Hpcm entity = Hpcm.builder().hlpId("ID").hlpDfn("Definition").build();
         when(hpcmRepository.findByHlpDfnContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
         Page<HpcmDto> result = helpService.getHpcmList("keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getHpcmDf()).isEqualTo("Definition");
+        assertThat(result.getContent().get(0).getHlpDfn()).isEqualTo("Definition");
     }
 
     @Test
     @DisplayName("도움말 상세 조회 테스트")
     void getHpcm_Success() {
-        Hpcm entity = Hpcm.builder().hpcmId("ID").hpcmDf("Def").build();
+        Hpcm entity = Hpcm.builder().hlpId("ID").hlpDfn("Def").build();
         when(hpcmRepository.findById("ID")).thenReturn(Optional.of(entity));
 
         HpcmDto result = helpService.getHpcm("ID");
 
-        assertThat(result.getHpcmDf()).isEqualTo("Def");
+        assertThat(result.getHlpDfn()).isEqualTo("Def");
     }
 
     @Test
     @DisplayName("도움말 등록 테스트")
     void createHpcm_Success() {
-        HpcmDto dto = HpcmDto.builder().hpcmDf("New Help").build();
+        HpcmDto dto = HpcmDto.builder().hlpDfn("New Help").build();
 
         String id = helpService.createHpcm("user", dto);
 
@@ -75,9 +75,9 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 수정 테스트")
     void updateHpcm_Success() {
-        Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hpcmId("ID").build());
+        Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hlpId("ID").build());
         when(hpcmRepository.findById("ID")).thenReturn(Optional.of(entity));
-        HpcmDto dto = HpcmDto.builder().hpcmDf("Updated").build();
+        HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").build();
 
         helpService.updateHpcm("ID", "user", dto);
 
@@ -97,7 +97,7 @@ class HelpServiceTest {
     @DisplayName("온라인 매뉴얼 목록 조회 테스트")
     void getOnlineManualList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlineManual entity = OnlineManual.builder().onlineMnlId("ID").onlineMnlNm("Name").build();
+        OnlineManual entity = OnlineManual.builder().onlnMnlId("ID").onlnMnlNm("Name").build();
         when(onlineManualRepository.findByOnlnMnlNmContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
@@ -109,18 +109,18 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 상세 조회 테스트")
     void getOnlineManual_Success() {
-        OnlineManual entity = OnlineManual.builder().onlineMnlId("ID").onlineMnlNm("Name").build();
+        OnlineManual entity = OnlineManual.builder().onlnMnlId("ID").onlnMnlNm("Name").build();
         when(onlineManualRepository.findById("ID")).thenReturn(Optional.of(entity));
 
         OnlineManualDto result = helpService.getOnlineManual("ID");
 
-        assertThat(result.getOnlineMnlNm()).isEqualTo("Name");
+        assertThat(result.getOnlnMnlNm()).isEqualTo("Name");
     }
 
     @Test
     @DisplayName("온라인 매뉴얼 등록 테스트")
     void createOnlineManual_Success() {
-        OnlineManualDto dto = OnlineManualDto.builder().onlineMnlNm("Manual").build();
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").build();
 
         String id = helpService.createOnlineManual("user", dto);
 
@@ -131,9 +131,9 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 수정 테스트")
     void updateOnlineManual_Success() {
-        OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlineMnlId("ID").build());
+        OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlnMnlId("ID").build());
         when(onlineManualRepository.findById("ID")).thenReturn(Optional.of(entity));
-        OnlineManualDto dto = OnlineManualDto.builder().onlineMnlNm("Updated").build();
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").build();
 
         helpService.updateOnlineManual("ID", "user", dto);
 

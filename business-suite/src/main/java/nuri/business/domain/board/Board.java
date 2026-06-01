@@ -163,44 +163,6 @@ public class Board extends BaseEntity implements Serializable {
         this.likeCnt++;
     }
 
-    // aliases
-    public String getNttId() { return pstId; }
-    public String getNttSj() { return pstTtl; }
-    public String getNttCn() { return pstCn; }
-    public Long getNttNo() { return ansSn; }
-    public String getNtcrId() { return userId; }
-    public String getNtcrNm() { return userNm; }
-    public String getPassword() { return pswd; }
-    public String getNtceBgngYmd() { return pstBgngYmd; }
-    public String getNtceEndYmd() { return pstEndYmd; }
-    public Integer getInqireCo() { return inqCnt; }
-    public Integer getLikeCo() { return likeCnt; }
-    public String getQnaStatus() { return qnaSttsCd; }
-    public String getQnaCategory() { return qnaCatCd; }
-    public String getSjBoldYn() { return ttlBoldYn; }
-    public String getParnts() { return upPstId; }
-
-    public void setNttId(String v) { this.pstId = v; }
-    public void setNttSj(String v) { this.pstTtl = v; }
-    public void setNttCn(String v) { this.pstCn = v; }
-    public void setNttNo(Long v) { this.ansSn = v; }
-    public void setNtcrId(String v) { this.userId = v; }
-    public void setNtcrNm(String v) { this.userNm = v; }
-    public void setPassword(String v) { this.pswd = v; }
-    public void setNtceBgngYmd(String v) { this.pstBgngYmd = v; }
-    public void setNtceEndYmd(String v) { this.pstEndYmd = v; }
-    public void setInqireCo(Integer v) { this.inqCnt = v; }
-    public void setLikeCo(Integer v) { this.likeCnt = v; }
-    public void setQnaStatus(String v) { this.qnaSttsCd = v; }
-    public void setQnaCategory(String v) { this.qnaCatCd = v; }
-    public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
-    public void setParnts(String v) { this.upPstId = v; }
-
-    // legacy aliases for frontend compatibility
-    public String getAnswerAt() { return ansYn; }
-    public void setAnswerAt(String v) { this.ansYn = v; }
-    public String getNoticeAt() { return ntcYn; }
-    public void setNoticeAt(String v) { this.ntcYn = v; }
 
     public Integer getCommentCnt() { return cmntCnt; }
     public void setCommentCnt(Integer v) { this.cmntCnt = v; }

@@ -83,7 +83,7 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
                 .bgngTm(dto.getBgngTm())
                 .endTm(dto.getEndTm())
                 .otpUseYn(dto.getOtpUseYn())
-                .createdBy("SYSTEM")
+                .frstRgtrId("SYSTEM")
                 .build();
         loginPolicyRepository.save(entity);
     }

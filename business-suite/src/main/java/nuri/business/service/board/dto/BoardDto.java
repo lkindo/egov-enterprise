@@ -26,7 +26,6 @@ public class BoardDto {
     private String bbsId;
 
     @Schema(description = "답글 번호")
-    @com.fasterxml.jackson.annotation.JsonProperty("pstSn")
     private Long ansSn;
 
     @Schema(description = "제목")
@@ -57,12 +56,10 @@ public class BoardDto {
     private String useYn;
 
     @Schema(description = "게시 시작일")
-    @com.fasterxml.jackson.annotation.JsonProperty("bgngYmd")
     @Size(max = 20)
     private String pstBgngYmd;
 
     @Schema(description = "게시 종료일")
-    @com.fasterxml.jackson.annotation.JsonProperty("endYmd")
     @Size(max = 20)
     private String pstEndYmd;
 
@@ -84,7 +81,6 @@ public class BoardDto {
     private String atchFileId;
 
     @Schema(description = "비밀글 여부")
-    @com.fasterxml.jackson.annotation.JsonProperty("secretYn")
     @Size(max = 1)
     private String scrtYn;
 
@@ -93,7 +89,6 @@ public class BoardDto {
     private String blogId;
 
     @Schema(description = "행사일")
-    @com.fasterxml.jackson.annotation.JsonProperty("eventDate")
     private LocalDateTime evntDt;
 
     @Schema(description = "QNA 상태")
@@ -119,89 +114,6 @@ public class BoardDto {
     private String frstRegisterNm;
 
     @Schema(description = "답글 단계")
-    @com.fasterxml.jackson.annotation.JsonProperty("replyLc")
     private Integer ansLvl;
 
-    // --- MapStruct Legacy Fields ---
-    private String knoId;
-    private String knoNm;
-    private String knoCn;
-    private String statusCd;
-    private String categoryCd;
-    private String frstRegisterPnttmStr;
-    private String frstRegisterId;
-    private LocalDateTime lastUpdtPnttm;
-    @Size(max = 1)
-    private String blogYn;
-    private String eventDateStr;
-    private String isExpired;
-    @Size(max = 100)
-    @NotBlank
-    private String bbsTtl;
-
-    // --- Legacy Aliases ---
-    public String getId() { return pstId; }
-    public void setId(String v) { this.pstId = v; }
-    public String getNttSj() { return pstTtl; }
-    public void setNttSj(String v) { this.pstTtl = v; }
-    public String getNttCn() { return pstCn; }
-    public void setNttCn(String v) { this.pstCn = v; }
-    public Long getNttNo() { return ansSn; }
-    public void setNttNo(Long v) { this.ansSn = v; }
-    public Integer getCommentCo() { return commentCnt; }
-    public void setCommentCo(Integer v) { this.commentCnt = v; }
-    public Integer getFileCo() { return fileCnt; }
-    public void setFileCo(Integer v) { this.fileCnt = v; }
-    public String getUseAt() { return useYn; }
-    public void setUseAt(String v) { this.useYn = v; }
-    
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
-
-    public String getFrstRegisterNm() {
-        return userNm != null ? userNm : frstRegisterNm;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return frstRegisterPnttm;
-    }
-
-    public String getNtcrId() { return userId; }
-    public String getNtcrNm() { return userNm; }
-    public String getPassword() { return pswd; }
-    public String getNtceBgngYmd() { return pstBgngYmd; }
-    public String getNtceEndYmd() { return pstEndYmd; }
-    public Integer getInqireCo() { return inqCnt; }
-    public Integer getLikeCo() { return likeCnt; }
-    public String getQnaStatus() { return qnaSttsCd; }
-    public String getQnaCategory() { return qnaCatCd; }
-    public String getSjBoldYn() { return ttlBoldYn; }
-    public String getParnts() { return upPstId; }
-
-    public void setNtcrId(String v) { this.userId = v; }
-    public void setNtcrNm(String v) { this.userNm = v; }
-    public void setPassword(String v) { this.pswd = v; }
-    public void setNtceBgngYmd(String v) { this.pstBgngYmd = v; }
-    public void setNtceEndYmd(String v) { this.pstEndYmd = v; }
-    public void setInqireCo(Integer v) { this.inqCnt = v; }
-    public void setLikeCo(Integer v) { this.likeCnt = v; }
-    public void setQnaStatus(String v) { this.qnaSttsCd = v; }
-    public void setQnaCategory(String v) { this.qnaCatCd = v; }
-    public void setSjBoldYn(String v) { this.ttlBoldYn = v; }
-    public void setParnts(String v) { this.upPstId = v; }
-
-    public abstract static class BoardDtoBuilder<C extends BoardDto, B extends BoardDtoBuilder<C, B>> {
-        public B nttId(String nttId) { this.pstId = nttId; return self(); }
-        public B nttSj(String nttSj) { this.pstTtl = nttSj; return self(); }
-        public B nttCn(String nttCn) { this.pstCn = nttCn; return self(); }
-        public B nttNo(Long nttNo) { this.ansSn = nttNo; return self(); }
-        public B id(String id) { this.pstId = id; return self(); }
-        public B ntcrId(String ntcrId) { this.userId = ntcrId; return self(); }
-        public B ntcrNm(String ntcrNm) { this.userNm = ntcrNm; return self(); }
-        public B password(String password) { this.pswd = password; return self(); }
-        public B inqireCo(Integer inqireCo) { this.inqCnt = inqireCo; return self(); }
-        public B likeCo(Integer likeCo) { this.likeCnt = likeCo; return self(); }
-        public B qnaStatus(String qnaStatus) { this.qnaSttsCd = qnaStatus; return self(); }
-        public B qnaCategory(String qnaCategory) { this.qnaCatCd = qnaCategory; return self(); }
-    }
 }

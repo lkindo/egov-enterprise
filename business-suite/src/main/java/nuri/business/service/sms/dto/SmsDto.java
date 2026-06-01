@@ -31,13 +31,13 @@ public class SmsDto {
     private String trnsmitCn;
 
     @Schema(description = "수신 번호 (호환성용)")
-    private String recptnTelno;
+    private String rcptnTelno;
 
     @Schema(description = "수신자 수")
     private Integer recptnCnt;
 
     @Schema(description = "최초 등록자")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "최초 등록 일시")
     private LocalDateTime createdDate;
@@ -46,7 +46,7 @@ public class SmsDto {
     private String uniqId;
 
     public String getFrstRegisterId() {
-        return createdBy;
+        return frstRgtrId;
     }
 
     public LocalDateTime getFrstRegisterPnttm() {
@@ -74,7 +74,7 @@ public class SmsDto {
                 .trnsmitTelno(entity.getSndngTelno())
                 .trnsmitCn(entity.getSndngCn())
                 .recptnCnt(0)
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .recipients(new java.util.ArrayList<>())
                 .build();

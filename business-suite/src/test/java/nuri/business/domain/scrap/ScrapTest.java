@@ -21,8 +21,8 @@ class ScrapTest {
                 .scrapUrl("https://example.com/posts/1")
                 .scrapExpln("스크랩 테스트 설명글")
                 .useYn("Y")
-                .createdBy("user1")
-                .lastModifiedBy("user1")
+                .frstRgtrId("user1")
+                .lastMdfrId("user1")
                 .build();
 
         // Then
@@ -33,7 +33,7 @@ class ScrapTest {
         assertThat(scrap.getScrapUrl()).isEqualTo("https://example.com/posts/1");
         assertThat(scrap.getScrapExpln()).isEqualTo("스크랩 테스트 설명글");
         assertThat(scrap.getUseYn()).isEqualTo("Y");
-        assertThat(scrap.getCreatedBy()).isEqualTo("user1");
+        assertThat(scrap.getFrstRgtrId()).isEqualTo("user1");
         
         // BaseEntity fields integration test
         assertThat(scrap.getUniqId()).isEqualTo(scrap.getFrstRegisterId());

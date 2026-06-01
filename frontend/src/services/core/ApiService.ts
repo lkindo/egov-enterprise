@@ -80,6 +80,7 @@ export abstract class AdminService extends ApiService {
   constructor(domainPath: string, category: string = 'system') {
     // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
     // category를 동적으로 받아 system, content, operation 등 지원
-    super(`admin/${category}${domainPath}`);
+    const cleanedPath = domainPath.replace(/^\//, '');
+    super(`admin/${category}/${cleanedPath}`);
   }
 }

@@ -49,7 +49,7 @@ public class OnlinePollManageDto {
     private String pollAtmcDsuseYn;
 
     @Schema(description = "생성자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
@@ -67,7 +67,7 @@ public class OnlinePollManageDto {
                 .pollKndCd(entity.getPollKndCd())
                 .pollDsuseYn(entity.getPollDsuseYn())
                 .pollAtmcDsuseYn(entity.getPollAtmcDsuseYn())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .pollArticles(entity.getPollArticles() != null ? 
                         entity.getPollArticles().stream().map(OnlinePollArticleDto::from).collect(Collectors.toList()) : 

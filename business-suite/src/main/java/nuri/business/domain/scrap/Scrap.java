@@ -59,9 +59,6 @@ public class Scrap extends BaseEntity {
         this.useYn = useYn;
     }
 
-    // legacy
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
 
     // ----- [Legacy Aliases for Backward Compatibility] -----
 

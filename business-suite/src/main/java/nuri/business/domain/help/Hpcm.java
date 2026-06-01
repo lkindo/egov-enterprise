@@ -22,85 +22,23 @@ public class Hpcm extends BaseEntity {
 
     @Id
     @Column(name = "hlp_id", length = 20)
-    @com.fasterxml.jackson.annotation.JsonProperty("hpcmId")
     private String hlpId;
 
     @Column(length = 3, nullable = false)
-    @com.fasterxml.jackson.annotation.JsonProperty("hpcmSeCode")
     private String hlpSeCd;
 
     @Column(length = 1000, nullable = false)
-    @com.fasterxml.jackson.annotation.JsonProperty("hpcmDf")
     private String hlpDfn;
 
     @Column(columnDefinition = "TEXT")
-    @com.fasterxml.jackson.annotation.JsonProperty("hpcmDc")
     private String hlpExpln;
 
-    public void update(String hpcmSeCode, String hpcmDf, String hpcmDc) {
-        this.hlpSeCd = hpcmSeCode;
-        this.hlpDfn = hpcmDf;
-        this.hlpExpln = hpcmDc;
+    public void update(String hlpSeCd, String hlpDfn, String hlpExpln) {
+        this.hlpSeCd = hlpSeCd;
+        this.hlpDfn = hlpDfn;
+        this.hlpExpln = hlpExpln;
     }
 
-    // ----- [Legacy Aliases & Compatibility Bridge] -----
-
-    public String getHpcmId() {
-        return this.hlpId;
-    }
-
-    public void setHpcmId(String hpcmId) {
-        this.hlpId = hpcmId;
-    }
-
-    public String getHpcmSeCode() {
-        return this.hlpSeCd;
-    }
-
-    public void setHpcmSeCode(String hpcmSeCode) {
-        this.hlpSeCd = hpcmSeCode;
-    }
-
-    public String getHpcmDf() {
-        return this.hlpDfn;
-    }
-
-    public void setHpcmDf(String hpcmDf) {
-        this.hlpDfn = hpcmDf;
-    }
-
-    public String getHpcmDc() {
-        return this.hlpExpln;
-    }
-
-    public void setHpcmDc(String hpcmDc) {
-        this.hlpExpln = hpcmDc;
-    }
-
-    public static abstract class HpcmBuilder<C extends Hpcm, B extends HpcmBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String hlpId;
-        private String hlpSeCd;
-        private String hlpDfn;
-        private String hlpExpln;
-
-        public B hpcmId(String hpcmId) {
-            this.hlpId = hpcmId;
-            return self();
-        }
-
-        public B hpcmSeCode(String hpcmSeCode) {
-            this.hlpSeCd = hpcmSeCode;
-            return self();
-        }
-
-        public B hpcmDf(String hpcmDf) {
-            this.hlpDfn = hpcmDf;
-            return self();
-        }
-
-        public B hpcmDc(String hpcmDc) {
-            this.hlpExpln = hpcmDc;
-            return self();
-        }
-    }
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

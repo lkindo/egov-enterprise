@@ -40,11 +40,11 @@ public class AdministCode extends BaseEntity {
     private String ablYmd;
 
     public void update(String admdstSeCd, String admdstZoneNm, String upAdmdstCd, 
-                       String useYn, String lastModifiedBy) {
+                       String useYn, String lastMdfrId) {
         this.admdstSeCd = admdstSeCd;
         this.admdstZoneNm = admdstZoneNm;
         this.upAdmdstCd = upAdmdstCd;
         this.useYn = useYn;
-        this.lastModifiedBy = lastModifiedBy;
+        this.lastMdfrId = lastMdfrId;
     }
 }

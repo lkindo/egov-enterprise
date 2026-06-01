@@ -46,16 +46,16 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   if (!pstTtl || pstTtl.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'pstTtl' };
   if (!pstCn || pstCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'pstCn' };
 
-  const eventDate = formData.get('eventDate') as string || formData.get('evntDt') as string;
+  const evntDt = formData.get('evntDt') as string;
   const qnaSttsCd = formData.get('qnaSttsCd') as string;
   const qnaCatCd = formData.get('qnaCatCd') as string;
-  const pswd = formData.get('pswd') as string || formData.get('password') as string;
-  const userNm = formData.get('userNm') as string || formData.get('ntcrNm') as string;
-  const userId = formData.get('userId') as string || formData.get('ntcrId') as string;
-  const secretYn = formData.get('secretYn') as string || formData.get('scrtYn') as string || (formData.get('secretAt') === 'Y' ? 'Y' : 'N');
-  const useYn = formData.get('useYn') as string || (formData.get('useAt') === 'N' ? 'N' : 'Y');
-  const pstBgngYmd = formData.get('pstBgngYmd') as string || formData.get('bgngYmd') as string;
-  const pstEndYmd = formData.get('pstEndYmd') as string || formData.get('endYmd') as string;
+  const pswd = formData.get('pswd') as string;
+  const userNm = formData.get('userNm') as string;
+  const userId = formData.get('userId') as string;
+  const scrtYn = formData.get('scrtYn') as string || 'N';
+  const useYn = formData.get('useYn') as string || 'Y';
+  const pstBgngYmd = formData.get('pstBgngYmd') as string;
+  const pstEndYmd = formData.get('pstEndYmd') as string;
 
   try {
     const cookieStore = await cookies();
@@ -68,13 +68,13 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       pstCn, 
       pstBgngYmd: pstBgngYmd || undefined,
       pstEndYmd: pstEndYmd || undefined,
-      evntDt: eventDate || undefined, 
+      evntDt: evntDt || undefined, 
       qnaSttsCd: qnaSttsCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'QA01' : undefined), 
       qnaCatCd: qnaCatCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'CAT01' : undefined),
       pswd: pswd || '1',
       userNm: userNm || undefined,
       userId: userId || undefined,
-      scrtYn: secretYn === 'Y' ? 'Y' : 'N',
+      scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
       useYn: useYn === 'N' ? 'N' : 'Y'
     };
     

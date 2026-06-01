@@ -86,9 +86,9 @@ public class SurveyRespondentDto {
                 .rgnTelno(entity.getRgnTelno())
                 .midTelno(entity.getMidTelno())
                 .endTelno(entity.getEndTelno())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }

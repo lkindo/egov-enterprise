@@ -20,7 +20,7 @@ class CommentDomainTest {
         
         // When - update
         comment.update("New Content");
-        assertEquals("New Content", comment.getCmntCn());
+        assertEquals("New Content", comment.getAnsCn());
 
         // When - delete
         comment.delete();

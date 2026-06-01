@@ -43,7 +43,7 @@ class SmsAsyncProcessorTest {
     @Test
     @DisplayName("비동기 SMS 발송 - 성공")
     void processSending_Success() {
-        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").recptnTelno("0101").build();
+        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").rcptnTelno("0101").build();
         given(smsRecptnRepository.findByIdSmsId("S1")).willReturn(List.of(recptn));
         given(smsSender.send(anyString(), anyString(), anyString())).willReturn(true);
 
@@ -55,7 +55,7 @@ class SmsAsyncProcessorTest {
     @Test
     @DisplayName("비동기 SMS 발송 - 발송 실패")
     void processSending_SenderFailure() {
-        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").recptnTelno("0101").build();
+        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").rcptnTelno("0101").build();
         given(smsRecptnRepository.findByIdSmsId("S1")).willReturn(List.of(recptn));
         given(smsSender.send(anyString(), anyString(), anyString())).willReturn(false);
 
@@ -69,7 +69,7 @@ class SmsAsyncProcessorTest {
     @Test
     @DisplayName("비동기 SMS 발송 - 예외 발생")
     void processSending_Exception() {
-        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").recptnTelno("0101").build();
+        SmsRecptn recptn = SmsRecptn.builder().smsId("S1").rcptnTelno("0101").build();
         given(smsRecptnRepository.findByIdSmsId("S1")).willReturn(List.of(recptn));
         doThrow(new RuntimeException("Error")).when(smsSender).send(anyString(), anyString(), anyString());
 

@@ -48,7 +48,7 @@ public class SurveyArticleDto {
     private String srvyTmpltId;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
@@ -63,7 +63,7 @@ public class SurveyArticleDto {
                 .artclCn(entity.getArtclCn())
                 .etcAnsYn(entity.getEtcAnsYn())
                 .srvyTmpltId(entity.getSrvyTmpltId())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

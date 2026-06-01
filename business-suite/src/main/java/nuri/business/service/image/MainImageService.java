@@ -42,12 +42,12 @@ public class MainImageService implements EgovMainImageService {
     @Transactional
     public void insertMainImage(MainImageDto dto) {
         MainImage mainImage = MainImage.builder()
-                .imageId(dto.getImageId())
-                .imageNm(dto.getImageNm())
-                .image(dto.getImage())
-                .imageFile(dto.getImageFile())
-                .imageDc(dto.getImageDc())
-                .reflctAt(dto.getReflctAt())
+                .imgId(dto.getImgId())
+                .imgNm(dto.getImgNm())
+                .mainImgFilePath(dto.getMainImgFilePath())
+                .imgFileNm(dto.getImgFileNm())
+                .mainImgExpln(dto.getMainImgExpln())
+                .rfltYn(dto.getRfltYn())
                 .build();
         mainImageRepository.save(Objects.requireNonNull(mainImage));
     }
@@ -55,10 +55,10 @@ public class MainImageService implements EgovMainImageService {
     @Override
     @Transactional
     public void updateMainImage(MainImageDto dto) {
-        MainImage mainImage = mainImageRepository.findById(Objects.requireNonNull(dto.getImageId()))
+        MainImage mainImage = mainImageRepository.findById(Objects.requireNonNull(dto.getImgId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        mainImage.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(), dto.getReflctAt());
+        mainImage.update(dto.getImgNm(), dto.getMainImgFilePath(), dto.getImgFileNm(), dto.getMainImgExpln(), dto.getRfltYn());
     }
 
     @Override

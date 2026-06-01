@@ -35,15 +35,15 @@ public class CommonCodeCategory extends BaseEntity {
         this.clsfCdNm = clsfCdNm;
         this.clsfCdExpln = clsfCdExpln;
         this.useYn = useYn == null ? "Y" : useYn;
-        this.createdBy = frstRegisterId;
-        this.lastModifiedBy = frstRegisterId;
+        this.frstRgtrId = frstRegisterId;
+        this.lastMdfrId = frstRegisterId;
     }
 
     public void update(String clsfCdNm, String clsfCdExpln, String useYn, String lastUpdusrId) {
         this.clsfCdNm = clsfCdNm;
         this.clsfCdExpln = clsfCdExpln;
         this.useYn = useYn;
-        this.lastModifiedBy = lastUpdusrId;
+        this.lastMdfrId = lastUpdusrId;
     }
 
     public void delete() {

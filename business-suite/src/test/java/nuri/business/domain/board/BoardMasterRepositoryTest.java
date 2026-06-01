@@ -107,10 +107,10 @@ class BoardMasterRepositoryTest {
 
         // 2. Type search
         condition.setSearchWrd("General");
-        condition.setSearchCnd("1"); // bbsTyCodeNm
+        condition.setSearchCnd("1"); // bbsTypeCdNm
         results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).isNotEmpty();
-        assertThat(results.getContent().get(0).getBbsTyCodeNm()).isEqualTo("General Board");
+        assertThat(results.getContent().get(0).getBbsTypeCdNm()).isEqualTo("General Board");
     }
 
     @Test

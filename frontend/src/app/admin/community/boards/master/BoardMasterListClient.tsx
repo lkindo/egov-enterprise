@@ -147,7 +147,7 @@ export function BoardMasterListClient() {
           <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsIntroCn}</p>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
-              {board.bbsTyCodeNm}
+              {board.bbsTypeCdNm}
             </Badge>
           </div>
         </div>

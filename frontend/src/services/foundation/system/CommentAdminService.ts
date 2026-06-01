@@ -3,12 +3,12 @@ import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface CommentDetail {
-  commentNo: number;
-  pstId: number;
+  ansSn: number;
+  pstId: string;
   bbsId: string;
   wrterId: string;
   wrterNm: string;
-  commentCn: string;
+  ansCn: string;
   createdDate: string;
 }
 
@@ -21,13 +21,13 @@ class CommentAdminService extends AdminService {
   }
 
   /** 전체 댓글 목록 조회 */
-  async getComments(params: { pstId?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+  async getComments(params: { pstId?: string; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
     return this.get<PageResponse<CommentDetail>>('', { ...config, params });
   }
 
   /** 댓글 삭제 */
-  async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${commentNo}`, config);
+  async deleteComment(ansSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${ansSn}`, config);
   }
 }
 

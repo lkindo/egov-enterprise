@@ -35,7 +35,7 @@ public class InstitutionCodeRecptnLog {
     private String allInstNm;
 
     @Column(name = "lwst_inst_nm", length = 100)
-    private String lwtrkInstNm;
+    private String lwstInstNm;
 
     @Column(length = 100)
     private String instAbbrNm;
@@ -53,10 +53,10 @@ public class InstitutionCodeRecptnLog {
     private String topInstCd;
 
     @Column(name = "upr_inst_cd", length = 20)
-    private String upInstCd;
+    private String uprInstCd;
 
     @Column(name = "reprs_inst_cd", length = 20)
-    private String rprsInstCd;
+    private String reprsInstCd;
 
     @Column(length = 2)
     private String instTypeLclsf;
@@ -92,7 +92,7 @@ public class InstitutionCodeRecptnLog {
     private String crtrYmd;
 
     @Column(name = "sort_ordr")
-    private Integer sortSeq;
+    private Integer sortOrdr;
 
     private LocalDateTime crtDt;
 
@@ -128,26 +128,26 @@ public class InstitutionCodeRecptnLog {
 
     @Builder
     public InstitutionCodeRecptnLog(InstitutionCodeRecptnLogId id, String chgSeCd, String procSe,
-            String etcCd, String allInstNm, String lwtrkInstNm,
+            String etcCd, String allInstNm, String lwstInstNm,
             String instAbbrNm, String odr, String ord, String instCycl,
-            String topInstCd, String upInstCd, String rprsInstCd,
+            String topInstCd, String uprInstCd, String reprsInstCd,
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf,
             String telno, String faxNo, String crtYmd, String ablYmd,
             String ablYn, String chgYmd, String chgTm,
-            String crtrYmd, Integer sortSeq, String frstRgtrId) {
+            String crtrYmd, Integer sortOrdr, String frstRgtrId) {
         this.id = id;
         this.chgSeCd = chgSeCd;
         this.procSe = procSe == null ? "0" : procSe;
         this.etcCd = etcCd;
         this.allInstNm = allInstNm;
-        this.lwtrkInstNm = lwtrkInstNm;
+        this.lwstInstNm = lwstInstNm;
         this.instAbbrNm = instAbbrNm;
         this.odr = odr;
         this.ord = ord;
         this.instCycl = instCycl;
         this.topInstCd = topInstCd;
-        this.upInstCd = upInstCd;
-        this.rprsInstCd = rprsInstCd;
+        this.uprInstCd = uprInstCd;
+        this.reprsInstCd = reprsInstCd;
         this.instTypeLclsf = instTypeLclsf;
         this.instTypeMclsf = instTypeMclsf;
         this.instTypeSclsf = instTypeSclsf;
@@ -159,7 +159,7 @@ public class InstitutionCodeRecptnLog {
         this.chgYmd = chgYmd;
         this.chgTm = chgTm;
         this.crtrYmd = crtrYmd;
-        this.sortSeq = sortSeq;
+        this.sortOrdr = sortOrdr;
         this.frstRgtrId = frstRgtrId;
         this.lastMdfrId = frstRgtrId;
         this.crtDt = LocalDateTime.now();

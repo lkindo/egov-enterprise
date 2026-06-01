@@ -268,26 +268,26 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <motion.button 
  layout
  type="button"
- key={item.id}
+ key={item.pstId}
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
- onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)}
+ onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)}
  className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-lg md:rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
  >
  <div className="flex gap-4 md:gap-6 items-start">
  <div className="w-12 h-12 md:w-16 md:h-11 rounded-lg md:rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
  <span className="text-xs md:text-xs font-bold text-muted-foreground/40 leading-none">영향력</span>
- <span className="text-sm md:text-xl font-bold text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqireCo || 0) / 10) + 85)}</span>
+ <span className="text-sm md:text-xl font-bold text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqireCo || item.inqCnt || 0) / 10) + 85)}</span>
  </div>
  <div className="space-y-1 md:space-y-2 min-w-0">
  <div className="flex items-center gap-2 md:gap-3">
  <span className="text-xs md:text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">핵심 단위</span>
  <span className="text-xs md:text-xs font-bold text-muted-foreground/40 tracking-tight md:tracking-tight">{item.frstRegisterPnttmStr}</span>
  </div>
- <h4 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.nttSj}</h4>
+ <h4 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
  <div className="flex items-center gap-3 md:gap-4 opacity-40">
  <div className="flex items-center gap-1 md:gap-1.5"><User size={10} className="text-primary md:size-[12px]" /><span className="text-xs md:text-xs font-bold text-slate-900 truncate max-w-[60px] md:max-w-none">{item.ntcrNm}</span></div>
- <div className="flex items-center gap-1 md:gap-1.5"><Eye size={10} className="md:size-[12px]" /><span className="text-xs md:text-xs font-bold">{(item.inqireCo || 0).toLocaleString()} Views</span></div>
+ <div className="flex items-center gap-1 md:gap-1.5"><Eye size={10} className="md:size-[12px]" /><span className="text-xs md:text-xs font-bold">{(item.inqireCo || item.inqCnt || 0).toLocaleString()} Views</span></div>
  </div>
  </div>
  </div>
@@ -311,10 +311,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <HubSectionCard title="Trending Radar" description="인게이지먼트가 높은 데이터 지식" icon={TrendingUp}>
  <div className="space-y-4">
  {hotItems.map((item: any, idx: number) => (
- <button type="button" key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-slate-50 transition-all cursor-pointer group text-left">
+ <button type="button" key={item.pstId} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)} className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-slate-50 transition-all cursor-pointer group text-left">
  <span className="text-3xl font-bold text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8">{idx + 1}</span>
  <div className="flex-1 min-w-0">
- <p className="text-sm font-bold text-slate-800 tracking-tight truncate leading-none">{item.nttSj}</p>
+ <p className="text-sm font-bold text-slate-800 tracking-tight truncate leading-none">{item.pstTtl}</p>
  <div className="flex items-center gap-2 mt-2">
  <TrendingUp size={10} className="text-rose-500" />
  <span className="text-xs font-bold text-rose-500">영향 수치 높음</span>

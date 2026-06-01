@@ -66,21 +66,21 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = BoardMaster.builder()
                 .bbsId(bbsId)
                 .bbsTtl(dto.getBbsTtl())
-                .bbsExpln(dto.getBbsExpln())
+                .bbsExpln(dto.getBbsIntroCn())
                 .bbsTypeCd(dto.getBbsTypeCd())
                 .bbsAtrbCd(dto.getBbsAtrbCd())
-                .ansPsbltyYn(dto.getAnsPsbltyYn())
-                .fileAtchPsbltyYn(dto.getFileAtchPsbltyYn())
-                .atchPsbltyFileQty(dto.getAtchPsbltyFileQty())
-                .atchPsbltyFileSz(dto.getAtchPsbltyFileSz())
-                .tmpltId(dto.getTmpltId())
+                .ansPsbltyYn(dto.getAnsPsblYn())
+                .fileAtchPsbltyYn(dto.getFileAtchPsblYn())
+                .atchPsbltyFileQty(dto.getAtchPsblFileCnt())
+                .atchPsbltyFileSz(dto.getAtchPsblFileSize())
+                .tmpltId(dto.getTmplatId())
                 .useYn(dto.getUseYn())
                 .blogId(dto.getBlogId())
                 .blogYn(dto.getBlogYn())
                 .cmntyId(dto.getCmntyId())
-                .ansYn(dto.getAnsYn())
+                .ansYn(dto.getCommentYn())
                 .stsfdgYn(dto.getStsfdgYn())
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         boardMasterRepository.save(entity);
         return entity.getBbsId();
@@ -92,21 +92,21 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         String bbsTtl = dto.getBbsTtl() != null ? dto.getBbsTtl() : entity.getBbsTtl();
-        String bbsExpln = dto.getBbsExpln() != null ? dto.getBbsExpln() : entity.getBbsExpln();
-        String ansPsbltyYn = dto.getAnsPsbltyYn() != null ? dto.getAnsPsbltyYn() : entity.getAnsPsbltyYn();
-        String fileAtchPsbltyYn = dto.getFileAtchPsbltyYn() != null ? dto.getFileAtchPsbltyYn() : entity.getFileAtchPsbltyYn();
-        Integer atchPsbltyFileQty = dto.getAtchPsbltyFileQty() != null ? dto.getAtchPsbltyFileQty() : entity.getAtchPsbltyFileQty();
-        Long atchPsbltyFileSz = dto.getAtchPsbltyFileSz() != null ? dto.getAtchPsbltyFileSz() : entity.getAtchPsbltyFileSz();
-        String tmpltId = dto.getTmpltId() != null ? dto.getTmpltId() : entity.getTmpltId();
+        String bbsExpln = dto.getBbsIntroCn() != null ? dto.getBbsIntroCn() : entity.getBbsExpln();
+        String ansPsbltyYn = dto.getAnsPsblYn() != null ? dto.getAnsPsblYn() : entity.getAnsPsbltyYn();
+        String fileAtchPsbltyYn = dto.getFileAtchPsblYn() != null ? dto.getFileAtchPsblYn() : entity.getFileAtchPsbltyYn();
+        Integer atchPsbltyFileQty = dto.getAtchPsblFileCnt() != null ? dto.getAtchPsblFileCnt() : entity.getAtchPsbltyFileQty();
+        Long atchPsbltyFileSz = dto.getAtchPsblFileSize() != null ? dto.getAtchPsblFileSize() : entity.getAtchPsbltyFileSz();
+        String tmpltId = dto.getTmplatId() != null ? dto.getTmplatId() : entity.getTmpltId();
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
-        String ansYn = dto.getAnsYn() != null ? dto.getAnsYn() : entity.getAnsYn();
+        String ansYn = dto.getCommentYn() != null ? dto.getCommentYn() : entity.getAnsYn();
         String stsfdgYn = dto.getStsfdgYn() != null ? dto.getStsfdgYn() : entity.getStsfdgYn();
 
         entity.update(bbsTtl, bbsExpln, ansPsbltyYn, fileAtchPsbltyYn,
                 atchPsbltyFileQty, atchPsbltyFileSz, tmpltId, useYn,
                 ansYn, stsfdgYn);
         
-        entity.setLastModifiedBy(userId);
+        entity.setLastMdfrId(userId);
     }
 
     @Transactional
@@ -114,7 +114,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = boardMasterRepository.findById(bbsId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.delete();
-        entity.setLastModifiedBy(userId);
+        entity.setLastMdfrId(userId);
     }
 
     // --- Added back for test compatibility ---
@@ -150,7 +150,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .blogTtl(dto.getBlogTtl())
                 .blogIntroCn(dto.getBlogIntroCn())
                 .useYn("Y")
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         blogRepository.save(entity);
     }
@@ -162,13 +162,13 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .userId(userId)
                 .mngrYn(mngrYn)
                 .useYn("Y")
-                .createdBy(userId)
+                .frstRgtrId(userId)
                 .build();
         blogUserRepository.save(entity);
     }
 
     public boolean checkBlogUser(String userId) {
-        return blogRepository.existsByCreatedBy(userId);
+        return blogRepository.existsByFrstRgtrId(userId);
     }
 
     public List<BlogDto> getBlogListPortlet() {
@@ -183,7 +183,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .bbsTtl(projection.getBbsTtl())
                 .bbsTypeCd(projection.getBbsTypeCd())
                 .bbsAtrbCd(projection.getBbsAtrbCd())
-                .tmpltId(projection.getTmpltId())
+                .tmplatId(projection.getTmpltId())
                 .useYn(projection.getUseYn())
                 .frstRegisterPnttm(projection.getCreatedDate())
                 .build();

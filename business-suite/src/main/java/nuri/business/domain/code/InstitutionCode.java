@@ -24,7 +24,7 @@ public class InstitutionCode extends BaseEntity {
     private String allInstNm;
  
     @Column(length = 100)
-    private String lwtrkInstNm;
+    private String lwstInstNm;
  
     @Column(length = 100)
     private String instAbbrNm;
@@ -42,10 +42,10 @@ public class InstitutionCode extends BaseEntity {
     private String topInstCd;
  
     @Column(length = 20)
-    private String upInstCd;
+    private String uprInstCd;
  
     @Column(length = 20)
-    private String rprsInstCd;
+    private String reprsInstCd;
  
     @Column(length = 2)
     private String instTypeLclsf;
@@ -80,25 +80,25 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 8)
     private String crtrYmd;
  
-    private Integer sortSeq;
+    private Integer sortOrdr;
  
     @Builder
-    public InstitutionCode(String instCd, String allInstNm, String lwtrkInstNm, String instAbbrNm,
+    public InstitutionCode(String instCd, String allInstNm, String lwstInstNm, String instAbbrNm,
             String odr, String ord, String instCycl, String topInstCd,
-            String upInstCd, String rprsInstCd, String instTypeLclsf,
+            String uprInstCd, String reprsInstCd, String instTypeLclsf,
             String instTypeMclsf, String instTypeSclas, String telno, String faxNo,
             String crtYmd, String ablYmd, String ablYn, String chgYmd,
-            String chgTm, String crtrYmd, Integer sortSeq, String createdBy) {
+            String chgTm, String crtrYmd, Integer sortOrdr, String frstRgtrId) {
         this.instCd = instCd;
         this.allInstNm = allInstNm;
-        this.lwtrkInstNm = lwtrkInstNm;
+        this.lwstInstNm = lwstInstNm;
         this.instAbbrNm = instAbbrNm;
         this.odr = odr;
         this.ord = ord;
         this.instCycl = instCycl;
         this.topInstCd = topInstCd;
-        this.upInstCd = upInstCd;
-        this.rprsInstCd = rprsInstCd;
+        this.uprInstCd = uprInstCd;
+        this.reprsInstCd = reprsInstCd;
         this.instTypeLclsf = instTypeLclsf;
         this.instTypeMclsf = instTypeMclsf;
         this.instTypeSclsf = instTypeSclas;
@@ -110,24 +110,24 @@ public class InstitutionCode extends BaseEntity {
         this.chgYmd = chgYmd;
         this.chgTm = chgTm;
         this.crtrYmd = crtrYmd;
-        this.sortSeq = sortSeq;
-        this.createdBy = createdBy;
+        this.sortOrdr = sortOrdr;
+        this.frstRgtrId = frstRgtrId;
     }
  
-    public void update(String allInstNm, String lwtrkInstNm, String instAbbrNm, String odr, String ord,
-            String instCycl, String topInstCd, String upInstCd, String rprsInstCd,
+    public void update(String allInstNm, String lwstInstNm, String instAbbrNm, String odr, String ord,
+            String instCycl, String topInstCd, String uprInstCd, String reprsInstCd,
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf, String telno,
             String faxNo, String crtYmd, String ablYmd, String ablYn, String chgYmd,
-            String chgTm, String crtrYmd, Integer sortSeq, String lastModifiedBy) {
+            String chgTm, String crtrYmd, Integer sortOrdr, String lastMdfrId) {
         this.allInstNm = allInstNm;
-        this.lwtrkInstNm = lwtrkInstNm;
+        this.lwstInstNm = lwstInstNm;
         this.instAbbrNm = instAbbrNm;
         this.odr = odr;
         this.ord = ord;
         this.instCycl = instCycl;
         this.topInstCd = topInstCd;
-        this.upInstCd = upInstCd;
-        this.rprsInstCd = rprsInstCd;
+        this.uprInstCd = uprInstCd;
+        this.reprsInstCd = reprsInstCd;
         this.instTypeLclsf = instTypeLclsf;
         this.instTypeMclsf = instTypeMclsf;
         this.instTypeSclsf = instTypeSclsf;
@@ -139,8 +139,8 @@ public class InstitutionCode extends BaseEntity {
         this.chgYmd = chgYmd;
         this.chgTm = chgTm;
         this.crtrYmd = crtrYmd;
-        this.sortSeq = sortSeq;
-        this.lastModifiedBy = lastModifiedBy;
+        this.sortOrdr = sortOrdr;
+        this.lastMdfrId = lastMdfrId;
     }
  
     public void softDelete(String ablYmd, String chgYmd, String chgTm) {

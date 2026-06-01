@@ -53,7 +53,7 @@ public class SurveyResultDto {
     private String etcAnsCn;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
@@ -69,7 +69,7 @@ public class SurveyResultDto {
                 .rspdntAnsCn(entity.getRspdntAnsCn())
                 .rspnsNm(entity.getRspnsNm())
                 .etcAnsCn(entity.getEtcAnsCn())
-                .createdBy(entity.getCreatedBy())
+                .frstRgtrId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

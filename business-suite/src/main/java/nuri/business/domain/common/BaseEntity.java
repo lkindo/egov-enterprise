@@ -24,27 +24,27 @@ public abstract class BaseEntity extends BaseTimeEntity {
 
     @CreatedBy
     @Column(name = "frst_rgtr_id", updatable = false, length = 20)
-    protected String createdBy;
+    protected String frstRgtrId;
 
     @LastModifiedBy
     @Column(name = "last_mdfr_id", length = 20)
-    protected String lastModifiedBy;
+    protected String lastMdfrId;
 
     // ----- [Legacy Aliases] -----
 
     public String getFrstRegisterId() {
-        return createdBy;
+        return frstRgtrId;
     }
 
     public String getLastUpdusrId() {
-        return lastModifiedBy;
+        return lastMdfrId;
     }
 
     public void setFrstRegisterId(String id) {
-        this.createdBy = id;
+        this.frstRgtrId = id;
     }
 
     public void setLastUpdusrId(String id) {
-        this.lastModifiedBy = id;
+        this.lastMdfrId = id;
     }
 }

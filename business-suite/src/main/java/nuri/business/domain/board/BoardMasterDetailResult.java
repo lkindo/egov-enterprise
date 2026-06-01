@@ -25,18 +25,4 @@ public class BoardMasterDetailResult {
     private LocalDateTime createdDate;
     private String authFlag;
 
-    // legacy
-    public String getBbsNm() { return bbsTtl; }
-    public String getBbsTyCode() { return bbsTypeCd; }
-    public String getBbsAttrbCode() { return bbsAtrbCd; }
-    public String getBbsAttrCd() { return bbsAtrbCd; }
-    public String getReplyPosblAt() { return ansPsbltyYn; }
-    public String getReplyPsblYn() { return ansPsbltyYn; }
-    public String getFileAtchPosblAt() { return fileAtchPsbltyYn; }
-    public Integer getAtchPosblFileNumber() { return atchPsbltyFileQty; }
-    public String getBbsIntrcn() { return bbsExpln; }
-    public String getBbsIntroCn() { return bbsExpln; }
-    public String getTmpltId() { return tmpltId; }
-    public Long getAtchPosblFileSize() { return atchPsbltyFileSz; }
-    public String getUseAt() { return useYn; }
 }

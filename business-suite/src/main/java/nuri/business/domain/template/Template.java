@@ -33,38 +33,13 @@ public class Template extends BaseEntity {
     @Column(name = "use_yn", length = 1)
     private String useYn;
 
-    // ----- [Legacy Getter Aliases] -----
+    // ----- [Legacy Getter/Setter & Builder Aliases] -----
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
-    public String getTmplatId() { return this.tmpltId; }
-    public String getTmplatNm() { return this.tmpltNm; }
-    public String getTmplatSeCode() { return this.tmpltSeCd; }
-    public String getTmplatCours() { return this.tmpltPath; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-
-    public static abstract class TemplateBuilder<C extends Template, B extends TemplateBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B tmplatId(String tmplatId) {
-            this.tmpltId = tmplatId;
-            return self();
-        }
-        public B tmplatNm(String tmplatNm) {
-            this.tmpltNm = tmplatNm;
-            return self();
-        }
-        public B tmplatSeCode(String tmplatSeCode) {
-            this.tmpltSeCd = tmplatSeCode;
-            return self();
-        }
-        public B tmplatCours(String tmplatCours) {
-            this.tmpltPath = tmplatCours;
-            return self();
-        }
-    }
-
-    public void update(String tmplatNm, String tmplatSeCode, String tmplatCours, String useYn) {
-        this.tmpltNm = tmplatNm;
-        this.tmpltSeCd = tmplatSeCode;
-        this.tmpltPath = tmplatCours;
+    public void update(String tmpltNm, String tmpltSeCd, String tmpltPath, String useYn) {
+        this.tmpltNm = tmpltNm;
+        this.tmpltSeCd = tmpltSeCd;
+        this.tmpltPath = tmpltPath;
         this.useYn = useYn;
     }
 }

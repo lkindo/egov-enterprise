@@ -41,7 +41,7 @@ class FaqServiceTest {
     void getFaqList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Faq entity = Faq.builder().faqId("FAQ1").qestnTtl("Question 1").build();
+        Faq entity = Faq.builder().faqId("FAQ1").qstnTtl("Question 1").build();
         given(faqRepository.searchFaqs(anyString(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -56,7 +56,7 @@ class FaqServiceTest {
     void getFaq() {
         // given
         String faqId = "FAQ1";
-        Faq entity = Faq.builder().faqId(faqId).qestnTtl("Question 1").build();
+        Faq entity = Faq.builder().faqId(faqId).qstnTtl("Question 1").build();
         given(faqRepository.findById(faqId)).willReturn(Optional.of(entity));
 
         // when
@@ -74,8 +74,8 @@ class FaqServiceTest {
         String userId = "user1";
         FaqDto dto = FaqDto.builder()
                 .faqId("FAQ1")
-                .qestnTtl("New Question")
-                .qestnCn("Content")
+                .qstnTtl("New Question")
+                .qstnCn("Content")
                 .build();
 
         // when
@@ -92,11 +92,11 @@ class FaqServiceTest {
         // given
         String faqId = "FAQ1";
         String userId = "user1";
-        Faq existingFaq = Faq.builder().faqId(faqId).qestnTtl("Old Question").build();
+        Faq existingFaq = Faq.builder().faqId(faqId).qstnTtl("Old Question").build();
         FaqDto updateDto = FaqDto.builder()
                 .faqId(faqId)
-                .qestnTtl("Updated Question")
-                .qestnCn("Updated Content")
+                .qstnTtl("Updated Question")
+                .qstnCn("Updated Content")
                 .build();
 
         given(faqRepository.findById(faqId)).willReturn(Optional.of(existingFaq));
@@ -105,8 +105,8 @@ class FaqServiceTest {
         faqService.updateFaq(faqId, userId, updateDto);
 
         // then
-        assertThat(existingFaq.getQestnTtl()).isEqualTo("Updated Question");
-        assertThat(existingFaq.getQestnCn()).isEqualTo("Updated Content");
+        assertThat(existingFaq.getQstnTtl()).isEqualTo("Updated Question");
+        assertThat(existingFaq.getQstnCn()).isEqualTo("Updated Content");
     }
 
     @Test
@@ -128,7 +128,7 @@ class FaqServiceTest {
     void increaseInqireCo() {
         // given
         String faqId = "FAQ1";
-        Faq entity = org.mockito.Mockito.spy(Faq.builder().faqId(faqId).inqireCo(0).build());
+        Faq entity = org.mockito.Mockito.spy(Faq.builder().faqId(faqId).inqCnt(0).build());
         given(faqRepository.findById(faqId)).willReturn(Optional.of(entity));
 
         // when

@@ -12,38 +12,38 @@ class DeptJobEntityTest {
     @DisplayName("DeptJobBox 빌더 및 초기화 테스트")
     void deptJobBoxTest() {
         DeptJobBox box = DeptJobBox.builder()
-                .deptJobbxId("BOX_001")
-                .deptJobbxNm("Job Box 1")
+                .deptTaskBoxId("BOX_001")
+                .deptTaskBoxNm("Job Box 1")
                 .deptId("DEPT_001")
-                .indictOrdr(1)
+                .sortOrdr(1)
                 .build();
 
-        assertThat(box.getDeptJobbxId()).isEqualTo("BOX_001");
-        assertThat(box.getDeptJobbxNm()).isEqualTo("Job Box 1");
+        assertThat(box.getDeptTaskBoxId()).isEqualTo("BOX_001");
+        assertThat(box.getDeptTaskBoxNm()).isEqualTo("Job Box 1");
         assertThat(box.getDeptId()).isEqualTo("DEPT_001");
-        assertThat(box.getIndictOrdr()).isEqualTo(1);
+        assertThat(box.getSortOrdr()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("DeptJob 빌더 및 수정 테스트")
     void deptJobTest() {
         DeptJob job = DeptJob.builder()
-                .deptJobId("JOB_001")
-                .deptJobNm("Initial Job")
-                .deptJobCn("Initial Content")
-                .priort("1")
+                .deptTaskId("JOB_001")
+                .deptTaskNm("Initial Job")
+                .deptTaskCn("Initial Content")
+                .prrtyRnk("1")
                 .build();
 
-        assertThat(job.getDeptJobId()).isEqualTo("JOB_001");
-        assertThat(job.getDeptJobNm()).isEqualTo("Initial Job");
+        assertThat(job.getDeptTaskId()).isEqualTo("JOB_001");
+        assertThat(job.getDeptTaskNm()).isEqualTo("Initial Job");
 
         job.update("BOX_002", "Updated Job", "Updated Content", "user01", "2", "FILE_001");
         
-        assertThat(job.getDeptJobbxId()).isEqualTo("BOX_002");
-        assertThat(job.getDeptJobNm()).isEqualTo("Updated Job");
-        assertThat(job.getDeptJobCn()).isEqualTo("Updated Content");
-        assertThat(job.getChargerId()).isEqualTo("user01");
-        assertThat(job.getPriort()).isEqualTo("2");
+        assertThat(job.getDeptTaskBoxId()).isEqualTo("BOX_002");
+        assertThat(job.getDeptTaskNm()).isEqualTo("Updated Job");
+        assertThat(job.getDeptTaskCn()).isEqualTo("Updated Content");
+        assertThat(job.getPicId()).isEqualTo("user01");
+        assertThat(job.getPrrtyRnk()).isEqualTo("2");
         assertThat(job.getAtchFileId()).isEqualTo("FILE_001");
     }
 }

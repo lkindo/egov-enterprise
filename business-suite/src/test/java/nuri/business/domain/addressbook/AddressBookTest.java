@@ -19,8 +19,8 @@ class AddressBookTest {
                 .trgetOrgnztId("ORG_001")
                 .useYn("Y")
                 .wrterId("user1")
-                .createdBy("admin")
-                .lastModifiedBy("admin")
+                .frstRgtrId("admin")
+                .lastMdfrId("admin")
                 .build();
 
         // Then
@@ -30,8 +30,8 @@ class AddressBookTest {
         assertThat(addressBook.getTrgetOrgnztId()).isEqualTo("ORG_001");
         assertThat(addressBook.getUseYn()).isEqualTo("Y");
         assertThat(addressBook.getWrterId()).isEqualTo("user1");
-        assertThat(addressBook.getCreatedBy()).isEqualTo("admin");
-        assertThat(addressBook.getLastModifiedBy()).isEqualTo("admin");
+        assertThat(addressBook.getFrstRgtrId()).isEqualTo("admin");
+        assertThat(addressBook.getLastMdfrId()).isEqualTo("admin");
     }
 
     @Test

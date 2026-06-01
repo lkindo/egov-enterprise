@@ -15,35 +15,30 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ScheduleDto {
     @Size(max = 20)
-    private String schdlId;
+    private String schdulId;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdulSe")
     @Size(max = 12)
-    private String schdlSeCd;
+    private String schdulSe;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdlTtl")
     @Size(max = 100)
     @NotBlank
-    private String schdlNm;
+    private String schdulNm;
 
     @Size(max = 4000)
-    private String schdlCn;
+    private String schdulCn;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("reptitSeCode")
     @Size(max = 12)
-    private String reptSeCd;
+    private String reptitSeCode;
 
     @Size(max = 8)
-    private String schdlBgngYmd;
+    private String schdulBgnde;
     @Size(max = 8)
-    private String schdlEndYmd;
+    private String schdulEndde;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdulIpAdres")
-    private String schdlIpAddr;
+    private String schdulIpAdres;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdulChargerId")
     @Size(max = 20)
-    private String schdlPicId;
+    private String schdulChargerId;
 
     @Size(max = 30)
     private String atchFileId;
@@ -54,65 +49,38 @@ public class ScheduleDto {
     
     // Additional fields for service
     @Size(max = 20)
-    private String schdlDeptId;
+    private String schdulDeptId;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdlKindCd")
     @Size(max = 12)
-    private String schdlKndCd;
+    private String schdulKindCode;
 
     @Size(max = 100)
-    private String schdlPlcNm;
+    private String schdulPlace;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdlIpcrCd")
     @Size(max = 12)
-    private String schdlImprtCd;
-
-    // legacy
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulId() { return schdlId; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulNm() { return schdlNm; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulCn() { return schdlCn; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulBgnde() { return schdlBgngYmd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulEndde() { return schdlEndYmd; }
-    
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulSe() { return schdlSeCd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulIpAdres() { return schdlIpAddr; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulChargerId() { return schdlPicId; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getReptitSeCode() { return reptSeCd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdlKindCd() { return schdlKndCd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdlIpcrCd() { return schdlImprtCd; }
+    private String schdulIpcrCode;
 
     public static ScheduleDto from(Schedule entity) {
         if (entity == null) return null;
         return ScheduleDto.builder()
-                .schdlId(entity.getSchdlId())
-                .schdlSeCd(entity.getSchdlSeCd())
-                .schdlNm(entity.getSchdlNm())
-                .schdlCn(entity.getSchdlCn())
-                .reptSeCd(entity.getReptSeCd())
-                .schdlBgngYmd(entity.getSchdlBgngYmd())
-                .schdlEndYmd(entity.getSchdlEndYmd())
-                .schdlIpAddr(entity.getSchdlIpAddr())
-                .schdlPicId(entity.getSchdlPicId())
+                .schdulId(entity.getSchdlId())
+                .schdulSe(entity.getSchdlSeCd())
+                .schdulNm(entity.getSchdlNm())
+                .schdulCn(entity.getSchdlCn())
+                .reptitSeCode(entity.getReptSeCd())
+                .schdulBgnde(entity.getSchdlBgngYmd())
+                .schdulEndde(entity.getSchdlEndYmd())
+                .schdulIpAdres(entity.getSchdlIpAddr())
+                .schdulChargerId(entity.getSchdlPicId())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterId(entity.getFrstRgtrId())
                 .createdDate(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrId(entity.getLastMdfrId())
                 .modifiedDate(entity.getLastModifiedDate())
-                .schdlDeptId(entity.getSchdlDeptId())
-                .schdlKndCd(entity.getSchdlKndCd())
-                .schdlPlcNm(entity.getSchdlPlcNm())
-                .schdlImprtCd(entity.getSchdlImprtCd())
+                .schdulDeptId(entity.getSchdlDeptId())
+                .schdulKindCode(entity.getSchdlKndCd())
+                .schdulPlace(entity.getSchdlPlcNm())
+                .schdulIpcrCode(entity.getSchdlImprtCd())
                 .build();
     }
 }

@@ -46,13 +46,13 @@ public class AdministCodeDto {
     private String ablYmd;
 
     @Schema(description = "생성자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "생성일시")
     private LocalDateTime createdDate;
 
     @Schema(description = "수정자 ID")
-    private String lastModifiedBy;
+    private String lastMdfrId;
 
     @Schema(description = "수정일시")
     private LocalDateTime lastModifiedDate;

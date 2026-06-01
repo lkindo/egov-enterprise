@@ -13,8 +13,8 @@ export interface UserManage {
   esntlId?: string;
   moblphonNo?: string;
   areaNo?: string;
-  homeMiddleTelno?: string; // Aligned with backend homeMiddleTelno
-  homeEndTelno?: string; // Aligned with backend homeEndTelno
+  middleTelno?: string;
+  endTelno?: string;
   fxnum?: string; // Aligned with backend fxnum
   zip?: string;
   homeadres?: string; // Aligned with backend homeadres

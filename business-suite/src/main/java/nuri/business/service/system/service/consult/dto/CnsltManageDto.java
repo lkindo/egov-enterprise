@@ -92,7 +92,7 @@ public class CnsltManageDto {
     private String mngYmd;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRgtrId;
 
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
@@ -120,7 +120,7 @@ public class CnsltManageDto {
                 .atchFileId(entity.getAtchFileId())
                 .procCn(entity.getProcCn())
                 .mngYmd(entity.getMngYmd())
-                .createdBy(entity.getFrstRegisterId())
+                .frstRgtrId(entity.getFrstRegisterId())
                 .createdDate(entity.getFrstRegisterPnttm())
                 .build();
     }

@@ -43,15 +43,12 @@ public class Comment extends BaseEntity implements Serializable {
     private String bbsId;
 
     @Column(length = 20)
-    @com.fasterxml.jackson.annotation.JsonProperty("writerId")
     private String wrterId;
 
     @Column(length = 100)
-    @com.fasterxml.jackson.annotation.JsonProperty("writerNm")
     private String wrterNm;
 
     @Column(length = 200)
-    @com.fasterxml.jackson.annotation.JsonProperty("password")
     private String pswd;
 
     @Column(columnDefinition = "TEXT")
@@ -70,42 +67,5 @@ public class Comment extends BaseEntity implements Serializable {
     }
 
     // ----- [Legacy Getter/Setter & Builder Aliases] -----
-
-    public String getWriterId() { return this.wrterId; }
-    public void setWriterId(String v) { this.wrterId = v; }
-
-    public String getWriterNm() { return this.wrterNm; }
-    public void setWriterNm(String v) { this.wrterNm = v; }
-
-    public String getPassword() { return this.pswd; }
-    public void setPassword(String v) { this.pswd = v; }
-
-    public Long getAnswerNo() { return ansSn; }
-    public void setAnswerNo(Long v) { this.ansSn = v; }
-    public String getNttId() { return pstId; }
-    public void setNttId(String v) { this.pstId = v; }
-    public String getCmntCn() { return ansCn; }
-    public void setCmntCn(String v) { this.ansCn = v; }
-
-    public Long getId() { return ansSn; }
-    public void setId(Long v) { this.ansSn = v; }
-
-    public static abstract class CommentBuilder<C extends Comment, B extends CommentBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String wrterId;
-        private String wrterNm;
-        private String pswd;
-
-        public B writerId(String writerId) {
-            this.wrterId = writerId;
-            return self();
-        }
-        public B writerNm(String writerNm) {
-            this.wrterNm = writerNm;
-            return self();
-        }
-        public B password(String password) {
-            this.pswd = password;
-            return self();
-        }
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

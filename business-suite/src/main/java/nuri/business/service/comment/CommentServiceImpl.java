@@ -30,10 +30,10 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = Comment.builder()
                 .pstId(commentDto.getPstId())
                 .bbsId(commentDto.getBbsId())
-                .writerId(commentDto.getWriterId())
-                .writerNm(commentDto.getWriterNm())
-                .password(commentDto.getPassword())
-                .ansCn(commentDto.getCommentCn())
+                .wrterId(commentDto.getWrterId())
+                .wrterNm(commentDto.getWrterNm())
+                .pswd(commentDto.getPassword())
+                .ansCn(commentDto.getAnsCn())
                 .useYn("Y")
                 .build();
 
@@ -58,12 +58,12 @@ public class CommentServiceImpl implements CommentService {
 
     private CommentDto toDto(Comment entity) {
         return CommentDto.builder()
-                .commentNo(entity.getAnsSn())
+                .ansSn(entity.getAnsSn())
                 .pstId(entity.getPstId())
                 .bbsId(entity.getBbsId())
-                .writerId(entity.getWriterId())
-                .writerNm(entity.getWriterNm())
-                .commentCn(entity.getAnsCn())
+                .wrterId(entity.getWrterId())
+                .wrterNm(entity.getWrterNm())
+                .ansCn(entity.getAnsCn())
                 .createdDate(entity.getFrstRegistPnttm().toString())
                 .build();
     }

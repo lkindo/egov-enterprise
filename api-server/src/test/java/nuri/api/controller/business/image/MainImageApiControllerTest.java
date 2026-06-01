@@ -37,8 +37,8 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 목록 조회 테스트")
     void getMainImageListTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
-                .imageId("IMG1")
-                .imageNm("메인이미지1")
+                .imgId("IMG1")
+                .imgNm("메인이미지1")
                 .build();
         Page<MainImageDto> page = new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1);
 
@@ -48,7 +48,7 @@ class MainImageApiControllerTest extends ControllerTestSupport {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].imageId").value("IMG1"));
+                .andExpect(jsonPath("$.data.list[0].imgId").value("IMG1"));
     }
 
     @Test
@@ -56,15 +56,15 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 상세 조회 테스트")
     void getMainImageTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
-                .imageId("IMG1")
-                .imageNm("메인이미지1")
+                .imgId("IMG1")
+                .imgNm("메인이미지1")
                 .build();
 
         given(mainImageService.getMainImage("IMG1")).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/main-images/IMG1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.imageId").value("IMG1"));
+                .andExpect(jsonPath("$.data.imgId").value("IMG1"));
     }
 
     @Test
@@ -72,7 +72,7 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 등록 테스트")
     void insertMainImageTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
-                .imageNm("신규이미지")
+                .imgNm("신규이미지")
                 .build();
 
         mockMvc.perform(post("/api/v1/main-images")
@@ -87,7 +87,7 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 수정 테스트")
     void updateMainImageTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
-                .imageNm("수정이미지")
+                .imgNm("수정이미지")
                 .build();
 
         mockMvc.perform(put("/api/v1/main-images/IMG1")
@@ -111,14 +111,14 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("반영된 메인 이미지 목록 조회 테스트")
     void getReflectedMainImagesTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
-                .imageId("IMG1")
-                .reflctAt("Y")
+                .imgId("IMG1")
+                .rfltYn("Y")
                 .build();
 
         given(mainImageService.getReflectedMainImages()).willReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/main-images/reflected"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].imageId").value("IMG1"));
+                .andExpect(jsonPath("$.data[0].imgId").value("IMG1"));
     }
 }

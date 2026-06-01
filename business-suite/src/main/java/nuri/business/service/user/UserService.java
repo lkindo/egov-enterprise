@@ -213,8 +213,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 user.getGndrCd(),
                                 user.getBrthYmd(),
                                 userDto.getAreaNo(),
-                                userDto.getHomeMiddleTelno(),
-                                userDto.getHomeEndTelno(),
+                                userDto.getMiddleTelno(),
+                                userDto.getEndTelno(),
                                 userDto.getFaxNo(),
                                 userDto.getHomeAddr(),
                                 userDto.getDaddr(),
@@ -225,7 +225,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 userDto.getOfcpsNm(),
                                 userDto.getGroupId(),
                                 userDto.getOrgnztId(),
-                                userDto.getInsttCd(),
+                                userDto.getPstinstCd(),
                                 user.getRole(),
                                 user.getSubDn());
         }

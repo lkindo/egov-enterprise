@@ -62,7 +62,7 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
                     .reportrId(dto.getReportrId())
                     .reportContents(dto.getReportContents())
                     .atchFileId(dto.getAtchFileId())
-                    .createdBy(userId)
+                    .frstRgtrId(userId)
                     .build();
             memoReportRepository.save(entity);
             return id;
@@ -78,7 +78,7 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getReportSubject(), dto.getReprtDe(), entity.getWriterId(), dto.getReportrId(),
                 dto.getReportContents(), dto.getAtchFileId());
-        entity.setLastModifiedBy(userId);
+        entity.setLastMdfrId(userId);
     }
 
     @Override

@@ -13,10 +13,10 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class TemplateDto {
-    private String tmplatId;
-    private String tmplatNm;
-    private String tmplatCours;
-    private String tmplatSeCode;
+    private String tmpltId;
+    private String tmpltNm;
+    private String tmpltPath;
+    private String tmpltSeCd;
     @Size(max = 1)
     @NotBlank
     private String useYn;
@@ -24,14 +24,15 @@ public class TemplateDto {
     private LocalDateTime frstRegisterPnttm;
 
     public static TemplateDto from(Template entity) {
+        if (entity == null) return null;
         return TemplateDto.builder()
-                .tmplatId(entity.getTmplatId())
-                .tmplatNm(entity.getTmplatNm())
-                .tmplatCours(entity.getTmplatCours())
-                .tmplatSeCode(entity.getTmplatSeCode())
+                .tmpltId(entity.getTmpltId())
+                .tmpltNm(entity.getTmpltNm())
+                .tmpltPath(entity.getTmpltPath())
+                .tmpltSeCd(entity.getTmpltSeCd())
                 .useYn(entity.getUseYn())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .frstRegisterId(entity.getFrstRgtrId())
+                .frstRegisterPnttm(entity.getCreatedDate())
                 .build();
     }
 }

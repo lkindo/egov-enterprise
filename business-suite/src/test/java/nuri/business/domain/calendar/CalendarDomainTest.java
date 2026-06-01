@@ -11,20 +11,20 @@ class CalendarDomainTest {
     void restde_test() {
         // Given
         Restde restde = Restde.builder()
-                .restdeNo(1)
-                .restdeDe("20240101")
-                .restdeNm("신정")
+                .hldySn(1)
+                .hldyYmd("20240101")
+                .hldyNm("신정")
                 .build();
         
-        assertEquals("20240101", restde.getRestdeDe());
+        assertEquals("20240101", restde.getHldyYmd());
 
         // When - update coverage (5 lines)
         restde.update("20241225", "크리스마스", "예수 탄생일", "2");
 
         // Then
-        assertEquals("20241225", restde.getRestdeDe());
-        assertEquals("크리스마스", restde.getRestdeNm());
-        assertEquals("예수 탄생일", restde.getRestdeDc());
-        assertEquals("2", restde.getRestdeSeCode());
+        assertEquals("20241225", restde.getHldyYmd());
+        assertEquals("크리스마스", restde.getHldyNm());
+        assertEquals("예수 탄생일", restde.getHldyExpln());
+        assertEquals("2", restde.getHldySeCd());
     }
 }

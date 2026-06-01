@@ -43,24 +43,24 @@ export default function AbsenceAdminClient({
   const [absences, setAbsences] = useState(initialAbsences);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  const getAbsenceStatus = (emplyrId: string) => {
-    return absences.find(a => a.emplyrId === emplyrId)?.userAbsnceAt === 'Y';
+  const getAbsenceStatus = (userId: string) => {
+    return absences.find(a => a.userId === userId)?.userAbsnYn === 'Y';
   };
 
-  const handleToggleAbsence = async (emplyrId: string, currentStatus: boolean) => {
+  const handleToggleAbsence = async (userId: string, currentStatus: boolean) => {
     const newStatus = !currentStatus ? 'Y' : 'N';
     try {
-      await absenceAdminService.updateAbsence(emplyrId, newStatus);
+      await absenceAdminService.updateAbsence(userId, newStatus);
       // 로컬 상태 업데이트
       setAbsences(prev => {
-        const existing = prev.find(a => a.emplyrId === emplyrId);
+        const existing = prev.find(a => a.userId === userId);
         if (existing) {
-          return prev.map(a => a.emplyrId === emplyrId ? { ...a, userAbsnceAt: newStatus } : a);
+          return prev.map(a => a.userId === userId ? { ...a, userAbsnYn: newStatus } : a);
         } else {
-          return [...prev, { emplyrId, userAbsnceAt: newStatus }];
+          return [...prev, { userId, userAbsnYn: newStatus }];
         }
       });
-      toast.success(`${emplyrId} 사용자의 프로필이 ${newStatus === 'Y' ? '부재 모드' : '활성 모드'}로 전환되었습니다.`);
+      toast.success(`${userId} 사용자의 프로필이 ${newStatus === 'Y' ? '부재 모드' : '활성 모드'}로 전환되었습니다.`);
     } catch {
       toast.error('프로필 동기화 중 오류가 발생했습니다.');
     }
@@ -70,7 +70,7 @@ export default function AbsenceAdminClient({
     {
       header: '아이덴티티 리소스',
       accessor: (item: any) => {
-        const isAbsent = getAbsenceStatus(item.emplyrId);
+        const isAbsent = getAbsenceStatus(item.userId);
         return (
           <div className="flex items-center gap-6 py-4">
             <div className={cn(
@@ -83,7 +83,7 @@ export default function AbsenceAdminClient({
               )}
             </div>
             <div className="space-y-1">
-              <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">_ RES_UID: {item.emplyrId}</span>
+              <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">_ RES_UID: {item.userId}</span>
               <h4 className="text-lg font-bold tracking-tighter text-foreground uppercase leading-none">{item.userNm}</h4>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function AbsenceAdminClient({
     {
       header: '가용성 프로필 / 트리거',
       accessor: (item: any) => {
-        const isAbsent = getAbsenceStatus(item.emplyrId);
+        const isAbsent = getAbsenceStatus(item.userId);
         return (
           <div className="flex items-center gap-6">
             <div className={cn(
@@ -121,7 +121,7 @@ export default function AbsenceAdminClient({
             </div>
             <Switch
               checked={isAbsent}
-              onCheckedChange={() => handleToggleAbsence(item.emplyrId, isAbsent)}
+              onCheckedChange={() => handleToggleAbsence(item.userId, isAbsent)}
               className="data-[state=checked]:bg-rose-500 scale-125"
             />
           </div>
@@ -130,7 +130,7 @@ export default function AbsenceAdminClient({
     }
   ];
 
-  const totalAbsents = absences.filter(a => a.userAbsnceAt === 'Y').length;
+  const totalAbsents = absences.filter(a => a.userAbsnYn === 'Y').length;
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -224,7 +224,7 @@ export default function AbsenceAdminClient({
             <div className="overflow-hidden">
               <StandardDataTable
                 columns={columns}
-                data={users.filter((u: any) => String(u.userNm || '').includes(searchKeyword) || String(u.emplyrId || '').includes(searchKeyword))}
+                data={users.filter((u: any) => String(u.userNm || '').includes(searchKeyword) || String(u.userId || '').includes(searchKeyword))}
                 loading={loading}
                 emptyMessage="리소스 데이터를 분석 중입니다..."
                 className="border-none bg-transparent"

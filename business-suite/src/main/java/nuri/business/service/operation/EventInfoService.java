@@ -54,8 +54,8 @@ public class EventInfoService {
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
                 .evntAprvYmd(dto.getEvntAprvYmd())
-                .createdBy(userId)
-                .lastModifiedBy(userId)
+                .frstRgtrId(userId)
+                .lastMdfrId(userId)
                 .build();
  
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -82,8 +82,8 @@ public class EventInfoService {
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
                 .evntAprvYmd(dto.getEvntAprvYmd())
-                .createdBy(eventInfo.getCreatedBy())
-                .lastModifiedBy(userId)
+                .frstRgtrId(eventInfo.getFrstRgtrId())
+                .lastMdfrId(userId)
                 .build());
         log.info("Event updated successfully: {}", eventId);
     }

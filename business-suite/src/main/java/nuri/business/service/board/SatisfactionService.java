@@ -26,10 +26,10 @@ public class SatisfactionService extends BaseAbstractService {
         Satisfaction entity = Satisfaction.builder()
                 .bbsId(dto.getBbsId())
                 .pstId(dto.getPstId())
-                .stsfdgLevel(dto.getStsfdgLevel())
-                .stsfdgCn(dto.getStsfdgCn())
-                .password(dto.getPassword())
-                .createdBy(userId)
+                .dgstfnScr(dto.getDgstfnScr())
+                .dgstfnCn(dto.getDgstfnCn())
+                .pswd(dto.getPassword())
+                .frstRgtrId(userId)
                 .build();
         satisfactionRepository.save(entity);
     }
@@ -42,11 +42,11 @@ public class SatisfactionService extends BaseAbstractService {
 
     @Transactional
     public void updateSatisfaction(String userId, SatisfactionDto dto) {
-        Satisfaction entity = satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
+        Satisfaction entity = satisfactionRepository.findById(Objects.requireNonNull(dto.getDgstfnSn()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(dto.getStsfdgLevel(), dto.getStsfdgCn(), dto.getPassword());
-        entity.setLastModifiedBy(userId);
+        entity.update(dto.getDgstfnScr(), dto.getDgstfnCn(), dto.getPassword());
+        entity.setLastMdfrId(userId);
     }
 
     // legacy
@@ -61,7 +61,7 @@ public class SatisfactionService extends BaseAbstractService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.delete();
-        entity.setLastModifiedBy(userId);
+        entity.setLastMdfrId(userId);
     }
 
     // legacy
@@ -73,7 +73,7 @@ public class SatisfactionService extends BaseAbstractService {
     public List<SatisfactionDto> getSatisfactionList(String bbsId, String pstId) {
         List<Satisfaction> list = satisfactionRepository.findByPstIdAndBbsIdAndUseYn(pstId, bbsId, "Y");
         return list.stream()
-                .map(this::convertToDto)
+                .map(SatisfactionDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -83,27 +83,13 @@ public class SatisfactionService extends BaseAbstractService {
 
     public SatisfactionDto getSatisfaction(Long satisfactionId) {
         return satisfactionRepository.findById(satisfactionId)
-                .map(this::convertToDto)
+                .map(SatisfactionDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     public boolean checkPassword(Long satisfactionId, String password) {
         return satisfactionRepository.findById(satisfactionId)
-                .map(s -> Objects.equals(s.getPassword(), password))
+                .map(s -> Objects.equals(s.getPswd(), password))
                 .orElse(false);
-    }
-
-    private SatisfactionDto convertToDto(Satisfaction satisfaction) {
-        return SatisfactionDto.builder()
-                .satisfactionId(satisfaction.getStsfdgId())
-                .bbsId(satisfaction.getBbsId())
-                .pstId(satisfaction.getPstId())
-                .stsfdgCn(satisfaction.getStsfdgCn())
-                .stsfdgLevel(satisfaction.getStsfdgLevel())
-                .writerId(satisfaction.getCreatedBy())
-                .password(satisfaction.getPassword())
-                .useYn(satisfaction.getUseYn())
-                .createdDate(satisfaction.getCreatedDate())
-                .build();
     }
 }

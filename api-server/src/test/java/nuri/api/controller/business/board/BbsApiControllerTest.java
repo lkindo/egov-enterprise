@@ -65,7 +65,7 @@ class BbsApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].id").value("1"));
+                .andExpect(jsonPath("$.data.list[0].pstId").value("1"));
     }
 
     @Test

@@ -61,10 +61,11 @@ export default function ManualAdminClient({
   
   const form = useAppForm(manualSchema, {
     defaultValues: {
-      onlineMnlId: '',
-      onlineMnlNm: '',
-      onlineMnlDc: '',
-      onlineMnlDf: ''
+      onlnMnlId: '',
+      onlnMnlNm: '',
+      onlnMnlExpln: '',
+      onlnMnlDfn: '',
+      onlnMnlSeCd: 'GNR'
     }
   });
 
@@ -83,17 +84,18 @@ export default function ManualAdminClient({
 
   const handleOpenAdd = () => {
     setMode('create');
-    form.reset({ onlineMnlId: '', onlineMnlNm: '', onlineMnlDc: '', onlineMnlDf: '' });
+    form.reset({ onlnMnlId: '', onlnMnlNm: '', onlnMnlExpln: '', onlnMnlDfn: '', onlnMnlSeCd: 'GNR' });
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (manual: ManualDto) => {
     setMode('edit');
     form.reset({ 
-      onlineMnlId: manual.onlineMnlId || '',
-      onlineMnlNm: manual.onlineMnlNm || '', 
-      onlineMnlDc: manual.onlineMnlDc || '', 
-      onlineMnlDf: manual.onlineMnlDf || '' 
+      onlnMnlId: manual.onlnMnlId || '',
+      onlnMnlNm: manual.onlnMnlNm || '', 
+      onlnMnlExpln: manual.onlnMnlExpln || '', 
+      onlnMnlDfn: manual.onlnMnlDfn || '',
+      onlnMnlSeCd: manual.onlnMnlSeCd || 'GNR'
     });
     setIsFormOpen(true);
   };
@@ -105,7 +107,7 @@ export default function ManualAdminClient({
         await manualAdminService.createManual(data as any);
         toast.success('새 매뉴얼을 등록했습니다.');
       } else {
-        await manualAdminService.updateManual(data.onlineMnlId!, data as any);
+        await manualAdminService.updateManual(data.onlnMnlId!, data as any);
         toast.success('매뉴얼 정보를 수정했습니다.');
       }
       setIsFormOpen(false);
@@ -140,10 +142,10 @@ export default function ManualAdminClient({
           </div>
           <div className="flex flex-col text-left">
             <span className="font-bold text-foreground tracking-tighter">
-              {item.onlineMnlNm}
+              {item.onlnMnlNm}
             </span>
             <span className="text-xs font-bold text-muted-foreground mt-1 tracking-widest uppercase opacity-40">
-              ID: {item.onlineMnlId}
+              ID: {item.onlnMnlId}
             </span>
           </div>
         </div>
@@ -153,7 +155,7 @@ export default function ManualAdminClient({
       header: '설명',
       accessor: (item: ManualDto) => (
         <div className="max-w-[300px] truncate font-medium text-muted-foreground text-left">
-          {item.onlineMnlDc || '-'}
+          {item.onlnMnlExpln || '-'}
         </div>
       )
     },
@@ -162,7 +164,7 @@ export default function ManualAdminClient({
       accessor: (item: ManualDto) => (
         <div className="flex items-center gap-2 font-mono text-xs text-primary/70 bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 w-fit">
           <ExternalLink size={12} />
-          {item.onlineMnlDf}
+          {item.onlnMnlDfn}
         </div>
       )
     },
@@ -181,7 +183,7 @@ export default function ManualAdminClient({
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => item.onlineMnlId && handleDelete(item.onlineMnlId)}
+            onClick={() => item.onlnMnlId && handleDelete(item.onlnMnlId)}
             className="h-10 w-10 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
           >
             <Trash2 size={16} />
@@ -288,7 +290,7 @@ export default function ManualAdminClient({
               <div className="p-8 space-y-8 text-left">
                 <FormField
                   control={form.control}
-                  name="onlineMnlNm"
+                  name="onlnMnlNm"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">매뉴얼 명칭</FormLabel>
@@ -306,7 +308,7 @@ export default function ManualAdminClient({
 
                 <FormField
                   control={form.control}
-                  name="onlineMnlDf"
+                  name="onlnMnlDfn"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">리소스 경로</FormLabel>
@@ -324,7 +326,7 @@ export default function ManualAdminClient({
 
                 <FormField
                   control={form.control}
-                  name="onlineMnlDc"
+                  name="onlnMnlExpln"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">상세 설명</FormLabel>
