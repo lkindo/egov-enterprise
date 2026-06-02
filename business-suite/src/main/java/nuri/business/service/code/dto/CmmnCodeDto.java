@@ -43,10 +43,10 @@ public class CmmnCodeDto {
     private String useYn;
 
     @Schema(description = "최초등록자 ID")
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Schema(description = "최종수정자 ID")
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
 }
 

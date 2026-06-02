@@ -21,7 +21,7 @@ export interface GroupManage {
  groupId: string;
  groupNm: string;
  groupDc: string;
- groupCreatDe?: string;
+ groupCrtYmd?: string;
 }
 
 export interface MenuByAuthority {

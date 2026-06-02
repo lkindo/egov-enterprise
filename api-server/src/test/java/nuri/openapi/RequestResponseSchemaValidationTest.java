@@ -79,10 +79,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String validRequest = """
                 {
                   "userId": "validUser123",
-                  "password": "ValidPass123!",
+                  "pswd": "ValidPass123!",
                   "userNm": "테스트사용자이름",
-                  "passwordHint": "password hint",
-                  "passwordCnsr": "password answer",
+                  "pswdHint": "password hint",
+                  "pswdCrans": "password answer",
                   "role": "USER"
                 }
                 """;
@@ -124,10 +124,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String invalidRequest = """
                 {
                   "userId": 123,
-                  "password": 456,
+                  "pswd": 456,
                   "userNm": true,
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -200,10 +200,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String invalidRequest = """
                 {
                   "userId": "invalid@user#id",
-                  "password": "ValidPass123!",
+                  "pswd": "ValidPass123!",
                   "userNm": "테스트사용자이름",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -223,10 +223,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String invalidRequest = """
                 {
                   "userId": "%s",
-                  "password": "ValidPass123!",
+                  "pswd": "ValidPass123!",
                   "userNm": "테스트사용자이름",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """.formatted(longUserId);
@@ -245,10 +245,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String invalidRequest = """
                 {
                   "userId": "validUser123",
-                  "password": "123",
+                  "pswd": "123",
                   "userNm": "테스트사용자이름",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -269,9 +269,9 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
                   "userId": "updateUser",
                   "userNm": "수정사용자",
                   "esntlId": "USR_0000000000000001",
-                  "password": "password123!",
-                  "passwordHint": "new hint",
-                  "passwordCnsr": "new answer",
+                  "pswd": "password123!",
+                  "pswdHint": "new hint",
+                  "pswdCrans": "new answer",
                   "role": "ADMIN"
                 }
                 """;
@@ -316,7 +316,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String invalidRequest = """
                 {
                   "userId": "",
-                  "password": "",
+                  "pswd": "",
                   "userNm": ""
                 }
                 """;

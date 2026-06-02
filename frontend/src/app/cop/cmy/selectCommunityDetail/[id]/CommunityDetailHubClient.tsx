@@ -115,7 +115,7 @@ export default function CommunityDetailHubClient({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
-                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.frstRegisterPnttm?.substring(0, 10) || 'Unknown'} />
+                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.createdDate?.substring(0, 10) || 'Unknown'} />
                   <DetailBlock icon={<Users size={18} />} label="Member Count" value="42_Active_Entities" />
                   <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useAt === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
                 </div>

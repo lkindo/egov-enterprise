@@ -101,7 +101,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  // 마스터 정보 및 템플릿 확인
 
  const masterInfo = initialData.masterInfo || null;
- const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
+ const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
  // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
  const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
@@ -203,7 +203,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    if (loading) {
      return (
        <div className="rounded-2xl border border-white/20 overflow-hidden shadow-2xl bg-white/40 backdrop-blur-xl mb-10">
-         <BoardSkeleton tmplatId={tmplatId} />
+         <BoardSkeleton tmpltId={tmpltId} />
        </div>
      );
    }
@@ -252,26 +252,26 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
      >
        <AnimatePresence mode="wait">
          <motion.div
-           key={tmplatId}
+           key={tmpltId}
            initial={{ opacity: 0, x: -10 }}
            animate={{ opacity: 1, x: 0 }}
            exit={{ opacity: 0, x: 10 }}
            transition={{ duration: 0.3 }}
          >
-           {tmplatId === 'TMPLT_HUB' ? (
+           {tmpltId === 'TMPLT_HUB' ? (
              <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} page={queryPage} totalCount={totalCount} />
-           ) : tmplatId === 'TMPLT_GALLERY' ? (
+           ) : tmpltId === 'TMPLT_GALLERY' ? (
              <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
-           ) : tmplatId === 'TMPLT_QNA' ? (
+           ) : tmpltId === 'TMPLT_QNA' ? (
              <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
-           ) : tmplatId === 'TMPLT_CALENDAR' ? (
+           ) : tmpltId === 'TMPLT_CALENDAR' ? (
              <CalendarTemplate 
                list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} 
                currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth} 
              />
-           ) : tmplatId === 'TMPLT_FAQ' ? (
+           ) : tmpltId === 'TMPLT_FAQ' ? (
              <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
-           ) : tmplatId === 'TMPLT_WIKI' ? (
+           ) : tmpltId === 'TMPLT_WIKI' ? (
              <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
            ) : (
              <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} page={queryPage} totalCount={totalCount} />
@@ -307,11 +307,11 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    animate={{ x: 0, opacity: 1 }}
    className="flex items-center gap-3"
  >
- <div className={cn("w-2 h-10 rounded-full shadow-lg", tmplatId === 'TMPLT_HUB' ? "bg-gradient-to-b from-indigo-500 to-purple-500" : "bg-gradient-to-b from-primary to-primary/60")} />
+ <div className={cn("w-2 h-10 rounded-full shadow-lg", tmpltId === 'TMPLT_HUB' ? "bg-gradient-to-b from-indigo-500 to-purple-500" : "bg-gradient-to-b from-primary to-primary/60")} />
  <h2 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
  {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </h2>
- {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
+ {tmpltId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
  </motion.div>
  <motion.p 
    initial={{ x: -20, opacity: 0 }}
@@ -319,7 +319,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    transition={{ delay: 0.1 }}
    className="text-slate-500 font-bold ml-5 text-lg"
  >
- {masterInfo?.bbsIntroCn || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
+ {masterInfo?.bbsExpln || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
  </motion.p>
  </div>
 
@@ -341,7 +341,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    
  <div className="flex-1 space-y-4 relative z-10">
  <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
- {tmplatId === 'TMPLT_HUB' ? (
+ {tmpltId === 'TMPLT_HUB' ? (
    <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500 shadow-inner">
      <BookOpen className="w-10 h-10" />
    </div>

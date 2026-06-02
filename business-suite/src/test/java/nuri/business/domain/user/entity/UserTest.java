@@ -44,13 +44,13 @@ class UserTest {
                 "test@test.com", "대리", "GRP01", "ORG01", "PST01", Role.ADMIN, "crtfc123");
 
         assertEquals("김철수", user.getUserNm());
-        assertEquals("hint", user.getPasswordHint());
-        assertEquals("cnsr", user.getPasswordCnsr());
+        assertEquals("hint", user.getPswdHint());
+        assertEquals("cnsr", user.getPswdCrans());
         assertEquals("EMP001", user.getEmplNo());
         assertEquals("M", user.getGndrCd());
-        assertEquals("서울", user.getBaseAddr());
+        assertEquals("서울", user.getHomeAddr());
         assertEquals(Role.ADMIN, user.getRole());
-        assertEquals("crtfc123", user.getCrtfcDnValue());
+        assertEquals("crtfc123", user.getCertDnVl());
     }
 
     @Test
@@ -59,8 +59,8 @@ class UserTest {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         user.updatePassword("newPwd");
         
-        assertEquals("newPwd", user.getPassword());
-        assertNotNull(user.getPasswordUpdateDate());
+        assertEquals("newPwd", user.getPswd());
+        assertNotNull(user.getChgPswdLastDt());
     }
 
     @Test
@@ -69,15 +69,15 @@ class UserTest {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         
         user.incrementLockCount();
-        assertEquals(1, user.getLockCount());
+        assertEquals(1, user.getLckCnt());
         
         user.incrementLockCount();
-        assertEquals(2, user.getLockCount());
+        assertEquals(2, user.getLckCnt());
         
         user.unlock();
-        assertEquals("N", user.getLockAt());
-        assertEquals(0, user.getLockCount());
-        assertNull(user.getLockLastDate());
+        assertEquals("N", user.getLckYn());
+        assertEquals(0, user.getLckCnt());
+        assertNull(user.getLckLastPnttm());
     }
 
     @Test
@@ -100,14 +100,14 @@ class UserTest {
 
     @Test
     @DisplayName("상태 및 조직 업데이트 확인")
-    void testStatusAndOrgnztUpdate() {
+    void testStatusAndOgnzUpdate() {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         
         user.updateStatus("ACTIVE");
-        assertEquals("ACTIVE", user.getStatusCode());
+        assertEquals("ACTIVE", user.getUserSttsCd());
         
-        user.updateOrgnztId("ORG123");
-        assertEquals("ORG123", user.getOrgnztId());
+        user.updateOgnzId("ORG123");
+        assertEquals("ORG123", user.getOgnzId());
     }
 
     @Test
@@ -115,33 +115,27 @@ class UserTest {
     void testLegacyAliases() {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         
-        user.setUserType("TYPE1");
-        assertEquals("TYPE1", user.getUserType());
+        user.setUserTypeCd("TYPE1");
+        assertEquals("TYPE1", user.getUserTypeCd());
         
-        user.setPassword("pwd");
-        assertEquals("pwd", user.getPassword());
+        user.setPswd("pwd");
+        assertEquals("pwd", user.getPswd());
 
         user.setPswdCrans("crans");
         assertEquals("crans", user.getPswdCrans());
         
-        user.setChangePasswordCount(5);
-        assertEquals(5, user.getChangePasswordCount());
+        user.setChgPwdCnt(5);
+        assertEquals(5, user.getChgPwdCnt());
 
         LocalDateTime now = LocalDateTime.now();
-        user.setLockLastDate(now);
-        assertEquals(now, user.getLockLastDate());
+        user.setLckLastPnttm(now);
+        assertEquals(now, user.getLckLastPnttm());
 
-        user.setSubDn("subdn");
-        assertEquals("subdn", user.getSubDn());
+        user.setCertDnVl("subdn");
+        assertEquals("subdn", user.getCertDnVl());
 
-        user.setIhidnum("ihid");
-        assertEquals("ihid", user.getIhidnum());
-
-        user.setHomeadres("addr1");
-        assertEquals("addr1", user.getHomeadres());
-
-        user.setDetailAdres("addr2");
-        assertEquals("addr2", user.getDetailAdres());
+        user.setRrno("ihid");
+        assertEquals("ihid", user.getRrno());
 
         user.setHomeAddr("addr1");
         assertEquals("addr1", user.getHomeAddr());
@@ -149,37 +143,43 @@ class UserTest {
         user.setDaddr("addr2");
         assertEquals("addr2", user.getDaddr());
 
-        user.setHomemiddleTelno("1234");
-        assertEquals("1234", user.getHomemiddleTelno());
+        user.setHomeAddr("addr1");
+        assertEquals("addr1", user.getHomeAddr());
 
-        user.setHomeendTelno("5678");
-        assertEquals("5678", user.getHomeendTelno());
+        user.setDaddr("addr2");
+        assertEquals("addr2", user.getDaddr());
 
-        user.setInsttCode("instt");
-        assertEquals("instt", user.getInsttCode());
+        user.setMiddleTelno("1234");
+        assertEquals("1234", user.getMiddleTelno());
 
-        user.setBizrno("bizrno");
-        assertEquals("bizrno", user.getBizrno());
+        user.setEndTelno("5678");
+        assertEquals("5678", user.getEndTelno());
 
-        user.setJurirno("jurirno");
-        assertEquals("jurirno", user.getJurirno());
+        user.setPstinstCd("instt");
+        assertEquals("instt", user.getPstinstCd());
 
-        user.setCxfc("cxfc");
-        assertEquals("cxfc", user.getCxfc());
+        user.setBizrNo("bizrno");
+        assertEquals("bizrno", user.getBizrNo());
 
-        user.setIndutyCode("induty");
-        assertEquals("induty", user.getIndutyCode());
+        user.setJurirNo("jurirno");
+        assertEquals("jurirno", user.getJurirNo());
 
-        user.setEntrprsSeCode("entrprs");
-        assertEquals("entrprs", user.getEntrprsSeCode());
+        user.setCmpnyNm("cxfc");
+        assertEquals("cxfc", user.getCmpnyNm());
 
-        user.setSexdstnCode("M");
-        assertEquals("M", user.getSexdstnCode());
+        user.setIndutyCd("induty");
+        assertEquals("induty", user.getIndutyCd());
 
-        user.setBrth("1999");
-        assertEquals("1999", user.getBrth());
+        user.setEntSeCd("entrprs");
+        assertEquals("entrprs", user.getEntSeCd());
 
-        user.setFxnum("fx");
-        assertEquals("fx", user.getFxnum());
+        user.setGndrCd("M");
+        assertEquals("M", user.getGndrCd());
+
+        user.setBrthYmd("1999");
+        assertEquals("1999", user.getBrthYmd());
+
+        user.setFaxNo("fx");
+        assertEquals("fx", user.getFaxNo());
     }
 }

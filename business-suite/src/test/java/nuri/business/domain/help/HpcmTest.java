@@ -22,7 +22,7 @@ class HpcmTest {
         assertThat(hpcm.getHlpId()).isEqualTo("HPCM_001");
         assertThat(hpcm.getHlpSeCd()).isEqualTo("001");
         assertThat(hpcm.getHlpDfn()).isEqualTo("Help Definition");
-        assertThat(hpcm.getFrstRegisterId()).isEqualTo("admin");
+        assertThat(hpcm.getFrstRgtrId()).isEqualTo("admin");
     }
 
     @Test

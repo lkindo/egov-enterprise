@@ -13,13 +13,13 @@ class SatisfactionTest {
     void builderTest() {
         Satisfaction sat = Satisfaction.builder()
                 .bbsId("BBS_001")
-                .nttId("PST_001")
+                .pstId("PST_001")
                 .dgstfnScr(5)
                 .dgstfnCn("Very Good")
                 .build();
 
         assertThat(sat.getBbsId()).isEqualTo("BBS_001");
-        assertThat(sat.getNttId()).isEqualTo("PST_001");
+        assertThat(sat.getPstId()).isEqualTo("PST_001");
         assertThat(sat.getDgstfnScr()).isEqualTo(5);
         assertThat(sat.getDgstfnCn()).isEqualTo("Very Good");
         assertThat(sat.getUseYn()).isEqualTo("Y");
@@ -30,7 +30,7 @@ class SatisfactionTest {
     void businessLogicTest() {
         Satisfaction sat = Satisfaction.builder()
                 .bbsId("BBS_001")
-                .nttId("PST_001")
+                .pstId("PST_001")
                 .dgstfnScr(3)
                 .dgstfnCn("Normal")
                 .pswd("1234")

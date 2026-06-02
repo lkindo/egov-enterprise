@@ -1,18 +1,18 @@
 export interface Schedule {
-  schdulId: string;
-  schdulSe: string; // 1: 부서 2: 개인
-  schdulDeptId?: string;
-  schdulKindCode?: string;
-  schdulBgnde: string; // yyyyMMddHHmm
-  schdulEndde: string;
-  schdulNm: string;
-  schdulCn: string;
-  schdulPlace?: string;
-  schdulIpcrCode?: string;
-  schdulChargerId?: string;
+  schdlId: string;
+  schdlSeCd: string; // 1: 부서 2: 개인
+  schdlDeptId?: string;
+  schdlKndCd?: string;
+  schdlBgngYmd: string; // yyyyMMddHHmm
+  schdlEndYmd: string;
+  schdlNm: string;
+  schdlCn: string;
+  schdlPlcNm?: string;
+  schdlImprtCd?: string;
+  schdlPicId?: string;
   atchFileId?: string;
-  reptitSeCode?: string;
-  frstRegisterId?: string;
+  reptSeCd?: string;
+  frstRgtrId?: string;
   createdDate?: string;
 }
 
@@ -29,35 +29,33 @@ export interface MonthlyScheduleResponse {
 }
 
 export interface DeptSchedule extends Schedule {
-  schdulDeptId: string;
+  schdlDeptId: string;
   deptNm: string;
 }
 
 export interface ScheduleSearchParams {
-  schdulSe?: string;
-  schdulDeptId?: string;
-  schdulBgnde?: string;
-  schdulEndde?: string;
-  schdulNm?: string;
+  schdlSeCd?: string;
+  schdlDeptId?: string;
+  schdlBgngYmd?: string;
+  schdlEndYmd?: string;
+  schdlNm?: string;
   pageNo?: number;
   pageIndex?: number;
   size?: number;
 }
 
 export interface WorkReport {
-  reportId: string;
-  reportSubject: string;
-  reportContent: string;
-  reportType: string;
-  reportDate: string;
-  writerId: string;
-  reportStatus: string;
+  rptId: string;
+  rptTtl: string;
+  rptCn: string;
+  rptSeCd: string;
+  rptYmd: string;
+  userId: string;
+  rptSttsCd: string;
 }
 
 export interface ReportSearchParams {
-  reportNm?: string;
-  writngBgnde?: string;
-  writngEndde?: string;
+  searchWrd?: string;
   pageNo?: number;
   pageIndex?: number;
   size?: number;

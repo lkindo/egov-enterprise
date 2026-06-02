@@ -189,7 +189,7 @@ class PopupServiceImplTest {
         assertThat(popup.getPopupTtlNm()).isEqualTo("NEW");
         assertThat(popup.getNtceBgnde()).isEqualTo(LocalDate.of(2026, 2, 1));
         assertThat(popup.getNtceEndde()).isEqualTo(LocalDate.of(2026, 2, 28));
-        assertThat(popup.getLastUpdusrId()).isEqualTo("updater");
+        assertThat(popup.getLastMdfrId()).isEqualTo("updater");
     }
 
     @Test

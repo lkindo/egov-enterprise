@@ -10,7 +10,7 @@ public class BoardSearchCondition {
     private String searchCnd;
     private String searchWrd;
     private String useYn;
-    private String frstRegisterId;
+    private String frstRgtrId;
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;
     private String orderBy; // "date", "views", "comments"

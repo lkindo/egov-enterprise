@@ -55,7 +55,7 @@ const BBSDetailClient = () => {
     enabled: !!bbsId && !!pstId,
   });
 
-  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
+  const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedEventDate, setSelectedEventDate] = useState<string>(new Date().toISOString());
@@ -107,32 +107,32 @@ const BBSDetailClient = () => {
             <div className="space-y-6 text-center md:text-left">
               <div className={cn(
                 "flex items-center gap-3 px-5 py-2 w-fit rounded-lg border backdrop-blur-xl mx-auto md:mx-0",
-                tmplatId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : 
-                tmplatId === 'TMPLT_HUB' ? "bg-indigo-500/20 border-indigo-500/30" :
-                tmplatId === 'TMPLT_FAQ' ? "bg-purple-500/20 border-purple-500/30" :
-                tmplatId === 'TMPLT_WIKI' ? "bg-emerald-500/20 border-emerald-500/30" :
-                tmplatId === 'TMPLT_GALLERY' ? "bg-rose-500/20 border-rose-500/30" :
-                tmplatId === 'TMPLT_CALENDAR' ? "bg-cyan-500/20 border-cyan-500/30" :
+                tmpltId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : 
+                tmpltId === 'TMPLT_HUB' ? "bg-indigo-500/20 border-indigo-500/30" :
+                tmpltId === 'TMPLT_FAQ' ? "bg-purple-500/20 border-purple-500/30" :
+                tmpltId === 'TMPLT_WIKI' ? "bg-emerald-500/20 border-emerald-500/30" :
+                tmpltId === 'TMPLT_GALLERY' ? "bg-rose-500/20 border-rose-500/30" :
+                tmpltId === 'TMPLT_CALENDAR' ? "bg-cyan-500/20 border-cyan-500/30" :
                 "bg-white/10 border-white/10"
               )}>
                 <Edit3 className={cn(
                   "w-4 h-4 animate-bounce", 
-                  tmplatId === 'TMPLT_QNA' ? "text-amber-400" : 
-                  tmplatId === 'TMPLT_HUB' ? "text-indigo-400" :
-                  tmplatId === 'TMPLT_FAQ' ? "text-purple-400" :
-                  tmplatId === 'TMPLT_WIKI' ? "text-emerald-400" :
-                  tmplatId === 'TMPLT_GALLERY' ? "text-rose-400" :
-                  tmplatId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
+                  tmpltId === 'TMPLT_QNA' ? "text-amber-400" : 
+                  tmpltId === 'TMPLT_HUB' ? "text-indigo-400" :
+                  tmpltId === 'TMPLT_FAQ' ? "text-purple-400" :
+                  tmpltId === 'TMPLT_WIKI' ? "text-emerald-400" :
+                  tmpltId === 'TMPLT_GALLERY' ? "text-rose-400" :
+                  tmpltId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
                   "text-primary"
                 )} />
                 <span className="text-xs font-bold tracking-[0.3em] text-white">
                   {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
-                  {tmplatId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
-                   tmplatId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
-                   tmplatId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
-                   tmplatId === 'TMPLT_CALENDAR' ? 'EVENT_LOG' : 
-                   tmplatId === 'TMPLT_FAQ' ? 'FAQ_CONTENT' :
-                   tmplatId === 'TMPLT_WIKI' ? 'WIKI_ARTICLE' : 'BOARD'}
+                  {tmpltId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
+                   tmpltId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
+                   tmpltId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
+                   tmpltId === 'TMPLT_CALENDAR' ? 'EVENT_LOG' : 
+                   tmpltId === 'TMPLT_FAQ' ? 'FAQ_CONTENT' :
+                   tmpltId === 'TMPLT_WIKI' ? 'WIKI_ARTICLE' : 'BOARD'}
                 </span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-bold tracking-tighter leading-tight ">
@@ -140,7 +140,7 @@ const BBSDetailClient = () => {
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
               <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
-                {tmplatId === 'TMPLT_QNA' 
+                {tmpltId === 'TMPLT_QNA' 
                   ? '궁금한 점을 상세히 적어주시면 정확한 답변을 드릴 수 있습니다.'
                   : '새로운 아이디어나 소식을 공유하여 커뮤니티의 가치를 높여주세요.'}
               </p>
@@ -167,9 +167,9 @@ const BBSDetailClient = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="pstTtl" className={cn(
                   "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
-                  tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
+                  tmpltId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
-                  <Type className="w-4 h-4" /> 01. {tmplatId === 'TMPLT_QNA' ? 'QUESTION TITLE' : 'POST TITLE'}
+                  <Type className="w-4 h-4" /> 01. {tmpltId === 'TMPLT_QNA' ? 'QUESTION TITLE' : 'POST TITLE'}
                 </Label>
                 <span className="text-xs font-bold text-primary/40 tracking-tight">필수</span>
               </div>
@@ -177,17 +177,17 @@ const BBSDetailClient = () => {
                 id="pstTtl"
                 name="pstTtl"
                 defaultValue={article?.pstTtl || ''}
-                placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
+                placeholder={tmpltId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
                   "h-11 text-3xl font-bold border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
-                  tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
+                  tmpltId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                   state?.field === 'pstTtl' && "border-rose-500 bg-rose-50"
                 )}
                 required
               />
             </div>
 
-            {tmplatId === 'TMPLT_QNA' && (
+            {tmpltId === 'TMPLT_QNA' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <Label className="text-xs font-bold tracking-[0.3em] text-amber-500 flex items-center gap-3">
                   <ShieldCheck className="w-4 h-4" /> CATEGORY_SELECT
@@ -211,7 +211,7 @@ const BBSDetailClient = () => {
               </div>
             )}
 
-            {tmplatId === 'TMPLT_CALENDAR' && (
+            {tmpltId === 'TMPLT_CALENDAR' && (
               <div className="p-10 bg-cyan-900/10 border-2 border-cyan-500/20 rounded-lg flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
                  <div className="w-16 h-11 bg-cyan-500 rounded-lg flex items-center justify-center text-white shadow-xl shadow-cyan-500/20 shrink-0">
                     <Calendar size={32} />
@@ -236,9 +236,9 @@ const BBSDetailClient = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="pstCn" className={cn(
                   "text-xs font-bold tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
-                  tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
+                  tmpltId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
                 )}>
-                  <FileText className="w-4 h-4" /> 02. {tmplatId === 'TMPLT_QNA' ? 'DETAIL QUESTION' : 'CONTENT BODY'}
+                  <FileText className="w-4 h-4" /> 02. {tmpltId === 'TMPLT_QNA' ? 'DETAIL QUESTION' : 'CONTENT BODY'}
                 </Label>
                 <span className="text-xs font-bold text-primary/40 tracking-tight">필수</span>
               </div>
@@ -248,19 +248,19 @@ const BBSDetailClient = () => {
                   name="pstCn"
                   defaultValue={article?.pstCn || ''}
                   placeholder={
-                    tmplatId === 'TMPLT_QNA' 
+                    tmpltId === 'TMPLT_QNA' 
                       ? "질문 내용을 자세히 기재해 주시면 더 정확한 답변을 받으실 수 있습니다..."
                       : "전달하고자 하는 내용을 상세히 작성하세요..."
                   }
                   className={cn(
                     "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-lg bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
-                    tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
+                    tmpltId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                     state?.field === 'pstCn' && "border-rose-500 bg-rose-50"
                   )}
                   required
                 />
                 <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-xs font-bold text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-lg border border-primary/5 backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-pulse" /> {tmplatId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
+                  <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-pulse" /> {tmpltId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
                 </div>
               </div>
             </div>

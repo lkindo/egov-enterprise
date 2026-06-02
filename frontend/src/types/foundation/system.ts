@@ -67,8 +67,8 @@ export interface CmmnClCode {
   clsfCdNm: string;
   clsfCdExpln: string;
   useYn: 'Y' | 'N';
-  frstRegisterId?: string;
-  lastUpdusrId?: string;
+  frstRgtrId?: string;
+  lastMdfrId?: string;
 }
 
 export interface CmmnCode {

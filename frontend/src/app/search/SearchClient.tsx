@@ -244,7 +244,7 @@ function ArticleResultItem({ item, query }: any) {
                         {item.pstTtl}
                     </h4>
                     <span className="text-xs font-bold text-muted-foreground/40 bg-muted px-2 py-1 rounded-md shrink-0">
-                        {item.frstRegisterPnttm?.substring(0, 10)}
+                        {item.createdDate?.substring(0, 10)}
                     </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">

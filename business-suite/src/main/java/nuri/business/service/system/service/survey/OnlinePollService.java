@@ -90,7 +90,7 @@ public class OnlinePollService implements EgovOnlinePollService {
 
         String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        pollManage.setFrstRegisterId(currentUserId);
+        pollManage.setFrstRgtrId(currentUserId);
 
         if (dto.getPollArticles() != null) {
             for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
@@ -101,7 +101,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                         .pollManage(pollManage)
                         .pollArtclNm(itemDto.getPollArtclNm().length() > 100 ? itemDto.getPollArtclNm().substring(0, 100) : itemDto.getPollArtclNm())
                         .build();
-                item.setFrstRegisterId(currentUserId);
+                item.setFrstRgtrId(currentUserId);
                 pollManage.getPollArticles().add(item);
             }
         }
@@ -130,7 +130,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         
         String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        entity.setLastUpdusrId(currentUserId);
+        entity.setLastMdfrId(currentUserId);
 
         if (dto.getPollArticles() != null) {
             entity.getPollArticles().clear();
@@ -142,7 +142,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                         .pollManage(entity)
                         .pollArtclNm(itemDto.getPollArtclNm().length() > 100 ? itemDto.getPollArtclNm().substring(0, 100) : itemDto.getPollArtclNm())
                         .build();
-                item.setFrstRegisterId(currentUserId);
+                item.setFrstRgtrId(currentUserId);
                 entity.getPollArticles().add(item);
             }
         }
@@ -185,7 +185,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         
         String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        item.setFrstRegisterId(currentUserId);
+        item.setFrstRgtrId(currentUserId);
         
         pollItemRepository.save(Objects.requireNonNull(item));
     }
@@ -199,7 +199,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         
         String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        entity.setLastUpdusrId(currentUserId);
+        entity.setLastMdfrId(currentUserId);
     }
 
     @Override
@@ -240,7 +240,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         
         String currentUserId = userId;
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
-        result.setFrstRegisterId(currentUserId);
+        result.setFrstRgtrId(currentUserId);
         
         pollResultRepository.save(Objects.requireNonNull(result));
     }

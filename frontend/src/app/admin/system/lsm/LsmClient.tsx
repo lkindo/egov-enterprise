@@ -59,8 +59,8 @@ export default function LsmClient({
  header: '기간',
  accessor: (item) => (
  <div className="flex flex-col text-xs font-mono text-slate-500">
- <span>{item.schdulBgnde}</span>
- <span className="opacity-40">~ {item.schdulEndde}</span>
+ <span>{item.schdlBgngYmd}</span>
+ <span className="opacity-40">~ {item.schdlEndYmd}</span>
  </div>
  )
  }
@@ -106,7 +106,7 @@ export default function LsmClient({
  </div>
  <div>
  <h5 className="font-bold text-slate-900 leading-tight">{status.leaderNm}</h5>
- <p className="text-xs text-slate-400 font-bold uppercase">{status.positionNm} | {status.orgnztNm}</p>
+ <p className="text-xs text-slate-400 font-bold uppercase">{status.positionNm} | {status.ognzNm}</p>
  </div>
  </div>
  <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase tracking-tighter">

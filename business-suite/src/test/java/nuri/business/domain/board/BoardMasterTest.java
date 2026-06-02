@@ -122,15 +122,15 @@ class BoardMasterTest {
         assertThat(master.getStsfdgYn()).isEqualTo("Y");
 
         // Optn 관련 Getter/Setter 검증
-        master.setOptnFrstRegisterId("admin");
-        master.setOptnFrstRegistPnttm(now);
-        master.setOptnLastUpdusrId("moderator");
-        master.setOptnLastUpdtPnttm(now);
+        master.setOptnFrstRgtrId("admin");
+        master.setOptnCrtDt(now);
+        master.setOptnLastMdfrId("moderator");
+        master.setOptnMdfcnDt(now);
 
-        assertThat(master.getOptnFrstRegisterId()).isEqualTo("admin");
-        assertThat(master.getOptnFrstRegistPnttm()).isEqualTo(now);
-        assertThat(master.getOptnLastUpdusrId()).isEqualTo("moderator");
-        assertThat(master.getOptnLastUpdtPnttm()).isEqualTo(now);
+        assertThat(master.getOptnFrstRgtrId()).isEqualTo("admin");
+        assertThat(master.getOptnCrtDt()).isEqualTo(now);
+        assertThat(master.getOptnLastMdfrId()).isEqualTo("moderator");
+        assertThat(master.getOptnMdfcnDt()).isEqualTo(now);
     }
 
     @Test
@@ -138,21 +138,21 @@ class BoardMasterTest {
     void jpaCallbacksTest() {
         BoardMaster master1 = BoardMaster.builder().build();
         master1.onPrePersist();
-        assertThat(master1.getOptnFrstRegisterId()).isEqualTo("webmaster");
-        assertThat(master1.getOptnFrstRegistPnttm()).isNotNull();
-        assertThat(master1.getOptnLastUpdtPnttm()).isNotNull();
+        assertThat(master1.getOptnFrstRgtrId()).isEqualTo("webmaster");
+        assertThat(master1.getOptnCrtDt()).isNotNull();
+        assertThat(master1.getOptnMdfcnDt()).isNotNull();
 
         BoardMaster master2 = BoardMaster.builder()
-                .optnFrstRegisterId("custom")
-                .optnFrstRegistPnttm(LocalDateTime.of(2026, 1, 1, 0, 0))
-                .optnLastUpdtPnttm(LocalDateTime.of(2026, 1, 1, 0, 0))
+                .optnFrstRgtrId("custom")
+                .optnCrtDt(LocalDateTime.of(2026, 1, 1, 0, 0))
+                .optnMdfcnDt(LocalDateTime.of(2026, 1, 1, 0, 0))
                 .build();
         master2.onPrePersist();
-        assertThat(master2.getOptnFrstRegisterId()).isEqualTo("custom");
-        assertThat(master2.getOptnFrstRegistPnttm()).isEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
+        assertThat(master2.getOptnFrstRgtrId()).isEqualTo("custom");
+        assertThat(master2.getOptnCrtDt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
 
         master2.onPreUpdate();
-        assertThat(master2.getOptnLastUpdtPnttm()).isNotEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
+        assertThat(master2.getOptnMdfcnDt()).isNotEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
     }
 
     @Test
@@ -160,16 +160,16 @@ class BoardMasterTest {
     void builderCustomExtensionsTest() {
         LocalDateTime testTime = LocalDateTime.of(2026, 5, 22, 12, 0);
         BoardMaster master = BoardMaster.builder()
-                .optnFrstRegisterId("creator")
-                .optnFrstRegistPnttm(testTime)
-                .optnLastUpdusrId("modifier")
-                .optnLastUpdtPnttm(testTime)
+                .optnFrstRgtrId("creator")
+                .optnCrtDt(testTime)
+                .optnLastMdfrId("modifier")
+                .optnMdfcnDt(testTime)
                 .build();
 
-        assertThat(master.getOptnFrstRegisterId()).isEqualTo("creator");
-        assertThat(master.getOptnFrstRegistPnttm()).isEqualTo(testTime);
-        assertThat(master.getOptnLastUpdusrId()).isEqualTo("modifier");
-        assertThat(master.getOptnLastUpdtPnttm()).isEqualTo(testTime);
+        assertThat(master.getOptnFrstRgtrId()).isEqualTo("creator");
+        assertThat(master.getOptnCrtDt()).isEqualTo(testTime);
+        assertThat(master.getOptnLastMdfrId()).isEqualTo("modifier");
+        assertThat(master.getOptnMdfcnDt()).isEqualTo(testTime);
     }
 }
 

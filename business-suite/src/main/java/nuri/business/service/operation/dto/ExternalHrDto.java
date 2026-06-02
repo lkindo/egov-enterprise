@@ -38,8 +38,8 @@ public class ExternalHrDto {
     @Size(max = 50)
     private String emlAddr;
 
-    private LocalDateTime frstRegistPnttm;
-    private String frstRegisterId;
-    private LocalDateTime lastUpdtPnttm;
-    private String lastUpdusrId;
+    private LocalDateTime crtDt;
+    private String frstRgtrId;
+    private LocalDateTime mdfcnDt;
+    private String lastMdfrId;
 }

@@ -27,8 +27,8 @@ public class RewardManageDto {
     @Size(max = 30)
     private String atchFileId;
     private String informlSanctnId;
-    private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
+    private String lastMdfrId;
+    private LocalDateTime mdfcnDt;
 }

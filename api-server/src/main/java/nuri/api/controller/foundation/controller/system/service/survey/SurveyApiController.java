@@ -37,9 +37,9 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 템플릿 상세 조회")
-    @GetMapping("/templates/{tmplatId}")
-    public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable String tmplatId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(tmplatId)));
+    @GetMapping("/templates/{tmpltId}")
+    public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable String tmpltId) {
+        return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(tmpltId)));
     }
 
     @Operation(summary = "설문 템플릿 등록")
@@ -89,17 +89,17 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 템플릿 수정")
-    @PutMapping("/templates/{tmplatId}")
-    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmplatId, @RequestBody SurveyTemplateDto dto) {
-        dto.setSrvyTmpltId(tmplatId);
+    @PutMapping("/templates/{tmpltId}")
+    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmpltId, @RequestBody SurveyTemplateDto dto) {
+        dto.setSrvyTmpltId(tmpltId);
         surveyService.updateTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 템플릿 삭제")
-    @DeleteMapping("/templates/{tmplatId}")
-    public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable String tmplatId) {
-        surveyService.deleteTmplat(tmplatId);
+    @DeleteMapping("/templates/{tmpltId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable String tmpltId) {
+        surveyService.deleteTmplat(tmpltId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

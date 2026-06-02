@@ -19,8 +19,8 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export const deptSchema = z.object({
-  orgnztNm: z.string().min(1, '부서명은 필수입니다.').max(20, '부서명은 20자 이내여야 합니다.'),
-  orgnztDc: z.string().max(100, '설명은 100자 이내여야 합니다.').optional().or(z.literal('')),
+  ognzNm: z.string().min(1, '부서명은 필수입니다.').max(20, '부서명은 20자 이내여야 합니다.'),
+  ognzExpln: z.string().max(100, '설명은 100자 이내여야 합니다.').optional().or(z.literal('')),
 });
 
 export type DeptFormValues = z.infer<typeof deptSchema>;
@@ -35,8 +35,8 @@ interface DepartmentFormProps {
 export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: DepartmentFormProps) {
   const form = useAppForm(deptSchema, {
     defaultValues: {
-      orgnztNm: initialData?.orgnztNm || '',
-      orgnztDc: initialData?.orgnztDc || '',
+      ognzNm: initialData?.ognzNm || '',
+      ognzExpln: initialData?.ognzExpln || '',
     },
   });
 
@@ -47,7 +47,7 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pt-4 text-left">
         <FormField
           control={form.control}
-          name="orgnztNm"
+          name="ognzNm"
           render={({ field, fieldState }) => (
             <FormItem>
               <motion.div
@@ -75,7 +75,7 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
 
         <FormField
           control={form.control}
-          name="orgnztDc"
+          name="ognzExpln"
           render={({ field, fieldState }) => (
             <FormItem>
               <motion.div

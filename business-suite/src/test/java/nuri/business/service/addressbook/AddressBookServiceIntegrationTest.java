@@ -45,7 +45,7 @@ class AddressBookServiceIntegrationTest extends BusinessIntegrationTestSupport {
         // 4. searchWrd 없음
         Page<AddressBookDto> res4 = addressBookService.getAddressBookList(userId, null, null, "", PageRequest.of(0, 10));
 
-        // 5. trgetOrgnztId 있음
+        // 5. trgetOgnzId 있음
         Page<AddressBookDto> res5 = addressBookService.getAddressBookList(userId, orgId, null, "", PageRequest.of(0, 10));
         
         // 6. wrterId null (public)
@@ -55,7 +55,7 @@ class AddressBookServiceIntegrationTest extends BusinessIntegrationTestSupport {
         assertThat(res1.getContent()).isNotEmpty();
         assertThat(res2.getContent()).isNotEmpty();
         // res3 can be empty or not, depending on other data, but branch is covered
-        // res4, res5, res6 cover different combinations of wrterId, trgetOrgnztId, searchWrd
+        // res4, res5, res6 cover different combinations of wrterId, trgetOgnzId, searchWrd
     }
 
     @Test

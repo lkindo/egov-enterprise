@@ -49,7 +49,7 @@ public class BannerDto {
     @Schema(description = "생성자 ID")
     private String frstRgtrId;
     @Schema(description = "생성 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static BannerDto from(Banner entity) {
         if (entity == null) return null;
@@ -63,7 +63,7 @@ public class BannerDto {
                 .rfltYn(entity.getRfltYn())
                 .atchFileId(entity.getAtchFileId())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

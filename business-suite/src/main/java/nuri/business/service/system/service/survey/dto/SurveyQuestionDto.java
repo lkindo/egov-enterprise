@@ -50,7 +50,7 @@ public class SurveyQuestionDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     @Schema(description = "설문 항목 목록")
     private List<SurveyArticleDto> items;
@@ -66,7 +66,7 @@ public class SurveyQuestionDto {
                 .maxChcCnt(entity.getMaxChcCnt())
                 .srvyTmpltId(entity.getSrvyTmpltId())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

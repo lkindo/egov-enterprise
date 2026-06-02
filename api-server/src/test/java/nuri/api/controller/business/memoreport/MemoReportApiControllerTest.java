@@ -79,14 +79,14 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("메모보고 상세 조회 - 성공")
     void getMemoReport_success() throws Exception {
-        when(memoReportService.getMemoReport("R1")).thenReturn(MemoReportDto.builder().reportId("R1").build());
+        when(memoReportService.getMemoReport("R1")).thenReturn(MemoReportDto.builder().rptId("R1").build());
         mockMvc.perform(get("/api/v1/memo-reports/R1")).andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("메모보고 등록 - 성공")
     void createMemoReport_success() throws Exception {
-        MemoReportDto dto = MemoReportDto.builder().reportSubject("Subject").build();
+        MemoReportDto dto = MemoReportDto.builder().rptTtl("Subject").build();
         when(memoReportService.createMemoReport(eq("testUser"), any())).thenReturn("R_NEW");
         mockMvc.perform(post("/api/v1/memo-reports")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -98,7 +98,7 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("메모보고 수정 - 성공")
     void updateMemoReport_success() throws Exception {
-        MemoReportDto dto = MemoReportDto.builder().reportSubject("Update").build();
+        MemoReportDto dto = MemoReportDto.builder().rptTtl("Update").build();
         mockMvc.perform(put("/api/v1/memo-reports/R1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))

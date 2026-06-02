@@ -15,15 +15,15 @@ class CodeDtoCoverageTest {
         dto.setClsfCdNm("N1");
         dto.setClsfCdExpln("D1");
         dto.setUseYn("Y");
-        dto.setFrstRegisterId("U1");
-        dto.setLastUpdusrId("U2");
+        dto.setFrstRgtrId("U1");
+        dto.setLastMdfrId("U2");
 
         assertThat(dto.getClsfCd()).isEqualTo("C1");
         assertThat(dto.getClsfCdNm()).isEqualTo("N1");
         assertThat(dto.getClsfCdExpln()).isEqualTo("D1");
         assertThat(dto.getUseYn()).isEqualTo("Y");
-        assertThat(dto.getFrstRegisterId()).isEqualTo("U1");
-        assertThat(dto.getLastUpdusrId()).isEqualTo("U2");
+        assertThat(dto.getFrstRgtrId()).isEqualTo("U1");
+        assertThat(dto.getLastMdfrId()).isEqualTo("U2");
     }
 
     @Test
@@ -36,8 +36,8 @@ class CodeDtoCoverageTest {
         dto.setCdIdNm("GN1");
         dto.setCdIdExpln("GD1");
         dto.setUseYn("Y");
-        dto.setFrstRegisterId("U1");
-        dto.setLastUpdusrId("U2");
+        dto.setFrstRgtrId("U1");
+        dto.setLastMdfrId("U2");
 
         assertThat(dto.getClsfCd()).isEqualTo("C1");
         assertThat(dto.getCdId()).isEqualTo("G1");
@@ -54,8 +54,8 @@ class CodeDtoCoverageTest {
         dto.setDtlCdNm("CN1");
         dto.setDtlCdExpln("CD1");
         dto.setUseYn("Y");
-        dto.setFrstRegisterId("U1");
-        dto.setLastUpdusrId("U2");
+        dto.setFrstRgtrId("U1");
+        dto.setLastMdfrId("U2");
 
         assertThat(dto.getCdId()).isEqualTo("G1");
         assertThat(dto.getDtlCd()).isEqualTo("C1");

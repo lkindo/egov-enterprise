@@ -20,8 +20,8 @@ public class TemplateDto {
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
 
     public static TemplateDto from(Template entity) {
         if (entity == null) return null;
@@ -31,8 +31,8 @@ public class TemplateDto {
                 .tmpltPath(entity.getTmpltPath())
                 .tmpltSeCd(entity.getTmpltSeCd())
                 .useYn(entity.getUseYn())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

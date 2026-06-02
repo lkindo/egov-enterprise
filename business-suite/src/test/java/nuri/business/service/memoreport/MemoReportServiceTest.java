@@ -47,7 +47,7 @@ class MemoReportServiceTest {
     void getMemoReportList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().reportId("R1").build();
+        MemoReport entity = MemoReport.builder().rptId("R1").build();
         given(memoReportRepository.searchMemoReports(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -63,8 +63,8 @@ class MemoReportServiceTest {
         // given
         String writerId = "user1";
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().reportId("R1").writerId(writerId).build();
-        given(memoReportRepository.findByWriterId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        MemoReport entity = MemoReport.builder().rptId("R1").userId(writerId).build();
+        given(memoReportRepository.findByUserId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
         Page<MemoReportDto> result = memoReportService.getMyReportList(writerId, pageable);
@@ -79,8 +79,8 @@ class MemoReportServiceTest {
         // given
         String reportrId = "user1";
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().reportId("R1").reportrId(reportrId).build();
-        given(memoReportRepository.findByReportrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        MemoReport entity = MemoReport.builder().rptId("R1").rptrId(reportrId).build();
+        given(memoReportRepository.findByRptrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
         Page<MemoReportDto> result = memoReportService.getReceivedReportList(reportrId, pageable);
@@ -94,7 +94,7 @@ class MemoReportServiceTest {
     void getMemoReport() {
         // given
         String reprtId = "R1";
-        MemoReport entity = MemoReport.builder().reportId(reprtId).build();
+        MemoReport entity = MemoReport.builder().rptId(reprtId).build();
         given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
 
         // when
@@ -102,7 +102,7 @@ class MemoReportServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getReportId()).isEqualTo(reprtId);
+        assertThat(result.getRptId()).isEqualTo(reprtId);
     }
 
     @Test
@@ -111,9 +111,9 @@ class MemoReportServiceTest {
         // given
         String userId = "user1";
         MemoReportDto dto = MemoReportDto.builder()
-                .reportSubject("Subject")
-                .reportrId("reportr1")
-                .reprtDe("2024-05-01")
+                .rptTtl("Subject")
+                .rptrId("reportr1")
+                .memoRptYmd("20240501")
                 .build();
         given(egovMemoReportIdGnrService.getNextStringId()).willReturn("R1");
 
@@ -131,13 +131,13 @@ class MemoReportServiceTest {
         // given
         String reprtId = "R1";
         String userId = "user1";
-        MemoReport existingEntity = MemoReport.builder().reportId(reprtId).writerId(userId).build();
+        MemoReport existingEntity = MemoReport.builder().rptId(reprtId).userId(userId).build();
         MemoReportDto updateDto = MemoReportDto.builder()
-                .reportId(reprtId)
-                .reportSubject("Updated Subject")
-                .reportContents("Updated Content")
-                .reportrId("reportr1")
-                .reprtDe("2024-05-02")
+                .rptId(reprtId)
+                .rptTtl("Updated Subject")
+                .rptCn("Updated Content")
+                .rptrId("reportr1")
+                .memoRptYmd("20240502")
                 .build();
 
         given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(existingEntity));
@@ -146,9 +146,9 @@ class MemoReportServiceTest {
         memoReportService.updateMemoReport(reprtId, userId, updateDto);
 
         // then
-        assertThat(existingEntity.getReportSubject()).isEqualTo("Updated Subject");
-        assertThat(existingEntity.getReprtDe()).isEqualTo("2024-05-02");
-        assertThat(existingEntity.getReportContents()).isEqualTo("Updated Content");
+        assertThat(existingEntity.getRptTtl()).isEqualTo("Updated Subject");
+        assertThat(existingEntity.getMemoRptYmd()).isEqualTo("20240502");
+        assertThat(existingEntity.getRptCn()).isEqualTo("Updated Content");
     }
 
     @Test

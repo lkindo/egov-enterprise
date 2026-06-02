@@ -9,16 +9,16 @@ export interface LeaderSchedule {
   scheduleSe: string;
   scheduleNm: string;
   scheduleDc?: string;
-  schdulBgnde: string;
-  schdulEndde: string;
-  reptitSeCode?: string;
+  schdlBgngYmd: string;
+  schdlEndYmd: string;
+  reptSeCd?: string;
   schdlPlcNm?: string;
 }
 
 export interface LeaderStatus {
   leaderId: string;
   leaderNm: string;
-  orgnztNm?: string;
+  ognzNm?: string;
   positionNm?: string;
   status: string;
 }

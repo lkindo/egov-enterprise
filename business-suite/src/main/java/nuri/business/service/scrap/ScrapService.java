@@ -70,7 +70,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
                 .scrapId(entity.getScrapId())
                 .scrapNm(entity.getScrapNm())
                 .userId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

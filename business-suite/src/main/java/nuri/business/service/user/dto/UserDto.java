@@ -116,7 +116,7 @@ public class UserDto {
     
     private String lckYn;
 
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
 
     public static UserDto from(nuri.business.domain.user.entity.User user) {
@@ -150,7 +150,7 @@ public class UserDto {
                 .subDn(user.getCrtfcDnValue())
                 .userSttsCd(user.getUserSttsCd())
                 .lckYn(user.getLckYn())
-                .createdDate(user.getCreatedDate())
+                .crtDt(user.getCrtDt())
                 .build();
     }
 }

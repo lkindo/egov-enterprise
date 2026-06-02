@@ -34,7 +34,7 @@ public class DeptManageDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static DeptManageDto from(DeptManage entity) {
         if (entity == null)
@@ -44,7 +44,7 @@ public class DeptManageDto {
                 .orgnztNm(entity.getOrgnztNm())
                 .orgnztDc(entity.getOrgnztDc())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

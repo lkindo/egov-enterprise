@@ -43,8 +43,8 @@ public class ExternalHrService {
                 .mdTelno(dto.getMdTelno())
                 .endTelno(dto.getEndTelno())
                 .emlAddr(dto.getEmlAddr())
-                .frstRegisterId(dto.getFrstRegisterId())
-                .lastUpdusrId(dto.getLastUpdusrId())
+                .frstRgtrId(dto.getFrstRgtrId())
+                .lastMdfrId(dto.getLastMdfrId())
                 .build();
         return convertToDto(externalHrRepository.save(hr));
     }
@@ -62,10 +62,10 @@ public class ExternalHrService {
                 .mdTelno(hr.getMdTelno())
                 .endTelno(hr.getEndTelno())
                 .emlAddr(hr.getEmlAddr())
-                .frstRegisterId(hr.getFrstRegisterId())
-                .frstRegistPnttm(hr.getFrstRegistPnttm())
-                .lastUpdusrId(hr.getLastUpdusrId())
-                .lastUpdtPnttm(hr.getLastUpdtPnttm())
+                .frstRgtrId(hr.getFrstRgtrId())
+                .crtDt(hr.getCrtDt())
+                .lastMdfrId(hr.getLastMdfrId())
+                .mdfcnDt(hr.getMdfcnDt())
                 .build();
     }
 }

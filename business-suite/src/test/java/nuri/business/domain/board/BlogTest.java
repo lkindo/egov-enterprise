@@ -57,7 +57,7 @@ class BlogTest {
         blog.setBlogNm("Legacy Blog Name");
         blog.setBlogIntrcn("Legacy Blog Intro");
         blog.setRegTypeCd("REGT02");
-        blog.setTmplatId("TMP_09");
+        blog.setTmpltId("TMP_09");
 
         // Getter aliases 및 매핑 검증
         assertThat(blog.getBlogNm()).isEqualTo("Legacy Blog Name");
@@ -69,7 +69,7 @@ class BlogTest {
         assertThat(blog.getRegTypeCd()).isEqualTo("REGT02");
         assertThat(blog.getRegSeCd()).isEqualTo("REGT02");
 
-        assertThat(blog.getTmplatId()).isEqualTo("TMP_09");
+        assertThat(blog.getTmpltId()).isEqualTo("TMP_09");
         assertThat(blog.getTmpltId()).isEqualTo("TMP_09");
     }
 }

@@ -69,16 +69,16 @@ public class EventInfoDto {
     private String evntAprvYmd;
 
     @Schema(description = "최초 등록자 ID", example = "webmaster")
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Schema(description = "최종 수정자 ID", example = "webmaster")
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
     @Schema(description = "최종 수정 일시")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime mdfcnDt;
 
 
     public static EventInfoDto from(EventInfo entity) {
@@ -95,10 +95,10 @@ public class EventInfoDto {
                 .evntTypeCd(entity.getEvntTypeCd())
                 .evntAprvYn(entity.getEvntAprvYn())
                 .evntAprvYmd(entity.getEvntAprvYmd())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdtPnttm(entity.getLastUpdtPnttm())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 }

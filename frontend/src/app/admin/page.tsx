@@ -109,8 +109,8 @@ export default function AdminDashboardPage() {
  (safeContent.includes('삭제') || safeContent.includes('delete')) ? 'DELETE' :
  (safeContent.includes('복원') || safeContent.includes('restore')) ? 'RESTORE' : 'UPDATE',
  entityName: histCn,
- performedBy: String(log.frstRegisterId || log.rqesterId || 'System'),
- timestamp: String(log.frstRegisterPnttm || log.occrrncDe || new Date().toISOString()),
+ performedBy: String(log.frstRgtrId || log.rqesterId || 'System'),
+ timestamp: String(log.createdDate || log.occrrncDe || new Date().toISOString()),
  ipAddress: String(log.sysNm || log.rqesterIp || 'Unknown'),
  severity: (safeContent.includes('오류') || safeContent.includes('실패') || safeContent.includes('삭제') || safeContent.includes('error')) ? 'high' :
  (safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security')) ? 'medium' : ('low' as const)

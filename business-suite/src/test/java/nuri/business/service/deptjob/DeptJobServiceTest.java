@@ -74,8 +74,8 @@ class DeptJobServiceTest {
         when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
         
         OrganizationManage org = OrganizationManage.builder()
-                .orgnztId("DEPT1")
-                .orgnztNm("Test Dept")
+                .ognzId("DEPT1")
+                .ognzNm("Test Dept")
                 .build();
         when(organizationManageRepository.findById("DEPT1")).thenReturn(Optional.of(org));
 

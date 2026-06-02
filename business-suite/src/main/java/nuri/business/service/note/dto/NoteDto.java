@@ -49,7 +49,7 @@ public class NoteDto {
     private LocalDateTime regDate;
 
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     public String getTrnsmitterId() { return dsptchUserId; }
     public String getTrnsmitterNm() { return trnsmiterNm; }

@@ -37,33 +37,32 @@ export interface CommunityDto {
   cmmntyIntrcn?: string;
   registSeCode?: string;
   registSeCodeNm?: string;
-  tmplatId?: string;
+  tmpltId?: string;
   tmplatNm?: string;
   useAt?: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   frstRegisterNm?: string;
-  frstRegisterPnttm?: string;
+  createdDate?: string;
 }
 
 export interface BoardMasterDto {
   bbsId?: string;
   bbsNm?: string;
   bbsTtl?: string;
-  bbsIntroCn?: string;
   bbsExpln?: string;
   bbsTypeCd?: string;
   bbsAtrbCd?: string;
-  ansPsblYn?: string;
-  fileAtchPsblYn?: string;
+  ansPsbltyYn?: string;
+  fileAtchPsbltyYn?: string;
   atchPosblFileNumber?: number;
-  atchPsblFileCnt?: number;
+  atchPsbltyFileQty?: number;
   atchPosblFileSize?: number;
   atchPsblFileSizeLong?: number;
-  tmplatId?: string;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
-  lastUpdusrId?: string;
-  lastUpdusrPnttm?: string;
+  tmpltId?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
+  lastMdfrId?: string;
+  lastModifiedDate?: string;
   useAt?: string;
   useYn?: string;
   cmmntyId?: string;
@@ -71,7 +70,7 @@ export interface BoardMasterDto {
   blogAt?: string;
   blogYn?: string;
   commentAt?: string;
-  commentYn?: string;
+  ansYn?: string;
   stsfdgAt?: string;
   stsfdgYn?: string;
   // UI related fields (often joined in backend but may be missing in core DTO)
@@ -83,21 +82,21 @@ export interface BoardMasterDto {
 
 
 export interface ScheduleDto {
-  schdulId?: string;
-  schdulSe?: string;
-  schdulDeptId?: string;
-  schdulKindCode?: string;
-  schdulBgnde?: string;
-  schdulEndde?: string;
-  schdulNm?: string;
-  schdulCn?: string;
-  schdulPlace?: string;
-  schdulIpcrCode?: string;
-  schdulChargerId?: string;
+  schdlId?: string;
+  schdlSeCd?: string;
+  schdlDeptId?: string;
+  schdlKndCd?: string;
+  schdlBgngYmd?: string;
+  schdlEndYmd?: string;
+  schdlNm?: string;
+  schdlCn?: string;
+  schdlPlcNm?: string;
+  schdlImprtCd?: string;
+  schdlPicId?: string;
   atchFileId?: string;
-  reptitSeCode?: string;
-  frstRegisterId?: string;
+  reptSeCd?: string;
+  frstRgtrId?: string;
   createdDate?: string;
-  lastUpdusrId?: string;
+  lastMdfrId?: string;
   modifiedDate?: string;
 }

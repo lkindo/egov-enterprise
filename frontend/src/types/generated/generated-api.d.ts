@@ -762,7 +762,7 @@ export interface paths {
  patch?: never;
  trace?: never;
  };
- "/api/v1/admin/system/departments/{orgnztId}": {
+ "/api/v1/admin/system/departments/{ognzId}": {
  parameters: {
  query?: never;
  header?: never;
@@ -2333,7 +2333,7 @@ export interface paths {
  patch?: never;
  trace?: never;
  };
- "/api/v1/surveys/templates/{tmplatId}": {
+ "/api/v1/surveys/templates/{tmpltId}": {
  parameters: {
  query?: never;
  header?: never;
@@ -3387,23 +3387,23 @@ export interface components {
  timestamp?: string;
  };
  ScheduleDto: {
- schdulId?: string;
- schdulSe?: string;
- schdulDeptId?: string;
- schdulKindCode?: string;
- schdulBgnde?: string;
- schdulEndde?: string;
- schdulNm?: string;
- schdulCn?: string;
- schdulPlace?: string;
- schdulIpcrCode?: string;
- schdulChargerId?: string;
+ schdlId?: string;
+ schdlSeCd?: string;
+ schdlDeptId?: string;
+ schdlKndCd?: string;
+ schdlBgngYmd?: string;
+ schdlEndYmd?: string;
+ schdlNm?: string;
+ schdlCn?: string;
+ schdlPlcNm?: string;
+ schdlImprtCd?: string;
+ schdlPicId?: string;
  atchFileId?: string;
- reptitSeCode?: string;
- frstRegisterId?: string;
+ reptSeCd?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
  createdDate?: string;
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /** Format: date-time */
  modifiedDate?: string;
  };
@@ -3471,19 +3471,19 @@ export interface components {
  /** @description Description */
  writngDe?: string;
  /** @description Description */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- frstRegisterPnttm?: string;
+ createdDate?: string;
  /** @description Description */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- lastUpdusrPnttm?: string;
+ lastModifiedDate?: string;
  };
  /** @description Description */
  MemoReportDto: {
@@ -3516,7 +3516,7 @@ export interface components {
  * @description Description
  */
  createdDate?: string;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
  frstRegistPnttm?: string;
  };
@@ -3559,7 +3559,7 @@ export interface components {
  /** @description Description */
  leaderName?: string;
  /** @description Description */
- reptitSeCode?: string;
+ reptSeCd?: string;
  /** @description Description */
  scheduleIpcrCode?: string;
  /** @description Description */
@@ -3600,7 +3600,7 @@ export interface components {
  /** @description 결재님명*/
  sanctionerNm?: string;
  /** @description 결재님議곗쭅 명*/
- sanctionerOrgnztNm?: string;
+ sanctionerOgnzNm?: string;
  /** @description ?승인 여부 */
  confmAt?: string;
  /**
@@ -3721,19 +3721,19 @@ export interface components {
  /** @description Description */
  atchFileId?: string;
  /** @description Description */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- frstRegisterPnttm?: string;
+ createdDate?: string;
  /** @description Description */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- lastUpdusrPnttm?: string;
+ lastModifiedDate?: string;
  };
  DeptJobBoxDto: {
  deptJobbxId?: string;
@@ -3742,12 +3742,12 @@ export interface components {
  deptNm?: string;
  /** Format: int32 */
  indictOrdr?: number;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
  frstRegistPnttm?: string;
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /** Format: date-time */
- lastUpdtPnttm?: string;
+ lastModifiedDate?: string;
  };
  CommunityDto: {
  cmmntyId?: string;
@@ -3755,12 +3755,12 @@ export interface components {
  cmmntyIntrcn?: string;
  registSeCode?: string;
  registSeCodeNm?: string;
- tmplatId?: string;
+ tmpltId?: string;
  tmplatNm?: string;
  useAt?: string;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  frstRegisterNm?: string;
- frstRegisterPnttm?: string;
+ createdDate?: string;
  };
  CommentSaveRequest: {
  /** Format: int64 */
@@ -3820,8 +3820,8 @@ export interface components {
  dplctPermAt?: string;
  lmttAt?: string;
  regYn?: string;
- frstRegisterId?: string;
- lastUpdusrId?: string;
+ frstRgtrId?: string;
+ lastMdfrId?: string;
  dplctLoginAt?: string;
  lastUpdtPntTM?: string;
  ipAdres?: string;
@@ -3846,14 +3846,14 @@ export interface components {
  detailAdres?: string;
  ofcpsNm?: string;
  groupId?: string;
- orgnztId?: string;
+ ognzId?: string;
  insttCode?: string;
  emplyrSttusCode?: string;
  sbscrbDe?: string;
  offmTelno?: string;
  fxnum?: string;
  lockAt?: string;
- subDn?: string;
+ certDnVl?: string;
  brth?: string;
  emplyrNm?: string;
  uniqId?: string;
@@ -4068,11 +4068,11 @@ export interface components {
  /** @description Description */
  DeptManageDto: {
  /** @description Description */
- orgnztId?: string;
+ ognzId?: string;
  /** @description Description */
- orgnztNm?: string;
+ ognzNm?: string;
  /** @description Description */
- orgnztDc?: string;
+ ognzExpln?: string;
  /** @description Description */
  createdBy?: string;
  /**
@@ -4119,9 +4119,9 @@ export interface components {
  /** @description Use Y/N */
  useAt?: string;
  /** @description First Register ID */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** @description Last Updater ID */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  };
  /** @description Common Code DTO */
  CmmnCodeDto: {
@@ -4138,9 +4138,9 @@ export interface components {
  /** @description Use Y/N */
  useAt?: string;
  /** @description First Register ID */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** @description Last Updater ID */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  };
  /** @description Common Classification Code Info */
  CmmnClCodeDto: {
@@ -4153,9 +4153,9 @@ export interface components {
  /** @description Use Y/N */
  useAt?: string;
  /** @description First Register ID */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** @description Last Updater ID */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  };
  AdministCodeDto: {
  administZoneCode?: string;
@@ -4176,16 +4176,16 @@ export interface components {
  adbkId?: string;
  adbkNm?: string;
  othbcScope?: string;
- trgetOrgnztId?: string;
+ trgetOgnzId?: string;
  useAt?: string;
  wrterId?: string;
  adbkMan?: components["schemas"]["AddressBookUserDto"][];
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
  frstRegistPnttm?: string;
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /** Format: date-time */
- lastUpdtPnttm?: string;
+ lastModifiedDate?: string;
  };
  AddressBookUserDto: {
  adbkUserId?: string;
@@ -4199,7 +4199,7 @@ export interface components {
  fxnum?: string;
  };
  TmplatInfo: {
- tmplatId?: string;
+ tmpltId?: string;
  tmplatNm?: string;
  tmplatSeCode?: string;
  tmplatCours?: string;
@@ -4210,11 +4210,11 @@ export interface components {
  lastModifiedDate?: string;
  createdBy?: string;
  lastModifiedBy?: string;
- frstRegisterId?: string;
- lastUpdusrId?: string;
- frstRegisterPnttm?: string;
- lastUpdtPnttm?: string;
- lastUpdusrPnttm?: string;
+ frstRgtrId?: string;
+ lastMdfrId?: string;
+ createdDate?: string;
+ lastModifiedDate?: string;
+ lastModifiedDate?: string;
  };
  UserSignupRequest: {
  userId: string;
@@ -4349,9 +4349,9 @@ export interface components {
  /** @description SMS ID */
  smsId?: string;
  /** @description Description */
- trnsmitTelno?: string;
+ sndngTelno?: string;
  /** @description Description */
- trnsmitCn?: string;
+ sndngCn?: string;
  /**
  * Format: int32
  * @description Description
@@ -4373,8 +4373,8 @@ export interface components {
  /** @description Description */
  searchWrd?: string;
  /** Format: date-time */
- frstRegisterPnttm?: string;
- frstRegisterId?: string;
+ createdDate?: string;
+ frstRgtrId?: string;
  };
  /** @description Description */
  SmsRecptnDto: {
@@ -4383,9 +4383,9 @@ export interface components {
  /** @description Description */
  rcptnTelno?: string;
  /** @description Description */
- resultCode?: string;
+ rsltCd?: string;
  /** @description Description */
- resultMssage?: string;
+ rsltMsg?: string;
  };
  ApiResponseString: {
  success?: boolean;
@@ -4405,9 +4405,9 @@ export interface components {
  scrapNm?: string;
  useAt?: string;
  uniqId?: string;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
- frstRegisterPnttm?: string;
+ createdDate?: string;
  };
  /** @description Description */
  OnlinePollItemDto: {
@@ -4636,12 +4636,12 @@ export interface components {
  returnResn?: string;
  atchFileId?: string;
  informlSanctnId?: string;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
  frstRegistPnttm?: string;
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /** Format: date-time */
- lastUpdtPnttm?: string;
+ lastModifiedDate?: string;
  };
  ExternalHrDto: {
  eventId?: string;
@@ -4657,10 +4657,10 @@ export interface components {
  emailAdres?: string;
  /** Format: date-time */
  frstRegistPnttm?: string;
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** Format: date-time */
- lastUpdtPnttm?: string;
- lastUpdusrId?: string;
+ lastModifiedDate?: string;
+ lastMdfrId?: string;
  };
  ApiResponseListTmplatInfo: {
  success?: boolean;
@@ -5100,19 +5100,19 @@ export interface components {
  /** @description Description */
  uniqId?: string;
  /** @description Description */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- frstRegisterPnttm?: string;
+ createdDate?: string;
  /** @description Description */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- lastUpdusrPnttm?: string;
+ lastModifiedDate?: string;
  };
  ApiResponseNoteDto: {
  success?: boolean;
@@ -5362,7 +5362,7 @@ export interface components {
  /** @description Description */
  leaderNm?: string;
  /** @description Description */
- orgnztNm?: string;
+ ognzNm?: string;
  /** @description Description */
  leaderSttus?: string;
  /** @description Description */
@@ -5805,7 +5805,7 @@ export interface components {
  * Format: date-time
  * @description Description
  */
- frstRegisterPnttm?: string;
+ createdDate?: string;
  /** @description Description */
  atchFileId?: string;
  /**
@@ -5840,14 +5840,14 @@ export interface components {
  /** @description Description */
  ntcrId?: string;
  /** @description Description */
- frstRegisterId?: string;
+ frstRgtrId?: string;
  /** @description Description */
- lastUpdusrId?: string;
+ lastMdfrId?: string;
  /**
  * Format: date-time
  * @description Description
  */
- lastUpdtPnttm?: string;
+ lastModifiedDate?: string;
  /** @description Description */
  password?: string;
  /** @description Description */
@@ -8653,7 +8653,7 @@ export interface operations {
  query?: never;
  header?: never;
  path: {
- orgnztId: string;
+ ognzId: string;
  };
  cookie?: never;
  };
@@ -8675,7 +8675,7 @@ export interface operations {
  query?: never;
  header?: never;
  path: {
- orgnztId: string;
+ ognzId: string;
  };
  cookie?: never;
  };
@@ -8701,7 +8701,7 @@ export interface operations {
  query?: never;
  header?: never;
  path: {
- orgnztId: string;
+ ognzId: string;
  };
  cookie?: never;
  };
@@ -11597,7 +11597,7 @@ export interface operations {
  getAddressBooks: {
  parameters: {
  query: {
- trgetOrgnztId?: string;
+ trgetOgnzId?: string;
  searchCnd?: string;
  searchWrd?: string;
  pageable: components["schemas"]["Pageable"];
@@ -11858,7 +11858,7 @@ export interface operations {
  selectTmplatInfoDetail: {
  parameters: {
  query: {
- tmplatId: string;
+ tmpltId: string;
  };
  header?: never;
  path?: never;
@@ -11971,7 +11971,7 @@ export interface operations {
  query?: never;
  header?: never;
  path: {
- tmplatId: string;
+ tmpltId: string;
  };
  cookie?: never;
  };

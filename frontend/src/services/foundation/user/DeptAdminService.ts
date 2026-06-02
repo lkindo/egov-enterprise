@@ -6,9 +6,9 @@ import { PageResponse } from '@/types/foundation/system';
  * 부서 정보 DTO
  */
 export interface DeptDto {
-  orgnztId?: string;
-  orgnztNm: string;
-  orgnztDc: string;
+  ognzId?: string;
+  ognzNm: string;
+  ognzExpln: string;
 }
 
 class DeptAdminService extends AdminService {

@@ -108,7 +108,7 @@ public class BoardDto {
     private Integer fileCnt;
 
     @Schema(description = "등록일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Schema(description = "등록자명")
     private String frstRegisterNm;

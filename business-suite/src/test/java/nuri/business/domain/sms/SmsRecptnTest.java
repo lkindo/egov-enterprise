@@ -28,14 +28,14 @@ class SmsRecptnTest {
         SmsRecptn legacyRecptn = SmsRecptn.builder()
                 .smsId("SMS_002")
                 .rcptnTelno("01011112222")
-                .resultCode("1000")
-                .resultMssage("SUCCESS")
+                .rsltCd("1000")
+                .rsltMsg("SUCCESS")
                 .build();
 
-        assertThat(legacyRecptn.getResultCode()).isEqualTo("1000");
-        assertThat(legacyRecptn.getResultMssage()).isEqualTo("SUCCESS");
         assertThat(legacyRecptn.getRsltCd()).isEqualTo("1000");
-        assertThat(recptn.getResultCode()).isEqualTo("1000");
+        assertThat(legacyRecptn.getRsltMsg()).isEqualTo("SUCCESS");
+        assertThat(legacyRecptn.getRsltCd()).isEqualTo("1000");
+        assertThat(recptn.getRsltCd()).isEqualTo("1000");
     }
 
     @Test
@@ -48,7 +48,7 @@ class SmsRecptnTest {
 
         recptn.updateResult("2000", "FAIL");
         assertThat(recptn.getRsltCd()).isEqualTo("2000");
-        assertThat(recptn.getResultCode()).isEqualTo("2000"); // 하위 호환 Getter
+        assertThat(recptn.getRsltCd()).isEqualTo("2000"); // 하위 호환 Getter
         assertThat(recptn.getRsltMsg()).isEqualTo("FAIL");
     }
 

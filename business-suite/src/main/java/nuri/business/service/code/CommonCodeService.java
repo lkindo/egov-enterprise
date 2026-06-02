@@ -126,7 +126,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .clsfCdNm(required(dto.getClsfCdNm(), "dto.getClsfCdNm() 는 null 일 수 없습니다"))
                                 .clsfCdExpln(dto.getClsfCdExpln())
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -141,7 +141,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                         entity.update(required(dto.getClsfCdNm(), "dto.getClsfCdNm() 는 null 일 수 없습니다"),
                                                         dto.getClsfCdExpln(),
                                                         dto.getUseYn(),
-                                                        dto.getLastUpdusrId());
+                                                        dto.getLastMdfrId());
                                 });
         }
 
@@ -160,8 +160,8 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .clsfCdNm(entity.getClsfCdNm())
                                 .clsfCdExpln(entity.getClsfCdExpln())
                                 .useYn(entity.getUseYn())
-                                .frstRegisterId(entity.getFrstRegisterId())
-                                .lastUpdusrId(entity.getLastUpdusrId())
+                                .frstRgtrId(entity.getFrstRgtrId())
+                                .lastMdfrId(entity.getLastMdfrId())
                                 .build();
         }
 
@@ -209,7 +209,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .cdIdExpln(dto.getCdIdExpln())
                                 .clsfCd(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -224,7 +224,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                         entity.update(required(dto.getCdIdNm(), "dto.getCdIdNm() 는 null 일 수 없습니다"),
                                                         dto.getCdIdExpln(),
                                                         dto.getUseYn(),
-                                                        dto.getLastUpdusrId());
+                                                        dto.getLastMdfrId());
                                 });
         }
 
@@ -259,8 +259,8 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .clsfCd(entity.getClsfCd())
                                 .clsfCdNm(clCodeNm)
                                 .useYn(entity.getUseYn())
-                                .frstRegisterId(entity.getFrstRegisterId())
-                                .lastUpdusrId(entity.getLastUpdusrId())
+                                .frstRgtrId(entity.getFrstRgtrId())
+                                .lastMdfrId(entity.getLastMdfrId())
                                 .build();
         }
 
@@ -315,7 +315,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .dtlCdNm(required(dto.getDtlCdNm(), "dto.getDtlCdNm() 는 null 일 수 없습니다"))
                                 .dtlCdExpln(dto.getDtlCdExpln())
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRegisterId())
+                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -334,7 +334,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                         entity.update(required(dto.getDtlCdNm(), "dto.getDtlCdNm() 는 null 일 수 없습니다"),
                                                         dto.getDtlCdExpln(),
                                                         dto.getUseYn(),
-                                                        dto.getLastUpdusrId());
+                                                        dto.getLastMdfrId());
                                 });
         }
 
@@ -374,8 +374,8 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .dtlCdNm(entity.getDtlCdNm())
                                 .dtlCdExpln(entity.getDtlCdExpln())
                                 .useYn(entity.getUseYn())
-                                .frstRegisterId(entity.getFrstRegisterId())
-                                .lastUpdusrId(entity.getLastUpdusrId())
+                                .frstRgtrId(entity.getFrstRgtrId())
+                                .lastMdfrId(entity.getLastMdfrId())
                                 .build();
         }
 }

@@ -30,11 +30,11 @@ public class AddressBookApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AddressBookDto>>> getAddressBooks(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(required = false) String trgetOrgnztId,
+            @RequestParam(required = false) String trgetOgnzId,
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<AddressBookDto> result = addressBookService.getAddressBookList(userDetails.getUsername(), trgetOrgnztId, searchCnd, searchWrd, pageable);
+        Page<AddressBookDto> result = addressBookService.getAddressBookList(userDetails.getUsername(), trgetOgnzId, searchCnd, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

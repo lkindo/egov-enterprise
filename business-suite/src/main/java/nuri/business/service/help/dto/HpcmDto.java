@@ -40,7 +40,7 @@ public class HpcmDto {
     private String frstRgtrId;
 
     @Schema(description = "Description")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static HpcmDto from(Hpcm entity) {
         if (entity == null) return null;
@@ -50,7 +50,7 @@ public class HpcmDto {
                 .hlpDfn(entity.getHlpDfn())
                 .hlpExpln(entity.getHlpExpln())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

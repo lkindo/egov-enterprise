@@ -7,8 +7,8 @@ export interface Hpcm {
   hpcmSe: string;
   hpcmNm: string;
   hpcmDc: string;
-  frstRegisterId?: string;
-  lastUpdusrId?: string;
+  frstRgtrId?: string;
+  lastMdfrId?: string;
 }
 
 class HpcmAdminService extends ApiService {

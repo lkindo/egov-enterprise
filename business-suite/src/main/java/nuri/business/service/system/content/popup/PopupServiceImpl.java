@@ -65,7 +65,7 @@ public class PopupServiceImpl implements PopupService {
                     .stopvewSetupYn(dto.getStopvewSetupYn())
                     .ntceYn(dto.getNtceYn())
                     .build();
-            popup.setFrstRegisterId(userId);
+            popup.setFrstRgtrId(userId);
             popupRepository.save(Objects.requireNonNull(popup));
             return popupId;
         } catch (Exception e) {
@@ -85,7 +85,7 @@ public class PopupServiceImpl implements PopupService {
                 dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null,
                 dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null,
                 dto.getStopvewSetupYn(), dto.getNtceYn());
-        popup.setLastUpdusrId(userId);
+        popup.setLastMdfrId(userId);
     }
 
     @Override

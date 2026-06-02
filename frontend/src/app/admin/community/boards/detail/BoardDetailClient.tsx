@@ -56,7 +56,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     enabled: !!initialData.article,
   });
 
-  const tmplatId = (masterInfo as any)?.tmplatId || (masterInfo as any)?.tmplat_id || 'TMPLT_LIST';
+  const tmpltId = (masterInfo as any)?.tmpltId || (masterInfo as any)?.tmplat_id || 'TMPLT_LIST';
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -186,8 +186,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         transition={{ delay: 0.4 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-8 p-12 bg-white/60 backdrop-blur-xl rounded-3xl border-white border shadow-2xl ring-1 ring-black/5"
       >
-        <MetaItem icon={<User size={20} />} label="Contributor" value={article.frstRegisterId || 'System'} />
-        <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.frstRegisterPnttm || 'Today'} />
+        <MetaItem icon={<User size={20} />} label="Contributor" value={article.frstRgtrId || 'System'} />
+        <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.createdDate || 'Today'} />
         <MetaItem icon={<Eye size={20} />} label="Global Reach" value={`${(article.inqireCo || 0).toLocaleString()} Views`} />
         <MetaItem icon={<Share2 size={20} />} label="Integrity" value="Verified Node" />
       </motion.div>
@@ -211,7 +211,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               <div className="flex items-center gap-6">
                 <span className="h-[3px] w-16 bg-gradient-to-r from-primary to-transparent rounded-full" />
                 <p className="text-[10px] font-black tracking-[0.8em] text-primary uppercase leading-none ">
-                  {tmplatId === 'TMPLT_QNA' ? (article.qnaCategory || 'Q&A_TECHNICAL_CONSULT') : 'CORE_KNOWLEDGE_PAYLOAD'}
+                  {tmpltId === 'TMPLT_QNA' ? (article.qnaCategory || 'Q&A_TECHNICAL_CONSULT') : 'CORE_KNOWLEDGE_PAYLOAD'}
                 </p>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <div
               className={cn(
                 "prose prose-2xl dark:prose-invert prose-slate max-w-none transition-all duration-700",
-                tmplatId === 'TMPLT_HUB' ? "prose-p:text-slate-900 font-bold" : "text-slate-800",
+                tmpltId === 'TMPLT_HUB' ? "prose-p:text-slate-900 font-bold" : "text-slate-800",
                 "font-medium leading-[1.7] tracking-tight",
                 "prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:text-slate-900",
                 "prose-p:my-12",

@@ -4,13 +4,13 @@ import { AdminService } from '@/services/core/ApiService';
 /**
  * 템플릿님정보 ?명꽣?섏씠님 */
 export interface TmplatInfo {
-  tmplatId?: string;
+  tmpltId?: string;
   tmplatNm: string;
   tmplatSeCode: string;
   tmplatCours: string;
   useAt: string;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
 }
 
 class TemplateAdminService extends AdminService {
@@ -24,8 +24,8 @@ class TemplateAdminService extends AdminService {
   }
 
   /** 템플릿님곸꽭 조회 */
-  async getTemplate(tmplatId: string, config?: AxiosRequestConfig) {
-    return this.get<TmplatInfo>(`/${tmplatId}`, config);
+  async getTemplate(tmpltId: string, config?: AxiosRequestConfig) {
+    return this.get<TmplatInfo>(`/${tmpltId}`, config);
   }
 
   /** 템플릿등록 */

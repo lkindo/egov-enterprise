@@ -14,7 +14,7 @@ export interface OnlinePollDto {
   pollDsuseYn: string;
   pollAtmcDsuseYn?: string;
   pollArticles?: OnlinePollItemDto[];
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   createdDate?: string;
 }
 

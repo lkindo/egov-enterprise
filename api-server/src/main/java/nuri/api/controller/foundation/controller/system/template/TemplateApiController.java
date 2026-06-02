@@ -28,9 +28,9 @@ public class TemplateApiController {
     }
 
     @Operation(summary = "템플릿 상세 조회", description = "특정 템플릿의 상세 정보를 조회합니다.")
-    @GetMapping("/{tmplatId}")
-    public ResponseEntity<ApiResponse<Template>> selectTmplatInfoDetail(@PathVariable("tmplatId") String tmplatId) {
-        return ResponseEntity.ok(ApiResponse.success(tmplatInfoService.selectTmplatInfoDetail(tmplatId)));
+    @GetMapping("/{tmpltId}")
+    public ResponseEntity<ApiResponse<Template>> selectTmplatInfoDetail(@PathVariable("tmpltId") String tmpltId) {
+        return ResponseEntity.ok(ApiResponse.success(tmplatInfoService.selectTmplatInfoDetail(tmpltId)));
     }
 
     @Operation(summary = "템플릿 등록", description = "새로운 게시판 템플릿 정보를 등록합니다.")

@@ -32,7 +32,7 @@ class CommentDomainTest {
     void commentPredicate_test() {
         // Just call them to cover the lines
         assertNotNull(CommentPredicate.bbsIdEq("BBS1"));
-        assertNotNull(CommentPredicate.nttIdEq("10"));
+        assertNotNull(CommentPredicate.pstIdEq("10"));
         assertNotNull(CommentPredicate.pstIdEq("10"));
         assertNotNull(CommentPredicate.bbsIdAndPstIdEq("BBS1", "10"));
         assertNotNull(CommentPredicate.bbsIdAndPstIdEq(Expressions.asString("BBS1"), QComment.comment.pstId));

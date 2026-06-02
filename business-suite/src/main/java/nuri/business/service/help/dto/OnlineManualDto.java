@@ -43,7 +43,7 @@ public class OnlineManualDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
@@ -57,7 +57,7 @@ public class OnlineManualDto {
                 .onlnMnlDfn(entity.getOnlnMnlDfn())
                 .onlnMnlExpln(entity.getOnlnMnlExpln())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

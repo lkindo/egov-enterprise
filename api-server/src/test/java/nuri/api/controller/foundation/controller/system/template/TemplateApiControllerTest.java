@@ -50,7 +50,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/system/templates")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"tmplatId\":\"T1\", \"tmplatNm\":\"Test Template\"}"))
+                        .content("{\"tmpltId\":\"T1\", \"tmplatNm\":\"Test Template\"}"))
                 .andExpect(status().isOk());
     }
 }

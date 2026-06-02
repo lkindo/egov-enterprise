@@ -25,10 +25,10 @@ public class DeptJobDto {
     private String prrtyRnk;
     @Size(max = 30)
     private String atchFileId;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
+    private String lastMdfrId;
+    private LocalDateTime mdfcnDt;
 
     public static DeptJobDto from(DeptJob entity) {
         if (entity == null) return null;
@@ -41,10 +41,10 @@ public class DeptJobDto {
                 .picId(entity.getPicId())
                 .prrtyRnk(entity.getPrrtyRnk())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdtPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 }

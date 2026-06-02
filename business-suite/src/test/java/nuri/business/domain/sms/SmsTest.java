@@ -25,16 +25,16 @@ class SmsTest {
         // 2. 레거시 별칭 빌더 및 Getter 호환성 검증
         Sms legacySms = Sms.builder()
                 .smsId("SMS_002")
-                .trnsmitTelno("01087654321")
-                .trnsmitCn("Legacy SMS Message")
+                .sndngTelno("01087654321")
+                .sndngCn("Legacy SMS Message")
                 .build();
 
         assertThat(legacySms.getSmsId()).isEqualTo("SMS_002");
-        assertThat(legacySms.getTrnsmitTelno()).isEqualTo("01087654321");
-        assertThat(legacySms.getTrnsmitCn()).isEqualTo("Legacy SMS Message");
+        assertThat(legacySms.getSndngTelno()).isEqualTo("01087654321");
+        assertThat(legacySms.getSndngCn()).isEqualTo("Legacy SMS Message");
 
         // 상호 크로스 검증
         assertThat(legacySms.getSndngTelno()).isEqualTo("01087654321");
-        assertThat(sms.getTrnsmitCn()).isEqualTo("Test SMS Message");
+        assertThat(sms.getSndngCn()).isEqualTo("Test SMS Message");
     }
 }

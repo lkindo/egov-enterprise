@@ -9,8 +9,8 @@ export interface KnowledgeDto {
   pstTtl: string;
   pstCn: string;
   atchFileId?: string;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
   inqireCo?: number;
   ntcrNm?: string;
   frstRegisterPnttmStr?: string;
@@ -120,8 +120,8 @@ class KnowledgeService extends ApiService {
       id: item.pstId || item.nttId,
       type: 'SHARE',
       title: item.pstTtl || item.nttSj,
-      user: item.ntcrNm || item.frstRegisterId,
-      time: item.frstRegisterPnttm?.split('T')[0] || 'Just now',
+      user: item.ntcrNm || item.frstRgtrId,
+      time: item.createdDate?.split('T')[0] || 'Just now',
       impact: `+${(item.inqireCo || 0) % 100} Reach`,
     }));
   }

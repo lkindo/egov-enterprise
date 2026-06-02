@@ -32,8 +32,8 @@ public class CommunityUserDto {
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    private String frstRegisterPnttm;
-    private String frstRegisterId;
+    private String crtDt;
+    private String frstRgtrId;
 
     public static CommunityUserDto from(CommunityUser entity) {
         if (entity == null)
@@ -46,9 +46,9 @@ public class CommunityUserDto {
                 .wdrlYmd(entity.getWdrlYmd())
                 .mbrSttsCd(entity.getMbrSttsCd())
                 .useYn(entity.getUseYn())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm() != null
-                        ? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt() != null
+                        ? entity.getCrtDt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : null)
                 .build();
     }

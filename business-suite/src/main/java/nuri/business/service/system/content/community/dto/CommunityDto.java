@@ -26,9 +26,9 @@ public class CommunityDto {
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    private String frstRegisterId;
+    private String frstRgtrId;
     private String frstRegisterNm;
-    private String frstRegisterPnttm;
+    private String crtDt;
 
     public static CommunityDto from(Community community) {
         if (community == null)
@@ -40,9 +40,9 @@ public class CommunityDto {
                 .regTypeCd(community.getRegTypeCd())
                 .tmplatId(community.getTmplatId())
                 .useYn(community.getUseYn())
-                .frstRegisterId(community.getFrstRegisterId())
-                .frstRegisterPnttm(community.getFrstRegisterPnttm() != null
-                        ? community.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                .frstRgtrId(community.getFrstRgtrId())
+                .crtDt(community.getCrtDt() != null
+                        ? community.getCrtDt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : null)
                 .build();
     }

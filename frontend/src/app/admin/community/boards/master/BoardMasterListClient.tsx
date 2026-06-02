@@ -90,7 +90,7 @@ export function BoardMasterListClient() {
     setSelectedBoard(board);
     setEditData({
       bbsTtl: board.bbsTtl,
-      bbsIntroCn: board.bbsIntroCn,
+      bbsExpln: board.bbsExpln,
       useYn: board.useYn
     });
     setIsModalOpen(true);
@@ -144,7 +144,7 @@ export function BoardMasterListClient() {
       header: '메타 정보',
       accessor: (board: BoardMaster) => (
         <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
-          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsIntroCn}</p>
+          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsExpln}</p>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
               {board.bbsTypeCdNm}
@@ -329,8 +329,8 @@ export function BoardMasterListClient() {
               <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
-                value={editData.bbsIntroCn || ''} 
-                onChange={(e) => setEditData({...editData, bbsIntroCn: e.target.value})}
+                value={editData.bbsExpln || ''} 
+                onChange={(e) => setEditData({...editData, bbsExpln: e.target.value})}
                 className="h-11 rounded-lg border-2 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
               />
             </div>

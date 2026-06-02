@@ -50,7 +50,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSchdulNm()).isEqualTo("Test Schedule");
+        assertThat(result.getContent().get(0).getSchdlNm()).isEqualTo("Test Schedule");
     }
 
     @Test
@@ -66,7 +66,7 @@ class ScheduleServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getSchdulId()).isEqualTo(schdlId);
+        assertThat(result.getSchdlId()).isEqualTo(schdlId);
     }
 
     @Test
@@ -75,8 +75,8 @@ class ScheduleServiceTest {
         // given
         String userId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdulNm("New Schedule")
-                .schdulSe("1")
+                .schdlNm("New Schedule")
+                .schdlSeCd("1")
                 .build();
 
         // when
@@ -94,8 +94,8 @@ class ScheduleServiceTest {
         String userId = "user1";
         Schedule existingEntity = Schedule.builder().schdlId(schdlId).schdlNm("Old Title").build();
         ScheduleDto updateDto = ScheduleDto.builder()
-                .schdulId(schdlId)
-                .schdulNm("New Title")
+                .schdlId(schdlId)
+                .schdlNm("New Title")
                 .build();
 
         given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));

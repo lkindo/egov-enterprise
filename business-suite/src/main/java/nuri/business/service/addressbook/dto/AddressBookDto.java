@@ -41,22 +41,13 @@ public class AddressBookDto {
     private List<AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
 
     @Schema(description = "최초 등록자 ID")
-    private String frstRegisterId;
+    private String frstRgtrId;
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime crtDt;
     @Schema(description = "최종 수정자 ID")
-    private String lastUpdusrId;
+    private String lastMdfrId;
     @Schema(description = "최종 수정 일시")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime mdfcnDt;
 
-    // legacy
-    @JsonIgnore
-    public String getUseAt() { return useYn; }
-    @JsonIgnore
-    public void setUseAt(String v) { this.useYn = v; }
-    @JsonIgnore
-    public LocalDateTime getCreatedDate() { return frstRegistPnttm; }
-    @JsonIgnore
-    public List<AddressBookUserDto> getNameCards() { return adbkMan; }
 }
 

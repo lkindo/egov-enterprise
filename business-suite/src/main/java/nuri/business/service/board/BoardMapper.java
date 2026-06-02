@@ -16,19 +16,19 @@ import java.time.format.DateTimeFormatter;
 public interface BoardMapper {
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "frstRegisterPnttm", source = "createdDate")
+    @Mapping(target = "crtDt", source = "crtDt")
     @Mapping(target = "upPstId", source = "upPstId")
     BoardDto toDto(Board entity);
 
     @Mapping(target = "pstId", source = "pstId")
     @Mapping(target = "userNm", source = "frstRegisterNm")
-    @Mapping(target = "frstRegisterPnttm", source = "createdDate")
+    @Mapping(target = "crtDt", source = "crtDt")
     @Mapping(target = "upPstId", source = "upPstId")
     BoardDto toDto(BoardSearchResult result);
 
     @Mapping(target = "pstId", source = "pstId")
     @Mapping(target = "userNm", source = "frstRegisterNm")
-    @Mapping(target = "frstRegisterPnttm", source = "createdDate")
+    @Mapping(target = "crtDt", source = "crtDt")
     @Mapping(target = "upPstId", source = "upPstId")
     BoardDto toDto(BoardDetailResult detail);
 

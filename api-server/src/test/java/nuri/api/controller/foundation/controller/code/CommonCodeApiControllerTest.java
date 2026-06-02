@@ -214,8 +214,8 @@ class CommonCodeApiControllerTest {
     @DisplayName("상세코드 상세 조회")
     void getDetailCode() throws Exception {
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
-        dto.setCodeId("C1");
-        dto.setCode("D1");
+        dto.setCdId("C1");
+        dto.setDtlCd("D1");
         when(commonCodeService.selectCmmnDetailCodeDetail(any(CmmnDetailCodeDto.class))).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/detail/C1/D1")

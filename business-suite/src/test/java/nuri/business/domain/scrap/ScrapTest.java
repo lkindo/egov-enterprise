@@ -36,7 +36,7 @@ class ScrapTest {
         assertThat(scrap.getFrstRgtrId()).isEqualTo("user1");
         
         // BaseEntity fields integration test
-        assertThat(scrap.getUniqId()).isEqualTo(scrap.getFrstRegisterId());
+        assertThat(scrap.getUniqId()).isEqualTo(scrap.getFrstRgtrId());
     }
 
     @Test
@@ -85,18 +85,18 @@ class ScrapTest {
                 .build();
 
         // When & Then (getters)
-        assertThat(scrap.getNttId()).isEqualTo("PST_INIT");
-        assertThat(scrap.getScrapDc()).isEqualTo("EXPLN_INIT");
+        assertThat(scrap.getPstId()).isEqualTo("PST_INIT");
+        assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_INIT");
 
         // When (setters)
-        scrap.setNttId("PST_UPDATED");
-        scrap.setScrapDc("EXPLN_UPDATED");
+        scrap.setPstId("PST_UPDATED");
+        scrap.setScrapExpln("EXPLN_UPDATED");
 
         // Then (cross verify standard fields)
         assertThat(scrap.getPstId()).isEqualTo("PST_UPDATED");
         assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_UPDATED");
-        assertThat(scrap.getNttId()).isEqualTo("PST_UPDATED");
-        assertThat(scrap.getScrapDc()).isEqualTo("EXPLN_UPDATED");
+        assertThat(scrap.getPstId()).isEqualTo("PST_UPDATED");
+        assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_UPDATED");
     }
 
     @Test
@@ -105,11 +105,11 @@ class ScrapTest {
         // Given & When
         Scrap scrap = Scrap.builder()
                 .scrapId("SCRAP_003")
-                .scrapDc("레거시 설명 빌딩")
+                .scrapExpln("레거시 설명 빌딩")
                 .build();
 
         // Then
         assertThat(scrap.getScrapExpln()).isEqualTo("레거시 설명 빌딩");
-        assertThat(scrap.getScrapDc()).isEqualTo("레거시 설명 빌딩");
+        assertThat(scrap.getScrapExpln()).isEqualTo("레거시 설명 빌딩");
     }
 }

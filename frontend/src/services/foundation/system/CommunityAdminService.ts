@@ -8,7 +8,7 @@ export interface Community {
   cmmntyIntrcn: string;
   useAt: 'Y' | 'N';
   registSeCode?: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   createdDate?: string;
 }
 

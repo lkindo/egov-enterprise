@@ -16,7 +16,7 @@ class AddressBookTest {
                 .adbkId("ADBK_001")
                 .adbkNm("사내 주소록")
                 .rlsScopeCd("COMPANY")
-                .trgetOrgnztId("ORG_001")
+                .trgetOgnzId("ORG_001")
                 .useYn("Y")
                 .wrterId("user1")
                 .frstRgtrId("admin")
@@ -27,7 +27,7 @@ class AddressBookTest {
         assertThat(addressBook.getAdbkId()).isEqualTo("ADBK_001");
         assertThat(addressBook.getAdbkNm()).isEqualTo("사내 주소록");
         assertThat(addressBook.getRlsScopeCd()).isEqualTo("COMPANY");
-        assertThat(addressBook.getTrgetOrgnztId()).isEqualTo("ORG_001");
+        assertThat(addressBook.getTrgetOgnzId()).isEqualTo("ORG_001");
         assertThat(addressBook.getUseYn()).isEqualTo("Y");
         assertThat(addressBook.getWrterId()).isEqualTo("user1");
         assertThat(addressBook.getFrstRgtrId()).isEqualTo("admin");
@@ -84,14 +84,14 @@ class AddressBookTest {
         addressBook.setAdbkId("ADBK_NEW");
         addressBook.setAdbkNm("NEW_NAME");
         addressBook.setRlsScopeCd("PUBLIC");
-        addressBook.setTrgetOrgnztId("ORG_NEW");
+        addressBook.setTrgetOgnzId("ORG_NEW");
         addressBook.setWrterId("writer1");
 
         // Then
         assertThat(addressBook.getAdbkId()).isEqualTo("ADBK_NEW");
         assertThat(addressBook.getAdbkNm()).isEqualTo("NEW_NAME");
         assertThat(addressBook.getRlsScopeCd()).isEqualTo("PUBLIC");
-        assertThat(addressBook.getTrgetOrgnztId()).isEqualTo("ORG_NEW");
+        assertThat(addressBook.getTrgetOgnzId()).isEqualTo("ORG_NEW");
         assertThat(addressBook.getWrterId()).isEqualTo("writer1");
     }
 }

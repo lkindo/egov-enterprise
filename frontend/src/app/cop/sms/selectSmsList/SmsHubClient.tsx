@@ -53,9 +53,9 @@ export default function SmsHubClient({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const [newSms, setNewSms] = useState<SmsDto>({
-    trnsmitTelno: '010-1234-5678',
+    sndngTelno: '010-1234-5678',
     rcptnTelno: '',
-    trnsmitCn: '',
+    sndngCn: '',
   });
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -77,7 +77,7 @@ export default function SmsHubClient({
     onSuccess: () => {
       toast('SMS가 성공적으로 전송되었습니다.', 'success');
       setIsDialogOpen(false);
-      setNewSms({ ...newSms, rcptnTelno: '', trnsmitCn: '' });
+      setNewSms({ ...newSms, rcptnTelno: '', sndngCn: '' });
       queryClient.invalidateQueries({ queryKey: ['sms-list'] });
     },
     onError: (err: any) => {
@@ -115,7 +115,7 @@ export default function SmsHubClient({
       header: 'MESSAGE_CONTENT',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md group-hover:text-slate-900 transition-colors">
-          {item.trnsmitCn}
+          {item.sndngCn}
         </p>
       )
     },
@@ -200,11 +200,11 @@ export default function SmsHubClient({
                                     <Textarea
                                         placeholder="전달할 메시지 내용을 입력하세요..."
                                         className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed"
-                                        value={newSms.trnsmitCn}
-                                        onChange={(e) => setNewSms({ ...newSms, trnsmitCn: e.target.value })}
+                                        value={newSms.sndngCn}
+                                        onChange={(e) => setNewSms({ ...newSms, sndngCn: e.target.value })}
                                     />
                                     <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-xs font-bold text-slate-400 tracking-tight">
-                                        _ {newSms.trnsmitCn.length} / 80 BYTES
+                                        _ {newSms.sndngCn.length} / 80 BYTES
                                     </div>
                                 </div>
                             </div>

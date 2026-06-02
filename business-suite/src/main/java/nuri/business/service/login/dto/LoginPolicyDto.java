@@ -45,7 +45,7 @@ public class LoginPolicyDto {
     /** 등록 여부 */
     private String regYn;
     /** 등록자 ID */
-    private String frstRegisterId;
+    private String frstRgtrId;
     /** 수정자 ID */
-    private String lastUpdusrId;
+    private String lastMdfrId;
 }

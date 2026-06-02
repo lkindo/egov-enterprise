@@ -19,10 +19,10 @@ public class DeptJobBoxDto {
     private String deptId;
     private String deptNm;
     private Integer sortOrdr;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
+    private String lastMdfrId;
+    private LocalDateTime mdfcnDt;
 
     public static DeptJobBoxDto fromEntity(DeptJobBox entity) {
         if (entity == null)
@@ -32,10 +32,10 @@ public class DeptJobBoxDto {
                 .deptTaskBoxNm(entity.getDeptTaskBoxNm())
                 .deptId(entity.getDeptId())
                 .sortOrdr(entity.getSortOrdr())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdtPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 

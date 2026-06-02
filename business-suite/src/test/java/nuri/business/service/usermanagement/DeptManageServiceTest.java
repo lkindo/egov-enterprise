@@ -44,7 +44,7 @@ class DeptManageServiceTest {
         Page<DeptManageDto> result = deptManageService.getDeptManageList("부서", PageRequest.of(0, 10));
 
         assertEquals(1, result.getContent().size());
-        assertEquals("DEPT1", result.getContent().get(0).getOrgnztId());
+        assertEquals("DEPT1", result.getContent().get(0).getOgnzId());
     }
 
     @Test
@@ -56,7 +56,7 @@ class DeptManageServiceTest {
         DeptManageDto result = deptManageService.getDeptManage("DEPT1");
 
         assertNotNull(result);
-        assertEquals("DEPT1", result.getOrgnztId());
+        assertEquals("DEPT1", result.getOgnzId());
     }
 
     @Test
@@ -71,8 +71,8 @@ class DeptManageServiceTest {
     @DisplayName("부서 등록 테스트")
     void insertDeptManageTest() {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztId("NEW1")
-                .orgnztNm("신규부서")
+                .ognzId("NEW1")
+                .ognzNm("신규부서")
                 .build();
 
         deptManageService.insertDeptManage(dto);
@@ -84,8 +84,8 @@ class DeptManageServiceTest {
     @DisplayName("부서 수정 테스트")
     void updateDeptManageTest() {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztId("DEPT1")
-                .orgnztNm("수정부서")
+                .ognzId("DEPT1")
+                .ognzNm("수정부서")
                 .build();
         
         DeptManage entity = mock(DeptManage.class);

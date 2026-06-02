@@ -85,7 +85,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         UserDto dto = new UserDto();
         dto.setUserId("testuser");
         dto.setUserNm("홍길동");
-        dto.setPassword("ValidPass123!");
+        dto.setPswd("ValidPass123!");
         
         doNothing().when(userService).updateUser(eq("testuser"), any(UserDto.class));
 
@@ -166,7 +166,7 @@ public class UserApiControllerTest extends BaseControllerTest {
     void insertUser() throws Exception {
         UserDto dto = new UserDto();
         dto.setUserId("newUser");
-        dto.setPassword("ValidPass123!");
+        dto.setPswd("ValidPass123!");
         dto.setUserNm("홍길동");
         
         when(userService.registerUser(any(), any(), any(), any(), any(), any())).thenReturn("newUser");
@@ -184,7 +184,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         UserDto dto = new UserDto();
         dto.setUserId("targetUser");
         dto.setUserNm("홍길동");
-        dto.setPassword("ValidPass123!");
+        dto.setPswd("ValidPass123!");
         doNothing().when(userService).updateUser(eq("targetUser"), any(UserDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
@@ -244,7 +244,7 @@ public class UserApiControllerTest extends BaseControllerTest {
     void moveUsersToDept() throws Exception {
         BulkDeptMoveRequest req = new BulkDeptMoveRequest();
         req.setUserIds(List.of("user1"));
-        req.setOrgnztId("ORG1");
+        req.setOgnzId("ORG1");
         doNothing().when(userService).moveUsersToDept(any(), eq("ORG1"));
 
         mockMvc.perform(patch("/api/v1/admin/system/users/dept")

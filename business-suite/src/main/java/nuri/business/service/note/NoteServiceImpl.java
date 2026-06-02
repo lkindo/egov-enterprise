@@ -118,7 +118,7 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteSj() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
                 .dsptchUserId(entity.getDsptchUserId())
-                .frstRegisterPnttm(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 
@@ -133,7 +133,7 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                 .rcverId(entity.getRcverId())
                 .openYn(entity.getOpenYn())
                 .recptnSe(entity.getRecptnSeCd())
-                .frstRegisterPnttm(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

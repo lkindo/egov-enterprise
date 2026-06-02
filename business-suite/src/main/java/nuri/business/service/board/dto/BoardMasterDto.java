@@ -37,10 +37,10 @@ public class BoardMasterDto {
     private Long atchPsblFileSize; // atchPsbltyFileSz -> atchPsblFileSize 표준화
     @Size(max = 20)
     private String tmplatId; // tmpltId -> tmplatId 표준화
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdusrPnttm;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
+    private String lastMdfrId;
+    private LocalDateTime mdfcnDt;
     @Size(max = 1)
     @NotBlank
     private String useYn;
@@ -71,10 +71,10 @@ public class BoardMasterDto {
                 .atchPsblFileCnt(entity.getAtchPsbltyFileQty())
                 .atchPsblFileSize(entity.getAtchPsbltyFileSz())
                 .tmplatId(entity.getTmpltId())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdusrPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .useYn(entity.getUseYn())
                 .cmntyId(entity.getCmntyId())
                 .blogId(entity.getBlogId())

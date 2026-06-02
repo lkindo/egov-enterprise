@@ -19,10 +19,10 @@ public class BoardMasterDetailResult {
     private Integer atchPsbltyFileQty;
     private Long atchPsbltyFileSz;
     private String ansPsbltyYn;
-    private String frstRegisterId;
+    private String frstRgtrId;
     private String frstRegisterNm;
     private String useYn;
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
     private String authFlag;
 
 }

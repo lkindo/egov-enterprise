@@ -49,12 +49,12 @@ public class AdministCodeDto {
     private String frstRgtrId;
 
     @Schema(description = "생성일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     @Schema(description = "수정자 ID")
     private String lastMdfrId;
 
     @Schema(description = "수정일시")
-    private LocalDateTime lastModifiedDate;
+    private LocalDateTime mdfcnDt;
 
 }

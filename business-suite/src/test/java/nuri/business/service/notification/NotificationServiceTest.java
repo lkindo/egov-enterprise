@@ -160,14 +160,13 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("읽지 않은 알림 수 조회 - 성공")
-    void getUnreadCount_success() {
-        // Repository 메서드 이름 확인 필요: countByReceiverIdAndIsRead -> countByReceiverIdAndReadYn?
-        // 기존 코드 스타일 유지
-        when(notificationRepository.countByReceiverIdAndIsRead("user123", "N")).thenReturn(5L);
+    void getUnreadCount_ReturnsCount() {
+        when(notificationRepository.countByRcvrIdAndReadYn("USER01", "N")).thenReturn(5L);
 
-        long count = notificationService.getUnreadCount("user123");
+        long count = notificationService.getUnreadCount("USER01");
 
         assertEquals(5L, count);
+        verify(notificationRepository).countByRcvrIdAndReadYn("USER01", "N");
     }
 
     @Test

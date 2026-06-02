@@ -49,8 +49,8 @@ class BoardUseTest {
         assertThat(boardUse.getUseYn()).isEqualTo("Y");
 
         // 호환성을 위한 빈 세터 호출 (에러가 나지 않음을 확인)
-        boardUse.setLastUpdusrId("admin");
-        boardUse.setFrstRegisterId("admin");
+        boardUse.setLastMdfrId("admin");
+        boardUse.setFrstRgtrId("admin");
     }
 
     @Test

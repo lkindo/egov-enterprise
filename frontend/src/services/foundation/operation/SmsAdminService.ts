@@ -7,10 +7,10 @@ import { PageResponse } from '@/types/foundation/system';
  */
 export interface SmsDto {
   smsId?: string;
-  trnsmitTelno: string; // 발신 번호
-  trnsmitCn: string;    // 발신 내용
+  sndngTelno: string; // 발신 번호
+  sndngCn: string;    // 발신 내용
   trnsmitPnttm?: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   createdDate?: string;
   rcptnTelno?: string;  // 수신 번호 (단일 수신 시 사용)
   recipients?: SmsRecptnDto[]; // 수신자 목록 (다중 수신 시 사용)
@@ -22,8 +22,8 @@ export interface SmsDto {
 export interface SmsRecptnDto {
   smsId?: string;
   rcptnTelno: string; // 수신 번호
-  resultCode?: string; // 결과 코드 (P: 대기, S: 성공, F: 실패)
-  resultMssage?: string;
+  rsltCd?: string; // 결과 코드 (P: 대기, S: 성공, F: 실패)
+  rsltMsg?: string;
 }
 
 class SmsAdminService extends ApiService {

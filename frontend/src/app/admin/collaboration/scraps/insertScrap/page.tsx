@@ -17,7 +17,7 @@ const InsertScrapPage = () => {
   const [formData, setFormData] = useState({
     scrapNm: '',
     scrapUrl: '',
-    scrapDc: ''
+    scrapExpln: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -115,14 +115,14 @@ const InsertScrapPage = () => {
 
               {/* Scrap Description */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapDc" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
+                <Label htmlFor="scrapExpln" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
                   Knowledge Description
                 </Label>
                 <Textarea
-                  id="scrapDc"
+                  id="scrapExpln"
                   placeholder="이 지식에 대한 상세한 기록을 남겨주세요..."
-                  value={formData.scrapDc}
-                  onChange={(e) => setFormData({ ...formData, scrapDc: e.target.value })}
+                  value={formData.scrapExpln}
+                  onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
                   className="min-h-[180px] p-6 rounded-lg border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
               </div>

@@ -8,7 +8,7 @@ export interface FAQ {
   qestnCn: string;
   answerCn: string;
   inqireCo: number;
-  lastUpdusrPnttm: string;
+  lastModifiedDate: string;
 }
 
 export interface QNA {
@@ -49,7 +49,7 @@ class HelpUserService extends UserService {
         qestnCn: item.pstTtl,
         answerCn: item.nttCn,
         inqireCo: item.rdcnt || 0,
-        lastUpdusrPnttm: item.lastUpdusrPnttm || item.frstRegistPnttm
+        lastModifiedDate: item.lastModifiedDate || item.frstRegistPnttm
       }));
     }
     return response as PageResponse<FAQ>;

@@ -33,9 +33,9 @@ public class DeptApiControllerTest extends BaseControllerTest {
     @Test
     public void getDepts_ShouldReturnPagedDepts() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztId("ORGNZT_0000000000001")
-                .orgnztNm("테스트 부서")
-                .orgnztDc("테스트 부서 설명")
+                .ognzId("ORGNZT_0000000000001")
+                .ognzNm("테스트 부서")
+                .ognzExpln("테스트 부서 설명")
                 .build();
         Page<DeptManageDto> page = new PageImpl<>(Collections.singletonList(dto), PageRequest.of(0, 10), 1);
 
@@ -48,16 +48,16 @@ public class DeptApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].orgnztId").value("ORGNZT_0000000000001"))
-                .andExpect(jsonPath("$.data.list[0].orgnztNm").value("테스트 부서"));
+                .andExpect(jsonPath("$.data.list[0].ognzId").value("ORGNZT_0000000000001"))
+                .andExpect(jsonPath("$.data.list[0].ognzNm").value("테스트 부서"));
     }
 
     @Test
     public void getDept_ShouldReturnDeptDetail() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztId("ORGNZT_0000000000001")
-                .orgnztNm("테스트 부서")
-                .orgnztDc("테스트 부서 설명")
+                .ognzId("ORGNZT_0000000000001")
+                .ognzNm("테스트 부서")
+                .ognzExpln("테스트 부서 설명")
                 .build();
 
         when(deptManageService.getDeptManage("ORGNZT_0000000000001")).thenReturn(dto);
@@ -66,15 +66,15 @@ public class DeptApiControllerTest extends BaseControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.orgnztId").value("ORGNZT_0000000000001"))
-                .andExpect(jsonPath("$.data.orgnztNm").value("테스트 부서"));
+                .andExpect(jsonPath("$.data.ognzId").value("ORGNZT_0000000000001"))
+                .andExpect(jsonPath("$.data.ognzNm").value("테스트 부서"));
     }
 
     @Test
     public void insertDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztNm("신규 부서")
-                .orgnztDc("신규 부서 설명")
+                .ognzNm("신규 부서")
+                .ognzExpln("신규 부서 설명")
                 .build();
 
         doNothing().when(deptManageService).insertDeptManage(any(DeptManageDto.class));
@@ -91,8 +91,8 @@ public class DeptApiControllerTest extends BaseControllerTest {
     @Test
     public void updateDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
-                .orgnztNm("수정 부서")
-                .orgnztDc("수정 부서 설명")
+                .ognzNm("수정 부서")
+                .ognzExpln("수정 부서 설명")
                 .build();
 
         doNothing().when(deptManageService).updateDeptManage(any(DeptManageDto.class));
@@ -103,7 +103,7 @@ public class DeptApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(deptManageService, times(1)).updateDeptManage(argThat(d -> "ORGNZT_0000000000001".equals(d.getOrgnztId())));
+        verify(deptManageService, times(1)).updateDeptManage(argThat(d -> "ORGNZT_0000000000001".equals(d.getOgnzId())));
     }
 
     @Test

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NotificationDomainTest {
 
     @Test
-    @DisplayName("Notification 엔티티 생성 및 초기화 테스트")
+    @DisplayName("Notification ?�티???�성 �?초기???�스??)
     void notification_builder_test() {
         // Given
         LocalDateTime before = LocalDateTime.now();
@@ -20,8 +20,8 @@ class NotificationDomainTest {
                 .ntfcCn("Content")
                 .receiverId("user1")
                 .linkUrl("/home")
-                .createdDate(LocalDateTime.now())
-                .lastModifiedDate(LocalDateTime.now())
+                .crtDt(LocalDateTime.now())
+                .mdfcnDt(LocalDateTime.now())
                 .build();
         
         // Then
@@ -31,13 +31,13 @@ class NotificationDomainTest {
         assertEquals("user1", ntfc.getReceiverId());
         assertEquals("/home", ntfc.getLinkUrl());
         assertEquals("N", ntfc.getIsRead());
-        assertNotNull(ntfc.getCreatedDate());
-        assertNotNull(ntfc.getLastModifiedDate());
-        assertTrue(ntfc.getCreatedDate().isAfter(before.minusSeconds(1)));
+        assertNotNull(ntfc.getCrtDt());
+        assertNotNull(ntfc.getMdfcnDt());
+        assertTrue(ntfc.getCrtDt().isAfter(before.minusSeconds(1)));
     }
 
     @Test
-    @DisplayName("Notification 상태 업데이트 및 읽음 처리 테스트")
+    @DisplayName("Notification ?�태 ?�데?�트 �??�음 처리 ?�스??)
     void notification_update_test() {
         // Given
         Notification ntfc = Notification.builder()

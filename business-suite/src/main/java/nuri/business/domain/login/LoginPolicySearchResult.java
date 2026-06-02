@@ -17,8 +17,8 @@ public class LoginPolicySearchResult {
     private String ipAddr;
     private String dpcnPrmYn;
     private String lmtYn;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+    private String lastMdfrId;
+    private LocalDateTime mdfcnDt;
     private String regYn; // Y or N
 
     // Compatibility getters

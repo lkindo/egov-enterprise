@@ -10,10 +10,10 @@ export interface DeptJobVO {
   chargerNm?: string;
   priort: string;
   atchFileId?: string;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
-  lastUpdusrId?: string;
-  lastUpdtPnttm?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
+  lastMdfrId?: string;
+  lastModifiedDate?: string;
 }
 
 export interface DeptJobBxVO {
@@ -22,10 +22,10 @@ export interface DeptJobBxVO {
   deptId?: string;
   deptNm?: string;
   indictOrdr?: number;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
-  lastUpdusrId?: string;
-  lastUpdtPnttm?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
+  lastMdfrId?: string;
+  lastModifiedDate?: string;
 }
 
 export interface DeptJobSearchParams {

@@ -24,5 +24,5 @@ public class MemoTodoDto {
     @Size(max = 20)
     @NotBlank
     private String userId;
-    private String frstRegisterId;
+    private String frstRgtrId;
 }

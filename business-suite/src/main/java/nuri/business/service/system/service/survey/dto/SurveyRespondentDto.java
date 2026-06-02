@@ -62,16 +62,16 @@ public class SurveyRespondentDto {
     private String endTelno;
 
     @Schema(description = "최초 등록자 ID")
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Schema(description = "최종 수정자 ID")
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
     @Schema(description = "최종 수정 일시")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime mdfcnDt;
 
     public static SurveyRespondentDto from(SurveyRespondent entity) {
         if (entity == null) return null;
@@ -86,10 +86,10 @@ public class SurveyRespondentDto {
                 .rgnTelno(entity.getRgnTelno())
                 .midTelno(entity.getMidTelno())
                 .endTelno(entity.getEndTelno())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdusrPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 }

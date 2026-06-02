@@ -44,7 +44,7 @@ public class ScheduleApiController {
             @RequestParam(defaultValue = "10") int pageUnit) {
         String userId = getCurrentUserId();
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        // schdulSe = "1" is Dept in eGov
+        // schdlSeCd = "1" is Dept in eGov
         Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("1", userId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }

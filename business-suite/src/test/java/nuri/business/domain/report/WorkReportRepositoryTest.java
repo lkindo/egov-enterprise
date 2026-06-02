@@ -27,12 +27,12 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
                 .build();
         workReportRepository.save(report1);
 
-        // 2. 하위 호환용 레거시 필드 빌더 활용
+        // 2. 신규 표준 빌더 활용
         WorkReport report2 = WorkReport.builder()
-                .reportId("R2")
-                .reportSubject("Monthly Report")
-                .reprtSe("2")
-                .wrterId("user1")
+                .rptId("R2")
+                .rptTtl("Monthly Report")
+                .rptSeCd("2")
+                .userId("user1")
                 .build();
         workReportRepository.save(report2);
 
@@ -43,7 +43,5 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent()).hasSize(1);
         // 신규 standard getter
         assertThat(result.getContent().get(0).getRptTtl()).isEqualTo("Weekly Report 1");
-        // 하위 호환 legacy getter
-        assertThat(result.getContent().get(0).getReportSubject()).isEqualTo("Weekly Report 1");
     }
 }

@@ -45,16 +45,16 @@ public class BlogDto {
     private String useYn;
 
     @Schema(description = "최초 등록자 ID")
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Schema(description = "최종 수정자 ID")
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
     @Schema(description = "최종 수정 일시")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime mdfcnDt;
 
     @Schema(description = "블로그 여부")
     @Size(max = 1)
@@ -71,10 +71,10 @@ public class BlogDto {
                 .regSeCd(entity.getRegSeCd())
                 .tmpltId(entity.getTmpltId())
                 .useYn(entity.getUseYn())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdtPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .blogYn(entity.getBlogYn())
                 .build();
     }

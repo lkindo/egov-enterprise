@@ -26,9 +26,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 interface PreviewProps {
- tmplatId: string;
+ tmpltId: string;
  bbsTtl: string;
- bbsIntroCn: string;
+ bbsExpln: string;
 }
 
 const MOCK_POSTS = [
@@ -37,7 +37,7 @@ const MOCK_POSTS = [
  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
 ];
 
-export function BoardPreview({ tmplatId, bbsTtl, bbsIntroCn }: PreviewProps) {
+export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  return (
  <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
  {/* Browser Bar */}
@@ -56,7 +56,7 @@ export function BoardPreview({ tmplatId, bbsTtl, bbsIntroCn }: PreviewProps) {
  <div className="flex justify-between items-end">
  <div className="space-y-2">
  <h1 className="text-4xl font-bold tracking-tighter text-slate-900 uppercase leading-none">{bbsTtl || 'PREVIEW_BOARD'}</h1>
- <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsIntroCn || 'Board description placeholder...'}</p>
+ <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsExpln || 'Board description placeholder...'}</p>
  </div>
  <div className="flex gap-2">
  <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
@@ -66,13 +66,13 @@ export function BoardPreview({ tmplatId, bbsTtl, bbsIntroCn }: PreviewProps) {
  </div>
 
  {/* Dynamic Content based on Template */}
- {tmplatId === 'TMPLT_HUB' && <HubLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_CALENDAR' && <CalendarLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
- {tmplatId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_HUB' && <HubLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
  </div>
 
  <div className="h-10 bg-slate-100 flex items-center justify-center border-t border-slate-200">

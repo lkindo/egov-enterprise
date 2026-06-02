@@ -363,22 +363,22 @@ public class InstitutionCodeRecptnDto {
     }
 
     @JsonIgnore
-    public LocalDateTime getFrstRegisterPnttm() {
+    public LocalDateTime getCrtDt() {
         return this.crtDt;
     }
 
     @JsonIgnore
-    public void setFrstRegisterPnttm(LocalDateTime frstRegisterPnttm) {
+    public void setCrtDt(LocalDateTime frstRegisterPnttm) {
         this.crtDt = frstRegisterPnttm;
     }
 
     @JsonIgnore
-    public String getFrstRegisterId() {
+    public String getFrstRgtrId() {
         return this.frstRgtrId;
     }
 
     @JsonIgnore
-    public void setFrstRegisterId(String frstRegisterId) {
+    public void setFrstRgtrId(String frstRegisterId) {
         this.frstRgtrId = frstRegisterId;
     }
 }

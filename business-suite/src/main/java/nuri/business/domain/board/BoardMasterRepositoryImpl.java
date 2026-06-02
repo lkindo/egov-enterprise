@@ -68,7 +68,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.bbsTtl,
                 boardMaster.tmpltId,
                 boardMaster.useYn,
-                boardMaster.crtDt.as("createdDate")))
+                boardMaster.crtDt.as("crtDt")))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
@@ -117,9 +117,9 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.atchPsbltyFileQty,
                 boardMaster.atchPsbltyFileSz,
                 boardMaster.ansPsbltyYn,
-                boardMaster.frstRgtrId.as("frstRegisterId"),
+                boardMaster.frstRgtrId.as("frstRgtrId"),
                 boardMaster.useYn,
-                boardMaster.crtDt.as("createdDate")))
+                boardMaster.crtDt.as("crtDt")))
                 .from(boardMaster)
                 .leftJoin(commonCodeTy)
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))

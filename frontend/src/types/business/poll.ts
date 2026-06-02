@@ -6,7 +6,7 @@ export interface OnlinePollManageVO {
   pollKndCd: string; // COM039 (001: 찬반, 002: 선택)
   pollDsuseYn: string; // N: 사용, Y: 폐기
   pollAtmcDsuseYn?: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   frstRegisterNm?: string;
   createdDate?: string;
 }
@@ -16,14 +16,14 @@ export interface OnlinePollItemVO {
   pollArtclId?: string;
   pollArtclNm: string;
   pollIemCo?: number; // 투표 수
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   createdDate?: string;
 }
 
 export interface OnlinePollPartcptnVO {
   pollId: string;
   pollArtclId: string; // 선택한 항목 ID
-  frstRegisterId?: string; // 사용자ID
+  frstRgtrId?: string; // 사용자ID
 }
 
 export interface PollSearchParams {

@@ -44,7 +44,7 @@ public class LeaderScheduleDto {
     private String schdlEndYmd;
 
     @Schema(description = "등록일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     // Standardized new fields for synchronization with LeaderSchedule entity
     @com.fasterxml.jackson.annotation.JsonProperty("schdlSeCd")
@@ -101,7 +101,7 @@ public class LeaderScheduleDto {
                 .schdlPicId(entity.getSchdlPicId())
                 .schdlSeCd(entity.getSchdlSeCd())
                 .schdlPlcNm(entity.getSchdlPlcNm())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

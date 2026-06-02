@@ -57,8 +57,8 @@ class UserAdminService extends AdminService {
   }
 
   /** 사용자 부서 일괄 이동 */
-  async moveUsersToDept(userIds: string[], orgnztId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.patch<void>(`/dept`, { userIds, orgnztId }, config);
+  async moveUsersToDept(userIds: string[], ognzId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch<void>(`/dept`, { userIds, ognzId }, config);
   }
 
   /** 사용자 권한 일괄 변경 */

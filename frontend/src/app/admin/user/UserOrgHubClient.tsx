@@ -113,7 +113,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: node.orgnztId || '' });
+    } = useSortable({ id: node.ognzId || '' });
 
     const style = {
         transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -163,13 +163,13 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                             "text-xs font-bold truncate leading-tight tracking-tight",
                             isSelected ? "text-white" : "text-slate-900"
                         )}>
-                            {node.orgnztNm}
+                            {node.ognzNm}
                         </span>
                         <span className={cn(
                             "text-xs font-bold tracking-tighter opacity-60",
                             isSelected ? "text-white" : "text-slate-500"
                         )}>
-                            {node.orgnztId}
+                            {node.ognzId}
                         </span>
                     </div>
                     {isSelected && (
@@ -386,7 +386,7 @@ export default function UserOrgHubClient({
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
     if (activeTab === 'USERS' || activeTab === 'ABSENCES') return (users || []).find(u => u?.userId === selectedItemId);
-    if (activeTab === 'DEPTS') return (departments || []).find(d => d?.orgnztId === selectedItemId);
+    if (activeTab === 'DEPTS') return (departments || []).find(d => d?.ognzId === selectedItemId);
     return null;
   }, [selectedItemId, activeTab, users, departments]);
 
@@ -536,13 +536,13 @@ export default function UserOrgHubClient({
                                     const { active, over } = event;
                                     if (over && active.id !== over.id) {
                                         setFlattenedDepts((items) => {
-                                            const oldIndex = items.findIndex(n => n.orgnztId === active.id);
-                                            const newIndex = items.findIndex(n => n.orgnztId === over.id);
+                                            const oldIndex = items.findIndex(n => n.ognzId === active.id);
+                                            const newIndex = items.findIndex(n => n.ognzId === over.id);
                                             const newItems = arrayMove(items, oldIndex, newIndex);
                                             
                                             const proj = getDeptProjection(items, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
                                             if (proj) {
-                                                const idx = newItems.findIndex(n => n.orgnztId === active.id);
+                                                const idx = newItems.findIndex(n => n.ognzId === active.id);
                                                 newItems[idx] = { ...newItems[idx], parentId: proj.parentId, depth: proj.depth };
                                             }
                                             return newItems;
@@ -552,14 +552,14 @@ export default function UserOrgHubClient({
                                     setActiveDeptId(null);
                                 }}
                             >
-                                <SortableContext items={flattenedDepts.map(n => n.orgnztId || '')} strategy={verticalListSortingStrategy}>
+                                <SortableContext items={flattenedDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-1">
                                         {flattenedDepts.map((node) => (
                                             <SortableDeptNode
-                                                key={node.orgnztId}
+                                                key={node.ognzId}
                                                 node={node}
-                                                isSelected={selectedItemId === node.orgnztId}
-                                                onClick={() => setSelectedItemId(node.orgnztId || null)}
+                                                isSelected={selectedItemId === node.ognzId}
+                                                onClick={() => setSelectedItemId(node.ognzId || null)}
                                             />
                                         ))}
                                     </div>
@@ -569,7 +569,7 @@ export default function UserOrgHubClient({
                                     <DragOverlay dropAnimation={dropAnimation}>
                                         {activeDeptId ? (
                                             <SortableDeptNode
-                                                node={flattenedDepts.find(n => n.orgnztId === activeDeptId)!}
+                                                node={flattenedDepts.find(n => n.ognzId === activeDeptId)!}
                                                 isSelected={false}
                                                 onClick={() => {}}
                                                 isOverlay
@@ -666,12 +666,12 @@ export default function UserOrgHubClient({
                     <div className="flex items-center gap-8">
                       <div className="w-24 h-20 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-4xl text-white shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
                         <span className="text-primary">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
+                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
                         </span>
                       </div>
                       <div className="space-y-4 pt-1">
                         <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none truncate max-w-[350px]">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm : (selectedItem as UserManage)?.userNm}
+                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm : (selectedItem as UserManage)?.userNm}
                         </h2>
                         <div className="flex gap-3">
                           <span className="bg-primary/5 text-primary text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border border-primary/10 shadow-sm flex items-center gap-2 uppercase">
@@ -706,8 +706,8 @@ export default function UserOrgHubClient({
                   <div className="flex-1 space-y-10 relative z-10">
                     <div className="grid grid-cols-2 gap-6">
                       <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={(selectedItem as UserManage)?.emlAddr || (activeTab === 'DEPTS' ? '부서 공용' : '미지정')} />
-                      <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.mblTelno || (selectedItem as Department)?.orgnztNm || '미등록'} />
-                      <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || '최상위'} />
+                      <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.mblTelno || (selectedItem as Department)?.ognzNm || '미등록'} />
+                      <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={(selectedItem as UserManage)?.ognzId || (selectedItem as Department)?.ognzId || '최상위'} />
                       <InfoBlock icon={<MapPin size={16} />} label="근무지" value="본사" />
                     </div>
 
@@ -903,20 +903,20 @@ export default function UserOrgHubClient({
             <div className="max-h-[400px] overflow-y-auto border-2 border-slate-100 rounded-lg p-4 custom-scrollbar bg-slate-50/30">
               {flattenedDepts.map((node) => (
                 <div
-                  key={node.orgnztId}
+                  key={node.ognzId}
                   style={{ paddingLeft: `${node.depth * 20}px` }}
                   className="mb-1"
                 >
                   <button
-                    onClick={() => setTargetDeptId(node.orgnztId || '')}
+                    onClick={() => setTargetDeptId(node.ognzId || '')}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
-                      targetDeptId === node.orgnztId ? "bg-primary text-white shadow-lg" : "hover:bg-white hover:shadow-sm text-slate-700"
+                      targetDeptId === node.ognzId ? "bg-primary text-white shadow-lg" : "hover:bg-white hover:shadow-sm text-slate-700"
                     )}
                   >
-                    <Building2 size={14} className={targetDeptId === node.orgnztId ? "text-white" : "text-slate-400"} />
-                    <span className="text-xs font-bold tracking-tight">{node.orgnztNm}</span>
-                    <span className="text-xs opacity-50 ml-auto">ID_{node.orgnztId}</span>
+                    <Building2 size={14} className={targetDeptId === node.ognzId ? "text-white" : "text-slate-400"} />
+                    <span className="text-xs font-bold tracking-tight">{node.ognzNm}</span>
+                    <span className="text-xs opacity-50 ml-auto">ID_{node.ognzId}</span>
                   </button>
                 </div>
               ))}

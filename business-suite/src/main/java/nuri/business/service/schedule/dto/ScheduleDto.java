@@ -42,9 +42,9 @@ public class ScheduleDto {
 
     @Size(max = 30)
     private String atchFileId;
-    private String frstRegisterId;
-    private LocalDateTime createdDate;
-    private String lastUpdusrId;
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
+    private String lastMdfrId;
     private LocalDateTime modifiedDate;
     
     // Additional fields for service
@@ -73,10 +73,10 @@ public class ScheduleDto {
                 .schdulIpAdres(entity.getSchdlIpAddr())
                 .schdulChargerId(entity.getSchdlPicId())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .modifiedDate(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .modifiedDate(entity.getMdfcnDt())
                 .schdulDeptId(entity.getSchdlDeptId())
                 .schdulKindCode(entity.getSchdlKndCd())
                 .schdulPlace(entity.getSchdlPlcNm())

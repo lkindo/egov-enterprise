@@ -232,7 +232,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
-        when(policy.getOtpEnabledAt()).thenReturn("Y");
+        when(policy.getOtpUseYn()).thenReturn("Y");
         when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
 
         // When & Then
@@ -250,7 +250,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
-        when(policy.getOtpEnabledAt()).thenReturn("Y");
+        when(policy.getOtpUseYn()).thenReturn("Y");
         when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
 
         User user = mock(User.class);

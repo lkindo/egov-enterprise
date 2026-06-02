@@ -49,7 +49,7 @@ class SmsAsyncProcessorTest {
 
         smsAsyncProcessor.processSending("S1", "0102", "Hello");
 
-        assertThat(recptn.getResultCode()).isEqualTo("S");
+        assertThat(recptn.getRsltCd()).isEqualTo("S");
     }
 
     @Test
@@ -63,7 +63,7 @@ class SmsAsyncProcessorTest {
 
         // Unit test에서는 @Recover가 자동 실행되지 않으므로 수동 호출하여 로직 검증
         smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"), recptn, "0102", "Hello");
-        assertThat(recptn.getResultCode()).isEqualTo("F");
+        assertThat(recptn.getRsltCd()).isEqualTo("F");
     }
 
     @Test
@@ -77,6 +77,6 @@ class SmsAsyncProcessorTest {
 
         // @Recover 수동 호출 검증
         smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"), recptn, "0102", "Hello");
-        assertThat(recptn.getResultCode()).isEqualTo("F");
+        assertThat(recptn.getRsltCd()).isEqualTo("F");
     }
 }

@@ -20,6 +20,6 @@ public class BoardMasterSearchResult {
     private String bbsExpln;
     private String tmpltId;
     private String useYn;
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
 }

@@ -49,7 +49,7 @@ public class Scrap extends BaseEntity {
     private String useYn = "Y";
 
     public String getUniqId() {
-        return getFrstRegisterId();
+        return getFrstRgtrId();
     }
 
     public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {

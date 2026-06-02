@@ -44,7 +44,7 @@ class DeptManageServiceImplTest {
         Page<DeptManageDto> result = deptManageService.getDeptManageList(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getOrgnztId()).isEqualTo("OR_01");
+        assertThat(result.getContent().get(0).getOgnzId()).isEqualTo("OR_01");
     }
 
     @Test
@@ -55,13 +55,13 @@ class DeptManageServiceImplTest {
 
         DeptManageDto result = deptManageService.getDeptManage("OR_01");
 
-        assertThat(result.getOrgnztId()).isEqualTo("OR_01");
+        assertThat(result.getOgnzId()).isEqualTo("OR_01");
     }
 
     @Test
     @DisplayName("부서 등록")
     void insertDeptManage() {
-        DeptManageDto dto = DeptManageDto.builder().orgnztId("OR_01").orgnztNm("New").build();
+        DeptManageDto dto = DeptManageDto.builder().ognzId("OR_01").ognzNm("New").build();
         deptManageService.insertDeptManage(dto);
         verify(deptManageRepository).save(any(DeptManage.class));
     }
@@ -72,10 +72,10 @@ class DeptManageServiceImplTest {
         DeptManage entity = DeptManage.builder().ognzId("OR_01").ognzNm("Old").build();
         given(deptManageRepository.findById("OR_01")).willReturn(Optional.of(entity));
 
-        DeptManageDto dto = DeptManageDto.builder().orgnztId("OR_01").orgnztNm("New").build();
+        DeptManageDto dto = DeptManageDto.builder().ognzId("OR_01").ognzNm("New").build();
         deptManageService.updateDeptManage(dto);
 
-        assertThat(entity.getOrgnztNm()).isEqualTo("New");
+        assertThat(entity.getOgnzNm()).isEqualTo("New");
     }
 
     @Test

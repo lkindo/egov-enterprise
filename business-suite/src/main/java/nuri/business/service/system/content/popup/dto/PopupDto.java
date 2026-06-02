@@ -60,7 +60,7 @@ public class PopupDto {
     @Schema(description = "생성자 ID")
     private String frstRgtrId;
     @Schema(description = "생성 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static PopupDto from(Popup entity) {
         if (entity == null)
@@ -78,7 +78,7 @@ public class PopupDto {
                 .stopvewSetupYn(entity.getStopvewSetupYn())
                 .ntceYn(entity.getNtceYn())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

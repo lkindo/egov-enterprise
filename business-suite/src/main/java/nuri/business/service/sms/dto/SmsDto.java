@@ -40,21 +40,12 @@ public class SmsDto {
     private String frstRgtrId;
 
     @Schema(description = "최초 등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     @Schema(description = "고유 식별자")
     private String uniqId;
 
-    public String getFrstRegisterId() {
-        return frstRgtrId;
-    }
 
-    public LocalDateTime getFrstRegisterPnttm() {
-        return createdDate;
-    }
-
-    public LocalDateTime getTrnsmitPnttm() { return createdDate; }
-    public LocalDateTime getFrstRegistPnttm() { return createdDate; }
 
     @Schema(description = "수신자 목록")
     @Builder.Default
@@ -75,7 +66,7 @@ public class SmsDto {
                 .trnsmitCn(entity.getSndngCn())
                 .recptnCnt(0)
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .recipients(new java.util.ArrayList<>())
                 .build();
     }

@@ -77,13 +77,13 @@ export async function bulkUpdateUserStatusAction(userIds: string[], status: stri
   }
 }
 
-export async function bulkMoveUserDeptAction(userIds: string[], orgnztId: string): Promise<ActionResponse> {
+export async function bulkMoveUserDeptAction(userIds: string[], ognzId: string): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await userAdminService.moveUsersToDept(userIds, orgnztId, axiosConfig);
+    await userAdminService.moveUsersToDept(userIds, ognzId, axiosConfig);
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자가 부서 이동되었습니다.` };

@@ -27,21 +27,6 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseTimeEntity {
 
-    public static abstract class BaseTimeEntityBuilder<C extends BaseTimeEntity, B extends BaseTimeEntityBuilder<C, B>> {
-        private LocalDateTime crtDt;
-        private LocalDateTime mdfcnDt;
-
-        public B createdDate(LocalDateTime createdDate) {
-            this.crtDt = createdDate;
-            return self();
-        }
-
-        public B lastModifiedDate(LocalDateTime lastModifiedDate) {
-            this.mdfcnDt = lastModifiedDate;
-            return self();
-        }
-    }
-
     @CreatedDate
     @Column(updatable = false)
     protected LocalDateTime crtDt;
@@ -49,48 +34,4 @@ public abstract class BaseTimeEntity {
     @LastModifiedDate
     protected LocalDateTime mdfcnDt;
 
-    // ----- [Legacy Aliases for createdDate & lastModifiedDate] -----
-    
-    public LocalDateTime getCreatedDate() {
-        return this.crtDt;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.crtDt = createdDate;
-    }
-
-    public LocalDateTime getLastModifiedDate() {
-        return this.mdfcnDt;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.mdfcnDt = lastModifiedDate;
-    }
-
-    // ----- [Legacy Aliases] -----
-    
-    public LocalDateTime getFrstRegistPnttm() {
-        return crtDt;
-    }
-
-    public LocalDateTime getLastUpdtPnttm() {
-        return mdfcnDt;
-    }
-
-    // Variations for different DTOs/Services
-    public LocalDateTime getFrstRegisterPnttm() {
-        return crtDt;
-    }
-
-    public LocalDateTime getLastUpdusrPnttm() {
-        return mdfcnDt;
-    }
-
-    public void setFrstRegistPnttm(LocalDateTime dateTime) {
-        this.crtDt = dateTime;
-    }
-
-    public void setLastUpdtPnttm(LocalDateTime dateTime) {
-        this.mdfcnDt = dateTime;
-    }
 }

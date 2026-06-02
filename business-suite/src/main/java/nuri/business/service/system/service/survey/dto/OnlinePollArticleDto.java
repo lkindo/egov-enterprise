@@ -39,7 +39,7 @@ public class OnlinePollArticleDto {
     private String frstRgtrId;
 
     @Schema(description = "생성 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static OnlinePollArticleDto from(OnlinePollArticle entity) {
         if (entity == null) return null;
@@ -48,7 +48,7 @@ public class OnlinePollArticleDto {
                 .pollId(entity.getPollManage() != null ? entity.getPollManage().getPollId() : null)
                 .pollArtclNm(entity.getPollArtclNm())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

@@ -13,8 +13,8 @@ export interface InfrmlSanctn {
  sancltNm: string;
  returnResn?: string;
  reqstDe?: string;
- frstRegisterId?: string;
- lastUpdusrId?: string;
+ frstRgtrId?: string;
+ lastMdfrId?: string;
 }
 
 /**

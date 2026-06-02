@@ -51,9 +51,9 @@ describe('Standardized Validation Schemas', () => {
   describe('smsSchema (SMS)', () => {
     it('should validate message length within 80 chars', () => {
       const validData = {
-        trnsmitTelno: '010-1234-5678',
+        sndngTelno: '010-1234-5678',
         rcptnTelno: '010-5678-1234',
-        trnsmitCn: '안녕하세요. 테스트 메시지입니다.',
+        sndngCn: '안녕하세요. 테스트 메시지입니다.',
       };
       const result = smsSchema.safeParse(validData);
       expect(result.success).toBe(true);
@@ -62,9 +62,9 @@ describe('Standardized Validation Schemas', () => {
     it('should reject message longer than 80 chars', () => {
       const longMessage = 'A'.repeat(81);
       const invalidData = {
-        trnsmitTelno: '010-1234-5678',
+        sndngTelno: '010-1234-5678',
         rcptnTelno: '010-5678-1234',
-        trnsmitCn: longMessage,
+        sndngCn: longMessage,
       };
       const result = smsSchema.safeParse(invalidData);
       expect(result.success).toBe(false);

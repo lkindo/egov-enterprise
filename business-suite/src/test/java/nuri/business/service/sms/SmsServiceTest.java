@@ -49,7 +49,7 @@ class SmsServiceTest {
     void getSmsListTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
-        Sms sms = Sms.builder().smsId("SMS_001").trnsmitTelno("01011112222").trnsmitCn("Hello").build();
+        Sms sms = Sms.builder().smsId("SMS_001").sndngTelno("01011112222").sndngCn("Hello").build();
         Page<Sms> page = new PageImpl<>(List.of(sms), pageable, 1);
         when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
 
@@ -65,7 +65,7 @@ class SmsServiceTest {
     @DisplayName("SMS 단건 조회 테스트")
     void getSmsTest() {
         // Given
-        Sms sms = Sms.builder().smsId("SMS_001").trnsmitTelno("01011112222").trnsmitCn("Hello").build();
+        Sms sms = Sms.builder().smsId("SMS_001").sndngTelno("01011112222").sndngCn("Hello").build();
         when(smsRepository.findById("SMS_001")).thenReturn(Optional.of(sms));
 
         // When
@@ -92,8 +92,8 @@ class SmsServiceTest {
     void sendSmsTest() {
         // Given
         SmsDto dto = SmsDto.builder()
-                .trnsmitTelno("01011112222")
-                .trnsmitCn("Test Message")
+                .sndngTelno("01011112222")
+                .sndngCn("Test Message")
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         
@@ -114,7 +114,7 @@ class SmsServiceTest {
     @DisplayName("SMS 수신자 목록 조회 테스트")
     void getSmsRecipientsTest() {
         // Given
-        SmsRecptn recptn = SmsRecptn.builder().smsId("SMS_001").rcptnTelno("01033334444").resultCode("S").build();
+        SmsRecptn recptn = SmsRecptn.builder().smsId("SMS_001").rcptnTelno("01033334444").rsltCd("S").build();
         when(smsRecptnRepository.findByIdSmsId("SMS_001")).thenReturn(List.of(recptn));
 
         // When
@@ -129,8 +129,8 @@ class SmsServiceTest {
     @DisplayName("SMS 발송 - 수신자 없음")
     void sendSms_NoRecipients() {
         SmsDto dto = SmsDto.builder()
-                .trnsmitTelno("01011112222")
-                .trnsmitCn("No Recipient")
+                .sndngTelno("01011112222")
+                .sndngCn("No Recipient")
                 .recipients(null)
                 .build();
 

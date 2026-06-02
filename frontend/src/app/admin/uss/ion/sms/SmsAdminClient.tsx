@@ -66,9 +66,9 @@ export default function SmsAdminClient({
   // Send SMS Form
   const form = useAppForm(smsSchema, {
     defaultValues: {
-      trnsmitTelno: '02-1234-5678', // 발신번호 (기본값)
+      sndngTelno: '02-1234-5678', // 발신번호 (기본값)
       rcptnTelno: '',
-      trnsmitCn: ''
+      sndngCn: ''
     }
   });
 
@@ -124,7 +124,7 @@ export default function SmsAdminClient({
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-3">
           <Phone size={14} className="text-primary opacity-50" />
-          <span className="font-bold text-foreground tracking-tighter">{item.trnsmitTelno}</span>
+          <span className="font-bold text-foreground tracking-tighter">{item.sndngTelno}</span>
         </div>
       )
     },
@@ -132,7 +132,7 @@ export default function SmsAdminClient({
       header: '메시지 내용',
       accessor: (item: SmsDto) => (
         <div className="max-w-[450px] truncate font-bold text-slate-600 tracking-tight text-left">
-          "{item.trnsmitCn}"
+          "{item.sndngCn}"
         </div>
       )
     },
@@ -287,7 +287,7 @@ export default function SmsAdminClient({
 
                 <FormField
                   control={form.control}
-                  name="trnsmitCn"
+                  name="sndngCn"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">

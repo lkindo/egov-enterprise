@@ -86,7 +86,7 @@ export default function TemplateAdminClient({
  {
  header: '템플릿 ID',
  accessor: (item: TmplatInfo) => (
- <span className="font-mono font-bold text-slate-400 text-xs tracking-tight">{item.tmplatId}</span>
+ <span className="font-mono font-bold text-slate-400 text-xs tracking-tight">{item.tmpltId}</span>
  )
  },
  {

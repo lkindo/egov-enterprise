@@ -12,7 +12,7 @@ public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResu
     long countByPollArtclId(String pollArtclId);
 
     @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollId = :pollId AND r.frstRgtrId = :frstRegisterId")
-    long countByPollIdAndFrstRegisterId(@Param("pollId") String pollId, @Param("frstRegisterId") String frstRegisterId);
+    long countByPollIdAndFrstRegisterId(@Param("pollId") String pollId, @Param("frstRgtrId") String frstRegisterId);
 
     List<OnlinePollResult> findByPollId(String pollId);
 

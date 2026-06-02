@@ -68,9 +68,9 @@ public class AdministCodeService {
                 .crtYmd(entity.getCrtYmd())
                 .ablYmd(entity.getAblYmd())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .lastMdfrId(entity.getLastMdfrId())
-                .lastModifiedDate(entity.getLastModifiedDate())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 }

@@ -18,7 +18,7 @@ export async function saveDeptAction(prevState: unknown, { mode, data }: { mode:
     if (mode === 'create') {
       await deptAdminService.createDept(data, config);
     } else {
-      await deptAdminService.updateDept(data.orgnztId!, data, config);
+      await deptAdminService.updateDept(data.ognzId!, data, config);
     }
 
     revalidatePath('/admin/user/departments');
@@ -51,12 +51,12 @@ export async function saveDeptHierarchyAction(flattenedDepts: any[]): Promise<Ac
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    // 트리 구조 변경 사항을 백엔드 형식에 맞춰 매핑 (parentId -> upperOrgnztId, ordr)
+    // 트리 구조 변경 사항을 백엔드 형식에 맞춰 매핑 (parentId -> upperOgnzId, ordr)
     const submitData = flattenedDepts.map((item, index) => ({
-      orgnztId: item.orgnztId,
-      orgnztNm: item.orgnztNm,
-      orgnztDc: item.orgnztDc,
-      upperOrgnztId: item.parentId,
+      ognzId: item.ognzId,
+      ognzNm: item.ognzNm,
+      ognzExpln: item.ognzExpln,
+      upperOgnzId: item.parentId,
       ordr: index + 1
     }));
 

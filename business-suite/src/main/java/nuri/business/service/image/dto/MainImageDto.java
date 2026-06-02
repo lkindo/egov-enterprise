@@ -46,7 +46,7 @@ public class MainImageDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static MainImageDto from(MainImage entity) {
         if (entity == null) return null;
@@ -58,7 +58,7 @@ public class MainImageDto {
                 .mainImgExpln(entity.getMainImgExpln())
                 .rfltYn(entity.getRfltYn())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

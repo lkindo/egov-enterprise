@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 2. OTP 검증 (정책에 활성화된 경우)
         loginPolicyRepository.findById(userId).ifPresent(policy -> {
-            if ("Y".equals(policy.getOtpEnabledAt())) {
+            if ("Y".equals(policy.getOtpUseYn())) {
                 if (request.getOtpCode() == null) {
                     log.warn(">>> [Login] OTP Required for userId: {}", userId);
                     throw new BusinessException("OTP 번호가 필요합니다.", ErrorCode.AUTH_ERROR);

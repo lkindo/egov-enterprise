@@ -49,7 +49,7 @@ public class DeptApiController {
     @Operation(summary = "부서 상세 조회", description = "특정 부서 ID에 해당하는 상세 정보를 조회합니다.")
     @GetMapping("/{deptId}")
     public ResponseEntity<ApiResponse<DeptManageDto>> getDept(
-            @Parameter(description = "부서 ID (OrgnztId)") @PathVariable String deptId) {
+            @Parameter(description = "부서 ID (OgnzId)") @PathVariable String deptId) {
         return ResponseEntity.ok(ApiResponse.success(deptManageService.getDeptManage(deptId)));
     }
 
@@ -73,7 +73,7 @@ public class DeptApiController {
     @Operation(summary = "부서 삭제", description = "시스템에서 부서를 삭제합니다.")
     @DeleteMapping("/{deptId}")
     public ResponseEntity<ApiResponse<Void>> deleteDept(
-            @Parameter(description = "부서 ID (OrgnztId)") @PathVariable String deptId) {
+            @Parameter(description = "부서 ID (OgnzId)") @PathVariable String deptId) {
         deptManageService.deleteDeptManage(deptId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

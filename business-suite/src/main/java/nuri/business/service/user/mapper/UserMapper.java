@@ -30,7 +30,7 @@ public interface UserMapper {
     @Mapping(target = "userSe", expression = "java(authority != null ? authority.getMbrTypeCd() : \"USR\")")
     @Mapping(target = "mberTypeCd", source = "authority.mbrTypeCd")
     @Mapping(target = "userSttsCd", source = "user.userSttsCd")
-    @Mapping(target = "createdDate", source = "user.createdDate")
+    @Mapping(target = "crtDt", source = "user.crtDt")
     @Mapping(target = "pswdCrans", source = "user.pswdCnsr")
     @Mapping(target = "orgnztId", source = "user.ognzId")
     @Mapping(target = "homeAddr", source = "user.baseAddr")

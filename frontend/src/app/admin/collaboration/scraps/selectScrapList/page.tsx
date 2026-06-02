@@ -21,8 +21,8 @@ interface Scrap {
     scrapId: string;
     scrapNm: string;
     scrapUrl: string;
-    scrapDc: string;
-    frstRegisterPnttm: string;
+    scrapExpln: string;
+    createdDate: string;
 }
 
 const ScrapListPage = () => {
@@ -131,11 +131,11 @@ const ScrapListPage = () => {
                                                         {item.scrapUrl?.length > 70 ? item.scrapUrl.substring(0, 70) + '...' : item.scrapUrl}
                                                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                                     </a>
-                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapDc || '설명 없음'}</span>
+                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapExpln || '설명 없음'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center text-sm text-muted-foreground font-medium">
-                                                {item.frstRegisterPnttm?.substring(0, 10)}
+                                                {item.createdDate?.substring(0, 10)}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <Button

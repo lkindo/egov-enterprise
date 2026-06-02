@@ -56,7 +56,7 @@ class CommunityServiceImplTest {
         CommunityDto dto = CommunityDto.builder()
                 .cmntyTtl("Test Community")
                 .cmntyIntroCn("Description")
-                .tmplatId("TMP_01")
+                .tmpltId("TMP_01")
                 .build();
         
         given(egovCmmntyIdGnrService.getNextStringId()).willReturn("CMMNTY_01");

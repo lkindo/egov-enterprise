@@ -1,5 +1,4 @@
 package nuri.business.domain.common;
-// Force re-scan
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
@@ -29,22 +28,4 @@ public abstract class BaseEntity extends BaseTimeEntity {
     @LastModifiedBy
     @Column(name = "last_mdfr_id", length = 20)
     protected String lastMdfrId;
-
-    // ----- [Legacy Aliases] -----
-
-    public String getFrstRegisterId() {
-        return frstRgtrId;
-    }
-
-    public String getLastUpdusrId() {
-        return lastMdfrId;
-    }
-
-    public void setFrstRegisterId(String id) {
-        this.frstRgtrId = id;
-    }
-
-    public void setLastUpdusrId(String id) {
-        this.lastMdfrId = id;
-    }
 }

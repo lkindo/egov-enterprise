@@ -72,8 +72,8 @@ export default function DeptAuthorityPage() {
  const roles: AuthorInfo[] = (rolesData as any)?.list || (rolesData as any)?.resultList || rolesData || [];
 
  const filteredDepts = depts.filter(d =>
- String(d.orgnztNm || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
- String(d.orgnztId || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase())
+ String(d.ognzNm || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
+ String(d.ognzId || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase())
  );
 
  const loading = deptsLoading || rolesLoading;
@@ -151,7 +151,7 @@ export default function DeptAuthorityPage() {
  }
  };
 
- const currentDept = depts.find(d => d.orgnztId === selectedDept);
+ const currentDept = depts.find(d => d.ognzId === selectedDept);
 
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -216,17 +216,17 @@ export default function DeptAuthorityPage() {
  ) : (
  filteredDepts.map((d, idx) => (
  <motion.button
- key={d.orgnztId}
+ key={d.ognzId}
  initial={{ opacity: 0, x: -10 }}
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.03 }}
  onClick={() => {
- setSelectedDept(d.orgnztId);
+ setSelectedDept(d.ognzId);
  setSelectedAuthorCode(null);
  }}
  className={cn(
  "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
- selectedDept === d.orgnztId
+ selectedDept === d.ognzId
  ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
  : "bg-white border-slate-50 hover:border-slate-200"
  )}
@@ -234,26 +234,26 @@ export default function DeptAuthorityPage() {
  <div className="flex items-center gap-4 relative z-10">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
- selectedDept === d.orgnztId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
+ selectedDept === d.ognzId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
  )}>
  <Users size={20} />
  </div>
  <div className="flex flex-col text-left">
  <span className={cn(
  "text-xs font-bold tracking-tighter leading-none mb-1",
- selectedDept === d.orgnztId ? "text-white" : "text-slate-900"
- )}>{d.orgnztNm}</span>
+ selectedDept === d.ognzId ? "text-white" : "text-slate-900"
+ )}>{d.ognzNm}</span>
  <span className={cn(
  "text-xs font-mono font-bold tracking-widest",
- selectedDept === d.orgnztId ? "text-white/30" : "text-slate-300"
- )}>{d.orgnztId}</span>
+ selectedDept === d.ognzId ? "text-white/30" : "text-slate-300"
+ )}>{d.ognzId}</span>
  </div>
  </div>
  <ChevronRight size={14} className={cn(
  "transition-all shrink-0 relative z-10",
- selectedDept === d.orgnztId ? "opacity-100 translate-x-1" : "opacity-0 translate-x-0"
+ selectedDept === d.ognzId ? "opacity-100 translate-x-1" : "opacity-0 translate-x-0"
  )} />
- {selectedDept === d.orgnztId && (
+ {selectedDept === d.ognzId && (
  <motion.div layoutId="active-dept-indicator" className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full shadow-[0_0_15px_rgba(var(--primary-rgb),0.8)]" />
  )}
  </motion.button>
@@ -268,7 +268,7 @@ export default function DeptAuthorityPage() {
  {/* Right: Policy Matrix Selection */}
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
  <HubSectionCard 
- title={currentDept ? `[${currentDept.orgnztNm}] 보안 마스터 정책 배포` : "보안 메트릭스 선택"} 
+ title={currentDept ? `[${currentDept.ognzNm}] 보안 마스터 정책 배포` : "보안 메트릭스 선택"} 
  description="선택한 조직의 모든 계정에 동기화할 마스터 권한 아키텍처를 선택하십시오." 
  icon={ShieldCheck}
  >
@@ -304,7 +304,7 @@ export default function DeptAuthorityPage() {
  <div className="relative z-10 space-y-2">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
  <div className="flex items-baseline gap-3">
- <h4 className="text-3xl font-bold tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
+ <h4 className="text-3xl font-bold tracking-tighter leading-none">{currentDept?.ognzNm}</h4>
  <span className="text-xs font-bold text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
  </div>
  <p className="text-xs font-bold text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 구성원에게 전역 정책 설정을 시작할 수 있는 상태입니다.</p>

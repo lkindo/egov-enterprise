@@ -24,7 +24,7 @@ export const userSchema = z.object({
   userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
   emlAddr: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
   mblTelno: z.string().optional().or(z.literal('')),
-  orgnztId: z.string().optional().or(z.literal('')),
+  ognzId: z.string().optional().or(z.literal('')),
   pswd: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
 });
 
@@ -45,7 +45,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
       userNm: initialData?.userNm || '',
       emlAddr: initialData?.emlAddr || '',
       mblTelno: initialData?.mblTelno || '',
-      orgnztId: initialData?.orgnztId || '',
+      ognzId: initialData?.ognzId || '',
       pswd: '',
     },
   });
@@ -204,7 +204,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
 
         <FormField
           control={form.control}
-          name="orgnztId"
+          name="ognzId"
           render={({ field, fieldState }) => (
             <FormItem>
               <motion.div
@@ -224,7 +224,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   >
                     <option value="">소속 없음 / GLOBAL</option>
                     {(departments || []).filter(Boolean).map((d: any) => (
-                      <option key={d.orgnztId} value={d.orgnztId}>{d.orgnztNm}</option>
+                      <option key={d.ognzId} value={d.ognzId}>{d.ognzNm}</option>
                     ))}
                   </select>
                 </FormControl>

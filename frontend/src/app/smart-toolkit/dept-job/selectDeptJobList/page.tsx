@@ -22,7 +22,7 @@ interface DeptJob {
   deptJobNm: string;
   deptJobCn: string;
   frstRegisterNm: string;
-  frstRegisterPnttm: string;
+  createdDate: string;
   priort: string;
 }
 
@@ -153,7 +153,7 @@ const DeptJobListPage = () => {
                       </TableCell>
                       <TableCell className="text-center py-6">
                         <div className="flex items-center justify-center gap-2 text-slate-400 font-bold text-sm">
-                          <Calendar className="w-4 h-4 opacity-30" /> {item.frstRegisterPnttm?.substring(0, 10)}
+                          <Calendar className="w-4 h-4 opacity-30" /> {item.createdDate?.substring(0, 10)}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">

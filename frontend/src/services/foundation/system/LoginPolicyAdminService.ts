@@ -12,7 +12,7 @@ export interface LoginPolicy {
   endTm?: string;
   otpUseYn?: 'Y' | 'N';
   regYn: 'Y' | 'N';
-  lastUpdusrId?: string;
+  lastMdfrId?: string;
 }
 
 /**

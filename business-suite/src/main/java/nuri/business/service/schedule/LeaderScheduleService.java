@@ -127,7 +127,7 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                 .schdlBgngYmd(entity.getSchdlBgngYmd())
                 .schdlEndYmd(entity.getSchdlEndYmd())
                 .schdlPlcNm(entity.getSchdlPlcNm())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

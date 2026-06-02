@@ -67,19 +67,19 @@ public class ExternalHr {
 
     // ----- [Legacy Getter Aliases] -----
 
-    public LocalDateTime getFrstRegistPnttm() {
+    public LocalDateTime getCrtDt() {
         return this.crtDt;
     }
 
-    public String getFrstRegisterId() {
+    public String getFrstRgtrId() {
         return this.frstRgtrId;
     }
 
-    public LocalDateTime getLastUpdtPnttm() {
+    public LocalDateTime getMdfcnDt() {
         return this.mdfcnDt;
     }
 
-    public String getLastUpdusrId() {
+    public String getLastMdfrId() {
         return this.lastMdfrId;
     }
 
@@ -91,7 +91,7 @@ public class ExternalHr {
     public ExternalHr(String evntId, String otsdHrId, String gndrCd, String otsdHrNm,
                       String crTypeCd, String ogdpInstNm, String brdtYmd, String areaNo,
                       String mdTelno, String endTelno, String emlAddr,
-                      String frstRegisterId, String lastUpdusrId) {
+                      String frstRgtrId, String lastMdfrId) {
         this.evntId = evntId;
         this.otsdHrId = otsdHrId;
         this.gndrCd = gndrCd;
@@ -103,9 +103,9 @@ public class ExternalHr {
         this.mdTelno = mdTelno;
         this.endTelno = endTelno;
         this.emlAddr = emlAddr;
-        this.frstRgtrId = frstRegisterId;
+        this.frstRgtrId = frstRgtrId;
         this.crtDt = LocalDateTime.now();
-        this.lastMdfrId = lastUpdusrId;
+        this.lastMdfrId = lastMdfrId;
         this.mdfcnDt = LocalDateTime.now();
     }
 }

@@ -56,9 +56,9 @@ public class MemoReportDto {
     private String reportrInqireDt;
 
     @Schema(description = "생성일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
-    public String getFrstRegisterId() {
+    public String getFrstRgtrId() {
         return writerId;
     }
 
@@ -88,7 +88,7 @@ public class MemoReportDto {
                 .instrCn(entity.getInstrCn())
                 .instrRegDt(entity.getInstrRegDt())
                 .reportrInqireDt(entity.getReportrInqireDt())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

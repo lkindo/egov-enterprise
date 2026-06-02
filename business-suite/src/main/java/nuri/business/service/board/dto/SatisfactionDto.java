@@ -25,7 +25,7 @@ public class SatisfactionDto {
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
@@ -42,7 +42,7 @@ public class SatisfactionDto {
                 .userNm(entity.getUserNm())
                 .password(entity.getPswd())
                 .useYn(entity.getUseYn())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

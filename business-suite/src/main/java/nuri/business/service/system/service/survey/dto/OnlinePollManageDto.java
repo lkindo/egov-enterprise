@@ -52,7 +52,7 @@ public class OnlinePollManageDto {
     private String frstRgtrId;
 
     @Schema(description = "생성 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     @Schema(description = "설문 항목 목록")
     private List<OnlinePollArticleDto> pollArticles;
@@ -68,7 +68,7 @@ public class OnlinePollManageDto {
                 .pollDsuseYn(entity.getPollDsuseYn())
                 .pollAtmcDsuseYn(entity.getPollAtmcDsuseYn())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .pollArticles(entity.getPollArticles() != null ? 
                         entity.getPollArticles().stream().map(OnlinePollArticleDto::from).collect(Collectors.toList()) : 
                         Collections.emptyList())

@@ -37,11 +37,8 @@ public class ScrapDto {
     @Size(max = 20)
     @NotBlank
     private String userId; 
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-
-
-    public LocalDateTime getCreatedDate() { return frstRegisterPnttm; }
+    private String frstRgtrId;
+    private LocalDateTime crtDt;
 
     public static ScrapDto from(Scrap entity) {
         if (entity == null) return null;
@@ -54,9 +51,9 @@ public class ScrapDto {
                 .scrapDc(entity.getScrapExpln())
                 .useYn(entity.getUseYn())
                 .uniqId(entity.getUniqId())
-                .userId(entity.getFrstRegisterId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getCreatedDate())
+                .userId(entity.getFrstRgtrId())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

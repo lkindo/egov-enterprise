@@ -7,7 +7,6 @@ export interface BoardPost {
   frstRegisterNm?: string;
   inqireCo: number;
   likeCo?: number;
-  frstRegisterPnttm: string;
   createdDate?: string;
   atchFileId?: string;
   pstSn: number;
@@ -21,9 +20,9 @@ export interface BoardPost {
   isExpired: string;
   frstRegisterPnttmStr: string;
   ntcrId?: string;
-  frstRegisterId: string;
-  lastUpdusrId: string;
-  lastUpdtPnttm: string;
+  frstRgtrId: string;
+  lastMdfrId: string;
+  lastModifiedDate: string;
   password: string;
   noticeYn: string;
   secretYn: string;

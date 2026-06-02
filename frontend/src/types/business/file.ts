@@ -7,7 +7,7 @@ export interface FileVO {
   fileExtsn: string;
   fileMg: number;
   fileCn?: string;
-  frstRegisterPnttm?: string;
+  createdDate?: string;
 }
 
 export interface FileSearchParams {

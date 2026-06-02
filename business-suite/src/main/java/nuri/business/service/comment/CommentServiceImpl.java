@@ -64,7 +64,7 @@ public class CommentServiceImpl implements CommentService {
                 .wrterId(entity.getWrterId())
                 .wrterNm(entity.getWrterNm())
                 .ansCn(entity.getAnsCn())
-                .createdDate(entity.getFrstRegistPnttm().toString())
+                .crtDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();
     }
 }

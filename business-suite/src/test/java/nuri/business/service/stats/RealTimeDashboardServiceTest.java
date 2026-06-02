@@ -39,13 +39,13 @@ class RealTimeDashboardServiceTest {
     @Test
     @DisplayName("실시간 통계 이벤트 발행 확인")
     void broadcastRealTimeStats_Success() {
-        when(notificationRepository.countByIsRead("N")).thenReturn(5L);
+        when(notificationRepository.countByReadYn("N")).thenReturn(5L);
 
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
 
         verify(eventPublisher).publishEvent(any(DashboardStatsUpdatedEvent.class));
-        verify(notificationRepository).countByIsRead("N");
+        verify(notificationRepository).countByReadYn("N");
     }
 
     @Test
@@ -70,8 +70,8 @@ class RealTimeDashboardServiceTest {
 
     @Test
     @DisplayName("대기 중인 알림 수 조회 예외 시 0 반환")
-    void getPendingAlertsCount_Exception_ReturnsZero() {
-        when(notificationRepository.countByIsRead("N")).thenThrow(new RuntimeException("DB Error"));
+    void getRealTimeStats_ExceptionHandled() {
+        when(notificationRepository.countByReadYn("N")).thenThrow(new RuntimeException("DB Error"));
         realTimeDashboardService.broadcastRealTimeStats();
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.alerts() == 0));
     }

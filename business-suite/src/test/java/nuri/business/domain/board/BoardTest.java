@@ -133,74 +133,75 @@ class BoardTest {
         Board board = Board.builder().build();
 
         // Setter aliases 호출
-        board.setNttId("PST_999");
-        board.setNttSj("Title Aliases");
-        board.setNttCn("Content Aliases");
-        board.setNttNo(100L);
-        board.setNtcrId("writer01");
-        board.setNtcrNm("Writer Name");
-        board.setPassword("securepass");
-        board.setNtceBgngYmd("20260101");
-        board.setNtceEndYmd("20261231");
-        board.setInqireCo(42);
-        board.setLikeCo(7);
-        board.setQnaStatus("RESOLVED");
-        board.setQnaCategory("CAT_02");
-        board.setSjBoldYn("Y");
-        board.setParnts("UP_PST_01");
-        board.setAnswerAt("Y");
-        board.setNoticeAt("Y");
+        board.setPstId("PST_999");
+        board.setPstTtl("Title Aliases");
+        board.setPstCn("Content Aliases");
+        board.setAnsSn(100L);
+        board.setUserId("writer01");
+        board.setUserNm("Writer Name");
+        board.setPswd("securepass");
+        board.setPstBgngYmd("20260101");
+        board.setPstEndYmd("20261231");
+        board.setInqCnt(42);
+        board.setLikeCnt(7);
+        board.setQnaSttsCd("RESOLVED");
+        board.setQnaCatCd("CAT_02");
+        board.setTtlBoldYn("Y");
+        board.setUpPstId("UP_PST_01");
+        board.setAnsYn("Y");
+        board.setUseYn("Y");
+        board.setNtcYn("Y");
 
         // Getter aliases & 핵심 필드 대칭성 검증
-        assertThat(board.getNttId()).isEqualTo("PST_999");
+        assertThat(board.getPstId()).isEqualTo("PST_999");
         assertThat(board.getPstId()).isEqualTo("PST_999");
         
-        assertThat(board.getNttSj()).isEqualTo("Title Aliases");
+        assertThat(board.getPstTtl()).isEqualTo("Title Aliases");
         assertThat(board.getPstTtl()).isEqualTo("Title Aliases");
         
-        assertThat(board.getNttCn()).isEqualTo("Content Aliases");
+        assertThat(board.getPstCn()).isEqualTo("Content Aliases");
         assertThat(board.getPstCn()).isEqualTo("Content Aliases");
         
-        assertThat(board.getNttNo()).isEqualTo(100L);
+        assertThat(board.getAnsSn()).isEqualTo(100L);
         assertThat(board.getAnsSn()).isEqualTo(100L);
         
-        assertThat(board.getNtcrId()).isEqualTo("writer01");
+        assertThat(board.getUserId()).isEqualTo("writer01");
         assertThat(board.getUserId()).isEqualTo("writer01");
         
-        assertThat(board.getNtcrNm()).isEqualTo("Writer Name");
+        assertThat(board.getUserNm()).isEqualTo("Writer Name");
         assertThat(board.getUserNm()).isEqualTo("Writer Name");
         
-        assertThat(board.getPassword()).isEqualTo("securepass");
+        assertThat(board.getPswd()).isEqualTo("securepass");
         assertThat(board.getPswd()).isEqualTo("securepass");
         
-        assertThat(board.getNtceBgngYmd()).isEqualTo("20260101");
+        assertThat(board.getPstBgngYmd()).isEqualTo("20260101");
         assertThat(board.getPstBgngYmd()).isEqualTo("20260101");
         
-        assertThat(board.getNtceEndYmd()).isEqualTo("20261231");
+        assertThat(board.getPstEndYmd()).isEqualTo("20261231");
         assertThat(board.getPstEndYmd()).isEqualTo("20261231");
         
-        assertThat(board.getInqireCo()).isEqualTo(42);
+        assertThat(board.getInqCnt()).isEqualTo(42);
         assertThat(board.getInqCnt()).isEqualTo(42);
         
-        assertThat(board.getLikeCo()).isEqualTo(7);
+        assertThat(board.getLikeCnt()).isEqualTo(7);
         assertThat(board.getLikeCnt()).isEqualTo(7);
         
-        assertThat(board.getQnaStatus()).isEqualTo("RESOLVED");
+        assertThat(board.getQnaSttsCd()).isEqualTo("RESOLVED");
         assertThat(board.getQnaSttsCd()).isEqualTo("RESOLVED");
         
-        assertThat(board.getQnaCategory()).isEqualTo("CAT_02");
+        assertThat(board.getQnaCatCd()).isEqualTo("CAT_02");
         assertThat(board.getQnaCatCd()).isEqualTo("CAT_02");
         
-        assertThat(board.getSjBoldYn()).isEqualTo("Y");
+        assertThat(board.getTtlBoldYn()).isEqualTo("Y");
         assertThat(board.getTtlBoldYn()).isEqualTo("Y");
         
-        assertThat(board.getParnts()).isEqualTo("UP_PST_01");
+        assertThat(board.getUpPstId()).isEqualTo("UP_PST_01");
         assertThat(board.getUpPstId()).isEqualTo("UP_PST_01");
         
-        assertThat(board.getAnswerAt()).isEqualTo("Y");
+        assertThat(board.getAnsYn()).isEqualTo("Y");
         assertThat(board.getAnsYn()).isEqualTo("Y");
         
-        assertThat(board.getNoticeAt()).isEqualTo("Y");
+        assertThat(board.getUseYn()).isEqualTo("Y");
         assertThat(board.getNtcYn()).isEqualTo("Y");
     }
 
@@ -209,7 +210,7 @@ class BoardTest {
     void builderDefaultTest() {
         Board board = Board.builder().build();
 
-        assertThat(board.getAnsLvl()).isEqualTo(0);
+        assertThat(board.getAnsLv()).isEqualTo(0);
         assertThat(board.getInqCnt()).isEqualTo(0);
         assertThat(board.getUseYn()).isEqualTo("Y");
         assertThat(board.getQnaSttsCd()).isEqualTo("OPEN");

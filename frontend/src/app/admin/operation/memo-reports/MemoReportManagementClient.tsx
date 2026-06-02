@@ -65,13 +65,13 @@ export default function MemoReportManagementClient() {
  accessor: (report) => (
  <div className="flex flex-col gap-1 py-1">
  <div className="flex items-center gap-2">
- {report.readAt !== 'Y' && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
+ {!report.rptrInqDt && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
  <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
- {report.reprtSj}
+ {report.rptTtl}
  </span>
  </div>
  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
- {report.reprtDe}
+ {report.memoRptYmd}
  </span>
  </div>
  )
@@ -86,7 +86,7 @@ export default function MemoReportManagementClient() {
  {
  header: '수신자',
  accessor: (report) => (
- <span className="text-xs font-bold text-slate-500 tracking-tight">{report.recptnNm}</span>
+ <span className="text-xs font-bold text-slate-500 tracking-tight">{report.rptrNm}</span>
  ),
  className: 'w-32'
  },
@@ -95,9 +95,9 @@ export default function MemoReportManagementClient() {
  accessor: (report) => (
  <div className={cn(
  "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all",
- report.readAt === 'Y' ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-slate-100 text-slate-400 border border-slate-200"
+ report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-slate-100 text-slate-400 border border-slate-200"
  )}>
- {report.readAt === 'Y' ? '수신확인' : '미열람'}
+ {report.rptrInqDt ? '수신확인' : '미열람'}
  </div>
  ),
  className: 'w-36 text-center'
@@ -164,7 +164,7 @@ export default function MemoReportManagementClient() {
 
  <HubMetricGrid>
  <HubMetricCard title="전체 보고" value={totalItems} icon={Layers} color="primary" />
- <HubMetricCard title="미열람" value={displayItems.filter(r => r.readAt !== 'Y').length} icon={Zap} color="amber" />
+ <HubMetricCard title="미열람" value={displayItems.filter(r => !r.rptrInqDt).length} icon={Zap} color="amber" />
  <HubMetricCard title="보안 등급" value="LVL_4" icon={ShieldCheck} color="emerald" status="최상" />
  <HubMetricCard title="동기화" value="ACTIVE" icon={RefreshCcw} color="indigo" />
  </HubMetricGrid>

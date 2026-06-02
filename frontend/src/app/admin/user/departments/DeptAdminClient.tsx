@@ -118,7 +118,7 @@ const SortableDeptNode = ({
  transform,
  transition,
  isDragging,
- } = useSortable({ id: item.orgnztId || '' });
+ } = useSortable({ id: item.ognzId || '' });
 
  const style = {
  transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -169,7 +169,7 @@ const SortableDeptNode = ({
  <div className="flex items-center">
  {(hasChildren || isOverlay) && (
  <button
- onClick={(e) => { e.stopPropagation(); onToggle(item.orgnztId || ''); }}
+ onClick={(e) => { e.stopPropagation(); onToggle(item.ognzId || ''); }}
  className={cn(
  "p-2 hover:bg-slate-100/10 rounded-lg transition-colors mr-2",
  depth === 0 ? "text-slate-400 hover:text-white" : "text-muted-foreground"
@@ -191,21 +191,21 @@ const SortableDeptNode = ({
  "font-bold tracking-tight transition-colors",
  depth === 0 ? "text-white text-lg" : "text-slate-900 text-sm"
  )}>
- {item.orgnztNm}
+ {item.ognzNm}
  </span>
  <div className="flex items-center gap-3 mt-1">
  <span className={cn(
  "text-xs font-bold px-2 py-0.5 rounded-md font-mono uppercase tracking-widest",
  depth === 0 ? "bg-white/10 text-slate-400" : "bg-slate-100 text-slate-500"
  )}>
- ID: {item.orgnztId}
+ ID: {item.ognzId}
  </span>
- {item.orgnztDc && (
+ {item.ognzExpln && (
  <span className={cn(
  "text-xs font-bold truncate max-w-[200px] ",
  depth === 0 ? "text-slate-500" : "text-slate-400"
  )}>
- {item.orgnztDc}
+ {item.ognzExpln}
  </span>
  )}
  </div>
@@ -216,7 +216,7 @@ const SortableDeptNode = ({
  {depth < 2 && (
  <Button
  variant="ghost" size="icon"
- onClick={() => onAddSub(item.orgnztId || '')}
+ onClick={() => onAddSub(item.ognzId || '')}
  className={cn(
  "h-10 w-10 rounded-lg",
  depth === 0 ? "bg-white/10 text-slate-400 hover:bg-primary hover:text-white" : "bg-slate-100 hover:bg-primary hover:text-white"
@@ -237,7 +237,7 @@ const SortableDeptNode = ({
  </Button>
  <Button
  variant="ghost" size="icon"
- onClick={() => onDelete(item.orgnztId || '')}
+ onClick={() => onDelete(item.ognzId || '')}
  className={cn(
  "h-10 w-10 text-rose-500 bg-rose-50/10 hover:bg-rose-500 hover:text-white rounded-lg transition-colors",
  depth === 0 && "bg-rose-950/20 hover:bg-rose-500"
@@ -284,10 +284,10 @@ export default function DeptAdminClient({
 
  const [isFormOpen, setIsAddOpen] = useState(false);
  const [selectedDept, setSelectedDept] = useState<DeptDto | null>(null);
- const [parentOrgnztId, setParentOrgnztId] = useState<string | null>(null);
+ const [parentOgnzId, setParentOgnzId] = useState<string | null>(null);
  const [form, setForm] = useState<DeptDto>({
- orgnztNm: '',
- orgnztDc: ''
+ ognzNm: '',
+ ognzExpln: ''
  });
 
  // Initialize data and simulate hierarchy if needed
@@ -295,12 +295,12 @@ export default function DeptAdminClient({
  const list = initialDepts.list || [];
  
  // Simulate hierarchy for demo/modernization purpose if all are roots
- // In a real app, this would come from the backend upperOrgnztId
+ // In a real app, this would come from the backend upperOgnzId
  const tree = listToDeptTree(list);
  const flat = flattenDeptTree(tree);
  
  setFlattenedDepts(flat);
- setExpandedIds(new Set(flat.map(d => d.orgnztId || '')));
+ setExpandedIds(new Set(flat.map(d => d.ognzId || '')));
  }, [initialDepts]);
 
  const sensors = useSensors(
@@ -318,13 +318,13 @@ export default function DeptAdminClient({
  const isParentExpanded = (parentId: string | null): boolean => {
  if (parentId === null) return true;
  if (!expandedIds.has(parentId)) return false;
- const parent = flattenedDepts.find(d => d.orgnztId === parentId);
+ const parent = flattenedDepts.find(d => d.ognzId === parentId);
  return isParentExpanded(parent?.parentId ?? null);
  };
 
  flattenedDepts.forEach(item => {
  if (isParentExpanded(item.parentId)) {
- const isDragging = activeId === item.orgnztId;
+ const isDragging = activeId === item.ognzId;
  visible.push({
  ...item,
  depth: isDragging && projected ? projected.depth : item.depth
@@ -367,11 +367,11 @@ export default function DeptAdminClient({
  
  if (over && projected) {
  setFlattenedDepts((items) => {
- const oldIndex = items.findIndex(m => m.orgnztId === active.id);
- const newIndex = items.findIndex(m => m.orgnztId === over.id);
+ const oldIndex = items.findIndex(m => m.ognzId === active.id);
+ const newIndex = items.findIndex(m => m.ognzId === over.id);
  const newItems = arrayMove(items, oldIndex, newIndex);
  
- const dragItemIndex = newItems.findIndex(m => m.orgnztId === active.id);
+ const dragItemIndex = newItems.findIndex(m => m.ognzId === active.id);
  newItems[dragItemIndex] = {
  ...newItems[dragItemIndex],
  depth: projected.depth,
@@ -400,31 +400,31 @@ export default function DeptAdminClient({
 
  const handleOpenAdd = (parentId: string | null = null) => {
  setSelectedDept(null);
- setParentOrgnztId(parentId);
- setForm({ orgnztNm: '', orgnztDc: '' });
+ setParentOgnzId(parentId);
+ setForm({ ognzNm: '', ognzExpln: '' });
  setIsAddOpen(true);
  };
 
  const handleOpenEdit = (dept: DeptDto) => {
  setSelectedDept(dept);
- setParentOrgnztId(null);
- setForm({ orgnztNm: dept.orgnztNm, orgnztDc: dept.orgnztDc });
+ setParentOgnzId(null);
+ setForm({ ognzNm: dept.ognzNm, ognzExpln: dept.ognzExpln });
  setIsAddOpen(true);
  };
 
  const handleSubmit = async () => {
- if (!form.orgnztNm) {
+ if (!form.ognzNm) {
  toast.error('부서 명을 입력해주세요.');
  return;
  }
 
  setLoading(true);
  try {
- const mode = selectedDept?.orgnztId ? 'edit' : 'create';
+ const mode = selectedDept?.ognzId ? 'edit' : 'create';
  const submitData = { 
  ...form, 
- orgnztId: selectedDept?.orgnztId,
- upperOrgnztId: parentOrgnztId 
+ ognzId: selectedDept?.ognzId,
+ upperOgnzId: parentOgnzId 
  } as any;
  
  const res = await saveDeptAction(null, { mode, data: submitData });
@@ -490,7 +490,7 @@ export default function DeptAdminClient({
  }, 1000);
  };
 
- const activeItem = activeId ? flattenedDepts.find(m => m.orgnztId === activeId) : null;
+ const activeItem = activeId ? flattenedDepts.find(m => m.ognzId === activeId) : null;
 
  return (
  <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -560,7 +560,7 @@ export default function DeptAdminClient({
 
  <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
  <div className="flex bg-white/5 p-1 rounded-lg">
- <Button className="flex-1 h-10 bg-transparent text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase border-none shadow-none" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.orgnztId || '')))}><ChevronsUpDown size={14} className="mr-2" /> 전체 펼치기</Button>
+ <Button className="flex-1 h-10 bg-transparent text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase border-none shadow-none" onClick={() => setExpandedIds(new Set(flattenedDepts.map(d => d.ognzId || '')))}><ChevronsUpDown size={14} className="mr-2" /> 전체 펼치기</Button>
  <Button className="flex-1 h-10 bg-transparent text-white/60 hover:text-white hover:bg-white/10 text-xs font-bold tracking-widest uppercase border-none shadow-none" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-2" /> 전체 접기</Button>
  </div>
  {hasChanges && (
@@ -600,19 +600,19 @@ export default function DeptAdminClient({
  onDragOver={handleDragOver}
  onDragEnd={handleDragEnd}
  >
- <SortableContext items={visibleDepts.map(d => d.orgnztId || '')} strategy={verticalListSortingStrategy}>
+ <SortableContext items={visibleDepts.map(d => d.ognzId || '')} strategy={verticalListSortingStrategy}>
  <div className="space-y-1">
  {visibleDepts.map((item) => (
  <SortableDeptNode
- key={item.orgnztId}
+ key={item.ognzId}
  item={item}
  depth={item.depth}
  onEdit={handleOpenEdit}
  onAddSub={handleOpenAdd}
  onDelete={handleDelete}
  onToggle={handleToggleExpand}
- isExpanded={expandedIds.has(item.orgnztId || '')}
- hasChildren={flattenedDepts.some(d => d.parentId === item.orgnztId)}
+ isExpanded={expandedIds.has(item.ognzId || '')}
+ hasChildren={flattenedDepts.some(d => d.parentId === item.ognzId)}
  />
  ))}
  {visibleDepts.length === 0 && (
@@ -664,17 +664,17 @@ export default function DeptAdminClient({
  <Building2 size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
  <Input
  placeholder="조직 명칭 입력"
- value={form.orgnztNm}
- onChange={(e) => setForm(prev => ({ ...prev, orgnztNm: e.target.value }))}
+ value={form.ognzNm}
+ onChange={(e) => setForm(prev => ({ ...prev, ognzNm: e.target.value }))}
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  />
  </div>
  </FormField>
 
- {parentOrgnztId && (
+ {parentOgnzId && (
  <FormField label="상위 조직 식별자" description="신규 노드가 소속될 상위 부서의 코드">
  <div className="h-11 flex items-center px-6 rounded-lg bg-slate-100 border-none font-mono text-xs font-bold shadow-inner text-slate-500 uppercase tracking-widest">
- Parent_UID: {parentOrgnztId}
+ Parent_UID: {parentOgnzId}
  </div>
  </FormField>
  )}
@@ -684,8 +684,8 @@ export default function DeptAdminClient({
  <Pencil size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
  placeholder="조직 상세 설명 입력"
- value={form.orgnztDc}
- onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
+ value={form.ognzExpln}
+ onChange={(e) => setForm(prev => ({ ...prev, ognzExpln: e.target.value }))}
  className="min-h-[160px] pl-16 p-6 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
  />
  </div>

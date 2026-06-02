@@ -11,18 +11,18 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("BoardMapper 단위 테스트")
+@DisplayName("BoardMapper ?�위 ?�스??)
 class BoardMapperTest {
 
     private final BoardMapper mapper = Mappers.getMapper(BoardMapper.class);
 
     @Test
-    @DisplayName("Entity -> DTO 변환 테스트")
+    @DisplayName("Entity -> DTO 변???�스??)
     void toDtoTest() {
         Board board = Board.builder()
                 .pstId("1")
-                .pstTtl("제목")
-                .createdDate(LocalDateTime.of(2026, 5, 3, 10, 0))
+                .pstTtl("?�목")
+                .crtDt(LocalDateTime.of(2026, 5, 3, 10, 0))
                 .blogId("BLOG1")
                 .build();
 
@@ -30,14 +30,11 @@ class BoardMapperTest {
 
         assertNotNull(dto);
         assertEquals("1", dto.getPstId());
-        assertEquals("1", dto.getKnoId());
-        assertEquals("제목", dto.getKnoNm());
-        assertEquals("2026-05-03", dto.getFrstRegisterPnttmStr());
-        assertEquals("Y", dto.getBlogYn());
+        assertEquals("1", dto.getPstId());
+        assertEquals("?�목", dto.getPstTtl());
+        assertEquals(LocalDateTime.of(2026, 5, 3, 10, 0), dto.getCrtDt());
     }
-
-    @Test
-    @DisplayName("디폴트 메서드 테스트 - formatDate")
+    @DisplayName("?�폴??메서???�스??- formatDate")
     void formatDateTest() {
         LocalDateTime date = LocalDateTime.of(2026, 5, 3, 15, 30);
         assertEquals("2026-05-03", mapper.formatDate(date));
@@ -45,7 +42,7 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("디폴트 메서드 테스트 - formatDateTime")
+    @DisplayName("?�폴??메서???�스??- formatDateTime")
     void formatDateTimeTest() {
         LocalDateTime dateTime = LocalDateTime.of(2026, 5, 3, 15, 30);
         assertEquals("2026-05-03 15:30", mapper.formatDateTime(dateTime));
@@ -53,14 +50,14 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("디폴트 메서드 테스트 - blogIdToYn")
+    @DisplayName("?�폴??메서???�스??- blogIdToYn")
     void blogIdToYnTest() {
         assertEquals("Y", mapper.blogIdToYn("some-id"));
         assertEquals("N", mapper.blogIdToYn(null));
     }
 
     @Test
-    @DisplayName("디폴트 메서드 테스트 - calculateExpired")
+    @DisplayName("?�폴??메서???�스??- calculateExpired")
     void calculateExpiredTest() {
         assertEquals("N", mapper.calculateExpired(null));
         assertEquals("N", mapper.calculateExpired(""));
@@ -73,7 +70,7 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("디폴트 메서드 테스트 - parseDateTime")
+    @DisplayName("?�폴??메서???�스??- parseDateTime")
     void parseDateTimeTest() {
         assertNull(mapper.parseDateTime(null));
         assertNull(mapper.parseDateTime(""));
@@ -95,10 +92,10 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("Request -> Entity 변환 테스트 (Default Values)")
+    @DisplayName("Request -> Entity 변???�스??(Default Values)")
     void toEntityDefaultTest() {
         BoardSaveRequest request = new BoardSaveRequest(
-                "BBS1", "제목", "내용", null, null, null, null, null, null, null, null, "USER1", "Name1", null
+                "BBS1", "?�목", "?�용", null, null, null, null, null, null, null, null, "USER1", "Name1", null
         );
         
         Board entity = mapper.toEntity(request, "BBS1", "USER1", "Name1", 10L);

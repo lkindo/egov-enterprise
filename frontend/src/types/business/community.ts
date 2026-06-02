@@ -7,12 +7,12 @@ export interface CommunityVO {
   useAt: string;
   registSeCode?: string;
   registSeCodeNm?: string;
-  tmplatId?: string;
+  tmpltId?: string;
   tmplatNm?: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   frstRegisterNm?: string;
-  frstRegisterPnttm?: string;
-  lastUpdtPnttm?: string;
+  createdDate?: string;
+  lastModifiedDate?: string;
 }
 
 export interface CommunitySearchParams {

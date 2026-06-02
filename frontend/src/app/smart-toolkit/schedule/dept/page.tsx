@@ -34,17 +34,17 @@ export default function DeptSchedulePage() {
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
     const [params, setParams] = useState<ScheduleSearchParams>({
         pageNo: 1,
-        schdulNm: '',
+        schdlNm: '',
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
     const [formData, setFormData] = useState<Partial<DeptSchedule>>({
-        schdulNm: '',
-        schdulCn: '',
-        schdulBgnde: format(new Date(), 'yyyy-MM-dd HH:mm'),
-        schdulEndde: format(new Date(), 'yyyy-MM-dd HH:mm'),
-        schdulPlace: '',
-        schdulIpcrCode: 'A', // A: 전체, B: 부서, C: 개인
+        schdlNm: '',
+        schdlCn: '',
+        schdlBgngYmd: format(new Date(), 'yyyy-MM-dd HH:mm'),
+        schdlEndYmd: format(new Date(), 'yyyy-MM-dd HH:mm'),
+        schdlPlcNm: '',
+        schdlImprtCd: 'A', // A: 전체, B: 부서, C: 개인
     });
 
     const fetchList = useCallback(async () => {
@@ -73,12 +73,12 @@ export default function DeptSchedulePage() {
     const handleCreate = () => {
         setEditingSchedule(null);
         setFormData({
-            schdulNm: '',
-            schdulCn: '',
-            schdulBgnde: format(new Date(), 'yyyy-MM-dd HH:mm'),
-            schdulEndde: format(new Date(), 'yyyy-MM-dd HH:mm'),
-            schdulPlace: '',
-            schdulIpcrCode: 'A',
+            schdlNm: '',
+            schdlCn: '',
+            schdlBgngYmd: format(new Date(), 'yyyy-MM-dd HH:mm'),
+            schdlEndYmd: format(new Date(), 'yyyy-MM-dd HH:mm'),
+            schdlPlcNm: '',
+            schdlImprtCd: 'A',
         });
         setIsDialogOpen(true);
     };
@@ -89,10 +89,10 @@ export default function DeptSchedulePage() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (schdulId: string) => {
+    const handleDelete = async (schdlId: string) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         try {
-            await deleteDeptSchedule(schdulId);
+            await deleteDeptSchedule(schdlId);
             fetchList();
         } catch {
             alert('삭제 중 오류가 발생했습니다.');
@@ -101,8 +101,8 @@ export default function DeptSchedulePage() {
 
     const handleSubmit = async () => {
         try {
-            if (editingSchedule && editingSchedule.schdulId) {
-                await updateDeptSchedule(editingSchedule.schdulId, formData as DeptSchedule);
+            if (editingSchedule && editingSchedule.schdlId) {
+                await updateDeptSchedule(editingSchedule.schdlId, formData as DeptSchedule);
             } else {
                 await createDeptSchedule(formData as DeptSchedule);
             }
@@ -127,8 +127,8 @@ export default function DeptSchedulePage() {
                 <Input
                     placeholder="일정명 또는 내용으로 검색하세요"
                     className="max-w-sm rounded-lg"
-                    value={params.schdulNm}
-                    onChange={(e) => setParams(prev => ({ ...prev, schdulNm: e.target.value }))}
+                    value={params.schdlNm}
+                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value }))}
                 />
                 <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
@@ -151,19 +151,19 @@ export default function DeptSchedulePage() {
                                 </TableCell>
                         ) : (
                             schedules.map((schedule, index) => (
-                                <TableRow key={schedule.schdulId} className="hover:bg-slate-50/50 transition-colors">
+                                <TableRow key={schedule.schdlId} className="hover:bg-slate-50/50 transition-colors">
                                     <TableCell className="text-center font-mono text-slate-400">{index + 1}</TableCell>
-                                    <TableCell className="font-bold text-slate-800">{schedule.schdulNm}</TableCell>
+                                    <TableCell className="font-bold text-slate-800">{schedule.schdlNm}</TableCell>
                                     <TableCell className="text-sm font-medium">
-                                        {schedule.schdulBgnde} ~ {schedule.schdulEndde}
+                                        {schedule.schdlBgngYmd} ~ {schedule.schdlEndYmd}
                                     </TableCell>
-                                    <TableCell className="text-sm text-slate-500 font-medium">{schedule.schdulPlace}</TableCell>
+                                    <TableCell className="text-sm text-slate-500 font-medium">{schedule.schdlPlcNm}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} className="rounded-lg hover:bg-primary/10">
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdulId!)} className="rounded-lg hover:bg-destructive/10">
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlId!)} className="rounded-lg hover:bg-destructive/10">
                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
                                         </div>
@@ -182,30 +182,30 @@ export default function DeptSchedulePage() {
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="schdulNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">일정명</Label>
+                            <Label htmlFor="schdlNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">일정명</Label>
                             <Input
-                                id="schdulNm"
+                                id="schdlNm"
                                 className="rounded-lg h-12"
-                                value={formData.schdulNm}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdulNm: e.target.value }))}
+                                value={formData.schdlNm}
+                                onChange={(e) => setFormData(prev => ({ ...prev, schdlNm: e.target.value }))}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdulCn" className="text-xs font-bold text-slate-400 uppercase tracking-widest">내용</Label>
+                            <Label htmlFor="schdlCn" className="text-xs font-bold text-slate-400 uppercase tracking-widest">내용</Label>
                             <Textarea
-                                id="schdulCn"
+                                id="schdlCn"
                                 className="rounded-lg min-h-[100px]"
-                                value={formData.schdulCn}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdulCn: e.target.value }))}
+                                value={formData.schdlCn}
+                                onChange={(e) => setFormData(prev => ({ ...prev, schdlCn: e.target.value }))}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdulPlace" className="text-xs font-bold text-slate-400 uppercase tracking-widest">장소</Label>
+                            <Label htmlFor="schdlPlcNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">장소</Label>
                             <Input
-                                id="schdulPlace"
+                                id="schdlPlcNm"
                                 className="rounded-lg h-12"
-                                value={formData.schdulPlace || ''}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdulPlace: e.target.value }))}
+                                value={formData.schdlPlcNm || ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, schdlPlcNm: e.target.value }))}
                             />
                         </div>
                     </div>

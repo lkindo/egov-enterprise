@@ -19,7 +19,7 @@ export interface UserManage {
   zip?: string;
   homeAddr?: string; // Aligned with backend homeAddr
   daddr?: string;
-  orgnztId?: string;
+  ognzId?: string;
   emplNo?: string;
   gndrCd?: string;
   brthYmd?: string; // Aligned with backend brthYmd

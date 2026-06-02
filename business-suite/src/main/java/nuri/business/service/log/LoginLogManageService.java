@@ -71,7 +71,7 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
                 .loginMthd(entity.getLoginMthd())
                 .errOccrrAt(entity.getErrOccrrAt())
                 .errorCode(entity.getErrorCode())
-                .creatDt(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : null)
+                .creatDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();
     }
 }

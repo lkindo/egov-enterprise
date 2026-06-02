@@ -14,9 +14,9 @@ public class BoardSearchResult {
     private String bbsId;
     private String pstId;
     private String pstTtl;
-    private String frstRegisterId;
+    private String frstRgtrId;
     private String frstRegisterNm;
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
     private Integer inqCnt;
     private Integer likeCnt;
     private String upPstId;

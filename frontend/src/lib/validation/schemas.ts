@@ -31,9 +31,9 @@ export const pollSchema = z.object({
 
 // --- SMS 관리 스키마 ---
 export const smsSchema = z.object({
-  trnsmitTelno: z.string().min(1, '발신 번호를 입력해 주세요.'),
+  sndngTelno: z.string().min(1, '발신 번호를 입력해 주세요.'),
   rcptnTelno: z.string().min(1, '수신 번호를 입력해 주세요.'),
-  trnsmitCn: z.string().min(1, '메시지 내용을 입력해 주세요.').max(80, '메시지는 80자 이내여야 합니다.'),
+  sndngCn: z.string().min(1, '메시지 내용을 입력해 주세요.').max(80, '메시지는 80자 이내여야 합니다.'),
 });
 
 // --- 메뉴 관리 스키마 ---
@@ -52,13 +52,13 @@ export const menuSchema = z.object({
 // --- 게시판 마스터 스키마 ---
 export const boardMasterSchema = z.object({
   bbsTtl: z.string().min(1, '게시판 명칭은 필수입니다.').max(100, '게시판 명칭은 100자 이내여야 합니다.'),
-  bbsIntroCn: z.string().min(1, '게시판 소개는 필수입니다.').max(4000, '게시판 소개는 4000자 이내여야 합니다.'),
+  bbsExpln: z.string().min(1, '게시판 소개는 필수입니다.').max(4000, '게시판 소개는 4000자 이내여야 합니다.'),
   bbsTypeCd: z.string().min(1, '게시판 유형은 필수입니다.'),
   bbsAtrbCd: z.string().min(1, '게시판 속성은 필수입니다.'),
-  ansPsblYn: z.enum(['Y', 'N']),
-  fileAtchPsblYn: z.enum(['Y', 'N']),
+  ansPsbltyYn: z.enum(['Y', 'N']),
+  fileAtchPsbltyYn: z.enum(['Y', 'N']),
   posblAtchFileNumber: z.coerce.number().min(0).max(10),
-  tmplatId: z.string().min(1, '템플릿 선택은 필수입니다.'),
+  tmpltId: z.string().min(1, '템플릿 선택은 필수입니다.'),
   useYn: z.enum(['Y', 'N']),
 });
 
@@ -96,7 +96,7 @@ export const userManageSchema = z.object({
   userSttsCd: z.enum(['P', 'A', 'D']),
   pswd: z.string().optional(),
   mblTelno: z.string().optional(),
-  orgnztId: z.string().optional(),
+  ognzId: z.string().optional(),
   groupId: z.string().optional(),
 });
 

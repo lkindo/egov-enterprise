@@ -3,10 +3,10 @@ export interface KnoManagementVO {
   knoNm: string;
   knoCn: string;
   othbcAt: string;
-  frstRegisterPnttm: string;
-  frstRegisterId: string;
-  lastUpdtPnttm: string;
-  lastUpdusrId: string;
+  createdDate: string;
+  frstRgtrId: string;
+  lastModifiedDate: string;
+  lastMdfrId: string;
 }
 
 export interface KnoSearchParams {

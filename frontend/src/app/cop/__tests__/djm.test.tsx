@@ -35,7 +35,7 @@ describe('DeptJobListPage', () => {
  deptJobNm: '주간 보고 작성',
  priort: '1', // High
  frstRegisterNm: '테스트님',
- frstRegisterPnttm: '2024-06-01'
+ createdDate: '2024-06-01'
  }
  ],
  total: 1,

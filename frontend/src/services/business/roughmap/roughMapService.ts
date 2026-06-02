@@ -8,7 +8,7 @@ export interface RoughMapInfo {
   lat: number;
   lng: number;
   markerType: string;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   createdDate?: string;
 }
 

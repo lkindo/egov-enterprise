@@ -114,14 +114,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       header: '보고서 제목',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.reprtSj}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">작성일: {item.reprtDe}</span>
+          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.rptTtl}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">작성일: {item.rptYmd}</span>
         </div>
       )
     },
     {
       header: '작성자',
-      accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.wrterNm}</span>,
+      accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.userId}</span>,
       className: 'w-32'
     },
     {

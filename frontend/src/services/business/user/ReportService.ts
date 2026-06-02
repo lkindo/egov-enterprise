@@ -3,18 +3,15 @@ import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface WorkReport {
-  reprtId: string;
-  reprtSj: string;
-  reprtSe: string; // 1: 주간, 2: 월간
-  reprtDe: string;
-  wrterId: string;
+  rptId?: string;
+  rptTtl?: string;
+  rptCn?: string;
+  rptSeCd?: string; // 1: 주간, 2: 월간
+  rptYmd?: string;
+  userId?: string;
   wrterNm?: string;
-  reportrId: string;
-  reportrNm?: string;
-  reprtThswikCn: string;
-  reprtLesseeCn: string;
-  confmDt?: string;
-  sttus: 'R' | 'Y' | 'N';
+  atchFileId?: string;
+  rptSttsCd?: string; // R: 대기, Y: 승인, N: 반려
 }
 
 /**

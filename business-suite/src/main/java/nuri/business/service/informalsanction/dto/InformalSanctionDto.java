@@ -67,7 +67,7 @@ public class InformalSanctionDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static InformalSanctionDto from(InformalSanction entity) {
         if (entity == null)
@@ -82,7 +82,7 @@ public class InformalSanctionDto {
                 .atrzDt(entity.getAtrzDt())
                 .rjctRsnCn(entity.getRjctRsnCn())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

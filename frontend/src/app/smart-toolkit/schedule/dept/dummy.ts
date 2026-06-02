@@ -3,7 +3,7 @@ export class DeptSchdulManage {
 }
 
 export class DeptSchdulManageVO {
- schdulId?: string;
+ schdlId?: string;
  searchKeyword?: string;
  searchCondition?: string;
  // ... (other properties)

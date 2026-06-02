@@ -21,5 +21,5 @@ public class CommentDto {
     private String wrterNm;
     private String password;
     private String ansCn;
-    private String createdDate;
+    private String crtDt;
 }

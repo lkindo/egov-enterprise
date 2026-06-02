@@ -22,9 +22,9 @@ public class BoardDetailResult {
     private Long ansSn;
     private String pstCn;
     private String pswd;
-    private String frstRegisterId;
+    private String frstRgtrId;
     private String frstRegisterNm;
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
     private String pstBgngYmd;
     private String pstEndYmd;
     private Integer inqCnt;

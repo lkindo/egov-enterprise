@@ -38,16 +38,16 @@ public class FaqDto {
     private String atchFileId;
 
     @Schema(description = "등록자 ID")
-    private String frstRegisterId;
+    private String frstRgtrId;
 
     @Schema(description = "등록일시")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime crtDt;
 
     @Schema(description = "수정자 ID")
-    private String lastUpdusrId;
+    private String lastMdfrId;
 
     @Schema(description = "수정일시")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime mdfcnDt;
 
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
@@ -61,10 +61,10 @@ public class FaqDto {
                 .ansCn(entity.getAnsCn())
                 .inqCnt(entity.getInqCnt())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdusrPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 }

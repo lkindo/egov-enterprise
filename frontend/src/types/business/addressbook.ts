@@ -2,7 +2,7 @@ export interface AddressBook {
  adbkId: string;
  adbkNm: string;
  rlsScopeCd: string; // 공용, 개인
- frstRegisterId: string;
+ frstRgtrId: string;
 }
 
 /** AddressBookUserDto (백엔드 business-suite) 필드와 1:1 매핑 */

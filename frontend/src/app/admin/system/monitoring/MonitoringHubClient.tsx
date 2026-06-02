@@ -199,7 +199,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
                 <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
-                <span className="text-xs font-bold opacity-20">{log.frstRegisterPnttm}</span>
+                <span className="text-xs font-bold opacity-20">{log.createdDate}</span>
             </div>
             <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
@@ -997,8 +997,8 @@ function TestDetailView({ test }: { test: any }) {
     "TEST_01": {
       summary: "조회 성능 최적화: Batch Fetch 및 Lazy Loading 가동을 통한 성능 확보 합격",
       stacks: [
-        { sql: "SELECT * FROM tb_user WHERE orgnzt_id = 'DEPT_001'", table: "tb_user", type: "SELECT" },
-        { sql: "SELECT * FROM tb_orgnzt WHERE orgnzt_id = ?", table: "tb_orgnzt", type: "SELECT" },
+        { sql: "SELECT * FROM tb_user WHERE ognz_id = 'DEPT_001'", table: "tb_user", type: "SELECT" },
+        { sql: "SELECT * FROM tb_ognz WHERE ognz_id = ?", table: "tb_ognz", type: "SELECT" },
         { sql: "SELECT * FROM tb_author WHERE author_code = ?", table: "tb_author", type: "SELECT" }
       ]
     },

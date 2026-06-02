@@ -63,7 +63,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
                 .conectMthd(log.getLoginMthd())
                 .conectId(log.getLoginId())
                 .conectIp(log.getLoginIp())
-                .creatDt(log.getCreatedDate())
+                .creatDt(log.getCrtDt())
                 .errOccrrAt(log.getErrOccrrAt())
                 .build();
     }

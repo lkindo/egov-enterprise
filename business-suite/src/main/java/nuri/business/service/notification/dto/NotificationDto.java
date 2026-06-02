@@ -49,12 +49,10 @@ public class NotificationDto {
     private String uniqId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     @com.fasterxml.jackson.annotation.JsonIgnore
     public String getNtfcId() { return ntfcNo; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public LocalDateTime getNtfcPnttm() { return createdDate; }
     @com.fasterxml.jackson.annotation.JsonIgnore
     public String getReadYn() { return isRead; }
 
@@ -67,7 +65,7 @@ public class NotificationDto {
                 .isRead(entity.getIsRead())
                 .uniqId(entity.getLinkUrl())
                 .ntfcTime(entity.getNtfcTime())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

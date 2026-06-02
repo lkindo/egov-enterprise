@@ -36,7 +36,7 @@ public class LeaderStatusDto {
     private String leaderSttusNm;
 
     @Schema(description = "등록일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     // legacy with @JsonIgnore to prevent Lombok duplicate serialization
     @com.fasterxml.jackson.annotation.JsonIgnore
@@ -54,7 +54,7 @@ public class LeaderStatusDto {
         return LeaderStatusDto.builder()
                 .leaderId(entity.getLeaderId())
                 .leaderSttsCd(entity.getLeaderSttsCd())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

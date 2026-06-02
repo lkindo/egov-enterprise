@@ -58,7 +58,7 @@ public class EgovTestDataConfig {
                     .ansPsbltyYn("Y")
                     .fileAtchPsbltyYn("Y")
                     .atchPsbltyFileQty(3)
-                    .optnFrstRegisterId("webmaster")
+                    .optnFrstRgtrId("webmaster")
                     .build();
             boardMasterRepository.save(board);
         });

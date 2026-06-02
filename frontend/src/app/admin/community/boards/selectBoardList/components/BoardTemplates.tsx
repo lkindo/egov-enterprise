@@ -603,8 +603,8 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
   );
 };
 
-export const BoardSkeleton = ({ tmplatId }: { tmplatId: string }) => {
-  if (tmplatId === 'TMPLT_HUB') {
+export const BoardSkeleton = ({ tmpltId }: { tmpltId: string }) => {
+  if (tmpltId === 'TMPLT_HUB') {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-10">
         {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -620,7 +620,7 @@ export const BoardSkeleton = ({ tmplatId }: { tmplatId: string }) => {
       </div>
     );
   }
-  if (tmplatId === 'TMPLT_QNA') {
+  if (tmpltId === 'TMPLT_QNA') {
     return (
       <div className="p-10 space-y-8">
         {[1, 2, 3, 4].map((i) => (

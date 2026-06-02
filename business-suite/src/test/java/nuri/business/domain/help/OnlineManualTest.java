@@ -20,7 +20,7 @@ class OnlineManualTest {
 
         assertThat(mnl.getOnlnMnlId()).isEqualTo("MNL_001");
         assertThat(mnl.getOnlnMnlNm()).isEqualTo("Manual 1");
-        assertThat(mnl.getFrstRegisterId()).isEqualTo("admin");
+        assertThat(mnl.getFrstRgtrId()).isEqualTo("admin");
     }
 
     @Test

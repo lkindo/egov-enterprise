@@ -13,9 +13,9 @@ export interface EventInfo {
   evntTypeCd?: string;
   evntAprvYn?: string;
   evntAprvYmd?: string;
-  frstRegisterId?: string;
-  frstRegisterPnttm?: string;
-  lastUpdtPnttm?: string;
+  frstRgtrId?: string;
+  createdDate?: string;
+  lastModifiedDate?: string;
 }
 
 

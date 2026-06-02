@@ -2,13 +2,15 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 export interface WorkReportDto {
-    reportId?: string;
-    reportSubject: string;
-    reportContent: string;
-    reportType: string;
-    reportDate: string;
-    writerId?: string;
-    reportStatus: string;
+    rptId?: string;
+    rptTtl: string;
+    rptCn: string;
+    rptSeCd: string;
+    rptYmd?: string;
+    userId?: string;
+    rptSttsCd?: string;
+    atchFileId?: string;
+    rptTypeCd?: string;
 }
 
 /**

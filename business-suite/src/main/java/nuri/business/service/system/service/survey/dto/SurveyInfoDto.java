@@ -55,7 +55,7 @@ public class SurveyInfoDto {
     private String frstRgtrId;
 
     @Schema(description = "등록 일시")
-    private LocalDateTime createdDate;
+    private LocalDateTime crtDt;
 
     public static SurveyInfoDto from(SurveyInfo entity) {
         if (entity == null) return null;
@@ -69,7 +69,7 @@ public class SurveyInfoDto {
                 .srvyTrgt(entity.getSrvyTrgt())
                 .srvyTmpltId(entity.getSrvyTmpltId())
                 .frstRgtrId(entity.getFrstRgtrId())
-                .createdDate(entity.getCreatedDate())
+                .crtDt(entity.getCrtDt())
                 .build();
     }
 }

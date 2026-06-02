@@ -24,17 +24,17 @@ class OrganizationManageTest {
 
         // 2. 레거시 별칭 빌더 및 Getter 하위 호환성 검증
         OrganizationManage legacyOrg = OrganizationManage.builder()
-                .orgnztId("ORG_002")
-                .orgnztNm("Organization 2")
-                .orgnztDc("Description 2")
+                .ognzId("ORG_002")
+                .ognzNm("Organization 2")
+                .ognzExpln("Description 2")
                 .build();
 
-        assertThat(legacyOrg.getOrgnztId()).isEqualTo("ORG_002");
-        assertThat(legacyOrg.getOrgnztNm()).isEqualTo("Organization 2");
-        assertThat(legacyOrg.getOrgnztDc()).isEqualTo("Description 2");
+        assertThat(legacyOrg.getOgnzId()).isEqualTo("ORG_002");
+        assertThat(legacyOrg.getOgnzNm()).isEqualTo("Organization 2");
+        assertThat(legacyOrg.getOgnzExpln()).isEqualTo("Description 2");
 
         // 상호 교차 매핑 검증
         assertThat(legacyOrg.getOgnzId()).isEqualTo("ORG_002");
-        assertThat(org.getOrgnztNm()).isEqualTo("Organization 1");
+        assertThat(org.getOgnzNm()).isEqualTo("Organization 1");
     }
 }

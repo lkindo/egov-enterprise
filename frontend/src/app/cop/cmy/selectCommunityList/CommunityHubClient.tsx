@@ -91,7 +91,7 @@ export default function CommunityHubClient({
       header: '개설일',
       accessor: (item) => (
         <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
-          <Calendar size={14} /> {item.frstRegisterPnttm?.substring(0, 10)}
+          <Calendar size={14} /> {item.createdDate?.substring(0, 10)}
         </div>
       )
     },

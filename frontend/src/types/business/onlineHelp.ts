@@ -6,10 +6,10 @@ export interface FaqVO {
   qestnCn: string;
   answerCn: string;
   inqireCo?: number;
-  frstRegisterId?: string;
+  frstRgtrId?: string;
   frstRegisterNm?: string;
-  frstRegisterPnttm?: string;
-  lastUpdtPnttm?: string;
+  createdDate?: string;
+  lastModifiedDate?: string;
   atchFileId?: string;
 }
 

@@ -160,7 +160,7 @@ function CommunityBoardContent() {
  <div className="space-y-3 flex-1">
  <div className="flex items-center gap-3">
  {item.noticeYn === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
- <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.frstRegisterPnttm?.split(' ')[0]}</span>
+ <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.createdDate?.split(' ')[0]}</span>
  </div>
  <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors ">
  {item.pstTtl}

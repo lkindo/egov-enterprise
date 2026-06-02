@@ -102,7 +102,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), dto.getUseAt());
+        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), dto.getUseYn());
 
         if (dto.getAdbkMan() == null) {
             return;
@@ -180,10 +180,10 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .trgetOrgnztId(entity.getTrgetOrgnztId())
                 .useYn(entity.getUseYn())
                 .wrterId(entity.getWrterId())
-                .frstRegisterId(entity.getFrstRgtrId())
-                .frstRegistPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastMdfrId())
-                .lastUpdtPnttm(entity.getLastModifiedDate())
+                .frstRgtrId(entity.getFrstRgtrId())
+                .crtDt(entity.getCrtDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 

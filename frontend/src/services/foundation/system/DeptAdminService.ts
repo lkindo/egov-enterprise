@@ -3,9 +3,9 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
 export interface Department {
-  orgnztId: string;
-  orgnztNm: string;
-  orgnztDc?: string;
+  ognzId: string;
+  ognzNm: string;
+  ognzExpln?: string;
 }
 
 /**
