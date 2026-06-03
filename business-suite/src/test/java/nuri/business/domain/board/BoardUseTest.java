@@ -44,13 +44,9 @@ class BoardUseTest {
         boardUse.update("N");
         assertThat(boardUse.getUseYn()).isEqualTo("N");
 
-        // setUseYn 호출
-        boardUse.setUseYn("Y");
+        // setUseYn 호출 대신 update 호출로 검증
+        boardUse.update("Y");
         assertThat(boardUse.getUseYn()).isEqualTo("Y");
-
-        // 호환성을 위한 빈 세터 호출 (에러가 나지 않음을 확인)
-        boardUse.setLastMdfrId("admin");
-        boardUse.setFrstRgtrId("admin");
     }
 
 }

@@ -50,15 +50,5 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
         this.useYn = useYn;
     }
 
-    public void setUseYn(String useYn) {
-        this.useYn = useYn;
-    }
 
-    public void setLastMdfrId(String lastUpdusrId) {
-        // This field doesn't exist in the entity - kept for compatibility
-    }
-
-    public void setFrstRgtrId(String frstRegisterId) {
-        // This field doesn't exist in the entity - kept for compatibility
-    }
 }

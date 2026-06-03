@@ -152,7 +152,7 @@ class AddressBookServiceTest {
         given(addressBookRepository.findById(adbkId)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").adbkId(adbkId).build();
+            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkId(adbkId).build()).build();
         given(addressBookUserRepository.findByAdbkId(adbkId)).willReturn(List.of(existingUser));
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("NEW_USER_ID");
 

@@ -76,7 +76,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
                     AddressBookUser userEntity = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
-                            .adbkId(adbkId)
+                            .addressBook(entity)
                             .userId(userDto.getUserId())
                             .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
@@ -126,7 +126,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
                     AddressBookUser newUser = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
-                            .adbkId(dto.getAdbkId())
+                            .addressBook(entity)
                             .userId(userDto.getUserId())
                             .nm(userDto.getNm())
                             .emlAddr(userDto.getEmlAddr())
@@ -190,7 +190,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     private AddressBookUserDto convertToUserDto(AddressBookUser entity) {
         return AddressBookUserDto.builder()
                 .adbkConstntId(entity.getAdbkConstntId())
-                .adbkId(entity.getAdbkId())
+                .adbkId(entity.getAddressBook() != null ? entity.getAddressBook().getAdbkId() : null)
                 .userId(entity.getUserId())
                 .nm(entity.getNm())
                 .emlAddr(entity.getEmlAddr())

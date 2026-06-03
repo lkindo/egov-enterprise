@@ -62,7 +62,7 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Book").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser user = AddressBookUser.builder().adbkConstntId("AU1").adbkId("A1").nm("User").build();
+        AddressBookUser user = AddressBookUser.builder().adbkConstntId("AU1").addressBook(AddressBook.builder().adbkId("A1").build()).nm("User").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(user));
 
         AddressBookDto result = addressBookService.getAddressBook("A1");
@@ -94,7 +94,7 @@ class AddressBookServiceImplTest {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Old").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
         
-        AddressBookUser existingUser = AddressBookUser.builder().adbkConstntId("AU1").adbkId("A1").userId("E1").build();
+        AddressBookUser existingUser = AddressBookUser.builder().adbkConstntId("AU1").addressBook(AddressBook.builder().adbkId("A1").build()).userId("E1").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(existingUser));
 
         AddressBookDto dto = AddressBookDto.builder()

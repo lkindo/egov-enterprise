@@ -14,7 +14,7 @@ class AddressBookUserTest {
         // Given & When
         AddressBookUser user = AddressBookUser.builder()
                 .adbkConstntId("CONST_001")
-                .adbkId("ADBK_001")
+                .addressBook(AddressBook.builder().adbkId("ADBK_001").build())
                 .userId("USER_001")
                 .nm("홍길동")
                 .emlAddr("gildong@example.com")
@@ -27,7 +27,7 @@ class AddressBookUserTest {
 
         // Then
         assertThat(user.getAdbkConstntId()).isEqualTo("CONST_001");
-        assertThat(user.getAdbkId()).isEqualTo("ADBK_001");
+        assertThat(user.getAddressBook().getAdbkId()).isEqualTo("ADBK_001");
         assertThat(user.getUserId()).isEqualTo("USER_001");
         assertThat(user.getNm()).isEqualTo("홍길동");
         assertThat(user.getEmlAddr()).isEqualTo("gildong@example.com");

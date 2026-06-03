@@ -214,26 +214,7 @@ public class User extends BaseEntity implements Serializable {
         this.lckLastPnttm = null;
     }
 
-    public void setAuthorCode(String authorCode) {
-        if (authorCode != null) {
-            try {
-                String cleanRole = authorCode.startsWith("ROLE_") ? authorCode.substring(5) : authorCode;
-                this.role = Role.USER;
-                for (Role r : Role.values()) {
-                    if (r.name().equalsIgnoreCase(cleanRole)) {
-                        this.role = r;
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                this.role = Role.USER;
-            }
-        }
-    }
 
-    public String getAuthorCode() {
-        return this.role != null ? this.role.name() : null;
-    }
 
     public void incrementLockCount() {
         if (this.lckCnt == null) {

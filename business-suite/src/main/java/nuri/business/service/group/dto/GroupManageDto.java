@@ -27,5 +27,5 @@ public class GroupManageDto {
     @Size(max = 4000)
     private String groupDc;
     /** 그룹생성일 */
-    private String groupCreatDe;
+    private String groupCrtYmd;
 }

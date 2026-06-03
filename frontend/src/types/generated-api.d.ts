@@ -4875,7 +4875,7 @@ export interface components {
             groupId?: string;
             groupNm?: string;
             groupDc?: string;
-            groupCreatDe?: string;
+            groupCrtYmd?: string;
         };
         /** @description 부서 정보 DTO */
         DeptManageDto: {
@@ -5769,8 +5769,6 @@ export interface components {
             recordCountPerPage?: number;
             searchKeywordFrom?: string;
             searchKeywordTo?: string;
-            searchEndDe?: string;
-            searchBgnDe?: string;
         };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
