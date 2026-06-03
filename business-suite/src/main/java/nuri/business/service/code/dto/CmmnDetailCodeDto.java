@@ -50,55 +50,5 @@ public class CmmnDetailCodeDto {
     @Schema(description = "최종수정자 ID")
     private String lastMdfrId;
 
-    // Compatibility Getters/Setters for legacy java references
-    @JsonIgnore
-    public String getCodeId() {
-        return cdId;
-    }
-
-    @JsonIgnore
-    public void setCodeId(String codeId) {
-        this.cdId = codeId;
-    }
-
-    @JsonIgnore
-    public String getCodeIdNm() {
-        return cdIdNm;
-    }
-
-    @JsonIgnore
-    public void setCodeIdNm(String codeIdNm) {
-        this.cdIdNm = codeIdNm;
-    }
-
-    @JsonIgnore
-    public String getCode() {
-        return dtlCd;
-    }
-
-    @JsonIgnore
-    public void setCode(String code) {
-        this.dtlCd = code;
-    }
-
-    @JsonIgnore
-    public String getCodeNm() {
-        return dtlCdNm;
-    }
-
-    @JsonIgnore
-    public void setCodeNm(String codeNm) {
-        this.dtlCdNm = codeNm;
-    }
-
-    @JsonIgnore
-    public String getCodeDc() {
-        return dtlCdExpln;
-    }
-
-    @JsonIgnore
-    public void setCodeDc(String codeDc) {
-        this.dtlCdExpln = codeDc;
-    }
 }
 

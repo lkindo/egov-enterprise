@@ -34,7 +34,7 @@ public class FaqApiController {
     @Operation(summary = "FAQ 상세 조회")
     @GetMapping("/{faqId}")
     public ResponseEntity<ApiResponse<FaqDto>> getFaq(@PathVariable String faqId) {
-        faqService.increaseInqireCo(faqId);
+        faqService.increaseInqCnt(faqId);
         FaqDto result = faqService.getFaq(faqId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }

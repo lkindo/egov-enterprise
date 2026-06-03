@@ -9,7 +9,7 @@ export interface SentMail {
   recptnPerson: string;
   sndngResultCode: string;
   atchFileId?: string;
-  createdDate?: string;
+  crtDt?: string;
 }
 
 class MailService extends ApiService {

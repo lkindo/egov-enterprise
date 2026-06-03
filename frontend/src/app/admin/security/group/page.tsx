@@ -168,7 +168,7 @@ export default function GroupManagePage() {
  accessor: (item: GroupManage) => (
  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 font-mono tracking-tighter">
  <Calendar size={12} className="opacity-40" />
- {item.groupCrtYmd || 'N/A'}
+ {item.groupCreatDe || 'N/A'}
  </div>
  ),
  className: 'w-48'

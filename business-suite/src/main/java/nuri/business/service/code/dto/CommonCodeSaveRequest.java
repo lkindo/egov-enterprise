@@ -27,25 +27,5 @@ public record CommonCodeSaveRequest(
         @Schema(description = "사용여부")
         String useYn) {
 
-    // Compatibility Getters for legacy java references
-    @JsonIgnore
-    public String codeGroupId() {
-        return cdId;
-    }
-
-    @JsonIgnore
-    public String code() {
-        return dtlCd;
-    }
-
-    @JsonIgnore
-    public String codeNm() {
-        return dtlCdNm;
-    }
-
-    @JsonIgnore
-    public String codeDc() {
-        return dtlCdExpln;
-    }
 }
 

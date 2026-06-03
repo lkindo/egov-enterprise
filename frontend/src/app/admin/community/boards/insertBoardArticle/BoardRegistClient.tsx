@@ -27,7 +27,7 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 const boardSchema = z.object({
   pstTtl: z.string().min(1, '제목을 입력해주세요.'),
   pstCn: z.string().min(1, '내용을 입력해주세요.'),
-  ntcrNm: z.string().optional(),
+  userNm: z.string().optional(),
   password: z.string().optional(),
   bbsId: z.string(),
   pstId: z.string().optional(),
@@ -59,7 +59,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       pstId: pstId || initialData?.pstId,
       pstTtl: initialData?.pstTtl || '',
       pstCn: initialData?.pstCn || '',
-      ntcrNm: initialData?.ntcrNm || '관리자',
+      userNm: initialData?.userNm || '관리자',
       password: initialData?.password || '1',
       parnts: parnts || initialData?.parnts,
       replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',

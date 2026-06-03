@@ -29,11 +29,10 @@ public class ScrapDto {
     private String scrapNm;
     @Size(max = 1000)
     private String scrapUrl;
-    private String scrapDc;
+    private String scrapExpln;
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    private String uniqId;
     @Size(max = 20)
     @NotBlank
     private String userId; 
@@ -48,9 +47,8 @@ public class ScrapDto {
                 .pstId(entity.getPstId())
                 .scrapNm(entity.getScrapNm())
                 .scrapUrl(entity.getScrapUrl())
-                .scrapDc(entity.getScrapExpln())
+                .scrapExpln(entity.getScrapExpln())
                 .useYn(entity.getUseYn())
-                .uniqId(entity.getUniqId())
                 .userId(entity.getFrstRgtrId())
                 .frstRgtrId(entity.getFrstRgtrId())
                 .crtDt(entity.getCrtDt())

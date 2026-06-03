@@ -43,7 +43,7 @@ export default function HelpCenterPage() {
   const qnaColumns = [
     {
       header: '제목',
-      accessor: (item: QNA) => <span className="font-bold text-foreground/80">{item.qestnSj}</span>,
+      accessor: (item: QNA) => <span className="font-bold text-foreground/80">{item.qstnTtl}</span>,
     },
     {
       header: '작성자',
@@ -125,7 +125,7 @@ export default function HelpCenterPage() {
                       className="w-full px-12 py-10 flex items-center justify-between group text-left"
                     >
                       <span className="font-bold text-2xl text-foreground group-hover:text-primary transition-colors flex items-start gap-4 tracking-tighter">
-                        <span className="text-primary opacity-30 text-3xl">Q.</span> {faq.qestnSj}
+                        <span className="text-primary opacity-30 text-3xl">Q.</span> {faq.qstnTtl}
                       </span>
                       <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-bold text-muted-foreground group-hover:bg-accent")}>
                         <ChevronDown size={24} />
@@ -139,7 +139,7 @@ export default function HelpCenterPage() {
                           className="p-10 bg-accent/30 rounded-lg border-2 border-accent/50 text-foreground/80 font-bold leading-[1.8] text-lg flex items-start gap-4 shadow-inner"
                         >
                           <span className="text-primary/20 text-3xl font-bold shrink-0 pt-1">A.</span>
-                          {faq.answerCn}
+                          {faq.ansCn}
                         </motion.div>
                       </div>
                     )}

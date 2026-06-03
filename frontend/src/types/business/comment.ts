@@ -1,24 +1,22 @@
 export interface CommentVO {
-  id: number;
-  pstId: number;
+  ansSn: number;
+  pstId: string;
   bbsId: string;
-  writerId: string;
+  wrterId: string;
   wrterNm: string;
-  cmntCn: string;
-  createdDate: string;
-  modifiedDate?: string;
-  useYn: string;
+  ansCn: string;
+  crtDt: string;
 }
 
 export interface CommentSaveRequest {
-  pstId: number;
+  pstId: string;
   bbsId: string;
-  cmntCn: string;
-  password?: string;
+  ansCn: string;
+  pswd?: string;
 }
 
 export interface CommentSearchParams {
-  pstId: number;
+  pstId: string;
   bbsId: string;
   page?: number;
   size?: number;

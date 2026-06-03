@@ -187,8 +187,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         className="grid grid-cols-2 lg:grid-cols-4 gap-8 p-12 bg-white/60 backdrop-blur-xl rounded-3xl border-white border shadow-2xl ring-1 ring-black/5"
       >
         <MetaItem icon={<User size={20} />} label="Contributor" value={article.frstRgtrId || 'System'} />
-        <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.createdDate || 'Today'} />
-        <MetaItem icon={<Eye size={20} />} label="Global Reach" value={`${(article.inqireCo || 0).toLocaleString()} Views`} />
+        <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.crtDt || 'Today'} />
+        <MetaItem icon={<Eye size={20} />} label="Global Reach" value={`${(article.inqCnt || 0).toLocaleString()} Views`} />
         <MetaItem icon={<Share2 size={20} />} label="Integrity" value="Verified Node" />
       </motion.div>
 
@@ -211,7 +211,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               <div className="flex items-center gap-6">
                 <span className="h-[3px] w-16 bg-gradient-to-r from-primary to-transparent rounded-full" />
                 <p className="text-[10px] font-black tracking-[0.8em] text-primary uppercase leading-none ">
-                  {tmpltId === 'TMPLT_QNA' ? (article.qnaCategory || 'Q&A_TECHNICAL_CONSULT') : 'CORE_KNOWLEDGE_PAYLOAD'}
+                  {tmpltId === 'TMPLT_QNA' ? (article.qnaCatCd || 'Q&A_TECHNICAL_CONSULT') : 'CORE_KNOWLEDGE_PAYLOAD'}
                 </p>
               </div>
             </div>
@@ -287,7 +287,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       >
         <CommentSection 
           bbsId={bbsId!} 
-          pstId={Number(pstId)} 
+          pstId={pstId!} 
           initialComments={initialData.initialComments} 
         />
       </motion.div>

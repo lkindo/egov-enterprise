@@ -18,12 +18,12 @@ import { Briefcase, Plus, Trash2, Home, ChevronRight, FileText, User, Calendar, 
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 interface DeptJob {
-  deptJobId: string;
-  deptJobNm: string;
-  deptJobCn: string;
-  frstRegisterNm: string;
-  createdDate: string;
-  priort: string;
+  deptTaskId: string;
+  deptTaskNm: string;
+  deptTaskCn: string;
+  picNm?: string;
+  crtDt: string;
+  prrtyRnk: string;
 }
 
 const DeptJobListPage = () => {
@@ -131,36 +131,36 @@ const DeptJobListPage = () => {
                   </TableRow>
                 ) : (
                   list.map((item, idx) => (
-                    <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
+                    <TableRow key={item.deptTaskId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
                       <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
                         {totalCount - ((pageNo - 1) * 10) - idx}
                       </TableCell>
                       <TableCell className="text-center py-6">
-                        {getPriorityBadge(item.priort)}
+                        {getPriorityBadge(item.prrtyRnk)}
                       </TableCell>
                       <TableCell className="px-4 py-6">
-                        <Link href={`/smart-toolkit/dept-job/selectDeptJobDetail/${item.deptJobId}`} className="flex items-center gap-3">
+                        <Link href={`/smart-toolkit/dept-job/selectDeptJobDetail/${item.deptTaskId}`} className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-primary opacity-20 group-hover:opacity-100 transition-opacity" />
                           <span className="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">
-                            {item.deptJobNm}
+                            {item.deptTaskNm}
                           </span>
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-6">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-100 rounded-lg text-slate-700 font-bold text-sm shadow-sm">
-                          <User className="w-3.5 h-3.5 opacity-40" /> {item.frstRegisterNm}
+                          <User className="w-3.5 h-3.5 opacity-40" /> {item.picNm || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-6">
                         <div className="flex items-center justify-center gap-2 text-slate-400 font-bold text-sm">
-                          <Calendar className="w-4 h-4 opacity-30" /> {item.createdDate?.substring(0, 10)}
+                          <Calendar className="w-4 h-4 opacity-30" /> {item.crtDt?.substring(0, 10)}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(item.deptJobId)}
+                          onClick={() => handleDelete(item.deptTaskId)}
                           className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />

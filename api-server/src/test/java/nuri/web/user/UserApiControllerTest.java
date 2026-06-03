@@ -106,10 +106,10 @@ class UserApiControllerTest extends BaseControllerTest {
 
         Map<String, Object> request = Map.of(
                 "userId", "newUser",
-                "password", "password123!",
+                "pswd", "password123!",
                 "userNm", "테스트사용자",
-                "passwordHint", "hint",
-                "passwordCnsr", "answer",
+                "pswdHint", "hint",
+                "pswdCrans", "answer",
                 "role", "USER");
 
         mockMvc.perform(post("/api/v1/users/signup")

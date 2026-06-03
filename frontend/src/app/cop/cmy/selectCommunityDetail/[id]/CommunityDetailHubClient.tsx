@@ -51,7 +51,7 @@ export default function CommunityDetailHubClient({
     <TooltipProvider delayDuration={0}>
       <div className="space-y-[var(--gap-hub-section)] pb-24 animate-in fade-in duration-1000">
         <PageHeader
-          title={community.cmmntyNm}
+          title={community.cmntyNm}
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
           actions={
             <Link href="/cop/cmy/selectCommunityList">
@@ -108,16 +108,16 @@ export default function CommunityDetailHubClient({
                         <BookOpen size={120} />
                       </div>
                       <p className="text-2xl font-bold tracking-tighter text-slate-900 leading-relaxed relative z-10">
-                        "{community.cmmntyIntrcn || '등록된 소개 정보가 정의되지 않았습니다.'}"
+                        "{community.cmntyIntroCn || '등록된 소개 정보가 정의되지 않았습니다.'}"
                       </p>
                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
-                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.createdDate?.substring(0, 10) || 'Unknown'} />
+                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.crtDt?.substring(0, 10) || 'Unknown'} />
                   <DetailBlock icon={<Users size={18} />} label="Member Count" value="42_Active_Entities" />
-                  <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useAt === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
+                  <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useYn === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
                 </div>
               </div>
             </HubSectionCard>

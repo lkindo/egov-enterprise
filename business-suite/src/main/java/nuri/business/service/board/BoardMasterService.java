@@ -66,19 +66,19 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = BoardMaster.builder()
                 .bbsId(bbsId)
                 .bbsTtl(dto.getBbsTtl())
-                .bbsExpln(dto.getBbsIntroCn())
+                .bbsExpln(dto.getBbsExpln())
                 .bbsTypeCd(dto.getBbsTypeCd())
                 .bbsAtrbCd(dto.getBbsAtrbCd())
-                .ansPsbltyYn(dto.getAnsPsblYn())
-                .fileAtchPsbltyYn(dto.getFileAtchPsblYn())
-                .atchPsbltyFileQty(dto.getAtchPsblFileCnt())
-                .atchPsbltyFileSz(dto.getAtchPsblFileSize())
-                .tmpltId(dto.getTmplatId())
+                .ansPsbltyYn(dto.getAnsPsbltyYn())
+                .fileAtchPsbltyYn(dto.getFileAtchPsbltyYn())
+                .atchPsbltyFileQty(dto.getAtchPsbltyFileQty())
+                .atchPsbltyFileSz(dto.getAtchPsbltyFileSz())
+                .tmpltId(dto.getTmpltId())
                 .useYn(dto.getUseYn())
                 .blogId(dto.getBlogId())
                 .blogYn(dto.getBlogYn())
                 .cmntyId(dto.getCmntyId())
-                .ansYn(dto.getCommentYn())
+                .ansYn(dto.getAnsYn())
                 .stsfdgYn(dto.getStsfdgYn())
                 .frstRgtrId(userId)
                 .build();
@@ -92,14 +92,14 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         String bbsTtl = dto.getBbsTtl() != null ? dto.getBbsTtl() : entity.getBbsTtl();
-        String bbsExpln = dto.getBbsIntroCn() != null ? dto.getBbsIntroCn() : entity.getBbsExpln();
-        String ansPsbltyYn = dto.getAnsPsblYn() != null ? dto.getAnsPsblYn() : entity.getAnsPsbltyYn();
-        String fileAtchPsbltyYn = dto.getFileAtchPsblYn() != null ? dto.getFileAtchPsblYn() : entity.getFileAtchPsbltyYn();
-        Integer atchPsbltyFileQty = dto.getAtchPsblFileCnt() != null ? dto.getAtchPsblFileCnt() : entity.getAtchPsbltyFileQty();
-        Long atchPsbltyFileSz = dto.getAtchPsblFileSize() != null ? dto.getAtchPsblFileSize() : entity.getAtchPsbltyFileSz();
-        String tmpltId = dto.getTmplatId() != null ? dto.getTmplatId() : entity.getTmpltId();
+        String bbsExpln = dto.getBbsExpln() != null ? dto.getBbsExpln() : entity.getBbsExpln();
+        String ansPsbltyYn = dto.getAnsPsbltyYn() != null ? dto.getAnsPsbltyYn() : entity.getAnsPsbltyYn();
+        String fileAtchPsbltyYn = dto.getFileAtchPsbltyYn() != null ? dto.getFileAtchPsbltyYn() : entity.getFileAtchPsbltyYn();
+        Integer atchPsbltyFileQty = dto.getAtchPsbltyFileQty() != null ? dto.getAtchPsbltyFileQty() : entity.getAtchPsbltyFileQty();
+        Long atchPsbltyFileSz = dto.getAtchPsbltyFileSz() != null ? dto.getAtchPsbltyFileSz() : entity.getAtchPsbltyFileSz();
+        String tmpltId = dto.getTmpltId() != null ? dto.getTmpltId() : entity.getTmpltId();
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
-        String ansYn = dto.getCommentYn() != null ? dto.getCommentYn() : entity.getAnsYn();
+        String ansYn = dto.getAnsYn() != null ? dto.getAnsYn() : entity.getAnsYn();
         String stsfdgYn = dto.getStsfdgYn() != null ? dto.getStsfdgYn() : entity.getStsfdgYn();
 
         entity.update(bbsTtl, bbsExpln, ansPsbltyYn, fileAtchPsbltyYn,
@@ -183,7 +183,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .bbsTtl(projection.getBbsTtl())
                 .bbsTypeCd(projection.getBbsTypeCd())
                 .bbsAtrbCd(projection.getBbsAtrbCd())
-                .tmplatId(projection.getTmpltId())
+                .tmpltId(projection.getTmpltId())
                 .useYn(projection.getUseYn())
                 .crtDt(projection.getCrtDt())
                 .build();

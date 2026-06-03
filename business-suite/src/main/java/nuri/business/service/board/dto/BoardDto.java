@@ -114,6 +114,6 @@ public class BoardDto {
     private String frstRegisterNm;
 
     @Schema(description = "답글 단계")
-    private Integer ansLvl;
+    private Integer ansLv;
 
 }

@@ -1,3 +1,13 @@
+// Mock PointerEvent which is missing in JSDOM
+if (typeof window !== 'undefined' && !window.PointerEvent) {
+  class PointerEvent extends MouseEvent {
+    constructor(type: string, props: PointerEventInit = {}) {
+      super(type, props);
+    }
+  }
+  window.PointerEvent = PointerEvent as any;
+}
+
 vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},

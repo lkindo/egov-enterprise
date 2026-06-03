@@ -45,13 +45,13 @@ export default function BoardWritePage() {
  defaultValues: {
  bbsId: '',
  pstTtl: '',
- nttCn: '',
+ pstCn: '',
  ntceBgnde: '',
  ntceEndde: '',
  noticeAt: 'N' as 'Y' | 'N',
  secretAt: 'N' as 'Y' | 'N',
  useYn: 'Y' as 'Y' | 'N',
- eventDate: ''
+ evntDt: ''
  }
  });
 
@@ -176,7 +176,7 @@ export default function BoardWritePage() {
 
  <FormField
  control={form.control}
- name="nttCn"
+ name="pstCn"
  render={({ field }) => (
  <FormItem className="space-y-4">
  <FormControl>
@@ -275,7 +275,7 @@ export default function BoardWritePage() {
 
  <FormField
  control={form.control}
- name="eventDate"
+ name="evntDt"
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행사/이벤트 일자</FormLabel>

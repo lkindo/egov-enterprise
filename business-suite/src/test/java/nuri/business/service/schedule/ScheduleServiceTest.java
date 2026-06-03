@@ -57,16 +57,16 @@ class ScheduleServiceTest {
     @DisplayName("일정 상세 조회")
     void getSchedule() {
         // given
-        String schdlId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).schdlNm("Test Schedule").build();
-        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
+        String schdulId = "S1";
+        Schedule entity = Schedule.builder().schdlId(schdulId).schdlNm("Test Schedule").build();
+        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
         // when
-        ScheduleDto result = scheduleService.getSchedule(schdlId);
+        ScheduleDto result = scheduleService.getSchedule(schdulId);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getSchdlId()).isEqualTo(schdlId);
+        assertThat(result.getSchdlId()).isEqualTo(schdulId);
     }
 
     @Test
@@ -90,18 +90,18 @@ class ScheduleServiceTest {
     @DisplayName("일정 수정")
     void updateSchedule() {
         // given
-        String schdlId = "S1";
+        String schdulId = "S1";
         String userId = "user1";
-        Schedule existingEntity = Schedule.builder().schdlId(schdlId).schdlNm("Old Title").build();
+        Schedule existingEntity = Schedule.builder().schdlId(schdulId).schdlNm("Old Title").build();
         ScheduleDto updateDto = ScheduleDto.builder()
-                .schdlId(schdlId)
+                .schdlId(schdulId)
                 .schdlNm("New Title")
                 .build();
 
-        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(existingEntity));
+        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(existingEntity));
 
         // when
-        scheduleService.updateSchedule(schdlId, userId, updateDto);
+        scheduleService.updateSchedule(schdulId, userId, updateDto);
 
         // then
         assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
@@ -111,13 +111,13 @@ class ScheduleServiceTest {
     @DisplayName("일정 삭제")
     void deleteSchedule() {
         // given
-        String schdlId = "S1";
+        String schdulId = "S1";
         String userId = "user1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).frstRgtrId(userId).build();
-        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
+        Schedule entity = Schedule.builder().schdlId(schdulId).frstRgtrId(userId).build();
+        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
         // when
-        scheduleService.deleteSchedule(schdlId, userId);
+        scheduleService.deleteSchedule(schdulId, userId);
 
         // then
         verify(scheduleRepository).delete(entity);
@@ -127,13 +127,13 @@ class ScheduleServiceTest {
     @DisplayName("일정 삭제 실패 - 작성자가 아님")
     void deleteSchedule_fail_notCreator() {
         // given
-        String schdlId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdlId).frstRgtrId("creator").build();
-        given(scheduleRepository.findById(schdlId)).willReturn(Optional.of(entity));
+        String schdulId = "S1";
+        Schedule entity = Schedule.builder().schdlId(schdulId).frstRgtrId("creator").build();
+        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
         // when & then
         BusinessException exception = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> 
-            scheduleService.deleteSchedule(schdlId, "otherUser")
+            scheduleService.deleteSchedule(schdulId, "otherUser")
         );
         assertThat(exception).isNotNull();
     }

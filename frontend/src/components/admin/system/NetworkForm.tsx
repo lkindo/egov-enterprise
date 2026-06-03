@@ -23,7 +23,7 @@ const networkSchema = z.object({
   subnet: z.string().min(1, "서브넷 마스크는 필수입니다."),
   gtwy: z.string().min(1, "게이트웨이는 필수입니다."),
   domnServer: z.string().optional(),
-  useAt: z.enum(['Y', 'N']),
+  useYn: z.enum(['Y', 'N']),
 });
 
 type NetworkFormValues = z.infer<typeof networkSchema>;
@@ -43,7 +43,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
             gtwy: initialData?.gtwy || '',
             domnServer: initialData?.domnServer || '',
             userNm: initialData?.userNm || '',
-            useAt: initialData?.useAt || 'Y',
+            useYn: initialData?.useYn || 'Y',
         },
     });
 
@@ -134,7 +134,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                 </div>
                 <FormField
                     control={form.control}
-                    name="useAt"
+                    name="useYn"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>사용 여부 <span className="text-destructive">*</span></FormLabel>

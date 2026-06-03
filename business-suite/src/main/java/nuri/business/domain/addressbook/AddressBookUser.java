@@ -39,8 +39,6 @@ public class AddressBookUser extends BaseEntity {
         return this.addressBook != null ? this.addressBook.getAdbkId() : null;
     }
 
-    // @Column(name = "rls_scp_cd", length = 30)
-    // private String rlsScpCd;
 
     @Column(length = 100)
     private String nm;

@@ -19,52 +19,47 @@ public class NotificationDto {
     @NotBlank
     @Size(max = 20)
     @Schema(description = "알림 일련번호")
-    private String ntfcNo;
+    private String notiSn;
 
     @Size(max = 100)
     @Schema(description = "알림 제목")
-    private String ntfcSj;
+    private String notiTtlNm;
 
     @Size(max = 4000)
     @Schema(description = "알림 내용")
-    private String ntfcCn;
+    private String notiCn;
 
     @Schema(description = "알림 일시")
-    private LocalDateTime ntfcTime;
+    private LocalDateTime notiDt;
 
     @Size(max = 100)
     @Schema(description = "알림 주기 설정")
-    private String bhNtfcIntrvl;
+    private String notiIvlVal;
 
     @Size(max = 20)
     @Schema(description = "수신자 ID")
-    private String receiverId;
+    private String rcvrId;
 
     @Size(max = 1)
     @Schema(description = "읽음 여부")
-    private String isRead;
+    private String readYn;
 
     @Size(max = 1000)
     @Schema(description = "링크 URL")
-    private String uniqId;
+    private String linkUrl;
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getNtfcId() { return ntfcNo; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getReadYn() { return isRead; }
-
     public static NotificationDto from(Notification entity) {
         return NotificationDto.builder()
-                .ntfcNo(entity.getNtfcNo())
-                .ntfcSj(entity.getNtfcSj())
-                .ntfcCn(entity.getNtfcCn())
-                .receiverId(entity.getReceiverId())
-                .isRead(entity.getIsRead())
-                .uniqId(entity.getLinkUrl())
-                .ntfcTime(entity.getNtfcTime())
+                .notiSn(entity.getNotiSn())
+                .notiTtlNm(entity.getNotiTtlNm())
+                .notiCn(entity.getNotiCn())
+                .rcvrId(entity.getRcvrId())
+                .readYn(entity.getReadYn())
+                .linkUrl(entity.getLinkUrl())
+                .notiDt(entity.getNotiDt())
                 .crtDt(entity.getCrtDt())
                 .build();
     }

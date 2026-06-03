@@ -11,7 +11,7 @@ export interface SmsDto {
   sndngCn: string;    // 발신 내용
   trnsmitPnttm?: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   rcptnTelno?: string;  // 수신 번호 (단일 수신 시 사용)
   recipients?: SmsRecptnDto[]; // 수신자 목록 (다중 수신 시 사용)
 }

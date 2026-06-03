@@ -66,11 +66,11 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
     private LoginLogDto toDto(LoginLog entity) {
         return LoginLogDto.builder()
                 .logId(entity.getLogId())
-                .loginId(entity.getLoginId())
-                .loginIp(entity.getLoginIp())
-                .loginMthd(entity.getLoginMthd())
-                .errOccrrAt(entity.getErrOccrrAt())
-                .errorCode(entity.getErrorCode())
+                .loginId(entity.getUserId())
+                .loginIp(entity.getLgnIpAddr())
+                .loginMthd(entity.getCntnMthdCd())
+                .errOccrrAt(entity.getErrOcrnYn())
+                .errorCode(entity.getErrCd())
                 .creatDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();
     }

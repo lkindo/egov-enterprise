@@ -46,18 +46,4 @@ public class FileMaster extends BaseEntity {
         this.useYn = "N";
     }
 
-    // ----- [Legacy Aliases & Compatibility Bridge] -----
-
-    public String getUseAt() {
-        return this.useYn;
-    }
-
-    public static abstract class FileMasterBuilder<C extends FileMaster, B extends FileMasterBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String useYn;
-
-        public B useAt(String useAt) {
-            this.useYn = useAt;
-            return self();
-        }
-    }
 }

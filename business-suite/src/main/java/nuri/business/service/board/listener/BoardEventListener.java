@@ -39,7 +39,7 @@ public class BoardEventListener {
         long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
         
         boardRepository.findById(pstId).ifPresent(board -> {
-            board.setCommentCnt((int) count);
+            board.setCmntCnt((int) count);
             boardRepository.save(board);
             log.info(">>> Updated comment count for pstId {}: {}", pstId, count);
         });

@@ -124,9 +124,9 @@ class MenuServiceIntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (18-Tier Architecture)
+### 계층형 아키텍처 (22-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **18개 계층(Tier)**으로 테스트를 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **22개 계층(Tier)**으로 테스트를 관리합니다.
 
 | 그룹 | Tier | 파일 | 검증 범위 |
 |------|------|------|-----------|
@@ -148,6 +148,10 @@ class MenuServiceIntegrationTest {
 | | 16 | `16-system-observability.spec.ts` | 시스템 가시성 |
 | | 17 | `17-support-governance.spec.ts` | 온라인 매뉴얼, FAQ 생명주기 |
 | | 18 | `18-business-extension.spec.ts` | ISM(비정형결재), LSM(간부일정), HPCM |
+| | 19 | `19-hierarchy-modernization.spec.ts` | 부서 및 메뉴 계층 구조 최적화 검증 |
+| | 20 | `20-common-security-validation.spec.ts` | 공통 보안 취약점 및 보안 필터 검증 |
+| | 21 | `21-advanced-resilience.spec.ts` | API 및 DB 장애 극복 회복탄력성 검증 |
+| | 22 | `22-deep-security-guard.spec.ts` | 심층 보안 통제 및 가디언 동작 검증 |
 
 ### 실행 명령어
 
@@ -160,8 +164,9 @@ npm run test:e2e:full
 
 # 특정 Tier만 실행
 npx playwright test --project=tier-1-core
-npx playwright test --project=tier-17-support
-npx playwright test --project=tier-18-business
+npx playwright test --project=tier-18-business-ext
+npx playwright test --project=tier-21-resilience
+npx playwright test --project=tier-22-security
 
 # UI 모드 (대화형 디버깅)
 npm run test:e2e:ui

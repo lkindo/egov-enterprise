@@ -76,7 +76,7 @@ class MenuServiceIntegrationTest {
         programRepository.save(program);
 
         Menu root = Menu.builder()
-                .id(1L)
+                .menuSn(1L)
                 .menuNm("ROOT")
                 .menuOrdr(1)
                 .menuExpln("DESC")
@@ -87,7 +87,7 @@ class MenuServiceIntegrationTest {
         menuRepository.save(root);
 
         Menu child = Menu.builder()
-                .id(2L)
+                .menuSn(2L)
                 .menuNm("CHILD")
                 .prgrmFileNm("PROG_01")
                 .upMenuSn(1L)

@@ -31,15 +31,15 @@ public class StatsDto {
 
     // CRUD 통계
     private int creatCo;
-    private int inqireCo;
+    private int inqCnt;
     private int updtCo;
     private int deleteCo;
     private int outptCo;
     private int errorCo;
 
     // 게시물 통계
-    private int totInqireCo;
-    private float avrgInqireCo;
+    private int totInqCnt;
+    private float avrgInqCnt;
     private String mxmmInqireBbsId;
     private String mxmmInqireBbsNm;
     private String topNtcepersonId;

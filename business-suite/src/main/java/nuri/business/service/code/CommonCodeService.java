@@ -63,21 +63,21 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         @CacheEvict(value = "commonCodes", allEntries = true)
         public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
 
-                egovLogger.info("Creating common code: {}/{}", request.codeGroupId(), request.code());
+                egovLogger.info("Creating common code: {}/{}", request.cdId(), request.dtlCd());
 
                 if (commonCodeRepository
                                 .findById(new nuri.business.domain.code.CommonCodeId(
-                                                request.codeGroupId(),
-                                                request.code()))
+                                                request.cdId(),
+                                                request.dtlCd()))
                                 .isPresent()) {
                         throw new BusinessException(ErrorCode.DUPLICATE_CODE);
                 }
 
                 CommonCode code = CommonCode.builder()
-                                .cdId(required(request.codeGroupId(), "request.codeGroupId() 는 null 일 수 없습니다"))
-                                .dtlCd(required(request.code(), "request.code() 는 null 일 수 없습니다"))
-                                .dtlCdNm(required(request.codeNm(), "request.codeNm() 는 null 일 수 없습니다"))
-                                .dtlCdExpln(request.codeDc())
+                                .cdId(required(request.cdId(), "request.cdId() 는 null 일 수 없습니다"))
+                                .dtlCd(required(request.dtlCd(), "request.dtlCd() 는 null 일 수 없습니다"))
+                                .dtlCdNm(required(request.dtlCdNm(), "request.dtlCdNm() 는 null 일 수 없습니다"))
+                                .dtlCdExpln(request.dtlCdExpln())
                                 .useYn(request.useYn())
                                 .build();
 

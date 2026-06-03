@@ -57,7 +57,7 @@ function CommunityDetailContent() {
         {
             header: '번호',
             accessor: (item: BoardPost) => (
-                item.noticeYn === 'Y' ?
+                (item as any).noticeYn === 'Y' ?
                     <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
                     item.pstId
             ),
@@ -75,18 +75,18 @@ function CommunityDetailContent() {
         },
         { 
             header: '작성자', 
-            accessor: (item: BoardPost) => item.frstRegisterNm || item.ntcrNm 
+            accessor: (item: BoardPost) => item.userNm 
         },
         { 
             header: '날짜', 
-            accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' 
+            accessor: (item: BoardPost) => item.crtDt?.substring(0, 10) || '-' 
         },
         {
             header: '조회',
             accessor: (item: BoardPost) => (
                 <div className="flex items-center gap-1 text-muted-foreground">
                     <Eye size={14} />
-                    {item.inqireCo}
+                    {item.inqCnt}
                 </div>
             )
         }

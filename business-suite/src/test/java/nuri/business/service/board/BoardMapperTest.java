@@ -11,17 +11,17 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("BoardMapper ?�위 ?�스??)
+@DisplayName("BoardMapper Unit Test")
 class BoardMapperTest {
 
     private final BoardMapper mapper = Mappers.getMapper(BoardMapper.class);
 
     @Test
-    @DisplayName("Entity -> DTO 변???�스??)
+    @DisplayName("Entity to DTO Conversion Test")
     void toDtoTest() {
         Board board = Board.builder()
                 .pstId("1")
-                .pstTtl("?�목")
+                .pstTtl("title")
                 .crtDt(LocalDateTime.of(2026, 5, 3, 10, 0))
                 .blogId("BLOG1")
                 .build();
@@ -31,10 +31,10 @@ class BoardMapperTest {
         assertNotNull(dto);
         assertEquals("1", dto.getPstId());
         assertEquals("1", dto.getPstId());
-        assertEquals("?�목", dto.getPstTtl());
+        assertEquals("title", dto.getPstTtl());
         assertEquals(LocalDateTime.of(2026, 5, 3, 10, 0), dto.getCrtDt());
     }
-    @DisplayName("?�폴??메서???�스??- formatDate")
+    @DisplayName("?뷀뤃??硫붿꽌???뚯뒪??- formatDate")
     void formatDateTest() {
         LocalDateTime date = LocalDateTime.of(2026, 5, 3, 15, 30);
         assertEquals("2026-05-03", mapper.formatDate(date));
@@ -42,7 +42,7 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("?�폴??메서???�스??- formatDateTime")
+    @DisplayName("?뷀뤃??硫붿꽌???뚯뒪??- formatDateTime")
     void formatDateTimeTest() {
         LocalDateTime dateTime = LocalDateTime.of(2026, 5, 3, 15, 30);
         assertEquals("2026-05-03 15:30", mapper.formatDateTime(dateTime));
@@ -50,14 +50,14 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("?�폴??메서???�스??- blogIdToYn")
+    @DisplayName("?뷀뤃??硫붿꽌???뚯뒪??- blogIdToYn")
     void blogIdToYnTest() {
         assertEquals("Y", mapper.blogIdToYn("some-id"));
         assertEquals("N", mapper.blogIdToYn(null));
     }
 
     @Test
-    @DisplayName("?�폴??메서???�스??- calculateExpired")
+    @DisplayName("?뷀뤃??硫붿꽌???뚯뒪??- calculateExpired")
     void calculateExpiredTest() {
         assertEquals("N", mapper.calculateExpired(null));
         assertEquals("N", mapper.calculateExpired(""));
@@ -70,7 +70,7 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("?�폴??메서???�스??- parseDateTime")
+    @DisplayName("?뷀뤃??硫붿꽌???뚯뒪??- parseDateTime")
     void parseDateTimeTest() {
         assertNull(mapper.parseDateTime(null));
         assertNull(mapper.parseDateTime(""));
@@ -92,10 +92,10 @@ class BoardMapperTest {
     }
 
     @Test
-    @DisplayName("Request -> Entity 변???�스??(Default Values)")
+    @DisplayName("Request -> Entity 蹂???뚯뒪??(Default Values)")
     void toEntityDefaultTest() {
         BoardSaveRequest request = new BoardSaveRequest(
-                "BBS1", "?�목", "?�용", null, null, null, null, null, null, null, null, "USER1", "Name1", null
+                "BBS1", "title", "content", null, null, null, null, null, null, null, null, "USER1", "Name1", null
         );
         
         Board entity = mapper.toEntity(request, "BBS1", "USER1", "Name1", 10L);

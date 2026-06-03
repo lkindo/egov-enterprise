@@ -16,13 +16,13 @@ import java.time.format.DateTimeFormatter;
 public class CommunityDto {
     @Size(max = 20)
     private String cmntyId;
-    private String cmntyTtl;
+    private String cmntyNm;
     @Size(max = 4000)
     private String cmntyIntroCn;
-    private String regTypeCd;
-    private String regTypeCdNm;
-    private String tmplatId;
-    private String tmplatNm;
+    private String regSeCd;
+    private String regSeCdNm;
+    private String tmpltId;
+    private String tmpltNm;
     @Size(max = 1)
     @NotBlank
     private String useYn;
@@ -35,10 +35,10 @@ public class CommunityDto {
             return null;
         return CommunityDto.builder()
                 .cmntyId(community.getCmntyId())
-                .cmntyTtl(community.getCmntyTtl())
+                .cmntyNm(community.getCmntyNm())
                 .cmntyIntroCn(community.getCmntyIntroCn())
-                .regTypeCd(community.getRegTypeCd())
-                .tmplatId(community.getTmplatId())
+                .regSeCd(community.getRegSeCd())
+                .tmpltId(community.getTmpltId())
                 .useYn(community.getUseYn())
                 .frstRgtrId(community.getFrstRgtrId())
                 .crtDt(community.getCrtDt() != null

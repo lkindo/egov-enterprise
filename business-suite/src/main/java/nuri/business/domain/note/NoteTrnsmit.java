@@ -34,34 +34,9 @@ public class NoteTrnsmit extends BaseEntity {
 
     @Column(length = 1)
     private String delYn;
-
-    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
-    public String getNoteDsptchId() { return this.noteSndngId; }
-    public String getDsptchUserId() { return this.sndrId; }
-
-    // ----- [Legacy Setter Aliases for Backwards Compatibility] -----
-    public void setNoteDsptchId(String noteDsptchId) { this.noteSndngId = noteDsptchId; }
-    public void setDsptchUserId(String dsptchUserId) { this.sndrId = dsptchUserId; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-    public static abstract class NoteTrnsmitBuilder<C extends NoteTrnsmit, B extends NoteTrnsmitBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B noteDsptchId(String noteDsptchId) {
-            this.noteSndngId = noteDsptchId;
-            return self();
-        }
-        public B dsptchUserId(String dsptchUserId) {
-            this.sndrId = dsptchUserId;
-            return self();
-        }
-    }
-
     @PrePersist
     protected void onCreate() {
         if (this.delYn == null)
             this.delYn = "N";
     }
-    
-    // legacy
-    public String getDeleteAt() { return delYn; }
-    public void setDeleteAt(String v) { this.delYn = v; }
 }

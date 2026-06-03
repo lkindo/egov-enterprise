@@ -45,10 +45,10 @@ export default function TemplateAdminClient({
  const [templates, setTemplates] = useState(initialTemplates);
  const [isAddOpen, setIsAddOpen] = useState(false);
  const [newTemplate, setNewTemplate] = useState<TmplatInfo>({
- tmplatNm: '',
- tmplatSeCode: 'TMPT01',
- tmplatCours: '',
- useAt: 'Y'
+ tmpltNm: '',
+ tmpltSeCd: 'TMPT01',
+ tmpltPath: '',
+ useYn: 'Y'
  });
 
  const handleRefresh = async () => {
@@ -64,7 +64,7 @@ export default function TemplateAdminClient({
  };
 
  const handleAdd = async () => {
- if (!newTemplate.tmplatNm || !newTemplate.tmplatCours) {
+ if (!newTemplate.tmpltNm || !newTemplate.tmpltPath) {
  toast.error('템플릿 명과 경로를 입력해주세요.');
  return;
  }
@@ -96,7 +96,7 @@ export default function TemplateAdminClient({
  <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-md">
  <Layout size={14} />
  </div>
- <span className="font-bold tracking-tighter text-slate-900">{item.tmplatNm}</span>
+ <span className="font-bold tracking-tighter text-slate-900">{item.tmpltNm}</span>
  </div>
  )
  },
@@ -104,7 +104,7 @@ export default function TemplateAdminClient({
  header: '구분',
  accessor: (item: TmplatInfo) => (
  <span className="text-xs font-bold text-slate-500 tracking-tight bg-slate-100 px-2 py-1 rounded-md ">
- {item.tmplatSeCode === 'TMPT01' ? '게시판' : item.tmplatSeCode === 'TMPT02' ? '커뮤니티' : '일반'}
+ {item.tmpltSeCd === 'TMPT01' ? '게시판' : item.tmpltSeCd === 'TMPT02' ? '커뮤니티' : '일반'}
  </span>
  )
  },
@@ -113,7 +113,7 @@ export default function TemplateAdminClient({
  accessor: (item: TmplatInfo) => (
  <div className="flex items-center gap-2 text-slate-400 font-mono text-xs ">
  <Code size={12} />
- {item.tmplatCours}
+ {item.tmpltPath}
  </div>
  )
  },
@@ -122,10 +122,10 @@ export default function TemplateAdminClient({
  accessor: (item: TmplatInfo) => (
  <div className={cn(
  "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit transition-all",
- item.useAt === 'Y' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
+ item.useYn === 'Y' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
  )}>
- {item.useAt === 'Y' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
- <span className="text-xs font-bold tracking-tight ">{item.useAt === 'Y' ? '활성' : '비활성'}</span>
+ {item.useYn === 'Y' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+ <span className="text-xs font-bold tracking-tight ">{item.useYn === 'Y' ? '활성' : '비활성'}</span>
  </div>
  )
  }
@@ -195,8 +195,8 @@ export default function TemplateAdminClient({
  <label className="text-xs font-bold text-slate-400 tracking-tight ml-2">템플릿 명칭</label>
  <Input
  placeholder="템플릿 명..."
- value={newTemplate.tmplatNm}
- onChange={(e) => setNewTemplate(prev => ({ ...prev, tmplatNm: e.target.value }))}
+ value={newTemplate.tmpltNm}
+ onChange={(e) => setNewTemplate(prev => ({ ...prev, tmpltNm: e.target.value }))}
  className="h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
@@ -205,8 +205,8 @@ export default function TemplateAdminClient({
  <div className="space-y-3">
  <label className="text-xs font-bold text-slate-400 tracking-tight ml-2">카테고리</label>
  <Select
- value={newTemplate.tmplatSeCode}
- onValueChange={(v) => setNewTemplate(prev => ({ ...prev, tmplatSeCode: v }))}
+ value={newTemplate.tmpltSeCd}
+ onValueChange={(v) => setNewTemplate(prev => ({ ...prev, tmpltSeCd: v }))}
  >
  <SelectTrigger className="h-11 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-xs tracking-tight focus:bg-white">
  <SelectValue placeholder="카테고리 선택" />
@@ -221,8 +221,8 @@ export default function TemplateAdminClient({
  <div className="space-y-3">
  <label className="text-xs font-bold text-slate-400 tracking-tight ml-2">상태</label>
  <Select
- value={newTemplate.useAt}
- onValueChange={(v) => setNewTemplate(prev => ({ ...prev, useAt: v }))}
+ value={newTemplate.useYn}
+ onValueChange={(v) => setNewTemplate(prev => ({ ...prev, useYn: v }))}
  >
  <SelectTrigger className="h-11 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-xs tracking-tight focus:bg-white">
  <SelectValue placeholder="상태 선택" />
@@ -241,8 +241,8 @@ export default function TemplateAdminClient({
  <Code className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
  <Input
  placeholder="/src/templates/..."
- value={newTemplate.tmplatCours}
- onChange={(e) => setNewTemplate(prev => ({ ...prev, tmplatCours: e.target.value }))}
+ value={newTemplate.tmpltPath}
+ onChange={(e) => setNewTemplate(prev => ({ ...prev, tmpltPath: e.target.value }))}
  className="h-11 pl-16 pr-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>

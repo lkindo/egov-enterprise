@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface AddressBookService {
 
-    Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOrgnztId, String searchCnd, String searchWrd,
+    Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOgnzId, String searchCnd, String searchWrd,
             @org.springframework.lang.NonNull Pageable pageable);
 
     AddressBookDto getAddressBook(@org.springframework.lang.NonNull String adbkId);

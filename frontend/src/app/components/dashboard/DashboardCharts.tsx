@@ -88,7 +88,7 @@ export function DashboardVisitorChart({ data }: ChartProps) {
 export function DashboardPostChart({ data }: ChartProps) {
   const chartData = (data || []).map(item => ({
     name: item.statsDate?.length === 8 ? `${item.statsDate.substring(6, 8)}` : item.statsDate,
-    posts: (item.creatCo || 0) + (item.inqireCo || 0)
+    posts: (item.creatCo || 0) + (item.inqCnt || 0)
   }));
 
   const [mounted, setMounted] = React.useState(false);

@@ -62,10 +62,10 @@ export default function CommunityHubClient({
           </div>
           <div className="space-y-1">
             <h4 className="text-md font-bold tracking-tighter leading-none text-foreground group-hover:text-primary transition-colors">
-              {item.cmmntyNm}
+              {item.cmntyNm}
             </h4>
             <p className="text-xs font-bold tracking-tight opacity-40">
-              ID_{item.cmmntyId?.substring(0, 8)}
+              ID_{item.cmntyId?.substring(0, 8)}
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function CommunityHubClient({
       header: '소개',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md">
-          "{item.cmmntyIntrcn || '등록된 소개 정보가 없습니다.'}"
+          "{item.cmntyIntroCn || '등록된 소개 정보가 없습니다.'}"
         </p>
       )
     },
@@ -91,14 +91,14 @@ export default function CommunityHubClient({
       header: '개설일',
       accessor: (item) => (
         <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
-          <Calendar size={14} /> {item.createdDate?.substring(0, 10)}
+          <Calendar size={14} /> {item.crtDt?.substring(0, 10)}
         </div>
       )
     },
     {
       header: '이동',
       accessor: (item) => (
-        <Link href={`/cop/cmy/selectCommunityDetail/${item.cmmntyId}`}>
+        <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntyId}`}>
           <Button size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-slate-100 border border-slate-200/60 text-slate-800 hover:bg-slate-900 hover:text-white transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -222,7 +222,7 @@ export default function CommunityHubClient({
                         loading={isLoading}
                         error={error as Error | null}
                         onRetry={() => refetch()}
-                        keyField="cmmntyId"
+                        keyField="cmntyId"
                         emptyMessage="검색된 커뮤니티 공간이 존재하지 않습니다."
                         isPremium={true}
                         className="border-none shadow-none bg-transparent"

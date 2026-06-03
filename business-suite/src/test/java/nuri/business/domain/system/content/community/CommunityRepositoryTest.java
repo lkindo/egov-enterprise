@@ -23,7 +23,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         // given
         Community community = Community.builder()
                 .cmntyId("CMNTY_001")
-                .cmntyTtl("Test Community")
+                .cmntyNm("Test Community")
                 .cmntyIntroCn("Test Intro")
                 .useYn("Y")
                 .build();
@@ -33,7 +33,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         Community saved = communityRepository.findById("CMNTY_001").orElseThrow();
 
         // then
-        assertThat(saved.getCmntyTtl()).isEqualTo("Test Community");
+        assertThat(saved.getCmntyNm()).isEqualTo("Test Community");
     }
 
     @Test
@@ -42,7 +42,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         // given
         Community community = Community.builder()
                 .cmntyId("CMNTY_002")
-                .cmntyTtl("Mapping Community")
+                .cmntyNm("Mapping Community")
                 .useYn("Y")
                 .build();
         communityRepository.save(community);

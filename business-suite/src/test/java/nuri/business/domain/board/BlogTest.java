@@ -48,28 +48,4 @@ class BlogTest {
         assertThat(blog.getUseYn()).isEqualTo("N");
     }
 
-    @Test
-    @DisplayName("Blog 레거시 별칭(Aliases) 및 Transient 필드 Getter/Setter 테스트")
-    void legacyAliasesAndSettersTest() {
-        Blog blog = Blog.builder().build();
-
-        // Setter aliases 호출
-        blog.setBlogNm("Legacy Blog Name");
-        blog.setBlogIntrcn("Legacy Blog Intro");
-        blog.setRegTypeCd("REGT02");
-        blog.setTmpltId("TMP_09");
-
-        // Getter aliases 및 매핑 검증
-        assertThat(blog.getBlogNm()).isEqualTo("Legacy Blog Name");
-        assertThat(blog.getBlogTtl()).isEqualTo("Legacy Blog Name");
-
-        assertThat(blog.getBlogIntrcn()).isEqualTo("Legacy Blog Intro");
-        assertThat(blog.getBlogIntroCn()).isEqualTo("Legacy Blog Intro");
-
-        assertThat(blog.getRegTypeCd()).isEqualTo("REGT02");
-        assertThat(blog.getRegSeCd()).isEqualTo("REGT02");
-
-        assertThat(blog.getTmpltId()).isEqualTo("TMP_09");
-        assertThat(blog.getTmpltId()).isEqualTo("TMP_09");
-    }
 }

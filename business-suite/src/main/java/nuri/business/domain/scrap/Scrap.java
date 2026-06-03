@@ -47,11 +47,6 @@ public class Scrap extends BaseEntity {
     @Column(length = 1)
     @Builder.Default
     private String useYn = "Y";
-
-    public String getUniqId() {
-        return getFrstRgtrId();
-    }
-
     public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {
         this.scrapNm = scrapNm;
         this.scrapUrl = scrapUrl;
@@ -60,25 +55,5 @@ public class Scrap extends BaseEntity {
     }
 
 
-    // ----- [Legacy Aliases for Backward Compatibility] -----
-
-    @Deprecated
-    public String getScrapDc() {
-        return scrapExpln;
-    }
-
-    @Deprecated
-    public void setScrapDc(String scrapDc) {
-        this.scrapExpln = scrapDc;
-    }
-
-    public static abstract class ScrapBuilder<C extends Scrap, B extends ScrapBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String scrapExpln;
-
-        @Deprecated
-        public B scrapDc(String scrapDc) {
-            this.scrapExpln = scrapDc;
-            return self();
-        }
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

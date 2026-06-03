@@ -40,33 +40,10 @@ public class Community extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String useYn;
 
-    // ----- [Legacy Getter Aliases] -----
-
-    public String getCmntyTtl() { return this.cmntyNm; }
-    public String getRegTypeCd() { return this.regSeCd; }
-    public String getTmplatId() { return this.tmpltId; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-
-    public static abstract class CommunityBuilder<C extends Community, B extends CommunityBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B cmntyTtl(String cmntyTtl) {
-            this.cmntyNm = cmntyTtl;
-            return self();
-        }
-        public B regTypeCd(String regTypeCd) {
-            this.regSeCd = regTypeCd;
-            return self();
-        }
-        public B tmplatId(String tmplatId) {
-            this.tmpltId = tmplatId;
-            return self();
-        }
-    }
-
-    public void update(String cmntyTtl, String cmntyIntroCn, String tmplatId, String useYn) {
-        this.cmntyNm = cmntyTtl;
+    public void update(String cmntyNm, String cmntyIntroCn, String tmpltId, String useYn) {
+        this.cmntyNm = cmntyNm;
         this.cmntyIntroCn = cmntyIntroCn;
-        this.tmpltId = tmplatId;
+        this.tmpltId = tmpltId;
         this.useYn = useYn;
     }
 

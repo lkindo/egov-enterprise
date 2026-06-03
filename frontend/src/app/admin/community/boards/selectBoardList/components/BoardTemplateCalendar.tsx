@@ -27,7 +27,7 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
   
   // 게시글을 날짜별로 그룹화
   const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
-    const targetDate = post.eventDate || post.createdDate;
+    const targetDate = post.evntDt || post.crtDt;
     if (targetDate) {
       const d = new Date(targetDate);
       if (d.getFullYear() === year && d.getMonth() === month) {
@@ -105,7 +105,7 @@ export const BoardTemplateCalendar = ({ list, bbsId, startDate, onDateChange }: 
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2 text-xs font-bold leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
-                      post.noticeYn === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
+                      (post as any).noticeYn === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
                     )}
                     title={post.pstTtl}
                   >

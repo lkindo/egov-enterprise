@@ -31,11 +31,11 @@ describe('DeptJobListPage', () => {
  data: {
  list: [
  {
- deptJobId: 'JOB_0001',
- deptJobNm: '주간 보고 작성',
- priort: '1', // High
+ deptTaskId: 'JOB_0001',
+ deptTaskNm: '주간 보고 작성',
+ prrtyRnk: '1', // High
  frstRegisterNm: '테스트님',
- createdDate: '2024-06-01'
+ crtDt: '2024-06-01'
  }
  ],
  total: 1,

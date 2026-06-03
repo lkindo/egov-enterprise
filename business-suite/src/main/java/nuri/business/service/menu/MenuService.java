@@ -84,20 +84,20 @@ public class MenuService {
             Menu menu = (Menu) result[0];
             MenuAuthority authority = (MenuAuthority) result[1];
 
-            menuMap.put(menu.getId(), menu);
+            menuMap.put(menu.getMenuSn(), menu);
 
             if (authority != null) {
-                authorityMap.computeIfAbsent(menu.getId(), k -> new ArrayList<>())
+                authorityMap.computeIfAbsent(menu.getMenuSn(), k -> new ArrayList<>())
                         .add(authority);
             }
         }
 
         List<Menu> filteredMenus = menuMap.values().stream()
                 .filter(m -> {
-                    boolean isAuthorized = authorityMap.getOrDefault(m.getId(), new ArrayList<>()).stream()
+                    boolean isAuthorized = authorityMap.getOrDefault(m.getMenuSn(), new ArrayList<>()).stream()
                             .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
                     boolean isAdmin = roles.contains("ROLE_ADMIN");
-                    return (isAuthorized || isAdmin) && m.getId() <= 9999999;
+                    return (isAuthorized || isAdmin) && m.getMenuSn() <= 9999999;
                 })
                 .collect(Collectors.toList());
 
@@ -113,8 +113,8 @@ public class MenuService {
             String url = calculateUrl(menu, programMap);
 
             MenuDto dto = MenuDto.builder()
-                    .id(menu.getId())
-                    .menuNo(menu.getId())
+                    .id(menu.getMenuSn())
+                    .menuNo(menu.getMenuSn())
                     .menuNm(menu.getMenuNm())
                     .prgrmFileNm(menu.getPrgrmFileNm())
                     .upMenuSn(menu.getUpMenuSn())
@@ -157,7 +157,7 @@ public class MenuService {
         List<Menu> allMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpMenuSn());
+            parentMap.put(m.getMenuSn(), m.getUpMenuSn());
         }
         return Collections.unmodifiableMap(parentMap);
     }
@@ -176,8 +176,8 @@ public class MenuService {
                     program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
 
             MenuDto dto = MenuDto.builder()
-                    .id(menu.getId())
-                    .menuNo(menu.getId())
+                    .id(menu.getMenuSn())
+                    .menuNo(menu.getMenuSn())
                     .menuNm(menu.getMenuNm())
                     .prgrmFileNm(menu.getPrgrmFileNm())
                     .upMenuSn(menu.getUpMenuSn())
@@ -284,7 +284,7 @@ public class MenuService {
         }
 
         Menu menu = Menu.builder()
-                .id(vo.getMenuNo())
+                .menuSn(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
                 .prgrmFileNm(vo.getPrgrmFileNm())
                 .upMenuSn(vo.getUpMenuSn())
@@ -362,10 +362,10 @@ public class MenuService {
         List<Menu> allMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpMenuSn());
+            parentMap.put(m.getMenuSn(), m.getUpMenuSn());
         }
 
-        Long currentId = currentMenu.getId();
+        Long currentId = currentMenu.getMenuSn();
         Long upperId = currentMenu.getUpMenuSn();
 
         while (upperId != null && upperId != 0) {
@@ -403,8 +403,8 @@ public class MenuService {
                     program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
 
             return MenuDto.builder()
-                    .id(menu.getId())
-                    .menuNo(menu.getId())
+                    .id(menu.getMenuSn())
+                    .menuNo(menu.getMenuSn())
                     .menuNm(menu.getMenuNm())
                     .prgrmFileNm(menu.getPrgrmFileNm())
                     .upMenuSn(menu.getUpMenuSn())
@@ -430,8 +430,8 @@ public class MenuService {
         String url = calculateUrl(menu, null);
 
         return MenuDto.builder()
-                .id(menu.getId())
-                .menuNo(menu.getId())
+                .id(menu.getMenuSn())
+                .menuNo(menu.getMenuSn())
                 .menuNm(menu.getMenuNm())
                 .prgrmFileNm(menu.getPrgrmFileNm())
                 .upMenuSn(menu.getUpMenuSn())

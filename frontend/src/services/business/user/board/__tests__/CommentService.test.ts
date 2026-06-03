@@ -22,14 +22,14 @@ describe('Board Comment Service', () => {
  beforeEach(() => vi.clearAllMocks());
 
  it('getComments calls correct endpoint', async () => {
-   await commentService.getComments({ pstId: 1, bbsId: 'BBS01' });
+   await commentService.getComments({ pstId: '1', bbsId: 'BBS01' });
    expect(client.get).toHaveBeenCalledWith('comments', expect.objectContaining({
-     params: expect.objectContaining({ pstId: 1, bbsId: 'BBS01' })
+     params: expect.objectContaining({ pstId: '1', bbsId: 'BBS01' })
    }));
  });
 
  it('createComment calls post with data', async () => {
-   const data = { cmntCn: 'Test comment', pstId: 1 };
+   const data = { ansCn: 'Test comment', pstId: '1' };
    await commentService.createComment(data as any);
    expect(client.post).toHaveBeenCalledWith('comments', data, undefined);
  });

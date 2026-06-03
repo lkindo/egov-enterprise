@@ -10,7 +10,7 @@ export interface FileDetail {
   streFileNm: string;
   fileExtsn: string;
   fileSize: number;
-  createdDate: string;
+  crtDt: string;
 }
 
 /**

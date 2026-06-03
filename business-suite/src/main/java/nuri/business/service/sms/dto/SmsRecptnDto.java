@@ -24,18 +24,18 @@ public class SmsRecptnDto {
     private String rcptnTelno;
 
     @Schema(description = "결과 코드 (P:대기, S:성공, F:실패)")
-    private String resultCode;
+    private String rsltCd;
 
     @Schema(description = "결과 메시지")
-    private String resultMssage;
+    private String rsltMsg;
 
     public static SmsRecptnDto from(SmsRecptn entity) {
         if (entity == null) return null;
         return SmsRecptnDto.builder()
                 .smsId(entity.getSmsId())
                 .rcptnTelno(entity.getRcptnTelno())
-                .resultCode(entity.getRsltCd())
-                .resultMssage(entity.getRsltMsg())
+                .rsltCd(entity.getRsltCd())
+                .rsltMsg(entity.getRsltMsg())
                 .build();
     }
 }

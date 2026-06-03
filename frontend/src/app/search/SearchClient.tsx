@@ -244,18 +244,18 @@ function ArticleResultItem({ item, query }: any) {
                         {item.pstTtl}
                     </h4>
                     <span className="text-xs font-bold text-muted-foreground/40 bg-muted px-2 py-1 rounded-md shrink-0">
-                        {item.createdDate?.substring(0, 10)}
+                        {item.crtDt?.substring(0, 10)}
                     </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
-                    {item.nttCn?.replace(/<[^>]*>?/gm, '') || '본문 내용이 없습니다.'}
+                    {item.pstCn?.replace(/<[^>]*>?/gm, '') || '본문 내용이 없습니다.'}
                 </p>
                 <div className="flex items-center justify-between pt-6 border-t border-primary/5">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
                             <UserIcon size={14} className="text-muted-foreground" />
                         </div>
-                        <span className="text-sm font-bold text-foreground/70">{item.frstRegisterNm}</span>
+                        <span className="text-sm font-bold text-foreground/70">{item.userNm || item.frstRegisterNm}</span>
                     </div>
                     <ArrowRight size={18} className="text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                 </div>

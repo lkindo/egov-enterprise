@@ -169,7 +169,7 @@ public class UserApiController {
     @PatchMapping("/admin/system/users/dept")
     public ResponseEntity<ApiResponse<Void>> moveUsersToDept(
             @RequestBody @Valid BulkDeptMoveRequest request) {
-        userService.moveUsersToDept(request.getUserIds(), request.getOrgnztId());
+        userService.moveUsersToDept(request.getUserIds(), request.getOgnzId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

@@ -40,7 +40,7 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 키워드 없음")
     void getSentMailList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SentMail mail = SentMail.builder().mssageId("M1").sj("Subject").build();
+        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
         given(sentMailRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(mail)));
 
         Page<SentMailDto> result = mailService.getSentMailList(null, pageable);
@@ -52,7 +52,7 @@ class MailServiceTest {
     @Test
     @DisplayName("보낸 메일 상세 조회 - 성공")
     void getSentMail_Success() {
-        SentMail mail = SentMail.builder().mssageId("M1").sj("Subject").build();
+        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
 
         SentMailDto result = mailService.getSentMail("M1");
@@ -80,18 +80,18 @@ class MailServiceTest {
     @Test
     @DisplayName("메일 결과 업데이트")
     void updateMailResult() {
-        SentMail mail = SentMail.builder().mssageId("M1").sndngResultCode("P").build();
+        SentMail mail = SentMail.builder().msgId("M1").dsptchRsltCd("P").build();
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
 
         mailService.updateMailResult("M1", "S");
 
-        assertThat(mail.getSndngResultCode()).isEqualTo("S");
+        assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
     }
 
     @Test
     @DisplayName("메일 삭제")
     void deleteMail() {
-        SentMail mail = SentMail.builder().mssageId("M1").build();
+        SentMail mail = SentMail.builder().msgId("M1").build();
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
 
         mailService.deleteMail("M1");
@@ -133,7 +133,7 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 빈 키워드")
     void getSentMailList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SentMail mail = SentMail.builder().mssageId("M1").sj("Subject").build();
+        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
         given(sentMailRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(mail)));
 
         Page<SentMailDto> result = mailService.getSentMailList("", pageable);

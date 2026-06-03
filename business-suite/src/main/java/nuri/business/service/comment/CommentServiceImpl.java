@@ -32,7 +32,7 @@ public class CommentServiceImpl implements CommentService {
                 .bbsId(commentDto.getBbsId())
                 .wrterId(commentDto.getWrterId())
                 .wrterNm(commentDto.getWrterNm())
-                .pswd(commentDto.getPassword())
+                .pswd(commentDto.getPswd())
                 .ansCn(commentDto.getAnsCn())
                 .useYn("Y")
                 .build();
@@ -63,6 +63,7 @@ public class CommentServiceImpl implements CommentService {
                 .bbsId(entity.getBbsId())
                 .wrterId(entity.getWrterId())
                 .wrterNm(entity.getWrterNm())
+                .pswd(entity.getPswd())
                 .ansCn(entity.getAnsCn())
                 .crtDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();

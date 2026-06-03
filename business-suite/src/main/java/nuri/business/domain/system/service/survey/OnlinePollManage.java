@@ -65,8 +65,4 @@ public class OnlinePollManage extends BaseEntity {
         this.pollDsuseYn = pollDsuseYn;
         this.pollAtmcDsuseYn = pollAtmcDsuseYn;
     }
-
-    // legacy
-    public String getPollTtl() { return pollNm; }
-    public void setPollTtl(String v) { this.pollNm = v; }
 }

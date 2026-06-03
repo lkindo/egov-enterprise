@@ -29,7 +29,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 user.userId,
                                                 user.userNm,
                                                 user.zip.as("userZip"),
-                                                user.baseAddr.as("userAddr"),
+                                                user.homeAddr.as("userAddr"),
                                                 user.emlAddr.as("emlAddr")))
                                 .from(user)
                                 .where(conditionEq(searchCondition, searchKeyword))

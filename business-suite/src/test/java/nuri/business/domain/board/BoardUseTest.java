@@ -53,26 +53,4 @@ class BoardUseTest {
         boardUse.setFrstRgtrId("admin");
     }
 
-    @Test
-    @DisplayName("BoardUse 레거시 별칭(Aliases) Getter/Setter 테스트")
-    void legacyAliasesAndSettersTest() {
-        BoardUse boardUse = BoardUse.builder().build();
-
-        // Setter aliases 호출
-        boardUse.setRegistSeCode("SE_LEGACY");
-
-        // Getter aliases 및 매핑 검증
-        assertThat(boardUse.getRegistSeCode()).isEqualTo("SE_LEGACY");
-        assertThat(boardUse.getRgstrSeCd()).isEqualTo("SE_LEGACY");
-    }
-
-    @Test
-    @DisplayName("BoardUse 커스텀 빌더 확장 메서드 검증")
-    void customBuilderTest() {
-        BoardUse boardUse = BoardUse.builder()
-                .registSeCode("SE_BUILD")
-                .build();
-
-        assertThat(boardUse.getRgstrSeCd()).isEqualTo("SE_BUILD");
-    }
 }

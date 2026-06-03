@@ -17,5 +17,5 @@ public class BulkDeptMoveRequest {
     private List<String> userIds;
 
     @NotNull(message = "부서 ID는 필수입니다.")
-    private String orgnztId;
+    private String ognzId;
 }

@@ -1,16 +1,16 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
 /**
  * 템플릿님정보 ?명꽣?섏씠님 */
 export interface TmplatInfo {
   tmpltId?: string;
-  tmplatNm: string;
-  tmplatSeCode: string;
-  tmplatCours: string;
-  useAt: string;
+  tmpltNm: string;
+  tmpltSeCd: string;
+  tmpltPath: string;
+  useYn: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
 }
 
 class TemplateAdminService extends AdminService {

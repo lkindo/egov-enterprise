@@ -223,7 +223,7 @@ class RoleManageServiceTest {
                 .roleId(roleCode)
                 .roleSort(5)
                 .build();
-        roleInfo.setCreatedDate(java.time.LocalDateTime.now());
+        roleInfo.setCrtDt(java.time.LocalDateTime.now());
         
         when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(roleInfo));
 

@@ -68,8 +68,8 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
-        Menu menu2 = Menu.builder().id(2L).menuNm("Menu 2").menuOrdr(2).upMenuSn(1L).build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
+        Menu menu2 = Menu.builder().menuSn(2L).menuNm("Menu 2").menuOrdr(2).upMenuSn(1L).build();
         
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
@@ -93,7 +93,7 @@ class MenuServiceTest {
         // given
         when(securityContext.getAuthentication()).thenReturn(null);
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
                 .build();
@@ -114,7 +114,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - modernRoute가 있는 경우 우선 적용")
     void calculateUrl_ModernRoute() {
         // given
-        Menu menu = Menu.builder().id(1L).modernRoute("/modern").build();
+        Menu menu = Menu.builder().menuSn(1L).modernRoute("/modern").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -128,7 +128,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - progrmFileNm이 dir/인 경우 # 반환")
     void calculateUrl_Dir() {
         // given
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("dir").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("dir").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -142,7 +142,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - inferModernRoute 매칭 케이스 (BoardManage)")
     void calculateUrl_InferModernRoute() {
         // given
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("BoardManage").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("BoardManage").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
         // when
@@ -156,7 +156,7 @@ class MenuServiceTest {
     @DisplayName("calculateUrl - legacy URL 추론 (qna)")
     void calculateUrl_InferFromLegacy() {
         // given
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("SomeProgram").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("SomeProgram").build();
         Program program = Program.builder().prgrmFileNm("SomeProgram").url("/uss/olh/qna/list.do").build();
         
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
@@ -208,9 +208,9 @@ class MenuServiceTest {
     @DisplayName("getRootIdByProgrmFileNm - 최상위 메뉴 ID 찾기")
     void getRootIdByProgrmFileNm() {
         // given
-        Menu menu3 = Menu.builder().id(3L).upMenuSn(2L).prgrmFileNm("Prog3").build();
-        Menu menu2 = Menu.builder().id(2L).upMenuSn(1L).build();
-        Menu menu1 = Menu.builder().id(1L).upMenuSn(0L).build();
+        Menu menu3 = Menu.builder().menuSn(3L).upMenuSn(2L).prgrmFileNm("Prog3").build();
+        Menu menu2 = Menu.builder().menuSn(2L).upMenuSn(1L).build();
+        Menu menu1 = Menu.builder().menuSn(1L).upMenuSn(0L).build();
 
         when(menuRepository.findByPrgrmFileNm("Prog3")).thenReturn(Optional.of(menu3));
         when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2, menu3));
@@ -235,7 +235,7 @@ class MenuServiceTest {
         for (String p : programs) {
             // Internal method call via public method is hard to isolate perfectly, 
             // but selectMenuManage calls calculateUrl which calls inferModernRoute.
-            Menu menu = Menu.builder().id(1L).prgrmFileNm(p).build();
+            Menu menu = Menu.builder().menuSn(1L).prgrmFileNm(p).build();
             when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
             menuService.selectMenuManage(1L);
         }
@@ -250,7 +250,7 @@ class MenuServiceTest {
         };
         
         for (String url : urls) {
-            Menu menu = Menu.builder().id(1L).prgrmFileNm("Prog").build();
+            Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
             Program program = Program.builder().prgrmFileNm("Prog").url(url + "test.do").build();
             
             when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
@@ -279,8 +279,8 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("user");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Auth Menu").build();
-        Menu menu2 = Menu.builder().id(2L).menuNm("NoAuth Menu").build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Auth Menu").build();
+        Menu menu2 = Menu.builder().menuSn(2L).menuNm("NoAuth Menu").build();
         
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_USER").menuSn(1L).build())
@@ -302,7 +302,7 @@ class MenuServiceTest {
     @DisplayName("getSubMenus - 특정 rootMenuNo 지정 조회")
     void getSubMenus_Success() {
         when(securityContext.getAuthentication()).thenReturn(null);
-        Menu menu1 = Menu.builder().id(2L).menuNm("Child Menu").upMenuSn(1L).build();
+        Menu menu1 = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).build();
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
                 .build();
@@ -321,7 +321,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("단순 조회 메서드 호출 커버리지")
     void simpleGetterCoverage() {
-        Menu menu = Menu.builder().id(1L).upMenuSn(0L).menuOrdr(1).build();
+        Menu menu = Menu.builder().menuSn(1L).upMenuSn(0L).menuOrdr(1).build();
         when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu));
         
         assertThat(menuService.getAllMenusCached()).hasSize(1);
@@ -431,11 +431,11 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menuMax = Menu.builder().id(10000000L).menuNm("Max Menu").build(); // id > 9999999
-        Menu menuNullUpper = Menu.builder().id(1L).menuNm("Null Upper").upMenuSn(null).build();
-        Menu menuZeroUpper = Menu.builder().id(2L).menuNm("Zero Upper").upMenuSn(0L).build();
-        Menu menuNormal = Menu.builder().id(3L).menuNm("Normal").upMenuSn(1L).build();
-        Menu menuOrphan = Menu.builder().id(4L).menuNm("Orphan").upMenuSn(99L).build(); // dtoMap doesn't contain upper
+        Menu menuMax = Menu.builder().menuSn(10000000L).menuNm("Max Menu").build(); // id > 9999999
+        Menu menuNullUpper = Menu.builder().menuSn(1L).menuNm("Null Upper").upMenuSn(null).build();
+        Menu menuZeroUpper = Menu.builder().menuSn(2L).menuNm("Zero Upper").upMenuSn(0L).build();
+        Menu menuNormal = Menu.builder().menuSn(3L).menuNm("Normal").upMenuSn(1L).build();
+        Menu menuOrphan = Menu.builder().menuSn(4L).menuNm("Orphan").upMenuSn(99L).build(); // dtoMap doesn't contain upper
 
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menuMax, null});
@@ -458,9 +458,9 @@ class MenuServiceTest {
     void buildMenuTree_SpecificRootMenuNo() {
         when(securityContext.getAuthentication()).thenReturn(null);
         
-        Menu menuChild = Menu.builder().id(2L).menuNm("Child Menu").upMenuSn(1L).build();
-        Menu menuOrphan = Menu.builder().id(3L).menuNm("Orphan").upMenuSn(99L).build(); // 상위 메뉴 없음
-        Menu menuSubChild = Menu.builder().id(4L).menuNm("Sub Child").upMenuSn(2L).build(); // 하위의 하위
+        Menu menuChild = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).build();
+        Menu menuOrphan = Menu.builder().menuSn(3L).menuNm("Orphan").upMenuSn(99L).build(); // 상위 메뉴 없음
+        Menu menuSubChild = Menu.builder().menuSn(4L).menuNm("Sub Child").upMenuSn(2L).build(); // 하위의 하위
 
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
@@ -501,7 +501,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("getAllMenus - calculateUrl에서 programMap 사용 테스트")
     void getAllMenus_calculateUrlWithProgramMap() {
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("Prog").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
         Program program = Program.builder().prgrmFileNm("Prog").url("/new/url").build();
         
         List<Object[]> results = new ArrayList<>();
@@ -517,7 +517,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("calculateUrl - inferFromLegacyUrl에서 매칭되지 않는 경우")
     void calculateUrl_LegacyUrlNotMatched() {
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("Prog").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
         Program program = Program.builder().prgrmFileNm("Prog").url("/some/weird.do").build();
         
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
@@ -530,7 +530,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("calculateUrl - url이 / 인 경우")
     void calculateUrl_RootUrl() {
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("Prog").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
         Program program = Program.builder().prgrmFileNm("Prog").url("/").build();
         
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
@@ -543,7 +543,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("calculateUrl - prgrmFileNm이 / 인 경우")
     void calculateUrl_PrgrmFileNmRoot() {
-        Menu menu = Menu.builder().id(1L).prgrmFileNm("/").build();
+        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("/").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
         
         MenuDto result = menuService.selectMenuManage(1L);
@@ -578,7 +578,7 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
@@ -601,7 +601,7 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
@@ -618,7 +618,7 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().id(1L).menuNm("Menu 1").menuOrdr(1).build();
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         List<Object[]> results = new ArrayList<>();
         results.add(new Object[]{menu1, null});
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
@@ -631,20 +631,20 @@ class MenuServiceTest {
     @Test
     @DisplayName("calculateUrl - inferModernRoute 에서 RoleManage 등 다른 분기")
     void calculateUrl_OtherBranches() {
-        Menu m = Menu.builder().id(1L).prgrmFileNm("dir/RoleManage").build();
+        Menu m = Menu.builder().menuSn(1L).prgrmFileNm("dir/RoleManage").build();
         when(menuRepository.findById(1L)).thenReturn(Optional.of(m));
         
         try {
             menuService.selectMenuManage(1L);
         } catch(Exception e) {}
         
-        m = Menu.builder().id(2L).prgrmFileNm("dir/BBSMasterManage").build();
+        m = Menu.builder().menuSn(2L).prgrmFileNm("dir/BBSMasterManage").build();
         when(menuRepository.findById(2L)).thenReturn(Optional.of(m));
         try {
             menuService.selectMenuManage(2L);
         } catch(Exception e) {}
         
-        m = Menu.builder().id(3L).prgrmFileNm("dir/UserManage").build();
+        m = Menu.builder().menuSn(3L).prgrmFileNm("dir/UserManage").build();
         when(menuRepository.findById(3L)).thenReturn(Optional.of(m));
         try {
             menuService.selectMenuManage(3L);
@@ -678,7 +678,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("전체 메뉴 및 프로그램 정보 목록 조회")
     void getAllMenus() {
-        Menu menu = Menu.builder().id(1L).menuNm("M1").prgrmFileNm("P1").build();
+        Menu menu = Menu.builder().menuSn(1L).menuNm("M1").prgrmFileNm("P1").build();
         Program program = Program.builder().prgrmFileNm("P1").url("/p1").build();
         Object[] row = new Object[]{menu, program};
 
@@ -693,7 +693,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("메뉴 부모 맵 캐시 데이터 조회")
     void getMenuParentMapCached() {
-        Menu menu1 = Menu.builder().id(2L).upMenuSn(1L).build();
+        Menu menu1 = Menu.builder().menuSn(2L).upMenuSn(1L).build();
         when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu1));
 
         Map<Long, Long> parentMap = menuService.getMenuParentMapCached();

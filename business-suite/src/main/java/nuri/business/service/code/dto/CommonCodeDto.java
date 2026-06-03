@@ -17,58 +17,6 @@ public record CommonCodeDto(
         @Size(max = 4000) @Schema(description = "코드설명") String dtlCdExpln,
 
         @NotBlank @Size(max = 1) @Schema(description = "사용여부") String useYn) {
-
-    // Compatibility Getters for legacy java references
-    @JsonIgnore
-    public String getCodeGroupId() {
-        return cdId;
-    }
-
-    @JsonIgnore
-    public String codeGroupId() {
-        return cdId;
-    }
-
-    @JsonIgnore
-    public String getCode() {
-        return dtlCd;
-    }
-
-    @JsonIgnore
-    public String code() {
-        return dtlCd;
-    }
-
-    @JsonIgnore
-    public String getCodeNm() {
-        return dtlCdNm;
-    }
-
-    @JsonIgnore
-    public String codeNm() {
-        return dtlCdNm;
-    }
-
-    @JsonIgnore
-    public String getCodeDc() {
-        return dtlCdExpln;
-    }
-
-    @JsonIgnore
-    public String codeDc() {
-        return dtlCdExpln;
-    }
-
-    @JsonIgnore
-    public String getUseAt() {
-        return useYn;
-    }
-
-    @JsonIgnore
-    public String useAt() {
-        return useYn;
-    }
-
     public static CommonCodeDto from(CommonCode entity) {
         return new CommonCodeDto(
                 entity.getCdId(),

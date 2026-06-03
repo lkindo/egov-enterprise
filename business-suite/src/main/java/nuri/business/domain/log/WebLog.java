@@ -49,13 +49,4 @@ public class WebLog extends BaseEntity {
         this.prcsTm = prcsTm;
     }
 
-    // ----- [Legacy Aliases] -----
-
-    public String getRqesterIp() {
-        return this.dmndUserIpAddr;
-    }
-
-    public String getOcrnYmd() {
-        return this.occrYmd;
-    }
 }

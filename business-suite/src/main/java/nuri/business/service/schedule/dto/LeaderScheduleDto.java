@@ -26,7 +26,6 @@ public class LeaderScheduleDto {
     private String leaderNm;
 
     @Schema(description = "일정제목")
-    @com.fasterxml.jackson.annotation.JsonProperty("schdlTtl")
     @Size(max = 100)
     @NotBlank
     private String schdlNm;
@@ -55,37 +54,15 @@ public class LeaderScheduleDto {
     @Size(max = 100)
     private String schdlPlcNm;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("reptitSeCd")
     @Size(max = 12)
     private String reptSeCd;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("schdlIpcrCd")
     @Size(max = 12)
     private String schdlImprtCd;
 
     @com.fasterxml.jackson.annotation.JsonProperty("schdlPicId")
     @Size(max = 20)
     private String schdlPicId;
-
-    // legacy with @JsonIgnore to prevent Lombok duplicate serialization
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getScheduleId() { return schdlId; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public void setScheduleId(String id) { this.schdlId = id; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulNm() { return schdlNm; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdulCn() { return schdlCn; }
-    
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getBgngYmd() { return schdlBgngYmd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getEndYmd() { return schdlEndYmd; }
-
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getReptitSeCd() { return reptSeCd; }
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getSchdlIpcrCd() { return schdlImprtCd; }
 
     public static LeaderScheduleDto from(nuri.business.domain.schedule.LeaderSchedule entity) {
         if (entity == null) return null;

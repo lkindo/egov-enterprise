@@ -227,12 +227,12 @@ export function Header({
         onMarkRead={markAsRead}
         onMarkAllRead={markAllAsRead}
         notifications={(notifications || []).filter(Boolean).map((n, i) => ({
-          id: n.ntfcId || `notif-${i}`,
-          title: n.ntfcSj,
-          message: n.ntfcCn,
-          time: n.ntfcPnttm,
+          id: n.notiSn || `notif-${i}`,
+          title: n.notiTtlNm,
+          message: n.notiCn,
+          time: n.notiDt,
           isRead: n.readYn === 'Y',
-          type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY'
+          type: n.type
         }))}
       />
     </header>

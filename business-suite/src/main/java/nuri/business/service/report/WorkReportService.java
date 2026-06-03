@@ -26,30 +26,30 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
     @Transactional
     public void createWorkReport(WorkReportDto dto) {
         WorkReport entity = WorkReport.builder()
-                .rptId(dto.getReportId())
-                .rptTtl(dto.getReportSubject())
-                .rptCn(dto.getReportContents())
-                .rptSeCd(dto.getReprtSe())
-                .userId(dto.getWrterId())
+                .rptId(dto.getRptId())
+                .rptTtl(dto.getRptTtl())
+                .rptCn(dto.getRptCn())
+                .rptSeCd(dto.getRptSeCd())
+                .userId(dto.getUserId())
                 .atchFileId(dto.getAtchFileId())
-                .frstRgtrId(dto.getWrterId())
-                .lastMdfrId(dto.getWrterId())
+                .frstRgtrId(dto.getUserId())
+                .lastMdfrId(dto.getUserId())
                 .build();
         workReportRepository.save(entity);
     }
 
     @Transactional
     public void updateWorkReport(WorkReportDto dto) {
-        WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getReportId()))
+        WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getRptId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(dto.getReportSubject(), dto.getReportContents(), dto.getAtchFileId(), dto.getReprtSe());
-        entity.setLastMdfrId(dto.getWrterId());
+        entity.update(dto.getRptTtl(), dto.getRptCn(), dto.getAtchFileId(), dto.getRptSeCd());
+        entity.setLastMdfrId(dto.getUserId());
     }
 
     @Transactional
-    public void deleteWorkReport(@NonNull String reportId) {
-        workReportRepository.deleteById(reportId);
+    public void deleteWorkReport(@NonNull String rptId) {
+        workReportRepository.deleteById(rptId);
     }
 
     public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {
@@ -57,19 +57,19 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
                 .map(this::toDto);
     }
 
-    public WorkReportDto getWorkReport(@NonNull String reportId) {
-        return workReportRepository.findById(reportId)
+    public WorkReportDto getWorkReport(@NonNull String rptId) {
+        return workReportRepository.findById(rptId)
                 .map(this::toDto)
                 .orElse(null);
     }
 
     private WorkReportDto toDto(WorkReport entity) {
         return WorkReportDto.builder()
-                .reportId(entity.getRptId())
-                .reportSubject(entity.getRptTtl())
-                .reportContents(entity.getRptCn())
-                .reprtSe(entity.getRptSeCd())
-                .wrterId(entity.getUserId())
+                .rptId(entity.getRptId())
+                .rptTtl(entity.getRptTtl())
+                .rptCn(entity.getRptCn())
+                .rptSeCd(entity.getRptSeCd())
+                .userId(entity.getUserId())
                 .atchFileId(entity.getAtchFileId())
                 .build();
     }

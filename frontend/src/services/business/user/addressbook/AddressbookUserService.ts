@@ -9,11 +9,11 @@ export interface AddressBook {
   adbkNm: string;
   rlsScopeCd: string;
   wrterId: string;
-  createdDate: string;
+  crtDt: string;
   telNo?: string;
   email?: string;
   adres?: string;
-  nameCards?: NameCard[];
+  adbkMan?: NameCard[];
 }
 
 /**

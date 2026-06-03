@@ -40,10 +40,10 @@ class NotificationServiceTest {
 
     private Notification createMockEntity(String id) {
         return Notification.builder()
-                .ntfcNo(id)
-                .ntfcSj("Test Subject")
-                .ntfcCn("Test Content")
-                .receiverId("user123")
+                .notiSn(id)
+                .notiTtlNm("Test Subject")
+                .notiCn("Test Content")
+                .rcvrId("user123")
                 .linkUrl("/test")
                 .build();
     }
@@ -71,7 +71,7 @@ class NotificationServiceTest {
 
         // Success
         NotificationDto result = notificationService.getNotification("NT_1");
-        assertEquals("Test Subject", result.getNtfcSj());
+        assertEquals("Test Subject", result.getNotiTtlNm());
 
         // Not Found
         assertThrows(BusinessException.class, () -> notificationService.getNotification("NOT_FOUND"));
@@ -81,8 +81,8 @@ class NotificationServiceTest {
     @DisplayName("알림 생성 - 성공 (WebSocket 전송 포함)")
     void createNotification_success() {
         NotificationDto dto = NotificationDto.builder()
-                .ntfcSj("Title")
-                .ntfcCn("Body")
+                .notiTtlNm("Title")
+                .notiCn("Body")
                 .build();
 
         // When
@@ -100,7 +100,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 생성 - WebSocket 오류 발생 시에도 서비스는 정상 작동")
     void createNotification_webSocketError_stillSuccess() {
-        NotificationDto dto = NotificationDto.builder().ntfcSj("Title").build();
+        NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
         doThrow(new RuntimeException("Socket error")).when(messagingTemplate).convertAndSend(anyString(),
                 any(Object.class));
 
@@ -115,7 +115,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 생성 - userId가 null인 경우 ToUser 전송 생략")
     void createNotification_nullUser_skipSendToUser() {
-        NotificationDto dto = NotificationDto.builder().ntfcSj("Title").build();
+        NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
 
         notificationService.createNotification(null, dto);
 
@@ -130,7 +130,7 @@ class NotificationServiceTest {
         when(notificationRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
 
         NotificationDto dto = NotificationDto.builder()
-                .ntfcSj("New Subject")
+                .notiTtlNm("New Subject")
                 .build();
 
         // Success

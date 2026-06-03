@@ -15,13 +15,13 @@ public class BoardSearchResult {
     private String pstId;
     private String pstTtl;
     private String frstRgtrId;
-    private String frstRegisterNm;
+    private String userNm;
     private LocalDateTime crtDt;
     private Integer inqCnt;
     private Integer likeCnt;
     private String upPstId;
     private String replyYn;
-    private Integer ansLvl;
+    private Integer ansLv;
     private String useYn;
     private String atchFileId;
     private String pstBgngYmd;
@@ -36,7 +36,4 @@ public class BoardSearchResult {
     private Long ansSn;
 
 
-    public String getPstId() { return pstId; }
-    public String getPstTtl() { return pstTtl; }
-    public Long getPstSn() { return ansSn; }
 }

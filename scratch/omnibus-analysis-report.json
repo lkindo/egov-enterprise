@@ -1,0 +1,14 @@
+{
+  "dbEntityMismatches": [
+    {
+      "entityName": "BoardMaster",
+      "tableName": "tb_bbs_master",
+      "fieldName": "option",
+      "columnName": "option",
+      "file": "\\business-suite\\src\\main\\java\\nuri\\business\\domain\\board\\BoardMaster.java",
+      "line": 78
+    }
+  ],
+  "mapstructForceMappings": [],
+  "feLegacyReferences": []
+}

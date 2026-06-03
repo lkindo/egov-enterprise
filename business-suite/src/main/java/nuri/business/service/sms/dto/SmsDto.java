@@ -25,13 +25,10 @@ public class SmsDto {
     private String smsId;
 
     @Schema(description = "발신 번호")
-    private String trnsmitTelno;
+    private String sndngTelno;
 
     @Schema(description = "발신 내용")
-    private String trnsmitCn;
-
-    @Schema(description = "수신 번호 (호환성용)")
-    private String rcptnTelno;
+    private String sndngCn;
 
     @Schema(description = "수신자 수")
     private Integer recptnCnt;
@@ -41,9 +38,6 @@ public class SmsDto {
 
     @Schema(description = "최초 등록 일시")
     private LocalDateTime crtDt;
-
-    @Schema(description = "고유 식별자")
-    private String uniqId;
 
 
 
@@ -62,8 +56,8 @@ public class SmsDto {
             return null;
         return SmsDto.builder()
                 .smsId(entity.getSmsId())
-                .trnsmitTelno(entity.getSndngTelno())
-                .trnsmitCn(entity.getSndngCn())
+                .sndngTelno(entity.getSndngTelno())
+                .sndngCn(entity.getSndngCn())
                 .recptnCnt(0)
                 .frstRgtrId(entity.getFrstRgtrId())
                 .crtDt(entity.getCrtDt())

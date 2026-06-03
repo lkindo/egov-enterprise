@@ -44,13 +44,13 @@ public class SentMailDto {
     public static SentMailDto from(SentMail entity) {
         if (entity == null) return null;
         return SentMailDto.builder()
-                .mssageId(entity.getMssageId())
-                .sj(entity.getSj())
-                .emailCn(entity.getEmailCn())
-                .dsptchPerson(entity.getDsptchPerson())
-                .recptnPerson(entity.getRecptnPerson())
-                .sndngResultCode(entity.getSndngResultCode())
-                .sndngDe(entity.getSndngDe() != null ? entity.getSndngDe().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
+                .mssageId(entity.getMsgId())
+                .sj(entity.getEmlTtl())
+                .emailCn(entity.getEmlCn())
+                .dsptchPerson(entity.getSndptyNm())
+                .recptnPerson(entity.getRcvrNm())
+                .sndngResultCode(entity.getDsptchRsltCd())
+                .sndngDe(entity.getDsptchDt() != null ? entity.getDsptchDt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
                 .atchFileId(entity.getAtchFileId())
                 .build();
     }

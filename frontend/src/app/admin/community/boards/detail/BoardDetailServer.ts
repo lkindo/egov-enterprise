@@ -19,7 +19,7 @@ export const getInitialBoardDetailData = cache(async (bbsId: string, pstId: stri
     const [article, masterInfo, commentResult] = await Promise.all([
       knowledgeService.getArticle(bbsId, pstId),
       boardAdminService.getBoardMaster(bbsId, axiosConfig),
-      commentService.getComments({ pstId: Number(pstId), bbsId, size: 100 }, axiosConfig)
+      commentService.getComments({ pstId, bbsId, size: 100 }, axiosConfig)
     ]);
 
     return { 

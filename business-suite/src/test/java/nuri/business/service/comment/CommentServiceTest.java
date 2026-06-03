@@ -34,7 +34,7 @@ class CommentServiceTest {
     private CommentRepository commentRepository;
 
     @Test
-    @DisplayName("?“ê? ëª©ë¡ ì¡°íšŒ")
+    @DisplayName("Get comments list")
     void getComments() {
         // given
         String pstId = "1";
@@ -61,7 +61,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?ì„±")
+    @DisplayName("Create comment")
     void createComment() {
         // given
         CommentDto request = CommentDto.builder()
@@ -69,7 +69,7 @@ class CommentServiceTest {
                 .bbsId("BBS_01")
                 .wrterId("user1")
                 .wrterNm("Tester")
-                .password("1234")
+                .pswd("1234")
                 .ansCn("New Comment")
                 .build();
         Comment savedComment = Comment.builder()
@@ -91,7 +91,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?˜ì •")
+    @DisplayName("Update comment")
     void updateComment() {
         // given
         Long id = 1L;
@@ -111,7 +111,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("ì¡´ì¬?˜ì? ?ŠëŠ” ?“ê? ?˜ì • ???ˆì™¸ ë°œìƒ")
+    @DisplayName("Update comment should throw exception when not found")
     void updateComment_NotFound() {
         // given
         Long id = 1L;
@@ -123,7 +123,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?? œ")
+    @DisplayName("Delete comment")
     void deleteComment() {
         // given
         Long id = 1L;
@@ -142,7 +142,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?? œ - ì¡´ì¬?˜ì? ?ŠìŒ")
+    @DisplayName("Delete comment should throw exception when not found")
     void deleteComment_NotFound() {
         // given
         Long id = 1L;

@@ -22,12 +22,4 @@ public class AddressBookUserSearchResult {
     private String officeTelno;
     private String faxNo;
 
-    // ----- [Legacy Aliases] -----
-    public String getNm() { return userNm; }
-    public void setNm(String v) { this.userNm = v; }
-
-    public String getEmlAddr() { return emlAddr; }
-    public String getMblTelno() { return mblTelno; }
-    public String getOfficeTelno() { return officeTelno; }
-    public String getFaxNo() { return faxNo; }
 }

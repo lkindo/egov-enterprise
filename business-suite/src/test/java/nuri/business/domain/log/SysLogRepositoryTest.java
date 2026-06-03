@@ -44,7 +44,7 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
                 .ocrnYmd("20240101")
                 .prcsSeCd("C")
                 .srvcNm("TestService")
-                .methodNm("testMethod")
+                .mthdNm("testMethod")
                 .build();
         sysLogRepository.save(log);
 

@@ -48,10 +48,10 @@ class ExceptionResponseTest {
         String requestBody = """
                 {
                   "userId": "duplicateUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "중복사용자",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;

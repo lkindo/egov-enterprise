@@ -24,25 +24,18 @@ class NoteDomainTest {
         assertEquals("Content", note2.getNoteCn());
         assertEquals("F1", note2.getAtchFileId());
 
-        // 3. SuperBuilder & Custom Builder 검증
+        // 3. SuperBuilder 검증
         Note note3 = Note.builder()
                 .noteId("N3")
-                .noteSj("Subject") // Custom Builder
+                .noteTtl("Subject")
                 .noteCn("Content3")
                 .atchFileId("F3")
                 .build();
         assertEquals("N3", note3.getNoteId());
         assertEquals("Subject", note3.getNoteTtl());
-        assertEquals("Subject", note3.getNoteSj()); // Legacy Alias Getter
         assertEquals("Content3", note3.getNoteCn());
         assertEquals("F3", note3.getAtchFileId());
 
-        // 4. Legacy Setter 검증
-        note3.setNoteSj("New Subject");
-        assertEquals("New Subject", note3.getNoteTtl());
-        assertEquals("New Subject", note3.getNoteSj());
-
-        // Lombok 빌더 내부 toString() 호출하여 빌더 구문 커버리지 확보
         assertNotNull(Note.builder().toString());
     }
 
@@ -62,55 +55,21 @@ class NoteDomainTest {
         assertEquals("R2", recptn2.getNoteRcptnId());
         assertEquals(note, recptn2.getNote());
         assertEquals(trnsmit, recptn2.getNoteDsptch());
-        assertEquals("RcvId", recptn2.getRcverId());
+        assertEquals("RcvId", recptn2.getRcvrId());
         assertEquals("Y", recptn2.getOpenYn());
-        assertEquals("Cd1", recptn2.getRecptnSeCd());
+        assertEquals("Cd1", recptn2.getRcptnSeCd());
 
-        // 3. SuperBuilder & Custom Builder 및 Legacy Alias 검증
+        // 3. SuperBuilder 검증
         NoteRecptn recptn3 = NoteRecptn.builder()
-                .noteRcptnId("R3") // Custom Builder
+                .noteRcptnId("R3")
                 .note(note)
                 .noteDsptch(trnsmit)
-                .rcverId("RcvId3") // Custom Builder
-                .openYn("N")
-                .recptnSeCd("Cd3") // Custom Builder
+                .rcvrId("RcvId3")
+                .rcptnSeCd("Cd3")
                 .build();
         assertEquals("R3", recptn3.getNoteRcptnId());
-        assertEquals("RcvId3", recptn3.getRcverId());
-        assertEquals("Cd3", recptn3.getRecptnSeCd());
-
-        // 4. Legacy Setter 검증 (Lombok 컴파일러 충돌 우회를 위해 수동 Reflection 매칭 호출)
-        Method setNoteRcptnId = null;
-        Method setRcverId = null;
-        Method setRecptnSeCd = null;
-        for (Method m : NoteRecptn.class.getDeclaredMethods()) {
-            String name = m.getName().toLowerCase();
-            if (name.startsWith("set")) {
-                if (name.contains("note")) {
-                    setNoteRcptnId = m;
-                } else if (name.contains("rcv")) {
-                    setRcverId = m;
-                } else if (name.contains("se")) {
-                    setRecptnSeCd = m;
-                }
-            }
-        }
-        assertNotNull(setNoteRcptnId);
-        assertNotNull(setRcverId);
-        assertNotNull(setRecptnSeCd);
-        setNoteRcptnId.setAccessible(true);
-        setRcverId.setAccessible(true);
-        setRecptnSeCd.setAccessible(true);
-        
-        System.out.println("BEFORE_ID: " + recptn3.getNoteRcptnId() + " / RCVER: " + recptn3.getRcverId() + " / SE: " + recptn3.getRecptnSeCd());
-        setNoteRcptnId.invoke(recptn3, "R4");
-        setRcverId.invoke(recptn3, "RcvId4");
-        setRecptnSeCd.invoke(recptn3, "Cd4");
-        System.out.println("AFTER_ID: " + recptn3.getNoteRcptnId() + " / RCVER: " + recptn3.getRcverId() + " / SE: " + recptn3.getRecptnSeCd());
-        
-        assertEquals("R4", recptn3.getNoteRcptnId());
-        assertEquals("RcvId4", recptn3.getRcverId());
-        assertEquals("Cd4", recptn3.getRecptnSeCd());
+        assertEquals("RcvId3", recptn3.getRcvrId());
+        assertEquals("Cd3", recptn3.getRcptnSeCd());
 
         // 5. PrePersist onCreate Lifecycle 검증
         NoteRecptn recptnLifecycle1 = NoteRecptn.builder().build();
@@ -144,28 +103,15 @@ class NoteDomainTest {
         assertEquals("SndId", trnsmit2.getSndrId());
         assertEquals("Y", trnsmit2.getDelYn());
 
-        // 3. SuperBuilder & Custom Builder 및 Legacy Alias 검증
+        // 3. SuperBuilder 검증
         NoteTrnsmit trnsmit3 = NoteTrnsmit.builder()
-                .noteDsptchId("T3") // Custom Builder
+                .noteSndngId("T3")
                 .note(note)
-                .dsptchUserId("SndId3") // Custom Builder
+                .sndrId("SndId3")
                 .delYn("N")
                 .build();
         assertEquals("T3", trnsmit3.getNoteSndngId());
-        assertEquals("T3", trnsmit3.getNoteDsptchId());
         assertEquals("SndId3", trnsmit3.getSndrId());
-        assertEquals("SndId3", trnsmit3.getDsptchUserId());
-
-        // 4. Legacy Setter 검증
-        trnsmit3.setNoteDsptchId("T4");
-        trnsmit3.setDsptchUserId("SndId4");
-        trnsmit3.setDeleteAt("Y");
-        assertEquals("T4", trnsmit3.getNoteSndngId());
-        assertEquals("T4", trnsmit3.getNoteDsptchId());
-        assertEquals("SndId4", trnsmit3.getSndrId());
-        assertEquals("SndId4", trnsmit3.getDsptchUserId());
-        assertEquals("Y", trnsmit3.getDeleteAt());
-        assertEquals("Y", trnsmit3.getDelYn());
 
         // 5. PrePersist onCreate Lifecycle 검증
         NoteTrnsmit trnsmitLifecycle1 = NoteTrnsmit.builder().build();

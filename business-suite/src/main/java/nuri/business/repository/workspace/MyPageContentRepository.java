@@ -10,7 +10,4 @@ import java.util.List;
 public interface MyPageContentRepository extends JpaRepository<MyPageContent, String> {
     List<MyPageContent> findByCntntsUseYn(String cntntsUseYn);
 
-    default List<MyPageContent> findByCntntsUseAt(String cntntsUseAt) {
-        return findByCntntsUseYn(cntntsUseAt);
-    }
 }

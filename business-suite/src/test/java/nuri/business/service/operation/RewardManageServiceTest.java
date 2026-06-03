@@ -30,7 +30,7 @@ class RewardManageServiceTest {
     @DisplayName("포상 전체 조회")
     void getAllRewards_Success() {
         // Given
-        RewardManage entity = RewardManage.builder().rwardId("R1").rwardNm("Excellence").build();
+        RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Excellence").build();
         given(rewardManageRepository.findAll()).willReturn(List.of(entity));
 
         // When
@@ -45,7 +45,7 @@ class RewardManageServiceTest {
     @DisplayName("이름으로 포상 검색")
     void searchByName_Success() {
         // Given
-        RewardManage entity = RewardManage.builder().rwardId("R1").rwardNm("Gold Prize").build();
+        RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Gold Prize").build();
         given(rewardManageRepository.findByRwrdNmContaining("Gold")).willReturn(List.of(entity));
 
         // When
@@ -60,7 +60,7 @@ class RewardManageServiceTest {
     void createReward_Success() {
         // Given
         RewardManageDto dto = RewardManageDto.builder().rwardNm("New Reward").build();
-        RewardManage savedEntity = RewardManage.builder().rwardId("R2").rwardNm("New Reward").build();
+        RewardManage savedEntity = RewardManage.builder().rwrdId("R2").rwrdNm("New Reward").build();
         given(rewardManageRepository.save(any(RewardManage.class))).willReturn(savedEntity);
 
         // When

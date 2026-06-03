@@ -52,12 +52,12 @@ public class Faq extends BaseEntity {
         this.atchFileId = atchFileId;
     }
 
-    public void increaseInqireCo() {
+    public void increaseInqCnt() {
         this.inqCnt = (this.inqCnt == null ? 0 : this.inqCnt) + 1;
     }
 
     public void increaseViewCount() {
-        this.increaseInqireCo();
+        this.increaseInqCnt();
     }
 
     // ----- [Legacy Getter/Setter & Builder Aliases] -----

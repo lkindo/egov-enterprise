@@ -20,8 +20,8 @@ export interface CnsltVO {
   atchFileId?: string;
   procCn?: string;
   mngYmd?: string;
-  createdBy?: string;
-  createdDate?: string;
+  frstRgtrId?: string;
+  crtDt?: string;
 }
 
 export interface CnsltSearchParams extends SearchParams {

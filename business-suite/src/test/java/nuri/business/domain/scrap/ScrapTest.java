@@ -35,8 +35,6 @@ class ScrapTest {
         assertThat(scrap.getUseYn()).isEqualTo("Y");
         assertThat(scrap.getFrstRgtrId()).isEqualTo("user1");
         
-        // BaseEntity fields integration test
-        assertThat(scrap.getUniqId()).isEqualTo(scrap.getFrstRgtrId());
     }
 
     @Test
@@ -74,42 +72,4 @@ class ScrapTest {
         assertThat(scrap.getUseYn()).isEqualTo("Y");
     }
 
-    @Test
-    @DisplayName("Scrap 레거시 Getter/Setter 및 별칭(Alias) 호환성 검증")
-    void legacyAliasTest() {
-        // Given
-        Scrap scrap = Scrap.builder()
-                .scrapId("SCRAP_002")
-                .pstId("PST_INIT")
-                .scrapExpln("EXPLN_INIT")
-                .build();
-
-        // When & Then (getters)
-        assertThat(scrap.getPstId()).isEqualTo("PST_INIT");
-        assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_INIT");
-
-        // When (setters)
-        scrap.setPstId("PST_UPDATED");
-        scrap.setScrapExpln("EXPLN_UPDATED");
-
-        // Then (cross verify standard fields)
-        assertThat(scrap.getPstId()).isEqualTo("PST_UPDATED");
-        assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_UPDATED");
-        assertThat(scrap.getPstId()).isEqualTo("PST_UPDATED");
-        assertThat(scrap.getScrapExpln()).isEqualTo("EXPLN_UPDATED");
-    }
-
-    @Test
-    @DisplayName("Scrap 레거시 빌더 호환성 및 Lombok SuperBuilder 위임 검증")
-    void legacyBuilderTest() {
-        // Given & When
-        Scrap scrap = Scrap.builder()
-                .scrapId("SCRAP_003")
-                .scrapExpln("레거시 설명 빌딩")
-                .build();
-
-        // Then
-        assertThat(scrap.getScrapExpln()).isEqualTo("레거시 설명 빌딩");
-        assertThat(scrap.getScrapExpln()).isEqualTo("레거시 설명 빌딩");
-    }
 }

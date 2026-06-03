@@ -1,18 +1,17 @@
 // Community Types
 
 export interface CommunityVO {
-  cmmntyId?: string;
-  cmmntyNm: string;
-  cmmntyIntrcn: string;
-  useAt: string;
-  registSeCode?: string;
-  registSeCodeNm?: string;
+  cmntyId?: string;
+  cmntyNm: string;
+  cmntyIntroCn: string;
+  useYn: string;
+  regSeCd?: string;
+  regSeCdNm?: string;
   tmpltId?: string;
-  tmplatNm?: string;
+  tmpltNm?: string;
   frstRgtrId?: string;
   frstRegisterNm?: string;
-  createdDate?: string;
-  lastModifiedDate?: string;
+  crtDt?: string;
 }
 
 export interface CommunitySearchParams {

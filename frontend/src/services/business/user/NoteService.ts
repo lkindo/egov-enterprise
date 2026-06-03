@@ -5,11 +5,11 @@ export interface Note {
  noteId: string;
  noteSj: string;
  noteCn: string;
- trnsmitterId: string;
- trnsmitterNm?: string;
+ dsptchUserId: string;
+ trnsmiterNm?: string;
  rcverId: string;
  rcverNm?: string;
- sendDt: string;
+ crtDt: string;
  openYn: 'Y' | 'N';
 }
 

@@ -69,11 +69,11 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         return SysLogDto.builder()
                 .dmndId(entity.getDmndId())
                 .srvcNm(entity.getSrvcNm())
-                .methodNm(entity.getMethodNm())
+                .methodNm(entity.getMthdNm())
                 .prcsSeCd(entity.getPrcsSeCd())
                 .prcsTm(entity.getPrcsTm())
                 .dmndUserId(entity.getDmndUserId())
-                .rqesterIp(entity.getRqesterIp())
+                .rqesterIp(entity.getDmndUserIpAddr())
                 .ocrnYmd(entity.getOcrnYmd())
                 .build();
     }

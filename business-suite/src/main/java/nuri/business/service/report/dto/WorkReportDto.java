@@ -1,8 +1,8 @@
 package nuri.business.service.report.dto;
 
 import jakarta.validation.constraints.*;
-
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Setter
@@ -10,12 +10,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class WorkReportDto {
-    private String reportId;
-    private String reportSubject;
-    private String reportContents;
-    private String reprtSe;
+    private String rptId;
+    private String rptTtl;
+    private String rptCn;
+    private String rptSeCd;
     @Size(max = 1)
-    private String wrterId;
+    private String userId;
     @Size(max = 30)
     private String atchFileId;
     @Size(max = 12)
@@ -24,11 +24,4 @@ public class WorkReportDto {
     private String rptYmd;
     private String rptTypeCd;
 
-    // standard aliases
-    public String getReprtId() { return reportId; }
-    public String getReprtTtl() { return reportSubject; }
-    public String getReprtCn() { return reportContents; }
-    
-    public void setReprtId(String id) { this.reportId = id; }
-    public void setReprtTtl(String subject) { this.reportSubject = subject; }
 }

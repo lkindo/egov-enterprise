@@ -43,7 +43,7 @@ export interface UserDto {
   role: string;
   emplNo?: string;
   ofcpsNm?: string;
-  createdDate?: string;
+  crtDt?: string;
   emlAddr?: string;
   mblTelno?: string;
   otpSecret?: string;

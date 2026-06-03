@@ -21,14 +21,14 @@ import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
 export default function CreateDeptJobPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<Partial<DeptJobVO>>({
-    deptJobNm: '',
-    deptJobCn: '',
-    priort: '2', // Default: 보통
-    chargerNm: '',
+    deptTaskNm: '',
+    deptTaskCn: '',
+    prrtyRnk: '2', // Default: 보통
+    picNm: '',
   });
 
   const handleSave = async () => {
-    if (!formData.deptJobNm || !formData.deptJobCn) {
+    if (!formData.deptTaskNm || !formData.deptTaskCn) {
       alert('업무명과 내용은 필수입니다.');
       return;
     }
@@ -68,21 +68,21 @@ export default function CreateDeptJobPage() {
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label htmlFor="deptJobNm" className="text-sm font-bold text-slate-500 ml-1">업무명 (필수)</Label>
+              <Label htmlFor="deptTaskNm" className="text-sm font-bold text-slate-500 ml-1">업무명 (필수)</Label>
               <Input
-                id="deptJobNm"
-                value={formData.deptJobNm}
-                onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptJobNm: e.target.value }))}
+                id="deptTaskNm"
+                value={formData.deptTaskNm}
+                onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
                 className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
               />
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="priort" className="text-sm font-bold text-slate-500 ml-1">우선 순위</Label>
+              <Label htmlFor="prrtyRnk" className="text-sm font-bold text-slate-500 ml-1">우선 순위</Label>
               <Select
-                value={formData.priort}
-                onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, priort: value }))}
+                value={formData.prrtyRnk}
+                onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, prrtyRnk: value }))}
               >
                 <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
                   <SelectValue placeholder="순위 선택" />
@@ -97,22 +97,22 @@ export default function CreateDeptJobPage() {
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="chargerNm" className="text-sm font-bold text-slate-500 ml-1">담당자 (선택)</Label>
+            <Label htmlFor="picNm" className="text-sm font-bold text-slate-500 ml-1">담당자 (선택)</Label>
             <Input
-              id="chargerNm"
-              value={formData.chargerNm}
-              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, chargerNm: e.target.value }))}
+              id="picNm"
+              value={formData.picNm}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, picNm: e.target.value }))}
               placeholder="담당자 성함을 입력하세요"
               className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
             />
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="deptJobCn" className="text-sm font-bold text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
+            <Label htmlFor="deptTaskCn" className="text-sm font-bold text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
             <Textarea
-              id="deptJobCn"
-              value={formData.deptJobCn}
-              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptJobCn: e.target.value }))}
+              id="deptTaskCn"
+              value={formData.deptTaskCn}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskCn: e.target.value }))}
               className="min-h-[250px] p-8 rounded-lg border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
               placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
             />

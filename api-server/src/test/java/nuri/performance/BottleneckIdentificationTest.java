@@ -425,8 +425,8 @@ class BottleneckIdentificationTest {
                 "userId": "transUser%d",
                 "password": "Password123!",
                 "userNm": "트랜잭션 사용자 %d",
-                "passwordHint": "hint",
-                "passwordCnsr": "answer",
+                "pswdHint": "hint",
+                "pswdCrans": "answer",
                 "role": "USER"
               }
               """.formatted(requestId, requestId);

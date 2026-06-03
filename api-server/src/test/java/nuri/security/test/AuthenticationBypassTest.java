@@ -97,8 +97,8 @@ class AuthenticationBypassTest extends BaseSecurityTest {
           "userId": "attacker",
           "password": "password123!",
           "userNm": "공격자",
-          "passwordHint": "hint",
-          "passwordCnsr": "answer",
+          "pswdHint": "hint",
+          "pswdCrans": "answer",
           "role": "USER"
         }
         """;

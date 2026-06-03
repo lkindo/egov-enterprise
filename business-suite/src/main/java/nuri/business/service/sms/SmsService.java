@@ -54,13 +54,13 @@ public class SmsService implements EgovSmsService {
     @Override
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
-        log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getTrnsmitTelno());
+        log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getSndngTelno());
         String smsId = nuri.foundation.core.util.IdGenerationUtil.generateSmsId();
 
         Sms sms = Sms.builder()
                 .smsId(smsId)
-                .sndngTelno(dto.getTrnsmitTelno())
-                .sndngCn(dto.getTrnsmitCn())
+                .sndngTelno(dto.getSndngTelno())
+                .sndngCn(dto.getSndngCn())
                 .build();
 
         smsRepository.save(Objects.requireNonNull(sms));
@@ -79,7 +79,7 @@ public class SmsService implements EgovSmsService {
             // 비동기로 실제 발송 처리 요청
             // 주의: 현재 트랜잭션이 커밋된 후에 가동되도록 보장하거나, 
             // 별도 컴포넌트에서 REQUIRES_NEW로 조회하도록 설계됨
-            smsAsyncProcessor.processSending(smsId, dto.getTrnsmitTelno(), dto.getTrnsmitCn());
+            smsAsyncProcessor.processSending(smsId, dto.getSndngTelno(), dto.getSndngCn());
         }
 
         log.info("SMS request registered successfully for ID: {}", smsId);

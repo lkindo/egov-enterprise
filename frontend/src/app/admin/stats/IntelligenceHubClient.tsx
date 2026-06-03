@@ -259,7 +259,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                           />
                           <Area 
                             type="monotone" 
-                            dataKey="inqireCo" 
+                            dataKey="inqCnt" 
                             stroke="#10b981" 
                             strokeWidth={4}
                             fillOpacity={0}

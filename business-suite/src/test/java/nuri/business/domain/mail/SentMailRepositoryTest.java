@@ -43,16 +43,16 @@ class SentMailRepositoryTest {
     @BeforeEach
     void setUp() {
         SentMail mail1 = SentMail.builder()
-                .mssageId("MAIL_001")
-                .sj("Test Subject 1")
-                .emailCn("Test Content 1")
-                .dsptchPerson("Sender 1")
+                .msgId("MAIL_001")
+                .emlTtl("Test Subject 1")
+                .emlCn("Test Content 1")
+                .sndptyNm("Sender 1")
                 .build();
         SentMail mail2 = SentMail.builder()
-                .mssageId("MAIL_002")
-                .sj("Another Mail")
-                .emailCn("Special Message")
-                .dsptchPerson("Manager")
+                .msgId("MAIL_002")
+                .emlTtl("Another Mail")
+                .emlCn("Special Message")
+                .sndptyNm("Manager")
                 .build();
         sentMailRepository.save(mail1);
         sentMailRepository.save(mail2);
@@ -65,7 +65,7 @@ class SentMailRepositoryTest {
     void searchSentMails_Subject() {
         Page<SentMail> result = sentMailRepository.searchSentMails("1", "Subject", PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSj()).contains("Subject");
+        assertThat(result.getContent().get(0).getEmlTtl()).contains("Subject");
     }
 
     @Test
@@ -73,7 +73,7 @@ class SentMailRepositoryTest {
     void searchSentMails_Content() {
         Page<SentMail> result = sentMailRepository.searchSentMails("2", "Special", PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getEmailCn()).contains("Special");
+        assertThat(result.getContent().get(0).getEmlCn()).contains("Special");
     }
 
     @Test
@@ -81,7 +81,7 @@ class SentMailRepositoryTest {
     void searchSentMails_Sender() {
         Page<SentMail> result = sentMailRepository.searchSentMails("3", "Manager", PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getDsptchPerson()).isEqualTo("Manager");
+        assertThat(result.getContent().get(0).getSndptyNm()).isEqualTo("Manager");
     }
 
     @Test

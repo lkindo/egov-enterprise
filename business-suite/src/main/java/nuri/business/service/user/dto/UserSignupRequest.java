@@ -41,12 +41,4 @@ public class UserSignupRequest {
 
     @Schema(description = "사용자 역할")
     private String role;
-
-    // ----- [Legacy Aliases] -----
-    public String getPassword() { return pswd; }
-    public String getPasswordHint() { return pswdHint; }
-    public String getPasswordCnsr() { return pswdCrans; }
-    public void setPassword(String v) { this.pswd = v; }
-    public void setPasswordHint(String v) { this.pswdHint = v; }
-    public void setPasswordCnsr(String v) { this.pswdCrans = v; }
 }

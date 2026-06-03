@@ -62,69 +62,6 @@ public class RewardManage extends BaseEntity {
     @Column(length = 20)
     private String ifmlAtrzId;
 
-    // ----- [Legacy Getter Aliases] -----
-
-    public String getRwardId() { return this.rwrdId; }
-    public String getRwardwnrId() { return this.rwrdUserId; }
-    public String getRwardCode() { return this.rwrdCd; }
-    public String getRwardDe() { return this.rwrdYmd; }
-    public String getRwardNm() { return this.rwrdNm; }
-    public String getPblenCn() { return this.cntrbCn; }
-    public String getSanctnerId() { return this.atrzrId; }
-    public String getConfmAt() { return this.confmYn; }
-    public java.time.LocalDateTime getSanctnDt() { return this.aprvDt; }
-    public String getReturnResn() { return this.rtnRsnCn; }
-    public String getInformlSanctnId() { return this.ifmlAtrzId; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-
-    public static abstract class RewardManageBuilder<C extends RewardManage, B extends RewardManageBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B rwardId(String rwardId) {
-            this.rwrdId = rwardId;
-            return self();
-        }
-        public B rwardwnrId(String rwardwnrId) {
-            this.rwrdUserId = rwardwnrId;
-            return self();
-        }
-        public B rwardCode(String rwardCode) {
-            this.rwrdCd = rwardCode;
-            return self();
-        }
-        public B rwardDe(String rwardDe) {
-            this.rwrdYmd = rwardDe;
-            return self();
-        }
-        public B rwardNm(String rwardNm) {
-            this.rwrdNm = rwardNm;
-            return self();
-        }
-        public B pblenCn(String pblenCn) {
-            this.cntrbCn = pblenCn;
-            return self();
-        }
-        public B sanctnerId(String sanctnerId) {
-            this.atrzrId = sanctnerId;
-            return self();
-        }
-        public B confmAt(String confmAt) {
-            this.confmYn = confmAt;
-            return self();
-        }
-        public B sanctnDt(java.time.LocalDateTime sanctnDt) {
-            this.aprvDt = sanctnDt;
-            return self();
-        }
-        public B returnResn(String returnResn) {
-            this.rtnRsnCn = returnResn;
-            return self();
-        }
-        public B informlSanctnId(String informlSanctnId) {
-            this.ifmlAtrzId = informlSanctnId;
-            return self();
-        }
-    }
-
     public void update(String rwardDe, String rwardNm, String pblenCn) {
         this.rwrdYmd = rwardDe;
         this.rwrdNm = rwardNm;

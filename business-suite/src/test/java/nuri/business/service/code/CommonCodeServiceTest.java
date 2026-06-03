@@ -51,7 +51,7 @@ class CommonCodeServiceTest {
         List<CommonCodeDto> result = commonCodeService.getCodesByGroup("GRP1");
 
         assertEquals(1, result.size());
-        assertEquals("CODE1", result.get(0).code());
+        assertEquals("CODE1", result.get(0).dtlCd());
     }
 
     @Test
@@ -64,7 +64,7 @@ class CommonCodeServiceTest {
         CommonCodeDto result = commonCodeService.createCode(request);
 
         assertNotNull(result);
-        assertEquals("CODE1", result.code());
+        assertEquals("CODE1", result.dtlCd());
     }
 
     @Test

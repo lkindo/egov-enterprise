@@ -280,7 +280,7 @@ class UserServiceTest {
             given(userRepository.findAllById(anyList())).willReturn(List.of(user));
             
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
-            verify(user).updateOgnzId("DEPT1");
+            verify(user).updateOrgnztId("DEPT1");
             verify(userRepository).saveAll(anyList());
         }
     }

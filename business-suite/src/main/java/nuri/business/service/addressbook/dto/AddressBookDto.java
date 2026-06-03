@@ -28,7 +28,7 @@ public class AddressBookDto {
     private String rlsScopeCd;
 
     @Schema(description = "대상 조직 ID", example = "ORGNZT_0000000000001")
-    private String trgetOrgnztId;
+    private String trgetOgnzId;
 
     @Schema(description = "사용 여부", example = "Y")
     private String useYn;

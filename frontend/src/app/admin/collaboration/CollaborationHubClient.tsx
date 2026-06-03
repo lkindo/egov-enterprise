@@ -88,12 +88,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  },
  {
  header: '발신자',
- accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.trnsmitterNm || item.trnsmitterId}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.trnsmiterNm || item.dsptchUserId}</span>,
  className: 'w-32'
  },
  {
  header: '발신일시',
- accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.sendDt?.substring(0, 16)}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 16)}</span>,
  className: 'w-48'
  },
  {
@@ -149,7 +149,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  },
  {
  header: '등록일자',
- accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.createdDate?.substring(0, 10)}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 10)}</span>,
  className: 'w-48'
  },
  {

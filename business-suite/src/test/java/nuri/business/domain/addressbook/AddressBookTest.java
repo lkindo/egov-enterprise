@@ -55,26 +55,6 @@ class AddressBookTest {
     }
 
     @Test
-    @DisplayName("AddressBook 레거시 Getter/Setter 및 별칭(Alias) 호환성 검증")
-    void legacyAliasTest() {
-        // Given
-        AddressBook addressBook = AddressBook.builder()
-                .adbkId("ADBK_002")
-                .useYn("Y")
-                .build();
-
-        // When & Then (getter alias)
-        assertThat(addressBook.getUseAt()).isEqualTo("Y");
-
-        // When (setter alias)
-        addressBook.setUseAt("N");
-
-        // Then (cross verify standard field)
-        assertThat(addressBook.getUseYn()).isEqualTo("N");
-        assertThat(addressBook.getUseAt()).isEqualTo("N");
-    }
-
-    @Test
     @DisplayName("AddressBook 표준 Setter 검증")
     void standardSettersTest() {
         // Given

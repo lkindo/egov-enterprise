@@ -64,15 +64,15 @@ export default function MemoReportManagementClient() {
  header: '보고 제목',
  accessor: (report) => (
  <div className="flex flex-col gap-1 py-1">
- <div className="flex items-center gap-2">
- {!report.rptrInqDt && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
- {report.rptTtl}
- </span>
- </div>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
- {report.memoRptYmd}
- </span>
+  <div className="flex items-center gap-2">
+  {!report.rptrInqDt && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
+  <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+  {report.rptTtl}
+  </span>
+  </div>
+  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+  {report.memoRptYmd}
+  </span>
  </div>
  )
  },

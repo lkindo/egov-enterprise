@@ -56,31 +56,4 @@ class AddressBookUserSearchResultTest {
         assertThat(result.getOfficeTelno()).isEqualTo("031-333-4444");
         assertThat(result.getFaxNo()).isEqualTo("031-555-6666");
     }
-
-    @Test
-    @DisplayName("AddressBookUserSearchResult 레거시 별칭 Getter/Setter 호환성 검증")
-    void legacyAliasTest() {
-        // Given
-        AddressBookUserSearchResult result = AddressBookUserSearchResult.builder()
-                .userNm("유관순")
-                .emlAddr("yookwansun@example.com")
-                .mblTelno("010-2222-3333")
-                .officeTelno("02-111-4444")
-                .faxNo("02-111-5555")
-                .build();
-
-        // When & Then (getter alias)
-        assertThat(result.getNm()).isEqualTo("유관순");
-        assertThat(result.getEmlAddr()).isEqualTo("yookwansun@example.com");
-        assertThat(result.getMblTelno()).isEqualTo("010-2222-3333");
-        assertThat(result.getOfficeTelno()).isEqualTo("02-111-4444");
-        assertThat(result.getFaxNo()).isEqualTo("02-111-5555");
-
-        // When (setter alias)
-        result.setNm("유관순 수정");
-
-        // Then (cross verify standard field)
-        assertThat(result.getUserNm()).isEqualTo("유관순 수정");
-        assertThat(result.getNm()).isEqualTo("유관순 수정");
-    }
 }

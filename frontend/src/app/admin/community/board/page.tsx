@@ -148,7 +148,7 @@ function CommunityBoardContent() {
  </div>
  <div className="flex gap-8 items-start md:items-center relative z-10 flex-1">
  <div className="w-16 h-11 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shrink-0">
- {item.noticeYn === 'Y' ? (
+ {(item as any).noticeYn === 'Y' ? (
  <Megaphone size={24} className="text-primary animate-bounce" />
  ) : (
  <>
@@ -159,15 +159,15 @@ function CommunityBoardContent() {
  </div>
  <div className="space-y-3 flex-1">
  <div className="flex items-center gap-3">
- {item.noticeYn === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
- <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.createdDate?.split(' ')[0]}</span>
+ {(item as any).noticeYn === 'Y' && <Badge className="bg-primary text-white font-bold text-xs uppercase tracking-widest border-none">Emergency</Badge>}
+ <span className="text-xs font-bold text-slate-400 tracking-widest uppercase ">{item.crtDt?.split(' ')[0]}</span>
  </div>
  <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors ">
  {item.pstTtl}
  </h3>
  <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-500 uppercase tracking-tight">
- <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg"><User size={12} className="text-primary" /> {item.frstRegisterNm || item.ntcrNm}</span>
- <span className="flex items-center gap-2"><Eye size={12} /> {item.inqireCo} Interactions</span>
+ <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg"><User size={12} className="text-primary" /> {item.userNm}</span>
+ <span className="flex items-center gap-2"><Eye size={12} /> {item.inqCnt} Interactions</span>
  <span className="flex items-center gap-2"><Clock size={12} /> Access Granted</span>
  </div>
  </div>

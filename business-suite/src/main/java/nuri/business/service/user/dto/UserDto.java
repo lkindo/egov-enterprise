@@ -69,7 +69,7 @@ public class UserDto {
     private String endTelno;
 
     @Size(max = 20, message = "회원 유형 코드는 최대 20 자입니다")
-    private String mberTypeCd;
+    private String mbrTypeCd;
 
     @Size(max = 11, message = "팩스 번호는 최대 11 자입니다")
     private String faxNo;
@@ -78,7 +78,7 @@ public class UserDto {
     private String pstinstCd;
 
     @Size(max = 20, message = "조직 ID 는 최대 20 자입니다")
-    private String orgnztId;
+    private String ognzId;
 
     @Size(max = 20, message = "그룹 ID 는 최대 20 자입니다")
     private String groupId;
@@ -106,7 +106,7 @@ public class UserDto {
     private String ofcpsNm;
 
     @Size(max = 255, message = "DN 정보는 최대 255 자입니다")
-    private String subDn;
+    private String certDnVl;
 
     @Size(max = 10, message = "사용자 구분은 최대 10 자입니다")
     private String userSe;
@@ -119,6 +119,8 @@ public class UserDto {
     private LocalDateTime crtDt;
 
 
+
+
     public static UserDto from(nuri.business.domain.user.entity.User user) {
         if (user == null)
             return null;
@@ -129,7 +131,7 @@ public class UserDto {
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .pswd(user.getPswd())
                 .pswdHint(user.getPswdHint())
-                .pswdCrans(user.getPswdCnsr())
+                .pswdCrans(user.getPswdCrans())
                 .emplNo(user.getEmplNo())
                 .gndrCd(user.getGndrCd())
                 .brthYmd(user.getBrthYmd())
@@ -138,16 +140,16 @@ public class UserDto {
                 .endTelno(user.getEndTelno())
                 .faxNo(user.getFaxNo())
                 .pstinstCd(user.getPstinstCd())
-                .orgnztId(user.getOgnzId())
+                .ognzId(user.getOgnzId())
                 .groupId(user.getGroupId())
-                .homeAddr(user.getBaseAddr())
-                .daddr(user.getDtlAddr())
+                .homeAddr(user.getHomeAddr())
+                .daddr(user.getDaddr())
                 .zip(user.getZip())
                 .officeTelno(user.getOfficeTelno())
                 .mblTelno(user.getMblTelno())
                 .emlAddr(user.getEmlAddr())
                 .ofcpsNm(user.getOfcpsNm())
-                .subDn(user.getCrtfcDnValue())
+                .certDnVl(user.getCertDnVl())
                 .userSttsCd(user.getUserSttsCd())
                 .lckYn(user.getLckYn())
                 .crtDt(user.getCrtDt())

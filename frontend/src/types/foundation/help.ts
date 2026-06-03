@@ -1,18 +1,20 @@
 export interface Hpcm {
- hpcmId?: string;
- hpcmSeCode: string;
- hpcmDf: string;
- hpcmDc: string;
- createdBy?: string;
- createdDate?: string;
+ hlpId?: string;
+ hlpSeCd: string;
+ hlpDfn: string;
+ hlpExpln: string;
+ frstRgtrId?: string;
+ crtDt?: string;
 }
 
 export interface OnlineManual {
- mnlId?: string;
- mnlNm: string;
- mnlDc: string;
- createdBy?: string;
- createdDate?: string;
+ onlnMnlId?: string;
+ onlnMnlNm: string;
+ onlnMnlSeCd?: string;
+ onlnMnlDfn?: string;
+ onlnMnlExpln: string;
+ frstRgtrId?: string;
+ crtDt?: string;
 }
 
 export interface HelpSearchParams {

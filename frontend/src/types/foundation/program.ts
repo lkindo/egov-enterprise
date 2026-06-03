@@ -8,9 +8,9 @@ export interface Program {
   prgrmExpln?: string;
   // Audit Fields (Newly synchronized via Full-Stack Survey)
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   lastMdfrId?: string;
-  lastModifiedDate?: string;
+  mdfcnDt?: string;
 }
 
 /** client의 ApiResponse.data를 직접 반환하도록 페이지네이션 구조 정의 */

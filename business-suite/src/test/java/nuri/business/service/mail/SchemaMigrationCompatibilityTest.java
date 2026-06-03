@@ -73,13 +73,12 @@ class SchemaMigrationCompatibilityTest {
         // 이 엔티티는 신규 추가된 'temp_migration_col' 컬럼을 전혀 매핑하지 않고 모르는 상태임 (구버전 인스턴스)
         testMssageId = "MSG_M_" + UUID.randomUUID().toString().substring(0, 8);
         SentMail legacyMail = SentMail.builder()
-                .mssageId(testMssageId)
-                .sndngResultCode("S")
-                .sj("무중단 배포 호환성 테스트")
-                .emailCn("구버전 서버에서 신버전 DB 스키마로 데이터 입출력을 테스트합니다.")
-                .dsptchPerson("admin@egov.com")
-                .recptnPerson("user@egov.com")
-                .sndngDe(LocalDateTime.now())
+                .msgId(testMssageId)
+                .dsptchRsltCd("S")
+                .emlTtl("무중단 배포 호환성 테스트")
+                .emlCn("구버전 서버에서 신버전 DB 스키마로 데이터 입출력을 테스트합니다.")
+                .sndptyNm("admin@egov.com")
+                .rcvrNm("user@egov.com")
                 .build();
 
         // When & Then: 3. 구버전 엔티티를 통한 쓰기(Insert/Save)가 예외 없이 완벽하게 수행되는지 검증
@@ -93,8 +92,8 @@ class SchemaMigrationCompatibilityTest {
                     .orElseThrow(() -> new AssertionError("저장된 메일 데이터를 찾을 수 없습니다."));
             
             // 기존 매핑된 속성들의 완벽한 복원 여부 단언
-            assertThat(retrievedMail.getSj()).isEqualTo("무중단 배포 호환성 테스트");
-            assertThat(retrievedMail.getSndngResultCode()).isEqualTo("S");
+            assertThat(retrievedMail.getEmlTtl()).isEqualTo("무중단 배포 호환성 테스트");
+            assertThat(retrievedMail.getDsptchRsltCd()).isEqualTo("S");
         }, "신규 컬럼이 추가된 DB 상태에서도 구버전 필드의 데이터 조회는 무결하게 이루어져야 합니다.");
 
         // Then: 5. 신규 컬럼에도 정상적으로 DEFAULT 설정 혹은 NULL 허용 기본값이 인가되었는지 원시 JDBC로 대조 확인

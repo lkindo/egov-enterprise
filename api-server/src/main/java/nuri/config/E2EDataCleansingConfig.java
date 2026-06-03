@@ -29,7 +29,7 @@ public class E2EDataCleansingConfig {
             // 1. 게시판 게시글 소프트 삭제 (NBBS) - Board.delete()는 USE_AT='N'으로 소프트 삭제
             //    E2E 테스트 패턴: 'E2E %' (Poll, Popup, Banner, FAQ 등)
             int bbsSoftCount = jdbcTemplate.update(
-                "UPDATE TB_BBS_ITEM SET USE_AT = 'N' WHERE PST_TTL LIKE 'E2E %' OR FRST_REGISTER_ID = 'E2E_USER'"
+                "UPDATE TB_BBS_ITEM SET USE_YN = 'N' WHERE PST_TTL LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'"
             );
             log.info(">>> Soft-deleted {} board articles.", bbsSoftCount);
 
@@ -39,27 +39,27 @@ public class E2EDataCleansingConfig {
             //    단, JDBC 레벨에서는 수동으로 자식 테이블부터 삭제
             int pollItemCount = jdbcTemplate.update(
                 "DELETE FROM TB_ONLN_POLL_ARTCL WHERE POLL_ID IN (" +
-                "  SELECT POLL_ID FROM TB_ONLN_POLL_MANAGE WHERE POLL_NM LIKE 'E2E %' OR FRST_REGISTER_ID = 'E2E_USER'" +
+                "  SELECT POLL_ID FROM TB_ONLN_POLL_MANAGE WHERE POLL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'" +
                 ")"
             );
             log.info(">>> Cleaned {} poll items.", pollItemCount);
 
             int pollCount = jdbcTemplate.update(
-                "DELETE FROM TB_ONLN_POLL_MANAGE WHERE POLL_NM LIKE 'E2E %' OR FRST_REGISTER_ID = 'E2E_USER'"
+                "DELETE FROM TB_ONLN_POLL_MANAGE WHERE POLL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'"
             );
             log.info(">>> Cleaned {} online polls.", pollCount);
 
             // 3. 팝업 데이터 삭제 (NPOPUPMANAGE)
             //    E2E 테스트 패턴: 'E2E Popup %'
             int popupCount = jdbcTemplate.update(
-                "DELETE FROM TB_POPUP_INFO WHERE POPUP_SJ_NM LIKE 'E2E %' OR FRST_REGISTER_ID = 'E2E_USER'"
+                "DELETE FROM TB_POPUP_INFO WHERE POPUP_TTL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'"
             );
             log.info(">>> Cleaned {} popups.", popupCount);
 
             // 4. 배너 데이터 삭제 (NBANNER)
             //    E2E 테스트 패턴: 'E2E Banner %'
             int bannerCount = jdbcTemplate.update(
-                "DELETE FROM TB_BNR_INFO WHERE BANNER_NM LIKE 'E2E %' OR FRST_REGISTER_ID = 'E2E_USER'"
+                "DELETE FROM TB_BNR_INFO WHERE BNR_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'"
             );
             log.info(">>> Cleaned {} banners.", bannerCount);
 

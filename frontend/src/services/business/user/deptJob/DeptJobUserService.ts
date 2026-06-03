@@ -66,7 +66,7 @@ class DeptJobUserService extends UserService {
       page?: number; 
       size?: number; 
       searchWrd?: string;
-      deptJobbxId?: string;
+      deptTaskBoxId?: string;
     }, 
     config?: AxiosRequestConfig
   ): Promise<PageResponse<DeptJobVO>> {

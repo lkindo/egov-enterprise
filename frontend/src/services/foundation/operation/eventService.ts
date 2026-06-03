@@ -14,8 +14,8 @@ export interface EventInfo {
   evntAprvYn?: string;
   evntAprvYmd?: string;
   frstRgtrId?: string;
-  createdDate?: string;
-  lastModifiedDate?: string;
+  crtDt?: string;
+  mdfcnDt?: string;
 }
 
 

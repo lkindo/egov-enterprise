@@ -157,7 +157,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   return {
   ...old,
   list: old.list.map((item: any) => 
-  String(item.pstId) === pstId ? { ...item, likeCo: (item.likeCo || 0) + 1 } : item
+  String(item.pstId) === pstId ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
   )
   };
   });

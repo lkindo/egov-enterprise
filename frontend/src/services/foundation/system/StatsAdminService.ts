@@ -8,7 +8,7 @@ export interface StatsDto {
   statsDate: string;
   statsCo: number;
   creatCo: number;
-  inqireCo: number;
+  inqCnt: number;
   updtCo: number;
   deleteCo: number;
   errorCo: number;

@@ -30,19 +30,6 @@ public class CommunityUser extends BaseEntity implements Serializable {
     @Column(length = 8)
     private String whdwlYmd;
 
-    // ----- [Legacy Getter Aliases] -----
-
-    public String getWdrlYmd() { return this.whdwlYmd; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-
-    public static abstract class CommunityUserBuilder<C extends CommunityUser, B extends CommunityUserBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B wdrlYmd(String wdrlYmd) {
-            this.whdwlYmd = wdrlYmd;
-            return self();
-        }
-    }
-
     @Column(length = 12)
     private String mbrSttsCd;
 

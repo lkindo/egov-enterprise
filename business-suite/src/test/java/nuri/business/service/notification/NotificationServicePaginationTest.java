@@ -35,11 +35,11 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     void setUp() {
         for (int i = 1; i <= 25; i++) {
             Notification notification = Notification.builder()
-                    .ntfcNo("NTFC_" + i)
-                    .ntfcSj("?åÏä§???åÎ¶º " + i)
-                    .ntfcCn("?¥Ïö© " + i)
-                    .receiverId("testUser")
-                    .isRead(i % 5 == 0 ? "Y" : "N")
+                    .notiSn("NTFC_" + i)
+                    .notiTtlNm("Test Notification " + i)
+                    .notiCn("Content " + i)
+                    .rcvrId("testUser")
+                    .readYn(i % 5 == 0 ? "Y" : "N")
                     .crtDt(LocalDateTime.now())
                     .build();
             notificationRepository.save(notification);
@@ -49,7 +49,7 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?òÏù¥ÏßÄ?§Ïù¥?òÎêú ?úÏÑ± ?åÎ¶º Ï°∞Ìöå")
+    @DisplayName("Get active notifications with pagination")
     void getActiveNotifications_WithPagination() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
@@ -60,7 +60,7 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?òÏù¥ÏßÄ?§Ïù¥??- ??Î≤àÏß∏ ?òÏù¥ÏßÄ")
+    @DisplayName("Get active notifications second page")
     void getActiveNotifications_SecondPage() {
         Pageable pageable = PageRequest.of(1, 10);
         Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
@@ -70,14 +70,14 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?ÑÏ≤¥ ?úÏÑ± ?åÎ¶º Ï°∞Ìöå - Î©îÎ™®Î¶?Î∂Ä??Ï£ºÏùò")
+    @DisplayName("Get all active notifications")
     void getActiveNotificationsAll() {
         List<NotificationDto> result = notificationService.getActiveNotificationsAll();
         assertThat(result).hasSize(25);
     }
 
     @Test
-    @DisplayName("?ΩÏ? ?äÏ? ?åÎ¶º Ïπ¥Ïö¥??)
+    @DisplayName("Get unread notifications count")
     void getUnreadCount() {
         long unreadCount = notificationService.getUnreadCount("testUser");
         assertThat(unreadCount).isEqualTo(20);

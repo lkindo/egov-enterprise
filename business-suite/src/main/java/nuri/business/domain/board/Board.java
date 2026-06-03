@@ -53,7 +53,7 @@ public class Board extends BaseEntity implements Serializable {
     private String ttlBoldYn;
 
     @Builder.Default
-    private Integer ansLvl = 0;
+    private Integer ansLv = 0;
 
     @Builder.Default
     private Integer inqCnt = 0;
@@ -163,7 +163,4 @@ public class Board extends BaseEntity implements Serializable {
         this.likeCnt++;
     }
 
-
-    public Integer getCommentCnt() { return cmntCnt; }
-    public void setCommentCnt(Integer v) { this.cmntCnt = v; }
 }

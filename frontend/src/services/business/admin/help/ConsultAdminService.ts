@@ -41,8 +41,8 @@ class ConsultAdminService extends AdminService {
   /**
    * 상담 답변 처리
    */
-  async answerConsultation(id: string, answerCn: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.patch<void>(`/${id}/answer`, answerCn, {
+  async answerConsultation(id: string, procCn: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch<void>(`/${id}/answer`, procCn, {
       ...config,
       headers: { 
         ...config?.headers,

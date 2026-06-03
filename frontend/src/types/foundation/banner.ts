@@ -7,8 +7,8 @@ export interface Banner {
     sortOrdr: number;
     rfltYn: 'Y' | 'N';
     atchFileId?: string;
-    createdBy?: string;
-    createdDate?: string;
+    frstRgtrId?: string;
+    crtDt?: string;
 }
 
 export interface Popup {
@@ -23,6 +23,6 @@ export interface Popup {
     ntceEndde: string;
     stopvewSetupYn: 'Y' | 'N';
     ntceYn: 'Y' | 'N';
-    createdBy?: string;
-    createdDate?: string;
+    frstRgtrId?: string;
+    crtDt?: string;
 }

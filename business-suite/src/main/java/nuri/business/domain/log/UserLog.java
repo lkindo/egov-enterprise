@@ -75,33 +75,4 @@ public class UserLog extends BaseEntity {
         this.errCnt = errCnt;
     }
 
-    // ----- [Legacy Aliases] -----
-
-    public String getMethodNm() {
-        return this.mthdNm;
-    }
-
-    public Integer getCreatCo() {
-        return this.crtCnt;
-    }
-
-    public Integer getUpdtCo() {
-        return this.mdfcnCnt;
-    }
-
-    public Integer getRdCnt() {
-        return this.inqCnt;
-    }
-
-    public Integer getDeleteCo() {
-        return this.delCnt;
-    }
-
-    public Integer getOutptCo() {
-        return this.otptCnt;
-    }
-
-    public Integer getErrorCo() {
-        return this.errCnt;
-    }
 }

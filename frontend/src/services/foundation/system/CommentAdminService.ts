@@ -9,7 +9,7 @@ export interface CommentDetail {
   wrterId: string;
   wrterNm: string;
   ansCn: string;
-  createdDate: string;
+  crtDt: string;
 }
 
 /**

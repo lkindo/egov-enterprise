@@ -19,8 +19,8 @@ export default function BoardWritePage() {
 
     const [formData, setFormData] = useState({
         bbsId: 'BBSMSTR_AAAAAAAAAAAA',
-        nttSj: '',
-        nttCn: '',
+        pstTtl: '',
+        pstCn: '',
         noticeAt: 'N' as 'Y' | 'N',
         secretAt: 'N' as 'Y' | 'N'
     });
@@ -31,7 +31,7 @@ export default function BoardWritePage() {
     const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
 
     const handleSave = async () => {
-        if (!formData.nttSj.trim()) {
+        if (!formData.pstTtl.trim()) {
             toast('제목을 입력해 주세요.', 'error');
             return;
         }
@@ -79,8 +79,8 @@ export default function BoardWritePage() {
                     <FormField label="게시글 제목" required>
                         <input
                             type="text"
-                            value={formData.nttSj}
-                            onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
+                            value={formData.pstTtl}
+                            onChange={(e) => setFormData({ ...formData, pstTtl: e.target.value })}
                             placeholder="제목을 입력해 주세요."
                             className="w-full h-12 px-4 rounded-lg border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
@@ -88,8 +88,8 @@ export default function BoardWritePage() {
 
                     <FormField label="내용 작성" required>
                         <StandardEditor
-                            value={formData.nttCn}
-                            onChange={(val) => setFormData({ ...formData, nttCn: val })}
+                            value={formData.pstCn}
+                            onChange={(val) => setFormData({ ...formData, pstCn: val })}
                             minHeight="450px"
                         />
                     </FormField>

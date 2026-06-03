@@ -12,7 +12,7 @@ import { createComment, deleteComment, updateComment } from '@/app/actions/comme
 import { useToast } from '@/app/components/ui/toast';
 
 interface CommentSectionProps {
-  pstId: number;
+  pstId: string;
   bbsId: string;
   initialComments: CommentVO[];
 }
@@ -31,24 +31,24 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         case 'add':
           return [action.payload, ...state];
         case 'delete':
-          return state.filter(c => c.id !== action.payload);
+          return state.filter(c => c.ansSn !== action.payload);
         case 'update':
-          return state.map(c => c.id === action.payload.id ? { ...c, cmntCn: action.payload.cmntCn } : c);
+          return state.map(c => c.ansSn === action.payload.ansSn ? { ...c, ansCn: action.payload.ansCn } : c);
         default:
           return state;
       }
     }
   );
 
-  const [cmntCn, setCmntCn] = useState('');
+  const [ansCn, setAnsCn] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editCn, setEditCn] = useState('');
 
   const handleCreate = async (formData: FormData) => {
-    const content = formData.get('cmntCn') as string;
+    const content = formData.get('ansCn') as string;
     if (!content.trim()) return;
 
-    setCmntCn(''); // Clear input immediately
+    setAnsCn(''); // Clear input immediately
     
     startTransition(async () => {
       // Add optimistic comment
@@ -57,9 +57,9 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         type: 'add',
         payload: {
           id: tempId,
-          cmntCn: content,
+          ansCn: content,
           wrterNm: 'User', // Assume current user
-          createdDate: new Date().toISOString(),
+          crtDt: new Date().toISOString(),
           isOptimistic: true
         }
       });
@@ -80,7 +80,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       const formData = new FormData();
       formData.append('id', id.toString());
       formData.append('bbsId', bbsId);
-      formData.append('pstId', pstId.toString());
+      formData.append('pstId', pstId);
       
       const result = await deleteComment(null, formData);
       if (!result.success) {
@@ -96,13 +96,13 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
     setEditingId(null);
     
     startTransition(async () => {
-      addOptimisticComment({ type: 'update', payload: { id, cmntCn: originalContent } });
+      addOptimisticComment({ type: 'update', payload: { ansSn: id, ansCn: originalContent } });
       
       const formData = new FormData();
       formData.append('id', id.toString());
-      formData.append('cmntCn', originalContent);
+      formData.append('ansCn', originalContent);
       formData.append('bbsId', bbsId);
-      formData.append('pstId', pstId.toString());
+      formData.append('pstId', pstId);
       
       const result = await updateComment(null, formData);
       if (!result.success) {
@@ -143,7 +143,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
           ) : (
             optimisticComments.map((comment) => (
               <motion.div
-                key={comment.id}
+                key={comment.ansSn}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -165,26 +165,26 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                             <h4 className="font-black text-slate-900 tracking-tight text-lg leading-none uppercase">{comment.wrterNm}</h4>
                             <div className="flex items-center gap-3 text-[10px] font-black text-slate-300 tracking-widest uppercase mt-2">
                               <Clock className="w-3.5 h-3.5" />
-                              {comment.createdDate ? format(new Date(comment.createdDate), 'yyyy-MM-dd HH:mm') : '-'}
+                              {comment.crtDt ? format(new Date(comment.crtDt), 'yyyy-MM-dd HH:mm') : '-'}
                             </div>
                           </div>
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          {editingId === comment.id ? (
+                          {editingId === comment.ansSn ? (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.id)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
                               <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-50" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.id); setEditCn(comment.cmntCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.id)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
                             </>
                           )}
                         </div>
                       </div>
 
-                      {editingId === comment.id ? (
+                      {editingId === comment.ansSn ? (
                         <Textarea
                           value={editCn}
                           onChange={(e) => setEditCn(e.target.value)}
@@ -192,7 +192,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                         />
                       ) : (
                         <p className="text-slate-700 font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
-                          {comment.cmntCn}
+                          {comment.ansCn}
                         </p>
                       )}
                     </div>
@@ -222,16 +222,16 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
               <div className="h-[2px] flex-1 bg-slate-100" />
             </div>
             <Textarea
-              name="cmntCn"
+              name="ansCn"
               placeholder="Inject your thoughts into the collective knowledge..."
-              value={cmntCn}
-              onChange={(e) => setCmntCn(e.target.value)}
+              value={ansCn}
+              onChange={(e) => setAnsCn(e.target.value)}
               className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-slate-900 tracking-tighter resize-none p-0 bg-transparent placeholder:text-slate-200 placeholder:uppercase"
             />
             <div className="flex justify-end border-t border-slate-100 pt-8">
               <Button
                 type="submit"
-                disabled={isPending || !cmntCn.trim()}
+                disabled={isPending || !ansCn.trim()}
                 className="h-16 px-12 rounded-[1.5rem] bg-slate-900 hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
                 {isPending ? (

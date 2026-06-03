@@ -176,7 +176,6 @@ class AddressBookServiceTest {
         nuri.business.domain.addressbook.AddressBookUserSearchResult view = mock(nuri.business.domain.addressbook.AddressBookUserSearchResult.class);
         given(view.getUserId()).willReturn("EMP_1");
         given(view.getUserNm()).willReturn("Name");
-        given(view.getNm()).willReturn("Name");
         Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> page = new PageImpl<>(List.of(view));
         given(addressBookRepository.searchAddressBookUsers(any(), any(Pageable.class))).willReturn(page);
 

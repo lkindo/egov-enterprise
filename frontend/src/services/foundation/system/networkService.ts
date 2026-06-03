@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 
 /**
@@ -13,7 +13,7 @@ export interface NetworkInfo {
  subnet: string;
  gtwy: string;
  domnServer: string;
- useAt: "Y" | "N";
+ useYn: "Y" | "N";
 }
 
 export interface NetworkStatusDetailed {

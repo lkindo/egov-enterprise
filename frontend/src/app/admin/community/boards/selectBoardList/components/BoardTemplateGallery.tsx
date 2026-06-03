@@ -59,9 +59,9 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
                 <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-white font-bold text-xs border border-slate-200 dark:border-slate-800">OP</div>
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-none mb-1">
-                    <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                    <HighlightText text={item.userNm} highlight={querySearchWrd} />
                   </span>
-                  <span className="text-xs font-bold text-slate-600">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                  <span className="text-xs font-bold text-slate-600">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                 </div>
               </div>
               <div className="flex gap-6">
@@ -72,7 +72,7 @@ export const BoardTemplateGallery = ({ list, bbsId, querySearchWrd, onLike, isLi
                   aria-label="좋아요"
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
-                  <span data-testid="like-count" className="text-xs font-bold text-slate-900">{item.likeCo || 0}</span>
+                  <span data-testid="like-count" className="text-xs font-bold text-slate-900">{item.likeCnt || 0}</span>
                 </button>
                 <div className="flex items-center gap-1.5 text-slate-300" aria-label="공유하기"><Share2 size={16} /></div>
               </div>

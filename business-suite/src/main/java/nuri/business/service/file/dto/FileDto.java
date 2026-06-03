@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 /**
  * ??? 정보 DTO
  */
@@ -21,5 +23,5 @@ public class FileDto {
     private Long fileMg;
     @Size(max = 4000)
     private String fileCn;
-    private String createdDate;
+    private LocalDateTime crtDt;
 }

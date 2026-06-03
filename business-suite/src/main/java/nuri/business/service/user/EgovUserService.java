@@ -52,8 +52,8 @@ public interface EgovUserService {
     /**
      * 사용자 등록
      */
-    String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
-            String passwordHint, String passwordCnsr,
+    String registerUser(@NonNull String userId, @NonNull String pswd, @NonNull String userNm,
+            String pswdHint, String pswdCrans,
             String roleName);
 
 
@@ -95,7 +95,7 @@ public interface EgovUserService {
     /**
      * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
      */
-    void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId);
+    void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId);
 
     /**
      * 여러 사용자의 권한을 한꺼번에 변경합니다.

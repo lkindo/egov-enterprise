@@ -106,7 +106,7 @@ class UserTest {
         user.updateStatus("ACTIVE");
         assertEquals("ACTIVE", user.getUserSttsCd());
         
-        user.updateOgnzId("ORG123");
+        user.updateOrgnztId("ORG123");
         assertEquals("ORG123", user.getOgnzId());
     }
 

@@ -81,8 +81,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       header: '업무함 명칭',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.deptJobbxNm}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.deptJobbxId}</span>
+          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.deptTaskBoxNm}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.deptTaskBoxId}</span>
         </div>
       )
     },

@@ -7,8 +7,7 @@ export interface OnlinePollManageVO {
   pollDsuseYn: string; // N: 사용, Y: 폐기
   pollAtmcDsuseYn?: string;
   frstRgtrId?: string;
-  frstRegisterNm?: string;
-  createdDate?: string;
+  crtDt?: string;
 }
 
 export interface OnlinePollItemVO {
@@ -17,7 +16,7 @@ export interface OnlinePollItemVO {
   pollArtclNm: string;
   pollIemCo?: number; // 투표 수
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
 }
 
 export interface OnlinePollPartcptnVO {

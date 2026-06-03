@@ -76,10 +76,10 @@ public class CommunityServiceImpl implements CommunityService {
             String cmntyId = egovCmmntyIdGnrService.getNextStringId();
             Community community = Community.builder()
                     .cmntyId(cmntyId)
-                    .cmntyTtl(dto.getCmntyTtl())
+                    .cmntyNm(dto.getCmntyNm())
                     .cmntyIntroCn(dto.getCmntyIntroCn())
-                    .regTypeCd("REGC01")
-                    .tmplatId(dto.getTmplatId())
+                    .regSeCd("REGC01")
+                    .tmpltId(dto.getTmpltId())
                     .useYn("Y")
                     .build();
             return CommunityDto.from(Objects
@@ -96,9 +96,9 @@ public class CommunityServiceImpl implements CommunityService {
                 .orElseThrow(() -> new IllegalArgumentException("Community not found: " + dto.getCmntyId()));
 
         community.update(
-                dto.getCmntyTtl(),
+                dto.getCmntyNm(),
                 dto.getCmntyIntroCn(),
-                dto.getTmplatId(),
+                dto.getTmpltId(),
                 dto.getUseYn());
     }
 

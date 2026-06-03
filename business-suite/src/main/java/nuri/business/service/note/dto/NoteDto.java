@@ -51,10 +51,6 @@ public class NoteDto {
     @Schema(description = "최초 등록 일시")
     private LocalDateTime crtDt;
 
-    public String getTrnsmitterId() { return dsptchUserId; }
-    public String getTrnsmitterNm() { return trnsmiterNm; }
-    public LocalDateTime getSendDt() { return regDate; }
-
     @Schema(description = "수신자 목록")
     @Builder.Default
     private List<NoteRecipientDto> recipients = new java.util.ArrayList<>();

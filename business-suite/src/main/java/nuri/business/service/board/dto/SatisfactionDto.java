@@ -21,7 +21,7 @@ public class SatisfactionDto {
     private Integer dgstfnScr;
     private String userId;
     private String userNm;
-    private String password;
+    private String pswd;
     @Size(max = 1)
     @NotBlank
     private String useYn;
@@ -40,7 +40,7 @@ public class SatisfactionDto {
                 .dgstfnScr(entity.getDgstfnScr())
                 .userId(entity.getUserId())
                 .userNm(entity.getUserNm())
-                .password(entity.getPswd())
+                .pswd(entity.getPswd())
                 .useYn(entity.getUseYn())
                 .crtDt(entity.getCrtDt())
                 .build();

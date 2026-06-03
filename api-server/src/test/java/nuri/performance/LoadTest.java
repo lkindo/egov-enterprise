@@ -123,10 +123,10 @@ class LoadTest {
           String requestBody = """
               {
                 "userId": "loadTestUser%d",
-                "password": "Password123!",
+                "pswd": "Password123!",
                 "userNm": "부하테스트 사용자 %d",
-                "passwordHint": "hint",
-                "passwordCnsr": "answer",
+                "pswdHint": "hint",
+                "pswdCrans": "answer",
                 "role": "USER"
               }
               """.formatted(requestId, requestId);

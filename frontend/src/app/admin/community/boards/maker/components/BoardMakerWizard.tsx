@@ -324,7 +324,7 @@ export function BoardMakerWizard() {
 
  {/* Main Content Card */}
  <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50">
- <form onSubmit={handleSubmit(onSubmit)}>
+ <form onSubmit={handleSubmit(onSubmit, (errors) => console.log('>>> [Validation Error] ', errors))}>
  <CardHeader className="bg-slate-50 dark:bg-slate-900 p-12 text-slate-900 dark:text-white relative border-b border-slate-100 dark:border-slate-800 transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <h3 className="text-4xl font-bold tracking-tighter text-left">

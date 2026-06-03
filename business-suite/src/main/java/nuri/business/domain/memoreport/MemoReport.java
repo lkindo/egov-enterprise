@@ -75,79 +75,7 @@ public class MemoReport extends BaseEntity {
         this.drctnMttrRegDt = drctnMttrRegDt;
     }
 
-    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
-    public String getReportId() { return this.rptId; }
-    public String getReportSubject() { return this.rptTtl; }
-    public String getReprtDe() { return this.memoRptYmd; }
-    public String getWriterId() { return this.userId; }
-    public String getReportrId() { return this.rptrId; }
-    public String getReportContents() { return this.rptCn; }
-    public String getInstrCn() { return this.drctnMttr; }
-    public String getInstrRegDt() { return this.drctnMttrRegDt; }
-    public String getReportrInqireDt() { return this.rptrInqDt; }
 
-    // standard aliases
-    public String getReprtId() { return this.rptId; }
-    public String getReprtTtl() { return this.rptTtl; }
-    public String getReprtCn() { return this.rptCn; }
-    
-    // legacy aliases
-    public String getRptId() { return this.rptId; }
-    public String getRptTtl() { return this.rptTtl; }
-    public String getRptYmd() { return this.memoRptYmd; }
-    public String getRptCn() { return this.rptCn; }
-    public String getRptUserId() { return this.rptrId; }
-
-    // ----- [Legacy Setter Aliases for Backwards Compatibility] -----
-    public void setReportId(String reportId) { this.rptId = reportId; }
-    public void setReportSubject(String reportSubject) { this.rptTtl = reportSubject; }
-    public void setReprtDe(String reprtDe) { this.memoRptYmd = reprtDe; }
-    public void setWriterId(String writerId) { this.userId = writerId; }
-    public void setReportrId(String reportrId) { this.rptrId = reportrId; }
-    public void setReportContents(String reportContents) { this.rptCn = reportContents; }
-    public void setInstrCn(String instrCn) { this.drctnMttr = instrCn; }
-    public void setInstrRegDt(String instrRegDt) { this.drctnMttrRegDt = instrRegDt; }
-    public void setReportrInqireDt(String reportrInqireDt) { this.rptrInqDt = reportrInqireDt; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-    public static abstract class MemoReportBuilder<C extends MemoReport, B extends MemoReportBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B reportId(String reportId) {
-            this.rptId = reportId;
-            return self();
-        }
-        public B reportSubject(String reportSubject) {
-            this.rptTtl = reportSubject;
-            return self();
-        }
-        public B reprtDe(String reprtDe) {
-            this.memoRptYmd = reprtDe;
-            return self();
-        }
-        public B writerId(String writerId) {
-            this.userId = writerId;
-            return self();
-        }
-        public B reportrId(String reportrId) {
-            this.rptrId = reportrId;
-            return self();
-        }
-        public B reportContents(String reportContents) {
-            this.rptCn = reportContents;
-            return self();
-        }
-        public B instrCn(String instrCn) {
-            this.drctnMttr = instrCn;
-            return self();
-        }
-        public B instrRegDt(String instrRegDt) {
-            this.drctnMttrRegDt = instrRegDt;
-            return self();
-        }
-        public B reportrInqireDt(String reportrInqireDt) {
-            this.rptrInqDt = reportrInqireDt;
-            return self();
-        }
-    }
 
     private void validateDateFormat(String ymd) {
         if (ymd == null || ymd.isEmpty()) {

@@ -94,8 +94,8 @@ class StressTest {
                 "userId": "stress%d",
                 "password": "Password123!",
                 "userNm": "사용자 %d",
-                "passwordHint": "hint",
-                "passwordCnsr": "answer",
+                "pswdHint": "hint",
+                "pswdCrans": "answer",
                 "role": "USER"
               }
               """.formatted(requestId, requestId);

@@ -39,37 +39,4 @@ public class InternetSvcGuidance extends BaseEntity {
         this.rfltYn = rfltYn;
     }
 
-    // ----- [Legacy Aliases for Backward Compatibility] -----
-
-    public String getIntnetSvcId() {
-        return itntSvcId;
-    }
-
-    public void setIntnetSvcId(String intnetSvcId) {
-        this.itntSvcId = intnetSvcId;
-    }
-
-    public String getIntnetSvcNm() {
-        return itntSvcNm;
-    }
-
-    public void setIntnetSvcNm(String intnetSvcNm) {
-        this.itntSvcNm = intnetSvcNm;
-    }
-
-    public String getIntnetSvcDc() {
-        return itntSvcExpln;
-    }
-
-    public void setIntnetSvcDc(String intnetSvcDc) {
-        this.itntSvcExpln = intnetSvcDc;
-    }
-
-    public String getReflctAt() {
-        return rfltYn;
-    }
-
-    public void setReflctAt(String reflctAt) {
-        this.rfltYn = reflctAt;
-    }
 }
