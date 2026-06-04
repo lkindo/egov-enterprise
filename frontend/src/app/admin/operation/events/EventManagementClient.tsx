@@ -30,6 +30,8 @@ export default function EventManagementClient() {
  const [page, setPage] = useState(1);
  const size = 10;
  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+ const [rceptBgngYmd, setRceptBgngYmd] = useState('');
+ const [rceptEndYmd, setRceptEndYmd] = useState('');
  const [form, setForm] = useState<Partial<EventInfo>>({
  bizCd: '',
  evntCn: '',
@@ -55,6 +57,8 @@ export default function EventManagementClient() {
  toast('행사가 성공적으로 생성되었습니다.', 'success');
  queryClient.invalidateQueries({ queryKey: ['events-list'] });
  setIsCreateModalOpen(false);
+ setRceptBgngYmd('');
+ setRceptEndYmd('');
  setForm({
  bizCd: '',
  evntCn: '',
@@ -331,20 +335,18 @@ export default function EventManagementClient() {
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
  <Input 
  type="date"
- value={form.evntBgngYmd || ''}
- onChange={(e) => setForm({...form, evntBgngYmd: e.target.value})}
+ value={rceptBgngYmd}
+ onChange={(e) => setRceptBgngYmd(e.target.value)}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
- required
  />
  </div>
  <div className="space-y-2">
  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
  <Input 
  type="date"
- value={form.evntEndYmd || ''}
- onChange={(e) => setForm({...form, evntEndYmd: e.target.value})}
+ value={rceptEndYmd}
+ onChange={(e) => setRceptEndYmd(e.target.value)}
  className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
- required
  />
  </div>
  </div>

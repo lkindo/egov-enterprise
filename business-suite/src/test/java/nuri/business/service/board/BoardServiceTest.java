@@ -210,7 +210,7 @@ class BoardServiceTest {
         String parentId = "1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
         Board reply = Board.builder().pstId("2").build();
 
@@ -445,7 +445,7 @@ class BoardServiceTest {
         String parentId = "1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         Board reply = Board.builder().pstId("2").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
@@ -475,7 +475,7 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLvl(0).build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
@@ -660,7 +660,7 @@ class BoardServiceTest {
         boardService.updatePostWithFiles("BBS_01", "1", request, Collections.emptyList());
 
         // reply
-        Board parent = Board.builder().pstId("1").sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstId("1").sortOrdr(100L).ansLvl(0).build();
         given(boardRepository.findById("1")).willReturn(Optional.of(parent));
         given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(Board.builder().pstId("2").build());

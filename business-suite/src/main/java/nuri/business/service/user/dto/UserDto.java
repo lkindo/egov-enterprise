@@ -78,7 +78,7 @@ public class UserDto {
     private String pstinstCd;
 
     @Size(max = 20, message = "조직 ID 는 최대 20 자입니다")
-    private String orgnztId;
+    private String ognzId;
 
     @Size(max = 20, message = "그룹 ID 는 최대 20 자입니다")
     private String groupId;
@@ -138,7 +138,7 @@ public class UserDto {
                 .endTelno(user.getEndTelno())
                 .faxNo(user.getFaxNo())
                 .pstinstCd(user.getPstinstCd())
-                .orgnztId(user.getOgnzId())
+                .ognzId(user.getOgnzId())
                 .groupId(user.getGroupId())
                 .homeAddr(user.getBaseAddr())
                 .daddr(user.getDtlAddr())

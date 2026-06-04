@@ -67,7 +67,7 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 상세 조회")
     void getWorkReport() throws Exception {
         WorkReportDto dto = new WorkReportDto();
-        dto.setRptId("R1");
+        dto.setReportId("R1");
         when(workReportService.getWorkReport("R1")).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/work-reports/R1"))
@@ -79,7 +79,7 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 등록")
     void registerWorkReport() throws Exception {
         WorkReportDto dto = new WorkReportDto();
-        dto.setRptTtl("Subject");
+        dto.setReportSubject("Subject");
         doNothing().when(workReportService).createWorkReport(any(WorkReportDto.class));
 
         mockMvc.perform(post("/api/v1/work-reports")
@@ -93,7 +93,7 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 수정")
     void updateWorkReport() throws Exception {
         WorkReportDto dto = new WorkReportDto();
-        dto.setRptTtl("New Subject");
+        dto.setReportSubject("New Subject");
         doNothing().when(workReportService).updateWorkReport(any(WorkReportDto.class));
 
         mockMvc.perform(put("/api/v1/work-reports/R1")

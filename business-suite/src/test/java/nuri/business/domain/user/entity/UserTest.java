@@ -45,12 +45,12 @@ class UserTest {
 
         assertEquals("김철수", user.getUserNm());
         assertEquals("hint", user.getPswdHint());
-        assertEquals("cnsr", user.getPswdCrans());
+        assertEquals("cnsr", user.getPswdCnsr());
         assertEquals("EMP001", user.getEmplNo());
         assertEquals("M", user.getGndrCd());
-        assertEquals("서울", user.getHomeAddr());
+        assertEquals("서울", user.getBaseAddr());
         assertEquals(Role.ADMIN, user.getRole());
-        assertEquals("crtfc123", user.getCertDnVl());
+        assertEquals("crtfc123", user.getCrtfcDnValue());
     }
 
     @Test
@@ -121,8 +121,8 @@ class UserTest {
         user.setPswd("pwd");
         assertEquals("pwd", user.getPswd());
 
-        user.setPswdCrans("crans");
-        assertEquals("crans", user.getPswdCrans());
+        user.setPswdCnsr("crans");
+        assertEquals("crans", user.getPswdCnsr());
         
         user.setChgPwdCnt(5);
         assertEquals(5, user.getChgPwdCnt());
@@ -131,23 +131,17 @@ class UserTest {
         user.setLckLastPnttm(now);
         assertEquals(now, user.getLckLastPnttm());
 
-        user.setCertDnVl("subdn");
-        assertEquals("subdn", user.getCertDnVl());
+        user.setCrtfcDnValue("subdn");
+        assertEquals("subdn", user.getCrtfcDnValue());
 
         user.setRrno("ihid");
         assertEquals("ihid", user.getRrno());
 
-        user.setHomeAddr("addr1");
-        assertEquals("addr1", user.getHomeAddr());
+        user.setBaseAddr("addr1");
+        assertEquals("addr1", user.getBaseAddr());
 
-        user.setDaddr("addr2");
-        assertEquals("addr2", user.getDaddr());
-
-        user.setHomeAddr("addr1");
-        assertEquals("addr1", user.getHomeAddr());
-
-        user.setDaddr("addr2");
-        assertEquals("addr2", user.getDaddr());
+        user.setDtlAddr("addr2");
+        assertEquals("addr2", user.getDtlAddr());
 
         user.setMiddleTelno("1234");
         assertEquals("1234", user.getMiddleTelno());

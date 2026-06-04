@@ -7,11 +7,11 @@ import org.springframework.data.domain.Pageable;
 public interface EgovDeptManageService {
     Page<DeptManageDto> getDeptManageList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
-    DeptManageDto getDeptManage(String orgnztId);
+    DeptManageDto getDeptManage(String ognzId);
 
     void insertDeptManage(DeptManageDto dto);
 
     void updateDeptManage(DeptManageDto dto);
 
-    void deleteDeptManage(String orgnztId);
+    void deleteDeptManage(String ognzId);
 }

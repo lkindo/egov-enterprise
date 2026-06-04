@@ -11,19 +11,22 @@ export interface ApiResponse<T = unknown> {
 }
 
 const getBaseURL = () => {
-  if (typeof window === 'undefined') {
-    return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1/';
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/`;
   }
-  return '/api/v1/';
+  return 'http://127.0.0.1:8080/api/v1/';
 };
 
 const axiosInstance = axios.create({
   baseURL: getBaseURL(),
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    ...(typeof window === 'undefined' ? { 'Connection': 'close' } : {})
+  },
   withCredentials: true,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
-  timeout: 60000,
+  timeout: 15000,
 });
 
 // Request interceptor: Access Token 첨부

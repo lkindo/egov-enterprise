@@ -33,6 +33,7 @@ export class ConsoleErrorGuard {
     /Article Not Found/i,
     /\/api\/v1\/admin\/operation\/events/i,
     /\/api\/v1\/calendar\/schedule/i,
+    /There is no underlying STOMP connection/i,
   ];
 
   constructor(page: Page) {

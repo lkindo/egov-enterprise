@@ -52,6 +52,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String ttlBoldYn;
 
+    @Column(name = "ans_lv")
     @Builder.Default
     private Integer ansLvl = 0;
 

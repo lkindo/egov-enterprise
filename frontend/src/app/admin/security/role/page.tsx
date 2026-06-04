@@ -244,6 +244,7 @@ export default function RoleManagePage() {
 
  <div className="min-h-[500px]">
  <StandardDataTable
+ keyField="roleId"
  columns={columns}
  data={roles}
  loading={isLoading}

@@ -34,7 +34,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     @DisplayName("일정 목록 조회 성공")
     void getScheduleList_Success() throws Exception {
         // Given
-        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH1").schdlNm("Meeting").build()));
+        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdulId("SCH1").schdulNm("Meeting").build()));
         given(egovScheduleService.getScheduleList(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
@@ -44,14 +44,14 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].schdlId").value("SCH1"));
+                .andExpect(jsonPath("$.data.list[0].schdulId").value("SCH1"));
     }
 
     @Test
     @DisplayName("월간 일정 조회 성공")
     void getMonthlySchedule_Success() throws Exception {
         // Given
-        given(egovScheduleService.getMonthlySchedule(anyString(), anyString())).willReturn(List.of(ScheduleDto.builder().schdlId("SCH1").build()));
+        given(egovScheduleService.getMonthlySchedule(anyString(), anyString())).willReturn(List.of(ScheduleDto.builder().schdulId("SCH1").build()));
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules/monthly")
@@ -59,6 +59,6 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].schdlId").value("SCH1"));
+                .andExpect(jsonPath("$.data[0].schdulId").value("SCH1"));
     }
 }

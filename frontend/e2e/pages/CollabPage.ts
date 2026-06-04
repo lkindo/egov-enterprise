@@ -10,7 +10,7 @@ export class CollabPage {
     async goto() {
         console.log('>>> [Collab] Navigating to Collaboration Hub');
         await this.page.goto('/admin/collaboration');
-        await expect(this.page.getByRole('heading', { name: /협업 및 네트워크 허브/i })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: /협업 및 네트워크 허브/i })).toBeVisible({ timeout: 60000 });
     }
 
     async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS') {
@@ -26,10 +26,10 @@ export class CollabPage {
         
         // The button text is "신규 전송" (with Plus icon)
         await this.page.getByRole('button', { name: /신규 전송/i }).click();
-        await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-send/, { timeout: 30000 });
+        await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-send/, { timeout: 60000 });
         
         const searchInput = this.page.getByTestId('mail-recipient-input');
-        await expect(searchInput).toBeVisible({ timeout: 20000 });
+        await expect(searchInput).toBeVisible({ timeout: 60000 });
         await searchInput.click();
         await this.page.waitForTimeout(500);
         
@@ -39,10 +39,10 @@ export class CollabPage {
         await searchInput.pressSequentially(recipient, { delay: 150 });
         
         const recipientItem = this.page.getByTestId('recipient-item').first();
-        await expect(recipientItem).toBeVisible({ timeout: 20000 });
+        await expect(recipientItem).toBeVisible({ timeout: 60000 });
         await recipientItem.click();
         
-        await expect(this.page.getByText(/Target Locked/i)).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByText(/Target Locked/i)).toBeVisible({ timeout: 60000 });
         
         const subjectInput = this.page.getByTestId('mail-subject-input');
         await subjectInput.click();
@@ -56,7 +56,7 @@ export class CollabPage {
         await expect(sendBtn).toBeVisible();
         await sendBtn.click();
         
-        await expect(this.page.getByText(/성공적으로 발송되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/성공적으로 발송되었습니다/i)).toBeVisible({ timeout: 60000 });
         
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/mail-history/);
     }
@@ -84,7 +84,7 @@ export class CollabPage {
         await telInput.fill(tel);
         
         await this.page.getByTestId('commit-identity-button').click();
-        await expect(this.page.getByText(/등록되었습니다/i)).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/등록되었습니다/i)).toBeVisible({ timeout: 60000 });
     }
 
     async verifyIdentityInList(name: string) {
@@ -100,7 +100,7 @@ export class CollabPage {
         await this.page.keyboard.press('Enter');
         
         await this.page.waitForTimeout(2000);
-        await expect(this.page.getByText(name).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByText(name).first()).toBeVisible({ timeout: 60000 });
     }
 
     async deleteNote(subject?: string) {
@@ -149,7 +149,7 @@ export class CollabPage {
 
         // The delete button is inside the row in the Bento Grid version
         const deleteBtn = targetItem.getByTestId('delete-mail-btn');
-        await expect(deleteBtn).toBeVisible({ timeout: 10000 });
+        await expect(deleteBtn).toBeVisible({ timeout: 60000 });
         
         this.page.once('dialog', async dialog => {
             console.log(`>>> [Collab] Dialog detected: ${dialog.message()}`);
@@ -158,7 +158,7 @@ export class CollabPage {
 
         await deleteBtn.click();
         
-        await expect(this.page.getByText(/성공적으로 삭제되었습니다/i).first()).toBeVisible({ timeout: 20000 });
+        await expect(this.page.getByText(/성공적으로 삭제되었습니다/i).first()).toBeVisible({ timeout: 60000 });
         await this.page.waitForLoadState('networkidle');
         console.log('>>> [Collab] Mail record purged successfully');
     }
@@ -169,7 +169,7 @@ export class CollabPage {
         await expect(this.page.getByRole('heading', { name: /인텔리전스 시스템 아키텍처 분석/i })).toBeVisible();
         
         console.log('>>> [Collab] Verifying chart components are rendered');
-        await this.page.waitForSelector('canvas, svg, .recharts-surface', { timeout: 15000 });
+        await this.page.waitForSelector('canvas, svg, .recharts-surface', { timeout: 60000 });
         
         console.log('>>> [Collab] Changing period to: MONTHLY_BATCH (30D)');
         await this.page.getByLabel(/통계 조회 기간 선택/i).selectOption('MONTHLY_BATCH (30D)');

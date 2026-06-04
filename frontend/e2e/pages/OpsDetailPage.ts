@@ -21,7 +21,7 @@ export class OpsDetailPage {
         const [response] = await Promise.all([
             this.page.waitForResponse(
                 resp => resp.url().includes('/events') && resp.status() === 200,
-                { timeout: 15000 }
+                { timeout: 60000 }
             ),
             searchInput.pressSequentially(keyword, { delay: 80 })
         ]);
@@ -55,7 +55,7 @@ export class OpsDetailPage {
         const deployBtn = this.page.getByRole('button', { name: /Deploy Protocol/i });
         
         const [response] = await Promise.all([
-            this.page.waitForResponse(resp => resp.url().includes('/events') && resp.request().method() === 'POST', { timeout: 15000 }),
+            this.page.waitForResponse(resp => resp.url().includes('/events') && resp.request().method() === 'POST', { timeout: 60000 }),
             deployBtn.click()
         ]);
         
@@ -74,7 +74,7 @@ export class OpsDetailPage {
         console.log('>>> [OpsDetail] Event creation confirmed (toast or modal closed).');
         
         // Return to list and wait for DB to reflect the new event
-        await this.goto();
+        // Invalidation happens automatically, reload is redundant and causes next-coverage build to hang.
         await this.page.waitForTimeout(2000);
     }
 

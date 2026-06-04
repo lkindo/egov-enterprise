@@ -95,7 +95,7 @@ public interface EgovUserService {
     /**
      * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
      */
-    void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId);
+    void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId);
 
     /**
      * 여러 사용자의 권한을 한꺼번에 변경합니다.

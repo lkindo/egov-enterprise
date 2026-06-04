@@ -25,8 +25,8 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     }
 
     @Override
-    public DeptManageDto getDeptManage(String orgnztId) {
-        return deptManageRepository.findById(Objects.requireNonNull(orgnztId))
+    public DeptManageDto getDeptManage(String ognzId) {
+        return deptManageRepository.findById(Objects.requireNonNull(ognzId))
                 .map(DeptManageDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -35,9 +35,9 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     @Transactional
     public void insertDeptManage(DeptManageDto dto) {
         DeptManage entity = DeptManage.builder()
-                .ognzId(dto.getOrgnztId())
-                .ognzNm(dto.getOrgnztNm())
-                .ognzExpln(dto.getOrgnztDc())
+                .ognzId(dto.getOgnzId())
+                .ognzNm(dto.getOgnzNm())
+                .ognzExpln(dto.getOgnzExpln())
                 .build();
         deptManageRepository.save(Objects.requireNonNull(entity));
     }
@@ -45,14 +45,14 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     @Override
     @Transactional
     public void updateDeptManage(DeptManageDto dto) {
-        DeptManage entity = deptManageRepository.findById(Objects.requireNonNull(dto.getOrgnztId()))
+        DeptManage entity = deptManageRepository.findById(Objects.requireNonNull(dto.getOgnzId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getOrgnztNm(), dto.getOrgnztDc());
+        entity.update(dto.getOgnzNm(), dto.getOgnzExpln());
     }
 
     @Override
     @Transactional
-    public void deleteDeptManage(String orgnztId) {
-        deptManageRepository.deleteById(Objects.requireNonNull(orgnztId));
+    public void deleteDeptManage(String ognzId) {
+        deptManageRepository.deleteById(Objects.requireNonNull(ognzId));
     }
 }

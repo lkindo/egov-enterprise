@@ -35,10 +35,10 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 등록 테스트")
     void registerWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .rptId("REPO_001")
-                .rptTtl("주간보고")
-                .rptCn("내용")
-                .userId("user01")
+                .reportId("REPO_001")
+                .reportSubject("주간보고")
+                .reportContents("내용")
+                .wrterId("user01")
                 .build();
 
         workReportService.createWorkReport(dto);
@@ -50,9 +50,9 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 수정 테스트")
     void updateWorkReportTest() {
         WorkReportDto dto = WorkReportDto.builder()
-                .rptId("REPO_001")
-                .rptTtl("수정보고")
-                .userId("user01")
+                .reportId("REPO_001")
+                .reportSubject("수정보고")
+                .wrterId("user01")
                 .build();
 
         WorkReport report = WorkReport.builder()
@@ -91,8 +91,8 @@ class WorkReportServiceTest {
         WorkReportDto result = workReportService.getWorkReport("REPO_001");
 
         assertNotNull(result);
-        assertEquals("REPO_001", result.getRptId());
-        assertEquals("주간보고", result.getRptTtl());
+        assertEquals("REPO_001", result.getReportId());
+        assertEquals("주간보고", result.getReportSubject());
     }
 
     @Test

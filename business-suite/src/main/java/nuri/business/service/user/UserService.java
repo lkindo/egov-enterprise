@@ -224,7 +224,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 userDto.getEmlAddr(),
                                 userDto.getOfcpsNm(),
                                 userDto.getGroupId(),
-                                userDto.getOrgnztId(),
+                                userDto.getOgnzId(),
                                 userDto.getPstinstCd(),
                                 user.getRole(),
                                 user.getCrtfcDnValue());
@@ -383,13 +383,13 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
-        public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId) {
+        public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
                 // [보안] 관리자 권한 확인
                 if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
                 List<User> users = userRepository.findAllById(required(userIds));
-                users.forEach(user -> user.updateOrgnztId(orgnztId));
+                users.forEach(user -> user.updateOgnzId(ognzId));
                 userRepository.saveAll(users);
         }
 

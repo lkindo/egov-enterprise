@@ -111,9 +111,9 @@ class MemoReportServiceTest {
         // given
         String userId = "user1";
         MemoReportDto dto = MemoReportDto.builder()
-                .rptTtl("Subject")
-                .rptrId("reportr1")
-                .memoRptYmd("20240501")
+                .reportSubject("Subject")
+                .reportrId("reportr1")
+                .reprtDe("20240501")
                 .build();
         given(egovMemoReportIdGnrService.getNextStringId()).willReturn("R1");
 
@@ -133,11 +133,11 @@ class MemoReportServiceTest {
         String userId = "user1";
         MemoReport existingEntity = MemoReport.builder().rptId(reprtId).userId(userId).build();
         MemoReportDto updateDto = MemoReportDto.builder()
-                .rptId(reprtId)
-                .rptTtl("Updated Subject")
-                .rptCn("Updated Content")
-                .rptrId("reportr1")
-                .memoRptYmd("20240502")
+                .reportId(reprtId)
+                .reportSubject("Updated Subject")
+                .reportContents("Updated Content")
+                .reportrId("reportr1")
+                .reprtDe("20240502")
                 .build();
 
         given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(existingEntity));

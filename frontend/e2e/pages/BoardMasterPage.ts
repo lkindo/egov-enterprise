@@ -15,17 +15,17 @@ export class BoardMasterPage {
     }).or(page.locator('button:has(svg.lucide-rocket), button:has(.lucide-rocket)')).first();
     
     this.bbsNmInput = page.locator('#bbsTtl').first();
-    this.bbsIntrcnInput = page.locator('#bbsIntroCn').first();
+    this.bbsIntrcnInput = page.locator('#bbsExpln').first();
     this.nextButton = page.locator('button').filter({ hasText: /다음 단계로|Next/i }).first();
     this.deployButton = page.locator('button').filter({ hasText: /게시판 생성|Deploy|Create/i }).first();
   }
 
   async gotoMaster() {
-    await this.page.goto('/admin/community/boards/master', { waitUntil: 'networkidle' });
+    await this.page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' });
   }
 
   async gotoMaker() {
-    await this.page.goto('/admin/community/boards/maker', { waitUntil: 'networkidle' });
+    await this.page.goto('/admin/community/boards/maker', { waitUntil: 'domcontentloaded' });
   }
 
   async startWizard() {

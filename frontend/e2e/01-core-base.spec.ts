@@ -32,7 +32,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
         test.beforeEach(async ({ page }) => {
-            await page.goto('/admin', { waitUntil: 'networkidle' });
+            await page.goto('/admin');
         });
 
         test('Widgets and Charts Rendering', async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
 
         test('Global Layout & Navigation Mapping', async ({ page }) => {
             console.log('>>> Step 1: Sidebar Visibility');
-            const sidebar = page.locator('aside');
+            const sidebar = page.locator('aside').first();
             await expect(sidebar).toBeVisible();
 
             console.log('>>> Step 2: Sidebar Menu Interaction');
@@ -88,12 +88,12 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
 
         test.beforeEach(async ({ page }) => {
             console.log('>>> Navigating to User Portal Home');
-            await page.goto('/', { waitUntil: 'networkidle' });
+            await page.goto('/');
         });
 
         test('User Unified Dashboard Rendering', async ({ page }) => {
             console.log('>>> Step 1: Verifying User Layout & Global Navigation');
-            const header = page.locator('header');
+            const header = page.locator('header').first();
             await expect(header).toBeVisible();
             
             console.log('>>> Step 2: Verifying Main User Elements');

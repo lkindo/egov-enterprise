@@ -133,7 +133,7 @@ class BoardRepositoryTest {
         condition.setSearchCnd("2");
         results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).hasSize(1);
-        assertThat(results.getContent().get(0).getFrstRgtrNm()).isEqualTo("Manager");
+        assertThat(results.getContent().get(0).getFrstRegisterNm()).isEqualTo("Manager");
     }
 
     @Test

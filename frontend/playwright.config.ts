@@ -14,7 +14,7 @@ export default defineConfig({
     },
     fullyParallel: false, // Disable parallel execution for stability
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 5 : 2, // Increase retries for flaky CI
+    retries: 0, // Disable retries to prevent port locks and resource exhaustion on failure
     workers: 1, // Limit workers to 1 to prevent OOM and connection refused errors
     reporter: 'html',
     use: {

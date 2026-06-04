@@ -11,6 +11,9 @@ import { BusinessExtensionPage } from '../pages/BusinessExtensionPage';
 import { ConsoleErrorGuard } from './error-detector';
 import { SelfHealingAgent } from './self-healing-agent';
 import { LayoutBreathingGuard } from './layout-breathing-guard';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 
 type MyFixtures = {
   bbsPage: BBSPage;
@@ -27,9 +30,29 @@ type MyFixtures = {
   layoutGuard: LayoutBreathingGuard;
   adminPage: Page;
   userPage: Page;
+  coverage?: void;
 };
 
 export const test = base.extend<MyFixtures>({
+  // E2E 코드 커버리지 수집 Fixture (auto: true로 설정하여 모든 테스트에서 자동 실행)
+  coverage: [async ({ page }, use) => {
+    await use();
+    
+    try {
+      const coverage = await page.evaluate(() => (window as any).__coverage__);
+      if (coverage) {
+        const nycOutputDir = path.join(process.cwd(), '.nyc_output');
+        if (!fs.existsSync(nycOutputDir)) {
+          fs.mkdirSync(nycOutputDir, { recursive: true });
+        }
+        const fileName = `playwright_${crypto.randomUUID()}.json`;
+        fs.writeFileSync(path.join(nycOutputDir, fileName), JSON.stringify(coverage), 'utf8');
+      }
+    } catch (e) {
+      // API 페이지나 redirect 등으로 윈도우 객체 평가 불가 시 예외 스킵하여 E2E 깨짐 방어
+    }
+  }, { auto: true }],
+
   // 자가 치유 에이전트 Fixture
   healingAgent: async ({ page }, use) => {
     await use(new SelfHealingAgent(page));

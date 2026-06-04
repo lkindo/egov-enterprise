@@ -21,7 +21,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<AddressBook> searchAddressBooks(String wrterId, String trgetOrgnztId, String searchCnd, String searchWrd,
+    public Page<AddressBook> searchAddressBooks(String wrterId, String trgetOgnzId, String searchCnd, String searchWrd,
             Pageable pageable) {
         BooleanExpression condition = null;
         if (StringUtils.hasText(searchWrd)) {
@@ -36,7 +36,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 .selectFrom(addressBook)
                 .where(addressBook.useYn.eq("Y")
                         .and(wrterIdEq(wrterId))
-                        .and(trgetOrgnztIdEq(trgetOrgnztId))
+                        .and(trgetOgnzIdEq(trgetOgnzId))
                         .and(condition))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -48,7 +48,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 .from(addressBook)
                 .where(addressBook.useYn.eq("Y")
                         .and(wrterIdEq(wrterId))
-                        .and(trgetOrgnztIdEq(trgetOrgnztId))
+                        .and(trgetOgnzIdEq(trgetOgnzId))
                         .and(condition))
                 .fetchOne();
 
@@ -64,10 +64,10 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
         List<AddressBookUserSearchResult> results = queryFactory
                 .select(Projections.fields(AddressBookUserSearchResult.class,
-                        user.userId,
-                        user.userNm,
-                        user.emlAddr,
-                        user.mblTelno))
+                         user.userId,
+                         user.userNm,
+                         user.emlAddr,
+                         user.mblTelno))
                 .from(user)
                 .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId).and(addressBook.useYn.eq("Y")))
                 .where(searchPredicate)
@@ -90,7 +90,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
         return StringUtils.hasText(wrterId) ? addressBook.wrterId.eq(wrterId) : null;
     }
 
-    private BooleanExpression trgetOrgnztIdEq(String trgetOrgnztId) {
-        return StringUtils.hasText(trgetOrgnztId) ? addressBook.trgetOrgnztId.eq(trgetOrgnztId) : null;
+    private BooleanExpression trgetOgnzIdEq(String trgetOgnzId) {
+        return StringUtils.hasText(trgetOgnzId) ? addressBook.trgetOgnzId.eq(trgetOgnzId) : null;
     }
 }

@@ -62,7 +62,7 @@ export class SecurityAdminPage {
 
     async createRole(roleCode: string, roleNm: string) {
         console.log(`>>> Creating Role: ${roleCode}`);
-        await this.page.getByRole('button', { name: /신규 보안 롤 설정/i }).click();
+        await this.page.locator('button:has-text("신규 보안 롤 설정")').first().click();
         await this.page.waitForTimeout(1000); // Wait for modal animation
         
         await this.page.locator('#roleId').fill(roleCode);

@@ -43,8 +43,8 @@ public class AddressBook extends BaseEntity {
     @Column(length = 12)
     private String rlsScopeCd;
 
-    @Column(length = 20)
-    private String trgetOrgnztId;
+    @Column(name = "trget_ognz_id", length = 20)
+    private String trgetOgnzId;
 
     @Column(length = 1)
     private String useYn;

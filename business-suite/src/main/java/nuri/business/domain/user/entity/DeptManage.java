@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
  * 매핑 테이블: NORGNZTINFO
  */
 @Entity
-@Table(name = "tb_orgnzt_info")
+@Table(name = "tb_ognz_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -38,11 +38,5 @@ public class DeptManage extends BaseEntity {
         this.ognzExpln = ognzExpln;
     }
 
-    // ----- [Legacy Aliases for Compatibility] -----
-    public String getOrgnztId() { return ognzId; }
-    public String getOrgnztNm() { return ognzNm; }
-    public String getOrgnztDc() { return ognzExpln; }
-    public void setOrgnztId(String v) { this.ognzId = v; }
-    public void setOrgnztNm(String v) { this.ognzNm = v; }
-    public void setOrgnztDc(String v) { this.ognzExpln = v; }
 }
+

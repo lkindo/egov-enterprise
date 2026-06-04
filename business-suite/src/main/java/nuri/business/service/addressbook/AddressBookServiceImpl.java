@@ -35,10 +35,10 @@ public class AddressBookServiceImpl implements AddressBookService {
     private final EgovIdGnrService egovAdbkUserIdGnrService;
 
     @Override
-    public Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOrgnztId, String searchCnd,
+    public Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOgnzId, String searchCnd,
             String searchWrd, @NonNull Pageable pageable) {
         return addressBookRepository
-                .searchAddressBooks(wrterId, trgetOrgnztId, searchCnd, searchWrd, Objects.requireNonNull(pageable))
+                .searchAddressBooks(wrterId, trgetOgnzId, searchCnd, searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
@@ -63,7 +63,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .adbkId(adbkId)
                     .adbkNm(dto.getAdbkNm())
                     .rlsScopeCd(dto.getRlsScopeCd())
-                    .trgetOrgnztId(dto.getTrgetOrgnztId())
+                    .trgetOgnzId(dto.getTrgetOgnzId())
                     .useYn("Y")
                     .wrterId(userId)
                     .frstRgtrId(userId)
@@ -177,7 +177,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .adbkId(entity.getAdbkId())
                 .adbkNm(entity.getAdbkNm())
                 .rlsScopeCd(entity.getRlsScopeCd())
-                .trgetOrgnztId(entity.getTrgetOrgnztId())
+                .trgetOgnzId(entity.getTrgetOgnzId())
                 .useYn(entity.getUseYn())
                 .wrterId(entity.getWrterId())
                 .frstRgtrId(entity.getFrstRgtrId())

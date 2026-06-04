@@ -249,7 +249,7 @@ class AuthorManageServiceImplTest {
     @DisplayName("toRoleDto 변환 - 값 있는 경우")
     void toRoleDto_WithValues() {
         RoleInfo role = RoleInfo.builder().roleId("R1").roleNm("RN1").roleSort(5).build();
-        role.setCreatedDate(java.time.LocalDateTime.now());
+        role.setCrtDt(java.time.LocalDateTime.now());
         given(roleInfoRepository.findAll()).willReturn(List.of(role));
 
         List<RoleDto> result = authorManageService.selectRoleList();

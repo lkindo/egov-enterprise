@@ -46,7 +46,7 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 상세 조회")
     void getSms() throws Exception {
-        SmsDto dto = SmsDto.builder().smsId("SMS1").sndngCn("Content").build();
+        SmsDto dto = SmsDto.builder().smsId("SMS1").trnsmitCn("Content").build();
         given(smsService.getSms("SMS1")).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms/SMS1"))

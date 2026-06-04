@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NotificationDomainTest {
 
     @Test
-    @DisplayName("Notification ?�티???�성 �?초기???�스??)
+    @DisplayName("알림 도메인 생성 및 초기값 테스트")
     void notification_builder_test() {
         // Given
         LocalDateTime before = LocalDateTime.now();
@@ -37,7 +37,7 @@ class NotificationDomainTest {
     }
 
     @Test
-    @DisplayName("Notification ?�태 ?�데?�트 �??�음 처리 ?�스??)
+    @DisplayName("알림 상태 업데이트 및 읽음 처리 테스트")
     void notification_update_test() {
         // Given
         Notification ntfc = Notification.builder()

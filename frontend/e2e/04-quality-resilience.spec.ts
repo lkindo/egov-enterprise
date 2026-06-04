@@ -20,7 +20,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
             const adminPaths = ['/admin/user/manage', '/admin/system/audit'];
             for (const path of adminPaths) {
                 console.log(`>>> Checking restricted access to ${path}`);
-                await page.goto(path, { waitUntil: 'networkidle' });
+                await page.goto(path, { waitUntil: 'domcontentloaded' });
                 // Should redirect to dashboard or show unauthorized message
                 await expect(page).not.toHaveURL(new RegExp(path), { timeout: 10000 });
                 

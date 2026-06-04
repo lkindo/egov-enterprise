@@ -46,6 +46,9 @@
     "scripts",
     "skills",
     "**/*.stories.tsx",
-    "**/*.stories.ts"
+    "**/*.stories.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "e2e"
   ]
 }

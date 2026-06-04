@@ -47,7 +47,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
 
             // CRITICAL: Dept field is a native <select> tag, NOT a button/combobox
             console.log('>>> Step 3: Selecting department via native select');
-            const deptSelect = page.locator('select[name="orgnztId"]');
+            const deptSelect = page.locator('select[name="ognzId"]');
             await expect(deptSelect).toBeVisible({ timeout: 5000 });
             // Select the first real department option (index 1, index 0 is "소속 없음 / GLOBAL")
             await deptSelect.selectOption({ index: 1 });

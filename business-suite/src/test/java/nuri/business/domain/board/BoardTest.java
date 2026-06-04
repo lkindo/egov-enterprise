@@ -210,7 +210,7 @@ class BoardTest {
     void builderDefaultTest() {
         Board board = Board.builder().build();
 
-        assertThat(board.getAnsLv()).isEqualTo(0);
+        assertThat(board.getAnsLvl()).isEqualTo(0);
         assertThat(board.getInqCnt()).isEqualTo(0);
         assertThat(board.getUseYn()).isEqualTo("Y");
         assertThat(board.getQnaSttsCd()).isEqualTo("OPEN");

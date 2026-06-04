@@ -19,16 +19,16 @@ public class DeptManageDto {
     @NotBlank
     @Size(max = 20)
     @Schema(description = "부서 ID")
-    private String orgnztId;
+    private String ognzId;
 
     @NotBlank
     @Size(max = 100)
     @Schema(description = "부서 명")
-    private String orgnztNm;
+    private String ognzNm;
 
     @Size(max = 4000)
     @Schema(description = "부서 설명")
-    private String orgnztDc;
+    private String ognzExpln;
 
     @Schema(description = "등록자 ID")
     private String frstRgtrId;
@@ -40,9 +40,9 @@ public class DeptManageDto {
         if (entity == null)
             return null;
         return DeptManageDto.builder()
-                .orgnztId(entity.getOrgnztId())
-                .orgnztNm(entity.getOrgnztNm())
-                .orgnztDc(entity.getOrgnztDc())
+                .ognzId(entity.getOgnzId())
+                .ognzNm(entity.getOgnzNm())
+                .ognzExpln(entity.getOgnzExpln())
                 .frstRgtrId(entity.getFrstRgtrId())
                 .crtDt(entity.getCrtDt())
                 .build();

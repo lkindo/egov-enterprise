@@ -9,7 +9,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "tb_orgnzt_info")
+@Table(name = "tb_ognz_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

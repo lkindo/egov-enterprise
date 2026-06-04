@@ -49,7 +49,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 300)
     private String pswdHint;
 
-    @Column(length = 300)
+    @Column(name = "pswd_crans", length = 300)
     private String pswdCnsr;
 
     private LocalDateTime chgPswdLastDt;
@@ -67,7 +67,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 32)
     private String otpSecret;
 
-    @Column(length = 100)
+    @Column(name = "cert_dn_vl", length = 100)
     private String crtfcDnValue;
 
     // ■ 개인 정보
@@ -91,10 +91,10 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 5)
     private String zip;
 
-    @Column(length = 300)
+    @Column(name = "home_addr", length = 300)
     private String baseAddr;
 
-    @Column(length = 300)
+    @Column(name = "daddr", length = 300)
     private String dtlAddr;
 
     @Column(length = 4)
@@ -247,7 +247,7 @@ public class User extends BaseEntity implements Serializable {
         this.userSttsCd = status;
     }
 
-    public void updateOrgnztId(String ognzId) {
+    public void updateOgnzId(String ognzId) {
         this.ognzId = ognzId;
     }
 }

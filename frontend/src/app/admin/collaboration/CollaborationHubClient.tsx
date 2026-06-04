@@ -66,7 +66,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  });
  const scraps = (scrapData as any)?.list || [];
 
- const isLoading = notesLoading || addressLoading || scrapsLoading;
+ const isLoading = 
+    (activeTab === 'MESSAGES' && notesLoading) ||
+    (activeTab === 'ADDRESS_BOOK' && addressLoading) ||
+    (activeTab === 'SCRAPS' && scrapsLoading);
 
  const messageColumns: Column<any>[] = [
  {

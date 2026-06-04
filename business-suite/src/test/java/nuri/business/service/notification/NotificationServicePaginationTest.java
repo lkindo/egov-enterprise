@@ -36,8 +36,8 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
         for (int i = 1; i <= 25; i++) {
             Notification notification = Notification.builder()
                     .ntfcNo("NTFC_" + i)
-                    .ntfcSj("?�스???�림 " + i)
-                    .ntfcCn("?�용 " + i)
+                    .ntfcSj("테스트 알림 " + i)
+                    .ntfcCn("내용 " + i)
                     .receiverId("testUser")
                     .isRead(i % 5 == 0 ? "Y" : "N")
                     .crtDt(LocalDateTime.now())
@@ -49,7 +49,7 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?�이지?�이?�된 ?�성 ?�림 조회")
+    @DisplayName("페이지네이션된 활성 알림 조회")
     void getActiveNotifications_WithPagination() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
@@ -60,7 +60,7 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?�이지?�이??- ??번째 ?�이지")
+    @DisplayName("페이지네이션 - 두번째 페이지")
     void getActiveNotifications_SecondPage() {
         Pageable pageable = PageRequest.of(1, 10);
         Page<NotificationDto> result = notificationService.getActiveNotifications(pageable);
@@ -70,14 +70,14 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("?�체 ?�성 ?�림 조회 - 메모�?부??주의")
+    @DisplayName("전체 활성 알림 조회")
     void getActiveNotificationsAll() {
         List<NotificationDto> result = notificationService.getActiveNotificationsAll();
         assertThat(result).hasSize(25);
     }
 
     @Test
-    @DisplayName("?��? ?��? ?�림 카운??)
+    @DisplayName("읽지 않은 알림 카운트")
     void getUnreadCount() {
         long unreadCount = notificationService.getUnreadCount("testUser");
         assertThat(unreadCount).isEqualTo(20);

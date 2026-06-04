@@ -65,7 +65,7 @@ public class DeptApiController {
     public ResponseEntity<ApiResponse<Void>> updateDept(
             @PathVariable String deptId,
             @RequestBody DeptManageDto dto) {
-        dto.setOrgnztId(deptId);
+        dto.setOgnzId(deptId);
         deptManageService.updateDeptManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
