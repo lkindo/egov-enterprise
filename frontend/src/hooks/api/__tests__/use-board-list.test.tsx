@@ -38,24 +38,21 @@ describe('useBoardList Hook', () => {
 
     expect(result.current.data?.total).toBe(1);
     expect(result.current.data?.list).toHaveLength(1);
-    expect(result.current.data?.list[0].bbsNm).toBe('공지사항');
+    expect(result.current.data?.list[0].bbsId).toBe('BBSMSTR_000000000001');
   });
 
   it('should use initialData if provided', () => {
     const initialData = {
       list: [
         {
+          pstId: 'POST_001',
           bbsId: 'BBSMSTR_000000000001',
-          bbsNm: '임시 공지',
-          bbsTyCode: 'BBST01',
-          useAt: 'Y',
-          frstRegisterPnttm: '2026-06-01T00:00:00',
-          nttId: 1,
-          nttSj: '임시글',
-          nttCn: '본문',
-          inqireCo: 0,
-          ntcrNm: '작성자',
-          frstRegisterId: 'admin'
+          pstTtl: '임시 공지',
+          pstCn: '본문',
+          useYn: 'Y',
+          userId: 'admin',
+          userNm: '관리자',
+          crtDt: '2026-06-01T00:00:00'
         }
       ],
       total: 1,
@@ -66,6 +63,6 @@ describe('useBoardList Hook', () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.data?.list[0].bbsNm).toBe('임시 공지');
+    expect(result.current.data?.list[0].pstTtl).toBe('임시 공지');
   });
 });

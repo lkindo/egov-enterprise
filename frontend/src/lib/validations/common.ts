@@ -40,6 +40,7 @@ export const commonSchemas = {
     
   // 사용 여부 (YN)
   useYn: z.enum(['Y', 'N']),
+  useAt: z.enum(['Y', 'N']),
 };
 
 /**

@@ -207,7 +207,7 @@ class BoardMasterServiceTest {
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
                     .blogYn("Y")
-                    .commentYn("Y")
+                    .ansYn("Y")
                     .stsfdgYn("Y")
                     .build();
 

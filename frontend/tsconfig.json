@@ -24,6 +24,7 @@
     ],
     "types": [
       "vitest/globals",
+      "@testing-library/jest-dom",
       "node",
       "pg"
     ],

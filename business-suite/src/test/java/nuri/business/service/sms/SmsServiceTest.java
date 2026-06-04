@@ -92,8 +92,8 @@ class SmsServiceTest {
     void sendSmsTest() {
         // Given
         SmsDto dto = SmsDto.builder()
-                .trnsmitTelno("01011112222")
-                .trnsmitCn("Test Message")
+                .sndngTelno("01011112222")
+                .sndngCn("Test Message")
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         
@@ -129,8 +129,8 @@ class SmsServiceTest {
     @DisplayName("SMS 발송 - 수신자 없음")
     void sendSms_NoRecipients() {
         SmsDto dto = SmsDto.builder()
-                .trnsmitTelno("01011112222")
-                .trnsmitCn("No Recipient")
+                .sndngTelno("01011112222")
+                .sndngCn("No Recipient")
                 .recipients(null)
                 .build();
 

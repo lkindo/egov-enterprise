@@ -64,4 +64,13 @@ class SmsRecptnTest {
         assertThat(id1.hashCode()).isEqualTo(id2.hashCode());
         assertThat(id1.toString()).contains("SMS_001");
     }
+
+    @Test
+    @DisplayName("SmsRecptn id가 null인 경우 getSmsId 및 getRcptnTelno 리턴 null 검증")
+    void getSmsIdAndRcptnTelno_whenIdIsNull() {
+        SmsRecptn recptn = new SmsRecptn();
+        assertThat(recptn.getSmsId()).isNull();
+        assertThat(recptn.getRcptnTelno()).isNull();
+    }
 }
+
