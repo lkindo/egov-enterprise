@@ -66,7 +66,7 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
             String noteId = egovNoteIdGnrService.getNextStringId();
             Note note = Note.builder()
                     .noteId(noteId)
-                    .noteSj(dto.getNoteSj())
+                    .noteTtl(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
                     .frstRgtrId(dsptchUserId)
                     .build();
@@ -74,9 +74,9 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
 
             String trnsmitId = egovNoteIdGnrService.getNextStringId();
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                    .noteDsptchId(trnsmitId)
+                    .noteSndngId(trnsmitId)
                     .note(note)
-                    .dsptchUserId(dsptchUserId)
+                    .sndrId(dsptchUserId)
                     .frstRgtrId(dsptchUserId)
                     .build();
             noteTrnsmitRepository.save(trnsmit);
@@ -85,12 +85,12 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                 String[] rcverIds = dto.getRcverId().split(",");
                 for (String rcverId : rcverIds) {
                     NoteRecptn recptn = NoteRecptn.builder()
-                            .noteRecptnId(egovNoteIdGnrService.getNextStringId())
+                            .noteRcptnId(egovNoteIdGnrService.getNextStringId())
                             .note(note)
                             .noteDsptch(trnsmit)
-                            .rcverId(rcverId.trim())
+                            .rcvrId(rcverId.trim())
                             .openYn("N")
-                            .recptnSeCd("0")
+                            .rcptnSeCd("0")
                             .frstRgtrId(dsptchUserId)
                             .build();
                     noteRecptnRepository.save(recptn);
@@ -114,25 +114,25 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
 
     private NoteDto convertToDto(NoteTrnsmit entity) {
         return NoteDto.builder()
-                .noteDsptchId(entity.getNoteDsptchId())
-                .noteSj(entity.getNote() != null ? entity.getNote().getNoteSj() : null)
+                .noteDsptchId(entity.getNoteSndngId())
+                .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
-                .dsptchUserId(entity.getDsptchUserId())
+                .dsptchUserId(entity.getSndrId())
                 .crtDt(entity.getCrtDt())
                 .build();
     }
 
     private NoteDto convertToDto(NoteRecptn entity) {
         return NoteDto.builder()
-                .noteDsptchId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteDsptchId() : null)
-                .noteRecptnId(entity.getNoteRecptnId())
+                .noteDsptchId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteSndngId() : null)
+                .noteRecptnId(entity.getNoteRcptnId())
                 .noteId(entity.getNote() != null ? entity.getNote().getNoteId() : null)
-                .noteSj(entity.getNote() != null ? entity.getNote().getNoteSj() : null)
+                .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
-                .dsptchUserId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getDsptchUserId() : null)
-                .rcverId(entity.getRcverId())
+                .dsptchUserId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getSndrId() : null)
+                .rcverId(entity.getRcvrId())
                 .openYn(entity.getOpenYn())
-                .recptnSe(entity.getRecptnSeCd())
+                .recptnSe(entity.getRcptnSeCd())
                 .crtDt(entity.getCrtDt())
                 .build();
     }

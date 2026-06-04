@@ -23,10 +23,10 @@ public class SmsRecptn {
     private String rsltMsg;
 
     @Builder
-    public SmsRecptn(String smsId, String rcptnTelno, String resultCode, String resultMssage, String rsltCd, String rsltMsg) {
+    public SmsRecptn(String smsId, String rcptnTelno, String rsltCd, String rsltMsg) {
         this.id = new SmsRecptnId(smsId, rcptnTelno);
-        this.rsltCd = rsltCd != null ? rsltCd : resultCode;
-        this.rsltMsg = rsltMsg != null ? rsltMsg : resultMssage;
+        this.rsltCd = rsltCd;
+        this.rsltMsg = rsltMsg;
     }
 
     public String getSmsId() {
@@ -42,16 +42,6 @@ public class SmsRecptn {
         this.rsltMsg = rsltMsg;
     }
 
-    // ----- [Legacy Aliases for Backward Compatibility] -----
-
-    @Deprecated
-    public String getResultCode() {
-        return rsltCd;
-    }
-
-    @Deprecated
-    public String getResultMssage() {
-        return rsltMsg;
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
 }

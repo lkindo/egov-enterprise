@@ -22,7 +22,7 @@ interface Scrap {
     scrapNm: string;
     scrapUrl: string;
     scrapExpln: string;
-    createdDate: string;
+    crtDt: string;
 }
 
 const ScrapListPage = () => {
@@ -135,7 +135,7 @@ const ScrapListPage = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center text-sm text-muted-foreground font-medium">
-                                                {item.createdDate?.substring(0, 10)}
+                                                {item.crtDt?.substring(0, 10)}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <Button

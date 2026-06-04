@@ -14,7 +14,7 @@ public interface UserLogRepository extends JpaRepository<UserLog, UserLogId>, Us
     @org.springframework.data.jpa.repository.Query(value = """
             SELECT ocrn_ymd as statsDate,
                    SUM(crt_cnt) as creatCo,
-                   SUM(inq_cnt) as inqireCo
+                   SUM(inq_cnt) as inqCnt
             FROM tb_user_log
             WHERE ocrn_ymd BETWEEN :fromDate AND :toDate
             GROUP BY ocrn_ymd

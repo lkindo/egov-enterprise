@@ -280,7 +280,7 @@ class UserServiceTest {
             given(userRepository.findAllById(anyList())).willReturn(List.of(user));
             
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
-            verify(user).updateOgnzId("DEPT1");
+            verify(user).updateOrgnztId("DEPT1");
             verify(userRepository).saveAll(anyList());
         }
     }
@@ -297,7 +297,7 @@ class UserServiceTest {
             given(userAuthorityRepository.findById("ESNTL1")).willReturn(Optional.of(auth));
             
             userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
-            verify(user).setAuthorCode("ROLE_ADMIN");
+            verify(user).setRole(nuri.business.domain.user.entity.Role.ADMIN);
             verify(auth).update(eq("ROLE_ADMIN"), any());
             verify(userRepository).saveAll(anyList());
         }
@@ -314,7 +314,7 @@ class UserServiceTest {
             given(userAuthorityRepository.findById("ESNTL1")).willReturn(Optional.empty());
             
             userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
-            verify(user).setAuthorCode("ROLE_ADMIN");
+            verify(user).setRole(nuri.business.domain.user.entity.Role.ADMIN);
             verify(userAuthorityRepository).save(any(UserAuthority.class));
             verify(userRepository).saveAll(anyList());
         }

@@ -10,18 +10,18 @@ export interface KnowledgeDto {
   pstCn: string;
   atchFileId?: string;
   frstRgtrId?: string;
-  createdDate?: string;
-  inqireCo?: number;
-  ntcrNm?: string;
+  crtDt?: string;
+  inqCnt?: number;
+  frstRegisterNm?: string;
   frstRegisterPnttmStr?: string;
   bbsId?: string;
   statusCd?: string;
   categoryCd?: string;
-  qnaStatus?: string;
-  qnaCategory?: string;
-  eventDate?: string;
-  likeCo?: number;
-  commentCo?: number;
+  qnaSttsCd?: string;
+  qnaCatCd?: string;
+  evntDt?: string;
+  likeCnt?: number;
+  commentCnt?: number;
   // Legacy mappings for backward compatibility during transition if needed
   knoId?: string;
   knoNm?: string;
@@ -68,7 +68,7 @@ class KnowledgeService extends ApiService {
     }
 
     const boardParams = {
-      qnaCategory: params.category,
+      qnaCatCd: params.category,
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
@@ -83,7 +83,7 @@ class KnowledgeService extends ApiService {
    */
   public async getHotArticles(bbsId?: string): Promise<{ list: KnowledgeDto[] }> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, sort: 'inqireCo,desc' } });
+    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, sort: 'inqCnt,desc' } });
     
     return {
       list: (res.list || []).map((item: any) => ({
@@ -120,9 +120,9 @@ class KnowledgeService extends ApiService {
       id: item.pstId || item.nttId,
       type: 'SHARE',
       title: item.pstTtl || item.nttSj,
-      user: item.ntcrNm || item.frstRgtrId,
-      time: item.createdDate?.split('T')[0] || 'Just now',
-      impact: `+${(item.inqireCo || 0) % 100} Reach`,
+      user: item.userNm || item.frstRgtrId,
+      time: item.crtDt?.split('T')[0] || 'Just now',
+      impact: `+${(item.inqCnt || 0) % 100} Reach`,
     }));
   }
 }

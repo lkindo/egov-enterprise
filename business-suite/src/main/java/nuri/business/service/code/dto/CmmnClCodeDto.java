@@ -42,35 +42,5 @@ public class CmmnClCodeDto {
     @Schema(description = "최종수정자 ID")
     private String lastMdfrId;
 
-    // Compatibility Getters/Setters for legacy java references
-    @JsonIgnore
-    public String getClCode() {
-        return clsfCd;
-    }
-
-    @JsonIgnore
-    public void setClCode(String clCode) {
-        this.clsfCd = clCode;
-    }
-
-    @JsonIgnore
-    public String getClCodeNm() {
-        return clsfCdNm;
-    }
-
-    @JsonIgnore
-    public void setClCodeNm(String clCodeNm) {
-        this.clsfCdNm = clCodeNm;
-    }
-
-    @JsonIgnore
-    public String getClCodeDc() {
-        return clsfCdExpln;
-    }
-
-    @JsonIgnore
-    public void setClCodeDc(String clCodeDc) {
-        this.clsfCdExpln = clCodeDc;
-    }
 }
 

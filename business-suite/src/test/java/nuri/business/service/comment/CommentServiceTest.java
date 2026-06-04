@@ -34,7 +34,7 @@ class CommentServiceTest {
     private CommentRepository commentRepository;
 
     @Test
-    @DisplayName("댓글 목록 조회")
+    @DisplayName("Get comments list")
     void getComments() {
         // given
         String pstId = "1";
@@ -61,7 +61,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 등록")
+    @DisplayName("Create comment")
     void createComment() {
         // given
         CommentDto request = CommentDto.builder()
@@ -69,7 +69,7 @@ class CommentServiceTest {
                 .bbsId("BBS_01")
                 .wrterId("user1")
                 .wrterNm("Tester")
-                .password("1234")
+                .pswd("1234")
                 .ansCn("New Comment")
                 .build();
         Comment savedComment = Comment.builder()
@@ -91,7 +91,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 수정")
+    @DisplayName("Update comment")
     void updateComment() {
         // given
         Long id = 1L;
@@ -111,7 +111,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 댓글 수정 시 예외 발생")
+    @DisplayName("Update comment should throw exception when not found")
     void updateComment_NotFound() {
         // given
         Long id = 1L;
@@ -123,7 +123,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제")
+    @DisplayName("Delete comment")
     void deleteComment() {
         // given
         Long id = 1L;
@@ -142,7 +142,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제 - 존재하지 않음")
+    @DisplayName("Delete comment should throw exception when not found")
     void deleteComment_NotFound() {
         // given
         Long id = 1L;

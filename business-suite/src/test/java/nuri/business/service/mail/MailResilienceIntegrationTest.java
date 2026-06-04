@@ -77,23 +77,22 @@ class MailResilienceIntegrationTest {
         // Given: 2. 테스트용 메일 영속 데이터 준비 (초기 상태는 대기 'W')
         testMssageId = "MSG_" + UUID.randomUUID().toString().substring(0, 10);
         SentMail sentMail = SentMail.builder()
-                .mssageId(testMssageId)
-                .sndngResultCode("W") // Waiting / Ready
-                .sj("보안 경고 메일")
-                .emailCn("서버 온도가 80도를 초과했습니다.")
-                .dsptchPerson("admin@egov.com")
-                .recptnPerson("ops@egov.com")
-                .sndngDe(LocalDateTime.now())
+                .msgId(testMssageId)
+                .dsptchRsltCd("W") // Waiting / Ready
+                .emlTtl("보안 경고 메일")
+                .emlCn("서버 온도가 80도를 초과했습니다.")
+                .sndptyNm("admin@egov.com")
+                .rcvrNm("ops@egov.com")
                 .build();
         sentMailRepository.saveAndFlush(sentMail);
 
         // When: 비동기 발송 프로세스 호출 (AOP 프록시를 통해 비동기로 처리됨)
         mailAsyncProcessor.processSending(
                 testMssageId, 
-                sentMail.getSj(), 
-                sentMail.getEmailCn(), 
-                sentMail.getDsptchPerson(), 
-                sentMail.getRecptnPerson()
+                sentMail.getEmlTtl(), 
+                sentMail.getEmlCn(), 
+                sentMail.getSndptyNm(), 
+                sentMail.getRcvrNm()
         );
 
         // Then: 1. Awaitility를 사용하여 최대 10초 대기하며 @Recover에 의해 상태가 최종 실패('F')로 갱신될 때까지 폴링 검증
@@ -106,8 +105,8 @@ class MailResilienceIntegrationTest {
                         .orElseThrow(() -> new AssertionError("메일 이력이 삭제되었습니다."));
                 
                 // 최종적으로 3회 재시도가 완전히 끝나고 복구 메서드가 실행되었음을 의미하는 실패('F') 상태 검증
-                assertThat(processedMail.getSndngResultCode())
-                        .withFailMessage("회복탄력성 재시도 및 복구 처리가 완료되지 않았습니다. 현재 상태: %s", processedMail.getSndngResultCode())
+                assertThat(processedMail.getDsptchRsltCd())
+                        .withFailMessage("회복탄력성 재시도 및 복구 처리가 완료되지 않았습니다. 현재 상태: %s", processedMail.getDsptchRsltCd())
                         .isEqualTo("F");
             });
 

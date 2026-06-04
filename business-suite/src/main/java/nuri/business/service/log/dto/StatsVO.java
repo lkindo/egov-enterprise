@@ -14,7 +14,7 @@ public class StatsVO {
     private long statsCo;
     private long creatCo;
     private long updtCo;
-    private long inqireCo;
+    private long inqCnt;
     private long deleteCo;
     private long outptCo;
     private long errorCo;

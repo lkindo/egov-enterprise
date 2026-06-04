@@ -67,9 +67,9 @@ function FAQItem({ item }: { item: BoardPost }) {
                     {item.pstCn}
                   </p>
                   <div className="flex items-center gap-4 text-xs font-bold text-slate-300 uppercase tracking-widest pt-4">
-                    <span>Last Updated: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                    <span>Last Updated: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                     <span className="w-1 h-1 bg-slate-200 rounded-lg" />
-                    <span>Views: {item.inqireCo}</span>
+                    <span>Views: {item.inqCnt}</span>
                   </div>
                 </div>
               </div>

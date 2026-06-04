@@ -32,51 +32,43 @@ export interface BaseSearchDto {
 }
 
 export interface CommunityDto {
-  cmmntyId?: string;
-  cmmntyNm?: string;
-  cmmntyIntrcn?: string;
-  registSeCode?: string;
-  registSeCodeNm?: string;
+  cmntyId?: string;
+  cmntyNm?: string;
+  cmntyIntroCn?: string;
+  regSeCd?: string;
+  regSeCdNm?: string;
   tmpltId?: string;
-  tmplatNm?: string;
-  useAt?: string;
+  tmpltNm?: string;
+  useYn?: string;
   frstRgtrId?: string;
   frstRegisterNm?: string;
-  createdDate?: string;
+  crtDt?: string;
 }
 
 export interface BoardMasterDto {
   bbsId?: string;
-  bbsNm?: string;
   bbsTtl?: string;
   bbsExpln?: string;
   bbsTypeCd?: string;
   bbsAtrbCd?: string;
   ansPsbltyYn?: string;
   fileAtchPsbltyYn?: string;
-  atchPosblFileNumber?: number;
   atchPsbltyFileQty?: number;
-  atchPosblFileSize?: number;
-  atchPsblFileSizeLong?: number;
+  atchPsbltyFileSz?: number;
   tmpltId?: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   lastMdfrId?: string;
-  lastModifiedDate?: string;
-  useAt?: string;
+  mdfcnDt?: string;
   useYn?: string;
-  cmmntyId?: string;
+  cmntyId?: string;
   blogId?: string;
-  blogAt?: string;
   blogYn?: string;
-  commentAt?: string;
   ansYn?: string;
-  stsfdgAt?: string;
   stsfdgYn?: string;
-  // UI related fields (often joined in backend but may be missing in core DTO)
+  // UI related fields (often joined in backend)
   bbsTypeCdNm?: string;
-  bbsAtrbCdNm?: string; // 새롭게 정립된 카멜케이스 표준 조인 필드
-  tmplatNm?: string;
+  bbsAtrbCdNm?: string;
   frstRegisterNm?: string;
 }
 
@@ -96,7 +88,7 @@ export interface ScheduleDto {
   atchFileId?: string;
   reptSeCd?: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   lastMdfrId?: string;
-  modifiedDate?: string;
+  mdfcnDt?: string;
 }

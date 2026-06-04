@@ -18,7 +18,7 @@ public class MyPageService {
     private final MyPageContentRepository myPageContentRepository;
 
     public List<MyPageContentDto> getActiveMyPageContents() {
-        return myPageContentRepository.findByCntntsUseAt("Y").stream()
+        return myPageContentRepository.findByCntntsUseYn("Y").stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -35,7 +35,7 @@ public class MyPageService {
                 .cntntsId(dto.getCntntsId())
                 .cntntsNm(dto.getCntntsNm())
                 .cntcUrl(dto.getCntcUrl())
-                .cntntsUseAt(dto.getCntntsUseAt())
+                .cntntsUseYn(dto.getCntntsUseAt())
                 .cntntsLinkUrl(dto.getCntntsLinkUrl())
                 .cntntsDc(dto.getCntntsDc())
                 .build();
@@ -59,7 +59,7 @@ public class MyPageService {
                 .cntntsId(entity.getCntntsId())
                 .cntntsNm(entity.getCntntsNm())
                 .cntcUrl(entity.getCntcUrl())
-                .cntntsUseAt(entity.getCntntsUseAt())
+                .cntntsUseAt(entity.getCntntsUseYn())
                 .cntntsLinkUrl(entity.getCntntsLinkUrl())
                 .cntntsDc(entity.getCntntsDc())
                 .build();

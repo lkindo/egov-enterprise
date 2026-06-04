@@ -82,18 +82,18 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
                   <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-primary font-black text-sm border border-white/10 shadow-xl">OP</div>
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-1">Author</span>
-                    <span className="text-lg font-black">{list[0].frstRegisterNm}</span>
+                    <span className="text-lg font-black">{list[0].userNm}</span>
                   </div>
                 </div>
                 <div className="h-10 w-px bg-white/10 hidden md:block" />
                 <div className="flex items-center gap-3 text-white/60">
                   <Clock size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{list[0].createdDate ? String(list[0].createdDate).substring(0, 10) : 'Just now'}</span>
+                  <span className="text-sm font-bold tracking-tight">{list[0].crtDt ? String(list[0].crtDt).substring(0, 10) : 'Just now'}</span>
                 </div>
                 <div className="h-10 w-px bg-white/10 hidden md:block" />
                 <div className="flex items-center gap-3 text-white/60">
                   <Eye size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{(list[0].inqireCo || 0).toLocaleString()} views</span>
+                  <span className="text-sm font-bold tracking-tight">{(list[0].inqCnt || 0).toLocaleString()} views</span>
                 </div>
               </div>
             </div>
@@ -117,7 +117,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
               </Link>
               <div className="flex justify-between items-center pt-6 border-t border-slate-200/50">
                 <div className="flex gap-4">
-                  <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={16} className="text-slate-300" /> {item.inqireCo}</div>
+                  <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={16} className="text-slate-300" /> {item.inqCnt}</div>
                   <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><MessageSquare size={16} className="text-slate-300" /> 0</div>
                 </div>
                 <motion.div 
@@ -166,9 +166,9 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-black text-xs border border-white shadow-inner">OP</div>
                   <div className="flex flex-col">
                     <span className="text-sm font-black text-slate-800 leading-none mb-1.5">
-                      <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                      <HighlightText text={item.userNm} highlight={querySearchWrd} />
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -179,7 +179,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                     aria-label="좋아요"
                   >
                     <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} />
-                    <span className="text-sm font-black text-slate-900">{item.likeCo || 0}</span>
+                    <span className="text-sm font-black text-slate-900">{item.likeCnt || 0}</span>
                   </motion.button>
                   <Button variant="ghost" size="icon" className="rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400">
                     <Share2 size={20} />
@@ -212,23 +212,23 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className={cn(
                   "w-20 h-16 rounded-2xl flex items-center justify-center font-black text-3xl shadow-xl transition-all",
-                  item.qnaStatus === 'SOLVED' ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-amber-500 text-white shadow-amber-500/20"
+                  item.qnaSttsCd === 'SOLVED' ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-amber-500 text-white shadow-amber-500/20"
                 )}
               >
-                {item.qnaStatus === 'SOLVED' ? <CheckCircle2 size={40} /> : <HelpCircle size={40} /> }
+                {item.qnaSttsCd === 'SOLVED' ? <CheckCircle2 size={40} /> : <HelpCircle size={40} /> }
               </motion.div>
               <span className={cn(
                 "text-[10px] font-black uppercase tracking-[0.3em]",
-                item.qnaStatus === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
-              )}>{item.qnaStatus === 'SOLVED' ? 'Solved' : 'Awaiting'}</span>
+                item.qnaSttsCd === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
+              )}>{item.qnaSttsCd === 'SOLVED' ? 'Solved' : 'Awaiting'}</span>
             </div>
             <div className="flex-1 space-y-5">
               <div className="flex items-center gap-5">
                 <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest uppercase">
-                  {item.qnaCategory || 'GENERAL_QNA'}
+                  {item.qnaCatCd || 'GENERAL_QNA'}
                 </Badge>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                <span className="text-[10px] font-black text-slate-400 flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                <span className="text-[10px] font-black text-slate-400 flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                 <h4 className="text-3xl font-black text-slate-900 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
@@ -239,13 +239,13 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black border border-white shadow-sm">AD</div>
                   <span className="text-xs font-black text-slate-600 uppercase tracking-tight">
-                    <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                    <HighlightText text={item.userNm} highlight={querySearchWrd} />
                   </span>
                 </div>
                 <div className="h-4 w-px bg-slate-100" />
                 <div className="flex items-center gap-2.5 text-slate-400 font-black text-[10px] tracking-widest uppercase">
                   <MessageSquare size={16} className="text-amber-400" />
-                  <span>{item.commentCo || 0} Responses</span>
+                  <span>{item.commentCnt || 0} Responses</span>
                 </div>
                 <div className="h-4 w-px bg-slate-100" />
                 <motion.button 
@@ -255,7 +255,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                   aria-label="좋아요"
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
-                  <span>{item.likeCo || 0} Appreciations</span>
+                  <span>{item.likeCnt || 0} Appreciations</span>
                 </motion.button>
               </div>
             </div>
@@ -283,7 +283,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
   const firstDayOfMonth = new Date(year, month, 1).getDay();
 
   const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
-    const targetDate = post.eventDate || post.createdDate;
+    const targetDate = post.evntDt || post.crtDt;
     if (targetDate) {
       const d = new Date(targetDate);
       if (d.getFullYear() === year && d.getMonth() === month) {
@@ -376,7 +376,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate uppercase tracking-tight",
-                      post.noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white"
+                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white"
                     )}
                     title={post.pstTtl}
                   >
@@ -457,9 +457,9 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
                       {item.pstCn}
                     </p>
                     <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-slate-50">
-                      <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                      <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-100" />
-                      <span className="flex items-center gap-2"><Eye size={12} /> Reach: {item.inqireCo} Units</span>
+                      <span className="flex items-center gap-2"><Eye size={12} /> Reach: {item.inqCnt} Units</span>
                     </div>
                   </div>
                 </div>
@@ -508,7 +508,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
               <div className="flex-1 p-10 space-y-6">
                 <div className="flex items-center gap-5">
                   <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 rounded-lg border-slate-100 px-4 py-1.5">Documentation_v3.0</Badge>
-                  <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                  <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                 </div>
                 <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                   <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
@@ -520,12 +520,12 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Compiler</span>
                     <span className="text-xs font-black text-slate-800 uppercase tracking-tight">
-                      <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                       <HighlightText text={item.userNm} highlight={querySearchWrd} />
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Global_Index</span>
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{(item.inqireCo || 0).toLocaleString()}</span>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{(item.inqCnt || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -570,19 +570,19 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
               </TableCell>
               <TableCell className="text-center py-5">
                 <div className="font-bold text-xs text-slate-600 tracking-tight">
-                  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                  <HighlightText text={item.userNm} highlight={querySearchWrd} />
                 </div>
               </TableCell>
               <TableCell className="text-center py-5">
                 <div className="font-bold text-xs text-slate-400 tracking-tight">
-                  {item.createdDate ? String(item.createdDate).substring(0, 10).replace(/-/g, '.') : '-'}
+                  {item.crtDt ? String(item.crtDt).substring(0, 10).replace(/-/g, '.') : '-'}
                 </div>
               </TableCell>
               <TableCell className="text-center py-5">
                 <div className="flex items-center justify-center gap-2">
                   <div className="font-bold text-[10px] text-primary bg-primary/5 px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-primary/10">
                     <Eye size={12} className="opacity-50" />
-                    {item.inqireCo}
+                    {item.inqCnt}
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -591,7 +591,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                     aria-label="좋아요"
                   >
                     <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
-                    <span>{item.likeCo || 0}</span>
+                    <span>{item.likeCnt || 0}</span>
                   </motion.button>
                 </div>
               </TableCell>

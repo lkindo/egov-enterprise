@@ -28,7 +28,7 @@ public class SatisfactionService extends BaseAbstractService {
                 .pstId(dto.getPstId())
                 .dgstfnScr(dto.getDgstfnScr())
                 .dgstfnCn(dto.getDgstfnCn())
-                .pswd(dto.getPassword())
+                .pswd(dto.getPswd())
                 .frstRgtrId(userId)
                 .build();
         satisfactionRepository.save(entity);
@@ -45,7 +45,7 @@ public class SatisfactionService extends BaseAbstractService {
         Satisfaction entity = satisfactionRepository.findById(Objects.requireNonNull(dto.getDgstfnSn()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(dto.getDgstfnScr(), dto.getDgstfnCn(), dto.getPassword());
+        entity.update(dto.getDgstfnScr(), dto.getDgstfnCn(), dto.getPswd());
         entity.setLastMdfrId(userId);
     }
 
@@ -56,7 +56,7 @@ public class SatisfactionService extends BaseAbstractService {
     }
 
     @Transactional
-    public void deleteSatisfaction(Long satisfactionId, String userId, String password) {
+    public void deleteSatisfaction(Long satisfactionId, String userId, String pswd) {
         Satisfaction entity = satisfactionRepository.findById(satisfactionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -87,9 +87,9 @@ public class SatisfactionService extends BaseAbstractService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    public boolean checkPassword(Long satisfactionId, String password) {
+    public boolean checkPassword(Long satisfactionId, String pswd) {
         return satisfactionRepository.findById(satisfactionId)
-                .map(s -> Objects.equals(s.getPswd(), password))
+                .map(s -> Objects.equals(s.getPswd(), pswd))
                 .orElse(false);
     }
 }

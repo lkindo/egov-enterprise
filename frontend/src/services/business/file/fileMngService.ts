@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
@@ -12,8 +12,7 @@ export interface SharedFileDetail {
  fileSize: number;
  fileStrePath: string;
  streFileNm: string;
- creatDt: string;
- createdDate?: string;
+ crtDt: string;
 }
 
 const BASE_URL = '/files';

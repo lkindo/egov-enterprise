@@ -60,7 +60,7 @@ class NoteServiceImplTest {
         String userId = "user1";
         String searchWrd = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteDsptchId("T1").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").build();
         Page<NoteTrnsmit> page = new PageImpl<>(List.of(trnsmit));
 
         given(noteTrnsmitRepository.searchNoteTrnsmits(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
@@ -79,7 +79,7 @@ class NoteServiceImplTest {
         String userId = "user1";
         String searchWrd = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        NoteRecptn recptn = NoteRecptn.builder().noteRecptnId("R1").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId("R1").build();
         Page<NoteRecptn> page = new PageImpl<>(List.of(recptn));
 
         given(noteRecptnRepository.searchNoteRecptns(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
@@ -96,8 +96,8 @@ class NoteServiceImplTest {
     void getNoteDetail_sent_success() {
         // given
         String relationId = "T1";
-        Note note = Note.builder().noteId("N1").noteSj("Title").noteCn("Content").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteDsptchId(relationId).note(note).dsptchUserId("user1").build();
+        Note note = Note.builder().noteId("N1").noteTtl("Title").noteCn("Content").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).note(note).sndrId("user1").build();
 
         given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
 
@@ -129,15 +129,15 @@ class NoteServiceImplTest {
     void getNoteDetail_received_success() {
         // given
         String relationId = "R1";
-        Note note = Note.builder().noteId("N1").noteSj("Title").noteCn("Content").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteDsptchId("T1").dsptchUserId("user1").build();
+        Note note = Note.builder().noteId("N1").noteTtl("Title").noteCn("Content").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").sndrId("user1").build();
         NoteRecptn recptn = NoteRecptn.builder()
-                .noteRecptnId(relationId)
+                .noteRcptnId(relationId)
                 .note(note)
                 .noteDsptch(trnsmit)
-                .rcverId("user2")
+                .rcvrId("user2")
                 .openYn("N")
-                .recptnSeCd("0")
+                .rcptnSeCd("0")
                 .build();
 
         given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));

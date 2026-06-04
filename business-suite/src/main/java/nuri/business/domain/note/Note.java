@@ -52,18 +52,4 @@ public class Note extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<NoteTrnsmit> noteTrnsmits = new java.util.ArrayList<>();
-
-    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
-    public String getNoteSj() { return this.noteTtl; }
-
-    // ----- [Legacy Setter Aliases for Backwards Compatibility] -----
-    public void setNoteSj(String noteSj) { this.noteTtl = noteSj; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-    public static abstract class NoteBuilder<C extends Note, B extends NoteBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B noteSj(String noteSj) {
-            this.noteTtl = noteSj;
-            return self();
-        }
-    }
 }

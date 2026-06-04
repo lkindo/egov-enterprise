@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @Builder
@@ -18,76 +19,59 @@ import java.time.LocalDateTime;
 public class MemoReportDto {
 
     @Schema(description = "보고아이디")
-    private String reportId;
+    private String rptId;
 
     @Schema(description = "보고제목")
-    private String reportSubject;
+    private String rptTtl;
 
     @Schema(description = "보고일자")
-    private String reprtDe;
+    private String memoRptYmd;
 
     @Schema(description = "작성자아이디")
-    private String writerId;
+    private String userId;
 
     @Schema(description = "작성자명")
     @Size(max = 100)
     private String wrterNm;
 
     @Schema(description = "보고대상자아이디")
-    private String reportrId;
+    private String rptrId;
 
     @Schema(description = "보고대상자명")
-    private String reportrNm;
+    private String rptrNm;
 
     @Schema(description = "보고내용")
-    private String reportContents;
+    private String rptCn;
 
     @Schema(description = "첨부파일아이디")
     @Size(max = 30)
     private String atchFileId;
 
     @Schema(description = "지시사항내용")
-    private String instrCn;
+    private String drctnMttr;
 
     @Schema(description = "지시사항등록일시")
-    private String instrRegDt;
+    private String drctnMttrRegDt;
 
     @Schema(description = "보고대상자조회일시")
-    private String reportrInqireDt;
+    private String rptrInqDt;
 
     @Schema(description = "생성일시")
     private LocalDateTime crtDt;
 
-    public String getFrstRgtrId() {
-        return writerId;
-    }
-
-    // standard
-    public String getReprtId() { return reportId; }
-    public String getReprtTtl() { return reportSubject; }
-    public String getReprtCn() { return reportContents; }
-
-    // legacy
-    public String getRptId() { return reportId; }
-    public String getRptTtl() { return reportSubject; }
-    public String getRptYmd() { return reprtDe; }
-    public String getRptCn() { return reportContents; }
-    public String getRptUserId() { return reportrId; }
-    public String getRptInqDt() { return reportrInqireDt; }
-    
     public static MemoReportDto from(MemoReport entity) {
         if (entity == null) return null;
         return MemoReportDto.builder()
-                .reportId(entity.getReportId())
-                .reportSubject(entity.getReportSubject())
-                .reprtDe(entity.getReprtDe()) 
-                .writerId(entity.getWriterId())
-                .reportrId(entity.getReportrId())
-                .reportContents(entity.getReportContents())
+                .rptId(entity.getRptId())
+                .rptTtl(entity.getRptTtl())
+                .memoRptYmd(entity.getMemoRptYmd()) 
+                .userId(entity.getUserId())
+                .rptrId(entity.getRptrId())
+                .rptCn(entity.getRptCn())
                 .atchFileId(entity.getAtchFileId())
-                .instrCn(entity.getInstrCn())
-                .instrRegDt(entity.getInstrRegDt())
-                .reportrInqireDt(entity.getReportrInqireDt())
+                .drctnMttr(entity.getDrctnMttr())
+                .drctnMttrRegDt(entity.getDrctnMttrRegDt())
+                .rptrInqDt(entity.getRptrInqDt())
                 .crtDt(entity.getCrtDt())
                 .build();
     }

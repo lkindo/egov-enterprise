@@ -48,8 +48,8 @@ class BoardEntityTest {
     void countUpdateTest() {
         Board board = Board.builder().cmntCnt(0).fileCnt(0).build();
         
-        board.setCommentCnt(5);
-        assertThat(board.getCommentCnt()).isEqualTo(5);
+        board.setCmntCnt(5);
+        assertThat(board.getCmntCnt()).isEqualTo(5);
         
         board.setFileCnt(3);
         assertThat(board.getFileCnt()).isEqualTo(3);

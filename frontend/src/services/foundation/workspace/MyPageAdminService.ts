@@ -1,17 +1,17 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
 export interface MyPageContent {
  cntntsId: string;
  cntntsNm: string;
  cntcUrl: string;
- cntntsUseAt: 'Y' | 'N';
+ cntntsUseYn: 'Y' | 'N';
  cntntsLinkUrl: string;
  cntntsDc: string;
 }
 
 /**
- * 留덉씠페이지 肄섑뀗痢관리님쒕퉬님(Admin)
+ * 留덉씠페이지€ 肄섑뀗痢관리님쒕퉬님(Admin)
  */
 class MyPageAdminService extends AdminService {
  constructor() {

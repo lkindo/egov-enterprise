@@ -23,7 +23,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     void menuCrud() {
         // given
         Menu menu = Menu.builder()
-                .id(9999L)
+                .menuSn(9999L)
                 .menuNm("테스트 메뉴")
                 .menuOrdr(1)
                 .upMenuSn(0L)
@@ -55,13 +55,13 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     void searchMenus() {
         // given
         menuRepository.save(Menu.builder()
-                .id(1000L)
+                .menuSn(1000L)
                 .menuNm("시스템 관리")
                 .menuOrdr(1)
                 .upMenuSn(0L)
                 .build());
         menuRepository.save(Menu.builder()
-                .id(1001L)
+                .menuSn(1001L)
                 .menuNm("사용자 관리")
                 .menuOrdr(2)
                 .upMenuSn(1000L)

@@ -91,7 +91,7 @@ export const MESSAGES = {
       codeId: '코드 ID',
       codeNm: '코드명',
       codeDc: '코드 설명',
-      useAt: '사용 여부',
+      useYn: '사용 여부',
       group: '코드 그룹',
       detail: '상세 코드',
       newDetail: '신규 상세 코드 등록',

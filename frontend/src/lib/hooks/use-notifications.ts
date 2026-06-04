@@ -8,12 +8,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 
 export interface Notification {
-  ntfcId: string;
-  ntfcSj: string;
-  ntfcCn: string;
-  ntfcPnttm: string;
+  notiSn: string;
+  notiTtlNm: string;
+  notiCn: string;
+  notiDt: string;
   readYn: 'Y' | 'N';
-  type?: string;
+  type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
 }
 
 export function useNotifications() {
@@ -35,12 +35,12 @@ export function useNotifications() {
       const countData = countResult as number | { count: number };
 
       const actualList = (Array.isArray(list) ? list : (list?.list || [])).map((n: any) => ({
-        ntfcId: n.ntfcId || n.ntfcNo,
-        ntfcSj: n.ntfcSj,
-        ntfcCn: n.ntfcCn,
-        ntfcPnttm: n.ntfcPnttm || n.ntfcTime || n.createdDate,
-        readYn: n.readYn || n.isRead || 'N',
-        type: n.type
+        notiSn: n.notiSn,
+        notiTtlNm: n.notiTtlNm,
+        notiCn: n.notiCn,
+        notiDt: n.notiDt || n.crtDt || new Date().toISOString(),
+        readYn: n.readYn || 'N',
+        type: n.type || (n.notiTtlNm?.includes('보안') ? 'SECURITY' : n.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
       }));
       setNotifications(actualList);
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
@@ -57,19 +57,19 @@ export function useNotifications() {
     
     // Normalize notification object to match frontend expectations
     const newNotif: Notification = {
-      ntfcId: rawNotif.ntfcId || rawNotif.ntfcNo,
-      ntfcSj: rawNotif.ntfcSj,
-      ntfcCn: rawNotif.ntfcCn,
-      ntfcPnttm: rawNotif.ntfcPnttm || rawNotif.ntfcTime || new Date().toISOString(),
-      readYn: rawNotif.readYn || rawNotif.isRead || 'N',
-      type: rawNotif.type
+      notiSn: rawNotif.notiSn,
+      notiTtlNm: rawNotif.notiTtlNm,
+      notiCn: rawNotif.notiCn,
+      notiDt: rawNotif.notiDt || rawNotif.crtDt || new Date().toISOString(),
+      readYn: rawNotif.readYn || 'N',
+      type: rawNotif.type || (rawNotif.notiTtlNm?.includes('보안') ? 'SECURITY' : rawNotif.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
     };
 
     setNotifications(prev => [newNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
 
     // 실시간 토스트 표시
-    toast(newNotif.ntfcSj || '새로운 알림이 도착했습니다.', 'success');
+    toast(newNotif.notiTtlNm || '새로운 알림이 도착했습니다.', 'success');
   }, [toast]);
 
   // 초기 로드 및 WebSocket 구독 설정
@@ -105,7 +105,7 @@ export function useNotifications() {
     try {
       await client.post(`/notifications/${id}/read`);
       // Update local state immediately for better UX
-      setNotifications(prev => prev.map(n => n.ntfcId === id ? { ...n, readYn: 'Y' } : n));
+      setNotifications(prev => prev.map(n => n.notiSn === id ? { ...n, readYn: 'Y' } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
@@ -114,7 +114,7 @@ export function useNotifications() {
   };
 
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => n.readYn === 'N').map(n => n.ntfcId);
+    const unreadIds = notifications.filter(n => n.readYn === 'N').map(n => n.notiSn);
     if (unreadIds.length === 0) return;
 
     try {

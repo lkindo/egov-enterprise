@@ -28,10 +28,10 @@ class PrivacyLogRepositoryTest extends PersistenceTestSupport {
     void searchPrivacyLogs() {
         // given
         PrivacyLog log = PrivacyLog.builder()
-                .requestId("REQ_01")
-                .inquiryDatetime(LocalDateTime.now())
-                .inquiryInfo("Test Info")
-                .requesterId("user01")
+                .dmndId("REQ_01")
+                .inqDt(LocalDateTime.now())
+                .inqInfo("Test Info")
+                .dmndUserId("user01")
                 .build();
         privacyLogRepository.save(log);
         entityManager.flush();
@@ -42,7 +42,7 @@ class PrivacyLogRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).isNotEmpty();
-        assertThat(result.getContent().get(0).getInquiryInfo()).contains("Test");
+        assertThat(result.getContent().get(0).getInqInfo()).contains("Test");
     }
 
     @Test
@@ -51,9 +51,9 @@ class PrivacyLogRepositoryTest extends PersistenceTestSupport {
         // given
         LocalDateTime targetDate = LocalDateTime.of(2024, 4, 8, 10, 0);
         PrivacyLog log = PrivacyLog.builder()
-                .requestId("REQ_02")
-                .inquiryDatetime(targetDate)
-                .inquiryInfo("Date Test")
+                .dmndId("REQ_02")
+                .inqDt(targetDate)
+                .inqInfo("Date Test")
                 .build();
         privacyLogRepository.save(log);
         entityManager.flush();

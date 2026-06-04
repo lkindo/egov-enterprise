@@ -22,8 +22,8 @@ public class NotificationEventListener {
         log.info("Handling notification event for user: {}, message: {}", event.getUserId(), event.getMessage());
 
         NotificationDto dto = NotificationDto.builder()
-                .ntfcSj("Notification: " + event.getType())
-                .ntfcCn(event.getMessage())
+                .notiTtlNm("Notification: " + event.getType())
+                .notiCn(event.getMessage())
                 .build();
 
         notificationService.createNotification(event.getUserId(), dto);

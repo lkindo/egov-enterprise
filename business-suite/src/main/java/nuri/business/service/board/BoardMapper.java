@@ -21,13 +21,11 @@ public interface BoardMapper {
     BoardDto toDto(Board entity);
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "userNm", source = "frstRegisterNm")
     @Mapping(target = "crtDt", source = "crtDt")
     @Mapping(target = "upPstId", source = "upPstId")
     BoardDto toDto(BoardSearchResult result);
 
     @Mapping(target = "pstId", source = "pstId")
-    @Mapping(target = "userNm", source = "frstRegisterNm")
     @Mapping(target = "crtDt", source = "crtDt")
     @Mapping(target = "upPstId", source = "upPstId")
     BoardDto toDto(BoardDetailResult detail);
@@ -49,7 +47,6 @@ public interface BoardMapper {
     @Mapping(target = "pstId", ignore = true)
     @Mapping(target = "ansSn", source = "ansSn")
     @Mapping(target = "upPstId", source = "upPstId")
-    @Mapping(target = "ansLvl", source = "replyLc")
     @Mapping(target = "useYn", source = "request.useYn", defaultValue = "Y")
     @Mapping(target = "qnaSttsCd", source = "request.qnaSttsCd", defaultValue = "OPEN")
     @Mapping(target = "evntDt", source = "request.evntDt", qualifiedByName = "parseDateTime")
@@ -59,7 +56,7 @@ public interface BoardMapper {
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "userNm", source = "userNm")
     @Mapping(target = "sortOrdr", source = "sortOrdr")
-    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long ansSn, String upPstId, Integer replyLc);
+    Board toReplyEntity(BoardSaveRequest request, String bbsId, String userId, String userNm, Long sortOrdr, Long ansSn, String upPstId, Integer ansLv);
 
     @Named("formatDate")
     default String formatDate(LocalDateTime date) {

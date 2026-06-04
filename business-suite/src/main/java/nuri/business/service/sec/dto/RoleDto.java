@@ -25,13 +25,4 @@ public class RoleDto {
     private String roleSort;
     private String roleCrtYmd;
 
-    @JsonIgnore
-    public String getRoleCreatDe() {
-        return roleCrtYmd;
-    }
-
-    @JsonIgnore
-    public void setRoleCreatDe(String roleCreatDe) {
-        this.roleCrtYmd = roleCreatDe;
-    }
 }

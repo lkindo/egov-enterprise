@@ -57,8 +57,4 @@ public class AddressBook extends BaseEntity {
         this.rlsScopeCd = rlsScopeCd;
         this.useYn = useYn;
     }
-
-    // legacy
-    public String getUseAt() { return useYn; }
-    public void setUseAt(String v) { this.useYn = v; }
 }

@@ -91,15 +91,6 @@ public class InformalSanction extends BaseEntity {
         }
     }
 
-    // legacy aliases
-    public String getInformalSanctionId() { return ifmlAtrzId; }
-    public String getJobSeCode() { return taskSeCd; }
-    public String getApplicantId() { return aplcntId; }
-    public String getRequestDe() { return reqYmd; }
-    public String getSanctionerId() { return aprvrId; }
-    public String getConfmAt() { return aprvYn; }
-    public LocalDateTime getSanctionDt() { return atrzDt; }
-    public String getReturnResn() { return rjctRsnCn; }
 
     private void validateDateFormat(String ymd) {
         if (ymd == null || ymd.isEmpty()) {

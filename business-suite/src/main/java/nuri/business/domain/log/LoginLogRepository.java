@@ -17,7 +17,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) AS statsDate,
                                '' AS conectMethod,
-                               0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
+                               0 AS creatCo, 0 AS updtCo, 0 AS inqCnt, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
                           FROM TB_LOGIN_LOG
                          WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CRT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
@@ -36,7 +36,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) AS statsDate,
                                '' AS conectMethod,
-                               0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
+                               0 AS creatCo, 0 AS updtCo, 0 AS inqCnt, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
                           FROM TB_LOGIN_LOG
                          WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CRT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
@@ -55,7 +55,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         SELECT COUNT(LOGIN_ID) AS statsCo,
                                SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 7, 2) AS statsDate,
                                '' AS conectMethod,
-                               0 AS creatCo, 0 AS updtCo, 0 AS inqireCo, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
+                               0 AS creatCo, 0 AS updtCo, 0 AS inqCnt, 0 AS deleteCo, 0 AS outptCo, 0 AS errorCo
                           FROM TB_LOGIN_LOG
                          WHERE LOGIN_ID = :detailStatsKind
                            AND to_char(CRT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate

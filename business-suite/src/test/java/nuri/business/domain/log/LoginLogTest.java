@@ -11,12 +11,12 @@ class LoginLogTest {
     @DisplayName("LoginLog 빌더 확인")
     void testBuilder() {
         LoginLog log = LoginLog.builder()
-                .loginId("user01")
-                .loginIp("127.0.0.1")
-                .loginMthd("ID/PWD")
+                .userId("user01")
+                .lgnIpAddr("127.0.0.1")
+                .cntnMthdCd("ID/PWD")
                 .build();
 
-        assertEquals("user01", log.getLoginId());
-        assertEquals("127.0.0.1", log.getLoginIp());
+        assertEquals("user01", log.getUserId());
+        assertEquals("127.0.0.1", log.getLgnIpAddr());
     }
 }

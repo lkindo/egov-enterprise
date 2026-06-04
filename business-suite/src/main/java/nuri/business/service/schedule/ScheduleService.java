@@ -68,19 +68,19 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     @Transactional
     public String createSchedule(String userId, ScheduleDto dto) {
         Schedule entity = Schedule.builder()
-                .schdlId(dto.getSchdulId())
-                .schdlSeCd(dto.getSchdulSe())
-                .schdlDeptId(dto.getSchdulDeptId())
-                .schdlKndCd(dto.getSchdulKindCode())
-                .schdlNm(dto.getSchdulNm())
-                .schdlCn(dto.getSchdulCn())
-                .schdlBgngYmd(dto.getSchdulBgnde())
-                .schdlEndYmd(dto.getSchdulEndde())
-                .schdlPlcNm(dto.getSchdulPlace())
-                .schdlImprtCd(dto.getSchdulIpcrCode())
-                .schdlPicId(dto.getSchdulChargerId())
-                .schdlIpAddr(dto.getSchdulIpAdres())
-                .reptSeCd(dto.getReptitSeCode())
+                .schdlId(dto.getSchdlId())
+                .schdlSeCd(dto.getSchdlSeCd())
+                .schdlDeptId(dto.getSchdlDeptId())
+                .schdlKndCd(dto.getSchdlKndCd())
+                .schdlNm(dto.getSchdlNm())
+                .schdlCn(dto.getSchdlCn())
+                .schdlBgngYmd(dto.getSchdlBgngYmd())
+                .schdlEndYmd(dto.getSchdlEndYmd())
+                .schdlPlcNm(dto.getSchdlPlcNm())
+                .schdlImprtCd(dto.getSchdlImprtCd())
+                .schdlPicId(dto.getSchdlPicId())
+                .schdlIpAddr(dto.getSchdlIpAddr())
+                .reptSeCd(dto.getReptSeCd())
                 .atchFileId(dto.getAtchFileId())
                 .frstRgtrId(userId)
                 .build();
@@ -95,16 +95,16 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.updateAll(
-                dto.getSchdulNm(),
-                dto.getSchdulCn(),
-                dto.getSchdulSe(),
-                dto.getSchdulKindCode(),
-                dto.getSchdulBgnde(),
-                dto.getSchdulEndde(),
-                dto.getSchdulPlace(),
-                dto.getSchdulIpcrCode(),
-                dto.getSchdulChargerId(),
-                dto.getReptitSeCode());
+                dto.getSchdlNm(),
+                dto.getSchdlCn(),
+                dto.getSchdlSeCd(),
+                dto.getSchdlKndCd(),
+                dto.getSchdlBgngYmd(),
+                dto.getSchdlEndYmd(),
+                dto.getSchdlPlcNm(),
+                dto.getSchdlImprtCd(),
+                dto.getSchdlPicId(),
+                dto.getReptSeCd());
         
         entity.setLastMdfrId(userId);
     }

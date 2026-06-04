@@ -31,27 +31,21 @@ public class FileDetail extends BaseEntity {
 
     @Id
     @Column(name = "atch_file_seq")
-    @com.fasterxml.jackson.annotation.JsonProperty("fileSn")
     private Integer atchFileSeq;
 
     @Column(length = 1000)
-    @com.fasterxml.jackson.annotation.JsonProperty("fileStreCours")
     private String fileStrgPath; // 파일저장경로
 
     @Column(length = 100)
-    @com.fasterxml.jackson.annotation.JsonProperty("streFileNm")
     private String strgFileNm; // 저장파일명
 
     @Column(length = 100)
-    @com.fasterxml.jackson.annotation.JsonProperty("orignlFileNm")
     private String orgnlFileNm; // 원본파일명
 
     @Column(length = 20)
-    @com.fasterxml.jackson.annotation.JsonProperty("fileExtsn")
     private String fileEstn; // 확장자
 
     @Column
-    @com.fasterxml.jackson.annotation.JsonProperty("fileMg")
     private Long fileSz; // 파일크기
 
     @Column(length = 4000)
@@ -67,59 +61,5 @@ public class FileDetail extends BaseEntity {
         this.fileEstn = fileExtsn;
         this.fileSz = fileMg;
         this.fileCn = fileCn;
-    }
-
-    // ----- [Legacy Getter/Setter & Builder Aliases] -----
-
-    public Integer getFileSn() { return this.atchFileSeq; }
-    public void setFileSn(Integer v) { this.atchFileSeq = v; }
-
-    public String getFileStreCours() { return this.fileStrgPath; }
-    public void setFileStreCours(String v) { this.fileStrgPath = v; }
-
-    public String getStreFileNm() { return this.strgFileNm; }
-    public void setStreFileNm(String v) { this.strgFileNm = v; }
-
-    public String getOrignlFileNm() { return this.orgnlFileNm; }
-    public void setOrignlFileNm(String v) { this.orgnlFileNm = v; }
-
-    public String getFileExtsn() { return this.fileEstn; }
-    public void setFileExtsn(String v) { this.fileEstn = v; }
-
-    public Long getFileMg() { return this.fileSz; }
-    public void setFileMg(Long v) { this.fileSz = v; }
-
-    public static abstract class FileDetailBuilder<C extends FileDetail, B extends FileDetailBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private Integer atchFileSeq;
-        private String fileStrgPath;
-        private String strgFileNm;
-        private String orgnlFileNm;
-        private String fileEstn;
-        private Long fileSz;
-
-        public B fileSn(Integer fileSn) {
-            this.atchFileSeq = fileSn;
-            return self();
-        }
-        public B fileStreCours(String fileStreCours) {
-            this.fileStrgPath = fileStreCours;
-            return self();
-        }
-        public B streFileNm(String streFileNm) {
-            this.strgFileNm = streFileNm;
-            return self();
-        }
-        public B orignlFileNm(String orignlFileNm) {
-            this.orgnlFileNm = orignlFileNm;
-            return self();
-        }
-        public B fileExtsn(String fileExtsn) {
-            this.fileEstn = fileExtsn;
-            return self();
-        }
-        public B fileMg(Long fileMg) {
-            this.fileSz = fileMg;
-            return self();
-        }
     }
 }

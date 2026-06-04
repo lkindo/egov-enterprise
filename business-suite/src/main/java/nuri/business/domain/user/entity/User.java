@@ -49,8 +49,8 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 300)
     private String pswdHint;
 
-    @Column(name = "pswd_crans", length = 300)
-    private String pswdCnsr;
+    @Column(length = 300)
+    private String pswdCrans;
 
     private LocalDateTime chgPswdLastDt;
 
@@ -67,8 +67,8 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 32)
     private String otpSecret;
 
-    @Column(name = "cert_dn_vl", length = 100)
-    private String crtfcDnValue;
+    @Column(length = 100)
+    private String certDnVl;
 
     // ■ 개인 정보
     @Column(length = 256)
@@ -91,11 +91,11 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 5)
     private String zip;
 
-    @Column(name = "home_addr", length = 300)
-    private String baseAddr;
+    @Column(length = 300)
+    private String homeAddr;
 
-    @Column(name = "daddr", length = 300)
-    private String dtlAddr;
+    @Column(length = 300)
+    private String daddr;
 
     @Column(length = 4)
     private String areaNo;
@@ -113,19 +113,19 @@ public class User extends BaseEntity implements Serializable {
     private String officeTelno;
 
     // ■ 조직 및 권한
-    @Column(length = 30)
+    @Column(name = "group_id", length = 30)
     private String groupId;
 
-    @Column(length = 20)
+    @Column(name = "ognz_id", length = 20)
     private String ognzId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "groupId", referencedColumnName = "group_id", insertable = false, updatable = false,
+    @JoinColumn(name = "group_id", referencedColumnName = "group_id", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.group.GroupManage groupManage;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ognzId", referencedColumnName = "ognz_id", insertable = false, updatable = false,
+    @JoinColumn(name = "ognz_id", referencedColumnName = "ognz_id", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.organization.OrganizationManage organizationManage;
 
@@ -170,16 +170,16 @@ public class User extends BaseEntity implements Serializable {
     @Column(updatable = false, length = 8)
     private String sbscrbYmd;
 
-    public void update(String userNm, String pswdHint, String pswdCnsr,
+    public void update(String userNm, String pswdHint, String pswdCrans,
             String emplNo, String rrno, String gndrCd, String brthYmd,
             String areaNo, String middleTelno, String endTelno,
-            String faxNo, String baseAddr, String dtlAddr, String zip,
+            String faxNo, String homeAddr, String daddr, String zip,
             String officeTelno, String mblTelno, String emlAddr, String ofcpsNm,
-            String groupId, String ognzId, String pstinstCd, Role role, String crtfcDnValue) {
+            String groupId, String ognzId, String pstinstCd, Role role, String certDnVl) {
         if (userNm != null)
             this.userNm = userNm;
         this.pswdHint = pswdHint;
-        this.pswdCnsr = pswdCnsr;
+        this.pswdCrans = pswdCrans;
         this.emplNo = emplNo;
         this.rrno = rrno;
         this.gndrCd = gndrCd;
@@ -188,8 +188,8 @@ public class User extends BaseEntity implements Serializable {
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
         this.faxNo = faxNo;
-        this.baseAddr = baseAddr;
-        this.dtlAddr = dtlAddr;
+        this.homeAddr = homeAddr;
+        this.daddr = daddr;
         this.zip = zip;
         this.officeTelno = officeTelno;
         this.mblTelno = mblTelno;
@@ -200,7 +200,7 @@ public class User extends BaseEntity implements Serializable {
         this.pstinstCd = pstinstCd;
         if (role != null)
             this.role = role;
-        this.crtfcDnValue = crtfcDnValue;
+        this.certDnVl = certDnVl;
     }
 
     public void updatePassword(String pswd) {
@@ -214,26 +214,7 @@ public class User extends BaseEntity implements Serializable {
         this.lckLastPnttm = null;
     }
 
-    public void setAuthorCode(String authorCode) {
-        if (authorCode != null) {
-            try {
-                String cleanRole = authorCode.startsWith("ROLE_") ? authorCode.substring(5) : authorCode;
-                this.role = Role.USER;
-                for (Role r : Role.values()) {
-                    if (r.name().equalsIgnoreCase(cleanRole)) {
-                        this.role = r;
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                this.role = Role.USER;
-            }
-        }
-    }
 
-    public String getAuthorCode() {
-        return this.role != null ? this.role.name() : null;
-    }
 
     public void incrementLockCount() {
         if (this.lckCnt == null) {
@@ -247,7 +228,7 @@ public class User extends BaseEntity implements Serializable {
         this.userSttsCd = status;
     }
 
-    public void updateOgnzId(String ognzId) {
+    public void updateOrgnztId(String ognzId) {
         this.ognzId = ognzId;
     }
 }

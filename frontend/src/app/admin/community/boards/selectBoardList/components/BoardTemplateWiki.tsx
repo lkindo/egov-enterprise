@@ -44,7 +44,7 @@ export const BoardTemplateWiki = ({ list, bbsId, querySearchWrd }: BoardTemplate
             <div className="flex-1 p-8 space-y-4">
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-xs font-bold uppercase tracking-widest text-slate-400 rounded-none border-slate-200">Doc v1.0</Badge>
-                <span className="text-xs font-bold text-slate-300 ">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                <span className="text-xs font-bold text-slate-300 ">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                 <h4 className="text-2xl font-bold text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">
@@ -56,12 +56,12 @@ export const BoardTemplateWiki = ({ list, bbsId, querySearchWrd }: BoardTemplate
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Author</span>
                   <span className="text-xs font-bold text-slate-600">
-                    <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                    <HighlightText text={item.userNm} highlight={querySearchWrd} />
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Views</span>
-                  <span className="text-xs font-bold text-slate-600">{item.inqireCo}</span>
+                  <span className="text-xs font-bold text-slate-600">{item.inqCnt}</span>
                 </div>
               </div>
             </div>

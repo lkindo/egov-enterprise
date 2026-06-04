@@ -29,8 +29,8 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         // given
         LoginLog log = LoginLog.builder()
                 .logId("LOG_001")
-                .loginMthd("LOGIN")
-                .loginIp("127.0.0.1")
+                .cntnMthdCd("LOGIN")
+                .lgnIpAddr("127.0.0.1")
                 .build();
         loginLogRepository.save(log);
         entityManager.flush();

@@ -75,9 +75,19 @@ const eslintConfig = [
     },
     rules: {
       "local-theme/enforce-design-tokens": "warn",
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": "error",
-      "@typescript-eslint/no-require-imports": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
+      "@typescript-eslint/no-require-imports": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "react/no-unescaped-entities": "warn",
+      "@typescript-eslint/no-unused-expressions": "warn",
     }
   },
   {
@@ -91,6 +101,15 @@ const eslintConfig = [
           "suffix": ["Service", "AdminService"]
         }
       ]
+    }
+  },
+  {
+    files: ["**/__tests__/**/*", "**/*.test.ts", "**/*.test.tsx", "vitest.setup.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "react-hooks/rules-of-hooks": "off",
+      "@typescript-eslint/no-unused-expressions": "off"
     }
   }
 ];

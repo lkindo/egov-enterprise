@@ -152,7 +152,7 @@ class AddressBookServiceTest {
         given(addressBookRepository.findById(adbkId)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").adbkId(adbkId).build();
+            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkId(adbkId).build()).build();
         given(addressBookUserRepository.findByAdbkId(adbkId)).willReturn(List.of(existingUser));
         given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("NEW_USER_ID");
 
@@ -176,7 +176,6 @@ class AddressBookServiceTest {
         nuri.business.domain.addressbook.AddressBookUserSearchResult view = mock(nuri.business.domain.addressbook.AddressBookUserSearchResult.class);
         given(view.getUserId()).willReturn("EMP_1");
         given(view.getUserNm()).willReturn("Name");
-        given(view.getNm()).willReturn("Name");
         Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> page = new PageImpl<>(List.of(view));
         given(addressBookRepository.searchAddressBookUsers(any(), any(Pageable.class))).willReturn(page);
 

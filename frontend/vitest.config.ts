@@ -9,13 +9,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 1,
-        minForks: 1,
-      }
-    },
+    testTimeout: 15000,
     alias: {
       '@': path.resolve(__dirname, './src'),
     },

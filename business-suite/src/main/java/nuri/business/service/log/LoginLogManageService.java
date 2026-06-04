@@ -43,7 +43,7 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
         Page<LoginLog> page = loginLogRepository.searchLoginLogs(
-                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(),
+                searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(),
                 required(pageable, "pageable 는 null 일 수 없습니다"));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -52,7 +52,7 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
     public int selectLoginLogListTotCnt(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) loginLogRepository.searchLoginLogs(
-                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(), pageable)
+                searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(), pageable)
                 .getTotalElements();
     }
 
@@ -66,11 +66,11 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
     private LoginLogDto toDto(LoginLog entity) {
         return LoginLogDto.builder()
                 .logId(entity.getLogId())
-                .loginId(entity.getLoginId())
-                .loginIp(entity.getLoginIp())
-                .loginMthd(entity.getLoginMthd())
-                .errOccrrAt(entity.getErrOccrrAt())
-                .errorCode(entity.getErrorCode())
+                .loginId(entity.getUserId())
+                .loginIp(entity.getLgnIpAddr())
+                .loginMthd(entity.getCntnMthdCd())
+                .errOccrrAt(entity.getErrOcrnYn())
+                .errorCode(entity.getErrCd())
                 .creatDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();
     }

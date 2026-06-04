@@ -33,10 +33,10 @@ class WorkReportService extends ApiService {
 
     /**
      * 업무보고 상세 조회
-     * @param id 보고 ID
+     * @param rptId 보고 ID
      */
-    async getWorkReport(id: string) {
-        return this.get<WorkReportDto>(`/${id}`);
+    async getWorkReport(rptId: string) {
+        return this.get<WorkReportDto>(`/${rptId}`);
     }
 
     /**
@@ -49,19 +49,19 @@ class WorkReportService extends ApiService {
 
     /**
      * 업무보고 수정
-     * @param id 보고 ID
+     * @param rptId 보고 ID
      * @param report 수정 데이터
      */
-    async updateWorkReport(id: string, report: WorkReportDto) {
-        return this.put<void>(`/${id}`, report);
+    async updateWorkReport(rptId: string, report: WorkReportDto) {
+        return this.put<void>(`/${rptId}`, report);
     }
 
     /**
      * 업무보고 삭제
-     * @param id 보고 ID
+     * @param rptId 보고 ID
      */
-    async deleteWorkReport(id: string) {
-        return this.delete<void>(`/${id}`);
+    async deleteWorkReport(rptId: string) {
+        return this.delete<void>(`/${rptId}`);
     }
 }
 

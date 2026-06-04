@@ -13,7 +13,7 @@ export interface Network {
  subnet: string;
  domnServer: string;
  userNm: string;
- useAt: 'Y' | 'N';
+ useYn: 'Y' | 'N';
 }
 
 class NetworkAdminService extends AdminService {

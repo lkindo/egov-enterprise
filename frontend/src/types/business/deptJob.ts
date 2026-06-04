@@ -1,31 +1,31 @@
 export interface DeptJobVO {
-  deptJobId?: string;
-  deptJobNm: string;
-  deptJobCn: string;
-  deptJobbxId?: string;
-  deptJobbxNm?: string;
+  deptTaskId?: string;
+  deptTaskNm: string;
+  deptTaskCn: string;
+  deptTaskBoxId?: string;
+  deptTaskBoxNm?: string;
   deptId?: string;
   deptNm?: string;
-  chargerId?: string;
-  chargerNm?: string;
-  priort: string;
+  picId?: string;
+  picNm?: string;
+  prrtyRnk: string;
   atchFileId?: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   lastMdfrId?: string;
-  lastModifiedDate?: string;
+  mdfcnDt?: string;
 }
 
 export interface DeptJobBxVO {
-  deptJobbxId: string;
-  deptJobbxNm: string;
+  deptTaskBoxId: string;
+  deptTaskBoxNm: string;
   deptId?: string;
   deptNm?: string;
-  indictOrdr?: number;
+  sortOrdr?: number;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
   lastMdfrId?: string;
-  lastModifiedDate?: string;
+  mdfcnDt?: string;
 }
 
 export interface DeptJobSearchParams {

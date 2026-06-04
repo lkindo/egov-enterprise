@@ -44,35 +44,9 @@ class BoardUseTest {
         boardUse.update("N");
         assertThat(boardUse.getUseYn()).isEqualTo("N");
 
-        // setUseYn 호출
-        boardUse.setUseYn("Y");
+        // setUseYn 호출 대신 update 호출로 검증
+        boardUse.update("Y");
         assertThat(boardUse.getUseYn()).isEqualTo("Y");
-
-        // 호환성을 위한 빈 세터 호출 (에러가 나지 않음을 확인)
-        boardUse.setLastMdfrId("admin");
-        boardUse.setFrstRgtrId("admin");
     }
 
-    @Test
-    @DisplayName("BoardUse 레거시 별칭(Aliases) Getter/Setter 테스트")
-    void legacyAliasesAndSettersTest() {
-        BoardUse boardUse = BoardUse.builder().build();
-
-        // Setter aliases 호출
-        boardUse.setRegistSeCode("SE_LEGACY");
-
-        // Getter aliases 및 매핑 검증
-        assertThat(boardUse.getRegistSeCode()).isEqualTo("SE_LEGACY");
-        assertThat(boardUse.getRgstrSeCd()).isEqualTo("SE_LEGACY");
-    }
-
-    @Test
-    @DisplayName("BoardUse 커스텀 빌더 확장 메서드 검증")
-    void customBuilderTest() {
-        BoardUse boardUse = BoardUse.builder()
-                .registSeCode("SE_BUILD")
-                .build();
-
-        assertThat(boardUse.getRgstrSeCd()).isEqualTo("SE_BUILD");
-    }
 }

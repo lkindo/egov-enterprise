@@ -108,9 +108,9 @@ class InternetSvcGuidanceServiceTest {
         internetSvcGuidanceService.updateIntnetSvcGuidance(updateDto);
 
         // then
-        assertThat(existingEntity.getIntnetSvcNm()).isEqualTo("Updated ISG");
-        assertThat(existingEntity.getIntnetSvcDc()).isEqualTo("Updated Desc");
-        assertThat(existingEntity.getReflctAt()).isEqualTo("N");
+        assertThat(existingEntity.getItntSvcNm()).isEqualTo("Updated ISG");
+        assertThat(existingEntity.getItntSvcExpln()).isEqualTo("Updated Desc");
+        assertThat(existingEntity.getRfltYn()).isEqualTo("N");
     }
 
     @Test

@@ -7,8 +7,8 @@ export interface Survey {
   srvyBgngYmd: string;
   srvyEndYmd: string;
   srvyTmpltId?: string;
-  createdBy?: string;
-  createdDate: string;
+  frstRgtrId?: string;
+  crtDt: string;
 }
 
 export interface SurveyQuestion {
@@ -19,8 +19,8 @@ export interface SurveyQuestion {
   qstnCn: string;
   maxChcCnt: number;
   srvyTmpltId: string;
-  createdBy: string;
-  createdDate: string;
+  frstRgtrId: string;
+  crtDt: string;
   items: SurveyAnswer[];
 }
 
@@ -32,8 +32,8 @@ export interface SurveyAnswer {
   artclCn: string;
   etcAnsYn: string;
   srvyTmpltId: string;
-  createdBy: string;
-  createdDate: string;
+  frstRgtrId: string;
+  crtDt: string;
 }
 
 export interface SurveyResultStats {
@@ -51,8 +51,8 @@ export interface QustnrRespondInfo {
   rspdntAnsCn: string;
   rspnsNm: string;
   etcAnsCn: string;
-  createdBy: string;
-  createdDate: string;
+  frstRgtrId: string;
+  crtDt: string;
   srvyTtl?: string; // Optionally included in detail responses
 }
 

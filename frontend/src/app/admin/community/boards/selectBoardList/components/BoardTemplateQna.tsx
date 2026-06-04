@@ -43,21 +43,21 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
           <div className="flex flex-col items-center gap-2 min-w-[80px]">
             <div className={cn(
               "w-16 h-11 rounded-lg flex items-center justify-center font-bold text-2xl shadow-inner transition-all group-hover:scale-110",
-              item.qnaStatus === 'SOLVED' ? "bg-emerald-100 text-emerald-600 border-2 border-emerald-200" : "bg-amber-100 text-amber-600 border-2 border-amber-200"
+              item.qnaSttsCd === 'SOLVED' ? "bg-emerald-100 text-emerald-600 border-2 border-emerald-200" : "bg-amber-100 text-amber-600 border-2 border-amber-200"
             )}>
-              {item.qnaStatus === 'SOLVED' ? <CheckCircle2 size={32} /> : <HelpCircle size={32} /> }
+              {item.qnaSttsCd === 'SOLVED' ? <CheckCircle2 size={32} /> : <HelpCircle size={32} /> }
             </div>
             <span className={cn(
               "text-xs font-bold uppercase tracking-widest",
-              item.qnaStatus === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
-            )}>{item.qnaStatus === 'SOLVED' ? 'Solved' : 'Open'}</span>
+              item.qnaSttsCd === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
+            )}>{item.qnaSttsCd === 'SOLVED' ? 'Solved' : 'Open'}</span>
           </div>
           <div className="flex-1 space-y-3">
             <div className="flex items-center gap-4">
               <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-xs font-bold px-3 py-1">
-                {item.qnaCategory || 'GENERAL_QNA'}
+                {item.qnaCatCd || 'GENERAL_QNA'}
               </Badge>
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Clock size={12} /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
             </div>
             <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
               <h4 className="text-2xl font-bold text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase ">
@@ -68,13 +68,13 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">AD</div>
                 <span className="text-xs font-bold text-slate-600">
-                  <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                  <HighlightText text={item.userNm} highlight={querySearchWrd} />
                 </span>
               </div>
               <div className="h-4 w-px bg-slate-200" />
               <div className="flex items-center gap-2 text-slate-600 font-bold text-xs">
                 <MessageSquare size={14} className="text-amber-400" />
-                <span>{item.commentCo || 0} Answers</span>
+                <span>{item.commentCnt || 0} Answers</span>
               </div>
               <div className="h-4 w-px bg-slate-200" />
               <button 
@@ -84,7 +84,7 @@ export const BoardTemplateQna = ({ list, bbsId, querySearchWrd, onLike, isLikePe
                 aria-label="좋아요"
               >
                 <ThumbsUp size={14} className={cn("opacity-30", isLikePending && "animate-bounce")} />
-                <span data-testid="like-count">{item.likeCo || 0} Likes</span>
+                <span data-testid="like-count">{item.likeCnt || 0} Likes</span>
               </button>
             </div>
           </div>

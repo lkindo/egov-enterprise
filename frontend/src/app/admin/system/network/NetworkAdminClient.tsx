@@ -114,8 +114,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '운영 상태',
             accessor: (item: Network) => (
                 <HubStatusBadge 
-                    label={item.useAt === 'Y' ? '정상 운영' : '운영 중지'} 
-                    variant={item.useAt === 'Y' ? 'success' : 'secondary'} 
+                    label={item.useYn === 'Y' ? '정상 운영' : '운영 중지'} 
+                    variant={item.useYn === 'Y' ? 'success' : 'secondary'} 
                 />
             ),
             className: 'w-32'

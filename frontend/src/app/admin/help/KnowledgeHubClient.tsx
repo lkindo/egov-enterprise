@@ -85,7 +85,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const displayItems = React.useMemo(() => {
  const items = articlesData?.list || [];
  if (sortBy === 'views') {
- return [...items].sort((a, b) => (b.inqireCo || 0) - (a.inqireCo || 0));
+ return [...items].sort((a, b) => (b.inqCnt || 0) - (a.inqCnt || 0));
  }
  return items;
  }, [articlesData, sortBy]);
@@ -277,7 +277,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div className="flex gap-4 md:gap-6 items-start">
  <div className="w-12 h-12 md:w-16 md:h-11 rounded-lg md:rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
  <span className="text-xs md:text-xs font-bold text-muted-foreground/40 leading-none">영향력</span>
- <span className="text-sm md:text-xl font-bold text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqireCo || item.inqCnt || 0) / 10) + 85)}</span>
+ <span className="text-sm md:text-xl font-bold text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqCnt || 0) / 10) + 85)}</span>
  </div>
  <div className="space-y-1 md:space-y-2 min-w-0">
  <div className="flex items-center gap-2 md:gap-3">
@@ -286,8 +286,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  <h4 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
  <div className="flex items-center gap-3 md:gap-4 opacity-40">
- <div className="flex items-center gap-1 md:gap-1.5"><User size={10} className="text-primary md:size-[12px]" /><span className="text-xs md:text-xs font-bold text-slate-900 truncate max-w-[60px] md:max-w-none">{item.ntcrNm}</span></div>
- <div className="flex items-center gap-1 md:gap-1.5"><Eye size={10} className="md:size-[12px]" /><span className="text-xs md:text-xs font-bold">{(item.inqireCo || item.inqCnt || 0).toLocaleString()} Views</span></div>
+ <div className="flex items-center gap-1 md:gap-1.5"><User size={10} className="text-primary md:size-[12px]" /><span className="text-xs md:text-xs font-bold text-slate-900 truncate max-w-[60px] md:max-w-none">{item.userNm}</span></div>
+ <div className="flex items-center gap-1 md:gap-1.5"><Eye size={10} className="md:size-[12px]" /><span className="text-xs md:text-xs font-bold">{(item.inqCnt || 0).toLocaleString()} Views</span></div>
  </div>
  </div>
  </div>

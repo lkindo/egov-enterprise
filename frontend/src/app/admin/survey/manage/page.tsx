@@ -87,7 +87,7 @@ export default function PollManagePage() {
     {
       header: '등록자',
       accessor: (poll) => (
-        <span className="text-xs font-bold text-slate-600 tracking-tight">{poll.frstRegisterNm}</span>
+        <span className="text-xs font-bold text-slate-600 tracking-tight">{poll.frstRgtrId}</span>
       ),
       className: 'w-32 text-center'
     },
@@ -95,7 +95,7 @@ export default function PollManagePage() {
       header: '등록일',
       accessor: (poll) => (
         <span className="text-xs font-bold text-slate-300 tabular-nums tracking-widest uppercase">
-          {poll.createdDate?.slice(0, 10).replace(/-/g, '.')}
+          {poll.crtDt?.slice(0, 10).replace(/-/g, '.')}
         </span>
       ),
       className: 'w-32 text-right pr-8'

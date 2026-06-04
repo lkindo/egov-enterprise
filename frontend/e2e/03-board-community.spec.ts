@@ -16,6 +16,9 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
         const menuName = `Menu_${boardName}`;
 
         test('End-to-End Board Creation and Deployment', async ({ boardMasterPage }) => {
+            boardMasterPage.page.on('console', msg => {
+                console.log(`>>> [Browser Console] [${msg.type()}] ${msg.text()}`);
+            });
             console.log('>>> Step 1: Navigating to Board Maker Wizard');
             await boardMasterPage.gotoMaker();
 

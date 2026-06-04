@@ -45,7 +45,7 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
         Page<SysLog> page = sysLogRepository.searchSysLogs(
-                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(),
+                searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(),
                 required(pageable, "pageable 는 null 일 수 없습니다"));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -54,7 +54,7 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
     public int selectSysLogListTotCnt(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) sysLogRepository.searchSysLogs(
-                searchVO.getSearchKeyword(), searchVO.getSearchBgnDe(), searchVO.getSearchEndDe(), pageable)
+                searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(), pageable)
                 .getTotalElements();
     }
 
@@ -69,11 +69,11 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         return SysLogDto.builder()
                 .dmndId(entity.getDmndId())
                 .srvcNm(entity.getSrvcNm())
-                .methodNm(entity.getMethodNm())
+                .methodNm(entity.getMthdNm())
                 .prcsSeCd(entity.getPrcsSeCd())
                 .prcsTm(entity.getPrcsTm())
                 .dmndUserId(entity.getDmndUserId())
-                .rqesterIp(entity.getRqesterIp())
+                .rqesterIp(entity.getDmndUserIpAddr())
                 .ocrnYmd(entity.getOcrnYmd())
                 .build();
     }

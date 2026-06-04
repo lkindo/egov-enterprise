@@ -19,7 +19,7 @@ public class CommentDto {
     private String bbsId;
     private String wrterId;
     private String wrterNm;
-    private String password;
+    private String pswd;
     private String ansCn;
     private String crtDt;
 }

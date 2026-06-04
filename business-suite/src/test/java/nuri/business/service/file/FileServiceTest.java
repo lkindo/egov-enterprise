@@ -87,8 +87,8 @@ class FileServiceTest {
         FileMaster master = new FileMaster(atchFileId);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
-                .fileSn(1)
-                .orignlFileNm("test.jpg")
+                .atchFileSeq(1)
+                .orgnlFileNm("test.jpg")
                 .build();
 
         given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
@@ -109,8 +109,8 @@ class FileServiceTest {
         String atchFileId = "FILE_123";
         Integer fileSn = 1;
         FileDetail detail = FileDetail.builder()
-                .streFileNm("stored.jpg")
-                .fileStreCours("path")
+                .strgFileNm("stored.jpg")
+                .fileStrgPath("path")
                 .build();
         Resource resource = new ByteArrayResource("test".getBytes());
 
@@ -131,8 +131,8 @@ class FileServiceTest {
         String atchFileId = "FILE_123";
         FileMaster master = new FileMaster(atchFileId);
         FileDetail detail = FileDetail.builder()
-                .streFileNm("stored.jpg")
-                .fileStreCours("path")
+                .strgFileNm("stored.jpg")
+                .fileStrgPath("path")
                 .build();
 
         given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
@@ -153,8 +153,8 @@ class FileServiceTest {
         String atchFileId = "FILE_123";
         Integer fileSn = 1;
         FileDetail detail = FileDetail.builder()
-                .streFileNm("stored.jpg")
-                .fileStreCours("path")
+                .strgFileNm("stored.jpg")
+                .fileStrgPath("path")
                 .build();
 
         given(fileDetailRepository.findById(any(FileDetailId.class))).willReturn(Optional.of(detail));
@@ -173,7 +173,7 @@ class FileServiceTest {
         // given
         String atchFileId = "FILE_123";
         FileMaster master = new FileMaster(atchFileId);
-        FileDetail existingDetail = FileDetail.builder().fileSn(1).build();
+        FileDetail existingDetail = FileDetail.builder().atchFileSeq(1).build();
         MockMultipartFile newFile = new MockMultipartFile("files", "new.jpg", "image/jpeg", "content".getBytes());
 
         given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
@@ -246,18 +246,18 @@ class FileServiceTest {
 
         fileService.updateFiles(atchFileId, List.of(file));
 
-        verify(fileDetailRepository).save(argThat(d -> d.getFileSn() == 1));
+        verify(fileDetailRepository).save(argThat(d -> d.getAtchFileSeq() == 1));
     }
 
     @Test
     @DisplayName("전체 파일 목록 조회 - 키워드 포함")
     void getAllFileList_WithKeyword() {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        given(fileDetailRepository.findByOrignlFileNmContaining(eq("key"), any())).willReturn(org.springframework.data.domain.Page.empty());
+        given(fileDetailRepository.findByOrgnlFileNmContaining(eq("key"), any())).willReturn(org.springframework.data.domain.Page.empty());
 
         fileService.getAllFileList(pageable, "key");
 
-        verify(fileDetailRepository).findByOrignlFileNmContaining(eq("key"), any());
+        verify(fileDetailRepository).findByOrgnlFileNmContaining(eq("key"), any());
     }
 
     @Test

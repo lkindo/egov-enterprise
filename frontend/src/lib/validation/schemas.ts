@@ -67,16 +67,16 @@ export const boardSchema = z.object({
   pstId: z.number().optional(),
   bbsId: z.string().min(1, '게시판 ID는 필수입니다.').max(20, '게시판 ID는 20자 이내여야 합니다.'),
   pstTtl: z.string().min(1, '제목은 필수이며 유효해야 합니다.').max(100, '제목은 100자 이내여야 합니다.'),
-  nttCn: z.string().min(1, '내용을 입력해 주세요.').max(4000, '내용은 4000자 이내여야 합니다.'),
+  pstCn: z.string().min(1, '내용을 입력해 주세요.').max(4000, '내용은 4000자 이내여야 합니다.'),
   ntceBgnde: z.string().optional(),
   ntceEndde: z.string().optional(),
   password: z.string().optional().or(z.string().max(200, '비밀번호는 200자 이내여야 합니다.')),
-  ntcrId: z.string().optional(),
-  ntcrNm: z.string().optional().or(z.string().max(60, '작성자 명은 60자 이내여야 합니다.')),
+  userId: z.string().optional(),
+  userNm: z.string().optional().or(z.string().max(60, '작성자 명은 60자 이내여야 합니다.')),
   noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),
   useYn: z.enum(['Y', 'N']).optional(),
-  eventDate: z.string().optional(),
+  evntDt: z.string().optional(),
 });
 
 // --- 온라인 매뉴얼 스키마 ---

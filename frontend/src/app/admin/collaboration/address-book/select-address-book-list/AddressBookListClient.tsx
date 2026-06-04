@@ -102,7 +102,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  header: '등록일자',
  accessor: (item) => (
  <span className="text-xs font-bold text-slate-300 tabular-nums tracking-widest uppercase">
- {(item.createdDate || '').substring(0, 10).replace(/-/g, '.')}
+ {(item.crtDt || '').substring(0, 10).replace(/-/g, '.')}
  </span>
  ),
  className: 'w-32 text-center'

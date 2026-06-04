@@ -28,7 +28,6 @@ public class LeaderStatusDto {
     private String orgnztNm;
 
     @Schema(description = "간부상태코드")
-    @com.fasterxml.jackson.annotation.JsonProperty("leaderSttus")
     @Size(max = 12)
     private String leaderSttsCd;
 
@@ -37,17 +36,6 @@ public class LeaderStatusDto {
 
     @Schema(description = "등록일시")
     private LocalDateTime crtDt;
-
-    // legacy with @JsonIgnore to prevent Lombok duplicate serialization
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getLeaderSttus() {
-        return leaderSttsCd;
-    }
-
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public void setLeaderSttus(String leaderSttus) {
-        this.leaderSttsCd = leaderSttus;
-    }
 
     public static LeaderStatusDto from(LeaderStatus entity) {
         if (entity == null) return null;

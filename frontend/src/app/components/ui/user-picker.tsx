@@ -55,11 +55,11 @@ export function UserPicker({
  </div>
  <div>
  <p className="text-sm font-bold text-foreground">{user.nm}</p>
- <p className="text-xs text-muted-foreground">{user.emailAdres}</p>
+ <p className="text-xs text-muted-foreground">{user.emlAddr}</p>
  </div>
  </div>
  <div className="text-sm font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
- ID: {user.emplyrId || user.adbkUserId}
+ ID: {user.userId || user.adbkConstntId}
  </div>
  </div>
  );

@@ -95,11 +95,10 @@ export interface MenuManage {
   menuOrdr: number;
   menuNm: string;
   upperMenuId: number;
-  menuDc: string;
-  relImgNm: string;
-  relImgPath: string;
+  menuExpln?: string;
+  relImgNm?: string;
+  relImgPath?: string;
   prgrmFileNm: string;
-  useAt?: 'Y' | 'N';
 }
 
 // Program
@@ -113,15 +112,14 @@ export interface ProgrmManage {
 
 // Log
 export interface SysLog {
-  requstId: string;
-  occrrncDe: string;
+  dmndId: string;
   srvcNm: string;
   methodNm: string;
-  processSeCode: string;
-  processTime: string;
+  prcsSeCd: string;
+  prcsTm: string;
+  dmndUserId: string;
   rqesterIp: string;
-  rqesterId: string;
-  trgetMenuNm?: string;
+  ocrnYmd: string;
 }
 
 export interface UserLog {
@@ -139,10 +137,9 @@ export interface LoginLog {
   loginId: string;
   loginIp: string;
   loginMthd: string;
-  loginDt: string;
-  errorOccrrAt: string;
+  errOccrrAt: string;
   errorCode: string;
-  loginDtStr?: string;
+  creatDt: string;
 }
 
 // Web Log

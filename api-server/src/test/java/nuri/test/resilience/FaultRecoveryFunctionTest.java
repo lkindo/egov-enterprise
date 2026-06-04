@@ -96,10 +96,10 @@ public class FaultRecoveryFunctionTest {
         String requestBody = """
                 {
                   "userId": "retryUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "Retry User",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -209,10 +209,10 @@ public class FaultRecoveryFunctionTest {
         String requestBody = """
                 {
                   "userId": "transactionUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "Transaction User",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;

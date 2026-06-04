@@ -77,11 +77,11 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 상세 조회 - 성공")
     void getNotification_success() throws Exception {
-        when(notificationService.getNotification("NT1")).thenReturn(NotificationDto.builder().ntfcNo("NT1").build());
+        when(notificationService.getNotification("NT1")).thenReturn(NotificationDto.builder().notiSn("NT1").build());
 
         mockMvc.perform(get("/api/v1/notifications/NT1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.ntfcNo").value("NT1"));
+                .andExpect(jsonPath("$.data.notiSn").value("NT1"));
     }
 
     @Test
@@ -96,7 +96,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 등록 - 성공")
     void createNotification_success() throws Exception {
-        NotificationDto dto = NotificationDto.builder().ntfcSj("Title").build();
+        NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
         when(notificationService.createNotification(eq("testUser"), any())).thenReturn("NT_NEW");
 
         mockMvc.perform(post("/api/v1/notifications")

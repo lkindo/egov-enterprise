@@ -36,9 +36,9 @@ class MyPageServiceTest {
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
                 .cntntsNm("테스트 콘텐츠")
-                .cntntsUseAt("Y")
+                .cntntsUseYn("Y")
                 .build();
-        given(myPageContentRepository.findByCntntsUseAt("Y")).willReturn(Collections.singletonList(entity));
+        given(myPageContentRepository.findByCntntsUseYn("Y")).willReturn(Collections.singletonList(entity));
 
         // when
         List<MyPageContentDto> result = myPageService.getActiveMyPageContents();

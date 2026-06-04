@@ -85,17 +85,14 @@ class UserTest {
     void testAuthorCode() {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         
-        user.setAuthorCode("ROLE_ADMIN");
-        assertEquals("ADMIN", user.getAuthorCode());
+        user.setRole(Role.fromAuthorCode("ROLE_ADMIN"));
         assertEquals(Role.ADMIN, user.getRole());
         
-        user.setAuthorCode("INVALID_ROLE");
-        assertEquals("USER", user.getAuthorCode());
+        user.setRole(Role.fromAuthorCode("INVALID_ROLE"));
         assertEquals(Role.USER, user.getRole());
 
-        user.setAuthorCode(null);
-        // null인 경우 기존 권한 유지(코드상)
-        assertEquals("USER", user.getAuthorCode());
+        user.setRole(Role.fromAuthorCode(null));
+        assertEquals(Role.USER, user.getRole());
     }
 
     @Test
@@ -106,7 +103,7 @@ class UserTest {
         user.updateStatus("ACTIVE");
         assertEquals("ACTIVE", user.getUserSttsCd());
         
-        user.updateOgnzId("ORG123");
+        user.updateOrgnztId("ORG123");
         assertEquals("ORG123", user.getOgnzId());
     }
 

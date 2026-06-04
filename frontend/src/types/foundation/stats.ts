@@ -26,7 +26,7 @@ export interface StatsVO {
   statsId: string;
   statsSe: string;
   statsCn: string;
-  createdDate: string;
+  crtDt: string;
 }
 
 export interface StatsSearchParams {

@@ -20,10 +20,4 @@ public class LoginPolicySearchResult {
     private String lastMdfrId;
     private LocalDateTime mdfcnDt;
     private String regYn; // Y or N
-
-    // Compatibility getters
-    public String getEmplyrId() { return userId; }
-    public String getIpInfo() { return ipAddr; }
-    public String getDplctPermAt() { return dpcnPrmYn; }
-    public String getLmttAt() { return lmtYn; }
 }

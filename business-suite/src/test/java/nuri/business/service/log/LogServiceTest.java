@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("LogService (공통 로그 서비스 테스트)")
+@DisplayName("LogService Unit Test")
 class LogServiceTest {
 
     @Mock
@@ -30,11 +30,11 @@ class LogServiceTest {
     private LogService logService;
 
     @Nested
-    @DisplayName("로그인 로그 기록 테스트")
+    @DisplayName("Log login records test")
     class LogLoginTests {
 
         @Test
-        @DisplayName("로그인 로그 기록 성공")
+        @DisplayName("Log login records success")
         void testLogLogin_Success() {
             // Given
             String userId = "user01";
@@ -53,21 +53,21 @@ class LogServiceTest {
             LoginLog savedLog = captor.getValue();
             assertNotNull(savedLog.getLogId());
             assertTrue(savedLog.getLogId().startsWith("LGN_"));
-            assertEquals(userId, savedLog.getLoginId());
-            assertEquals(ip, savedLog.getLoginIp());
-            assertEquals(mthd, savedLog.getLoginMthd());
-            assertEquals(errAt, savedLog.getErrOccrrAt());
-            assertEquals(errCode, savedLog.getErrorCode());
+            assertEquals(userId, savedLog.getUserId());
+            assertEquals(ip, savedLog.getLgnIpAddr());
+            assertEquals(mthd, savedLog.getCntnMthdCd());
+            assertEquals(errAt, savedLog.getErrOcrnYn());
+            assertEquals(errCode, savedLog.getErrCd());
             assertNotNull(savedLog.getCrtDt());
         }
     }
 
     @Nested
-    @DisplayName("최근 로그인 로그 목록 조회 테스트")
+    @DisplayName("Get recent login logs test")
     class GetRecentLoginLogsTests {
 
         @Test
-        @DisplayName("최근 로그인 로그 목록 조회 성공")
+        @DisplayName("Get recent login logs success")
         void testGetRecentLoginLogs_Success() {
             // Given
             LoginLog log1 = LoginLog.builder()
@@ -102,7 +102,7 @@ class LogServiceTest {
         }
 
         @Test
-        @DisplayName("로그가 없을 때 빈 목록 반환")
+        @DisplayName("Get recent login logs returns empty list when no logs")
         void testGetRecentLoginLogs_Empty() {
             // Given
             when(loginLogRepository.findTop100ByOrderByCrtDtDesc()).thenReturn(List.of());

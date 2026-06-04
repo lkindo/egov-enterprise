@@ -1,6 +1,6 @@
 export interface Schedule {
   schdlId: string;
-  schdlSeCd: string; // 1: 부서 2: 개인
+  schdlSeCd: string; // 1 (부서) 2 (개인)
   schdlDeptId?: string;
   schdlKndCd?: string;
   schdlBgngYmd: string; // yyyyMMddHHmm
@@ -13,7 +13,10 @@ export interface Schedule {
   atchFileId?: string;
   reptSeCd?: string;
   frstRgtrId?: string;
-  createdDate?: string;
+  crtDt?: string;
+  schdlIpAddr?: string;
+  lastMdfrId?: string;
+  mdfcnDt?: string;
 }
 
 export interface ScheduleResponse {
@@ -30,7 +33,6 @@ export interface MonthlyScheduleResponse {
 
 export interface DeptSchedule extends Schedule {
   schdlDeptId: string;
-  deptNm: string;
 }
 
 export interface ScheduleSearchParams {
@@ -52,6 +54,8 @@ export interface WorkReport {
   rptYmd: string;
   userId: string;
   rptSttsCd: string;
+  atchFileId?: string;
+  rptTypeCd?: string;
 }
 
 export interface ReportSearchParams {

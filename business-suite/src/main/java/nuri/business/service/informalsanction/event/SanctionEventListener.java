@@ -45,8 +45,8 @@ public class SanctionEventListener {
             // SMS 발송
             if (org.springframework.util.StringUtils.hasText(user.getMblTelno())) {
                 nuri.business.service.sms.dto.SmsDto smsDto = nuri.business.service.sms.dto.SmsDto.builder()
-                        .trnsmitTelno("02-1234-5678") // 대표번호
-                        .trnsmitCn(message)
+                        .sndngTelno("02-1234-5678") // 대표번호
+                        .sndngCn(message)
                         .recipients(java.util.List.of(nuri.business.service.sms.dto.SmsRecptnDto.builder()
                                 .rcptnTelno(user.getMblTelno())
                                 .build()))

@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 public interface EgovWorkReportService {
     void createWorkReport(WorkReportDto dto);
     void updateWorkReport(WorkReportDto dto);
-    void deleteWorkReport(String reportId);
+    void deleteWorkReport(String rptId);
     Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, Pageable pageable);
     
     // legacy
@@ -15,5 +15,5 @@ public interface EgovWorkReportService {
         return getWorkReportList(searchId, null, searchWrd, pageable);
     }
 
-    WorkReportDto getWorkReport(String reportId);
+    WorkReportDto getWorkReport(String rptId);
 }

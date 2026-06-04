@@ -32,13 +32,13 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
 
     @Override
     public Page<MemoReportDto> getMyReportList(String writerId, @NonNull Pageable pageable) {
-        return memoReportRepository.findByWriterId(writerId, Objects.requireNonNull(pageable))
+        return memoReportRepository.findByUserId(writerId, Objects.requireNonNull(pageable))
                 .map(MemoReportDto::from);
     }
 
     @Override
     public Page<MemoReportDto> getReceivedReportList(String rptUserId, @NonNull Pageable pageable) {
-        return memoReportRepository.findByReportrId(rptUserId, Objects.requireNonNull(pageable))
+        return memoReportRepository.findByRptrId(rptUserId, Objects.requireNonNull(pageable))
                 .map(MemoReportDto::from);
     }
 
@@ -55,12 +55,12 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
         try {
             String id = egovMemoReportIdGnrService.getNextStringId();
             MemoReport entity = MemoReport.builder()
-                    .reportId(id)
-                    .reportSubject(dto.getReportSubject())
-                    .reprtDe(dto.getReprtDe())
-                    .writerId(userId)
-                    .reportrId(dto.getReportrId())
-                    .reportContents(dto.getReportContents())
+                    .rptId(id)
+                    .rptTtl(dto.getRptTtl())
+                    .memoRptYmd(dto.getMemoRptYmd())
+                    .userId(userId)
+                    .rptrId(dto.getRptrId())
+                    .rptCn(dto.getRptCn())
                     .atchFileId(dto.getAtchFileId())
                     .frstRgtrId(userId)
                     .build();
@@ -76,8 +76,8 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
     public void updateMemoReport(String rptId, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getReportSubject(), dto.getReprtDe(), entity.getWriterId(), dto.getReportrId(),
-                dto.getReportContents(), dto.getAtchFileId());
+        entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
+                dto.getRptCn(), dto.getAtchFileId());
         entity.setLastMdfrId(userId);
     }
 

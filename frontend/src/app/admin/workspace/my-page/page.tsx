@@ -33,10 +33,10 @@ export default function MyPageManagement() {
   }, [toast]);
 
   const toggleStatus = async (item: any) => {
-    const newStatus = item.cntntsUseAt === 'Y' ? 'N' : 'Y';
+    const newStatus = item.cntntsUseYn === 'Y' ? 'N' : 'Y';
     try {
-      await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseAt: newStatus });
-      setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseAt: newStatus } : c));
+      await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseYn: newStatus });
+      setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseYn: newStatus } : c));
       toast(`${item.cntntsNm} 상태가 변경되었습니다.`, 'success');
     } catch (error) {
       toast('상태 변경 중 오류가 발생했습니다.', 'error');
@@ -67,12 +67,12 @@ export default function MyPageManagement() {
       accessor: (item) => (
         <button 
           onClick={(e) => { e.stopPropagation(); toggleStatus(item); }}
-          className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.cntntsUseAt === 'Y'
+          className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.cntntsUseYn === 'Y'
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
             : 'bg-slate-100 text-slate-400 border border-slate-200'
           }`}
         >
-          {item.cntntsUseAt === 'Y' ? '활성' : '중단'}
+          {item.cntntsUseYn === 'Y' ? '활성' : '중단'}
         </button>
       ),
       className: 'w-32 text-center'
@@ -116,7 +116,7 @@ export default function MyPageManagement() {
 
       <HubMetricGrid>
         <HubMetricCard title="전체 콘텐츠" value={contents.length} icon={Layers} color="primary" />
-        <HubMetricCard title="활성 위젯" value={contents.filter(c => c.cntntsUseAt === 'Y').length} icon={Zap} color="emerald" status="정상" />
+        <HubMetricCard title="활성 위젯" value={contents.filter(c => c.cntntsUseYn === 'Y').length} icon={Zap} color="emerald" status="정상" />
         <HubMetricCard title="사용량" value="HIGH" icon={Activity} color="indigo" />
         <HubMetricCard title="보안 상태" value="SAFE" icon={RefreshCcw} color="amber" />
       </HubMetricGrid>

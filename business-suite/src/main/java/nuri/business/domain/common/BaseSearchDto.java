@@ -54,14 +54,6 @@ public class BaseSearchDto implements Serializable {
 
     /** 검색 범위 종료일/값 */
     private String searchKeywordTo = "";
-
-    public String getSearchBgnDe() {
-        return searchKeywordFrom;
-    }
-
-    public String getSearchEndDe() {
-        return searchKeywordTo;
-    }
     
     /**
      * 페이지 번호에 따른 오프셋 계산 유틸리티

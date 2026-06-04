@@ -63,9 +63,9 @@ export default function AddressBookInsertHubClient() {
  adbkNm: form.adbkNm,
  rlsScopeCd: form.rlsScopeCd,
  wrterId: form.wrterId,
- nameCards: [
+ adbkMan: [
  {
- userNm: form.adbkNm,
+ nm: form.adbkNm,
  emlAddr: form.email,
  mblTelno: form.telNo
  }

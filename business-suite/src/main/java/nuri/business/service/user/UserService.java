@@ -169,7 +169,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .userNm(userNm)
                                 .esntlId(esntlId)
                                 .pswdHint(pswdHint)
-                                .pswdCnsr(pswdCrans)
+                                .pswdCrans(pswdCrans)
                                 .role(role)
                                 .build();
 
@@ -207,7 +207,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 user.update(
                                 userDto.getUserNm(),
                                 user.getPswdHint(),
-                                user.getPswdCnsr(),
+                                user.getPswdCrans(),
                                 userDto.getEmplNo(),
                                 user.getRrno(),
                                 user.getGndrCd(),
@@ -227,7 +227,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 userDto.getOgnzId(),
                                 userDto.getPstinstCd(),
                                 user.getRole(),
-                                user.getCrtfcDnValue());
+                                user.getCertDnVl());
         }
 
         /**
@@ -280,7 +280,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         public UserResponse signup(UserSignupRequest request) {
                 required(request, "회원가입 요청 정보는 null 일 수 없습니다");
                 required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다");
-                required(request.getPassword(), "비밀번호 는 null 일 수 없습니다");
+                required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
                 required(request.getUserNm(), "사용자 이름 은 null 일 수 없습니다");
 
                 if (userRepository.existsById(request.getUserId())) {
@@ -296,7 +296,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .userNm(request.getUserNm())
                                 .esntlId(esntlId)
                                 .pswdHint(request.getPswdHint())
-                                .pswdCnsr(request.getPswdCrans())
+                                .pswdCrans(request.getPswdCrans())
                                 .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.USER)
                                 .build();
 
@@ -389,7 +389,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
                 List<User> users = userRepository.findAllById(required(userIds));
-                users.forEach(user -> user.updateOgnzId(ognzId));
+                users.forEach(user -> user.updateOrgnztId(ognzId));
                 userRepository.saveAll(users);
         }
 
@@ -408,7 +408,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 String authorCode = "ROLE_" + role.name();
 
                 users.forEach(user -> {
-                        user.setAuthorCode(authorCode);
+                        user.setRole(role);
 
                         userAuthorityRepository.findById(user.getEsntlId())
                                 .ifPresentOrElse(

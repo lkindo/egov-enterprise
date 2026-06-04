@@ -65,24 +65,6 @@ public class ExternalHr {
     @Column(length = 20)
     private String lastMdfrId;
 
-    // ----- [Legacy Getter Aliases] -----
-
-    public LocalDateTime getCrtDt() {
-        return this.crtDt;
-    }
-
-    public String getFrstRgtrId() {
-        return this.frstRgtrId;
-    }
-
-    public LocalDateTime getMdfcnDt() {
-        return this.mdfcnDt;
-    }
-
-    public String getLastMdfrId() {
-        return this.lastMdfrId;
-    }
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EVNT_ID", insertable = false, updatable = false)
     private EventInfo event;

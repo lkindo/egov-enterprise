@@ -62,11 +62,11 @@ const BBSDetailClient = () => {
 
   useEffect(() => {
     if (article) {
-      if (article.qnaCategory || (article as any).qnaCatCd) {
-        setSelectedCategory(article.qnaCategory || (article as any).qnaCatCd);
+      if (article.qnaCatCd) {
+        setSelectedCategory(article.qnaCatCd);
       }
-      if (article.eventDate) {
-        setSelectedEventDate(article.eventDate);
+      if (article.evntDt) {
+        setSelectedEventDate(article.evntDt);
       }
     }
   }, [article]);
@@ -160,7 +160,7 @@ const BBSDetailClient = () => {
           <input type="hidden" name="bbsId" value={bbsId} />
           <input type="hidden" name="pstId" value={pstId} />
           <input type="hidden" name="qnaCatCd" value={selectedCategory} />
-          <input type="hidden" name="eventDate" value={selectedEventDate} />
+          <input type="hidden" name="evntDt" value={selectedEventDate} />
           <CardContent className="pt-20 px-12 md:px-20 space-y-20">
             {/* 제목 입력 */}
             <div className="space-y-6 group">

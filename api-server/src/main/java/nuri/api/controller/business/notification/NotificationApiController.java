@@ -41,17 +41,17 @@ public class NotificationApiController {
     }
 
     @Operation(summary = "알림 상세 조회", description = "특정 알림의 상세 내용을 조회합니다.")
-    @GetMapping("/{ntfcNo}")
+    @GetMapping("/{notiSn}")
     public ResponseEntity<ApiResponse<NotificationDto>> getNotification(
-            @PathVariable String ntfcNo) {
-        return ResponseEntity.ok(ApiResponse.success(notificationService.getNotification(ntfcNo)));
+            @PathVariable String notiSn) {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.getNotification(notiSn)));
     }
 
     @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 상태로 변경합니다.")
-    @PostMapping("/{ntfcNo}/read")
+    @PostMapping("/{notiSn}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
-            @PathVariable String ntfcNo) {
-        notificationService.markAsRead(ntfcNo);
+            @PathVariable String notiSn) {
+        notificationService.markAsRead(notiSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -64,10 +64,10 @@ public class NotificationApiController {
     }
 
     @Operation(summary = "알림 삭제", description = "특정 알림을 삭제합니다.")
-    @DeleteMapping("/{ntfcNo}")
+    @DeleteMapping("/{notiSn}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
-            @PathVariable String ntfcNo) {
-        notificationService.deleteNotification(ntfcNo);
+            @PathVariable String notiSn) {
+        notificationService.deleteNotification(notiSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

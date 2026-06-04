@@ -18,6 +18,10 @@
 3.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, 요구사항을 분석한 뒤 L1 이상의 작업에서는 **`gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. 특히 DB 마이그레이션 시에는 **`zero-downtime-migration-planner`**를 가동해 확장/축소 패턴을 따르고, 다중 모듈 구조 변경 시에는 **`deep-context-mapper`**를 선행 적재하며, 작업 완료 후에는 **`docs-as-code-sync`**를 가동해 문서 부채를 차단한다.
 4.  **Skill Discovery (문맥 기반 자율 차용)**: 의무적인 스킬 전수 탐색 스캔은 금지한다. 단, 지시 맥락과 명백히 일치하는 내장 스킬이 감지되면 자율적으로 차용한다. 특히 UI/UX 수정 시에는 **`visual-auditor`**를 기동해 실시간 비주얼 오디팅을 수행하고, 테스트 코드(Unit/E2E)를 작성하거나 수정할 때에는 반드시 **`mutation-testing-auditor`** 스킬을 기동하여 의도적 버그 주입을 통해 테스트의 강건성을 수리적으로 증명한다.
 5.  **Self-Reflective Recovery (자가 성찰 오류 복구)**: 빌드, 컴파일, 테스트 실행 중 오류 발생 시, 즉각 코드를 임의 수정하지 않는다. 반드시 §8의 **자가 성찰 디버그 프로토콜(Self-Reflective Debug Protocol)**을 가동하여 근본 원인을 증명한 뒤 수정을 개시한다.
+6.  **Compilation Integrity Gate (컴파일 무결성 보증 게이트) - [HARD CONSTRAINT]**: 에이전트는 소스 코드 변경(L1 이상)을 수반하는 작업을 완료(작업 아카이브 작성 및 walkthrough.md 제출)하기 전, 스캐너 결과에만 의존해 완료를 속단하는 행위를 절대 금지한다. 반드시 아래 2가지 컴파일 검증 명령을 로컬 터미널에서 직접 실행하여 성공했음을 물리적 빌드 로그 증적으로 제시해야 한다.
+    - **Backend**: `./gradlew compileJava compileTestJava` (Java 컴파일 무결성 검증)
+    - **Frontend**: `npx tsc --noEmit` (TypeScript 정적 타입 컴파일 무결성 검증)
+    빌드/타입 에러가 단 1건이라도 존재하는 상태에서 작업 완료를 선언하는 것은 절대 용납되지 않는다.
 
 ---
 

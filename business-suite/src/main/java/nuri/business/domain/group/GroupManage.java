@@ -37,8 +37,4 @@ public class GroupManage extends BaseEntity {
         this.groupDc = groupDc;
     }
 
-    // Helper for legacy string date
-    public String getGroupCreatDeString() {
-        return groupCrtYmd != null ? groupCrtYmd.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "";
-    }
 }

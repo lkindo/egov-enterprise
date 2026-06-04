@@ -38,5 +38,5 @@ public class DeptManage extends BaseEntity {
         this.ognzExpln = ognzExpln;
     }
 
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 }
-

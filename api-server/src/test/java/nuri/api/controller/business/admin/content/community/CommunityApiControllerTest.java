@@ -95,7 +95,7 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 생성")
     void createCommunity() throws Exception {
         CommunityDto requestDto = new CommunityDto();
-        requestDto.setCmntyTtl("New Community");
+        requestDto.setCmntyNm("New Community");
         
         CommunityDto responseDto = new CommunityDto();
         responseDto.setCmntyId("C1");
@@ -115,7 +115,7 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 수정")
     void updateCommunity() throws Exception {
         CommunityDto dto = new CommunityDto();
-        dto.setCmntyTtl("Updated Community");
+        dto.setCmntyNm("Updated Community");
 
         doNothing().when(communityService).updateCommunity(eq("user"), any(CommunityDto.class));
 

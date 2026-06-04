@@ -52,10 +52,10 @@ class UserApiControllerHttpStatusTest {
         String requestBody = """
                 {
                   "userId": "newUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "New User",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -76,10 +76,10 @@ class UserApiControllerHttpStatusTest {
         String requestBody = """
                 {
                   "userId": "existingUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "Existing User",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -103,10 +103,10 @@ class UserApiControllerHttpStatusTest {
         String requestBody = """
                 {
                   "userId": "newUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "New User",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;

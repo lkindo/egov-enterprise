@@ -4,18 +4,18 @@ import { AxiosRequestConfig } from 'axios';
 
 export interface FAQ {
   faqId: string;
-  qestnSj: string;
-  qestnCn: string;
-  answerCn: string;
-  inqireCo: number;
-  lastModifiedDate: string;
+  qstnTtl: string;
+  qstnCn: string;
+  ansCn: string;
+  inqCnt: number;
+  mdfcnDt: string;
 }
 
 export interface QNA {
   qaId: string;
-  qestnSj: string;
-  qestnCn: string;
-  answerCn?: string;
+  qstnTtl: string;
+  qstnCn: string;
+  ansCn?: string;
   writngPassword?: string;
   wrterNm: string;
   writngDe: string;
@@ -45,11 +45,11 @@ class HelpUserService extends UserService {
     if (response && response.list) {
       response.list = response.list.map((item: any) => ({
         faqId: item.pstId,
-        qestnSj: item.pstTtl,
-        qestnCn: item.pstTtl,
-        answerCn: item.nttCn,
-        inqireCo: item.rdcnt || 0,
-        lastModifiedDate: item.lastModifiedDate || item.frstRegistPnttm
+        qstnTtl: item.pstTtl,
+        qstnCn: item.pstCn,
+        ansCn: item.pstCn,
+        inqCnt: item.inqCnt || 0,
+        mdfcnDt: item.crtDt
       }));
     }
     return response as PageResponse<FAQ>;
@@ -69,12 +69,12 @@ class HelpUserService extends UserService {
     if (response && response.list) {
       response.list = response.list.map((item: any) => ({
         qaId: item.pstId,
-        qestnSj: item.pstTtl,
-        qestnCn: item.nttCn,
-        answerCn: item.answerCn || item.replyCn || '',
-        wrterNm: item.ntcrNm || item.frstRegisterNm,
-        writngDe: item.frstRegistPnttm,
-        qnaProcessSttusCode: item.replyLc && item.replyLc > 0 ? '3' : '1' 
+        qstnTtl: item.pstTtl,
+        qstnCn: item.pstCn,
+        ansCn: item.pstCn || '',
+        wrterNm: item.userNm || item.userId,
+        writngDe: item.crtDt,
+        qnaProcessSttusCode: item.ansLv && item.ansLv > 0 ? '3' : '1'
       }));
     }
     return response as PageResponse<QNA>;
@@ -84,10 +84,10 @@ class HelpUserService extends UserService {
   async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
     const boardData = {
       bbsId: 'BBSMSTR_DDDDDDDDDDDD',
-      pstTtl: data.qestnSj,
-      nttCn: data.qestnCn,
-      password: data.writngPassword,
-      ntcrNm: data.wrterNm
+      pstTtl: data.qstnTtl,
+      pstCn: data.qstnCn,
+      pswd: data.writngPassword,
+      userNm: data.wrterNm
     };
     return this.post<void>('/posts', boardData, config);
   }

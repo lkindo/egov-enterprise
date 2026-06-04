@@ -32,8 +32,8 @@ class ReportService extends ApiService {
   /**
    * 보고 상세 조회
    */
-  async getReport(id: string, config?: AxiosRequestConfig): Promise<WorkReport> {
-    return this.get<WorkReport>(`/${id}`, config);
+  async getReport(rptId: string, config?: AxiosRequestConfig): Promise<WorkReport> {
+    return this.get<WorkReport>(`/${rptId}`, config);
   }
 
   /**
@@ -46,8 +46,8 @@ class ReportService extends ApiService {
   /**
    * 보고 승인/반려
    */
-  async confirmReport(id: string, confmAt: 'Y' | 'N', config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${id}/confirm`, { confmAt }, config);
+  async confirmReport(rptId: string, confmAt: 'Y' | 'N', config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${rptId}/confirm`, { confmAt }, config);
   }
 }
 

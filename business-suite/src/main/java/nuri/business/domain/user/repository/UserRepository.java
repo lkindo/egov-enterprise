@@ -17,7 +17,7 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     Optional<User> findByEsntlId(String esntlId);
     Optional<User> findByUserId(String userId);
 
-    Optional<User> findByCrtfcDnValue(String crtfcDnValue);
+    Optional<User> findByCertDnVl(String certDnVl);
 
     Optional<User> findByUserNmAndEmlAddr(String userNm, String emlAddr);
 

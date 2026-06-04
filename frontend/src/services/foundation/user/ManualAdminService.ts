@@ -13,7 +13,7 @@ export interface ManualDto {
   onlnMnlDfn: string; // 온라인매뉴얼경로(정의)
   onlnMnlSeCd?: string; // 온라인매뉴얼구분코드
   createdBy?: string; // 최초등록자ID
-  createdDate?: string; // 생성일시
+  crtDt?: string; // 생성일시
 }
 
 /**

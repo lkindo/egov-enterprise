@@ -96,8 +96,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 condition.setSearchCnd(searchCnd);
                 condition.setSearchWrd(searchWrd);
                 condition.setOrderBy(orderBy);
-                condition.setQnaStatus(qnaStatus);
-                condition.setQnaCategory(qnaCategory);
+                condition.setQnaSttsCd(qnaStatus);
+                condition.setQnaCatCd(qnaCategory);
 
                 if (StringUtils.hasText(startDate)) {
                         try {

@@ -23,18 +23,7 @@ public class Menu extends BaseEntity {
     @Column(name = "menu_sn")
     private Long menuSn;
 
-    // Legacy getter alias to preserve API and service layer compatibility
-    public Long getId() {
-        return this.menuSn;
-    }
 
-    // Custom Builder Extension for Backwards Compatibility
-    public static abstract class MenuBuilder<C extends Menu, B extends MenuBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B id(Long id) {
-            this.menuSn = id;
-            return self();
-        }
-    }
 
     @Column(nullable = false, length = 100)
     private String menuNm;

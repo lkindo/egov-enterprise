@@ -52,8 +52,8 @@ public interface EgovUserService {
     /**
      * 사용자 등록
      */
-    String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
-            String passwordHint, String passwordCnsr,
+    String registerUser(@NonNull String userId, @NonNull String pswd, @NonNull String userNm,
+            String pswdHint, String pswdCrans,
             String roleName);
 
 

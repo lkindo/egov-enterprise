@@ -10,17 +10,17 @@ interface ActionResponse {
 }
 
 interface CreateCommentData {
-  pstId: number;
+  pstId: string;
   bbsId: string;
-  cmntCn: string;
+  ansCn: string;
 }
 
 export async function createComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
   const pstId = formData.get('pstId') as string;
   const bbsId = formData.get('bbsId') as string;
-  const cmntCn = formData.get('cmntCn') as string;
+  const ansCn = formData.get('ansCn') as string;
 
-  if (!cmntCn || cmntCn.trim() === '') {
+  if (!ansCn || ansCn.trim() === '') {
     return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
@@ -30,9 +30,9 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const commentData: CreateCommentData = {
-      pstId: parseInt(pstId),
+      pstId,
       bbsId,
-      cmntCn
+      ansCn
     };
 
     const response: unknown = await client.post(`/comments`, commentData, axiosConfig);
@@ -79,9 +79,9 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
   const id = formData.get('id') as string;
   const bbsId = formData.get('bbsId') as string;
   const pstId = formData.get('pstId') as string;
-  const cmntCn = formData.get('cmntCn') as string;
+  const ansCn = formData.get('ansCn') as string;
 
-  if (!cmntCn || cmntCn.trim() === '') {
+  if (!ansCn || ansCn.trim() === '') {
     return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
@@ -91,9 +91,9 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     const commentData = {
-      pstId: parseInt(pstId),
+      pstId,
       bbsId,
-      cmntCn
+      ansCn
     };
 
     const response: unknown = await client.put(`/comments/${id}`, commentData, axiosConfig);

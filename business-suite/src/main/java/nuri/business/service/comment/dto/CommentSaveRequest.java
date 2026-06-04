@@ -16,5 +16,5 @@ public class CommentSaveRequest {
     private String bbsId;
     @NotBlank
     private String cmntCn;
-    private String password;
+    private String pswd;
 }

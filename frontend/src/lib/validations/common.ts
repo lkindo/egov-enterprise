@@ -39,7 +39,7 @@ export const commonSchemas = {
     .regex(/^[A-Z0-9_]+$/, { message: '코드는 영문 대문자, 숫자, 언더바(_)만 가능합니다.' }),
     
   // 사용 여부 (YN)
-  useAt: z.enum(['Y', 'N']),
+  useYn: z.enum(['Y', 'N']),
 };
 
 /**

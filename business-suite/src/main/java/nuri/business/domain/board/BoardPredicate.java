@@ -45,12 +45,12 @@ public class BoardPredicate {
             builder.and(QBoard.board.crtDt.loe(condition.getEndDate()));
         }
 
-        if (StringUtils.hasText(condition.getQnaStatus())) {
-            builder.and(QBoard.board.qnaSttsCd.eq(condition.getQnaStatus()));
+        if (StringUtils.hasText(condition.getQnaSttsCd())) {
+            builder.and(QBoard.board.qnaSttsCd.eq(condition.getQnaSttsCd()));
         }
 
-        if (StringUtils.hasText(condition.getQnaCategory())) {
-            builder.and(QBoard.board.qnaCatCd.eq(condition.getQnaCategory()));
+        if (StringUtils.hasText(condition.getQnaCatCd())) {
+            builder.and(QBoard.board.qnaCatCd.eq(condition.getQnaCatCd()));
         }
 
         return builder;

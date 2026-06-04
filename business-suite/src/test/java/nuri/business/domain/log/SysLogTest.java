@@ -12,7 +12,7 @@ class SysLogTest {
     void testBuilder() {
         SysLog log = SysLog.builder()
                 .srvcNm("DeptService")
-                .methodNm("selectDept")
+                .mthdNm("selectDept")
                 .build();
 
         assertEquals("DeptService", log.getSrvcNm());

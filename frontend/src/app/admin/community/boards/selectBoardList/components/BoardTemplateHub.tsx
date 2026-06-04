@@ -33,18 +33,18 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
                   <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20 dark:border-white/10">OP</div>
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-slate-600 dark:text-white/80 uppercase tracking-widest leading-none mb-1">Author</span>
-                    <span className="text-sm font-bold">{list[0].frstRegisterNm}</span>
+                    <span className="text-sm font-bold">{list[0].userNm}</span>
                   </div>
                 </div>
                 <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
                 <div className="flex items-center gap-3 text-slate-600 dark:text-white/80">
                   <Clock size={16} />
-                  <span className="text-xs font-bold">{list[0].createdDate ? String(list[0].createdDate).substring(0, 10) : 'Just now'}</span>
+                  <span className="text-xs font-bold">{list[0].crtDt ? String(list[0].crtDt).substring(0, 10) : 'Just now'}</span>
                 </div>
                 <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
                 <div className="flex items-center gap-3 text-slate-600 dark:text-white/80">
                   <Eye size={16} />
-                  <span className="text-xs font-bold">{list[0].inqireCo} views</span>
+                  <span className="text-xs font-bold">{list[0].inqCnt} views</span>
                 </div>
               </div>
             </div>
@@ -64,7 +64,7 @@ export const BoardTemplateHub = ({ list, bbsId, page }: BoardTemplateHubProps) =
             </Link>
             <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
               <div className="flex gap-4">
-                <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><Eye size={14} /> {item.inqireCo}</div>
+                <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><Eye size={14} /> {item.inqCnt}</div>
                 <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><MessageSquare size={14} /> 0</div>
               </div>
               <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">

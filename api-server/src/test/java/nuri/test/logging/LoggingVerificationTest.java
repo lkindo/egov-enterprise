@@ -45,10 +45,10 @@ public class LoggingVerificationTest {
         String requestBody = """
                 {
                   "userId": "duplicateUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "중복사용자",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -72,10 +72,10 @@ public class LoggingVerificationTest {
         String requestBody = """
                 {
                   "userId": "newUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "신규사용자",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;

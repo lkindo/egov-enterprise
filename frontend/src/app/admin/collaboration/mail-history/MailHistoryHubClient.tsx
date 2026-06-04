@@ -115,7 +115,7 @@ export default function MailHistoryHubClient() {
  header: '발송 일시',
  accessor: (mail) => (
  <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">
- {mail.createdDate}
+ {mail.crtDt}
  </span>
  ),
  className: 'w-48'
@@ -287,7 +287,7 @@ export default function MailHistoryHubClient() {
                       <Clock size={14} />
                       <span className="text-[10px] font-bold uppercase tracking-widest">Timestamp</span>
                     </div>
-                    <p className="text-sm font-bold text-white">{selectedMail.createdDate}</p>
+                    <p className="text-sm font-bold text-white">{selectedMail.crtDt}</p>
                   </div>
                 </div>
 

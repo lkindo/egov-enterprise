@@ -56,7 +56,8 @@ export class BoardMasterPage {
     await expect(this.bbsNmInput).toBeVisible({ timeout: 10000 });
     await this.bbsNmInput.fill(name);
     await this.bbsIntrcnInput.fill(description);
-    await this.nextButton.click();
+    await this.nextButton.scrollIntoViewIfNeeded();
+    await this.nextButton.click({ force: true });
     console.log('>>> Step 1 completed');
   }
 
@@ -77,7 +78,8 @@ export class BoardMasterPage {
     for (const selector of selectors) {
       if (await selector.isVisible({ timeout: 2000 }).catch(() => false)) {
         console.log(`>>> Found template selector: ${selector}`);
-        await selector.click();
+        await selector.scrollIntoViewIfNeeded();
+        await selector.click({ force: true });
         found = true;
         break;
       }
@@ -87,7 +89,8 @@ export class BoardMasterPage {
       console.log('>>> Warning: Specific template not found visible, trying fallback (first card)...');
       const fallback = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl').first();
       if (await fallback.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await fallback.click();
+        await fallback.scrollIntoViewIfNeeded();
+        await fallback.click({ force: true });
       } else {
         console.log('>>> CRITICAL: No template cards found!');
       }
@@ -96,13 +99,15 @@ export class BoardMasterPage {
     await this.page.waitForTimeout(500);
     await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
     console.log('>>> Clicking Next button after template selection');
-    await this.nextButton.click();
+    await this.nextButton.scrollIntoViewIfNeeded();
+    await this.nextButton.click({ force: true });
     console.log('>>> Step 2 completed');
   }
 
   async fillStep3() {
     await expect(this.nextButton).toBeVisible({ timeout: 10000 });
-    await this.nextButton.click();
+    await this.nextButton.scrollIntoViewIfNeeded();
+    await this.nextButton.click({ force: true });
     console.log('>>> Step 3 completed');
   }
 
@@ -110,7 +115,8 @@ export class BoardMasterPage {
     const menuInput = this.page.locator('input[name="menuNm"], input[placeholder*="메뉴"], input[placeholder*="Menu"]').first();
     await expect(menuInput).toBeVisible({ timeout: 10000 });
     await menuInput.fill(menuName);
-    await this.deployButton.click();
+    await this.deployButton.scrollIntoViewIfNeeded();
+    await this.deployButton.click({ force: true });
     console.log('>>> Step 4 completed - deployment initiated');
   }
 

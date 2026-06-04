@@ -33,9 +33,9 @@ public class NotificationService implements EgovNotificationService {
     }
 
     @Override
-    public NotificationDto getNotification(String ntfcNo) {
-        log.debug("Fetching notification details for ID: {}", ntfcNo);
-        return notificationRepository.findById(Objects.requireNonNull(ntfcNo))
+    public NotificationDto getNotification(String notiSn) {
+        log.debug("Fetching notification details for ID: {}", notiSn);
+        return notificationRepository.findById(Objects.requireNonNull(notiSn))
                 .map(NotificationDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -46,11 +46,11 @@ public class NotificationService implements EgovNotificationService {
         log.info("Creating notification for user: {}", userId);
         String id = "NTFC_" + System.currentTimeMillis();
         Notification entity = Notification.builder()
-                .ntfcNo(id)
-                .ntfcSj(dto.getNtfcSj())
-                .ntfcCn(dto.getNtfcCn())
-                .receiverId(userId)
-                .linkUrl(dto.getUniqId())
+                .notiSn(id)
+                .notiTtlNm(dto.getNotiTtlNm())
+                .notiCn(dto.getNotiCn())
+                .rcvrId(userId)
+                .linkUrl(dto.getLinkUrl())
                 .build();
 
         notificationRepository.save(entity);
@@ -71,18 +71,18 @@ public class NotificationService implements EgovNotificationService {
 
     @Override
     @Transactional
-    public void updateNotification(String ntfcNo, String userId, NotificationDto dto) {
-        log.info("Updating notification ID: {} for user: {}", ntfcNo, userId);
-        Notification entity = notificationRepository.findById(ntfcNo)
+    public void updateNotification(String notiSn, String userId, NotificationDto dto) {
+        log.info("Updating notification ID: {} for user: {}", notiSn, userId);
+        Notification entity = notificationRepository.findById(notiSn)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcTime(), dto.getBhNtfcIntrvl());
+        entity.update(dto.getNotiTtlNm(), dto.getNotiCn(), dto.getNotiDt(), dto.getNotiIvlVal());
     }
 
     @Override
     @Transactional
-    public void deleteNotification(String ntfcNo) {
-        log.warn("Deleting notification ID: {}", ntfcNo);
-        notificationRepository.deleteById(ntfcNo);
+    public void deleteNotification(String notiSn) {
+        log.warn("Deleting notification ID: {}", notiSn);
+        notificationRepository.deleteById(notiSn);
     }
 
     @Override
@@ -103,13 +103,13 @@ public class NotificationService implements EgovNotificationService {
 
     @Override
     public long getUnreadCount(String userId) {
-        return notificationRepository.countByReceiverIdAndIsRead(userId, "N");
+        return notificationRepository.countByRcvrIdAndReadYn(userId, "N");
     }
 
     @Override
     @Transactional
-    public void markAsRead(String ntfcNo) {
-        log.info("Marking notification ID: {} as read", ntfcNo);
-        notificationRepository.findById(ntfcNo).ifPresent(Notification::markAsRead);
+    public void markAsRead(String notiSn) {
+        log.info("Marking notification ID: {} as read", notiSn);
+        notificationRepository.findById(notiSn).ifPresent(Notification::markAsRead);
     }
 }

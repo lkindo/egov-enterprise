@@ -2,14 +2,14 @@
 
 export interface FaqVO {
   faqId?: string;
-  qestnSj: string;
-  qestnCn: string;
-  answerCn: string;
-  inqireCo?: number;
+  qstnTtl: string;
+  qstnCn: string;
+  ansCn: string;
+  inqCnt?: number;
   frstRgtrId?: string;
-  frstRegisterNm?: string;
-  createdDate?: string;
-  lastModifiedDate?: string;
+  crtDt?: string;
+  lastMdfrId?: string;
+  mdfcnDt?: string;
   atchFileId?: string;
 }
 

@@ -1,4 +1,4 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -11,7 +11,7 @@ export interface ExternalHr {
  emailAdres: string;
  telno: string;
  mbtlnum: string;
- createdDate: string;
+ crtDt?: string;
 }
 
 export interface Reward {
@@ -20,7 +20,7 @@ export interface Reward {
  rewardDe: string;
  rewardLevel: string;
  rewardCn: string;
- createdDate: string;
+ crtDt?: string;
 }
 
 /**

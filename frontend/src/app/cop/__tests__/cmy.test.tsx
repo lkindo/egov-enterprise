@@ -55,7 +55,7 @@ describe('CommunityHubClient', () => {
         cmmntyNm: '개발자 커뮤니티',
         cmmntyIntrcn: '개발 관련 논의',
         frstRegisterNm: '테스트님',
-        createdDate: '2024-05-01'
+        crtDt: '2024-05-01'
       }
     ],
     total: 1,

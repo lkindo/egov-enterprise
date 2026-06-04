@@ -8,13 +8,13 @@ import java.util.List;
 public interface EgovNotificationService {
     Page<NotificationDto> getNotificationList(String keyword, Pageable pageable);
 
-    NotificationDto getNotification(String ntfcNo);
+    NotificationDto getNotification(String notiSn);
 
     String createNotification(String userId, NotificationDto dto);
 
-    void updateNotification(String ntfcNo, String userId, NotificationDto dto);
+    void updateNotification(String notiSn, String userId, NotificationDto dto);
 
-    void deleteNotification(String ntfcNo);
+    void deleteNotification(String notiSn);
 
     /**
      * 페이지네이션 적용된 활성 알림 조회
@@ -28,5 +28,5 @@ public interface EgovNotificationService {
 
     long getUnreadCount(String userId);
 
-    void markAsRead(String ntfcNo);
+    void markAsRead(String notiSn);
 }

@@ -70,22 +70,4 @@ public class SysLog extends BaseEntity {
         this.errSeCd = errSeCd;
     }
 
-    public static abstract class SysLogBuilder<C extends SysLog, B extends SysLogBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        private String mthdNm;
-
-        public B methodNm(String methodNm) {
-            this.mthdNm = methodNm;
-            return self();
-        }
-    }
-
-    // ----- [Legacy Aliases] -----
-
-    public String getMethodNm() {
-        return this.mthdNm;
-    }
-
-    public String getRqesterIp() {
-        return this.dmndUserIpAddr;
-    }
 }

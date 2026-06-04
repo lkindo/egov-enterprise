@@ -104,10 +104,10 @@ class BoardTest {
                 .bbsId("BBS_001")
                 .build();
 
-        board.setCommentCnt(5);
+        board.setCmntCnt(5);
         board.setFileCnt(3);
 
-        assertThat(board.getCommentCnt()).isEqualTo(5);
+        assertThat(board.getCmntCnt()).isEqualTo(5);
         assertThat(board.getFileCnt()).isEqualTo(3);
     }
 
@@ -217,7 +217,7 @@ class BoardTest {
         assertThat(board.getLikeCnt()).isEqualTo(0);
         assertThat(board.getAnsYn()).isEqualTo("N");
         assertThat(board.getNtcYn()).isEqualTo("N");
-        assertThat(board.getCommentCnt()).isEqualTo(0);
+        assertThat(board.getCmntCnt()).isEqualTo(0);
         assertThat(board.getFileCnt()).isEqualTo(0);
     }
 }

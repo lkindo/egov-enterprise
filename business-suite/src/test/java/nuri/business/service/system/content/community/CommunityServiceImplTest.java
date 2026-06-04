@@ -54,7 +54,7 @@ class CommunityServiceImplTest {
         // given
         String userId = "user1";
         CommunityDto dto = CommunityDto.builder()
-                .cmntyTtl("Test Community")
+                .cmntyNm("Test Community")
                 .cmntyIntroCn("Description")
                 .tmplatId("TMP_01")
                 .build();
@@ -68,7 +68,7 @@ class CommunityServiceImplTest {
         // then
         assertThat(created).isNotNull();
         assertThat(created.getCmntyId()).isEqualTo("CMMNTY_01");
-        assertThat(created.getCmntyTtl()).isEqualTo("Test Community");
+        assertThat(created.getCmntyNm()).isEqualTo("Test Community");
         verify(communityRepository, times(1)).save(any(Community.class));
     }
 
@@ -78,7 +78,7 @@ class CommunityServiceImplTest {
         // given
         Community community = Community.builder()
                 .cmntyId("CMMNTY_01")
-                .cmntyTtl("Test Community")
+                .cmntyNm("Test Community")
                 .build();
         given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
 
@@ -87,14 +87,14 @@ class CommunityServiceImplTest {
         
         // then
         assertThat(found).isNotNull();
-        assertThat(found.getCmntyTtl()).isEqualTo("Test Community");
+        assertThat(found.getCmntyNm()).isEqualTo("Test Community");
     }
 
     @Test
     @DisplayName("커뮤니티 목록 조회 - 성공")
     void getCommunityList() {
         // given
-        Community community = Community.builder().cmntyId("CMMNTY_01").cmntyTtl("Comm A").build();
+        Community community = Community.builder().cmntyId("CMMNTY_01").cmntyNm("Comm A").build();
         Pageable pageable = PageRequest.of(0, 10);
 
         given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
@@ -120,20 +120,20 @@ class CommunityServiceImplTest {
         // given
         Community community = Community.builder()
                 .cmntyId("CMMNTY_01")
-                .cmntyTtl("Comm A")
+                .cmntyNm("Comm A")
                 .build();
         given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
         
         CommunityDto updateDto = CommunityDto.builder()
                 .cmntyId("CMMNTY_01")
-                .cmntyTtl("Updated Comm")
+                .cmntyNm("Updated Comm")
                 .build();
 
         // when
         communityService.updateCommunity("user1", updateDto);
         
         // then
-        assertThat(community.getCmntyTtl()).isEqualTo("Updated Comm");
+        assertThat(community.getCmntyNm()).isEqualTo("Updated Comm");
     }
     
     @Test

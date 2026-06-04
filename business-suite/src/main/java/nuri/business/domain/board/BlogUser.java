@@ -43,11 +43,6 @@ public class BlogUser extends BaseEntity {
 
     @Column(length = 1)
     private String useYn;
-
-    @Transient
-    public String getWdrlYmd() { return whdwlYmd; }
-    @Transient
-    public void setWdrlYmd(String v) { this.whdwlYmd = v; }
 }
 
 @EqualsAndHashCode

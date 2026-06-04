@@ -83,7 +83,7 @@ public class RealTimeDashboardService {
      */
     private int getPendingAlertsCount() {
         try {
-            return (int) notificationRepository.countByIsRead("N");
+            return (int) notificationRepository.countByReadYn("N");
         } catch (Exception e) {
             log.error("Failed to count pending alerts", e);
             return 0;

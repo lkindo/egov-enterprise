@@ -24,8 +24,8 @@ class SqlInjectionAndXssDefenseTest extends BaseSecurityTest {
               "userId": "%s",
               "password": "password123!",
               "userNm": "테스트사용자",
-              "passwordHint": "hint",
-              "passwordCnsr": "answer",
+              "pswdHint": "hint",
+              "pswdCrans": "answer",
               "role": "USER"
             }
             """.formatted(maliciousUserId);
@@ -51,8 +51,8 @@ class SqlInjectionAndXssDefenseTest extends BaseSecurityTest {
               "userId": "%s",
               "password": "password123!",
               "userNm": "Admin",
-              "passwordHint": "hint",
-              "passwordCnsr": "answer",
+              "pswdHint": "hint",
+              "pswdCrans": "answer",
               "role": "USER"
             }
             """.formatted(maliciousUserId);
@@ -78,8 +78,8 @@ class SqlInjectionAndXssDefenseTest extends BaseSecurityTest {
               "userId": "xssUser",
               "password": "password123!",
               "userNm": "%s",
-              "passwordHint": "hint",
-              "passwordCnsr": "answer",
+              "pswdHint": "hint",
+              "pswdCrans": "answer",
               "role": "USER"
             }
             """.formatted(maliciousUserName);

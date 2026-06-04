@@ -41,18 +41,20 @@ class OpenApiDocumentationTest {
   @DisplayName("OpenAPI 스펙 JSON 생성 확인")
   void openApiSpec_endpoint_accessibility() throws Exception {
     // When & Then - OpenAPI 스펙 확인
-    mockMvc.perform(get("/v3/api-docs")
+    String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.openapi").exists());
+        .andExpect(jsonPath("$.openapi").exists())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
 
-    // 테스트 환경에서는 파일 내보내기 기능 비활성화
-    // String exportPath = System.getProperty("openapi.export.path");
-    // if (exportPath != null && !exportPath.isEmpty()) {
-    //   java.nio.file.Path path = java.nio.file.Paths.get(exportPath);
-    //   java.nio.file.Files.createDirectories(path.getParent());
-    //   java.nio.file.Files.write(path, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    // }
+    String exportPath = System.getProperty("openapi.export.path");
+    if (exportPath != null && !exportPath.isEmpty()) {
+      java.nio.file.Path path = java.nio.file.Paths.get(exportPath);
+      if (path.getParent() != null) {
+        java.nio.file.Files.createDirectories(path.getParent());
+      }
+      java.nio.file.Files.write(path, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
   }
 }

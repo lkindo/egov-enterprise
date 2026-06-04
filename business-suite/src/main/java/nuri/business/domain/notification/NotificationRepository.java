@@ -14,15 +14,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     long countByRcvrIdAndReadYn(String rcvrId, String readYn);
 
-    @Deprecated
-    default long countByReceiverIdAndIsRead(String receiverId, String isRead) {
-        return countByRcvrIdAndReadYn(receiverId, isRead);
-    }
-
     long countByReadYn(String readYn);
-
-    @Deprecated
-    default long countByIsRead(String isRead) {
-        return countByReadYn(isRead);
-    }
 }

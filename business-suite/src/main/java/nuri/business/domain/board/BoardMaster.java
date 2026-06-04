@@ -121,22 +121,26 @@ public class BoardMaster extends BaseEntity {
         if (this.optnFrstRgtrId != null) {
             this.option.setFrstRgtrId(this.optnFrstRgtrId);
         } else {
-            this.option.setFrstRgtrId(this.getFrstRgtrId() != null ? this.getFrstRgtrId() : "webmaster");
+            this.optnFrstRgtrId = this.getFrstRgtrId() != null ? this.getFrstRgtrId() : "webmaster";
+            this.option.setFrstRgtrId(this.optnFrstRgtrId);
         }
         if (this.optnCrtDt != null) {
             this.option.setCrtDt(this.optnCrtDt);
         } else {
-            this.option.setCrtDt(this.getCrtDt() != null ? this.getCrtDt() : LocalDateTime.now());
+            this.optnCrtDt = this.getCrtDt() != null ? this.getCrtDt() : LocalDateTime.now();
+            this.option.setCrtDt(this.optnCrtDt);
         }
         if (this.optnLastMdfrId != null) {
             this.option.setLastMdfrId(this.optnLastMdfrId);
         } else {
-            this.option.setLastMdfrId(this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster");
+            this.optnLastMdfrId = this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster";
+            this.option.setLastMdfrId(this.optnLastMdfrId);
         }
         if (this.optnMdfcnDt != null) {
             this.option.setMdfcnDt(this.optnMdfcnDt);
         } else {
-            this.option.setMdfcnDt(LocalDateTime.now());
+            this.optnMdfcnDt = LocalDateTime.now();
+            this.option.setMdfcnDt(this.optnMdfcnDt);
         }
     }
 
@@ -152,9 +156,11 @@ public class BoardMaster extends BaseEntity {
         if (this.optnLastMdfrId != null) {
             this.option.setLastMdfrId(this.optnLastMdfrId);
         } else {
-            this.option.setLastMdfrId(this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster");
+            this.optnLastMdfrId = this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster";
+            this.option.setLastMdfrId(this.optnLastMdfrId);
         }
-        this.option.setMdfcnDt(LocalDateTime.now());
+        this.optnMdfcnDt = LocalDateTime.now();
+        this.option.setMdfcnDt(this.optnMdfcnDt);
     }
 
     @PostLoad
@@ -169,95 +175,7 @@ public class BoardMaster extends BaseEntity {
         }
     }
 
-    // ----- [Legacy Getter/Setter & Builder Aliases] -----
-
-    public String getAnsYn() {
-        return this.ansYn != null ? this.ansYn : "N";
-    }
-
-    public void setAnsYn(String ansYn) {
-        this.ansYn = ansYn;
-        ensureOption();
-        this.option.setAnsYn(ansYn);
-    }
-
-    public String getStsfdgYn() {
-        return this.stsfdgYn != null ? this.stsfdgYn : "N";
-    }
-
-    public void setStsfdgYn(String stsfdgYn) {
-        this.stsfdgYn = stsfdgYn;
-        ensureOption();
-        this.option.setStsfdgYn(stsfdgYn);
-    }
-
-    public String getOptnFrstRegisterId() {
-        if (this.option != null) {
-            return this.option.getFrstRgtrId();
-        }
-        return this.optnFrstRgtrId;
-    }
-
-    public void setOptnFrstRegisterId(String v) {
-        this.optnFrstRgtrId = v;
-        ensureOption();
-        this.option.setFrstRgtrId(v);
-    }
-
-    public LocalDateTime getOptnFrstRegistPnttm() {
-        if (this.option != null) {
-            return this.option.getCrtDt();
-        }
-        return this.optnCrtDt;
-    }
-
-    public void setOptnFrstRegistPnttm(LocalDateTime v) {
-        this.optnCrtDt = v;
-        ensureOption();
-        this.option.setCrtDt(v);
-    }
-
-    public String getOptnLastUpdusrId() {
-        if (this.option != null) {
-            return this.option.getLastMdfrId();
-        }
-        return this.optnLastMdfrId;
-    }
-
-    public void setOptnLastUpdusrId(String v) {
-        this.optnLastMdfrId = v;
-        ensureOption();
-        this.option.setLastMdfrId(v);
-    }
-
-    public LocalDateTime getOptnLastUpdtPnttm() {
-        if (this.option != null) {
-            return this.option.getMdfcnDt();
-        }
-        return this.optnMdfcnDt;
-    }
-
-    public void setOptnLastUpdtPnttm(LocalDateTime v) {
-        this.optnMdfcnDt = v;
-        ensureOption();
-        this.option.setMdfcnDt(v);
-    }
-
-    public static abstract class BoardMasterBuilder<C extends BoardMaster, B extends BoardMasterBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-
-        public B optnFrstRegisterId(String v) {
-            return this.optnFrstRgtrId(v);
-        }
-        public B optnFrstRegistPnttm(LocalDateTime v) {
-            return this.optnCrtDt(v);
-        }
-        public B optnLastUpdusrId(String v) {
-            return this.optnLastMdfrId(v);
-        }
-        public B optnLastUpdtPnttm(LocalDateTime v) {
-            return this.optnMdfcnDt(v);
-        }
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
     public void update(String bbsTtl, String bbsExpln, String ansPsbltyYn, String fileAtchPsbltyYn,
             Integer atchPsbltyFileQty, Long atchPsbltyFileSz, String tmpltId, String useYn,
@@ -270,8 +188,8 @@ public class BoardMaster extends BaseEntity {
         this.atchPsbltyFileSz = atchPsbltyFileSz;
         this.tmpltId = tmpltId;
         this.useYn = useYn;
-        this.setAnsYn(ansYn);
-        this.setStsfdgYn(stsfdgYn);
+        this.ansYn = ansYn;
+        this.stsfdgYn = stsfdgYn;
     }
 
     public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
@@ -282,8 +200,8 @@ public class BoardMaster extends BaseEntity {
     public void updateAtchPsbltyFileSz(Long atchPsbltyFileSz) { this.atchPsbltyFileSz = atchPsbltyFileSz; }
     public void updateTmpltId(String tmpltId) { this.tmpltId = tmpltId; }
     public void updateUseYn(String useYn) { this.useYn = useYn; }
-    public void updateAnsYn(String ansYn) { this.setAnsYn(ansYn); }
-    public void updateStsfdgYn(String stsfdgYn) { this.setStsfdgYn(stsfdgYn); }
+    public void updateAnsYn(String ansYn) { this.ansYn = ansYn; }
+    public void updateStsfdgYn(String stsfdgYn) { this.stsfdgYn = stsfdgYn; }
 
     public void delete() {
         this.useYn = "N";

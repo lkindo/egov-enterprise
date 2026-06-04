@@ -94,13 +94,13 @@ export default function NotePage() {
             <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
                 <User size={14} />
             </div>
-            <span className="text-sm font-bold text-slate-600">{tab === 'received' ? item.trnsmitterId : item.rcverId}</span>
+            <span className="text-sm font-bold text-slate-600">{tab === 'received' ? item.dsptchUserId : item.rcverId}</span>
         </div>
       )
     },
     {
       header: '일시',
-      accessor: (item: Note) => <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter">{item.sendDt}</span>,
+      accessor: (item: Note) => <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter">{item.crtDt}</span>,
     },
     {
       header: '관리',
@@ -244,9 +244,9 @@ export default function NotePage() {
                     <h3 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>
                     <div className="flex items-center gap-4 pt-2">
                          <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                             {tab === 'received' ? `발신: ${selectedNote.trnsmitterId}` : `수신: ${selectedNote.rcverId}`}
+                             {tab === 'received' ? `발신: ${selectedNote.dsptchUserId}` : `수신: ${selectedNote.rcverId}`}
                          </div>
-                         <div className="text-xs font-bold text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.sendDt}</div>
+                         <div className="text-xs font-bold text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.crtDt}</div>
                     </div>
               </div>
               <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
@@ -260,7 +260,7 @@ export default function NotePage() {
                 <Button
                   onClick={() => {
                     setDetailOpen(false);
-                    setFormData({ ...formData, rcverId: selectedNote.trnsmitterId, noteSj: `Re: ${selectedNote.noteSj}` });
+                    setFormData({ ...formData, rcverId: selectedNote.dsptchUserId, noteSj: `Re: ${selectedNote.noteSj}` });
                     setWriteOpen(true);
                   }}
                   className="h-11 px-10 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"

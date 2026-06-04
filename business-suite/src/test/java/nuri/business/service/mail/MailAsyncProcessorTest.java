@@ -41,19 +41,19 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 성공")
     void processSending_Success() throws Exception {
-        SentMail mail = SentMail.builder().mssageId("M1").build();
+        SentMail mail = SentMail.builder().msgId("M1").build();
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
 
         mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to");
 
         verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
-        assertThat(mail.getSndngResultCode()).isEqualTo("S");
+        assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
     }
 
     @Test
     @DisplayName("비동기 메일 발송 - 실패 (예외 발생)")
     void processSending_Failure() throws Exception {
-        SentMail mail = SentMail.builder().mssageId("M1").build();
+        SentMail mail = SentMail.builder().msgId("M1").build();
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
         doThrow(new RuntimeException("Send error")).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
@@ -64,7 +64,7 @@ class MailAsyncProcessorTest {
 
         // Manually trigger recovery for verification
         mailAsyncProcessor.recoverSending(new RuntimeException("Send error"), "M1", "Sub", "Cn", "from", "to");
-        assertThat(mail.getSndngResultCode()).isEqualTo("F");
+        assertThat(mail.getDsptchRsltCd()).isEqualTo("F");
     }
 
     @Test

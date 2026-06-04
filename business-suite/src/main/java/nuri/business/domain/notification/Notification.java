@@ -61,47 +61,5 @@ public class Notification extends BaseEntity {
         this.notiIvlVal = notiIvlVal;
     }
 
-    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
-    public String getNtfcNo() { return this.notiSn; }
-    public String getNtfcSj() { return this.notiTtlNm; }
-    public String getNtfcCn() { return this.notiCn; }
-    public String getReceiverId() { return this.rcvrId; }
-    public String getIsRead() { return this.readYn; }
-    public LocalDateTime getNtfcTime() { return this.notiDt; }
-    public String getBhNtfcIntrvl() { return this.notiIvlVal; }
-
-    // ----- [Legacy Setter Aliases for Backwards Compatibility] -----
-    public void setNtfcNo(String ntfcNo) { this.notiSn = ntfcNo; }
-    public void setNtfcSj(String ntfcSj) { this.notiTtlNm = ntfcSj; }
-    public void setNtfcCn(String ntfcCn) { this.notiCn = ntfcCn; }
-    public void setReceiverId(String receiverId) { this.rcvrId = receiverId; }
-    public void setIsRead(String isRead) { this.readYn = isRead; }
-    public void setNtfcTime(LocalDateTime ntfcTime) { this.notiDt = ntfcTime; }
-    public void setBhNtfcIntrvl(String bhNtfcIntrvl) { this.notiIvlVal = bhNtfcIntrvl; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-    public static abstract class NotificationBuilder<C extends Notification, B extends NotificationBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-
-        public B ntfcNo(String ntfcNo) {
-            return this.notiSn(ntfcNo);
-        }
-        public B ntfcSj(String ntfcSj) {
-            return this.notiTtlNm(ntfcSj);
-        }
-        public B ntfcCn(String ntfcCn) {
-            return this.notiCn(ntfcCn);
-        }
-        public B receiverId(String receiverId) {
-            return this.rcvrId(receiverId);
-        }
-        public B isRead(String isRead) {
-            return this.readYn(isRead);
-        }
-        public B ntfcTime(LocalDateTime ntfcTime) {
-            return this.notiDt(ntfcTime);
-        }
-        public B bhNtfcIntrvl(String bhNtfcIntrvl) {
-            return this.notiIvlVal(bhNtfcIntrvl);
-        }
-    }
+    // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

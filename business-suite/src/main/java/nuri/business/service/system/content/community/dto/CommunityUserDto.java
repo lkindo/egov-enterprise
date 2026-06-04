@@ -43,7 +43,7 @@ public class CommunityUserDto {
                 .userId(entity.getId().getUserId())
                 .mngrYn(entity.getMngrYn())
                 .joinYmd(entity.getJoinYmd())
-                .wdrlYmd(entity.getWdrlYmd())
+                .wdrlYmd(entity.getWhdwlYmd())
                 .mbrSttsCd(entity.getMbrSttsCd())
                 .useYn(entity.getUseYn())
                 .frstRgtrId(entity.getFrstRgtrId())

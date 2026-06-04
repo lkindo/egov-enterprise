@@ -60,11 +60,11 @@ public class LogService extends BaseAbstractService implements EgovLogService {
     private LogDto convertToDto(LoginLog log) {
         return LogDto.builder()
                 .logId(log.getLogId())
-                .conectMthd(log.getLoginMthd())
-                .conectId(log.getLoginId())
-                .conectIp(log.getLoginIp())
+                .conectMthd(log.getCntnMthdCd())
+                .conectId(log.getUserId())
+                .conectIp(log.getLgnIpAddr())
                 .creatDt(log.getCrtDt())
-                .errOccrrAt(log.getErrOccrrAt())
+                .errOccrrAt(log.getErrOcrnYn())
                 .build();
     }
 }

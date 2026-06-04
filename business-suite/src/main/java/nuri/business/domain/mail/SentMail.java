@@ -50,48 +50,7 @@ public class SentMail extends BaseEntity {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
-    // ----- [Legacy Getter Aliases for Backwards Compatibility] -----
 
-    public String getMssageId() { return this.msgId; }
-    public String getSj() { return this.emlTtl; }
-    public String getEmailCn() { return this.emlCn; }
-    public String getDsptchPerson() { return this.sndptyNm; }
-    public String getRecptnPerson() { return this.rcvrNm; }
-    public String getSndngResultCode() { return this.dsptchRsltCd; }
-    public java.time.LocalDateTime getSndngDe() { return this.dsptchDt; }
-
-    // ----- [Custom Builder Extension for Backwards Compatibility] -----
-
-    public static abstract class SentMailBuilder<C extends SentMail, B extends SentMailBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B mssageId(String mssageId) {
-            this.msgId = mssageId;
-            return self();
-        }
-        public B sj(String sj) {
-            this.emlTtl = sj;
-            return self();
-        }
-        public B emailCn(String emailCn) {
-            this.emlCn = emailCn;
-            return self();
-        }
-        public B dsptchPerson(String dsptchPerson) {
-            this.sndptyNm = dsptchPerson;
-            return self();
-        }
-        public B recptnPerson(String recptnPerson) {
-            this.rcvrNm = recptnPerson;
-            return self();
-        }
-        public B sndngResultCode(String sndngResultCode) {
-            this.dsptchRsltCd = sndngResultCode;
-            return self();
-        }
-        public B sndngDe(java.time.LocalDateTime sndngDe) {
-            this.dsptchDt = sndngDe;
-            return self();
-        }
-    }
 
     public SentMail(String mssageId, String sj, String emailCn, String dsptchPerson,
             String recptnPerson, String sndngResultCode, String atchFileId) {

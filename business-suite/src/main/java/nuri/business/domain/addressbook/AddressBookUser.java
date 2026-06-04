@@ -35,12 +35,8 @@ public class AddressBookUser extends BaseEntity {
     @Column(length = 20)
     private String userId;
 
-    public String getAdbkId() {
-        return this.addressBook != null ? this.addressBook.getAdbkId() : null;
-    }
 
-    // @Column(name = "rls_scp_cd", length = 30)
-    // private String rlsScpCd;
+
 
     @Column(length = 100)
     private String nm;
@@ -60,10 +56,5 @@ public class AddressBookUser extends BaseEntity {
     @Column(length = 11)
     private String faxNo;
 
-    public static abstract class AddressBookUserBuilder<C extends AddressBookUser, B extends AddressBookUserBuilder<C, B>> extends BaseEntityBuilder<C, B> {
-        public B adbkId(String adbkId) {
-            this.addressBook(AddressBook.builder().adbkId(adbkId).build());
-            return self();
-        }
-    }
+
 }

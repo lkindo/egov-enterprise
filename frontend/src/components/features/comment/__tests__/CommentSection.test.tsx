@@ -33,18 +33,17 @@ vi.mock('@/app/components/ui/toast', () => ({
 }));
 
 describe('CommentSection Component', () => {
-  const mockPstId = 1;
+  const mockPstId = '1';
   const mockBbsId = 'BBS_001';
   const mockComments: CommentVO[] = [
     {
-      id: 101,
+      ansSn: 101,
       pstId: mockPstId,
       bbsId: mockBbsId,
-      writerId: 'user01',
+      wrterId: 'user01',
       wrterNm: 'User One',
-      cmntCn: 'First Comment',
-      useYn: 'Y',
-      createdDate: '2024-03-10T12:00:00Z',
+      ansCn: 'First Comment',
+      crtDt: '2024-03-10T12:00:00Z',
     },
   ];
 

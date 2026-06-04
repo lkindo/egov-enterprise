@@ -56,12 +56,12 @@ public class MailService implements EgovMailService {
         String mssageId = nuri.foundation.core.util.IdGenerationUtil.generateMailId();
 
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
-                .mssageId(mssageId)
-                .sj(dto.getSj())
-                .emailCn(dto.getEmailCn())
-                .dsptchPerson(dto.getDsptchPerson())
-                .recptnPerson(dto.getRecptnPerson())
-                .sndngResultCode("P") // Pending
+                .msgId(mssageId)
+                .emlTtl(dto.getSj())
+                .emlCn(dto.getEmailCn())
+                .sndptyNm(dto.getDsptchPerson())
+                .rcvrNm(dto.getRecptnPerson())
+                .dsptchRsltCd("P") // Pending
                 .atchFileId(dto.getAtchFileId())
                 .build());
 

@@ -40,10 +40,10 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
                 'Content-Type': 'application/json'
             },
             data: {
-                ntfcSj: testTitle,
-                ntfcCn: testMessage,
-                isRead: 'N',
-                receiverId: 'webmaster'
+                notiTtlNm: testTitle,
+                notiCn: testMessage,
+                readYn: 'N',
+                rcvrId: 'webmaster'
             }
         });
         console.log(`>>> API Response Status: ${response.status()}`);
@@ -88,7 +88,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         console.log('>>> Step 1: Creating long notification');
         await request.post('http://localhost:8080/api/v1/notifications', {
             headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-            data: { ntfcSj: testTitle, ntfcCn: testMessage, receiverId: 'webmaster' }
+            data: { notiTtlNm: testTitle, notiCn: testMessage, rcvrId: 'webmaster' }
         });
 
         console.log('>>> Step 2: Verifying UI stability in drawer');

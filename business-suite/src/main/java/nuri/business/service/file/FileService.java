@@ -74,12 +74,12 @@ public class FileService extends BaseAbstractService implements EgovFileService 
 
             FileDetail detail = FileDetail.builder()
                     .fileMaster(master)
-                    .fileSn(fileSn++)
-                    .fileStreCours(targetPath)
-                    .streFileNm(savedFilename)
-                    .orignlFileNm(file.getOriginalFilename())
-                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                    .fileMg(file.getSize())
+                    .atchFileSeq(fileSn++)
+                    .fileStrgPath(targetPath)
+                    .strgFileNm(savedFilename)
+                    .orgnlFileNm(file.getOriginalFilename())
+                    .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                    .fileSz(file.getSize())
                     .build();
 
             fileDetailRepository.save(detail);
@@ -112,8 +112,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                         required(fileSn, "fileSn 는 null 일 수 없습니다")))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        return storageService.loadAsResource(required(detail.getStreFileNm(), "detail.getStreFileNm() 는 null 일 수 없습니다"),
-                required(detail.getFileStreCours(), "detail.getFileStreCours() 는 null 일 수 없습니다"));
+        return storageService.loadAsResource(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
+                required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
     }
 
     /**
@@ -127,8 +127,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
 
         List<FileDetail> details = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다"));
         for (FileDetail detail : details) {
-            storageService.delete(required(detail.getStreFileNm(), "detail.getStreFileNm() 는 null 일 수 없습니다"),
-                    required(detail.getFileStreCours(), "detail.getFileStreCours() 는 null 일 수 없습니다"));
+            storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
+                    required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
         }
 
         fileMasterRepository.delete(required(master, "master 는 null 일 수 없습니다"));
@@ -145,8 +145,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                         required(fileSn, "fileSn 는 null 일 수 없습니다")))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        storageService.delete(required(detail.getStreFileNm(), "detail.getStreFileNm() 는 null 일 수 없습니다"),
-                required(detail.getFileStreCours(), "detail.getFileStreCours() 는 null 일 수 없습니다"));
+        storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
+                required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
         fileDetailRepository.delete(required(detail, "detail 는 null 일 수 없습니다"));
     }
 
@@ -172,7 +172,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
-                .mapToInt(FileDetail::getFileSn)
+                .mapToInt(FileDetail::getAtchFileSeq)
                 .max()
                 .orElse(0);
 
@@ -190,12 +190,12 @@ public class FileService extends BaseAbstractService implements EgovFileService 
 
             FileDetail detail = FileDetail.builder()
                     .fileMaster(master)
-                    .fileSn(fileSn++)
-                    .fileStreCours(targetPath)
-                    .streFileNm(savedFilename)
-                    .orignlFileNm(file.getOriginalFilename())
-                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                    .fileMg(file.getSize())
+                    .atchFileSeq(fileSn++)
+                    .fileStrgPath(targetPath)
+                    .strgFileNm(savedFilename)
+                    .orgnlFileNm(file.getOriginalFilename())
+                    .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                    .fileSz(file.getSize())
                     .build();
 
             fileDetailRepository.save(required(detail, "detail 는 null 일 수 없습니다"));
@@ -210,7 +210,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
             org.springframework.data.domain.Pageable pageable, String searchKeyword) {
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             return fileDetailRepository
-                    .findByOrignlFileNmContaining(searchKeyword, required(pageable, "pageable 는 null 일 수 없습니다"))
+                    .findByOrgnlFileNmContaining(searchKeyword, required(pageable, "pageable 는 null 일 수 없습니다"))
                     .map(this::convertToDto);
         }
         return fileDetailRepository.findAll(required(pageable, "pageable 는 null 일 수 없습니다"))
@@ -220,13 +220,14 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     private FileDto convertToDto(FileDetail d) {
         return FileDto.builder()
                 .atchFileId(d.getFileMaster().getAtchFileId())
-                .fileSn(d.getFileSn())
-                .fileStreCours(d.getFileStreCours())
-                .streFileNm(d.getStreFileNm())
-                .orignlFileNm(d.getOrignlFileNm())
-                .fileExtsn(d.getFileExtsn())
-                .fileMg(d.getFileMg())
+                .fileSn(d.getAtchFileSeq())
+                .fileStreCours(d.getFileStrgPath())
+                .streFileNm(d.getStrgFileNm())
+                .orignlFileNm(d.getOrgnlFileNm())
+                .fileExtsn(d.getFileEstn())
+                .fileMg(d.getFileSz())
                 .fileCn(d.getFileCn())
+                .crtDt(d.getCrtDt())
                 .build();
     }
 

@@ -8,49 +8,49 @@ import static org.junit.jupiter.api.Assertions.*;
 class NotificationDomainTest {
 
     @Test
-    @DisplayName("알림 도메인 생성 및 초기값 테스트")
+    @DisplayName("Notification Entity Creation and Initialization Test")
     void notification_builder_test() {
         // Given
         LocalDateTime before = LocalDateTime.now();
         
         // When - use builder to trigger custom constructor logic
         Notification ntfc = Notification.builder()
-                .ntfcNo("NT1")
-                .ntfcSj("Title")
-                .ntfcCn("Content")
-                .receiverId("user1")
+                .notiSn("NT1")
+                .notiTtlNm("Title")
+                .notiCn("Content")
+                .rcvrId("user1")
                 .linkUrl("/home")
                 .crtDt(LocalDateTime.now())
                 .mdfcnDt(LocalDateTime.now())
                 .build();
         
         // Then
-        assertEquals("NT1", ntfc.getNtfcNo());
-        assertEquals("Title", ntfc.getNtfcSj());
-        assertEquals("Content", ntfc.getNtfcCn());
-        assertEquals("user1", ntfc.getReceiverId());
+        assertEquals("NT1", ntfc.getNotiSn());
+        assertEquals("Title", ntfc.getNotiTtlNm());
+        assertEquals("Content", ntfc.getNotiCn());
+        assertEquals("user1", ntfc.getRcvrId());
         assertEquals("/home", ntfc.getLinkUrl());
-        assertEquals("N", ntfc.getIsRead());
+        assertEquals("N", ntfc.getReadYn());
         assertNotNull(ntfc.getCrtDt());
         assertNotNull(ntfc.getMdfcnDt());
         assertTrue(ntfc.getCrtDt().isAfter(before.minusSeconds(1)));
     }
 
     @Test
-    @DisplayName("알림 상태 업데이트 및 읽음 처리 테스트")
+    @DisplayName("Notification Status Update and Read Processing Test")
     void notification_update_test() {
         // Given
         Notification ntfc = Notification.builder()
-                .ntfcNo("NT1")
+                .notiSn("NT1")
                 .build();
         
         // When - mark as read
         ntfc.markAsRead();
-        assertEquals("Y", ntfc.getIsRead());
+        assertEquals("Y", ntfc.getReadYn());
         
         // When - update content
         ntfc.update("New Sj", "New Cn", null, null);
-        assertEquals("New Sj", ntfc.getNtfcSj());
-        assertEquals("New Cn", ntfc.getNtfcCn());
+        assertEquals("New Sj", ntfc.getNotiTtlNm());
+        assertEquals("New Cn", ntfc.getNotiCn());
     }
 }

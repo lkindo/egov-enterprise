@@ -12,7 +12,7 @@ export interface MemoReportInfo {
   drctnMttr?: string;
   drctnMttrRegDt?: string;
   rptrInqDt?: string;
-  createdDate: string;
+  crtDt: string;
 }
 
 export interface PageResponse<T> {

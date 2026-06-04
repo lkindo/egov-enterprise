@@ -125,16 +125,16 @@ class FaqServiceTest {
 
     @Test
     @DisplayName("FAQ 조회수 증가")
-    void increaseInqireCo() {
+    void increaseInqCnt() {
         // given
         String faqId = "FAQ1";
         Faq entity = org.mockito.Mockito.spy(Faq.builder().faqId(faqId).inqCnt(0).build());
         given(faqRepository.findById(faqId)).willReturn(Optional.of(entity));
 
         // when
-        faqService.increaseInqireCo(faqId);
+        faqService.increaseInqCnt(faqId);
 
         // then
-        verify(entity).increaseInqireCo();
+        verify(entity).increaseInqCnt();
     }
 }

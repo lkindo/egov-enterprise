@@ -23,7 +23,6 @@ public class BoardDetailResult {
     private String pstCn;
     private String pswd;
     private String frstRgtrId;
-    private String frstRegisterNm;
     private LocalDateTime crtDt;
     private String pstBgngYmd;
     private String pstEndYmd;
@@ -33,7 +32,7 @@ public class BoardDetailResult {
     private String atchFileId;
     private String upPstId;
     private String replyYn;
-    private Integer ansLvl;
+    private Integer ansLv;
     private Long sortOrdr;
     private String ttlBoldYn;
     private String noticeYn;
@@ -51,8 +50,4 @@ public class BoardDetailResult {
     private String bbsTtl;
 
 
-    public String getPstId() { return pstId; }
-    public String getPstTtl() { return pstTtl; }
-    public String getPstCn() { return pstCn; }
-    public Long getPstSn() { return ansSn; }
 }

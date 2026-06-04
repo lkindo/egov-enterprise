@@ -11,7 +11,7 @@ import java.util.List;
 public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResult, String> {
     long countByPollArtclId(String pollArtclId);
 
-    @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollId = :pollId AND r.frstRgtrId = :frstRegisterId")
+    @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollId = :pollId AND r.frstRgtrId = :frstRgtrId")
     long countByPollIdAndFrstRegisterId(@Param("pollId") String pollId, @Param("frstRgtrId") String frstRegisterId);
 
     List<OnlinePollResult> findByPollId(String pollId);

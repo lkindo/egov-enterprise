@@ -15,15 +15,15 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 const InsertDeptJobPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    deptJobNm: '',
-    deptJobCn: '',
-    priort: '3'
+    deptTaskNm: '',
+    deptTaskCn: '',
+    prrtyRnk: '3'
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.deptJobNm.trim()) {
+    if (!formData.deptTaskNm.trim()) {
       alert('업무 제목을 입력해 주세요.');
       return;
     }
@@ -70,22 +70,22 @@ const InsertDeptJobPage = () => {
           <CardContent className="pt-24 pb-20 px-12 md:px-20 space-y-20">
             {/* Task Title */}
             <div className="space-y-6 group">
-              <Label htmlFor="deptJobNm" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
+              <Label htmlFor="deptTaskNm" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
                 <span className="w-2 h-2 rounded-lg bg-primary" /> 핵심 업무명 지정
               </Label>
               <Input
-                id="deptJobNm"
+                id="deptTaskNm"
                 placeholder="수행해야 할 핵심 업무 제목을 입력하세요"
                 className="h-11 text-3xl font-bold border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-lg px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
-                value={formData.deptJobNm}
-                onChange={(e) => setFormData({ ...formData, deptJobNm: e.target.value })}
+                value={formData.deptTaskNm}
+                onChange={(e) => setFormData({ ...formData, deptTaskNm: e.target.value })}
                 required
               />
             </div>
 
             {/* Priority Selection */}
             <div className="space-y-6 group">
-              <Label htmlFor="priort" className="text-xs font-bold tracking-[0.3em] text-slate-400 flex items-center gap-3">
+              <Label htmlFor="prrtyRnk" className="text-xs font-bold tracking-[0.3em] text-slate-400 flex items-center gap-3">
                 <AlertCircle className="w-4 h-4 text-primary" /> 전략적 우선순위 등급
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -97,13 +97,13 @@ const InsertDeptJobPage = () => {
                   <button
                     key={p.value}
                     type="button"
-                    onClick={() => setFormData({ ...formData, priort: p.value })}
-                    className={`p-8 rounded-lg border-2 text-center transition-all active:scale-95 ${formData.priort === p.value
+                    onClick={() => setFormData({ ...formData, prrtyRnk: p.value })}
+                    className={`p-8 rounded-lg border-2 text-center transition-all active:scale-95 ${formData.prrtyRnk === p.value
                       ? 'bg-slate-900 text-white border-slate-900 shadow-2xl ring-8 ring-slate-100'
                       : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200'
                       }`}
                   >
-                    <div className={`text-sm font-bold tracking-[0.2em] mb-1 ${formData.priort === p.value ? 'text-primary' : ''}`}>{p.label}</div>
+                    <div className={`text-sm font-bold tracking-[0.2em] mb-1 ${formData.prrtyRnk === p.value ? 'text-primary' : ''}`}>{p.label}</div>
                     <div className="text-sm font-bold opacity-60 ">{p.desc}</div>
                   </button>
                 ))}
@@ -112,15 +112,15 @@ const InsertDeptJobPage = () => {
 
             {/* Task Description */}
             <div className="space-y-6 group">
-              <Label htmlFor="deptJobCn" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
+              <Label htmlFor="deptTaskCn" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
                 <FileText className="w-4 h-4" /> 상세 업무 내용
               </Label>
               <Textarea
-                id="deptJobCn"
+                id="deptTaskCn"
                 placeholder="업무의 상세 목표, 수행 방법, 요청 사항 등을 구체적으로 서술하세요.."
                 className="min-h-[350px] p-12 text-xl font-medium leading-[1.8] border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-lg bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl resize-none scrollbar-thin scrollbar-thumb-slate-200"
-                value={formData.deptJobCn}
-                onChange={(e) => setFormData({ ...formData, deptJobCn: e.target.value })}
+                value={formData.deptTaskCn}
+                onChange={(e) => setFormData({ ...formData, deptTaskCn: e.target.value })}
                 required
               />
             </div>

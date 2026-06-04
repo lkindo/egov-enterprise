@@ -38,10 +38,10 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
         String requestBody = """
                 {
                   "userId": "newUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "새로운사용자",
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
                   "role": "USER"
                 }
                 """;
@@ -62,7 +62,7 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
         String invalidRequestBody = """
                 {
                   "userId": "",
-                  "password": "123",
+                  "pswd": "123",
                   "userNm": ""
                 }
                 """;
@@ -80,7 +80,7 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
         String mismatchedRequestBody = """
                 {
                   "user_id": "newUser",
-                  "password": "password123!",
+                  "pswd": "password123!",
                   "userNm": "새로운사용자",
                   "role": "USER"
                 }

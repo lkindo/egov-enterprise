@@ -23,7 +23,7 @@ export async function saveNetworkAction(prevState: unknown, formData: FormData):
             subnet: formData.get('subnet') as string,
             domnServer: formData.get('domnServer') as string,
             userNm: formData.get('userNm') as string,
-            useAt: formData.get('useAt') as 'Y' | 'N',
+            useYn: formData.get('useYn') as 'Y' | 'N',
         };
 
         if (ntwrkId) {
