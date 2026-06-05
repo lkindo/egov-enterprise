@@ -14,7 +14,7 @@ export interface RoleManage {
  roleExpln: string;
  roleTypeCd: string;
  roleSort: string;
- creatDt?: string;
+ crtDt?: string;
 }
 
 export interface GroupManage {

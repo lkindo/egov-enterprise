@@ -230,6 +230,6 @@ class RoleManageServiceTest {
         RoleManageDto result = roleManageService.selectRole(roleCode);
 
         assertThat(result.getRoleSort()).isEqualTo("5");
-        assertThat(result.getCreatDt()).isNotNull();
+        assertThat(result.getCrtDt()).isNotNull();
     }
 }

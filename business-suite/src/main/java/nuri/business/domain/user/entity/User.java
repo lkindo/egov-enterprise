@@ -57,7 +57,7 @@ public class User extends BaseEntity implements Serializable {
     private Integer chgPwdCnt;
 
     @Builder.Default
-    @Column(length = 1)
+    @Column(name = "lck_yn", length = 1)
     private String lckYn = "N";
 
     private Integer lckCnt;

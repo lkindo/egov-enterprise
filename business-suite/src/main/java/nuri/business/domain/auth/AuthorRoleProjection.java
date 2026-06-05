@@ -17,5 +17,5 @@ public class AuthorRoleProjection {
     private String roleSort;
     private String authrtCd;
     private String regYn;
-    private LocalDateTime creatDt;
+    private LocalDateTime crtDt;
 }

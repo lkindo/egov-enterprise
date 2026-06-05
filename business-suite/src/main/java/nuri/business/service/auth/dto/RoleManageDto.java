@@ -51,6 +51,6 @@ public class RoleManageDto {
     
     /** 등록일시 */
     @Schema(description = "등록일시", example = "2026-05-25 20:46:00")
-    private String creatDt;
+    private String crtDt;
 }
 

@@ -29,7 +29,7 @@ public class RoleInfoRepositoryImpl implements RoleInfoRepositoryCustom {
                                                 roleInfo.roleTypeCd,
                                                 commonCode.dtlCdNm.as("roleTyNm"),
                                                 roleInfo.roleSort,
-                                                roleInfo.roleCrtYmd.as("creatDt")))
+                                                roleInfo.roleCrtYmd.as("crtDt")))
                                 .from(roleInfo)
                                 .leftJoin(commonCode).on(
                                                 commonCode.cdId.eq("COM029")

@@ -17,7 +17,7 @@ class AuthDtoTest {
                 .roleExpln("사용자 권한")
                 .roleTypeCd("URL")
                 .roleSort("1")
-                .creatDt("2024-01-01")
+                .crtDt("2024-01-01")
                 .build();
 
         // Standardized getters
@@ -27,6 +27,6 @@ class AuthDtoTest {
         assertThat(dto.getRoleExpln()).isEqualTo("사용자 권한");
         assertThat(dto.getRoleTypeCd()).isEqualTo("URL");
         assertThat(dto.getRoleSort()).isEqualTo("1");
-        assertThat(dto.getCreatDt()).isEqualTo("2024-01-01");
+        assertThat(dto.getCrtDt()).isEqualTo("2024-01-01");
     }
 }

@@ -15,5 +15,5 @@ public class RoleInfoProjection {
     private String roleTypeCd;
     private String roleTyNm;
     private Integer roleSort;
-    private java.time.LocalDate creatDt;
+    private java.time.LocalDate crtDt;
 }

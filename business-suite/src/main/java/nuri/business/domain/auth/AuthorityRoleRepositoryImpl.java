@@ -31,7 +31,7 @@ public class AuthorityRoleRepositoryImpl implements AuthorityRoleRepositoryCusto
                                                 new CaseBuilder()
                                                                 .when(authorityRole.id.authrtCd.isNotNull()).then("Y")
                                                                 .otherwise("N").as("regYn"),
-                                                authorityRole.crtDt.as("creatDt")))
+                                                authorityRole.crtDt.as("crtDt")))
                                 .from(roleInfo)
                                 .leftJoin(authorityRole).on(roleInfo.roleId.eq(authorityRole.id.roleCd)
                                                 .and(authorityRole.id.authrtCd.eq(authrtCd)))
