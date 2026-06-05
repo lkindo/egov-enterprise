@@ -30,12 +30,12 @@ actuatorInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export interface HealthResponse {
+interface HealthResponse {
   status: 'UP' | 'DOWN' | 'OUT_OF_SERVICE' | 'UNKNOWN';
   components?: Record<string, any>;
 }
 
-export interface MetricResponse {
+interface MetricResponse {
   name: string;
   description: string;
   baseUnit: string;

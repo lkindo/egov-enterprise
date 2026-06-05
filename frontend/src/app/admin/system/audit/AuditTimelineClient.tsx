@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { auditAdminService, AuditLog } from '@/services/foundation/system/AuditAdminService';

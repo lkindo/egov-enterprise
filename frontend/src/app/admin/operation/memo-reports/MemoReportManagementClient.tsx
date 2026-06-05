@@ -2,17 +2,12 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
- FileText, Search, Plus, Mail, Inbox, Globe, 
- Send, User, Clock, ChevronRight, MessageSquare,
- AlertCircle, ShieldCheck, Sparkles, Filter, MoreVertical,
- ArrowRight, Trash2, Zap, Layers, History, RefreshCcw
-} from 'lucide-react';
+import { Search,  Plus,  Mail,  Inbox,  ShieldCheck,  MoreVertical,  Zap,  Layers,  RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
-import { motion, AnimatePresence } from 'framer-motion';
+;
 import { memoReportService, MemoReportInfo } from '@/services/business/memoreport/memoReportService';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

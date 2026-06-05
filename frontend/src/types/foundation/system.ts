@@ -27,7 +27,7 @@ export interface PageResponse<T = unknown> {
   totalPage: number;
 }
 
-export interface ApiResponse<T = unknown> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   status: number;
   code: string;
@@ -36,7 +36,7 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export interface PaginationResponse<T> {
+interface PaginationResponse<T> {
   success?: boolean;
   list?: T[];
   content?: T[]; // Spring Data JPA 대응 추가
@@ -90,7 +90,7 @@ export interface CmmnDetailCode {
 }
 
 // Menu
-export interface MenuManage {
+interface MenuManage {
   menuNo: number;
   menuOrdr: number;
   menuNm: string;
@@ -111,7 +111,7 @@ export interface ProgrmManage {
 }
 
 // Log
-export interface SysLog {
+interface SysLog {
   dmndId: string;
   srvcNm: string;
   methodNm: string;
@@ -132,7 +132,7 @@ export interface UserLog {
 }
 
 // Login Log
-export interface LoginLog {
+interface LoginLog {
   logId: string;
   loginId: string;
   loginIp: string;

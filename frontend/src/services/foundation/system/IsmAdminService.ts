@@ -1,4 +1,4 @@
-import { ApiService, AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 

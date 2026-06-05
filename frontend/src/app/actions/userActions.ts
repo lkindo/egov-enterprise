@@ -10,7 +10,7 @@ interface ActionResponse {
   message: string;
 }
 
-export async function createUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
+async function createUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -27,7 +27,7 @@ export async function createUserAction(prevState: unknown, formData: UserManage)
   }
 }
 
-export async function updateUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
+async function updateUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -44,7 +44,7 @@ export async function updateUserAction(prevState: unknown, formData: UserManage)
   }
 }
 
-export async function deleteUserAction(prevState: unknown, userId: string): Promise<ActionResponse> {
+async function deleteUserAction(prevState: unknown, userId: string): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;

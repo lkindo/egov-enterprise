@@ -3,28 +3,22 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Settings2, 
-  Layers,
-  BookOpen,
-  ImageIcon,
-  List as ListIcon,
-  Rocket,
-  ArrowRight,
-  TrendingUp,
-  Zap,
-  ShieldCheck,
-  MoreVertical,
-  FileText,
-  Trash2,
-  AlertTriangle,
-  Lock
-} from 'lucide-react';
+import { Plus,  
+  Settings2,  
+  Layers, 
+  Rocket, 
+  ArrowRight, 
+  TrendingUp, 
+  Zap, 
+  ShieldCheck, 
+  MoreVertical, 
+  Trash2, 
+  AlertTriangle, 
+  Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

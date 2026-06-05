@@ -1,14 +1,14 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
-export interface DeptAuthorBatchRequest {
+interface DeptAuthorBatchRequest {
   deptId: string;
   authrtId: string;
   allMembers: boolean;
   userIds?: string[];
 }
 
-export interface DeptAuthorProjection {
+interface DeptAuthorProjection {
   deptCode: string;
   deptNm: string;
   userId: string;

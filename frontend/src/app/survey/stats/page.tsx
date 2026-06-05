@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, BarChart3, PieChart, Activity } from 'lucide-react';
+import { Loader2,  ArrowLeft,  BarChart3 } from 'lucide-react';
 
 function StatsContent() {
   const searchParams = useSearchParams();

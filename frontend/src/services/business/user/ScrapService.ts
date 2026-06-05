@@ -1,7 +1,7 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
-export interface Scrap {
+interface Scrap {
   scrapId: string;
   bbsId: string;
   pstId: number;

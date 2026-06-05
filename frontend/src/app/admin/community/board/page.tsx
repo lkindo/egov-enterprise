@@ -3,13 +3,10 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { 
- Plus, Eye, Megaphone, Loader2, 
- Search, Filter, ChevronRight, MessageSquare, 
- User, Calendar as CalendarIcon, Clock, Layers,
- ArrowUpRight, Sparkles
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Plus,  Eye,  Megaphone,  Loader2,  
+ Search,  Filter,  ChevronRight,  MessageSquare,  
+ User,  Clock,  Layers,  Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';

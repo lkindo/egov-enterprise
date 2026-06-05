@@ -2,7 +2,7 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface WorkReport {
+interface WorkReport {
   rptId?: string;
   rptTtl?: string;
   rptCn?: string;

@@ -4,43 +4,30 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  BarChart3,
-  PieChart,
-  LineChart,
-  Activity,
-  Users,
-  Monitor,
-  Database,
-  FileText,
-  TrendingUp,
-  Filter,
-  Download,
-  ChevronRight,
-  Search,
-  RefreshCcw,
-  Zap,
-  Box,
-  LayoutDashboard,
-  ClipboardList,
-  Vote
-} from 'lucide-react';
+import { BarChart3, 
+  Activity, 
+  Users, 
+  Monitor, 
+  Database, 
+  FileText, 
+  Filter, 
+  Download, 
+  ChevronRight, 
+  RefreshCcw, 
+  Zap, 
+  Box, 
+  LayoutDashboard, 
+  Vote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
+import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import { XAxis,  
+  YAxis,  
+  CartesianGrid,  
   Tooltip as RechartsTooltip, 
-  LineChart as RechartsLineChart,
-  Line,
-  AreaChart,
-  Area
-} from 'recharts';
+  AreaChart, 
+  Area } from 'recharts';
 import { HubMetricSkeleton, HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 

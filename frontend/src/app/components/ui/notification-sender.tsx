@@ -1,21 +1,17 @@
-
 import React, { useState } from 'react';
-import {
-  Send,
-  Sparkles,
-  Target,
-  Layers,
-  Mail,
-  MessageSquare,
-  Bell,
-  X,
-  Calendar,
-  ShieldCheck,
-  Zap,
-  Bot,
-  UserCheck,
-  Users
-} from 'lucide-react';
+import { Send, 
+  Sparkles, 
+  Target, 
+  Layers, 
+  Mail, 
+  MessageSquare, 
+  Bell, 
+  Calendar, 
+  ShieldCheck, 
+  Zap, 
+  Bot, 
+  UserCheck, 
+  Users } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 

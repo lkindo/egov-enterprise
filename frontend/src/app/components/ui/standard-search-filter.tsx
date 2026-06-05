@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-export interface FilterField {
+interface FilterField {
   name: string;
   label: string;
   type: 'text' | 'select' | 'date' | 'daterange';
@@ -26,7 +26,7 @@ interface StandardSearchFilterProps {
   isPremium?: boolean;
 }
 
-export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = true }: StandardSearchFilterProps) {
+function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = true }: StandardSearchFilterProps) {
   const [values, setValues] = useState<Record<string, any>>({});
   const [isExpanded, setIsExpanded] = useState(true);
 

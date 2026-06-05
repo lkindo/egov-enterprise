@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+;
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
- LayoutGrid, BarChart3, HelpCircle, Users, FileStack, Settings2,
- PieChart, Target, Zap, ArrowUpRight, Search, Plus, Loader2, Sparkles,
- Layers, Clock, ShieldCheck, Activity
-} from "lucide-react";
+;
+import { LayoutGrid,  BarChart3,  HelpCircle,  Users,  FileStack,  Settings2,  Zap,  Plus, 
+ Layers,  Activity } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';

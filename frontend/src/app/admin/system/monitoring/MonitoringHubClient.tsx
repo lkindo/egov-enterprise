@@ -2,41 +2,34 @@
 
 import React, { useState, useMemo, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+;
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { 
-  Activity, 
-  ShieldAlert, 
-  Terminal, 
-  MessageSquare, 
-  Search, 
-  Filter, 
-  RefreshCcw, 
-  Bell,
-  Zap,
-  LogIn,
-  Cpu,
-  HardDrive,
-  Server,
-  Download,
-  Trash2,
-  Clock,
-  ShieldCheck,
-  ChevronRight,
-  MonitorCheck,
-  Globe,
-  Database,
-  SearchCode,
-  Network,
-  CheckCircle2,
-  AlertCircle,
-  Share2,
-  FileText
-} from 'lucide-react';
+;
+import { Activity,  
+  ShieldAlert,  
+  Terminal,  
+  MessageSquare,  
+  Search,  
+  RefreshCcw,  
+  Bell, 
+  Zap, 
+  LogIn, 
+  Cpu, 
+  Server, 
+  Download, 
+  Trash2, 
+  ShieldCheck, 
+  ChevronRight, 
+  MonitorCheck, 
+  Database, 
+  Network, 
+  CheckCircle2, 
+  AlertCircle, 
+  Share2, 
+  FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';

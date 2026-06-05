@@ -10,7 +10,7 @@ import { loginPolicyAdminService, LoginPolicy } from '@/services/foundation/syst
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+;
 import { Switch } from '@/components/ui/switch';
 import { 
   ShieldAlert, 

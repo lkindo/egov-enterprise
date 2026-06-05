@@ -1,4 +1,4 @@
-export interface Schedule {
+interface Schedule {
   schdlId: string;
   schdlSeCd: string; // 1 (부서) 2 (개인)
   schdlDeptId?: string;
@@ -19,14 +19,14 @@ export interface Schedule {
   mdfcnDt?: string;
 }
 
-export interface ScheduleResponse {
+interface ScheduleResponse {
   resultList: Schedule[];
   totalCount: number;
   pageNo: number;
   totalPages: number;
 }
 
-export interface MonthlyScheduleResponse {
+interface MonthlyScheduleResponse {
   schedules: Schedule[];
   yearMonth: string;
 }
@@ -46,7 +46,7 @@ export interface ScheduleSearchParams {
   size?: number;
 }
 
-export interface WorkReport {
+interface WorkReport {
   rptId: string;
   rptTtl: string;
   rptCn: string;
@@ -58,7 +58,7 @@ export interface WorkReport {
   rptTypeCd?: string;
 }
 
-export interface ReportSearchParams {
+interface ReportSearchParams {
   searchWrd?: string;
   pageNo?: number;
   pageIndex?: number;

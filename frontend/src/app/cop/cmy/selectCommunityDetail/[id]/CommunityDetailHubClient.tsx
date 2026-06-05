@@ -1,28 +1,25 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  ShieldCheck, 
-  Calendar,
-  ChevronLeft,
-  ArrowUpRight,
-  MessageSquare,
-  Globe,
-  Settings,
-  UserPlus,
-  Share2,
-  ExternalLink,
-  BookOpen,
-  Info
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Users,  
+  ShieldCheck,  
+  Calendar, 
+  ChevronLeft, 
+  ArrowUpRight, 
+  MessageSquare, 
+  Globe, 
+  Settings, 
+  UserPlus, 
+  Share2, 
+  BookOpen, 
+  Info } from 'lucide-react';
+;
+;
 import { communityService } from '@/services/business/community/communityService';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';

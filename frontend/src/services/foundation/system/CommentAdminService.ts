@@ -2,7 +2,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface CommentDetail {
+interface CommentDetail {
   ansSn: number;
   pstId: string;
   bbsId: string;

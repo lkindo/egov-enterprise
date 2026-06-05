@@ -1,26 +1,16 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Briefcase,
-  Search,
-  Filter,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  ClipboardList,
-  FileText,
-  Activity,
-  Plus,
-  ChevronRight,
-  Database,
-  Layers,
-  Sparkles,
-  RefreshCcw,
-  ArrowUpRight,
-  MoreVertical
-} from 'lucide-react';
+import { Briefcase, 
+  Search, 
+  ClipboardList, 
+  FileText, 
+  Activity, 
+  Plus, 
+  Layers, 
+  RefreshCcw, 
+  MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,9 +19,9 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { motion, AnimatePresence } from 'framer-motion';
+;
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { scheduleService } from '@/services/business/user/ScheduleService';
+;
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { reportService } from '@/services/business/user/ReportService';
 

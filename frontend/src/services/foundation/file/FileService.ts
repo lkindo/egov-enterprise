@@ -4,7 +4,7 @@ import { AxiosRequestConfig } from 'axios';
 /**
  * 파일 정보 인터페이스
  */
-export interface FileVO {
+interface FileVO {
   atchFileId: string;
   fileSn: number;
   fileExtsn: string;
@@ -18,7 +18,7 @@ export interface FileVO {
  * 파일 관리 서비스
  * 백엔드 FileApiController 연동 (/api/v1/files)
  */
-export class FileService extends ApiService {
+class FileService extends ApiService {
   constructor() {
     super('files');
   }

@@ -1,8 +1,6 @@
 package nuri.business.service.addressbook.dto;
 
 import jakarta.validation.constraints.*;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

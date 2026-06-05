@@ -12,17 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
- Save,
- ArrowLeft,
- Layout,
- FileText,
- MessageSquare,
- ShieldCheck,
- Calendar,
- Settings2,
- CheckCircle2
-} from 'lucide-react';
+import { Save, 
+ ArrowLeft, 
+ Layout, 
+ FileText, 
+ MessageSquare, 
+ ShieldCheck, 
+ Calendar, 
+ Settings2 } from 'lucide-react';
 import { boardSchema } from '@/lib/validation/schemas';
 import { useAppForm } from '@/hooks/useAppForm';
 import {

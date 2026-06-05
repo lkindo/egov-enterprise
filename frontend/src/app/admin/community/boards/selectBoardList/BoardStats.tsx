@@ -13,7 +13,7 @@ import {
   Cell,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Users, MessageSquare } from "lucide-react";
+import { TrendingUp,  Users } from "lucide-react";
 import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 
 const trafficData = [

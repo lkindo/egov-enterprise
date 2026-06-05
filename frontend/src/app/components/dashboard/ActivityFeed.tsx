@@ -1,7 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
-import { MessageSquare, UserPlus, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { MessageSquare,  UserPlus,  Clock } from 'lucide-react';
 
 const activities = [
   {

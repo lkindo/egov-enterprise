@@ -4,17 +4,13 @@ import React, { useState, use } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { templateAdminService, TmplatInfo } from '@/services/foundation/system/TemplateAdminService';
-import {
- Layout,
- Plus,
- Search,
- RefreshCcw,
- FileCode,
- CheckCircle2,
- XCircle,
- ExternalLink,
- Code
-} from 'lucide-react';
+import { Layout, 
+ Plus, 
+ RefreshCcw, 
+ FileCode, 
+ CheckCircle2, 
+ XCircle, 
+ Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

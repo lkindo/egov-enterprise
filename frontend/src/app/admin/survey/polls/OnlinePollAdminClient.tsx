@@ -3,32 +3,25 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { onlinePollAdminService, OnlinePollDto, OnlinePollItemDto } from '@/services/foundation/system/OnlinePollAdminService';
+import { onlinePollAdminService,  OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import {
- Vote,
- Plus,
- Search,
- RefreshCcw,
- BarChart,
- Calendar,
- CheckCircle2,
- XCircle,
- Activity,
- Users,
- Layers,
- Trash2,
- PieChart,
- TrendingUp,
- Zap,
- Target,
- ChevronRight,
- MonitorCheck,
- UserCheck,
- Clock
-} from 'lucide-react';
+import { Vote, 
+ Plus, 
+ Search, 
+ RefreshCcw, 
+ BarChart, 
+ Calendar, 
+ XCircle, 
+ Activity, 
+ Layers, 
+ Trash2, 
+ TrendingUp, 
+ Zap, 
+ MonitorCheck, 
+ UserCheck, 
+ Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function OnlinePollAdminClient({ 
  initialPolls 

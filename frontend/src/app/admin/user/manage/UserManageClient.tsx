@@ -2,30 +2,24 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
- Users, 
- Search, 
- UserPlus, 
- Shield, 
- Activity, 
+import { Users,  
+ Search,  
+ UserPlus,  
+ Shield,  
  MoreHorizontal, 
- Mail, 
- Calendar,
- Filter,
- RefreshCw,
- Database,
- ArrowUpRight,
- UserCheck,
- UserX,
- History,
- Lock,
- Zap,
- LayoutGrid,
- List,
- ChevronRight,
- Edit2,
- Trash2
-} from 'lucide-react';
+ RefreshCw, 
+ Database, 
+ ArrowUpRight, 
+ UserCheck, 
+ UserX, 
+ History, 
+ Lock, 
+ Zap, 
+ LayoutGrid, 
+ List, 
+ ChevronRight, 
+ Edit2, 
+ Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,8 +33,8 @@ import {
 } from '@/components/ui/table';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage, UserSearchParams } from '@/types/foundation/user';
-import { PageResponse } from '@/types/foundation/system';
-import { motion, AnimatePresence } from 'framer-motion';
+;
+;
 import { cn } from '@/lib/utils';
 
 export default function UserManageClient() {

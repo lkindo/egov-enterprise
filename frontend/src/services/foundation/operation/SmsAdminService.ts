@@ -19,7 +19,7 @@ export interface SmsDto {
 /**
  * SMS 수신 정보 DTO
  */
-export interface SmsRecptnDto {
+interface SmsRecptnDto {
   smsId?: string;
   rcptnTelno: string; // 수신 번호
   rsltCd?: string; // 결과 코드 (P: 대기, S: 성공, F: 실패)

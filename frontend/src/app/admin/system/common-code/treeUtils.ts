@@ -1,5 +1,5 @@
-import { DomainCluster, GroupCode } from '@/types/foundation/code';
-import { arrayMove } from '@dnd-kit/sortable';
+import { DomainCluster } from '@/types/foundation/code';
+;
 
 export interface FlattenedCodeNode {
   id: string;
@@ -40,7 +40,7 @@ export function flattenCodeTree(clusters: DomainCluster[]): FlattenedCodeNode[] 
   return flattened;
 }
 
-export function rebuildCodeTree(flattened: FlattenedCodeNode[]): DomainCluster[] {
+function rebuildCodeTree(flattened: FlattenedCodeNode[]): DomainCluster[] {
   const clusters: DomainCluster[] = [];
   const clusterMap = new Map<string, DomainCluster>();
 

@@ -28,8 +28,8 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { menuService } from '@/services/business/user/MenuService';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+;
+import { useRouter } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
 
@@ -45,8 +45,6 @@ const DOMAIN_ROUTE_MAP: Record<number, string> = {
   2000000: '/admin/collaboration',
   9000000: '/admin/system/menus',
 };
-
-
 
 export function Header({ 
   initialMenus = [],

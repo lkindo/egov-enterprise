@@ -1,21 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { 
- Search, Plus, LucideIcon,
- Library, BookOpen, MessageCircleQuestion, Globe,
- TrendingUp, Users, ArrowRight, Layers, Trash2, Award, Zap, History,
- Filter, Calendar, ChevronDown, Check, HelpCircle, CornerDownRight,
- Monitor, Star, Sparkles, Hash, MessageSquare, ChevronRight, Quote,
- User, Eye, ShieldAlert, Lock, Settings2
-} from 'lucide-react';
+import { Search,  Plus, 
+ Library,  BookOpen,  MessageCircleQuestion, 
+ TrendingUp,  Users,  ArrowRight,  Layers,  Zap,  History,  Sparkles,  Hash,  ChevronRight, 
+ User,  Eye,  ShieldAlert,  Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
-import { knowledgeService, BoardArticle } from '@/services/business/knowledge/knowledgeService';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 

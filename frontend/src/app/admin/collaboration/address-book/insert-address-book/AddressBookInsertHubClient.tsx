@@ -2,28 +2,23 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
- User, 
- Phone, 
- Mail, 
- MapPin, 
- ArrowLeft, 
- Plus, 
- ShieldCheck, 
- Zap, 
- Globe,
- Star,
- CheckCircle2,
- Layers,
- Sparkles
-} from 'lucide-react';
+import { User,  
+ Phone,  
+ Mail,  
+ ArrowLeft,  
+ Plus,  
+ ShieldCheck,  
+ Zap,  
+ Globe, 
+ CheckCircle2, 
+ Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/app/components/ui/toast';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
-import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+;
+;
+;
 
 export default function AddressBookInsertHubClient() {
  const router = useRouter();

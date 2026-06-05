@@ -4,7 +4,7 @@ import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
-import { PageHeader } from '@/app/components/layout/page-header';
+;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, User, Calendar, ClipboardCheck, MessageSquare } from 'lucide-react';

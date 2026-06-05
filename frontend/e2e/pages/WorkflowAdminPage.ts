@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page,  expect } from '@playwright/test';
 
 export class WorkflowAdminPage {
     readonly page: Page;

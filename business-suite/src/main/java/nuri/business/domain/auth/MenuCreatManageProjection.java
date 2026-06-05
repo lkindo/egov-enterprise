@@ -1,7 +1,6 @@
 package nuri.business.domain.auth;
 
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

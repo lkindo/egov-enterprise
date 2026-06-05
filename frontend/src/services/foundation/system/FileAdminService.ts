@@ -2,7 +2,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface FileDetail {
+interface FileDetail {
   atchFileId: string;
   fileSn: number;
   fileStrePath: string;

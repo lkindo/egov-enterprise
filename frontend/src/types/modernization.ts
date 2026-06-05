@@ -3,7 +3,7 @@
  * This file adds missing types from the backend that are not yet in generated-api.d.ts
  */
 
-export interface ApiResponse<T> {
+interface ApiResponse<T> {
   success: boolean;
   status: number;
   code: string;
@@ -20,7 +20,7 @@ export interface PageResponse<T> {
   totalPage: number;
 }
 
-export interface BaseSearchDto {
+interface BaseSearchDto {
   searchCondition?: string;
   searchKeyword?: string;
   pageIndex?: number;
@@ -31,7 +31,7 @@ export interface BaseSearchDto {
   searchKeywordTo?: string;
 }
 
-export interface CommunityDto {
+interface CommunityDto {
   cmntyId?: string;
   cmntyNm?: string;
   cmntyIntroCn?: string;
@@ -73,7 +73,7 @@ export interface BoardMasterDto {
 }
 
 
-export interface ScheduleDto {
+interface ScheduleDto {
   schdlId?: string;
   schdlSeCd?: string;
   schdlDeptId?: string;

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Briefcase, Send, ArrowLeft, Home, ChevronRight, Activity, AlertCircle, FileText, CheckCircle } from "lucide-react";
+import { Briefcase,  Send,  ArrowLeft,  Activity,  AlertCircle,  FileText,  CheckCircle } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const InsertDeptJobPage = () => {

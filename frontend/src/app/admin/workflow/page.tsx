@@ -1,22 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-    GitBranch,
-    Settings,
-    History,
-    Play,
-    Plus,
-    ArrowLeft,
-    Search,
-    CheckCircle2,
-    Clock,
-    MoreHorizontal,
-    Layers,
-    Zap,
-    Activity,
-    RefreshCcw
-} from 'lucide-react';
+import { GitBranch, 
+    History, 
+    Plus, 
+    CheckCircle2, 
+    Clock, 
+    Layers, 
+    Zap, 
+    Activity, 
+    RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/app/components/ui/workflow-canvas';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

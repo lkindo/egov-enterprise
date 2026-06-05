@@ -1,7 +1,7 @@
 import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
-export interface MyPageContent {
+interface MyPageContent {
  cntntsId: string;
  cntntsNm: string;
  cntcUrl: string;

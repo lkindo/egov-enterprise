@@ -1,28 +1,19 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Search,
-  Command as CommandIcon,
-  X,
-  ChevronRight,
-  ArrowRight,
-  Settings,
-  User,
-  LogOut,
-  Bell,
-  Mail,
-  Calendar,
-  FileText,
-  Shield,
-  ShieldCheck,
-  LayoutDashboard,
-  Globe,
-  Zap,
-  History as HistoryIcon,
-  GitBranch,
-  Users
-} from 'lucide-react';
+import { Search, 
+  ArrowRight, 
+  Settings, 
+  User, 
+  LogOut, 
+  Bell, 
+  FileText, 
+  ShieldCheck, 
+  LayoutDashboard, 
+  Globe, 
+  Zap, 
+  History as HistoryIcon, 
+  GitBranch, 
+  Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';

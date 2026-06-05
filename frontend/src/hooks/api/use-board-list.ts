@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
-import { BoardPost, BoardResponse } from '@/types/business/board';
+import { BoardPost } from '@/types/business/board';
 
 export interface BoardListParams {
   bbsId: string;

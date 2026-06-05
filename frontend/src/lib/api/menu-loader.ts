@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { menuService } from '@/services/business/user/MenuService';
-import { MenuInfo } from '@/types/foundation/menu';
+;
 
 export const getInitialMenus = cache(async (accessToken?: string) => {
   if (!accessToken) return [];

@@ -1,20 +1,15 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Server, 
-  Database, 
-  Globe, 
-  Network, 
-  Cpu, 
-  Activity, 
+import { Server,  
+  Database,  
+  Globe,  
+  Activity,  
   Zap, 
-  ShieldCheck,
-  ZapOff,
-  Radio,
-  Share2
-} from 'lucide-react';
+  ZapOff, 
+  Radio, 
+  Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTopologyData } from '@/lib/hooks/use-topology-data';
 

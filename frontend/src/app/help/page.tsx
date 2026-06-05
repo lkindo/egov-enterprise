@@ -4,13 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { helpUserService, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
-import { HelpCircle, MessageCircle, ChevronDown, ChevronUp, Search, PlusCircle, Sparkles, Hash } from 'lucide-react';
+import { HelpCircle,  MessageCircle,  ChevronDown,  Search,  PlusCircle,  Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/app/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ErrorStateDisplay, EmptyStateDisplay } from '@/app/components/ui/status-displays';
+import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
 
 export default function HelpCenterPage() {
   const { toast } = useToast();

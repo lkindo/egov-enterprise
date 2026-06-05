@@ -41,4 +41,3 @@ class CommunityUserService extends UserService {
 }
 
 export const communityUserService = new CommunityUserService();
-export default communityUserService;

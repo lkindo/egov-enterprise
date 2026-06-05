@@ -2,26 +2,18 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { 
- Search, 
- MessageSquare, 
- Eye, 
- Clock, 
- ChevronRight, 
- MoreHorizontal,
- ThumbsUp,
- Share2,
- Calendar,
- Grid,
- List as ListIcon,
- ImageIcon,
- HelpCircle,
- CheckCircle2,
- CalendarDays,
- User,
- ChevronDown,
- Book
-} from 'lucide-react';
+import { Search,  
+ MessageSquare,  
+ Eye,  
+ Clock,  
+ ChevronRight,  
+ MoreHorizontal, 
+ ThumbsUp, 
+ Share2, 
+ CheckCircle2, 
+ User, 
+ ChevronDown, 
+ Book } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 

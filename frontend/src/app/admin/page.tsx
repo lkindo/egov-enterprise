@@ -1,26 +1,20 @@
 'use client';
 
 import React from 'react';
-import {
- Activity,
- Users,
- ShieldCheck,
- Zap,
- ArrowUpRight,
- TrendingUp,
- Database,
- Server,
- AlertCircle,
- Clock,
- Cpu,
- FileText,
- Settings,
- ArrowRight,
- Sparkles,
- LayoutDashboard,
- Box,
- Globe
-} from 'lucide-react';
+import { Activity, 
+ Users, 
+ ShieldCheck, 
+ Zap, 
+ ArrowUpRight, 
+ TrendingUp, 
+ Database, 
+ AlertCircle, 
+ Clock, 
+ Cpu, 
+ Sparkles, 
+ LayoutDashboard, 
+ Box, 
+ Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
@@ -68,7 +62,6 @@ const MOCK_DISTRIBUTION_DATA = [
 ];
 
 export default function AdminDashboardPage() {
-
 
  const { data: auditData } = useQuery({
  queryKey: ['admin-dashboard-recent-audits'],

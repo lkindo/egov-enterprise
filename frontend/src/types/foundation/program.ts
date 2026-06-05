@@ -1,4 +1,4 @@
-import { PaginationInfo } from './system';
+;
 
 export interface Program {
   prgrmFileNm: string;
@@ -14,7 +14,7 @@ export interface Program {
 }
 
 /** client의 ApiResponse.data를 직접 반환하도록 페이지네이션 구조 정의 */
-export interface ProgramResponse {
+interface ProgramResponse {
   list: Program[];
   total: number;
   totalPage: number;

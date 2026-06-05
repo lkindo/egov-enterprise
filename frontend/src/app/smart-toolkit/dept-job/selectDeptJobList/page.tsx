@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Trash2, Home, ChevronRight, FileText, User, Calendar, CheckSquare } from "lucide-react";
+import { Briefcase,  Plus,  Trash2,  FileText,  User,  Calendar,  CheckSquare } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 interface DeptJob {

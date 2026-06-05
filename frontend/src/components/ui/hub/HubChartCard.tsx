@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { LucideIcon, Maximize2, Download, Filter } from 'lucide-react';
+import { Maximize2,  Download,  Filter } from 'lucide-react';
 import { hubItemVariants } from '@/lib/hub-animations';
 
 interface HubChartCardProps {

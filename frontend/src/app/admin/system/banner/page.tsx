@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
 import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
 import BannerAdminClient from './BannerAdminClient';
-import { Loader2 } from 'lucide-react';
+;
 
 export const metadata = {
   title: '배너 및 팝업 관리 | 시스템 설정',

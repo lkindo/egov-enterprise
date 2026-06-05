@@ -1,6 +1,6 @@
 import { CmmnClCode, CmmnCode, CmmnDetailCode } from './system';
 
-export type CodeDetail = CmmnDetailCode;
+type CodeDetail = CmmnDetailCode;
 
 export interface GroupCode extends CmmnCode {
     details: CodeDetail[];

@@ -6,8 +6,8 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { leaderScheduleAdminService, LeaderSchedule, LeaderStatus } from '@/services/foundation/system/LeaderScheduleAdminService';
-import { Calendar, UserCheck, Clock, Shield, Search, Plus, Activity, Star } from 'lucide-react';
+import { LeaderSchedule,  LeaderStatus } from '@/services/foundation/system/LeaderScheduleAdminService';
+import { Calendar,  UserCheck,  Clock,  Shield,  Plus,  Activity,  Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function LsmClient({ 

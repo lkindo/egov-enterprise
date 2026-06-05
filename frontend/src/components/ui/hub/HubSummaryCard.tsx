@@ -3,7 +3,7 @@ import { motion, Variants } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type HubSummaryColor = 'blue' | 'orange' | 'purple' | 'emerald' | 'rose' | 'amber';
+type HubSummaryColor = 'blue' | 'orange' | 'purple' | 'emerald' | 'rose' | 'amber';
 
 export interface HubSummaryCardProps {
   title: string;

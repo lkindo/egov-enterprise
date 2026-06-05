@@ -1,19 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Palette, 
-  CheckCircle2, 
-  Info, 
-  ChevronRight, 
-  Save, 
-  Image as ImageIcon,
-  Monitor,
-  Settings2,
-  Brush
-} from 'lucide-react';
+import { Palette,  
+  CheckCircle2,  
+  Info,  
+  ChevronRight,  
+  Image as ImageIcon, 
+  Monitor, 
+  Settings2, 
+  Brush } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card,  CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

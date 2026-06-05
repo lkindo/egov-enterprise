@@ -1,4 +1,4 @@
-export interface ConnectStats {
+interface ConnectStats {
   statsDate: string; // Aligned with backend statsDate
   statsCo: number; // Aligned with backend statsCo
 }
@@ -9,7 +9,7 @@ export interface MenuStats {
   percentage: number;
 }
 
-export interface UserActivityStats {
+interface UserActivityStats {
   userId: string;
   userNm: string;
   postCount: number;
@@ -22,14 +22,14 @@ export interface SummaryStats {
   todayConnects: number;
 }
 
-export interface StatsVO {
+interface StatsVO {
   statsId: string;
   statsSe: string;
   statsCn: string;
   crtDt: string;
 }
 
-export interface StatsSearchParams {
+interface StatsSearchParams {
   statsSe?: string;
   searchPeriod?: string;
   statsKind?: string;

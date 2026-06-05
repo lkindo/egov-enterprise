@@ -2,18 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
- Sparkles, 
- ShieldAlert, 
- TrendingUp, 
- Activity, 
- Zap, 
+import { Sparkles,  
+ ShieldAlert,  
+ TrendingUp,  
+ Zap,  
  CheckCircle2, 
- Globe,
- ArrowRight,
- ChevronRight,
- Maximize2
-} from 'lucide-react';
+ ChevronRight, 
+ Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 

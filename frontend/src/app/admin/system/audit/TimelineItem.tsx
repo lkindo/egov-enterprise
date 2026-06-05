@@ -2,19 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  ShieldAlert, 
-  LogIn, 
-  UserRound, 
-  Settings, 
-  ArrowUpRight, 
-  Clock, 
-  Database,
-  SearchCode,
-  AlertCircle,
-  ShieldCheck,
-  CheckCircle2
-} from 'lucide-react';
+import { ShieldAlert,  
+  ArrowUpRight,  
+  Clock,  
+  Database, 
+  AlertCircle, 
+  ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuditLog } from '@/services/foundation/system/AuditAdminService';
 

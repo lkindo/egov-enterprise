@@ -40,4 +40,3 @@ class CommentService extends ApiService {
 }
 
 export const commentService = new CommentService();
-export default commentService;

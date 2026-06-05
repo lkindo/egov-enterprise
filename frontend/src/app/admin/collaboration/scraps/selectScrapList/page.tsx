@@ -11,10 +11,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
+import { Card,  CardContent,  CardHeader,  CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bookmark, Plus, Trash2, Home, ChevronRight, ExternalLink, FileText } from "lucide-react";
+import { Bookmark,  Plus,  Trash2,  ExternalLink,  FileText } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 interface Scrap {

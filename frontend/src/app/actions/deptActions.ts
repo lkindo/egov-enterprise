@@ -9,7 +9,7 @@ interface ActionResponse {
   message: string;
 }
 
-export async function saveDeptAction(prevState: unknown, { mode, data }: { mode: 'create' | 'edit', data: DeptDto }): Promise<ActionResponse> {
+async function saveDeptAction(prevState: unknown, { mode, data }: { mode: 'create' | 'edit', data: DeptDto }): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -29,7 +29,7 @@ export async function saveDeptAction(prevState: unknown, { mode, data }: { mode:
   }
 }
 
-export async function deleteDeptAction(prevState: unknown, deptId: string): Promise<ActionResponse> {
+async function deleteDeptAction(prevState: unknown, deptId: string): Promise<ActionResponse> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;

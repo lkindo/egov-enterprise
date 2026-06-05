@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 @Schema(description = "공통코드 저장 요청 DTO")
 public record CommonCodeSaveRequest(
         @Schema(description = "코드그룹 ID")

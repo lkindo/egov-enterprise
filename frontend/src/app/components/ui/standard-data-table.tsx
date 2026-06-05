@@ -12,7 +12,7 @@ export interface Column<T> {
   className?: string;
 }
 
-export interface BulkAction<T> {
+interface BulkAction<T> {
   label: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'destructive' | 'outline';

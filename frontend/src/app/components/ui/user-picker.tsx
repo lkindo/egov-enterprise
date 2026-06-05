@@ -6,8 +6,8 @@ const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.S
 import { VirtualScrollList } from './virtual-scroll-list';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { NameCard } from '@/types/business/addressbook';
-import { Search, User, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Search,  User } from 'lucide-react';
+;
 
 interface UserPickerProps {
  isOpen: boolean;

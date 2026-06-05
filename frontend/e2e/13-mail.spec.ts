@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { MailPage } from './pages/MailPage';
-import { TEST_CREDENTIALS } from './test-credentials';
+;
 
 test.describe('Tier 13: Enterprise Mail System E2E', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });

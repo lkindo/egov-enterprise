@@ -1,8 +1,6 @@
 package nuri.business.service.sec.dto;
 
 import jakarta.validation.constraints.*;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 @Getter

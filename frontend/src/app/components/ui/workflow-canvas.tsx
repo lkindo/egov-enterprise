@@ -1,16 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Play,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  ChevronRight,
-  User,
-  MoreVertical,
-  Minus
-} from 'lucide-react';
+import { Play, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  User, 
+  MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type WorkflowStatus = 'completed' | 'current' | 'pending' | 'failed';

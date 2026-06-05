@@ -1,11 +1,11 @@
 'use client';
 
-import React, { use, useState, useEffect } from 'react';
+import React, { use,  useState } from 'react';
 import Link from 'next/link';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Trash2, Home, ChevronRight, UserCircle, Phone, Mail, MapPin, Layers, Zap, RefreshCcw, Activity } from "lucide-react";
+import { Search,  Plus,  Trash2,  UserCircle,  Layers,  Zap,  RefreshCcw,  Activity } from "lucide-react";
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';

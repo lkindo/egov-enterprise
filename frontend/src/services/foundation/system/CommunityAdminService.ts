@@ -2,7 +2,7 @@ import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
-export interface Community {
+interface Community {
   cmntyId: string;
   cmntyNm: string;
   cmntyIntrcn: string;

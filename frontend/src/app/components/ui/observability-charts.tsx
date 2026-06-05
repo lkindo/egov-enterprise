@@ -1,26 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  YAxis,
-  Tooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  AreaChart,
-  Area,
-  XAxis,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
+import { PieChart, 
+  Pie, 
+  Cell, 
+  LineChart, 
+  Line, 
+  YAxis, 
+  Tooltip, 
+  Radar, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  CartesianGrid, 
+  ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 
 /**

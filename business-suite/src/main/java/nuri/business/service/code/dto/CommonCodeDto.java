@@ -4,7 +4,6 @@ import jakarta.validation.constraints.*;
 
 import nuri.business.domain.code.CommonCode;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Schema(description = "공통코드 DTO")
 public record CommonCodeDto(

@@ -21,7 +21,7 @@ export interface OnlinePollDto {
 /**
  * 온라인설문 항목(OnlinePollItem) DTO 인터페이스
  */
-export interface OnlinePollItemDto {
+interface OnlinePollItemDto {
   pollArtclId?: string;
   pollArtclNm: string;
   pollIemCo?: number;

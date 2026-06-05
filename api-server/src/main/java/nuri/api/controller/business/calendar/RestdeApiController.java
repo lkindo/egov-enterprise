@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import java.util.Objects;
 
 /**
  * 휴일 관리 REST API 컨트롤러

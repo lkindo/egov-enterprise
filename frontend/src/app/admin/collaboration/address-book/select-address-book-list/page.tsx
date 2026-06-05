@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { getInitialAddressBookData } from './AddressBookListServer';
-import { Skeleton } from "@/components/ui/skeleton";
+;
 
 // Optimization: Dynamic Import for Client Component
 const AddressBookListClient = dynamic(() => import('./AddressBookListClient'), {

@@ -3,7 +3,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { GroupManage } from '@/types/foundation/security';
 
-export type GroupInfo = GroupManage;
+type GroupInfo = GroupManage;
 
 /**
  * 그룹 관리님쒕퉬님(Admin)

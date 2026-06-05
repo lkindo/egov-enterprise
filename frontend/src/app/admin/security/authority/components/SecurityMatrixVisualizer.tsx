@@ -2,22 +2,17 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
- ShieldCheck, 
- Lock, 
- Globe, 
- Monitor, 
- Database, 
- Zap, 
- ShieldAlert, 
- Maximize2, 
- Minimize2, 
- Trash2, 
- Save, 
- Search, 
- ChevronRight, 
- Info 
-} from 'lucide-react';
+import { ShieldCheck,  
+ Lock,  
+ Monitor,  
+ Database,  
+ Zap,  
+ Maximize2,  
+ Minimize2,  
+ Save,  
+ Search,  
+ ChevronRight,  
+ Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

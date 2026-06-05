@@ -6,10 +6,8 @@ import { BoardPost } from '@/types/business/board';
 import { HighlightText } from './HighlightText';
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { 
-  BookOpen, Clock, Eye, MessageSquare, ChevronRight, ThumbsUp, Share2, 
-  HelpCircle, CheckCircle2, User, Calendar as CalendarIcon, ChevronDown
-} from "lucide-react";
+import { BookOpen,  Clock,  Eye,  MessageSquare,  ChevronRight,  ThumbsUp,  Share2,  
+  HelpCircle,  CheckCircle2,  ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -193,7 +191,6 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
     </motion.div>
   );
 };
-
 
 export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePending }: TemplateProps) => {
   if (list.length === 0) return null;

@@ -6,8 +6,8 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
-import { HelpCircle, FileText, Info, Search, Plus, Terminal, Zap, BookOpen } from 'lucide-react';
+import { Hpcm } from '@/services/foundation/system/HpcmAdminService';
+import { HelpCircle,  FileText,  Search,  Plus,  Terminal,  Zap,  BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[] } }) {

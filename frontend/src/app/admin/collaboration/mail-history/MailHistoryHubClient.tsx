@@ -1,29 +1,24 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
- RefreshCcw,
- Mail,
- Search,
- Plus,
- Trash2,
- Zap,
- ArrowUpRight,
- Clock,
- Sparkles,
- Layers,
- Send,
- Loader2,
- ShieldCheck,
- User,
- ExternalLink,
- Activity,
- MoreVertical
-} from 'lucide-react';
+import { RefreshCcw, 
+ Mail, 
+ Search, 
+ Plus, 
+ Trash2, 
+ Zap, 
+ ArrowUpRight, 
+ Clock, 
+ Layers, 
+ ShieldCheck, 
+ User, 
+ ExternalLink, 
+ Activity, 
+ MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { mailService, SentMail } from '@/services/business/mail/MailService';

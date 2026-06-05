@@ -1,18 +1,15 @@
-import {
- DndContext,
- closestCenter,
- KeyboardSensor,
- PointerSensor,
- useSensor,
- useSensors,
- DragOverlay,
- defaultDropAnimationSideEffects,
- DragStartEvent,
- DragOverEvent,
- DragEndEvent,
- MeasuringStrategy,
- DropAnimation,
-} from '@dnd-kit/core';
+import { DndContext, 
+ closestCenter, 
+ KeyboardSensor, 
+ PointerSensor, 
+ useSensor, 
+ useSensors, 
+ DragOverlay, 
+ defaultDropAnimationSideEffects, 
+ DragStartEvent, 
+ DragEndEvent, 
+ MeasuringStrategy, 
+ DropAnimation } from '@dnd-kit/core';
 import {
  arrayMove,
  SortableContext,
@@ -22,22 +19,19 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { flattenCodeTree, rebuildCodeTree, getCodeProjection, FlattenedCodeNode } from './treeUtils';
+import { flattenCodeTree,  getCodeProjection,  FlattenedCodeNode } from './treeUtils';
 import { cn } from '@/lib/utils';
-import { 
- Layers, 
- Tag, 
- Database, 
- Search, 
- SearchSlash, 
- Plus, 
- RefreshCcw, 
- Settings, 
- Trash2,
- LayoutGrid,
- Fingerprint,
- Save
-} from 'lucide-react';
+import { Layers,  
+ Tag,  
+ Database,  
+ Search,  
+ SearchSlash,  
+ Plus,  
+ RefreshCcw,  
+ Settings,  
+ Trash2, 
+ Fingerprint, 
+ Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
@@ -46,7 +40,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
-import { codeDetailSchema } from '@/lib/validation/schemas';
+;
 import { 
  Form, 
  FormControl, 

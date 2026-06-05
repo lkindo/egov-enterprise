@@ -28,7 +28,7 @@ export interface BoardPost {
   ansLv?: number;
 }
 
-export interface BoardResponse {
+interface BoardResponse {
   list: BoardPost[];
   total: number;
   totalPage: number;

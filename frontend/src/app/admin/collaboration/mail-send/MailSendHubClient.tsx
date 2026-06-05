@@ -26,7 +26,7 @@ import { mailService } from '@/services/business/mail/MailService';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+;
 
 export default function MailSendHubClient() {
   const router = useRouter();

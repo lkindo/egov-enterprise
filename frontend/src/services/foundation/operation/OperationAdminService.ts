@@ -2,7 +2,7 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface ExternalHr {
+interface ExternalHr {
  extrlUserId: string;
  ncrdId: string;
  extrlUserNm: string;
@@ -14,7 +14,7 @@ export interface ExternalHr {
  crtDt?: string;
 }
 
-export interface Reward {
+interface Reward {
  rewardId: string;
  rewardNm: string;
  rewardDe: string;

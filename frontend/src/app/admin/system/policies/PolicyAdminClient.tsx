@@ -7,7 +7,7 @@ import { policyAdminService, SystemPolicy } from '@/services/foundation/system/P
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+;
 import dynamic from 'next/dynamic';
 import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/app/components/ui/skeleton';
@@ -32,7 +32,6 @@ const policySchema = z.object({
  plcyTtl: z.string().min(1, '정책 제목은 필수입니다.').max(100, '정책 제목은 최대 100자 이하로 입력하십시오.'),
  plcyCn: z.string().min(1, '정책 내용은 필수입니다.').max(4000, '정책 내용은 최대 4000자 이하로 입력하십시오.')
 });
-
 
 type PolicyFormValues = z.infer<typeof policySchema>;
 

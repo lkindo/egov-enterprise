@@ -2,23 +2,15 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { 
-  Building2, 
-  Database, 
-  FileCode,
-  MapPin,
-  ChevronRight,
-  ShieldCheck,
-  Zap,
-  Activity,
-  Server,
-  Network,
-  Code2,
-  Layers,
-  SearchCode,
-  Timer,
-  LucideIcon
-} from 'lucide-react';
+import { Building2,  
+  Database,  
+  FileCode, 
+  MapPin, 
+  ShieldCheck, 
+  Zap, 
+  Code2, 
+  Timer, 
+  LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

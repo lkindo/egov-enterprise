@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+;
 import axios from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark, Globe, FileText, ArrowLeft, Send, Home, ChevronRight, Info, Trash2 } from "lucide-react";
+import { Bookmark,  Globe,  FileText,  ArrowLeft,  Send,  Trash2 } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const SelectScrapDetailPage = () => {

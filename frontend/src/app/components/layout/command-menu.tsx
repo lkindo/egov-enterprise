@@ -1,26 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Settings,
-  User,
-  LayoutDashboard,
-  ShieldCheck,
-  Users,
-  Printer,
-  Moon,
-  Sun,
-  Monitor,
-  LogOut,
-  Search,
-  Activity,
-  Database,
-  Lock,
-  Globe
-} from 'lucide-react';
+import { LayoutDashboard, 
+  ShieldCheck, 
+  Users, 
+  Printer, 
+  Moon, 
+  Sun, 
+  LogOut, 
+  Search, 
+  Activity, 
+  Database, 
+  Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { motion, AnimatePresence } from 'framer-motion';
+;
 
 import {
   CommandDialog,
@@ -32,7 +26,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
+;
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);

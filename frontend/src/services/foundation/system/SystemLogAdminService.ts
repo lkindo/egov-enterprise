@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse, SearchParams, UserLog, LoginLog as LoginLogType, WebLog, PrivacyLog, TransferLog } from '@/types/foundation/system';
+import { PageResponse,  SearchParams,  UserLog,  WebLog,  PrivacyLog,  TransferLog } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface SysLog {

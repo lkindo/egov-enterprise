@@ -49,7 +49,7 @@ export async function deleteCodeDetail(prevState: unknown, { cdId, dtlCd }: { cd
 }
 
 // --- Classification Code Actions ---
-export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> & { isNew?: boolean }) {
+async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> & { isNew?: boolean }) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -74,7 +74,7 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
   }
 }
 
-export async function deleteClCode(prevState: unknown, clsfCd: string) {
+async function deleteClCode(prevState: unknown, clsfCd: string) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -89,7 +89,7 @@ export async function deleteClCode(prevState: unknown, clsfCd: string) {
 }
 
 // --- Common Code (Group) Actions ---
-export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> & { isNew?: boolean }) {
+async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> & { isNew?: boolean }) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
@@ -114,7 +114,7 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
   }
 }
 
-export async function deleteCmmnCode(prevState: unknown, cdId: string) {
+async function deleteCmmnCode(prevState: unknown, cdId: string) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;

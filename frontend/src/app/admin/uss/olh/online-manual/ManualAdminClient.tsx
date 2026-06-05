@@ -5,18 +5,14 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
 import { PageResponse } from '@/types/foundation/system';
-import {
-  BookOpen,
-  Plus,
-  Search,
-  RefreshCcw,
-  FileText,
-  CheckCircle2,
-  Trash2,
-  Edit2,
-  ExternalLink,
-  Code
-} from 'lucide-react';
+import { BookOpen, 
+  Plus, 
+  Search, 
+  RefreshCcw, 
+  FileText, 
+  Trash2, 
+  Edit2, 
+  ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,8 +38,8 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+;
+import { motion } from 'framer-motion';
 
 export default function ManualAdminClient({ 
   initialManuals 

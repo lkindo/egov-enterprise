@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pollSchema, smsSchema, menuSchema, boardMasterSchema } from '../schemas';
+import { pollSchema,  smsSchema,  menuSchema } from '../schemas';
 
 describe('Standardized Validation Schemas', () => {
   

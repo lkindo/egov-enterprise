@@ -9,7 +9,7 @@ import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminServ
 import { Survey } from '@/types/business/survey';
 import { useToast } from '@/app/components/ui/toast';
 import { Calendar, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+;
 
 export default function SurveyListPage() {
   const router = useRouter();

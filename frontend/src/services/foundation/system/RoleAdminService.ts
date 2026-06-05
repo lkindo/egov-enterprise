@@ -3,7 +3,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { RoleManage } from '@/types/foundation/security';
 
-export type RoleInfo = RoleManage;
+type RoleInfo = RoleManage;
 
 /**
  * 濡관리님쒕퉬님(Admin)

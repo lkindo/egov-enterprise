@@ -24,7 +24,7 @@ export interface SurveyQuestion {
   items: SurveyAnswer[];
 }
 
-export interface SurveyAnswer {
+interface SurveyAnswer {
   srvyArtclId: string;
   srvyQstnId: string;
   srvyId: string;
@@ -56,7 +56,7 @@ export interface QustnrRespondInfo {
   srvyTtl?: string; // Optionally included in detail responses
 }
 
-export interface QustnrRespondInfoVO {
+interface QustnrRespondInfoVO {
   qustnrRespondInfo: QustnrRespondInfo;
   answers: SurveyAnswer[];
   pageNo?: number;

@@ -4,7 +4,7 @@ import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-export interface HubListItem {
+interface HubListItem {
   id?: string | number;
   pstId?: string | number;
   title?: string;

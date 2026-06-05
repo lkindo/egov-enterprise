@@ -5,33 +5,26 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Inbox,
-  Send,
-  Check,
-  X,
-  FileText,
-  User,
-  ClipboardCheck,
-  History,
-  Info,
-  Calendar,
-  Zap,
-  Search,
-  ArrowUpRight,
-  ShieldCheck,
-  Plus,
-  Loader2,
-  Clock,
-  Layers,
-  ChevronRight
-} from 'lucide-react';
+import { Inbox, 
+  Check, 
+  X, 
+  FileText, 
+  User, 
+  History, 
+  Info, 
+  Calendar, 
+  Zap, 
+  Search, 
+  ShieldCheck, 
+  Plus, 
+  Loader2, 
+  Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { approvalUserService, Approval } from '@/services/business/user/approval/ApprovalUserService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
+;
 import { Badge } from '@/components/ui/badge';
 import { ApprovalStepper } from './ApprovalStepper';
 import { useRouter } from 'next/navigation';

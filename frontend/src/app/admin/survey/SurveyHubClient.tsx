@@ -1,40 +1,32 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useQueryClient } from '@tanstack/react-query';
+;
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { PageHeader } from '@/app/components/layout/page-header';
-import {
-  ClipboardCheck,
-  BarChart3,
-  FileText,
-  Users,
-  Plus,
-  Search,
-  Filter,
-  Clock,
-  Calendar,
-  ChevronRight,
-  Trophy,
-  TrendingUp,
-  PieChart,
-  CheckCircle,
-  Target,
-  Activity,
-  BookOpen,
-  Settings,
-  Layout,
-  Database,
-  ArrowRight,
-  Download,
-  Share2,
-  AlertCircle
-} from 'lucide-react';
+import { ClipboardCheck, 
+  BarChart3, 
+  Users, 
+  Plus, 
+  Search, 
+  Clock, 
+  Calendar, 
+  TrendingUp, 
+  PieChart, 
+  CheckCircle, 
+  Target, 
+  Activity, 
+  BookOpen, 
+  Layout, 
+  Database, 
+  Download, 
+  Share2, 
+  AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';

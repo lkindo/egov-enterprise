@@ -19,7 +19,7 @@ import { getPollList } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO, PollSearchParams } from '@/types/business/poll';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card,  CardContent,  CardHeader } from "@/components/ui/card";
 
 export default function SurveyStatsPage() {
   const router = useRouter();

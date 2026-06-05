@@ -28,7 +28,7 @@ export interface DeptJobBxVO {
   mdfcnDt?: string;
 }
 
-export interface DeptJobSearchParams {
+interface DeptJobSearchParams {
   pageNo?: number;
   searchCondition?: string;
   searchKeyword?: string;

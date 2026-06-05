@@ -1,7 +1,7 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { CommunityVO, CommunitySearchParams } from '@/types/business/community';
-import { CommunityDto } from '@/types/modernization';
+;
 
 /**
  * 커뮤니티 관리 서비스

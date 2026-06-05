@@ -2,26 +2,23 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Zap, 
-  ShieldCheck, 
-  ArrowLeft, 
-  Search, 
-  Plus, 
-  ChevronRight, 
-  Calendar, 
-  CreditCard, 
-  ShoppingBag, 
-  Clock, 
-  Send,
-  User,
-  Info
-} from 'lucide-react';
+import { FileText,  
+  Zap,  
+  ShieldCheck,  
+  ArrowLeft,  
+  Plus,  
+  ChevronRight,  
+  Calendar,  
+  CreditCard,  
+  ShoppingBag,  
+  Clock,  
+  Send, 
+  User, 
+  Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/app/components/ui/toast';
 

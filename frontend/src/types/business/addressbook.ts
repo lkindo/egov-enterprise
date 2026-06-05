@@ -1,4 +1,4 @@
-export interface AddressBook {
+interface AddressBook {
  adbkId: string;
  adbkNm: string;
  rlsScopeCd: string; // 공용, 개인
@@ -18,7 +18,7 @@ export interface NameCard {
  faxNo?: string;
 }
 
-export interface AddressBookUser {
+interface AddressBookUser {
  adbkConstntId: string;
  nm: string;
  emlAddr: string;

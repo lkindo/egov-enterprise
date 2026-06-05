@@ -1,17 +1,13 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Monitor, 
-  Cpu, 
-  Database, 
-  ShieldCheck, 
-  Activity,
-  ArrowRight,
-  Server
-} from 'lucide-react';
+import { Users,  
+  Monitor,  
+  Cpu,  
+  Database,  
+  ShieldCheck,  
+  Activity } from 'lucide-react';
 
 interface NodeProps {
   id: string;

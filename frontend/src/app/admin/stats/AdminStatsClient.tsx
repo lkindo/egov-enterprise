@@ -9,30 +9,18 @@ import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import {
-  BarChart3,
-  Users,
-  FileText,
-  MousePointer2,
-  AlertTriangle,
-  TrendingUp,
-  Globe,
-  RefreshCcw,
-  Zap,
-  Clock,
-  Layout,
-  Cpu,
-  BarChart,
-  Activity,
-  ArrowUpRight,
-  Database,
-  ShieldCheck,
-  Server,
-  ZapOff,
-  CloudLightning,
-  Monitor,
-  Target
-} from 'lucide-react';
+import { BarChart3, 
+  Globe, 
+  RefreshCcw, 
+  Layout, 
+  Cpu, 
+  Activity, 
+  ArrowUpRight, 
+  Database, 
+  ShieldCheck, 
+  CloudLightning, 
+  Monitor, 
+  Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 
@@ -47,7 +35,7 @@ const NationalDistributionMap = dynamic(() => import('@/app/components/ui/nation
 });
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+;
 
 export default function AdminStatsClient({
   initialSummary,

@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import { SurveyPage } from './pages/SurveyPage';
-import { PromotionPage } from './pages/PromotionPage';
-import { KnowledgePage } from './pages/KnowledgePage';
+;
+;
 
 test.describe('Tier 5: Public Engagement & Experience', () => {
     
@@ -42,7 +42,6 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await adminSurvey.checkResults(searchKeyword, surveyTitle);
         });
     });
-
 
     test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage }) => {
         const popupTitle = `E2E Popup ${Date.now()}-${Math.floor(Math.random() * 1000)}`;

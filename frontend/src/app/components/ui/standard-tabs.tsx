@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface TabItem {
+interface TabItem {
  id: string;
  label: string;
  icon?: React.ReactNode;

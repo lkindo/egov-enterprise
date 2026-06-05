@@ -3,19 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Check, 
-  Bell, 
-  ShieldAlert, 
-  Activity, 
-  Database, 
-  Zap, 
-  ArrowRight,
-  Filter,
-  CheckCircle2,
-  Trash2
-} from 'lucide-react';
+import { X,  
+  Bell,  
+  ShieldAlert,  
+  Activity,  
+  Database,  
+  Zap,  
+  ArrowRight, 
+  Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 

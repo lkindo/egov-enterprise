@@ -124,4 +124,4 @@ export const MESSAGES = {
   },
 } as const;
 
-export type MessageKey = keyof typeof MESSAGES;
+type MessageKey = keyof typeof MESSAGES;

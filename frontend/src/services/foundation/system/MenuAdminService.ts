@@ -14,7 +14,7 @@ export interface Menu {
   modernRoute?: string;
 }
 
-export interface MenuCreate {
+interface MenuCreate {
   authrtCd: string;
   menuSn: number;
   crtrId: string;

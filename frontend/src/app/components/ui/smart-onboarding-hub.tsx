@@ -1,18 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Sparkles,
-  Command,
-  Layout,
-  Bell,
-  User,
-  CheckCircle2,
-  Activity,
-  ArrowRight
-} from 'lucide-react';
+import { X, 
+  ChevronLeft, 
+  Sparkles, 
+  Command, 
+  Layout, 
+  CheckCircle2, 
+  Activity, 
+  ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 

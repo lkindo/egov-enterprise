@@ -6,7 +6,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 

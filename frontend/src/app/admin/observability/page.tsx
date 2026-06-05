@@ -2,20 +2,15 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
-import { 
-  Activity, 
-  BarChart3, 
-  Clock, 
-  AlertTriangle, 
-  Search, 
-  Filter, 
-  RefreshCcw,
-  ExternalLink,
-  Zap,
-  Layers,
-  ShieldCheck
-} from 'lucide-react';
+;
+import { Activity,  
+  BarChart3,  
+  Clock,  
+  AlertTriangle,  
+  RefreshCcw, 
+  ExternalLink, 
+  Zap, 
+  Layers } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';

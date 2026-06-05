@@ -12,20 +12,17 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NetworkForm } from '@/components/admin/system/NetworkForm';
-import {
-    Plus,
-    Network as NetworkIcon,
-    Server,
-    Activity,
-    Shield,
-    Cpu,
-    Settings,
-    Trash2,
-    Search,
-    Zap,
-    Globe,
-    Database,
-} from 'lucide-react';
+import { Plus, 
+    Network as NetworkIcon, 
+    Server, 
+    Activity, 
+    Cpu, 
+    Settings, 
+    Trash2, 
+    Search, 
+    Zap, 
+    Globe, 
+    Database } from 'lucide-react';
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -81,7 +78,6 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             }
         }
     };
-
 
     const columns = [
         {

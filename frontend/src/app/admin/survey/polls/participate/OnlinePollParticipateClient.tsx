@@ -4,22 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/business/poll';
-import { 
- Vote, 
- Calendar, 
- ChevronRight, 
+import { Vote,  
+ Calendar,  
+ ChevronRight,  
  CheckCircle2, 
- BarChart3, 
- Clock, 
- AlertCircle,
- UserCheck,
- Zap,
- Trophy,
- Target
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+ UserCheck, 
+ Zap, 
+ Trophy, 
+ Target } from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+;
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -33,7 +28,6 @@ export default function OnlinePollParticipateClient() {
  const [isVoting, setIsVoting] = useState(false);
  const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
  const [todayStr, setTodayStr] = useState<string>('');
-
 
  useEffect(() => {
  setTodayStr(format(new Date(), 'yyyy-MM-dd'));
@@ -213,7 +207,6 @@ export default function OnlinePollParticipateClient() {
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
  const isClosed = todayStr > (poll.pollEndYmd || '9999-12-31');
 
- 
  return (
  <div 
  onClick={onSelect}
