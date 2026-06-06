@@ -51,8 +51,9 @@ class HelpUserService extends UserService {
         inqCnt: item.inqCnt || 0,
         mdfcnDt: item.crtDt
       }));
+      return response as PageResponse<FAQ>;
     }
-    return response as PageResponse<FAQ>;
+    return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<FAQ>;
   }
 
   /** Q&A 목록 조회 (페이지) */
@@ -76,8 +77,9 @@ class HelpUserService extends UserService {
         writngDe: item.crtDt,
         qnaProcessSttusCode: item.ansLv && item.ansLv > 0 ? '3' : '1'
       }));
+      return response as PageResponse<QNA>;
     }
-    return response as PageResponse<QNA>;
+    return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<QNA>;
   }
 
   /** Q&A 등록 */

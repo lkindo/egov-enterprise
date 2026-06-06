@@ -19,6 +19,8 @@ const nextConfig = {
       '@radix-ui/react-label',
       '@radix-ui/react-slot',
       'framer-motion',
+      'recharts',
+      'date-fns',
     ],
   },
   turbopack: {

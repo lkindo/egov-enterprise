@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import { SurveyPage } from './pages/SurveyPage';
-;
-;
+import { PromotionPage } from './pages/PromotionPage';
+import { KnowledgePage } from './pages/KnowledgePage';
 
 test.describe('Tier 5: Public Engagement & Experience', () => {
     

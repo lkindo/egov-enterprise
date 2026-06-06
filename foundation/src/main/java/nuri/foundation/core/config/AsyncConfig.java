@@ -3,7 +3,7 @@ package nuri.foundation.core.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.retry.annotation.EnableRetry;
 import java.util.concurrent.Executor;
 
@@ -22,13 +22,9 @@ public class AsyncConfig {
 
     @Bean(name = "logExecutor")
     public Executor logExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(5);        // 기본 가동 스레드
-        executor.setMaxPoolSize(10);       // 최대 가동 스레드
-        executor.setQueueCapacity(500);    // 대기 큐 용량
-        executor.setThreadNamePrefix("LogAsync-");
+        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("LogAsync-");
+        executor.setVirtualThreads(true);
         executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
-        executor.initialize();
         return executor;
     }
 }
