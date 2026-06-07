@@ -1,5 +1,6 @@
 package nuri.api.controller.business.calendar;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.calendar.RestdeService;
@@ -50,7 +51,7 @@ public class RestdeApiController {
 
     @Operation(summary = "휴일 등록", description = "새로운 휴일 정보를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Integer>> createRestde(@RequestBody RestdeDto dto) {
+    public ResponseEntity<ApiResponse<Integer>> createRestde(@Valid @RequestBody RestdeDto dto) {
         String userId = getCurrentUserId();
         if ("anonymous".equals(userId)) {
             return ResponseEntity.status(401).build();
@@ -61,7 +62,7 @@ public class RestdeApiController {
 
     @Operation(summary = "휴일 수정", description = "기존 휴일 정보를 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateRestde(@PathVariable Integer id, @RequestBody RestdeDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateRestde(@PathVariable Integer id, @Valid @RequestBody RestdeDto dto) {
         String userId = getCurrentUserId();
         if ("anonymous".equals(userId)) {
             return ResponseEntity.status(401).build();

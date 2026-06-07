@@ -96,6 +96,7 @@ class CommunityApiControllerTest {
     void createCommunity() throws Exception {
         CommunityDto requestDto = new CommunityDto();
         requestDto.setCmntyNm("New Community");
+        requestDto.setUseYn("Y");
         
         CommunityDto responseDto = new CommunityDto();
         responseDto.setCmntyId("C1");
@@ -116,6 +117,7 @@ class CommunityApiControllerTest {
     void updateCommunity() throws Exception {
         CommunityDto dto = new CommunityDto();
         dto.setCmntyNm("Updated Community");
+        dto.setUseYn("Y");
 
         doNothing().when(communityService).updateCommunity(eq("user"), any(CommunityDto.class));
 

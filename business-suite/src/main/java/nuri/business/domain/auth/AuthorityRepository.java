@@ -19,6 +19,6 @@ public interface AuthorityRepository extends JpaRepository<Authority, String>, A
     @Transactional
     void deleteById(@NonNull String authrtCd);
 
-    @Query("SELECT a FROM Authority a WHERE a.authrtNm LIKE %:searchKeyword% OR a.authrtCd LIKE %:searchKeyword%")
+    @Query("SELECT a FROM Authority a WHERE a.authrtNm LIKE CONCAT(:searchKeyword, '%') OR a.authrtCd LIKE CONCAT(:searchKeyword, '%')")
     Page<Authority> searchByKeyword(@Param("searchKeyword") @NonNull String searchKeyword, @NonNull Pageable pageable);
 }

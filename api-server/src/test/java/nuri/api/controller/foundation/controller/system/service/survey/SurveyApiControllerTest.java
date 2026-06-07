@@ -155,6 +155,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void insertSurvey_ShouldSucceed() throws Exception {
         SurveyInfoDto dto = SurveyInfoDto.builder()
+                .srvyId("SRVY_NEW")
                 .srvyTtl("신규 설문조사")
                 .build();
 
@@ -172,6 +173,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void updateSurvey_ShouldSucceed() throws Exception {
         SurveyInfoDto dto = SurveyInfoDto.builder()
+                .srvyId("SRVY_001")
                 .srvyTtl("수정 설문조사")
                 .build();
 
@@ -218,6 +220,8 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void insertQuestion_ShouldSucceed() throws Exception {
         SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .srvyQstnId("Q_NEW")
+                .srvyId("SRVY_001")
                 .qstnCn("직무 만족도 질문")
                 .build();
 
@@ -235,6 +239,8 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void updateQuestion_ShouldSucceed() throws Exception {
         SurveyQuestionDto dto = SurveyQuestionDto.builder()
+                .srvyQstnId("Q_001")
+                .srvyId("SRVY_001")
                 .qstnCn("직무 만족도 질문 수정")
                 .build();
 
@@ -265,6 +271,9 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void insertItem_ShouldSucceed() throws Exception {
         SurveyArticleDto dto = SurveyArticleDto.builder()
+                .srvyArtclId("ITEM_NEW")
+                .srvyQstnId("Q_001")
+                .srvyId("SRVY_001")
                 .artclCn("매우 만족")
                 .build();
 
@@ -282,6 +291,9 @@ public class SurveyApiControllerTest extends BaseControllerTest {
     @Test
     public void updateItem_ShouldSucceed() throws Exception {
         SurveyArticleDto dto = SurveyArticleDto.builder()
+                .srvyArtclId("ITEM_001")
+                .srvyQstnId("Q_001")
+                .srvyId("SRVY_001")
                 .artclCn("매우 만족 수정")
                 .build();
 

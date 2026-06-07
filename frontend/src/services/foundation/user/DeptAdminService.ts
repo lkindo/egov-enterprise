@@ -42,7 +42,7 @@ class DeptAdminService extends AdminService {
   }
 
   /** 부서 계층 및 순서 일괄 수정 (현대화 트리 대응) */
-  async updateDeptHierarchy(data: any[], config?: AxiosRequestConfig) {
+  async updateDeptHierarchy(data: unknown[], config?: AxiosRequestConfig) {
     return this.put<void>('/batch-hierarchy', data, { ...config, timeout: 60000 });
   }
 }

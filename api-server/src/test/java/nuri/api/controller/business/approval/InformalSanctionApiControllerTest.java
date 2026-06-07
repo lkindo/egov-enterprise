@@ -64,6 +64,7 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
         
         InformalSanctionDto dto = InformalSanctionDto.builder()
                 .taskSeCd("001")
+                .aplcntId("user01")
                 .aprvrId("boss01")
                 .build();
 
@@ -80,6 +81,8 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     void updateInformalSanctionTest() throws Exception {
         InformalSanctionDto dto = InformalSanctionDto.builder()
                 .taskSeCd("001")
+                .aplcntId("user01")
+                .aprvrId("boss01")
                 .build();
 
         mockMvc.perform(put("/api/v1/informal-sanctions/IS1")

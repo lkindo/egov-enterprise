@@ -1,5 +1,6 @@
 package nuri.api.controller.business.lsm;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.schedule.EgovLeaderScheduleService;
@@ -41,7 +42,7 @@ public class LeaderScheduleApiController {
 
     @Operation(summary = "간부 일정 등록", description = "새로운 간부 일정을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> insertLeaderSchedule(@RequestBody LeaderScheduleDto dto) {
+    public ResponseEntity<ApiResponse<String>> insertLeaderSchedule(@Valid @RequestBody LeaderScheduleDto dto) {
         String id = leaderScheduleService.createLeaderSchedule("ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
@@ -50,7 +51,7 @@ public class LeaderScheduleApiController {
     @PutMapping("/{schdlId}")
     public ResponseEntity<ApiResponse<Void>> updateLeaderSchedule(
             @PathVariable String schdlId,
-            @RequestBody LeaderScheduleDto dto) {
+            @Valid @RequestBody LeaderScheduleDto dto) {
         leaderScheduleService.updateLeaderSchedule(schdlId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

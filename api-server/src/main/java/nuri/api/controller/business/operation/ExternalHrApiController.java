@@ -1,5 +1,6 @@
 package nuri.api.controller.business.operation;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.dto.ExternalHrDto;
@@ -23,7 +24,7 @@ public class ExternalHrApiController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createExternalHr(@RequestBody ExternalHrDto dto) {
+    public ResponseEntity<?> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
         return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));
     }
 }

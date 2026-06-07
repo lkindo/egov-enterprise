@@ -92,84 +92,46 @@ class BoardMasterTest {
     }
 
     @Test
-    @DisplayName("레거시 별칭(Aliases) 및 Getter/Setter 테스트")
-    void legacyAliasesAndSettersTest() {
-        LocalDateTime now = LocalDateTime.now();
+    @DisplayName("명시적 registerOption 연관관계 설정 테스트")
+    void registerOptionTest() {
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_002")
                 .bbsTtl("Notice A")
                 .bbsTypeCd("BBST02")
                 .bbsAtrbCd("BBSA02")
-                .ansPsbltyYn("Y")
-                .fileAtchPsbltyYn("Y")
-                .atchPsbltyFileQty(3)
-                .atchPsbltyFileSz(500L)
-                .tmpltId("TMP_02")
-                .ansYn("Y")
-                .stsfdgYn("Y")
                 .build();
 
+        master.registerOption("Y", "Y");
+
         // 표준 필드 검증
-        assertThat(master.getBbsTtl()).isEqualTo("Notice A");
-        assertThat(master.getBbsTypeCd()).isEqualTo("BBST02");
-        assertThat(master.getBbsAtrbCd()).isEqualTo("BBSA02");
-        assertThat(master.getAnsPsbltyYn()).isEqualTo("Y");
-        assertThat(master.getFileAtchPsbltyYn()).isEqualTo("Y");
-        assertThat(master.getAtchPsbltyFileQty()).isEqualTo(3);
-        assertThat(master.getAtchPsbltyFileSz()).isEqualTo(500L);
-        assertThat(master.getTmpltId()).isEqualTo("TMP_02");
         assertThat(master.getAnsYn()).isEqualTo("Y");
         assertThat(master.getStsfdgYn()).isEqualTo("Y");
 
-        // Optn 관련 Getter/Setter 검증
-        master.setOptnFrstRgtrId("admin");
-        master.setOptnCrtDt(now);
-        master.setOptnLastMdfrId("moderator");
-        master.setOptnMdfcnDt(now);
-
-        assertThat(master.getOptnFrstRgtrId()).isEqualTo("admin");
-        assertThat(master.getOptnCrtDt()).isEqualTo(now);
-        assertThat(master.getOptnLastMdfrId()).isEqualTo("moderator");
-        assertThat(master.getOptnMdfcnDt()).isEqualTo(now);
+        // 연관 엔티티 검증
+        assertThat(master.getOption()).isNotNull();
+        assertThat(master.getOption().getBoardMaster()).isEqualTo(master);
+        assertThat(master.getOption().getBbsId()).isEqualTo("BBS_002");
+        assertThat(master.getOption().getAnsYn()).isEqualTo("Y");
+        assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
     }
 
     @Test
-    @DisplayName("JPA 콜백 생명주기 메서드 직접 호출 테스트")
-    void jpaCallbacksTest() {
-        BoardMaster master1 = BoardMaster.builder().build();
-        master1.onPrePersist();
-        assertThat(master1.getOptnFrstRgtrId()).isEqualTo("webmaster");
-        assertThat(master1.getOptnCrtDt()).isNotNull();
-        assertThat(master1.getOptnMdfcnDt()).isNotNull();
-
-        BoardMaster master2 = BoardMaster.builder()
-                .optnFrstRgtrId("custom")
-                .optnCrtDt(LocalDateTime.of(2026, 1, 1, 0, 0))
-                .optnMdfcnDt(LocalDateTime.of(2026, 1, 1, 0, 0))
-                .build();
-        master2.onPrePersist();
-        assertThat(master2.getOptnFrstRgtrId()).isEqualTo("custom");
-        assertThat(master2.getOptnCrtDt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
-
-        master2.onPreUpdate();
-        assertThat(master2.getOptnMdfcnDt()).isNotEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
-    }
-
-    @Test
-    @DisplayName("커스텀 빌더 확장 메서드 검증")
-    void builderCustomExtensionsTest() {
-        LocalDateTime testTime = LocalDateTime.of(2026, 5, 22, 12, 0);
+    @DisplayName("BoardMaster update 시 Option 명시 동기화 테스트")
+    void updateOptionSyncTest() {
         BoardMaster master = BoardMaster.builder()
-                .optnFrstRgtrId("creator")
-                .optnCrtDt(testTime)
-                .optnLastMdfrId("modifier")
-                .optnMdfcnDt(testTime)
+                .bbsId("BBS_003")
+                .bbsTtl("Notice B")
                 .build();
 
-        assertThat(master.getOptnFrstRgtrId()).isEqualTo("creator");
-        assertThat(master.getOptnCrtDt()).isEqualTo(testTime);
-        assertThat(master.getOptnLastMdfrId()).isEqualTo("modifier");
-        assertThat(master.getOptnMdfcnDt()).isEqualTo(testTime);
+        master.registerOption("N", "N");
+
+        // 수정 수행
+        master.update("New TTL", "New Description", "Y", "Y", 5, 1024L, "TMP_02", "Y", "Y", "Y");
+
+        assertThat(master.getAnsYn()).isEqualTo("Y");
+        assertThat(master.getStsfdgYn()).isEqualTo("Y");
+        assertThat(master.getOption().getAnsYn()).isEqualTo("Y");
+        assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
     }
 }
 

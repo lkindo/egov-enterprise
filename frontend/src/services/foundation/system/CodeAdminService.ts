@@ -100,7 +100,7 @@ class CodeAdminService extends AdminService {
     }
 
     /** 공통코드 계층 및 순서 일괄 수정 (현대화 트리 대응) */
-    async updateCmmnCodeHierarchy(data: any[], config?: AxiosRequestConfig): Promise<void> {
+    async updateCmmnCodeHierarchy(data: unknown[], config?: AxiosRequestConfig): Promise<void> {
         return this.put('/cmmn/batch-hierarchy', data, { ...config, timeout: 60000 });
     }
 

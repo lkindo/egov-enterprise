@@ -64,7 +64,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(post("/api/v1/admin/system/board-masters")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsTtl\":\"New Board\", \"bbsExpln\":\"Description\"}")
+                .content("{\"bbsTtl\":\"New Board\", \"bbsExpln\":\"Description\", \"bbsTypeCd\":\"TYPE\", \"bbsAtrbCd\":\"ATRB\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -76,7 +76,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     void updateBoardMaster_Success() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/board-masters/BBS_001")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsTtl\":\"Updated Board\"}")
+                .content("{\"bbsTtl\":\"Updated Board\", \"bbsTypeCd\":\"TYPE\", \"bbsAtrbCd\":\"ATRB\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

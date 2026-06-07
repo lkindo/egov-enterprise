@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -53,7 +54,7 @@ public class AuthorApiController {
 
     @Operation(summary = "권한 그룹 등록", description = "새로운 시스템 권한 그룹을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createAuthor(@RequestBody AuthorManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createAuthor(@Valid @RequestBody AuthorManageDto dto) {
         authorManageService.insertAuthor(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -62,7 +63,7 @@ public class AuthorApiController {
     @PutMapping("/{authrtCd}")
     public ResponseEntity<ApiResponse<Void>> updateAuthor(
             @PathVariable String authrtCd,
-            @RequestBody AuthorManageDto dto) {
+            @Valid @RequestBody AuthorManageDto dto) {
         dto.setAuthrtCd(authrtCd);
         authorManageService.updateAuthor(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

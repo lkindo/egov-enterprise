@@ -8,6 +8,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface GroupManageRepository extends JpaRepository<GroupManage, String> {
 
-    @Query("SELECT g FROM GroupManage g WHERE g.groupNm LIKE %:searchKeyword%")
+    @Query("SELECT g FROM GroupManage g WHERE g.groupNm LIKE CONCAT(:searchKeyword, '%')")
     Page<GroupManage> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);
 }

@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState,  useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { Plus,  
- MapPin,  
- Search,  
- Layers,  
- ShieldCheck,  
+import { Plus, 
+ MapPin, 
+ Search, 
+ Layers, 
+ ShieldCheck, 
  Database, 
  SearchCode, 
  Milestone, 
@@ -25,14 +25,49 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import dynamic from 'next/dynamic';
+
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+
+const administCodeSchema = z.object({
+  admdstCd: z.string().min(1, '식별 코드는 필수 입력 사항입니다.').max(10, '식별 코드는 최대 10자리입니다.'),
+  admdstZoneNm: z.string().min(1, '행정구역명은 필수 입력 사항입니다.'),
+  admdstSeCd: z.string().min(1, '구분은 필수 입력 사항입니다.'),
+  upAdmdstCd: z.string().min(1, '상위 코드는 필수 입력 사항입니다.'),
+  useYn: z.string().min(1, '사용 여부는 필수 입력 사항입니다.'),
+});
+
+type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 
 export default function AdministCodeClient({ initialData }: { initialData: any }) {
  const [data, setData] = useState(initialData?.list || []);
  const [total, setTotal] = useState(initialData?.total || 0);
  const [loading, setLoading] = useState(false);
+ const [isModalOpen, setIsModalOpen] = useState(false);
+ const [registerLoading, setRegisterLoading] = useState(false);
  const { toast } = useToast();
  const [searchWrd, setSearchWrd] = useState('');
  const [pageNumber, setPageNumber] = useState(1);
+
+ const form = useAppForm(administCodeSchema, {
+   defaultValues: {
+     admdstCd: '',
+     admdstZoneNm: '',
+     admdstSeCd: '1',
+     upAdmdstCd: '',
+     useYn: 'Y',
+   }
+ });
 
  const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
  try {
@@ -46,6 +81,21 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  } finally {
  setLoading(false);
  }
+ };
+
+ const onRegisterSubmit = async (values: AdministCodeFormValues) => {
+   try {
+     setRegisterLoading(true);
+     await codeAdminService.createAdministCode(values);
+     toast('행정 구역 코드가 등록되었습니다.', 'success');
+     setIsModalOpen(false);
+     form.reset();
+     loadData(searchWrd, 1);
+   } catch (error) {
+     toast('코드 등록 중 오류가 발생했습니다.', 'error');
+   } finally {
+     setRegisterLoading(false);
+   }
  };
 
  const stats = useMemo(() => {
@@ -133,7 +183,10 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  >
  <RefreshCcw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
- <Button className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group">
+ <Button 
+  onClick={() => setIsModalOpen(true)}
+  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
+ >
  <Plus size={18} /> 신규 등록
  </Button>
  </div>
@@ -234,7 +287,103 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  </HubSectionCard>
  </div>
  </div>
+
+ <StandardModal
+   isOpen={isModalOpen}
+   onClose={() => setIsModalOpen(false)}
+   title="행정 구역 코드 등록"
+   maxWidth="xl"
+   footer={
+     <div className="flex w-full gap-4">
+       <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+       <Button 
+         onClick={form.handleSubmit(onRegisterSubmit)}
+         disabled={registerLoading}
+         className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+       >
+         <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
+       </Button>
+     </div>
+   }
+ >
+   <Form {...form}>
+     <form className="space-y-6 pt-4 text-left">
+       <ShadcnFormField
+         control={form.control}
+         name="admdstCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 1111051500" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="admdstSeCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">구분</FormLabel>
+             <FormControl>
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+                 <option value="1">법정동</option>
+                 <option value="2">행정동</option>
+               </select>
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="admdstZoneNm"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 명칭</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="upAdmdstCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 1111000000" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="useYn"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">사용 여부</FormLabel>
+             <FormControl>
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+                 <option value="Y">활성 (사용함)</option>
+                 <option value="N">중단 (사용안함)</option>
+               </select>
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+     </form>
+   </Form>
+ </StandardModal>
  </div>
  );
 }
+
 

@@ -1,5 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
+import jakarta.validation.Valid;
 import nuri.business.service.scrap.EgovScrapService;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -48,7 +49,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createScrap(@RequestBody ScrapDto dto) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> createScrap(@Valid @RequestBody ScrapDto dto) throws Exception {
         String userId = getCurrentUserId();
         egovScrapService.createScrap(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -56,7 +57,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 수정")
     @PutMapping("/{scrapId}")
-    public ResponseEntity<ApiResponse<Void>> updateScrap(@PathVariable String scrapId, @RequestBody ScrapDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateScrap(@PathVariable String scrapId, @Valid @RequestBody ScrapDto dto) {
         String userId = getCurrentUserId();
         dto.setScrapId(scrapId);
         egovScrapService.updateScrap(userId, dto);

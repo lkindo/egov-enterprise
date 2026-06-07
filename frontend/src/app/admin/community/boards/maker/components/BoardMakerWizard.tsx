@@ -237,7 +237,8 @@ export function BoardMakerWizard() {
  menuOrdr: data.menuOrdr,
  progrmFileNm: 'EgovBBSMaster',
  modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
- menuDc: `Auto-generated menu for board ${data.bbsTtl}`
+ menuDc: `Auto-generated menu for board ${data.bbsTtl}`,
+ useYn: 'N'
  } as any);
 
  setStatus("Provisioning Complete. Refreshing Graph...");

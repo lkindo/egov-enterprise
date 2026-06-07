@@ -24,11 +24,23 @@ graph TD
 
 ---
 
-## 1. Phase 3: FileDetail 대리키(Surrogate Key) 마이그레이션
+## 1. Phase 3: FileDetail 대리키(Surrogate Key) 마이그레이션 [RESOLVED]
 
-현재 `FileDetail` 엔티티는 `FileMaster`와의 식별 관계(Identifying Relationship)를 맺고 있으며, 복합 식별자(`atchFileId`, `fileSn`)를 PK로 사용하고 있습니다. 이를 단일 대리키(`file_detail_id`) 기반의 비식별 관계로 전환하여 도메인 유연성을 확보해야 합니다.
+본 아키텍처 개선 과제는 성공적으로 완수되었습니다. `tb_file_detail` 엔티티의 복합 식별 관계(IdClass)를 단일 대리키(Surrogate Key) 비식별 구조로 안전하게 마이그레이션 완료하였습니다.
 
-### 1.1. 스키마 마이그레이션 로드맵 (Expand-and-Contract)
+### 1.1. 스키마 마이그레이션 결과 (Flyway V1.9 적용)
+- **마이그레이션 스크립트**: [V1.9__change_file_detail_pk.sql](file:///d:/project/egov-enterprise/api-server/src/main/resources/db/migration/V1.9__change_file_detail_pk.sql)
+- **조치 상세**:
+  1. `file_detail_id` UUID 컬럼 추가 및 기본값(`gen_random_uuid()`) 백필(Backfill).
+  2. 기존 기본키 `pk_tb_file_detail` 제거 및 `file_detail_id` 단일 기본키 지정.
+  3. 기존 식별 복합 컬럼 `(atch_file_id, atch_file_seq)`에 `uk_tb_file_detail_sn` 유니크 제약 조건 추가로 데이터 정합성 보장.
+
+### 1.2. JPA 엔티티 및 Repository 리팩토링 완료
+- **엔티티**: [FileDetail.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/file/FileDetail.java)에 `@Id` 및 `@GeneratedValue(strategy = GenerationType.UUID)` 단일 식별자 적용. `FileDetailId.java` 식별자 클래스는 완전히 삭제([DELETE])하여 도메인을 정화함.
+- **레포지토리**: [FileDetailRepository.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/file/FileDetailRepository.java)가 `JpaRepository<FileDetail, UUID>`를 상속하도록 변경하고, 하위 호환을 위한 `findByFileMasterAtchFileIdAndAtchFileSeq` 쿼리 메서드 선언.
+- **서비스 및 테스트**: [FileService.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/service/file/FileService.java) 및 [FileServiceTest.java](file:///d:/project/egov-enterprise/business-suite/src/test/java/nuri/business/service/file/FileServiceTest.java) 내의 findById 조회 및 모의 Mocking 정합성을 신규 쿼리 메서드로 안정적으로 전환 및 검증 완료.
+
+### 1.3. 스키마 마이그레이션 로드맵 (참고용 히스토리)
 
 ```sql
 -- [Phase 1: Expand] - 신규 대리키 컬럼 추가 (NULL 허용으로 구버전 INSERT 방어)
@@ -96,51 +108,23 @@ public class FileDetail {
 
 ---
 
-## 2. Phase 4: 레거시 참조 필드 및 Transient 브릿지 폐기
+## 2. Phase 4: 레거시 참조 필드 및 Transient 브릿지 폐기 [RESOLVED]
 
-현재 시스템에는 레거시 프레임워크와의 호환성 및 화면 레이어와의 결합도를 유지하기 위해 `String` 타입의 Alias 필드와 `@Transient`를 이용한 브릿지 로직(Entity 생명주기 콜백 활용)이 다수 존재합니다. 이를 점진적으로 소거하고 순수한 객체 참조 구조로 정화해야 합니다.
+본 아키텍처 개선 과제는 성공적으로 완수되었습니다. `BoardMaster` 엔티티 내에 존재하던 `@Transient` 메타데이터 필드와 JPA 라이프사이클 콜백을 이용한 수동 데이터 전송 로직(Transient 브릿지)을 완전히 소거하고 순수한 객체 참조 구조로 정화하였습니다.
 
-### 2.1. Refactoring Before / After
+### 2.1. 리팩토링 상세 결과 (JPA 연관관계 정화)
+- **대상 엔티티**: [BoardMaster.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/board/BoardMaster.java)
+- **조치 상세**:
+  1. `optnFrstRgtrId`, `optnCrtDt`, `optnLastMdfrId`, `optnMdfcnDt` 등 4개의 `@Transient` 필드를 완전히 제거하여 불필요한 메타 정보 누수를 차단함.
+  2. JPA 콜백 어노테이션인 `@PrePersist`, `@PreUpdate`, `@PostLoad` 관련 동기화 메서드 및 `ensureOption()` 헬퍼 메서드를 삭제하여 암묵적인 브릿지 동기화를 철폐함.
+  3. 명시적 객체 지향 참조 관계 설정을 위해 편의 메서드 `registerOption(ansYn, stsfdgYn)`를 제공하고, `update(...)` 비즈니스 메서드 및 개별 setter(`updateAnsYn()`, `updateStsfdgYn()`) 내에서 `BoardMasterOption` 엔티티를 자바 코드 레벨에서 명시적으로 동기화하도록 갱신함.
 
-#### [AS-IS] 수동 양방향 동기화 및 쉐도우 ID 필드 유지
-```java
-public class BoardMaster {
-    @Id
-    @Column(name = "BBS_ID")
-    private String bbsId;
+### 2.2. 서비스 및 테스트 데이터 설정 갱신
+- **서비스 계층**: [BoardMasterService.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/service/board/BoardMasterService.java)의 `createBoardMaster` 내에서 엔티티 영속화 전 `entity.registerOption(...)`을 명시적으로 호출하여 Cascade 영속성 전이가 안전하게 발생하도록 처리함.
+- **테스트 데이터 설정**: [EgovTestDataConfig.java](file:///d:/project/egov-enterprise/api-server/src/main/java/nuri/config/EgovTestDataConfig.java)의 `createTestBoard` 내에서 빌더 레벨의 transient 지정을 삭제하고 `board.registerOption("Y", "Y")`를 명시적으로 실행하게 함.
 
-    @Column(name = "BBS_TY_CODE")
-    private String bbsTyCode; // 레거시 쉐도우 외래키 필드
-
-    @Transient
-    private BoardMasterOption option; // 2단계에서 분리된 신규 옵션 엔티티
-
-    @PostLoad
-    protected void syncFieldsOnLoad() {
-        if (this.option != null) {
-            this.bbsTyCode = this.option.getBbsTyCode();
-        }
-    }
-}
-```
-
-#### [TO-BE] 순수 도메인 지향 참조 정화 (브릿지 완전 폐기)
-```java
-public class BoardMaster {
-    @Id
-    @Column(name = "BBS_ID")
-    private String bbsId;
-
-    @OneToOne(mappedBy = "boardMaster", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private BoardMasterOption option; 
-
-    // 레거시 String Getter가 필요했던 컨트롤러/화면 영역은 Entity가 아닌 DTO 변환 시점에 option.getBbsTyCode()를 바인딩하도록 수정합니다.
-}
-```
-
-### 2.2. 영향도 평가 프로토콜
-1. **정적 분석기 도입**: IDE 구조 통계 기능을 활용하여 모든 도메인 내부 `@PostLoad`, `@PrePersist`, `@PreUpdate` 어노테이션 사용처 전수 카운트.
-2. **DTO 매핑 레이어 분리**: `Mapstruct` 또는 `DTO Constructor` 패턴을 활용하여 영속 엔티티가 화면 레이어(`Next.js Controller/API`)로 누수되어 String 호환이 강제되는 지점을 원천 차단.
+### 2.3. 단위 테스트 코드 정비 완료
+- [BoardMasterTest.java](file:///d:/project/egov-enterprise/business-suite/src/test/java/nuri/business/domain/board/BoardMasterTest.java)에서 이전의 `@Transient` 필드와 수동 콜백을 직접 검사하던 테스트 케이스들을 삭제하고, 명시적 `registerOption` 및 `update` 시점의 Option 동기화 동작을 엄격히 검증하는 모던 테스트 케이스(`registerOptionTest()`, `updateOptionSyncTest()`)를 작성하여 테스트 커버리지 및 정합성을 입증함.
 
 ---
 
@@ -190,8 +174,8 @@ public abstract class BaseEntity {
 
 각 Phase 이행 시마다 아래 체크리스트를 준수하여 통합 테스트 및 E2E 테스트 통과 여부를 100% 검증합니다.
 
-- [ ] **Flyway DDL 정적 린터 통과**: `ZeroDowntimeMigrationLinterTest` 검증 성공
-- [ ] **연관관계 지연 로딩 동작 확인**: `@ManyToOne(fetch = FetchType.LAZY)` 적용 및 N+1 프리벤션 테스트 패스
-- [ ] **레거시 컨트롤러 호환성**: Next.js BFF 연동 OpenAPI 타입 명세(`generated-api.d.ts`)의 일치율 검증
-- [ ] **E2E Playwright 리그레션 오딧**: 로컬 E2E 테스트 스위트 그린 패스
+- [x] **Flyway DDL 정적 린터 통과**: `ZeroDowntimeMigrationLinterTest` 검증 성공
+- [x] **연관관계 지연 로딩 동작 확인**: `@ManyToOne(fetch = FetchType.LAZY)` 적용 및 N+1 프리벤션 테스트 패스
+- [x] **레거시 컨트롤러 호환성**: Next.js BFF 연동 OpenAPI 타입 명세(`generated-api.d.ts`)의 일치율 검증
+- [x] **E2E Playwright 리그레션 오딧**: 로컬 E2E 테스트 스위트 그린 패스
 

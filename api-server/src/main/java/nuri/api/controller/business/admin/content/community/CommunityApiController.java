@@ -1,5 +1,6 @@
 package nuri.api.controller.business.admin.content.community;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.content.community.CommunityService;
@@ -46,7 +47,7 @@ public class CommunityApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<CommunityDto>> createCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody CommunityDto communityDto) {
+            @Valid @RequestBody CommunityDto communityDto) {
         return ResponseEntity
                 .ok(ApiResponse.success(communityService.createCommunity(userDetails.getUsername(), communityDto)));
     }
@@ -56,7 +57,7 @@ public class CommunityApiController {
     public ResponseEntity<ApiResponse<Void>> updateCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "커뮤니티 ID") @PathVariable String cmntyId,
-            @RequestBody CommunityDto communityDto) {
+            @Valid @RequestBody CommunityDto communityDto) {
         communityDto.setCmntyId(cmntyId);
         communityService.updateCommunity(userDetails.getUsername(), communityDto);
         return ResponseEntity.ok(ApiResponse.success(null));

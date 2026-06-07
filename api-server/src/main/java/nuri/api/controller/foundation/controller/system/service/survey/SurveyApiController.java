@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovSurveyService;
@@ -44,7 +45,7 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 템플릿 등록")
     @PostMapping("/templates")
-    public ResponseEntity<ApiResponse<Void>> insertTemplate(@RequestBody SurveyTemplateDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertTemplate(@Valid @RequestBody SurveyTemplateDto dto) {
         surveyService.insertTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -68,14 +69,14 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 정보 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertSurvey(@RequestBody SurveyInfoDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertSurvey(@Valid @RequestBody SurveyInfoDto dto) {
         surveyService.insertSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 정보 수정")
     @PutMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String srvyId, @RequestBody SurveyInfoDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String srvyId, @Valid @RequestBody SurveyInfoDto dto) {
         dto.setSrvyId(srvyId);
         surveyService.updateSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -90,7 +91,7 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 템플릿 수정")
     @PutMapping("/templates/{tmpltId}")
-    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmpltId, @RequestBody SurveyTemplateDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmpltId, @Valid @RequestBody SurveyTemplateDto dto) {
         dto.setSrvyTmpltId(tmpltId);
         surveyService.updateTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -113,7 +114,7 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 문항 수정")
     @PutMapping("/{srvyId}/questions/{srvyQitemId}")
-    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String srvyId, @PathVariable String srvyQitemId, @RequestBody SurveyQuestionDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String srvyId, @PathVariable String srvyQitemId, @Valid @RequestBody SurveyQuestionDto dto) {
         dto.setSrvyId(srvyId);
         dto.setSrvyQstnId(srvyQitemId);
         surveyService.updateQuestion(dto);
@@ -130,7 +131,7 @@ public class SurveyApiController {
     @Operation(summary = "설문 문항 등록")
     @PostMapping("/{srvyId}/questions")
     public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable String srvyId,
-            @RequestBody SurveyQuestionDto dto) {
+            @Valid @RequestBody SurveyQuestionDto dto) {
         dto.setSrvyId(srvyId);
         surveyService.insertQuestion(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -138,7 +139,7 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 항목 수정")
     @PutMapping("/questions/items/{srvyItemId}")
-    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String srvyItemId, @RequestBody SurveyArticleDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String srvyItemId, @Valid @RequestBody SurveyArticleDto dto) {
         dto.setSrvyArtclId(srvyItemId);
         surveyService.updateItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -153,7 +154,7 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 항목 등록")
     @PostMapping("/questions/{srvyQitemId}/items")
-    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable String srvyQitemId, @RequestBody SurveyArticleDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable String srvyQitemId, @Valid @RequestBody SurveyArticleDto dto) {
         dto.setSrvyQstnId(srvyQitemId);
         surveyService.insertItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

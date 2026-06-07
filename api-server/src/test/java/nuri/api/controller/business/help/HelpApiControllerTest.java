@@ -93,7 +93,7 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("도움말 등록")
     void insertHpcmTest() throws Exception {
-        HpcmDto dto = HpcmDto.builder().hlpDfn("Def").build();
+        HpcmDto dto = HpcmDto.builder().hlpId("H1").hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
         when(helpService.createHpcm(anyString(), any(HpcmDto.class))).thenReturn("H1");
 
         mockMvc.perform(post("/api/v1/help/hpcm")
@@ -107,7 +107,7 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("도움말 수정")
     void updateHpcmTest() throws Exception {
-        HpcmDto dto = HpcmDto.builder().hlpId("H1").hlpDfn("Def").build();
+        HpcmDto dto = HpcmDto.builder().hlpId("H1").hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
         doNothing().when(helpService).updateHpcm(eq("H1"), anyString(), any(HpcmDto.class));
 
         mockMvc.perform(put("/api/v1/help/hpcm/H1")
@@ -154,7 +154,7 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("온라인 매뉴얼 등록")
     void createManualTest() throws Exception {
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").build();
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
         when(helpService.createOnlineManual(anyString(), any(OnlineManualDto.class))).thenReturn("M1");
 
         mockMvc.perform(post("/api/v1/help/manuals")
@@ -168,7 +168,7 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("온라인 매뉴얼 수정")
     void updateManualTest() throws Exception {
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").onlnMnlNm("Manual").build();
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
         doNothing().when(helpService).updateOnlineManual(eq("M1"), anyString(), any(OnlineManualDto.class));
 
         mockMvc.perform(put("/api/v1/help/manuals/M1")

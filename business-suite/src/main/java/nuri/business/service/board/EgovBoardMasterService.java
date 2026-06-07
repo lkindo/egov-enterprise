@@ -12,6 +12,10 @@ public interface EgovBoardMasterService {
     String createBoardMaster(String userId, BoardMasterDto dto);
     void updateBoardMaster(String userId, BoardMasterDto dto);
     void deleteBoardMaster(String userId, String bbsId);
+    boolean isDeletable(String bbsId);
+    void deleteBoardMasterPhysically(String userId, String bbsId);
+    void updateBoardMasterStatusInBatch(String userId, List<String> bbsIds, String useYn);
+    void deleteBoardMastersInBatch(String userId, List<String> bbsIds);
     
     boolean canUseSatisfaction(String bbsId);
     boolean canUseComment(String bbsId);

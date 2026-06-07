@@ -1,5 +1,6 @@
 package nuri.api.controller.business.admin.content.banner;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.content.banner.EgovBannerService;
@@ -44,7 +45,7 @@ public class BannerApiController {
 
     @Operation(summary = "배너 등록", description = "새로운 배너 정보를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertBanner(@RequestBody BannerDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertBanner(@Valid @RequestBody BannerDto dto) {
         bannerService.insertBanner(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -53,7 +54,7 @@ public class BannerApiController {
     @PutMapping("/{bannerId}")
     public ResponseEntity<ApiResponse<Void>> updateBanner(
             @PathVariable String bannerId,
-            @RequestBody BannerDto dto) {
+            @Valid @RequestBody BannerDto dto) {
         dto.setBnrId(bannerId);
         bannerService.updateBanner(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

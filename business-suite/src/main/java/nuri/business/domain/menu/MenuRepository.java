@@ -47,7 +47,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
      * modern_route 일괄 업데이트 (배치용)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.id IN :menuIds")
+    @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.menuSn IN :menuIds")
     int bulkUpdateModernRoute(@Param("menuIds") List<Long> menuIds, @Param("modernRoute") String modernRoute);
 
     /**
@@ -61,22 +61,22 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
      * [성능 최적화] 메뉴와 권한 정보를 한 번에 조회 (N+1 방지)
      */
     @Query("""
-                SELECT m, ma
+                SELECT new nuri.business.service.menu.dto.MenuWithAuthDto(m, ma)
                 FROM Menu m
-                LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuSn
+                LEFT JOIN MenuAuthority ma ON m.menuSn = ma.id.menuSn
                 ORDER BY m.upMenuSn ASC, m.menuOrdr ASC
             """)
-    List<Object[]> findAllWithAuthorities();
+    List<nuri.business.service.menu.dto.MenuWithAuthDto> findAllWithAuthorities();
 
     /**
      * [성능 최적화] 메뉴와 프로그램 정보를 한 번에 조회 (N+1 방지)
      */
     @Query("""
-                SELECT m, p
+                SELECT new nuri.business.service.menu.dto.MenuWithProgramDto(m, p)
                 FROM Menu m
                 LEFT JOIN Program p ON m.prgrmFileNm = p.prgrmFileNm
                 ORDER BY m.upMenuSn ASC, m.menuOrdr ASC
             """)
-    List<Object[]> findAllWithPrograms();
+    List<nuri.business.service.menu.dto.MenuWithProgramDto> findAllWithPrograms();
 }
 

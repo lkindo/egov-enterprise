@@ -1,5 +1,6 @@
 package nuri.api.controller.business.note;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.note.NoteService;
@@ -60,7 +61,7 @@ public class NoteApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> sendNote(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody NoteDto noteDto) {
+            @Valid @RequestBody NoteDto noteDto) {
         noteService.sendNote(userDetails.getUsername(), noteDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

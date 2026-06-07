@@ -47,6 +47,7 @@ export const menuSchema = z.object({
   relImgNm: z.string().optional(),
   upperMenuId: z.coerce.number().optional().default(0),
   modernRoute: z.string().optional(),
+  useYn: z.enum(['Y', 'N']).default('Y'),
 });
 
 // --- 게시판 마스터 스키마 ---

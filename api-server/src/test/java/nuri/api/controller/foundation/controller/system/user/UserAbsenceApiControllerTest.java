@@ -58,7 +58,7 @@ class UserAbsenceApiControllerTest {
     @Test
     @DisplayName("사용자 부재 상태 업데이트")
     void updateAbsence() throws Exception {
-        UserAbsenceDto dto = UserAbsenceDto.builder().userAbsnYn("Y").build();
+        UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnYn("Y").build();
 
         mockMvc.perform(put("/api/v1/admin/system/user-absences/user1")
                 .contentType(MediaType.APPLICATION_JSON)

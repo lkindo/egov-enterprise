@@ -1,5 +1,6 @@
 package nuri.api.controller.business.mail;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.mail.MailService;
@@ -45,7 +46,7 @@ public class MailApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> sendMail(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody SentMailDto sentMailDto) {
+            @Valid @RequestBody SentMailDto sentMailDto) {
         String mssageId = mailService.sendMail(userDetails.getUsername(), sentMailDto);
         return ResponseEntity.ok(ApiResponse.success(mssageId));
     }

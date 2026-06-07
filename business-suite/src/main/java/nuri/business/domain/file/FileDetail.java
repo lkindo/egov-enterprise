@@ -18,18 +18,22 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@IdClass(FileDetailId.class)
-@Table(name = "tb_file_detail")
+@Table(name = "tb_file_detail", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_tb_file_detail_sn", columnNames = {"ATCH_FILE_ID", "atch_file_seq"})
+})
 @SuperBuilder
 public class FileDetail extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "file_detail_id", updatable = false, nullable = false)
+    private java.util.UUID id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ATCH_FILE_ID", nullable = false)
     @Setter
     private FileMaster fileMaster;
 
-    @Id
     @Column(name = "atch_file_seq")
     private Integer atchFileSeq;
 

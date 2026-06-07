@@ -40,12 +40,9 @@ import java.util.Map;
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 @Slf4j
 public class ApiSecurityConfig {
-        private final EgovAuthenticationProvider egovAuthenticationProvider;
         private final JwtTokenProvider jwtTokenProvider;
 
-        public ApiSecurityConfig(@Lazy EgovAuthenticationProvider egovAuthenticationProvider,
-                        JwtTokenProvider jwtTokenProvider) {
-                this.egovAuthenticationProvider = egovAuthenticationProvider;
+        public ApiSecurityConfig(JwtTokenProvider jwtTokenProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
         }
 
@@ -84,13 +81,16 @@ public class ApiSecurityConfig {
 
         @Bean
         @Order(1)
-        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EgovAuthenticationProvider egovAuthenticationProvider) throws Exception {
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
                                                 AntPathRequestMatcher.antMatcher("/api/v1/**"),
                                                 AntPathRequestMatcher.antMatcher("/actuator/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(AbstractHttpConfigurer::disable)
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .logout(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
@@ -115,6 +115,7 @@ public class ApiSecurityConfig {
                                                 }))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authenticationProvider(egovAuthenticationProvider)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                                                 UsernamePasswordAuthenticationFilter.class);
                 return http.build();
@@ -130,6 +131,9 @@ public class ApiSecurityConfig {
                                                 .ignoringRequestMatchers(
                                                 AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
                                                 AntPathRequestMatcher.antMatcher("/ws/**")))
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .logout(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(
                                                                 AntPathRequestMatcher.antMatcher("/css/**"),
@@ -150,8 +154,6 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/error"))
                                                 .permitAll()
                                                 .anyRequest().authenticated())
-                                .formLogin(form -> form.disable())
-                                .logout(logout -> logout.disable())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
@@ -161,7 +163,7 @@ public class ApiSecurityConfig {
         }
 
         @Bean
-        public AuthenticationManager authenticationManager() {
-                return new ProviderManager(egovAuthenticationProvider);
+        public AuthenticationManager authenticationManager(org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration authenticationConfiguration) throws Exception {
+                return authenticationConfiguration.getAuthenticationManager();
         }
 }

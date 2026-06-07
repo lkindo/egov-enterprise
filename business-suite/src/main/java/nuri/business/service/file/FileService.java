@@ -5,7 +5,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.storage.FileStorageService;
 import nuri.business.domain.file.FileDetail;
-import nuri.business.domain.file.FileDetailId;
+
 import nuri.business.domain.file.FileDetailRepository;
 import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
@@ -108,8 +108,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
-                .findById(new FileDetailId(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
-                        required(fileSn, "fileSn 는 null 일 수 없습니다")))
+                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                        required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         return storageService.loadAsResource(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
@@ -141,8 +141,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     @Transactional
     public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
-                .findById(new FileDetailId(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
-                        required(fileSn, "fileSn 는 null 일 수 없습니다")))
+                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                        required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
@@ -156,8 +156,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     @Override
     public FileDto getFileDetail(String atchFileId, Integer fileSn) {
         FileDetail detail = fileDetailRepository
-                .findById(new FileDetailId(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
-                        required(fileSn, "fileSn 는 null 일 수 없습니다")))
+                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                        required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return convertToDto(detail);
     }

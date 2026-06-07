@@ -1,5 +1,6 @@
 package nuri.api.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.usermanagement.EgovDeptManageService;
@@ -55,7 +56,7 @@ public class DeptApiController {
 
     @Operation(summary = "부서 등록", description = "새로운 시스템 부서를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertDept(@RequestBody DeptManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertDept(@Valid @RequestBody DeptManageDto dto) {
         deptManageService.insertDeptManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -64,7 +65,7 @@ public class DeptApiController {
     @PutMapping("/{deptId}")
     public ResponseEntity<ApiResponse<Void>> updateDept(
             @PathVariable String deptId,
-            @RequestBody DeptManageDto dto) {
+            @Valid @RequestBody DeptManageDto dto) {
         dto.setOgnzId(deptId);
         deptManageService.updateDeptManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

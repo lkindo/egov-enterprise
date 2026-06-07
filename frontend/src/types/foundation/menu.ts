@@ -10,6 +10,7 @@ export interface MenuInfo {
  prgrmFileNm?: string;
  chkURL?: string; // Derived from program URL
  modernRoute?: string;
+ useYn?: 'Y' | 'N';
  children?: MenuInfo[];
 }
 

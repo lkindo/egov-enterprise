@@ -1,5 +1,6 @@
 package nuri.api.controller.business.approval;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
@@ -56,7 +57,7 @@ public class InformalSanctionApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> registerInformalSanction(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody InformalSanctionDto dto) throws Exception {
+            @Valid @RequestBody InformalSanctionDto dto) throws Exception {
 
         String id = egovInfrmlSanctnIdGnrService.getNextStringId();
         dto.setIfmlAtrzId(id);
@@ -70,7 +71,7 @@ public class InformalSanctionApiController {
     @PutMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<Void>> updateInformalSanction(
             @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId,
-            @RequestBody InformalSanctionDto dto) {
+            @Valid @RequestBody InformalSanctionDto dto) {
         dto.setIfmlAtrzId(ifmlAtrzId);
         informalSanctionService.updateInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

@@ -2,6 +2,7 @@ package nuri.business.security.iam;
 
 import nuri.business.security.service.EgovPasswordEncoder;
 import nuri.business.security.service.CustomUserDetails;
+import nuri.business.security.constants.SecurityConstants;
 
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
@@ -115,15 +116,15 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             String authorCode;
             if ("webmaster".equals(userEntity.getUserId())) {
                 log.info(">>> [SPECIAL] Forcing ROLE_ADMIN for user: webmaster");
-                authorCode = "ROLE_ADMIN";
+                authorCode = SecurityConstants.ROLE_ADMIN;
             } else if (authorCodeFromDb != null) {
                 authorCode = authorCodeFromDb;
             } else {
-                authorCode = userEntity.getRole() != null ? userEntity.getRole().name() : "ROLE_USER";
+                authorCode = userEntity.getRole() != null ? userEntity.getRole().name() : SecurityConstants.ROLE_USER;
             }
 
-            if (!authorCode.startsWith("ROLE_")) {
-                authorCode = "ROLE_" + authorCode;
+            if (!authorCode.startsWith(SecurityConstants.ROLE_PREFIX)) {
+                authorCode = SecurityConstants.ROLE_PREFIX + authorCode;
             }
 
             log.info(">>> Final resolved authorCode for user {}: {}", userId, authorCode);

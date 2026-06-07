@@ -2,6 +2,7 @@ package nuri.business.service.board;
 
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
+import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardMasterSearchResult;
 import nuri.business.domain.board.Blog;
 import nuri.business.domain.board.BlogUser;
@@ -32,6 +33,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     private final BoardMasterRepository boardMasterRepository;
     private final EgovIdGnrService egovBBSMstrIdGnrService;
+    private final BoardRepository boardRepository;
 
     public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
@@ -82,6 +84,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .stsfdgYn(dto.getStsfdgYn())
                 .frstRgtrId(userId)
                 .build();
+        entity.registerOption(dto.getAnsYn(), dto.getStsfdgYn());
         boardMasterRepository.save(entity);
         return entity.getBbsId();
     }
@@ -115,6 +118,71 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.delete();
         entity.setLastMdfrId(userId);
+    }
+
+    public boolean isDeletable(String bbsId) {
+        java.util.Optional<BoardMaster> o = boardMasterRepository.findById(bbsId);
+        if (o.isEmpty()) {
+            return false;
+        }
+        BoardMaster master = o.get();
+        if (!"N".equals(master.getUseYn())) {
+            return false;
+        }
+        long count = boardRepository.countAllByBbsIdNative(bbsId);
+        return count == 0;
+    }
+
+    @Transactional
+    public void deleteBoardMasterPhysically(String userId, String bbsId) {
+        BoardMaster master = boardMasterRepository.findById(bbsId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!"N".equals(master.getUseYn())) {
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
+        }
+
+        long count = boardRepository.countAllByBbsIdNative(bbsId);
+        if (count > 0) {
+            throw new BusinessException(ErrorCode.BOARD_HAS_ARTICLES);
+        }
+
+        boardMasterRepository.deleteById(bbsId);
+    }
+
+    @Transactional
+    public void updateBoardMasterStatusInBatch(String userId, List<String> bbsIds, String useYn) {
+        if (bbsIds == null || bbsIds.isEmpty()) {
+            return;
+        }
+        for (String bbsId : bbsIds) {
+            BoardMaster entity = boardMasterRepository.findById(bbsId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            entity.setUseYn(useYn);
+            entity.setLastMdfrId(userId);
+        }
+    }
+
+    @Transactional
+    public void deleteBoardMastersInBatch(String userId, List<String> bbsIds) {
+        if (bbsIds == null || bbsIds.isEmpty()) {
+            return;
+        }
+        for (String bbsId : bbsIds) {
+            BoardMaster master = boardMasterRepository.findById(bbsId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+            if (!"N".equals(master.getUseYn())) {
+                throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
+            }
+
+            long count = boardRepository.countAllByBbsIdNative(bbsId);
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.BOARD_HAS_ARTICLES);
+            }
+
+            boardMasterRepository.delete(master);
+        }
     }
 
     // --- Added back for test compatibility ---

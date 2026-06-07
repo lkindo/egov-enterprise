@@ -30,7 +30,7 @@ class ManualAdminService extends ApiService {
    * @param params 검색 파라미터
    * @returns 온라인 매뉴얼 페이지 결과
    */
-  public async getManualList(params: any = {}, config?: AxiosRequestConfig): Promise<PageResponse<ManualDto>> {
+  public async getManualList(params: unknown = {}, config?: AxiosRequestConfig): Promise<PageResponse<ManualDto>> {
     return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
   }
 

@@ -84,7 +84,7 @@ class LoginPolicyApiControllerTest {
     @DisplayName("로그인 정책 저장 성공 - 신규")
     void testSaveLoginPolicy_New() throws Exception {
         // Given
-        LoginPolicyDto dto = LoginPolicyDto.builder().ipAddr("127.0.0.1").build();
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId("user01").ipAddr("127.0.0.1").build();
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/login-policies/user01")
@@ -99,7 +99,7 @@ class LoginPolicyApiControllerTest {
     @DisplayName("로그인 정책 저장 성공 - 기존 업데이트")
     void testSaveLoginPolicy_Update() throws Exception {
         // Given
-        LoginPolicyDto dto = LoginPolicyDto.builder().ipAddr("127.0.0.1").build();
+        LoginPolicyDto dto = LoginPolicyDto.builder().userId("user01").ipAddr("127.0.0.1").build();
 
         // When & Then
         mockMvc.perform(put("/api/v1/admin/system/login-policies/user01")

@@ -1,5 +1,6 @@
 package nuri.api.controller.business.sms;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
@@ -60,7 +61,7 @@ public class SmsApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> sendSms(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody SmsDto smsDto) {
+            @Valid @RequestBody SmsDto smsDto) {
         String smsId = smsService.sendSms(userDetails.getEsntlId(), smsDto);
         return ResponseEntity.ok(ApiResponse.success(smsId));
     }

@@ -217,6 +217,11 @@ const SortableMenuNode = ({
                                         <LinkIcon size={10} /> {item.prgrmFileNm}
                                     </span>
                                 )}
+                                {(item.useYn === 'N') && (
+                                    <span className="text-[10px] flex items-center gap-1 font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-2 rounded-md">
+                                        비활성
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -350,7 +355,7 @@ export default function MenuAdminClient({
 
   const form = useAppForm(menuSchema, {
     defaultValues: {
-      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuDc: ''
+      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuDc: '', useYn: 'Y' as 'Y' | 'N'
     }
   });
 
@@ -411,13 +416,13 @@ export default function MenuAdminClient({
 
   const handleOpenCreate = (parentId: number = 0) => {
     setMode('create');
-    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuDc: '' });
+    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuDc: '', useYn: 'Y' as 'Y' | 'N' });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
     setMode('edit');
-    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuDc: menu.menuDc || '' });
+    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuDc: menu.menuDc || '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
     setIsOpen(true);
   };
 
@@ -431,7 +436,7 @@ export default function MenuAdminClient({
     try {
       setIsSaving(true);
       const submitData = flattenedMenus.map((item, idx) => ({
-        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuDc: item.menuDc || '', id: item.menuNo
+        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuDc: item.menuDc || '', id: item.menuNo, useYn: item.useYn || 'Y'
       }));
       const res = await updateMenuOrdersAction(submitData as any);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }
@@ -581,6 +586,32 @@ export default function MenuAdminClient({
                   )}
                 />
             </div>
+            <ShadcnFormField
+              control={form.control} name="useYn"
+              render={({ field }) => (
+                <FormItem className="flex flex-col gap-2 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">상태 설정 (사용 여부)</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-4 items-center">
+                      <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                        <input type="radio" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
+                               checked={field.value === 'Y'} 
+                               onChange={() => field.onChange('Y')} />
+                        활성화 (Y)
+                      </label>
+                      <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-500">
+                        <input type="radio" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
+                               checked={field.value === 'N'} 
+                               onChange={() => field.onChange('N')} />
+                        비활성화 (N)
+                      </label>
+                    </div>
+                  </FormControl>
+                  <p className="text-[10px] text-slate-400 font-medium ml-1">비활성화 시 일반 사용자 화면의 메뉴 트리에서 노출되지 않습니다.</p>
+                  <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                </FormItem>
+              )}
+            />
           </form>
         </Form>
       </StandardModal>

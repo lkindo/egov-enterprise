@@ -73,6 +73,7 @@ public class DeptApiControllerTest extends BaseControllerTest {
     @Test
     public void insertDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
+                .ognzId("ORGNZT_NEW")
                 .ognzNm("신규 부서")
                 .ognzExpln("신규 부서 설명")
                 .build();
@@ -91,6 +92,7 @@ public class DeptApiControllerTest extends BaseControllerTest {
     @Test
     public void updateDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
+                .ognzId("ORGNZT_0000000000001")
                 .ognzNm("수정 부서")
                 .ognzExpln("수정 부서 설명")
                 .build();

@@ -72,6 +72,7 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 등록 테스트")
     void insertMainImageTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
+                .imgId("IMG1")
                 .imgNm("신규이미지")
                 .build();
 
@@ -87,6 +88,7 @@ class MainImageApiControllerTest extends ControllerTestSupport {
     @DisplayName("메인 이미지 수정 테스트")
     void updateMainImageTest() throws Exception {
         MainImageDto dto = MainImageDto.builder()
+                .imgId("IMG1")
                 .imgNm("수정이미지")
                 .build();
 

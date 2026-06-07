@@ -47,6 +47,26 @@ class BoardAdminService extends AdminService {
         return this.delete(`/${id}`, { ...config, params: { userId } });
     }
 
+    /** 게시판 물리삭제 가능 여부 확인 */
+    async isBoardMasterDeletable(id: string, config?: AxiosRequestConfig): Promise<boolean> {
+        return this.get<boolean>(`/${id}/deletable`, config);
+    }
+
+    /** 게시판 영구 물리삭제 */
+    async deleteBoardMasterPhysically(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${id}/physical`, config);
+    }
+
+    /** 게시판 일괄 상태 제어 */
+    async batchUpdateBoardMasterStatus(bbsIds: string[], useYn: 'Y' | 'N', config?: AxiosRequestConfig): Promise<void> {
+        return this.post('/batch/status', { bbsIds, useYn }, config);
+    }
+
+    /** 게시판 일괄 영구 물리삭제 */
+    async batchDeleteBoardMastersPhysically(bbsIds: string[], config?: AxiosRequestConfig): Promise<void> {
+        return this.post('/batch/delete', { bbsIds }, config);
+    }
+
     /** 게시글 등록 (Article) */
     async createBoardArticle(data: any, config?: AxiosRequestConfig): Promise<void> {
         // 백엔드 BbsApiController.createBoard는 @RequestMapping("/api/v1/bbs") 아래 @PostMapping("/{bbsId}")를 가짐

@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.user;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.domain.user.dto.UserAbsenceDto;
 import nuri.business.service.system.user.UserAbsenceService;
@@ -35,7 +36,7 @@ public class UserAbsenceApiController {
     @PutMapping("/{emplyrId}")
     public ResponseEntity<ApiResponse<Void>> updateAbsence(
             @PathVariable String emplyrId,
-            @RequestBody UserAbsenceDto dto) {
+            @Valid @RequestBody UserAbsenceDto dto) {
         userAbsenceService.updateAbsence(emplyrId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -1,5 +1,6 @@
 package nuri.api.controller.business.operation;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.operation.EventInfoService;
@@ -44,7 +45,7 @@ public class EventApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createEvent(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody EventInfoDto request) {
+            @Valid @RequestBody EventInfoDto request) {
         return ResponseEntity.ok(ApiResponse.success(eventInfoService.createEvent(userDetails.getUsername(), request)));
     }
 
@@ -53,7 +54,7 @@ public class EventApiController {
     public ResponseEntity<ApiResponse<Void>> updateEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String eventId,
-            @RequestBody EventInfoDto request) {
+            @Valid @RequestBody EventInfoDto request) {
         eventInfoService.updateEvent(eventId, userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

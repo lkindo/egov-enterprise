@@ -12,6 +12,7 @@ export interface Menu {
   relImgPath: string;
   relImgNm: string;
   modernRoute?: string;
+  useYn?: string;
 }
 
 interface MenuCreate {

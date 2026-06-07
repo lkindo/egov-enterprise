@@ -64,6 +64,10 @@ public class MenuDto {
     @Size(max = 20)
     private String crtrId;
 
+    @Schema(description = "사용 여부", example = "Y")
+    @Size(max = 1)
+    private String useYn;
+
     @Builder.Default
     @Schema(description = "하위 메뉴 목록")
     private List<MenuDto> children = new ArrayList<>();

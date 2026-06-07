@@ -71,6 +71,8 @@ class MenuApiControllerTest extends BaseControllerTest {
         MenuDto dto = new MenuDto();
         dto.setMenuNo(2001L);
         dto.setMenuNm("신규 메뉴");
+        dto.setUseYn("Y");
+        dto.setMenuOrdr(1);
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/menus")
@@ -104,6 +106,8 @@ class MenuApiControllerTest extends BaseControllerTest {
     void testUpdateMenu() throws Exception {
         MenuDto dto = new MenuDto();
         dto.setMenuNm("Updated");
+        dto.setUseYn("Y");
+        dto.setMenuOrdr(1);
         mockMvc.perform(put("/api/v1/admin/system/menus/1001")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))

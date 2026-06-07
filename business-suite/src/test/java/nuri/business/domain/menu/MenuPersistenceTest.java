@@ -39,7 +39,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         assertThat(saved.getMenuNm()).isEqualTo("테스트 메뉴");
 
         // when: Update
-        saved.update("수정된 메뉴", "file.do", 0L, 2, "Menu DC", "path", "image.png");
+        saved.update("수정된 메뉴", "file.do", 0L, 2, "Menu DC", "path", "image.png", "Y");
         menuRepository.save(saved);
         menuRepository.flush();
         entityManager.clear();

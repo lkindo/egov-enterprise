@@ -1,5 +1,6 @@
 package nuri.api.controller.business.comment;
 
+import jakarta.validation.Valid;
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -28,14 +29,14 @@ public class CommentApiController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> createComment(@RequestBody CommentDto commentDto) {
+    public ResponseEntity<ApiResponse<Long>> createComment(@Valid @RequestBody CommentDto commentDto) {
         return ResponseEntity.ok(ApiResponse.success(commentService.createComment(commentDto)));
     }
 
     @PutMapping("/{commentNo}")
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @PathVariable Long commentNo,
-            @RequestBody CommentDto commentDto) {
+            @Valid @RequestBody CommentDto commentDto) {
         commentService.updateComment(commentNo, commentDto.getAnsCn());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

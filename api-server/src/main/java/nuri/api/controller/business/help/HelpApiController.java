@@ -1,5 +1,6 @@
 package nuri.api.controller.business.help;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.help.EgovHelpService;
@@ -45,7 +46,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 등록", description = "새로운 도움말을 등록합니다.")
     @PostMapping("/hpcm")
-    public ResponseEntity<ApiResponse<String>> insertHpcm(@RequestBody HpcmDto dto) {
+    public ResponseEntity<ApiResponse<String>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
         String id = helpService.createHpcm("ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
@@ -54,7 +55,7 @@ public class HelpApiController {
     @PutMapping("/hpcm/{hpcmId}")
     public ResponseEntity<ApiResponse<Void>> updateHpcm(
             @PathVariable String hpcmId,
-            @RequestBody HpcmDto dto) {
+            @Valid @RequestBody HpcmDto dto) {
         helpService.updateHpcm(hpcmId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -88,7 +89,7 @@ public class HelpApiController {
     @PostMapping("/manuals")
     public ResponseEntity<ApiResponse<String>> createManual(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody OnlineManualDto dto) {
+            @Valid @RequestBody OnlineManualDto dto) {
         String username = (userDetails != null) ? userDetails.getUsername() : "anonymous";
         String id = helpService.createOnlineManual(username, dto);
         return ResponseEntity.ok(ApiResponse.success(id));
@@ -98,7 +99,7 @@ public class HelpApiController {
     @PutMapping("/manuals/{mnlId}")
     public ResponseEntity<ApiResponse<Void>> updateManual(
             @PathVariable String mnlId,
-            @RequestBody OnlineManualDto dto) {
+            @Valid @RequestBody OnlineManualDto dto) {
         helpService.updateOnlineManual(mnlId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

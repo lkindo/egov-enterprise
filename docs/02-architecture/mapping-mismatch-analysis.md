@@ -20,48 +20,23 @@
 *   **결과**: DB 컬럼명(`snake_case`)과 Entity 필드명(`camelCase`) 간의 변환 규칙(Naming Strategy) 불일치는 발견되지 않았습니다. 
 *   **증거**: `check-mismatches.js` 검증 결과 불일치 컬럼 `0`건. JPA 엔티티 내 `@Column`의 `name` 속성과 자바 변수명은 논리적 표준 변환을 충실히 따르고 있습니다.
 
-### 3.2. BE Entity와 DTO 간의 Legacy Aliasing (수동 Getter/Setter 중복 노출) [CRITICAL]
-가장 심각한 잠재적 오류의 원천은 **DTO와 Entity 계층에 구현된 public Legacy Alias 메서드들**입니다. 이 메서드들은 과거 레거시 시스템과의 호환성이나 프론트엔드 깨짐 방지를 위해 임시방편으로 작성된 것으로 보이나, Jackson 직렬화 엔진이 이 public Getter들을 별도의 프로퍼티로 오인하여 **동일한 데이터를 서로 다른 2개 이상의 API 필드로 중복 노출**시키는 심각한 부작용을 낳고 있습니다.
+### 3.2. BE Entity와 DTO 간의 Legacy Aliasing (수동 Getter/Setter 중복 노출) [RESOLVED]
+이전 버전에서 DTO와 Entity 계층에 존재했던 수동 Legacy Getter/Setter(예: `passwordCnsr`, `reprtId` 등)로 인한 중복 직렬화 부채는 **이전 리팩토링 단계(`8f209d6d3` 및 `42bf701b8` 커밋 등)에서 완전히 정리**되었습니다.
+모든 DTO 및 Entity가 롬복 어노테이션 기반의 단일 현대적 카멜케이스 속성(SSOT)으로 통일되어, Jackson 직렬화 중복 및 OpenAPI 명세(`generated-api.d.ts`)의 불일치 이슈가 해결 완료되었습니다.
 
-#### ① User 도메인 (`UserDto.java`)
-표준 카멜케이스 변수와 레거시 축약 명칭이 공존하여, Jackson 직렬화 및 OpenAPI 명세(`generated-api.d.ts` Line 4197-4242)에 두 개 필드가 모두 중복 노출되고 있습니다.
+#### ① User 도메인 (`UserDto.java`) [RESOLVED]
+*   **조치 내용**: `passwordCnsr`, `homeadres`, `detailAdres` 등의 레거시 수동 getter/setter가 전면 제거되었으며, 표준 카멜케이스 변수(`pswdCrans`, `homeAddr`, `daddr`)로 완전 단일화되었습니다.
+*   **현황**: OpenAPI 명세 및 직렬화 중복 노출 차단 완료.
 
-*   `pswd` (표준) ➔ `password` (레거시 별칭)
-*   `pswdHint` (표준) ➔ `passwordHint` (레거시 별칭)
-*   `pswdCrans` (표준) ➔ `passwordCnsr` (레거시 별칭)
-*   `homeAddr` (표준) ➔ `homeadres` (레거시 별칭)
-*   `daddr` (표준) ➔ `detailAdres` (레거시 별칭)
-*   `gndrCd` (표준) ➔ `sexdstnCode` (레거시 별칭)
-*   `brthYmd` (표준) ➔ `brth` (레거시 별칭)
-*   `faxNo` (표준) ➔ `fxnum` (레거시 별칭)
-*   `officeTelno` (표준) ➔ `offmTelno` (레거시 별칭)
-*   `mblTelno` (표준) ➔ `moblphonNo` (레거시 별칭)
-*   `emlAddr` (표준) ➔ `emailAdres` (레거시 별칭)
-*   `userSttsCd` (표준) ➔ `userSttusCode` (레거시 별칭)
-*   `lckYn` (표준) ➔ `lockAt` (레거시 별칭)
-*   `mberTypeCd` (표준) ➔ `mberTyCode` (레거시 별칭)
+#### ② WorkReport 도메인 (`WorkReportDto.java`) [RESOLVED]
+*   **조치 내용**: `reprtId`, `reprtTtl`, `reprtCn` 레거시 메서드를 제거하고 표준 `rptId`, `rptTtl`, `rptCn`으로 표준화되었습니다.
 
-#### ② WorkReport 도메인 (`WorkReportDto.java`)
-보고서 정보 관련 핵심 필드가 모두 이중 구조로 바인딩되어 통신 오버헤드와 혼선을 유발합니다.
-*   `reportId` (표준) ➔ `reprtId` (레거시 별칭)
-*   `reportSubject` (표준) ➔ `reprtTtl` (레거시 별칭)
-*   `reportContents` (표준) ➔ `reprtCn` (레거시 별칭)
+#### ③ MemoReport 도메인 (`MemoReportDto.java`) [RESOLVED]
+*   **조치 내용**: 다중 앨리어스가 존재하던 구조를 단일 표준 필드(`rptId`, `rptTtl`, `rptCn`, `memoRptYmd`, `userId`, `rptrInqDt`) 구조로 전면 리팩토링 및 맵핑 완료하였습니다.
 
-#### ③ MemoReport 도메인 (`MemoReportDto.java`)
-이 도메인은 극단적인 삼중 별칭이 선언되어 있어 하나의 데이터가 최대 3개의 필드로 분화되어 전송됩니다.
-*   `reportId` (실제 변수) ➔ `reprtId` (표준형 Getter) ➔ `rptId` (축약형 레거시 Getter)
-*   `reportSubject` (실제 변수) ➔ `reprtTtl` (표준형 Getter) ➔ `rptTtl` (축약형 레거시 Getter)
-*   `reportContents` (실제 변수) ➔ `reprtCn` (표준형 Getter) ➔ `rptCn` (축약형 레거시 Getter)
-*   `reprtDe` (실제 변수) ➔ `rptYmd` (레거시 Getter)
-*   `reportrId` (실제 변수) ➔ `rptUserId` (레거시 Getter)
-*   `reportrInqireDt` (실제 변수) ➔ `rptInqDt` (레거시 Getter)
-
-#### ④ 기타 도메인 (Entity 및 Result DTO 수준의 별칭)
-비즈니스 로직과 쿼리 결과 맵핑 계층에서도 동일한 부채가 발견되었습니다.
-*   `AddressBookUserSearchResult.java`: `nm` ➔ `userNm` 별칭
-*   `Blog.java`: `blogNm` ➔ `blogTtl` / `blogIntrcn` ➔ `blogIntroCn` / `tmplatId` ➔ `tmpltId` 별칭
-*   `FileDetail.java` (파일 공통): `fileStreCours` ➔ `fileStrgPath` / `streFileNm` ➔ `strgFileNm` / `orignlFileNm` ➔ `orgnlFileNm` 별칭
-*   `InformalSanction.java` (비정형 결재): `informalSanctionId` ➔ `ifmlAtrzId` / `jobSeCode` ➔ `taskSeCd` / `applicantId` ➔ `aplcntId` 별칭
+#### ④ 기타 도메인 (Entity 및 Result DTO 수준의 별칭) [RESOLVED]
+*   `AddressBookUserSearchResult.java`, `Blog.java`, `FileDetail.java`, `InformalSanction.java` 내의 불필요한 레거시 별칭 및 수동 게터들을 완전히 삭제하고 단일 현대 표준으로 현행화 완료되었습니다.
+*   `BoardMaster.java` 내에 존재하던 `@Transient` 쉐도우 메타데이터 필드와 JPA 생명주기 콜백 기반의 수동 데이터 동기화 브릿지를 완전히 철폐하고, 명시적 연관관계 처리 체계(`registerOption`)로 정화 완료하였습니다.
 
 ---
 

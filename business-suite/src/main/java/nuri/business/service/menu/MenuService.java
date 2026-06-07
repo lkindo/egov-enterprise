@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.GrantedAuthority;
+import jakarta.annotation.PostConstruct;
 
 /**
  * 메뉴 관리 서비스
@@ -48,6 +49,30 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
+
+    @PostConstruct
+    @Transactional
+    public void migrateModernRoutes() {
+        List<Menu> menus = menuRepository.findAllWithoutModernRoute();
+        if (menus.isEmpty()) return;
+        log.info(">>> [MenuService] Migrating {} legacy menus to modern_route...", menus.size());
+
+        List<Program> programs = programRepository.findAll();
+        Map<String, String> legacyUrlMap = programs.stream()
+            .collect(Collectors.toMap(Program::getPrgrmFileNm, Program::getUrl, (a, b) -> a));
+
+        for (Menu m : menus) {
+            String route = inferModernRoute(m.getPrgrmFileNm());
+            if (route == null) {
+                route = inferFromLegacyUrl(legacyUrlMap.get(m.getPrgrmFileNm()));
+            }
+            if (route != null) {
+                m.updateModernRoute(route);
+                menuRepository.save(m);
+            }
+        }
+        log.info(">>> [MenuService] modern_route migration completed.");
+    }
 
     /**
      * 권한별 메뉴 계층 구조 조회 (캐싱 적용)
@@ -75,14 +100,14 @@ public class MenuService {
     }
 
     private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
-        List<Object[]> menuWithAuthResults = menuRepository.findAllWithAuthorities();
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> menuWithAuthResults = menuRepository.findAllWithAuthorities();
 
         Map<Long, Menu> menuMap = new LinkedHashMap<>();
         Map<Long, List<MenuAuthority>> authorityMap = new HashMap<>();
 
-        for (Object[] result : menuWithAuthResults) {
-            Menu menu = (Menu) result[0];
-            MenuAuthority authority = (MenuAuthority) result[1];
+        for (nuri.business.service.menu.dto.MenuWithAuthDto result : menuWithAuthResults) {
+            Menu menu = result.menu();
+            MenuAuthority authority = result.menuAuthority();
 
             menuMap.put(menu.getMenuSn(), menu);
 
@@ -97,7 +122,7 @@ public class MenuService {
                     boolean isAuthorized = authorityMap.getOrDefault(m.getMenuSn(), new ArrayList<>()).stream()
                             .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
                     boolean isAdmin = roles.contains("ROLE_ADMIN");
-                    return (isAuthorized || isAdmin) && m.getMenuSn() <= 9999999;
+                    return (isAuthorized || isAdmin) && m.getMenuSn() <= 9999999 && "Y".equals(m.getUseYn());
                 })
                 .collect(Collectors.toList());
 
@@ -124,6 +149,7 @@ public class MenuService {
                     .modernRoute(menu.getModernRoute())
                     .relImgPath(menu.getRelImgPath())
                     .relImgNm(menu.getRelImgNm())
+                    .useYn(menu.getUseYn())
                     .build();
 
             dtoMap.put(dto.getId(), dto);
@@ -165,12 +191,12 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
+        List<nuri.business.service.menu.dto.MenuWithProgramDto> menuWithProgramResults = menuRepository.findAllWithPrograms();
         List<MenuDto> result = new ArrayList<>();
 
-        for (Object[] menuResult : menuWithProgramResults) {
-            Menu menu = (Menu) menuResult[0];
-            Program program = (Program) menuResult[1];
+        for (nuri.business.service.menu.dto.MenuWithProgramDto menuResult : menuWithProgramResults) {
+            Menu menu = menuResult.menu();
+            Program program = menuResult.program();
 
             String url = calculateUrl(menu,
                     program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
@@ -187,6 +213,7 @@ public class MenuService {
                     .modernRoute(menu.getModernRoute())
                     .relImgPath(menu.getRelImgPath())
                     .relImgNm(menu.getRelImgNm())
+                    .useYn(menu.getUseYn())
                     .build();
 
             result.add(dto);
@@ -293,6 +320,7 @@ public class MenuService {
                 .relImgPath(vo.getRelImgPath())
                 .relImgNm(vo.getRelImgNm())
                 .modernRoute(vo.getModernRoute())
+                .useYn(vo.getUseYn() != null ? vo.getUseYn() : "Y")
                 .frstRgtrId("webmaster")
                 .crtDt(java.time.LocalDateTime.now())
                 .lastMdfrId("webmaster")
@@ -309,7 +337,7 @@ public class MenuService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
         menu.updateWithModernRoute(vo.getMenuNm(), vo.getPrgrmFileNm(), vo.getUpMenuSn(), vo.getMenuOrdr(),
                 vo.getMenuExpln(),
-                vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute());
+                vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute(), vo.getUseYn() != null ? vo.getUseYn() : "Y");
     }
 
 
@@ -380,24 +408,32 @@ public class MenuService {
 
 
     public List<MenuDto> getSubMenus(Long menuNo) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        List<String> roles = new ArrayList<>();
-        if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
-            for (GrantedAuthority authority : auth.getAuthorities()) {
-                roles.add(authority.getAuthority());
+        List<MenuDto> fullHierarchy = getMenuHierarchy();
+        return findSubTree(fullHierarchy, menuNo);
+    }
+
+    private List<MenuDto> findSubTree(List<MenuDto> nodes, Long targetMenuNo) {
+        if (nodes == null) return java.util.Collections.emptyList();
+        for (MenuDto node : nodes) {
+            if (node.getId().equals(targetMenuNo)) {
+                return node.getChildren();
             }
-        } else {
-            roles.add("ROLE_ANONYMOUS");
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                List<MenuDto> found = findSubTree(node.getChildren(), targetMenuNo);
+                if (!found.isEmpty()) {
+                    return found;
+                }
+            }
         }
-        return buildMenuTree(menuNo, roles);
+        return java.util.Collections.emptyList();
     }
 
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
-        List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
+        List<nuri.business.service.menu.dto.MenuWithProgramDto> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
         return menuWithProgramResults.stream().map(menuResult -> {
-            Menu menu = (Menu) menuResult[0];
-            Program program = (Program) menuResult[1];
+            Menu menu = menuResult.menu();
+            Program program = menuResult.program();
 
             String url = calculateUrl(menu,
                     program != null ? java.util.Collections.singletonMap(program.getPrgrmFileNm(), program) : null);
@@ -414,6 +450,7 @@ public class MenuService {
                     .modernRoute(menu.getModernRoute())
                     .relImgPath(menu.getRelImgPath())
                     .relImgNm(menu.getRelImgNm())
+                    .useYn(menu.getUseYn())
                     .build();
         }).collect(Collectors.toList());
     }
@@ -441,6 +478,7 @@ public class MenuService {
                 .modernRoute(menu.getModernRoute())
                 .relImgPath(menu.getRelImgPath())
                 .relImgNm(menu.getRelImgNm())
+                .useYn(menu.getUseYn())
                 .build();
     }
 
@@ -455,10 +493,10 @@ public class MenuService {
             return "#";
         }
 
-
         String inferred = inferModernRoute(progrmFileNm);
-        if (inferred != null)
+        if (inferred != null) {
             return inferred;
+        }
 
         Program program = null;
         if (programMap != null) {

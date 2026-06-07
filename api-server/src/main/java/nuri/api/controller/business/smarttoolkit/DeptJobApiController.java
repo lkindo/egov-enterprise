@@ -1,5 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.deptjob.EgovDeptJobBoxService;
@@ -58,7 +59,7 @@ public class DeptJobApiController {
     @PostMapping("/boxes")
     public ResponseEntity<ApiResponse<String>> createDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody DeptJobBoxDto dto) {
+            @Valid @RequestBody DeptJobBoxDto dto) {
         String userId = userDetails.getEsntlId();
         String newId = egovDeptJobBoxService.createDeptJobBox(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(newId));
@@ -69,7 +70,7 @@ public class DeptJobApiController {
     public ResponseEntity<ApiResponse<Void>> updateDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @PathVariable String deptJobbxId,
-            @RequestBody DeptJobBoxDto dto) {
+            @Valid @RequestBody DeptJobBoxDto dto) {
         String userId = userDetails.getEsntlId();
         egovDeptJobBoxService.updateDeptJobBox(deptJobbxId, userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));

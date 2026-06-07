@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.code;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -58,7 +59,7 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 수신 처리")
     @PostMapping("/receptions/process")
     public ResponseEntity<ApiResponse<Void>> processInstitutionCodeRecptn(
-            @RequestBody InstitutionCodeRecptnDto dto) throws Exception {
+            @Valid @RequestBody InstitutionCodeRecptnDto dto) throws Exception {
         
         institutionCodeService.updateInstitutionCodeRecptn(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

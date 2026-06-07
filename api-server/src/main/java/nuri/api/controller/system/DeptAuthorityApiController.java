@@ -1,5 +1,6 @@
 package nuri.api.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.auth.DeptAuthorProjection;
@@ -48,7 +49,7 @@ public class DeptAuthorityApiController {
     @Operation(summary = "부서 사용자 권한 일괄 저장", description = "해당 부서 사용자들에 대해 권한을 일괄 할당하거나 업데이트합니다.")
     @PostMapping("/batch")
     public ResponseEntity<ApiResponse<Void>> saveDeptUserAuthorities(
-            @RequestBody DeptAuthorBatchRequest request) {
+            @Valid @RequestBody DeptAuthorBatchRequest request) {
 
         userAuthorityManageService.saveDeptAuthorities(request);
         return ResponseEntity.ok(ApiResponse.success(null));

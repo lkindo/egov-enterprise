@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.code;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -49,14 +50,14 @@ public class AdministCodeApiController {
 
     @Operation(summary = "행정코드 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createAdministCode(@RequestBody AdministCodeDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
         administCodeService.createAdministCode(dto, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 수정")
     @PutMapping("/{code}")
-    public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @RequestBody AdministCodeDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @Valid @RequestBody AdministCodeDto dto) {
         administCodeService.updateAdministCode(code, dto, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

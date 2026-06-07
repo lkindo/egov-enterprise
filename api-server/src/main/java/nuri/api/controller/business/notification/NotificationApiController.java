@@ -1,5 +1,6 @@
 package nuri.api.controller.business.notification;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.notification.NotificationService;
@@ -59,7 +60,7 @@ public class NotificationApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createNotification(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody NotificationDto request) {
+            @Valid @RequestBody NotificationDto request) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.createNotification(userDetails.getUsername(), request)));
     }
 

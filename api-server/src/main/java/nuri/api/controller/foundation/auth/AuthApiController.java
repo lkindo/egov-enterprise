@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.auth;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.response.ApiResponse;
@@ -28,7 +29,7 @@ public class AuthApiController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
-    public ApiResponse<TokenResponse> login(@RequestBody LoginRequest loginRequest,
+    public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request,
             HttpServletResponse response) {
         String clientIp = getClientIp(request);

@@ -84,7 +84,7 @@ class PollApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(post("/api/v1/polls")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"pollNm\":\"신규 설문\",\"pollBgngYmd\":\"2026-05-20\",\"pollEndYmd\":\"2026-05-25\"}")
+                .content("{\"pollId\":\"POLL_NEW\", \"pollNm\":\"신규 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -99,7 +99,7 @@ class PollApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(put("/api/v1/polls/POLL_001")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"pollNm\":\"수정 설문\",\"pollBgngYmd\":\"2026-05-20\",\"pollEndYmd\":\"2026-05-25\"}")
+                .content("{\"pollId\":\"POLL_001\", \"pollNm\":\"수정 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

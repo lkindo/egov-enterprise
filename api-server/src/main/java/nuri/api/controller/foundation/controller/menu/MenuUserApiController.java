@@ -61,12 +61,7 @@ public class MenuUserApiController {
             result.put("menus", menus);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("getRawMenus failed", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", e.getMessage());
-            error.put("exception", e.getClass().getName());
-            return ResponseEntity.internalServerError().body(error);
+            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -83,12 +78,7 @@ public class MenuUserApiController {
             result.put("count", programs.size());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("getPrograms failed", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", e.getMessage());
-            error.put("exception", e.getClass().getName());
-            return ResponseEntity.internalServerError().body(error);
+            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -1,5 +1,6 @@
 package nuri.api.controller.business.admin.content.popup;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.content.popup.PopupService;
@@ -44,7 +45,7 @@ public class PopupApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PopupDto popupDto) {
+            @Valid @RequestBody PopupDto popupDto) {
         return ResponseEntity.ok(ApiResponse.success(popupService.createPopup(userDetails.getUsername(), popupDto)));
     }
 
@@ -53,7 +54,7 @@ public class PopupApiController {
     public ResponseEntity<ApiResponse<Void>> updatePopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "팝업 ID") @PathVariable String popupId,
-            @RequestBody PopupDto popupDto) {
+            @Valid @RequestBody PopupDto popupDto) {
         popupService.updatePopup(popupId, userDetails.getUsername(), popupDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

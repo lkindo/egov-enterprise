@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -50,14 +51,14 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 등록", description = "새로운 시스템 메뉴를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createMenu(@RequestBody MenuDto dto) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> createMenu(@Valid @RequestBody MenuDto dto) throws Exception {
         menuService.insertMenuManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "메뉴 정보 수정", description = "기존 시스템 메뉴 정보를 수정합니다.")
     @PutMapping("/{menuNo}")
-    public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable Long menuNo, @RequestBody MenuDto dto)
+    public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable Long menuNo, @Valid @RequestBody MenuDto dto)
             throws Exception {
         dto.setMenuNo(menuNo);
         menuService.updateMenuManage(dto);

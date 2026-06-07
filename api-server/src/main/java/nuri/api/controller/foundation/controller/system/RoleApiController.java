@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
@@ -44,7 +45,7 @@ public class RoleApiController {
 
     @Operation(summary = "롤 등록", description = "새로운 시스템 권한(Role)을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createRole(@RequestBody RoleManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createRole(@Valid @RequestBody RoleManageDto dto) {
         roleManageService.insertRole(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -53,7 +54,7 @@ public class RoleApiController {
     @PutMapping("/{roleCode}")
     public ResponseEntity<ApiResponse<Void>> updateRole(
             @PathVariable String roleCode,
-            @RequestBody RoleManageDto dto) {
+            @Valid @RequestBody RoleManageDto dto) {
         dto.setRoleId(roleCode);
         roleManageService.updateRole(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

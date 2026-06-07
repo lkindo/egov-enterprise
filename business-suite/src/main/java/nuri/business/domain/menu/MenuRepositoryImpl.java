@@ -55,6 +55,7 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                 .join(menu).on(menuAuthority.id.menuSn.eq(menu.menuSn))
                                 .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
                                 .where(menu.upMenuSn.eq(0L)
+                                                .and(menu.useYn.eq("Y"))
                                                 .and(menuAuthority.id.authrtCd.eq(
                                                                 queryFactory.select(userAuthority.authrtId)
                                                                                 .from(userAuthority)
@@ -78,10 +79,11 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuSn.eq(menu.menuSn))
                                 .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
-                                .where(menuAuthority.id.authrtCd.eq(
-                                                queryFactory.select(userAuthority.authrtId)
-                                                                .from(userAuthority)
-                                                                .where(userAuthority.scrtyDcsnTrgtId.eq(uniqId))))
+                                .where(menu.useYn.eq("Y")
+                                                .and(menuAuthority.id.authrtCd.eq(
+                                                                queryFactory.select(userAuthority.authrtId)
+                                                                                .from(userAuthority)
+                                                                                .where(userAuthority.scrtyDcsnTrgtId.eq(uniqId)))))
                                 .orderBy(menu.menuOrdr.asc())
                                 .fetch();
         }

@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
@@ -42,7 +43,7 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createProgram(@RequestBody ProgramDto dto) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> createProgram(@Valid @RequestBody ProgramDto dto) throws Exception {
         programService.insertProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -50,7 +51,7 @@ public class ProgramApiController {
     @Operation(summary = "프로그램 정보 수정")
     @PutMapping("/{progrmFileNm}")
     public ResponseEntity<ApiResponse<Void>> updateProgram(@PathVariable String progrmFileNm,
-            @RequestBody ProgramDto dto) throws Exception {
+            @Valid @RequestBody ProgramDto dto) throws Exception {
         dto.setPrgrmFileNm(progrmFileNm);
         programService.updateProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

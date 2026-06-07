@@ -84,6 +84,7 @@ class AdministCodeApiControllerTest {
     void createAdministCode_Anonymous() throws Exception {
         AdministCodeDto dto = new AdministCodeDto();
         dto.setAdmdstCd("A1");
+        dto.setUseYn("Y");
 
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -101,6 +102,7 @@ class AdministCodeApiControllerTest {
 
         AdministCodeDto dto = new AdministCodeDto();
         dto.setAdmdstCd("A1");
+        dto.setUseYn("Y");
 
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -113,6 +115,7 @@ class AdministCodeApiControllerTest {
     void updateAdministCode() throws Exception {
         AdministCodeDto dto = new AdministCodeDto();
         dto.setAdmdstCd("A1");
+        dto.setUseYn("Y");
 
         mockMvc.perform(put("/api/v1/admin/system/codes/administ/A1")
                 .contentType(MediaType.APPLICATION_JSON)

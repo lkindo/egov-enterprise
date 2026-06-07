@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -50,7 +51,7 @@ public class GroupApiController {
 
     @Operation(summary = "그룹 등록", description = "새로운 시스템 사용자 그룹을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createGroup(@RequestBody GroupManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createGroup(@Valid @RequestBody GroupManageDto dto) {
         groupManageService.insertGroup(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -59,7 +60,7 @@ public class GroupApiController {
     @PutMapping("/{groupId}")
     public ResponseEntity<ApiResponse<Void>> updateGroup(
             @PathVariable String groupId,
-            @RequestBody GroupManageDto dto) {
+            @Valid @RequestBody GroupManageDto dto) {
         dto.setGroupId(groupId);
         groupManageService.updateGroup(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

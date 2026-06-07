@@ -96,7 +96,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 등록 - 성공")
     void createNotification_success() throws Exception {
-        NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
+        NotificationDto dto = NotificationDto.builder().notiSn("NT_NEW").notiTtlNm("Title").build();
         when(notificationService.createNotification(eq("testUser"), any())).thenReturn("NT_NEW");
 
         mockMvc.perform(post("/api/v1/notifications")

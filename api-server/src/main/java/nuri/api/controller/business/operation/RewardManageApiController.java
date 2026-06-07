@@ -1,5 +1,6 @@
 package nuri.api.controller.business.operation;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.operation.RewardManageService;
 import nuri.business.service.operation.dto.RewardManageDto;
@@ -23,7 +24,7 @@ public class RewardManageApiController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createReward(@RequestBody RewardManageDto dto) {
+    public ResponseEntity<?> createReward(@Valid @RequestBody RewardManageDto dto) {
         return ResponseEntity.ok(ApiResponse.success(rewardManageService.createReward(dto)));
     }
 }

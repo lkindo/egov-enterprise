@@ -1,5 +1,6 @@
 package nuri.api.controller.business.faq;
 
+import jakarta.validation.Valid;
 import nuri.business.service.faq.FaqService;
 import nuri.business.service.faq.dto.FaqDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -41,14 +42,14 @@ public class FaqApiController {
 
     @Operation(summary = "FAQ 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createFaq(@RequestBody FaqDto dto) {
+    public ResponseEntity<ApiResponse<String>> createFaq(@Valid @RequestBody FaqDto dto) {
         String id = faqService.createFaq("SYSTEM", dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "FAQ 수정")
     @PutMapping("/{faqId}")
-    public ResponseEntity<ApiResponse<Void>> updateFaq(@PathVariable String faqId, @RequestBody FaqDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateFaq(@PathVariable String faqId, @Valid @RequestBody FaqDto dto) {
         dto.setFaqId(faqId);
         faqService.updateFaq(faqId, "SYSTEM", dto);
         return ResponseEntity.ok(ApiResponse.success(null));

@@ -1,5 +1,6 @@
 package nuri.api.controller.business.memoreport;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.memoreport.EgovMemoReportService;
@@ -63,7 +64,7 @@ public class MemoReportApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody MemoReportDto dto) {
+            @Valid @RequestBody MemoReportDto dto) {
         String rptId = memoReportService.createMemoReport(userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(rptId));
     }
@@ -73,7 +74,7 @@ public class MemoReportApiController {
     public ResponseEntity<ApiResponse<Void>> updateMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String rptId,
-            @RequestBody MemoReportDto dto) {
+            @Valid @RequestBody MemoReportDto dto) {
         memoReportService.updateMemoReport(rptId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

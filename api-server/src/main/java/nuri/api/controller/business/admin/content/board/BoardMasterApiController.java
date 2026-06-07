@@ -1,5 +1,6 @@
 package nuri.api.controller.business.admin.content.board;
 
+import jakarta.validation.Valid;
 import nuri.business.service.board.EgovBoardMasterService;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -46,7 +47,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createBoardMaster(@RequestBody BoardMasterDto dto) {
+    public ResponseEntity<ApiResponse<String>> createBoardMaster(@Valid @RequestBody BoardMasterDto dto) {
         String userId = getCurrentUserId();
         String bbsId = boardMasterService.createBoardMaster(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(bbsId));
@@ -54,7 +55,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 수정")
     @PutMapping("/{bbsId}")
-    public ResponseEntity<ApiResponse<Void>> updateBoardMaster(@PathVariable String bbsId, @RequestBody BoardMasterDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateBoardMaster(@PathVariable String bbsId, @Valid @RequestBody BoardMasterDto dto) {
         String userId = getCurrentUserId();
         dto.setBbsId(bbsId);
         boardMasterService.updateBoardMaster(userId, dto);

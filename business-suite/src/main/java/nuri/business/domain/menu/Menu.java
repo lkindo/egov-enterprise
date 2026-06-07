@@ -70,11 +70,15 @@ public class Menu extends BaseEntity {
     @Column(length = 1)
     private String routeMdfcnYn;
 
+    @Column(length = 1)
+    @Builder.Default
+    private String useYn = "Y";
+
     /**
      * 메뉴 정보 수정
      */
     public void update(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr, String menuExpln,
-                       String relImgPath, String relImgNm) {
+                       String relImgPath, String relImgNm, String useYn) {
         this.menuNm = menuNm;
         this.prgrmFileNm = prgrmFileNm;
         this.upMenuSn = upMenuSn;
@@ -82,6 +86,7 @@ public class Menu extends BaseEntity {
         this.menuExpln = menuExpln;
         this.relImgPath = relImgPath;
         this.relImgNm = relImgNm;
+        this.useYn = useYn;
     }
 
     /**
@@ -95,8 +100,8 @@ public class Menu extends BaseEntity {
      * 메뉴 정보 수정 (modern_route 포함)
      */
     public void updateWithModernRoute(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
-                                       String menuExpln, String relImgPath, String relImgNm, String modernRoute) {
-        this.update(menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm);
+                                       String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
+        this.update(menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm, useYn);
         this.modernRoute = modernRoute;
     }
 }

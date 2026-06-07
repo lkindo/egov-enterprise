@@ -1,5 +1,6 @@
 package nuri.api.controller.business.poll;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
@@ -45,7 +46,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 등록", description = "새로운 설문을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createPoll(@RequestBody OnlinePollManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createPoll(@Valid @RequestBody OnlinePollManageDto dto) {
         pollService.insertPoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -54,7 +55,7 @@ public class PollApiController {
     @PutMapping("/{pollId}")
     public ResponseEntity<ApiResponse<Void>> updatePoll(
             @PathVariable String pollId,
-            @RequestBody OnlinePollManageDto dto) {
+            @Valid @RequestBody OnlinePollManageDto dto) {
         dto.setPollId(pollId);
         pollService.updatePoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

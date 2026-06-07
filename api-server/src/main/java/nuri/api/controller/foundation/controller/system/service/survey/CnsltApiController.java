@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.system.service.consult.EgovCnsltService;
@@ -38,7 +39,7 @@ public class CnsltApiController {
 
     @Operation(summary = "상담 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertConsultation(@RequestBody CnsltManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertConsultation(@Valid @RequestBody CnsltManageDto dto) {
         cnsltService.insertCnslt(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -77,18 +77,7 @@ public class BoardMaster extends BaseEntity {
     @OneToOne(mappedBy = "boardMaster", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private BoardMasterOption option;
 
-    private void ensureOption() {
-        if (this.option == null) {
-            this.option = BoardMasterOption.builder()
-                .boardMaster(this)
-                .bbsId(this.bbsId)
-                .ansYn(this.ansYn != null ? this.ansYn : "N")
-                .stsfdgYn(this.stsfdgYn != null ? this.stsfdgYn : "N")
-                .build();
-        }
-    }
-
-    // --- [JPA Mapping & Transient Mirroring 동기화] ---
+    // --- [JPA Mapping] ---
     @Column(name = "ans_yn", length = 1, nullable = false)
     @Builder.Default
     private String ansYn = "N";
@@ -97,85 +86,16 @@ public class BoardMaster extends BaseEntity {
     @Builder.Default
     private String stsfdgYn = "N";
 
-    @Transient
-    private String optnFrstRgtrId;
-
-    @Transient
-    private LocalDateTime optnCrtDt;
-
-    @Transient
-    private String optnLastMdfrId;
-
-    @Transient
-    private LocalDateTime optnMdfcnDt;
-
-    @PrePersist
-    protected void onPrePersist() {
-        ensureOption();
-        if (this.ansYn != null) {
-            this.option.setAnsYn(this.ansYn);
-        }
-        if (this.stsfdgYn != null) {
-            this.option.setStsfdgYn(this.stsfdgYn);
-        }
-        if (this.optnFrstRgtrId != null) {
-            this.option.setFrstRgtrId(this.optnFrstRgtrId);
-        } else {
-            this.optnFrstRgtrId = this.getFrstRgtrId() != null ? this.getFrstRgtrId() : "webmaster";
-            this.option.setFrstRgtrId(this.optnFrstRgtrId);
-        }
-        if (this.optnCrtDt != null) {
-            this.option.setCrtDt(this.optnCrtDt);
-        } else {
-            this.optnCrtDt = this.getCrtDt() != null ? this.getCrtDt() : LocalDateTime.now();
-            this.option.setCrtDt(this.optnCrtDt);
-        }
-        if (this.optnLastMdfrId != null) {
-            this.option.setLastMdfrId(this.optnLastMdfrId);
-        } else {
-            this.optnLastMdfrId = this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster";
-            this.option.setLastMdfrId(this.optnLastMdfrId);
-        }
-        if (this.optnMdfcnDt != null) {
-            this.option.setMdfcnDt(this.optnMdfcnDt);
-        } else {
-            this.optnMdfcnDt = LocalDateTime.now();
-            this.option.setMdfcnDt(this.optnMdfcnDt);
-        }
+    public void registerOption(String ansYn, String stsfdgYn) {
+        this.ansYn = ansYn != null ? ansYn : "N";
+        this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "N";
+        this.option = BoardMasterOption.builder()
+                .boardMaster(this)
+                .bbsId(this.bbsId)
+                .ansYn(this.ansYn)
+                .stsfdgYn(this.stsfdgYn)
+                .build();
     }
-
-    @PreUpdate
-    protected void onPreUpdate() {
-        ensureOption();
-        if (this.ansYn != null) {
-            this.option.setAnsYn(this.ansYn);
-        }
-        if (this.stsfdgYn != null) {
-            this.option.setStsfdgYn(this.stsfdgYn);
-        }
-        if (this.optnLastMdfrId != null) {
-            this.option.setLastMdfrId(this.optnLastMdfrId);
-        } else {
-            this.optnLastMdfrId = this.getLastMdfrId() != null ? this.getLastMdfrId() : "webmaster";
-            this.option.setLastMdfrId(this.optnLastMdfrId);
-        }
-        this.optnMdfcnDt = LocalDateTime.now();
-        this.option.setMdfcnDt(this.optnMdfcnDt);
-    }
-
-    @PostLoad
-    protected void onPostLoad() {
-        if (this.option != null) {
-            this.ansYn = this.option.getAnsYn();
-            this.stsfdgYn = this.option.getStsfdgYn();
-            this.optnFrstRgtrId = this.option.getFrstRgtrId();
-            this.optnCrtDt = this.option.getCrtDt();
-            this.optnLastMdfrId = this.option.getLastMdfrId();
-            this.optnMdfcnDt = this.option.getMdfcnDt();
-        }
-    }
-
-    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
     public void update(String bbsTtl, String bbsExpln, String ansPsbltyYn, String fileAtchPsbltyYn,
             Integer atchPsbltyFileQty, Long atchPsbltyFileSz, String tmpltId, String useYn,
@@ -190,6 +110,13 @@ public class BoardMaster extends BaseEntity {
         this.useYn = useYn;
         this.ansYn = ansYn;
         this.stsfdgYn = stsfdgYn;
+
+        if (this.option != null) {
+            this.option.setAnsYn(ansYn != null ? ansYn : "N");
+            this.option.setStsfdgYn(stsfdgYn != null ? stsfdgYn : "N");
+        } else {
+            registerOption(ansYn, stsfdgYn);
+        }
     }
 
     public void updateBbsTtl(String bbsTtl) { this.bbsTtl = bbsTtl; }
@@ -200,8 +127,18 @@ public class BoardMaster extends BaseEntity {
     public void updateAtchPsbltyFileSz(Long atchPsbltyFileSz) { this.atchPsbltyFileSz = atchPsbltyFileSz; }
     public void updateTmpltId(String tmpltId) { this.tmpltId = tmpltId; }
     public void updateUseYn(String useYn) { this.useYn = useYn; }
-    public void updateAnsYn(String ansYn) { this.ansYn = ansYn; }
-    public void updateStsfdgYn(String stsfdgYn) { this.stsfdgYn = stsfdgYn; }
+    public void updateAnsYn(String ansYn) { 
+        this.ansYn = ansYn; 
+        if (this.option != null) {
+            this.option.setAnsYn(ansYn);
+        }
+    }
+    public void updateStsfdgYn(String stsfdgYn) { 
+        this.stsfdgYn = stsfdgYn; 
+        if (this.option != null) {
+            this.option.setStsfdgYn(stsfdgYn);
+        }
+    }
 
     public void delete() {
         this.useYn = "N";

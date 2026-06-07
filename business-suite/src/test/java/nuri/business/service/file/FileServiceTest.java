@@ -1,7 +1,7 @@
 package nuri.business.service.file;
 
 import nuri.business.domain.file.FileDetail;
-import nuri.business.domain.file.FileDetailId;
+
 import nuri.business.domain.file.FileDetailRepository;
 import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -114,7 +115,7 @@ class FileServiceTest {
                 .build();
         Resource resource = new ByteArrayResource("test".getBytes());
 
-        given(fileDetailRepository.findById(any(FileDetailId.class))).willReturn(Optional.of(detail));
+        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.of(detail));
         given(storageService.loadAsResource("stored.jpg", "path")).willReturn(resource);
 
         // when
@@ -157,7 +158,7 @@ class FileServiceTest {
                 .fileStrgPath("path")
                 .build();
 
-        given(fileDetailRepository.findById(any(FileDetailId.class))).willReturn(Optional.of(detail));
+        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.of(detail));
 
         // when
         fileService.deleteFile(atchFileId, fileSn);
@@ -205,7 +206,7 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 리소스 조회 - 상세 정보가 없는 경우 예외 발생")
     void getFileResource_NotFound() {
-        given(fileDetailRepository.findById(any())).willReturn(Optional.empty());
+        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.empty());
         assertThatThrownBy(() -> fileService.getFileResource("FILE_123", 1))
                 .isInstanceOf(BusinessException.class);
     }

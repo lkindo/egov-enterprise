@@ -68,7 +68,7 @@ public class DashboardApiController {
             result.put("pendingApprovalCount", pendingApprovalCount);
         } catch (Exception e) {
             log.error("Failed to fetch pending approval count", e);
-            result.put("pendingApprovalCount", 0);
+            result.put("pendingApprovalCount", 0L);
         }
 
         return ResponseEntity.ok(ApiResponse.success(result));

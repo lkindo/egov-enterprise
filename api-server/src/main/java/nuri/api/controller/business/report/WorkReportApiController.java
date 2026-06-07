@@ -1,5 +1,6 @@
 package nuri.api.controller.business.report;
 
+import jakarta.validation.Valid;
 import nuri.business.service.report.EgovWorkReportService;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -41,14 +42,14 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createWorkReport(@RequestBody WorkReportDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createWorkReport(@Valid @RequestBody WorkReportDto dto) {
         workReportService.createWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "작업보고 수정")
     @PutMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable String rptId, @RequestBody WorkReportDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable String rptId, @Valid @RequestBody WorkReportDto dto) {
         dto.setRptId(rptId);
         workReportService.updateWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

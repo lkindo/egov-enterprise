@@ -1,11 +1,10 @@
-import { cache } from 'react';
 import { cookies } from 'next/headers';
 import client from '../../../../../lib/api/client';
 
 /**
  * 게시글 목록 데이터를 서버 사이드에서 가져오는 함수
  */
-export const getInitialBoardData = cache(async (params: {
+export const getInitialBoardData = async (params: {
   bbsId: string;
   page: number;
   searchWrd: string;
@@ -34,8 +33,14 @@ export const getInitialBoardData = cache(async (params: {
     };
 
     const [listResponse, masterResponse]: any = await Promise.all([
-      client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams }),
-      client.get(`/admin/system/board-masters/${bbsId}`, axiosConfig)
+      client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams }).catch((err: any) => {
+        console.error('BoardListServer: Failed to fetch board articles', err);
+        return { list: [], total: 0, totalPage: 0 };
+      }),
+      client.get(`/admin/system/board-masters/${bbsId}`, axiosConfig).catch((err: any) => {
+        console.warn('BoardListServer: Failed to fetch board master info', err);
+        return null;
+      })
     ]);
 
     // PageResponse 구조에 맞춰 데이터 추출 (list, total, totalPage)
@@ -54,4 +59,4 @@ export const getInitialBoardData = cache(async (params: {
     console.error('BoardListServer: Failed to fetch board list', error);
     return { list: [], total: 0, totalPage: 0 };
   }
-});
+}

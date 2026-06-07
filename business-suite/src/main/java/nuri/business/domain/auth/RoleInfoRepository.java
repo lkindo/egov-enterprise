@@ -8,6 +8,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface RoleInfoRepository extends JpaRepository<RoleInfo, String>, RoleInfoRepositoryCustom {
 
-    @Query("SELECT r FROM RoleInfo r WHERE r.roleNm LIKE %:searchKeyword%")
+    @Query("SELECT r FROM RoleInfo r WHERE r.roleNm LIKE CONCAT(:searchKeyword, '%')")
     Page<RoleInfo> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);
 }

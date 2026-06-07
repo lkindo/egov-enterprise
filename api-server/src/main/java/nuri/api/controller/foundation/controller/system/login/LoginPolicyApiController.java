@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.login;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -48,7 +49,7 @@ public class LoginPolicyApiController {
     @PostMapping("/{userId}")
     public ResponseEntity<ApiResponse<Void>> insertLoginPolicy(
             @PathVariable("userId") String userId,
-            @RequestBody LoginPolicyDto loginPolicy) throws Exception {
+            @Valid @RequestBody LoginPolicyDto loginPolicy) throws Exception {
         loginPolicy.setUserId(userId);
         loginPolicyManageService.insertLoginPolicy(loginPolicy);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -58,7 +59,7 @@ public class LoginPolicyApiController {
     @PutMapping("/{userId}")
     public ResponseEntity<ApiResponse<Void>> updateLoginPolicy(
             @PathVariable("userId") String userId,
-            @RequestBody LoginPolicyDto loginPolicy) throws Exception {
+            @Valid @RequestBody LoginPolicyDto loginPolicy) throws Exception {
         loginPolicy.setUserId(userId);
         loginPolicyManageService.updateLoginPolicy(loginPolicy);
         return ResponseEntity.ok(ApiResponse.success(null));

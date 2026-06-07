@@ -1,5 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.schedule.EgovScheduleService;
@@ -77,7 +78,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createSchedule(@RequestBody ScheduleDto dto) {
+    public ResponseEntity<ApiResponse<String>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         String userId = getCurrentUserId();
         if ("anonymous".equals(userId)) {
             return ResponseEntity.status(401).build();
@@ -88,7 +89,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable String id, @RequestBody ScheduleDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable String id, @Valid @RequestBody ScheduleDto dto) {
         String userId = getCurrentUserId();
         egovScheduleService.updateSchedule(id, userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));

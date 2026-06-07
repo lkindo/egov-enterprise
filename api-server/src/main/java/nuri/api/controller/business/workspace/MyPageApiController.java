@@ -1,5 +1,6 @@
 package nuri.api.controller.business.workspace;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.workspace.MyPageService;
 import nuri.business.service.workspace.dto.MyPageContentDto;
@@ -38,14 +39,14 @@ public class MyPageApiController {
 
     @Operation(summary = "마이페이지 콘텐츠 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createContent(@RequestBody MyPageContentDto dto) {
+    public ResponseEntity<ApiResponse<String>> createContent(@Valid @RequestBody MyPageContentDto dto) {
         String newId = myPageService.createContent(dto);
         return ResponseEntity.ok(ApiResponse.success(newId));
     }
 
     @Operation(summary = "마이페이지 콘텐츠 수정")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateContent(@PathVariable String id, @RequestBody MyPageContentDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateContent(@PathVariable String id, @Valid @RequestBody MyPageContentDto dto) {
         myPageService.updateContent(id, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

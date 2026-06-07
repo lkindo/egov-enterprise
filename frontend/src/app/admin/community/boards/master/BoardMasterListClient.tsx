@@ -103,20 +103,56 @@ export function BoardMasterListClient() {
   };
 
   const handleDelete = async (board: BoardMaster) => {
-    const isConfirmed = await confirm({
-      title: '게시판 완전 삭제',
-      message: `[${board.bbsTtl}] 게시판을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-      confirmText: '삭제',
-      variant: 'destructive'
-    });
+    if (!board.bbsId) return;
 
-    if (isConfirmed && board.bbsId) {
+    if (board.useYn === 'Y') {
+      // 1. 활성 상태인 경우 -> Soft Delete (대기 상태 전환)
+      const isConfirmed = await confirm({
+        title: '게시판 서비스 비활성화',
+        message: `[${board.bbsTtl}] 게시판을 대기 상태로 전환(비활성화)하시겠습니까?`,
+        confirmText: '비활성화',
+        variant: 'destructive'
+      });
+
+      if (isConfirmed) {
+        try {
+          await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
+          toast('게시판이 비활성화(대기) 상태로 전환되었습니다.', 'success');
+          refetch();
+        } catch (error) {
+          toast('비활성화 처리 중 오류가 발생했습니다.', 'error');
+        }
+      }
+    } else {
+      // 2. 대기(N) 상태인 경우 -> Hard Delete (물리 삭제)
       try {
-        await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
-        toast('게시판이 삭제되었습니다.', 'success');
-        refetch();
-      } catch (error) {
-        toast('삭제 중 오류가 발생했습니다.', 'error');
+        const deletable = await boardAdminService.isBoardMasterDeletable(board.bbsId);
+        
+        if (!deletable) {
+          await confirm({
+            title: '영구 삭제 불가',
+            message: `[${board.bbsTtl}] 게시판 내부에 등록된 게시글 데이터가 존재하여 완전히 삭제할 수 없습니다. 관련 게시글을 먼저 모두 삭제해주십시오.`,
+            confirmText: '확인',
+            variant: 'default'
+          });
+          return;
+        }
+
+        const isConfirmed = await confirm({
+          title: '게시판 영구 물리 삭제',
+          message: `[${board.bbsTtl}] 게시판 마스터와 모든 설정을 데이터베이스에서 완전히 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+          confirmText: '영구 삭제',
+          variant: 'destructive'
+        });
+
+        if (isConfirmed) {
+          await boardAdminService.deleteBoardMasterPhysically(board.bbsId);
+          toast('게시판 마스터 데이터가 완전히 말소되었습니다.', 'success');
+          refetch();
+        }
+      } catch (error: any) {
+        const errMsg = error.message || '영구 삭제 처리 중 오류가 발생했습니다.';
+        toast(errMsg, 'error');
       }
     }
   };
@@ -187,7 +223,14 @@ export function BoardMasterListClient() {
             onClick={() => handleDelete(board)}
             size="icon" 
             variant="ghost" 
-            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+            className={cn(
+              "w-12 h-12 rounded-lg text-muted-foreground transition-all shadow-sm",
+              board.useYn === 'Y' 
+                ? "hover:bg-amber-500 hover:text-white" 
+                : "hover:bg-rose-600 hover:text-white"
+            )}
+            title={board.useYn === 'Y' ? '대기 상태로 비활성화' : 'DB에서 영구 물리삭제'}
+            aria-label={board.useYn === 'Y' ? '대기 상태로 비활성화' : 'DB에서 영구 물리삭제'}
           >
             <Trash2 size={20} />
           </Button>
@@ -256,18 +299,71 @@ export function BoardMasterListClient() {
             {
               label: '일괄 활성화',
               icon: <Zap size={16} />,
-              onClick: (items) => toast(`${items.length}개의 게시판이 즉시 활성화됩니다.`, 'success')
+              onClick: async (items) => {
+                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
+                if (ids.length === 0) return;
+                try {
+                  await boardAdminService.batchUpdateBoardMasterStatus(ids, 'Y');
+                  toast(`${items.length}개의 게시판이 일괄 활성화되었습니다.`, 'success');
+                  refetch();
+                } catch (err: any) {
+                  toast(err.message || '일괄 활성화 중 오류가 발생했습니다.', 'error');
+                }
+              }
             },
             {
               label: '일괄 비활성',
               icon: <Lock size={16} />,
-              onClick: (items) => toast(`${items.length}개의 게시판이 대기 상태로 전환됩니다.`, 'info')
+              onClick: async (items) => {
+                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
+                if (ids.length === 0) return;
+                try {
+                  await boardAdminService.batchUpdateBoardMasterStatus(ids, 'N');
+                  toast(`${items.length}개의 게시판이 일괄 비활성화되었습니다.`, 'info');
+                  refetch();
+                } catch (err: any) {
+                  toast(err.message || '일괄 비활성화 중 오류가 발생했습니다.', 'error');
+                }
+              }
             },
             {
               label: '완전 말소',
               icon: <Trash2 size={16} />,
               variant: 'destructive',
-              onClick: (items) => toast(`${items.length}개의 마스터 데이터 말소 프로세스 가동.`, 'error')
+              onClick: async (items) => {
+                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
+                if (ids.length === 0) return;
+
+                // 1. 활성 상태인 게시판 필터링
+                const activeBoards = items.filter(item => item.useYn === 'Y');
+                if (activeBoards.length > 0) {
+                  await confirm({
+                    title: '일괄 영구 삭제 불가',
+                    message: `선택한 항목 중 활성 상태인 게시판([${activeBoards.map(b => b.bbsTtl).join(', ')}])이 포함되어 있습니다. 활성 상태인 게시판을 먼저 대기 상태로 변경한 후 다시 일괄 삭제를 시도해주십시오.`,
+                    confirmText: '확인',
+                    variant: 'default'
+                  });
+                  return;
+                }
+
+                // 2. 최종 물리 삭제 컨펌
+                const isConfirmed = await confirm({
+                  title: '선택한 게시판 일괄 영구 말소',
+                  message: `선택하신 ${items.length}개의 게시판과 모든 관련 설정을 데이터베이스에서 완전히 영구 말소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+                  confirmText: '일괄 영구 삭제',
+                  variant: 'destructive'
+                });
+
+                if (isConfirmed) {
+                  try {
+                    await boardAdminService.batchDeleteBoardMastersPhysically(ids);
+                    toast('선택한 게시판 마스터 데이터가 모두 영구 말소되었습니다.', 'success');
+                    refetch();
+                  } catch (err: any) {
+                    toast(err.message || '일괄 영구 삭제 중 오류가 발생했습니다.', 'error');
+                  }
+                }
+              }
             }
           ]}
           search={{

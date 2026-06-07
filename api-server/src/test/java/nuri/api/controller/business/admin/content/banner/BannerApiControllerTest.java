@@ -50,7 +50,7 @@ class BannerApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("배너 등록/수정/삭제 - 성공")
     void banner_crud_success() throws Exception {
-        BannerDto dto = BannerDto.builder().build();
+        BannerDto dto = BannerDto.builder().bnrNm("Test Banner").build();
 
         mockMvc.perform(post("/api/v1/admin/system/banners")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))

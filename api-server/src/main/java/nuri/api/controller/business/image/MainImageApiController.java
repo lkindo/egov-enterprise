@@ -1,5 +1,6 @@
 package nuri.api.controller.business.image;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.image.EgovMainImageService;
@@ -41,7 +42,7 @@ public class MainImageApiController {
 
     @Operation(summary = "메인 이미지 등록", description = "새로운 메인 이미지를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertMainImage(@RequestBody MainImageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> insertMainImage(@Valid @RequestBody MainImageDto dto) {
         mainImageService.insertMainImage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -50,7 +51,7 @@ public class MainImageApiController {
     @PutMapping("/{imageId}")
     public ResponseEntity<ApiResponse<Void>> updateMainImage(
             @PathVariable String imageId,
-            @RequestBody MainImageDto dto) {
+            @Valid @RequestBody MainImageDto dto) {
         dto.setImgId(imageId);
         mainImageService.updateMainImage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

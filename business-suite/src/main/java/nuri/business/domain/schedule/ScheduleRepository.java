@@ -13,7 +13,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, String> {
     @Query("SELECT s FROM Schedule s WHERE (:schdlSeCd IS NULL OR s.schdlSeCd = :schdlSeCd) AND (:userId IS NULL OR s.schdlPicId = :userId)")
     Page<Schedule> searchSchedules(@Param("schdlSeCd") String schdlSeCd, @Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT s FROM Schedule s WHERE s.schdlPicId = :userId AND (s.schdlBgngYmd LIKE :yearMonth% OR s.schdlEndYmd LIKE :yearMonth%)")
+    @Query("SELECT s FROM Schedule s WHERE s.schdlPicId = :userId AND (s.schdlBgngYmd LIKE CONCAT(:yearMonth, '%') OR s.schdlEndYmd LIKE CONCAT(:yearMonth, '%'))")
     List<Schedule> findMonthlySchedules(@Param("userId") String userId, @Param("yearMonth") String yearMonth);
 
     @Query("SELECT s FROM Schedule s WHERE s.schdlPicId = :userId AND ((s.schdlBgngYmd BETWEEN :startDate AND :endDate) OR (s.schdlEndYmd BETWEEN :startDate AND :endDate))")

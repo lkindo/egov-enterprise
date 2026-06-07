@@ -71,9 +71,9 @@ class MenuServiceTest {
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         Menu menu2 = Menu.builder().menuSn(2L).menuNm("Menu 2").menuOrdr(2).upMenuSn(1L).build();
         
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, null});
-        results.add(new Object[]{menu2, null});
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu2, null));
         
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
@@ -98,8 +98,8 @@ class MenuServiceTest {
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
                 .build();
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, auth});
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -108,6 +108,33 @@ class MenuServiceTest {
 
         // then
         assertThat(hierarchy).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("getMenuHierarchy - useYn이 'N'인 메뉴는 필터링됨")
+    void getMenuHierarchy_FilterInactiveMenus() {
+        // given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        Menu menuActive = Menu.builder().menuSn(1L).menuNm("Active Menu").menuOrdr(1).useYn("Y").build();
+        Menu menuInactive = Menu.builder().menuSn(2L).menuNm("Inactive Menu").menuOrdr(2).useYn("N").build();
+        
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuActive, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuInactive, null));
+        
+        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // when
+        List<MenuDto> hierarchy = menuService.getMenuHierarchy();
+
+        // then
+        assertThat(hierarchy).hasSize(1);
+        assertThat(hierarchy.get(0).getMenuNm()).isEqualTo("Active Menu");
     }
 
     @Test
@@ -138,36 +165,7 @@ class MenuServiceTest {
         assertThat(result.getChkURL()).isEqualTo("#");
     }
 
-    @Test
-    @DisplayName("calculateUrl - inferModernRoute 매칭 케이스 (BoardManage)")
-    void calculateUrl_InferModernRoute() {
-        // given
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("BoardManage").build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
 
-        // when
-        MenuDto result = menuService.selectMenuManage(1L);
-
-        // then
-        assertThat(result.getChkURL()).isEqualTo("/admin/community/boards");
-    }
-
-    @Test
-    @DisplayName("calculateUrl - legacy URL 추론 (qna)")
-    void calculateUrl_InferFromLegacy() {
-        // given
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("SomeProgram").build();
-        Program program = Program.builder().prgrmFileNm("SomeProgram").url("/uss/olh/qna/list.do").build();
-        
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-        when(programRepository.findById("SomeProgram")).thenReturn(Optional.of(program));
-
-        // when
-        MenuDto result = menuService.selectMenuManage(1L);
-
-        // then
-        assertThat(result.getChkURL()).isEqualTo("/admin/help/qna");
-    }
 
     @Test
     @DisplayName("insertMenuCreatList - 기존 권한 삭제 및 신규 추가")
@@ -222,43 +220,7 @@ class MenuServiceTest {
         assertThat(rootId).isEqualTo(1L);
     }
 
-    @Test
-    @DisplayName("inferModernRoute - 모든 분기 테스트")
-    void inferModernRoute_AllBranches() {
-        // This exercises all if statements in inferModernRoute
-        String[] programs = {
-            "BoardManage", "BBSMaster", "CmmCode", "GroupList", "RoleList", 
-            "AuthorGroup", "QustnrManage", "QustnrTmplat", "AdbkList", "FaqList", 
-            "CnsltList", "MainImage", "FileMng", "ProgramList", "MenuCreat", "MenuList", "Unknown"
-        };
-        
-        for (String p : programs) {
-            // Internal method call via public method is hard to isolate perfectly, 
-            // but selectMenuManage calls calculateUrl which calls inferModernRoute.
-            Menu menu = Menu.builder().menuSn(1L).prgrmFileNm(p).build();
-            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-            menuService.selectMenuManage(1L);
-        }
-    }
 
-    @Test
-    @DisplayName("inferFromLegacyUrl - 모든 분기 테스트")
-    void inferFromLegacyUrl_AllBranches() {
-        String[] urls = {
-            "/uss/olh/qna/", "/uss/olh/faq/", "/sec/gmt/", "/sec/ram/", 
-            "/sym/ccm/", "/uss/olp/qtm/", "/uss/olp/qmc/", "/unknown/"
-        };
-        
-        for (String url : urls) {
-            Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
-            Program program = Program.builder().prgrmFileNm("Prog").url(url + "test.do").build();
-            
-            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-            when(programRepository.findById("Prog")).thenReturn(Optional.of(program));
-            
-            menuService.selectMenuManage(1L);
-        }
-    }
 
     @Test
     @DisplayName("getMenuHierarchy - 예외 발생 시 catch 블록 테스트")
@@ -286,9 +248,9 @@ class MenuServiceTest {
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_USER").menuSn(1L).build())
                 .build();
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, auth});
-        results.add(new Object[]{menu2, null}); // 권한 없음
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu2, null)); // 권한 없음
 
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
@@ -302,13 +264,18 @@ class MenuServiceTest {
     @DisplayName("getSubMenus - 특정 rootMenuNo 지정 조회")
     void getSubMenus_Success() {
         when(securityContext.getAuthentication()).thenReturn(null);
-        Menu menu1 = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).build();
+        Menu parentMenu = Menu.builder().menuSn(1L).menuNm("Parent Menu").upMenuSn(0L).useYn("Y").build();
+        Menu menu1 = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).useYn("Y").build();
+        MenuAuthority authParent = MenuAuthority.builder()
+                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
+                .build();
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
                 .build();
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, auth});
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(parentMenu, authParent));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
         
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
@@ -330,8 +297,8 @@ class MenuServiceTest {
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
         assertThat(menuService.getAllPrograms()).isEmpty();
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu, null});
+        List<nuri.business.service.menu.dto.MenuWithProgramDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, null));
         when(menuRepository.findAllWithPrograms()).thenReturn(results);
         assertThat(menuService.getAllMenus()).hasSize(1);
     }
@@ -396,7 +363,7 @@ class MenuServiceTest {
         
         menuService.updateMenuManage(dto);
         
-        verify(menu).updateWithModernRoute(eq("Updated"), any(), any(), any(), any(), any(), any(), any());
+        verify(menu).updateWithModernRoute(eq("Updated"), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -432,17 +399,17 @@ class MenuServiceTest {
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
         Menu menuMax = Menu.builder().menuSn(10000000L).menuNm("Max Menu").build(); // id > 9999999
-        Menu menuNullUpper = Menu.builder().menuSn(1L).menuNm("Null Upper").upMenuSn(null).build();
-        Menu menuZeroUpper = Menu.builder().menuSn(2L).menuNm("Zero Upper").upMenuSn(0L).build();
-        Menu menuNormal = Menu.builder().menuSn(3L).menuNm("Normal").upMenuSn(1L).build();
-        Menu menuOrphan = Menu.builder().menuSn(4L).menuNm("Orphan").upMenuSn(99L).build(); // dtoMap doesn't contain upper
+        Menu menuNullUpper = Menu.builder().menuSn(1L).menuNm("Null Upper").upMenuSn(null).useYn("Y").build();
+        Menu menuZeroUpper = Menu.builder().menuSn(2L).menuNm("Zero Upper").upMenuSn(0L).useYn("Y").build();
+        Menu menuNormal = Menu.builder().menuSn(3L).menuNm("Normal").upMenuSn(1L).useYn("Y").build();
+        Menu menuOrphan = Menu.builder().menuSn(4L).menuNm("Orphan").upMenuSn(99L).useYn("Y").build(); // dtoMap doesn't contain upper
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menuMax, null});
-        results.add(new Object[]{menuNullUpper, null});
-        results.add(new Object[]{menuZeroUpper, null});
-        results.add(new Object[]{menuNormal, null});
-        results.add(new Object[]{menuOrphan, null});
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuMax, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuNullUpper, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuZeroUpper, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuNormal, null));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuOrphan, null));
 
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
@@ -458,10 +425,14 @@ class MenuServiceTest {
     void buildMenuTree_SpecificRootMenuNo() {
         when(securityContext.getAuthentication()).thenReturn(null);
         
-        Menu menuChild = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).build();
-        Menu menuOrphan = Menu.builder().menuSn(3L).menuNm("Orphan").upMenuSn(99L).build(); // 상위 메뉴 없음
-        Menu menuSubChild = Menu.builder().menuSn(4L).menuNm("Sub Child").upMenuSn(2L).build(); // 하위의 하위
+        Menu parentMenu = Menu.builder().menuSn(1L).menuNm("Parent Menu").upMenuSn(0L).useYn("Y").build();
+        Menu menuChild = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).useYn("Y").build();
+        Menu menuOrphan = Menu.builder().menuSn(3L).menuNm("Orphan").upMenuSn(99L).useYn("Y").build(); // 상위 메뉴 없음
+        Menu menuSubChild = Menu.builder().menuSn(4L).menuNm("Sub Child").upMenuSn(2L).useYn("Y").build(); // 하위의 하위
 
+        MenuAuthority authParent = MenuAuthority.builder()
+                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
+                .build();
         MenuAuthority auth = MenuAuthority.builder()
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
                 .build();
@@ -472,10 +443,11 @@ class MenuServiceTest {
                 .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(4L).build())
                 .build();
 
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menuChild, auth});
-        results.add(new Object[]{menuOrphan, authOrphan});
-        results.add(new Object[]{menuSubChild, authSubChild});
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(parentMenu, authParent));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuChild, auth));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuOrphan, authOrphan));
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuSubChild, authSubChild));
         
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
@@ -504,8 +476,8 @@ class MenuServiceTest {
         Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
         Program program = Program.builder().prgrmFileNm("Prog").url("/new/url").build();
         
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu, program});
+        List<nuri.business.service.menu.dto.MenuWithProgramDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, program));
         
         when(menuRepository.findAllWithPrograms()).thenReturn(results);
         
@@ -514,18 +486,7 @@ class MenuServiceTest {
         assertThat(menus.get(0).getChkURL()).isEqualTo("/new/url");
     }
     
-    @Test
-    @DisplayName("calculateUrl - inferFromLegacyUrl에서 매칭되지 않는 경우")
-    void calculateUrl_LegacyUrlNotMatched() {
-        Menu menu = Menu.builder().menuSn(1L).prgrmFileNm("Prog").build();
-        Program program = Program.builder().prgrmFileNm("Prog").url("/some/weird.do").build();
-        
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
-        when(programRepository.findById("Prog")).thenReturn(Optional.of(program));
-        
-        MenuDto result = menuService.selectMenuManage(1L);
-        assertThat(result.getChkURL()).isEqualTo("#"); // .do는 fallback으로 # 반환
-    }
+
     
     @Test
     @DisplayName("calculateUrl - url이 / 인 경우")
@@ -578,9 +539,9 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, null});
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -601,9 +562,9 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, null});
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -618,9 +579,9 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
-        List<Object[]> results = new ArrayList<>();
-        results.add(new Object[]{menu1, null});
+        Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
+        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
+        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
         when(menuRepository.findAllWithAuthorities()).thenReturn(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -628,28 +589,7 @@ class MenuServiceTest {
         assertThat(subMenus).isEmpty(); // getChildren이 null 이면 new ArrayList<>() 반환
     }
 
-    @Test
-    @DisplayName("calculateUrl - inferModernRoute 에서 RoleManage 등 다른 분기")
-    void calculateUrl_OtherBranches() {
-        Menu m = Menu.builder().menuSn(1L).prgrmFileNm("dir/RoleManage").build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(m));
-        
-        try {
-            menuService.selectMenuManage(1L);
-        } catch(Exception e) {}
-        
-        m = Menu.builder().menuSn(2L).prgrmFileNm("dir/BBSMasterManage").build();
-        when(menuRepository.findById(2L)).thenReturn(Optional.of(m));
-        try {
-            menuService.selectMenuManage(2L);
-        } catch(Exception e) {}
-        
-        m = Menu.builder().menuSn(3L).prgrmFileNm("dir/UserManage").build();
-        when(menuRepository.findById(3L)).thenReturn(Optional.of(m));
-        try {
-            menuService.selectMenuManage(3L);
-        } catch(Exception e) {}
-    }
+
 
     @Test
     @DisplayName("deleteMenuManageList - null 이나 비어있는 문자열 처리")
@@ -680,9 +620,7 @@ class MenuServiceTest {
     void getAllMenus() {
         Menu menu = Menu.builder().menuSn(1L).menuNm("M1").prgrmFileNm("P1").build();
         Program program = Program.builder().prgrmFileNm("P1").url("/p1").build();
-        Object[] row = new Object[]{menu, program};
-
-        when(menuRepository.findAllWithPrograms()).thenReturn(List.<Object[]>of(row));
+        when(menuRepository.findAllWithPrograms()).thenReturn(List.of(new nuri.business.service.menu.dto.MenuWithProgramDto(menu, program)));
 
         List<MenuDto> result = menuService.getAllMenus();
         assertThat(result).hasSize(1);

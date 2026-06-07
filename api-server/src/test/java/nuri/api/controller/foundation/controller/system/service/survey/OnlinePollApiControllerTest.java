@@ -61,7 +61,7 @@ class OnlinePollApiControllerTest {
     @Test
     @DisplayName("온라인 설문 등록")
     void insertPoll() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollNm("New Poll").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P2").pollNm("New Poll").build();
 
         mockMvc.perform(post("/api/v1/admin/system/polls")
                 .contentType(MediaType.APPLICATION_JSON)

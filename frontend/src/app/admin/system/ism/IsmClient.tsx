@@ -88,6 +88,29 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  }
  };
 
+ const handleDeleteIsm = async (id: string, name: string) => {
+    const isConfirmed = await confirm({
+      title: '결재 시퀀스 삭제',
+      message: `[${name}] 결재 요청 데이터를 정말로 데이터베이스에서 영구 삭제하시겠습니까?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'destructive',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      setLoading(true);
+      await ismAdminService.deleteInfrmlSanctn(id);
+      toast('성공적으로 삭제되었습니다.', 'success');
+      router.refresh();
+    } catch (error) {
+      toast('삭제 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
  const columns: Column<InfrmlSanctn>[] = [
  {
  header: '도메인 및 아키텍처',
@@ -153,7 +176,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  variant="ghost"
  size="icon"
  className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all opacity-40 hover:opacity-100"
- onClick={() => toast('아카이브 전용 모드입니다.', 'info')}
+ onClick={() => handleDeleteIsm(item.infrmlSanctnId, item.sancltNm)}
  >
  <Trash2 size={16} />
  </Button>

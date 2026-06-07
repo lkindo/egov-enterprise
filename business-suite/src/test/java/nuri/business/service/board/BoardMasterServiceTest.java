@@ -46,6 +46,9 @@ class BoardMasterServiceTest {
     private BoardUseRepository boardUseRepository;
 
     @Mock
+    private BoardRepository boardRepository;
+
+    @Mock
     private EgovIdGnrService egovBBSMstrIdGnrService;
 
     @Test
@@ -293,5 +296,129 @@ class BoardMasterServiceTest {
         dto.setBbsId("CUSTOM_BBS_ID");
         boardMasterService.createBoardMaster("user01", dto);
         verify(boardMasterRepository).save(any(BoardMaster.class));
+    }
+
+    @Test
+    @DisplayName("물리삭제 가능 여부 확인 - 성공 (Soft-deleted & No Articles)")
+    void isDeletable_Success() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+
+        boolean result = boardMasterService.isDeletable("BBS_01");
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("물리삭제 가능 여부 확인 - 실패 (Active Board)")
+    void isDeletable_ActiveBoard() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+
+        boolean result = boardMasterService.isDeletable("BBS_01");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("물리삭제 가능 여부 확인 - 실패 (Has Articles)")
+    void isDeletable_HasArticles() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(5L);
+
+        boolean result = boardMasterService.isDeletable("BBS_01");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("물리삭제 실행 - 성공")
+    void deleteBoardMasterPhysically_Success() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+
+        boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01");
+
+        verify(boardMasterRepository).deleteById("BBS_01");
+    }
+
+    @Test
+    @DisplayName("물리삭제 실행 - 실패 (Active Board)")
+    void deleteBoardMasterPhysically_ActiveBoard() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+
+        assertThrows(BusinessException.class, 
+            () -> boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01"));
+    }
+
+    @Test
+    @DisplayName("물리삭제 실행 - 실패 (Has Articles)")
+    void deleteBoardMasterPhysically_HasArticles() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(3L);
+
+        assertThrows(BusinessException.class, 
+            () -> boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01"));
+    }
+
+    @Test
+    @DisplayName("일괄 상태 변경 - 성공")
+    void updateBoardMasterStatusInBatch_Success() {
+        BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("Y").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
+        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+
+        boardMasterService.updateBoardMasterStatusInBatch("user1", List.of("BBS_01", "BBS_02"), "N");
+
+        assertThat(master1.getUseYn()).isEqualTo("N");
+        assertThat(master2.getUseYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 성공")
+    void deleteBoardMastersInBatch_Success() {
+        BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
+        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsIdNative("BBS_02")).willReturn(0L);
+
+        boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02"));
+
+        verify(boardMasterRepository).delete(master1);
+        verify(boardMasterRepository).delete(master2);
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 실패 (활성 게시판 포함)")
+    void deleteBoardMastersInBatch_Fail_ActiveBoard() {
+        BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("Y").build(); // 활성 게시판
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
+        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+
+        assertThrows(BusinessException.class,
+            () -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02")));
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 실패 (게시글 포함)")
+    void deleteBoardMastersInBatch_Fail_HasArticles() {
+        BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
+        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsIdNative("BBS_02")).willReturn(2L); // 게시글 있음
+
+        assertThrows(BusinessException.class,
+            () -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02")));
     }
 }
