@@ -1,5 +1,13 @@
 # GEMINI.md - eGov Enterprise Project Rule Set
 
+## [Inheritance & Overrides]
+- **Extends**: `c:\Users\sanle\.gemini\GEMINI.md` (Antigravity Global Rules)
+- **Overrides / Merges**:
+  - `global.§7.Ralph Loop` ➔ `project.§8 (프로젝트 자가 성찰 디버그 확장 지침과 병합)`
+  - `global.§3.버그수정` ➔ `project.§0.5 (자가 성찰 오류 복구 준수)`
+
+---
+
 본 파일은 **eGov Enterprise** 프로젝트의 전역 개발 규칙을 정의한다.
 에이전트는 모든 작업 수행 시 이 규칙을 최우선으로 참고하며, 글로벌 룰셋(`user_global`)의 기본 원칙을 이 프로젝트의 구체적인 맥락에 맞게 적용한다.
 
@@ -17,7 +25,7 @@
 2.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 코드 변경을 수반하는 작업 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다. 특히 백엔드 DTO/Controller 수정 시에는 **`api-contract-guardian`** 스킬을, Spring Security/AuthContext 등 보안 영역 수정 시에는 **`owasp-security-auditor`** 스킬을 강제 가동하여 헌법 위반과 Breaking Change를 사전에 차단한다.
 3.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, 요구사항을 분석한 뒤 L1 이상의 작업에서는 **`gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. 특히 DB 마이그레이션 시에는 **`zero-downtime-migration-planner`**를 가동해 확장/축소 패턴을 따르고, 다중 모듈 구조 변경 시에는 **`deep-context-mapper`**를 선행 적재하며, 작업 완료 후에는 **`docs-as-code-sync`**를 가동해 문서 부채를 차단한다.
 4.  **Skill Discovery (문맥 기반 자율 차용)**: 의무적인 스킬 전수 탐색 스캔은 금지한다. 단, 지시 맥락과 명백히 일치하는 내장 스킬이 감지되면 자율적으로 차용한다. 특히 UI/UX 수정 시에는 **`visual-auditor`**를 기동해 실시간 비주얼 오디팅을 수행하고, 테스트 코드(Unit/E2E)를 작성하거나 수정할 때에는 반드시 **`mutation-testing-auditor`** 스킬을 기동하여 의도적 버그 주입을 통해 테스트의 강건성을 수리적으로 증명한다.
-5.  **Self-Reflective Recovery (자가 성찰 오류 복구)**: 빌드, 컴파일, 테스트 실행 중 오류 발생 시, 즉각 코드를 임의 수정하지 않는다. 반드시 §8의 **자가 성찰 디버그 프로토콜(Self-Reflective Debug Protocol)**을 가동하여 근본 원인을 증명한 뒤 수정을 개시한다.
+5.  **Self-Reflective Recovery (자가 성찰 오류 복구)**: 빌드, 컴파일, 테스트 실행 중 오류 발생 시, 즉각 코드를 임의 수정하지 않는다. 반드시 글로벌 룰셋 §7.3의 **자가 성찰 기반 디버그 프로토콜(Ralph Loop 2.0)** 및 본 프로젝트의 §8 확장 지침을 가동하여 근본 원인을 증명한 뒤 수정을 개시한다.
 6.  **Compilation Integrity Gate (컴파일 무결성 보증 게이트) - [HARD CONSTRAINT]**: 에이전트는 소스 코드 변경(L1 이상)을 수반하는 작업을 완료(작업 아카이브 작성 및 walkthrough.md 제출)하기 전, 스캐너 결과에만 의존해 완료를 속단하는 행위를 절대 금지한다. 반드시 아래 2가지 컴파일 검증 명령을 로컬 터미널에서 직접 실행하여 성공했음을 물리적 빌드 로그 증적으로 제시해야 한다.
     - **Backend**: `./gradlew compileJava compileTestJava` (Java 컴파일 무결성 검증)
     - **Frontend**: `npx tsc --noEmit` (TypeScript 정적 타입 컴파일 무결성 검증)
@@ -112,53 +120,16 @@
   - **[면책 특권]** `deep-context-mapper` 등을 통해 메타 데이터(`meta_standard_words` 등)나 물리 스키마를 **단순 조회(SELECT)**하는 행위는 사용자 승인 없이 무제한 자율 실행하여 탐색 기동성을 극대화한다.
   - **[진단 특권]** `resilience-debugger`가 §8 자가 성찰 디버그 프로토콜 수행 중 DB 상태를 진단하기 위한 **SELECT 쿼리** 역시 사용자 승인 없이 자율 실행을 허용한다.
 
-## 8. 자가 성찰 기반 디버그 프로토콜 (Self-Reflective Debug Protocol / Ralph Loop 2.0)
+## 8. 프로젝트 자가 성찰 디버그 확장 지침 (Self-Reflective Debug Project Extension)
 
-> 본 조항은 글로벌 룰셋 §3(버그 수정 프로세스) 및 §7(Ralph Loop)을 본 프로젝트 맥락으로 오버라이드한다.
+> 본 조항은 글로벌 룰셋 §7.3(자가 성찰 기반 디버깅)을 상속 및 오버라이드하여, 본 프로젝트 고유의 환경 및 특수 도구 검증 지침을 강제한다.
 
-### ⚠ [절대 규범] 진입 제한 조건 (Trigger Constraint)
-에이전트는 오직 명백한 빌드 실패(BUILD FAILED), 컴파일 에러, 또는 테스트 실패 로그가 **물리적인 증거(실패 로그 및 예외 메시지 등)로 검출 및 증명되었을 때에만** 본 리포트를 강제 출력한다.
-
-* **출력 금지 예외 상황 (Ignore Case)**:
-  1. 단순 진행 상황 질의 및 아키텍처 탐색 단계 (L0 등급)
-  2. `./gradlew test` 등 빌드/테스트가 **그린 패스(Green Pass)로 성공**한 단계
-  3. 사용자의 아키텍처 설계 피드백 및 단순 질문 답변 단계
-  위 상황에서는 본 리포트를 절대로 출력하지 않으며, 성찰 리포트 블록 없이 담백한 기술적 답변만 제공한다.
-
-### 0단계: 상태 검증 (State Assertion)
-- 에이전트는 성찰 리포트 출력 직전, "지금 맞닥뜨린 빌드/테스트 결과에 실제 실패(Failure)나 오류가 존재하는가?"를 검증한다. 판정 결과가 '아니오'일 경우 즉시 리포트 출력을 완전히 생략하고 일반 응답으로 분기한다.
-
-```mermaid
-graph TD
-    A[Error Detected] --> B["1. Stop & Formulate Hypothesis"]
-    B --> C["2. Target Search & Evidence Collection"]
-    C --> D["3. Self-Reflection Report Output"]
-    D --> E["4. Minimal Precision Fix & Re-Verify"]
-```
-
-### 1단계: 멈춤 및 가설 수립 (Hypothesis Formulation)
-- 에러 로그를 읽고 즉시 코드를 고치지 않는다.
-- "내가 이전에 작성한 코드의 어떤 가정이 잘못되었는가?", "이 에러가 발생할 수밖에 없는 근본 원인(Root Cause) 가설은 무엇인가?"를 먼저 머릿속으로 정립한다.
-
-### 2단계: 표적 조사 및 증거 수집 (Target Investigation)
-- `resilience-debugger` 스킬을 사용하여 오류가 발생한 지점의 상하 컴포넌트, DB 데이터 상태, 타입 명세 등을 확인한다. 추정에 의존하지 않고 확실한 데이터/코드 증거를 확보한다.
-- **[E2E 교차 검증 의무]** 특히 Playwright E2E 테스트 실패 시, 단순 서버 로그만 보지 말고 브라우저의 결과 아티팩트(DOM 상태, 스크린샷, WebP 비디오)와 JVM 에러 로그를 반드시 교차 검증하여 적중률을 100%로 끌어올린다.
-
-### 3단계: 성찰 리포트 출력 (Report Generation)
-수정을 진행하기 전, 반드시 다음 템플릿의 리포트 블록을 출력한다:
-```markdown
-### 🔍 [SELF-REFLECTION REPORT] ###
-- **오판 진단(False Assumption)**: 내가 이전에 맞다고 생각했으나 틀렸던 가정이 무엇인가?
-- **근본 원인(Root Cause)**: 수집된 증거에 기반한 진짜 에러의 물리적 원인
-- **해결 가설(New Hypothesis)**: 이 문제를 해결하기 위한 가장 콤팩트하고 안전한 대안
-- **부작용 검토(Side-Effect Check)**: 이 수정이 타 모듈이나 헌법에 미칠 영향
-#################################
-```
-
-### 4단계: 초정밀 수정 및 재검증 (Precision Fix & Re-Verify)
-- 가설에 따라 최소한의 코드만 수정하고, 빌드/테스트를 재실행하여 검증한다. 동일 에러로 3회 연속 성찰 루프가 실패하면 글로벌 §7.3 에스컬레이션 규정을 적용한다.
+### 1. 프로젝트 특화 디버깅 도구 연동 (2단계 확장)
+- 글로벌 2단계(표적 조사 및 증거 수집) 수행 시, 본 프로젝트에서는 다음 단계와 도구를 연동하여 강제 기동한다.
+  - **DB 상태 진단**: `resilience-debugger` 스킬을 사용하여 오류 발생 지점의 DB Bridge 연동 상태 및 물리 스키마를 선제적으로 SELECT 조회하여 데이터 불일치 여부를 조사한다.
+  - **E2E 교차 검증 의무**: Playwright E2E 테스트 실패 시, 콘솔 로그만 분석하지 않고 반드시 브라우저 실행 결과 아티팩트(DOM 상태, S크린샷, WebP 비디오)와 JVM 에러 로그를 상호 교차 검증하여 실패 원인을 증명한다.
 
 ---
-*Last Updated: 2026-05-30 (Updated via Antigravity — Triggered-only Reflection Mechanism & State Assertion Integrated)*
+*Last Updated: 2026-06-09 (Updated via Antigravity — Global-Project Ruleset Inheritance & Optimization Applied)*
 
 
