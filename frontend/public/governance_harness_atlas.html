@@ -1722,8 +1722,8 @@
         title: "JPA SQL N+1 성능 초소형 방어벽 (JPA N+1 SQL Inspector)",
         desc: "통합 테스트 실행 도중 각 스레드별로 발행되는 SQL 쿼리 개수를 Hibernate Interceptor로 자동 계측하여, N+1 쿼리 누수가 발생하거나 임계치(최대 10개)를 위반하면 테스트를 즉시 실패 처리하는 성능 가드레일입니다. 리플렉션 기반 ThreadLocalCopyTaskDecorator를 활용해 비동기 스레드 풀(logExecutor, taskExecutor) 전파 누수까지 100% 원천 계측 및 감지합니다.",
         badge1: "Backend", badge2: "Performance", type1: "primary", type2: "success",
-        impl: "QueryCountInspector.java (business-suite testFixtures), ThreadLocalCopyTaskDecorator.java (foundation)",
-        doc: "jpa-performance-guardrail.md", docLink: "../docs/02-architecture/jpa-performance-guardrail.md",
+        impl: "QueryCountInspector.java, HibernateQueryCounterInspector.java, QueryCountGuardExtension.java (business-suite), ThreadLocalCopyTaskDecorator.java (foundation)",
+        doc: "jpa-performance-guardrail.md", docLink: "../../docs/02-architecture/jpa-performance-guardrail.md",
         color: "linear-gradient(90deg, var(--accent-warning), var(--accent-danger))"
       },
       {
@@ -1731,7 +1731,7 @@
         title: "Next.js Live Diagnostics 관제 대시보드 (Diagnostics Live Hub)",
         desc: "어드민 시스템의 관제 포털 내에 실시간 대시보드를 구축하여 스프링 3대 기술 헌법 무결성, 최근 JPA 성능 쿼리 로깅, AI 자가성찰 Ralph Loop 2.0 타임라인 흔적, 그리고 8대 네이티브 엔진의 스키마 및 위상 맵 가동 배지를 한눈에 관제합니다. 전체 가버넌스 작동 현황의 실시간 가시성을 200% 이상 비주얼로 확보합니다.",
         badge1: "Frontend", badge2: "Observability", type1: "cyan", type2: "primary",
-        impl: "MonitoringHubClient.tsx (frontend), NetworkMonitoringApiController.java (foundation)",
+        impl: "MonitoringHubClient.tsx (frontend), NetworkMonitoringApiController.java (api-server)",
         doc: "실시간 대시보드 통합 연동 완료", docLink: null,
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))"
       },
@@ -1741,7 +1741,7 @@
         desc: "백엔드 기술 헌법 제16조(돌연변이 스코어 85% 이상 강제)를 자동 수호하기 위해, 빌드 시 소스코드에 지능형 돌연변이 버그를 바이트코드 수준에서 강제 주입하고 테스트 생존을 계측합니다. 캐시 기반 Incremental 최적화 및 AST 증분 컴파일 엔진을 도입하여 빌드 오버헤드를 92% 이상 경감했습니다.",
         badge1: "Backend", badge2: "Quality", type1: "primary", type2: "warning",
         impl: "build.gradle (root), gradle-pitest-plugin (api-server / business-suite)",
-        doc: "pitest-mutation-testing.md", docLink: "../docs/02-architecture/pitest-mutation-testing.md",
+        doc: "pitest-mutation-testing.md", docLink: "../../docs/02-architecture/pitest-mutation-testing.md",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-warning))"
       },
       {
@@ -1750,7 +1750,7 @@
         desc: "UX 헌법 제15조(디자인 일관성 및 HSL 팔레트 수호)에 따라, JSX className 내에 임의의 원색(plain red, blue, green 등)을 남용하는 것을 빌드 및 IDE 정적 분석 단에서 차단하고 HSL 기반 시맨틱 토큰(bg-primary 등) 사용을 강제하는 ESLint 규칙입니다. 브랜드 정체성을 정밀 수호합니다.",
         badge1: "Frontend", badge2: "Styling", type1: "cyan", type2: "success",
         impl: "eslint.config.mjs (frontend), local-theme/enforce-design-tokens AST Engine",
-        doc: "tailwind-lint-rules.md", docLink: "../docs/03-guides/tailwind-lint-rules.md",
+        doc: "tailwind-lint-rules.md", docLink: "../../docs/03-guides/tailwind-lint-rules.md",
         color: "linear-gradient(90deg, var(--accent-success), var(--accent-secondary))"
       },
       {
@@ -1759,7 +1759,7 @@
         desc: "커스텀 API 컨트롤러 패키지 하위의 모든 HTTP 엔드포인트 메서드에 @PreAuthorize 또는 @Secured 등 명시적인 권한 어노테이션 지정을 강제합니다. 누락 감지 시 JUnit 빌드 타임에 테스트를 즉시 실패 처리(Hard-Stop)하여 제로데이 API 인가 노출 가능성을 0.00%로 완벽 밀봉하며, 커스텀 @PermitAllRoute 어노테이션 선언으로 정합적 퍼블릭 라우팅 인가를 완수합니다.",
         badge1: "Backend", badge2: "Security", badge3: "Hard-Stop", type1: "primary", type2: "error", type3: "success",
         impl: "SecurityAuthAnnotationLinterTest.java (api-server), PermitAllRoute.java (foundation)",
-        doc: "security-hardening-playbook.md", docLink: "../docs/03-guides/security-hardening-playbook.md",
+        doc: "security-hardening-playbook.md", docLink: "../../docs/03-guides/security-hardening-playbook.md",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-primary))"
       },
       {
@@ -1768,7 +1768,7 @@
         desc: "E2E 테스트 시 마이크로 UI 변경이나 CSS 리팩토링으로 주 셀렉터(Primary Selector)가 유실되어 테스트 빌드가 깨지는 취약성을 원천 해소합니다. 또한, LayoutBreathingGuard 픽스처를 탑재하여 Next.js 렌더링 지연(Timing Issue)을 극복하고, UI 컴포넌트 면적당 텍스트 비율 및 40% 숨통 여백 비율 미달 여부를 실시간 계측하여 텔레메트리 보고서를 출력합니다.",
         badge1: "E2E", badge2: "Resilience", badge3: "Self-Healing", type1: "cyan", type2: "secondary", type3: "success",
         impl: "self-healing-agent.ts, layout-breathing-guard.ts, base-test.ts (frontend/e2e/fixtures)",
-        doc: "frontend/e2e/specs/ 하위 전체 브라우저 테스트 케이스 매핑", docLink: null,
+        doc: "e2e-self-healing-guide.md", docLink: "../../docs/03-guides/e2e-self-healing-guide.md",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-success))"
       },
       {
@@ -1777,7 +1777,7 @@
         desc: "빌드 및 통합 테스트가 실행될 때마다 모든 Flyway SQL 마이그레이션 스크립트를 정적 분석하여, DROP COLUMN, RENAME COLUMN, ALTER COLUMN TYPE, DEFAULT 값 없는 NOT NULL 컬럼 추가 등 구버전 앱의 SELECT/INSERT 쿼리를 즉각 파괴하거나 테이블 락(DDL Lock)을 유발하는 파괴적 DDL 안티패턴을 JUnit 빌드 단에서 사전에 완벽히 감지하여 컴파일 즉시 Hard-Stop 차단합니다. 긴급 상황 시 -- linter:ignore 주석으로 우회가 가능합니다.",
         badge1: "Database", badge2: "Stability", badge3: "Hard-Stop", type1: "error", type2: "primary", type3: "success",
         impl: "ZeroDowntimeMigrationLinterTest.java (api-server)",
-        doc: "zero-downtime-migration.md", docLink: "../docs/02-architecture/zero-downtime-migration.md",
+        doc: "zero-downtime-migration.md", docLink: "../../docs/02-architecture/zero-downtime-migration.md",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-warning), var(--accent-success))",
         isFullWidth: true
       }
