@@ -36,7 +36,9 @@ import { ProgramForm } from '@/components/admin/system/ProgramForm';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 
-const programSchema = z.object({
+import { ProgramDtoSchema } from '@/types/generated-zod';
+
+const programSchema = ProgramDtoSchema.partial().extend({
  prgrmFileNm: z.string()
  .min(1, '파일명은 필수입니다.')
  .max(60, '파일명은 60자 이내여야 합니다.'),

@@ -22,11 +22,11 @@ import java.io.Serializable;
 public class BlogUser extends BaseEntity {
 
     @Id
-    @Column(name = "blog_id", length = 20)
+    @Column(length = 20)
     private String blogId;
 
     @Id
-    @Column(name = "user_id", length = 20)
+    @Column(length = 20)
     private String userId;
 
     @Column(length = 1)

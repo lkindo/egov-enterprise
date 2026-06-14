@@ -27,7 +27,6 @@ public class GroupManage extends BaseEntity {
     @Column(length = 4000)
     private String groupDc;
 
-    @Column(name = "group_crt_ymd")
     @Builder.Default
     private LocalDateTime groupCrtYmd = LocalDateTime.now();
 

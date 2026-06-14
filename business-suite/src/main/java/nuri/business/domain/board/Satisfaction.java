@@ -26,13 +26,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stsfdgIdSeq")
     @SequenceGenerator(name = "stsfdgIdSeq", sequenceName = "sq_dgstfn_sn", allocationSize = 1)
-    @Column(name = "dgstfn_sn")
-    private Long dgstfnSn;
+        private Long dgstfnSn;
 
     @Column(nullable = false, length = 20)
     private String bbsId;
 
-    @Column(name = "pst_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String pstId;
 
     @Column(nullable = false)

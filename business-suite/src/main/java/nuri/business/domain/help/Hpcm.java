@@ -21,7 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Hpcm extends BaseEntity {
 
     @Id
-    @Column(name = "hlp_id", length = 20)
+    @Column(length = 20)
     private String hlpId;
 
     @Column(length = 3, nullable = false)

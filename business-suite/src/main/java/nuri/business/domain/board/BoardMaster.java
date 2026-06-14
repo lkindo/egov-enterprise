@@ -78,11 +78,11 @@ public class BoardMaster extends BaseEntity {
     private BoardMasterOption option;
 
     // --- [JPA Mapping] ---
-    @Column(name = "ans_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(name = "stsfdg_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     @Builder.Default
     private String stsfdgYn = "N";
 

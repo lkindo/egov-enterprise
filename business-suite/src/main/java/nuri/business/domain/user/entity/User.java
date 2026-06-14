@@ -30,7 +30,7 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String esntlId;
 
-    @Column(name = "user_id", nullable = false, length = 20, unique = true)
+    @Column(nullable = false, length = 20, unique = true)
     @NonNull
     private String userId;
 
@@ -57,7 +57,7 @@ public class User extends BaseEntity implements Serializable {
     private Integer chgPwdCnt;
 
     @Builder.Default
-    @Column(name = "lck_yn", length = 1)
+    @Column(length = 1)
     private String lckYn = "N";
 
     private Integer lckCnt;

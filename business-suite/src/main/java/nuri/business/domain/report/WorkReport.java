@@ -20,7 +20,7 @@ public class WorkReport extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "rpt_id", length = 20)
+    @Column(length = 20)
     private String rptId;
 
     @Column(length = 100, nullable = false)
@@ -29,7 +29,7 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(columnDefinition = "TEXT", length = 4000)
     private String rptCn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(length = 20)
     private String atchFileId;
 
     @Column(length = 12)

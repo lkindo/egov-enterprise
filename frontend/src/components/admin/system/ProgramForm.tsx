@@ -29,12 +29,12 @@ import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { toast } from 'sonner';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { ProgramDtoSchema } from '@/types/generated-zod';
 
-const formSchema = z.object({
+const formSchema = ProgramDtoSchema.extend({
   prgrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
   prgrmStrgPath: z.string().min(1, { message: "저장경로는 필수입니다." }),
   prgrmKornNm: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
-  prgrmExpln: z.string().optional(),
   url: z.string().min(1, { message: "URL은 필수입니다." }),
 });
 

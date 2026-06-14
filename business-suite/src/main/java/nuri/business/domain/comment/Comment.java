@@ -28,8 +28,7 @@ public class Comment extends BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answerNoSeq")
     @SequenceGenerator(name = "answerNoSeq", sequenceName = "ANSWER_NO_SEQ", allocationSize = 1)
-    @Column(name = "ans_sn")
-    private Long ansSn;
+        private Long ansSn;
 
     @Column(name = "pst_id", length = 20)
     private String pstId;

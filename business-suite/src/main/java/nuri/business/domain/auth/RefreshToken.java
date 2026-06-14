@@ -15,7 +15,7 @@ import java.time.Instant;
 @Builder
 public class RefreshToken {
     @Id
-    @Column(name = "user_id", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private String userId;
 
     @Column(nullable = false, unique = true, length = 4000)

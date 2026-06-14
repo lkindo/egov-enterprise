@@ -22,7 +22,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Faq extends BaseEntity {
 
     @Id
-    @Column(name = "faq_id", length = 20)
+    @Column(length = 20)
     private String faqId;
 
     @Column(length = 100, nullable = false)

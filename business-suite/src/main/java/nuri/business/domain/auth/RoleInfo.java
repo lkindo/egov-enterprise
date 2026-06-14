@@ -32,7 +32,6 @@ public class RoleInfo extends BaseEntity {
 
     private Integer roleSort;
 
-    @Column(name = "role_crt_ymd")
     @Builder.Default
     private LocalDate roleCrtYmd = LocalDate.now();
 

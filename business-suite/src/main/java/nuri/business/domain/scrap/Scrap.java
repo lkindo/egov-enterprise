@@ -21,7 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Scrap extends BaseEntity {
 
     @Id
-    @Column(name = "scrap_id", length = 20)
+    @Column(length = 20)
     private String scrapId;
 
     @Column(length = 20)

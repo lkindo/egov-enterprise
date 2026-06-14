@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class SysLog extends BaseEntity {
 
     @Id
-    @Column(name = "dmnd_id", length = 20)
+    @Column(length = 20)
     private String dmndId;
 
     @Column(length = 100)

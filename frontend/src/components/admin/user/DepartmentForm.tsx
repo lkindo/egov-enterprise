@@ -18,7 +18,9 @@ import { Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export const deptSchema = z.object({
+import { DeptManageDtoSchema } from '@/types/generated-zod';
+
+export const deptSchema = DeptManageDtoSchema.partial().extend({
   ognzNm: z.string().min(1, '부서명은 필수입니다.').max(20, '부서명은 20자 이내여야 합니다.'),
   ognzExpln: z.string().max(100, '설명은 100자 이내여야 합니다.').optional().or(z.literal('')),
 });

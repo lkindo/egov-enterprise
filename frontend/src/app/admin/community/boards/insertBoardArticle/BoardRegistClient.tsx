@@ -24,7 +24,9 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   loading: () => <Skeleton className="h-[400px] w-full" />
 });
 
-const boardSchema = z.object({
+import { BoardSaveRequestSchema } from '@/types/generated-zod';
+
+const boardSchema = BoardSaveRequestSchema.extend({
   pstTtl: z.string().min(1, '제목을 입력해주세요.'),
   pstCn: z.string().min(1, '내용을 입력해주세요.'),
   userNm: z.string().optional(),

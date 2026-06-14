@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 public class LoginLog extends BaseEntity {
 
     @Id
-    @Column(name = "log_id", length = 20)
+    @Column(length = 20)
     private String logId;
 
     @Column(length = 20)

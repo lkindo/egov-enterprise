@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 public class Banner extends BaseEntity {
 
     @Id
-    @Column(name = "bnr_id", length = 20)
+    @Column(length = 20)
     private String bnrId;
 
     @Column(length = 100, nullable = false)

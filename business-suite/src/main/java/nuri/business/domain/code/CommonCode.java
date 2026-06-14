@@ -33,7 +33,7 @@ public class CommonCode extends BaseEntity implements Serializable {
     private CommonCodeGroup commonCodeGroup;
 
     @Id
-    @Column(name = "dtl_cd", length = 12)
+    @Column(length = 12)
     @NonNull
     private String dtlCd; // 상세코드 -> dtlCd로 표준화
 

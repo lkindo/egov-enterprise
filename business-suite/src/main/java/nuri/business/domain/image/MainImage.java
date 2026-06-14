@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 public class MainImage extends BaseEntity {
 
     @Id
-    @Column(name = "img_id", length = 20)
+    @Column(length = 20)
     private String imgId;
 
     @Column(length = 100, nullable = false)

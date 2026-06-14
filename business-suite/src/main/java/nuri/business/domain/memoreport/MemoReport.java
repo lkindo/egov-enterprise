@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class MemoReport extends BaseEntity {
 
     @Id
-    @Column(name = "rpt_id", length = 20)
+    @Column(length = 20)
     private String rptId;
 
     @Column(length = 100, nullable = false)

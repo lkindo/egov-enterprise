@@ -34,7 +34,7 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 100)
     private String allInstNm;
 
-    @Column(name = "lwst_inst_nm", length = 100)
+    @Column(length = 100)
     private String lwstInstNm;
 
     @Column(length = 100)
@@ -52,10 +52,10 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 20)
     private String topInstCd;
 
-    @Column(name = "upr_inst_cd", length = 20)
+    @Column(length = 20)
     private String uprInstCd;
 
-    @Column(name = "reprs_inst_cd", length = 20)
+    @Column(length = 20)
     private String reprsInstCd;
 
     @Column(length = 2)
@@ -91,8 +91,7 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 8)
     private String crtrYmd;
 
-    @Column(name = "sort_ordr")
-    private Integer sortOrdr;
+        private Integer sortOrdr;
 
     private LocalDateTime crtDt;
 
@@ -109,14 +108,13 @@ public class InstitutionCodeRecptnLog {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @EqualsAndHashCode
     public static class InstitutionCodeRecptnLogId implements Serializable {
-        @Column(name = "ocrn_ymd", length = 8)
+        @Column(length = 8)
         private String ocrnYmd;
 
-        @Column(name = "inst_cd", length = 20)
+        @Column(length = 20)
         private String instCd;
 
-        @Column(name = "job_sn")
-        private Long jobSn;
+                private Long jobSn;
 
         @Builder
         public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {

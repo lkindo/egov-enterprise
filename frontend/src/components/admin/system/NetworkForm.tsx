@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
-import { commonSchemas } from '@/lib/validations/common';
 import * as z from 'zod';
 import {
   Form,
@@ -15,16 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { NetworkInfo } from '@/services/foundation/system/networkService';
-
-const networkSchema = z.object({
-  manageIem: commonSchemas.requiredString("관리항목"),
-  userNm: commonSchemas.requiredString("사용자명"),
-  ntwrkIp: z.string().regex(/^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/, "올바른 IPv4 주소를 입력하세요."),
-  subnet: z.string().min(1, "서브넷 마스크는 필수입니다."),
-  gtwy: z.string().min(1, "게이트웨이는 필수입니다."),
-  domnServer: z.string().optional(),
-  useYn: z.enum(['Y', 'N']),
-});
+import { networkSchema } from '@/lib/validation/schemas';
 
 type NetworkFormValues = z.infer<typeof networkSchema>;
 

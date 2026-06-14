@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 public class ReprtStats extends BaseEntity {
 
     @Id
-    @Column(name = "reprt_id", length = 20)
+    @Column(length = 20)
     private String reprtId;
 
     @Column(length = 255)

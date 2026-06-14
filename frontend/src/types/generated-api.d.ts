@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/informal-sanctions/{informalSanctionId}": {
+    "/api/v1/admin/system/ism/{informalSanctionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,7 +254,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/ism/{informalSanctionId}": {
+    "/api/v1/informal-sanctions/{informalSanctionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -593,7 +593,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -612,7 +612,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -631,7 +631,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{tmpltId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -650,7 +650,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -669,7 +669,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -687,7 +687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1559,86 +1559,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_2"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/operation/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/faqs": {
         parameters: {
             query?: never;
@@ -2034,7 +1954,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys": {
+    "/api/v1/surveys": {
         parameters: {
             query?: never;
             header?: never;
@@ -2052,7 +1972,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys": {
+    "/api/v1/admin/system/surveys": {
         parameters: {
             query?: never;
             header?: never;
@@ -2548,6 +2468,86 @@ export interface paths {
         get: operations["getAllRewards"];
         put?: never;
         post: operations["createReward"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3275,166 +3275,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_3"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/operation/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_3"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/dashboard": {
         parameters: {
             query?: never;
@@ -4046,6 +3886,166 @@ export interface paths {
          * @description 특정 SMS의 수신자 목록을 조회합니다.
          */
         get: operations["getSmsRecipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4846,6 +4846,11 @@ export interface components {
              * @example admin
              */
             crtrId?: string;
+            /**
+             * @description 사용 여부
+             * @example Y
+             */
+            useYn?: string;
             /** @description 하위 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
@@ -6301,30 +6306,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseListFileDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["FileDto"][];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        FileDto: {
-            atchFileId?: string;
-            /** Format: int32 */
-            fileSn?: number;
-            fileStreCours?: string;
-            streFileNm?: string;
-            orignlFileNm?: string;
-            fileExtsn?: string;
-            /** Format: int64 */
-            fileMg?: number;
-            fileCn?: string;
-            /** Format: date-time */
-            crtDt?: string;
-        };
         ApiResponsePageResponseFaqDto: {
             success?: boolean;
             /** Format: int32 */
@@ -7728,6 +7709,30 @@ export interface components {
             data?: components["schemas"]["SmsRecptnDto"][];
             /** Format: date-time */
             timestamp?: string;
+        };
+        ApiResponseListFileDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["FileDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        FileDto: {
+            atchFileId?: string;
+            /** Format: int32 */
+            fileSn?: number;
+            fileStreCours?: string;
+            streFileNm?: string;
+            orignlFileNm?: string;
+            fileExtsn?: string;
+            /** Format: int64 */
+            fileMg?: number;
+            fileCn?: string;
+            /** Format: date-time */
+            crtDt?: string;
         };
         ApiResponsePageResponseEventInfoDto: {
             success?: boolean;
@@ -11884,110 +11889,6 @@ export interface operations {
             };
         };
     };
-    uploadFiles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
     getFaqList: {
         parameters: {
             query: {
@@ -13997,6 +13898,110 @@ export interface operations {
             };
         };
     };
+    uploadFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
     getAllExternalHr: {
         parameters: {
             query?: {
@@ -14973,186 +14978,6 @@ export interface operations {
             };
         };
     };
-    downloadFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    getFileList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
     getDashboardData: {
         parameters: {
             query?: never;
@@ -15917,6 +15742,186 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListSmsRecptnDto"];
+                };
+            };
+        };
+    };
+    downloadFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    getFileList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };

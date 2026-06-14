@@ -29,10 +29,9 @@ public class MenuAuthority extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class MenuAuthorityId implements Serializable {
-        @Column(name = "authrt_cd", length = 12)
+        @Column(length = 12)
         private String authrtCd;
 
-        @Column(name = "menu_sn")
-        private Long menuSn;
+                private Long menuSn;
     }
 }

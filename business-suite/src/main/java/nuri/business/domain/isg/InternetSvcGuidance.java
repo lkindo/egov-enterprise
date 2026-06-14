@@ -21,7 +21,7 @@ import org.hibernate.annotations.DynamicUpdate;
 public class InternetSvcGuidance extends BaseEntity {
 
     @Id
-    @Column(name = "itnt_svc_id", length = 20)
+    @Column(length = 20)
     private String itntSvcId;
 
     @Column(length = 100)

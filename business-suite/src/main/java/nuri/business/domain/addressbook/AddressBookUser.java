@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 public class AddressBookUser extends BaseEntity {
 
     @Id
-    @Column(name = "adbk_constnt_id", length = 20)
+    @Column(length = 20)
     private String adbkConstntId;
 
     @ManyToOne(fetch = FetchType.LAZY)

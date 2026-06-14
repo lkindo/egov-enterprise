@@ -26,7 +26,9 @@ import dynamic from 'next/dynamic';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-const rewardSchema = z.object({
+import { RewardManageDtoSchema } from '@/types/generated-zod';
+
+const rewardSchema = RewardManageDtoSchema.extend({
   rwardNm: z.string().min(1, '포상 명칭은 필수 입력 사항입니다.'),
   rwardwnrId: z.string().min(1, '수상자 ID는 필수 입력 사항입니다.'),
   rwardCode: z.string().min(1, '포상 코드는 필수 입력 사항입니다.'),

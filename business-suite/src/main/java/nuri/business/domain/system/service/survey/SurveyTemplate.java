@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 public class SurveyTemplate extends BaseEntity {
 
     @Id
-    @Column(name = "srvy_tmplt_id", length = 20)
+    @Column(length = 20)
     private String srvyTmpltId;
 
     @Column(length = 12)

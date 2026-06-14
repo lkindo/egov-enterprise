@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 public class Diary extends BaseEntity implements Serializable {
 
     @Id
-    @Column(name = "diary_id", length = 20)
+    @Column(length = 20)
     private String diaryId;
 
     @Column(length = 20)

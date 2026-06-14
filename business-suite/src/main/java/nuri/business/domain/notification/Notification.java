@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 public class Notification extends BaseEntity {
 
     @Id
-    @Column(name = "noti_sn", length = 20)
+    @Column(length = 20)
     private String notiSn;
 
     @Column(length = 100)

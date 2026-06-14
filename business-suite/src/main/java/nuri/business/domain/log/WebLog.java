@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class WebLog extends BaseEntity {
 
     @Id
-    @Column(name = "dmnd_id", length = 20)
+    @Column(length = 20)
     private String dmndId;
 
     @Column(length = 1000)
@@ -37,8 +37,7 @@ public class WebLog extends BaseEntity {
     @Column(length = 8)
     private String occrYmd;
 
-    @Column(name = "prcs_tm")
-    private Long prcsTm;
+        private Long prcsTm;
 
     public WebLog(String dmndId, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {
         this.dmndId = dmndId;

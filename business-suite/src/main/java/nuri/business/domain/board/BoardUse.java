@@ -25,11 +25,11 @@ import java.io.Serializable;
 public class BoardUse extends BaseTimeEntity implements Serializable {
 
     @Id
-    @Column(name = "bbs_id", length = 20)
+    @Column(length = 20)
     private String bbsId;
 
     @Id
-    @Column(name = "trgt_id", length = 20)
+    @Column(length = 20)
     private String trgtId;
 
     @Column(length = 12)

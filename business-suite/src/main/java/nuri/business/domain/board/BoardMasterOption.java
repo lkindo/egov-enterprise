@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 public class BoardMasterOption extends BaseEntity {
 
     @Id
-    @Column(name = "bbs_id", length = 20)
+    @Column(length = 20)
     private String bbsId;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -24,11 +24,11 @@ public class BoardMasterOption extends BaseEntity {
     @JoinColumn(name = "bbs_id")
     private BoardMaster boardMaster;
 
-    @Column(name = "ans_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(name = "stsfdg_yn", length = 1, nullable = false)
+    @Column(length = 1, nullable = false)
     @Builder.Default
     private String stsfdgYn = "N";
 

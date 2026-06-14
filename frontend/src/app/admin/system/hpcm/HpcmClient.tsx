@@ -26,7 +26,9 @@ import dynamic from 'next/dynamic';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-const hpcmSchema = z.object({
+import { HpcmDtoSchema } from '@/types/generated-zod';
+
+const hpcmSchema = HpcmDtoSchema.partial().extend({
   hpcmSe: z.string().min(1, '도움말 구분은 필수 입력 사항입니다.'),
   hpcmNm: z.string().min(1, '도움말 명칭은 필수 입력 사항입니다.'),
   hpcmDc: z.string().min(1, '도움말 설명은 필수 입력 사항입니다.'),

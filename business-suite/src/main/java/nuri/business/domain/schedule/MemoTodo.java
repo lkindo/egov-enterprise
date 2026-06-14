@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class MemoTodo extends BaseEntity {
 
     @Id
-    @Column(name = "todo_id", length = 20)
+    @Column(length = 20)
     private String todoId;
 
     @Column(length = 100, nullable = false)

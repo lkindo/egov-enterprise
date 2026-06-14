@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class CommonCodeCategory extends BaseEntity {
 
     @Id
-    @Column(name = "clsf_cd", length = 12)
+    @Column(length = 12)
     private String clsfCd;
 
     @Column(length = 100)

@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class RewardManage extends BaseEntity {
 
     @Id
-    @Column(name = "rwrd_id", length = 20)
+    @Column(length = 20)
     private String rwrdId;
 
     @Column(length = 20, nullable = false)

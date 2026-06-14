@@ -27,7 +27,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class SystemPolicy extends BaseEntity {
 
     @Id
-    @Column(name = "plcy_type_cd", length = 12)
+    @Column(length = 12)
     private String plcyTypeCd;
 
     @Column(length = 100, nullable = false)

@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 public class LeaderStatus extends BaseEntity {
 
     @Id
-    @Column(name = "leader_id", length = 20)
+    @Column(length = 20)
     private String leaderId;
 
     @Column(length = 12)

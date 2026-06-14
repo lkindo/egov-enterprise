@@ -22,7 +22,7 @@ import java.io.Serializable;
 public class Community extends BaseEntity implements Serializable {
 
     @Id
-    @Column(name = "cmnty_id", length = 20, nullable = false)
+    @Column(length = 20, nullable = false)
     private String cmntyId;
 
     @Column(length = 100)

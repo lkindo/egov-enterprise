@@ -21,7 +21,7 @@ import org.hibernate.annotations.DynamicUpdate;
 public class NoteRecptn extends BaseEntity {
 
     @Id
-    @Column(name = "note_rcptn_id", length = 20)
+    @Column(length = 20)
     private String noteRcptnId;
 
     @ManyToOne(fetch = FetchType.LAZY)

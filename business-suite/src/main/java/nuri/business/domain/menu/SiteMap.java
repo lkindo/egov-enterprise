@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class SiteMap extends BaseEntity {
 
     @Id
-    @Column(name = "mpng_crt_id", length = 20)
+    @Column(length = 20)
     private String mpngCrtId;
 
     @Column(length = 20)

@@ -56,7 +56,9 @@ import {
  FormMessage,
 } from '@/components/ui/form';
 
-const bannerSchema = z.object({
+import { BannerDtoSchema, PopupDtoSchema } from '@/types/generated-zod';
+
+const bannerSchema = BannerDtoSchema.extend({
  bnrNm: z.string().min(1, '배너 명칭은 필수 입력 사항입니다.'),
  linkUrl: z.string().optional(),
  sortOrdr: z.coerce.number().min(0, '정렬 순서는 0 이상의 숫자여야 합니다.'),
@@ -64,14 +66,14 @@ const bannerSchema = z.object({
  bnrExpln: z.string().optional(),
 });
 
-const popupSchema = z.object({
+const popupSchema = PopupDtoSchema.extend({
  popupTtlNm: z.string().min(1, '팝업 제목은 필수 입력 사항입니다.'),
  ntceBgnde: z.string().min(1, '게시 시작일은 필수입니다.'),
  ntceEndde: z.string().min(1, '게시 종료일은 필수입니다.'),
- popupWdthPstn: z.coerce.number().min(0),
- popupVrtcPstn: z.coerce.number().min(0),
- popupWdthSz: z.coerce.number().min(100),
- popupVrtcSz: z.coerce.number().min(100),
+ popupWdthPstn: z.coerce.number().min(0) as any,
+ popupVrtcPstn: z.coerce.number().min(0) as any,
+ popupWdthSz: z.coerce.number().min(100) as any,
+ popupVrtcSz: z.coerce.number().min(100) as any,
  ntceYn: z.enum(['Y', 'N']),
  stopvewSetupYn: z.enum(['Y', 'N']),
 }).refine(data => {

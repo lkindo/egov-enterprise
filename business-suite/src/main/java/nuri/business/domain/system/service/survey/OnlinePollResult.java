@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 public class OnlinePollResult extends BaseEntity {
 
     @Id
-    @Column(name = "poll_rslt_id", length = 20)
+    @Column(length = 20)
     private String pollRsltId;
 
     @Column(length = 20, nullable = false)

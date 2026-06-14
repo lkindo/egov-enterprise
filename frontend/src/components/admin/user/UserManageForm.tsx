@@ -19,7 +19,9 @@ import { cn } from '@/lib/utils';
 import { Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const userSchema = z.object({
+import { UserDtoSchema } from '@/types/generated-zod';
+
+export const userSchema = UserDtoSchema.partial().extend({
   userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
   userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
   emlAddr: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),

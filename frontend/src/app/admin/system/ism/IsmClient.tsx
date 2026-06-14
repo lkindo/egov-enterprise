@@ -40,7 +40,9 @@ import {
  FormMessage,
 } from '@/components/ui/form';
 
-const ismSchema = z.object({
+import { InformalSanctionDtoSchema } from '@/types/generated-zod';
+
+const ismSchema = InformalSanctionDtoSchema.partial().extend({
  returnResn: z.string().min(1, '의결 의견은 필수 입력 사항입니다.'),
 });
 

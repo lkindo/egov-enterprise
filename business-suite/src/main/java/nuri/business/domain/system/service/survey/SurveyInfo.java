@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 public class SurveyInfo extends BaseEntity {
 
     @Id
-    @Column(name = "srvy_id", length = 20)
+    @Column(length = 20)
     private String srvyId;
 
     @Column(length = 100, nullable = false)

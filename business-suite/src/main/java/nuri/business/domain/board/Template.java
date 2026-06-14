@@ -18,20 +18,20 @@ import lombok.Builder;
 public class Template extends BaseEntity {
 
     @Id
-    @Column(name = "tmplt_id", length = 20)
+    @Column(length = 20)
     private String tmpltId;
 
-    @Column(name = "tmplt_nm", nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String tmpltNm;
 
-    @Column(name = "tmplt_path", nullable = false, length = 1000)
+    @Column(nullable = false, length = 1000)
     private String tmpltPath;
 
-    @Column(name = "use_yn", nullable = false, length = 1)
+    @Column(nullable = false, length = 1)
     @Builder.Default
     private String useYn = "Y";
 
-    @Column(name = "tmplt_se_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String tmpltSeCd;
 
     public void update(String tmpltNm, String tmpltPath, String useYn, String tmpltSeCd) {

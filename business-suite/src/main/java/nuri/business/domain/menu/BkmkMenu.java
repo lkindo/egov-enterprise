@@ -39,10 +39,9 @@ public class BkmkMenu extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class BkmkMenuId implements Serializable {
-        @Column(name = "menu_id")
-        private Long menuId;
+                private Long menuId;
 
-        @Column(name = "user_id", length = 20)
+        @Column(length = 20)
         private String userId;
     }
 }

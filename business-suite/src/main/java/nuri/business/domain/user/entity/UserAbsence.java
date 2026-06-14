@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class UserAbsence extends BaseEntity {
 
     @Id
-    @Column(name = "user_id", length = 20)
+    @Column(length = 20)
     private String userId;
 
     @Column(length = 1, nullable = false)

@@ -127,7 +127,9 @@ const PERMISSIONS = [
  { id: 'comment', name: '댓글 작성' },
 ];
 
-const formSchema = z.object({
+import { BoardMasterDtoSchema } from '@/types/generated-zod';
+
+const formSchema = BoardMasterDtoSchema.extend({
  bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
  bbsExpln: z.string(),
  ansPsbltyYn: z.boolean(),

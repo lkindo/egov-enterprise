@@ -28,7 +28,7 @@ public class AddressBook extends BaseEntity {
     private java.util.List<AddressBookUser> addressBookUsers = new java.util.ArrayList<>();
 
     @Id
-    @Column(name = "adbk_id", length = 20)
+    @Column(length = 20)
     private String adbkId;
 
     public void addAddressBookUser(AddressBookUser user) {
@@ -43,7 +43,7 @@ public class AddressBook extends BaseEntity {
     @Column(length = 12)
     private String rlsScopeCd;
 
-    @Column(name = "trget_ognz_id", length = 20)
+    @Column(length = 20)
     private String trgetOgnzId;
 
     @Column(length = 1)

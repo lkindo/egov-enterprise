@@ -69,8 +69,9 @@ import { DomainCluster, GroupCode } from '@/types/foundation/code';
 
 const INDENTATION_WIDTH = 24;
 
-// 공통코드 상세 등록/수정 전용 Zod 스키마 (useAt 및 codeId 누락 폼 불일치 완전 해소)
-const codeDetailFormSchema = z.object({
+import { CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
+
+const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
  dtlCd: z.string().min(1, '코드 식별자는 필수입니다.').max(12, '상세코드는 12자 이하로 입력해주세요.'),
  dtlCdNm: z.string().min(1, '표기 레이블은 필수입니다.').max(100, '상세코드명은 100자 이하로 입력해주세요.'),
  useYn: z.enum(['Y', 'N']).default('Y'),

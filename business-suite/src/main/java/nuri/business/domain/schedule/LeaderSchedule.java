@@ -20,7 +20,7 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "schdl_id", length = 20)
+    @Column(length = 20)
     private String schdlId;
 
     @Column(length = 12)

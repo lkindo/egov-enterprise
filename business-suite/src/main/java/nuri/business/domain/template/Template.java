@@ -18,19 +18,19 @@ import lombok.experimental.SuperBuilder;
 public class Template extends BaseEntity {
 
     @Id
-    @Column(name = "tmplt_id", length = 20)
+    @Column(length = 20)
     private String tmpltId;
 
-    @Column(name = "tmplt_nm", length = 100, nullable = false)
+    @Column(length = 100, nullable = false)
     private String tmpltNm;
 
-    @Column(name = "tmplt_se_cd", length = 12, nullable = false)
+    @Column(length = 12, nullable = false)
     private String tmpltSeCd;
 
-    @Column(name = "tmplt_path", length = 1000)
+    @Column(length = 1000)
     private String tmpltPath;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(length = 1)
     private String useYn;
 
     // ----- [Legacy Getter/Setter & Builder Aliases] -----

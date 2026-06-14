@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class Sms extends BaseEntity {
 
     @Id
-    @Column(name = "sms_id", length = 20)
+    @Column(length = 20)
     private String smsId;
 
     @Column(length = 13, nullable = false)

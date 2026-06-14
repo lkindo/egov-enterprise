@@ -22,10 +22,10 @@ import org.springframework.data.annotation.LastModifiedBy;
 public abstract class BaseEntity extends BaseTimeEntity {
 
     @CreatedBy
-    @Column(name = "frst_rgtr_id", updatable = false, length = 20)
+    @Column(updatable = false, length = 20)
     protected String frstRgtrId;
 
     @LastModifiedBy
-    @Column(name = "last_mdfr_id", length = 20)
+    @Column(length = 20)
     protected String lastMdfrId;
 }

@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import { renderHook, waitFor } from '@testing-library/react';
 import { useUser } from '../use-user';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

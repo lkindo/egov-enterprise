@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,21 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/system/ntwrksvc-monitoring")
 @RequiredArgsConstructor
 public class NetworkMonitoringApiController {
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NetworkDto {
+        private String ntwrkId;
+        private String manageIem;
+        private String ntwrkIp;
+        private String gtwy;
+        private String subnet;
+        private String domnServer;
+        private String userNm;
+        private String useYn;
+    }
 
     @Data
     @Builder
@@ -58,5 +75,26 @@ public class NetworkMonitoringApiController {
         int totCnt = list.size();
         
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+    }
+
+    @Operation(summary = "네트워크 기초 정보 등록")
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> createNetwork(@RequestBody NetworkDto networkDto) {
+        log.info("Create network node: {}", networkDto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "네트워크 정보 수정")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateNetwork(@PathVariable String id, @RequestBody NetworkDto networkDto) {
+        log.info("Update network node id: {}, data: {}", id, networkDto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "네트워크 정보 삭제")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteNetwork(@PathVariable String id) {
+        log.info("Delete network node id: {}", id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public class PrivacyLog extends BaseEntity {
 
     @Id
-    @Column(name = "dmnd_id", length = 20)
+    @Column(length = 20)
     private String dmndId;
 
     private LocalDateTime inqDt;

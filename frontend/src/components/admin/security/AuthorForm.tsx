@@ -17,7 +17,9 @@ import { AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { cn } from '@/lib/utils';
 import { Zap, Key, ShieldCheck, Binary } from 'lucide-react';
 
-export const authorSchema = z.object({
+import { RoleManageDtoSchema } from '@/types/generated-zod';
+
+export const authorSchema = RoleManageDtoSchema.partial().extend({
   authrtCd: z.string()
     .min(1, '권한 코드는 필수입니다.')
     .max(30, '권한 코드는 30자 이내여야 합니다.')

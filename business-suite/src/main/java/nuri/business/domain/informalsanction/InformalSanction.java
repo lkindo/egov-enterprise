@@ -28,7 +28,7 @@ public class InformalSanction extends BaseEntity {
     private Integer version;
 
     @Id
-    @Column(name = "ifml_atrz_id", length = 20)
+    @Column(length = 20)
     private String ifmlAtrzId;
 
     @Column(length = 12, nullable = false)

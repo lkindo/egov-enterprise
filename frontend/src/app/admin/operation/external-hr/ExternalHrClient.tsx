@@ -24,7 +24,9 @@ import dynamic from 'next/dynamic';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-const externalHrSchema = z.object({
+import { ExternalHrDtoSchema } from '@/types/generated-zod';
+
+const externalHrSchema = ExternalHrDtoSchema.extend({
   otsdHrNm: z.string().min(1, '성명은 필수 입력 사항입니다.'),
   ogdpInstNm: z.string().min(1, '소속기관은 필수 입력 사항입니다.'),
   areaNo: z.string().min(1, '지역번호는 필수입니다.').max(4),

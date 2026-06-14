@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class InstitutionCode extends BaseEntity {
  
     @Id
-    @Column(name = "inst_cd", length = 20)
+    @Column(length = 20)
     private String instCd;
  
     @Column(length = 100)

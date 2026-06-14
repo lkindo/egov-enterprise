@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 public class Popup extends BaseEntity {
 
     @Id
-    @Column(name = "popup_id", length = 20)
+    @Column(length = 20)
     private String popupId;
 
     @Column(length = 100, nullable = false)

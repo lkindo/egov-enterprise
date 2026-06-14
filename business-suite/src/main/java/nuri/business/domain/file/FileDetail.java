@@ -34,8 +34,7 @@ public class FileDetail extends BaseEntity {
     @Setter
     private FileMaster fileMaster;
 
-    @Column(name = "atch_file_seq")
-    private Integer atchFileSeq;
+        private Integer atchFileSeq;
 
     @Column(length = 1000)
     private String fileStrgPath; // 파일저장경로

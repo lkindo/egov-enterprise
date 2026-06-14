@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 public class IndividualPage extends BaseEntity {
 
     @Id
-    @Column(name = "page_id", length = 20)
+    @Column(length = 20)
     private String pageId;
 
     @Column(length = 300, nullable = false)

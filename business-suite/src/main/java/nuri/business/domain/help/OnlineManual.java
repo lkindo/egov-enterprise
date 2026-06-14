@@ -21,7 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class OnlineManual extends BaseEntity {
 
     @Id
-    @Column(name = "onln_mnl_id", length = 20)
+    @Column(length = 20)
     private String onlnMnlId;
 
     @Column(length = 100, nullable = false)

@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 public class Blog extends BaseEntity {
 
     @Id
-    @Column(name = "blog_id", length = 20)
+    @Column(length = 20)
     private String blogId;
 
     @Column(nullable = false, length = 300)

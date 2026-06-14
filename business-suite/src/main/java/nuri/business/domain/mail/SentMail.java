@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class SentMail extends BaseEntity {
 
     @Id
-    @Column(name = "msg_id", length = 20)
+    @Column(length = 20)
     private String msgId;
 
     @Column(length = 100, nullable = false)

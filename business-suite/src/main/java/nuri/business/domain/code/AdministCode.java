@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class AdministCode extends BaseEntity {
 
     @Id
-    @Column(name = "admdst_cd", length = 12)
+    @Column(length = 12)
     private String admdstCd;
 
     @Column(length = 12)

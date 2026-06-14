@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 public class OnlinePollArticle extends BaseEntity {
 
     @Id
-    @Column(name = "poll_artcl_id", length = 20)
+    @Column(length = 20)
     private String pollArtclId;
 
     @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)

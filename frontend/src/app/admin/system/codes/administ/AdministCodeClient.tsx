@@ -39,7 +39,9 @@ import dynamic from 'next/dynamic';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-const administCodeSchema = z.object({
+import { AdministCodeDtoSchema } from '@/types/generated-zod';
+
+const administCodeSchema = AdministCodeDtoSchema.extend({
   admdstCd: z.string().min(1, '식별 코드는 필수 입력 사항입니다.').max(10, '식별 코드는 최대 10자리입니다.'),
   admdstZoneNm: z.string().min(1, '행정구역명은 필수 입력 사항입니다.'),
   admdstSeCd: z.string().min(1, '구분은 필수 입력 사항입니다.'),

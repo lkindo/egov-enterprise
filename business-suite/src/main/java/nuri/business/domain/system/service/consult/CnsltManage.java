@@ -25,7 +25,7 @@ import lombok.Builder;
 public class CnsltManage extends BaseEntity {
 
     @Id
-    @Column(name = "dscsn_id", length = 20)
+    @Column(length = 20)
     private String dscsnId;
 
     @Column(length = 100)

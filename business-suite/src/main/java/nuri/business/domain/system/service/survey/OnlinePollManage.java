@@ -29,7 +29,7 @@ import java.util.List;
 public class OnlinePollManage extends BaseEntity {
 
     @Id
-    @Column(name = "poll_id", length = 20)
+    @Column(length = 20)
     private String pollId;
 
     @Column(length = 100, nullable = false)
