@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,11 @@ import { PageHeader } from '@/app/components/layout/page-header';
 
 export default function PollManagePage() {
   const router = useRouter();
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
   const [params, setParams] = useState<PollSearchParams>({
     page: 0,
     size: 10,
@@ -70,9 +75,8 @@ export default function PollManagePage() {
     {
       header: '상태',
       accessor: (poll) => {
-        const today = new Date();
         const end = new Date(poll.pollEndYmd);
-        const isActive = end >= today;
+        const isActive = now ? end >= now : false;
         return (
           <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${isActive
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
@@ -132,7 +136,7 @@ export default function PollManagePage() {
 
       <HubMetricGrid>
         <HubMetricCard title="전체 설문" value={data?.total || 0} icon={Layers} color="primary" />
-        <HubMetricCard title="진행중" value={polls.filter(p => new Date(p.pollEndYmd) >= new Date()).length} icon={Zap} color="emerald" status="활성" />
+        <HubMetricCard title="진행중" value={now ? polls.filter(p => new Date(p.pollEndYmd) >= now).length : 0} icon={Zap} color="emerald" status="활성" />
         <HubMetricCard title="참여 노드" value="2.4k" icon={Activity} color="indigo" />
         <HubMetricCard title="데이터 상태" value="Normal" icon={RefreshCcw} color="amber" />
       </HubMetricGrid>

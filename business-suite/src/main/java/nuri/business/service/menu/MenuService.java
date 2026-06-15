@@ -10,6 +10,7 @@ import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.program.dto.ProgramDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -222,8 +223,10 @@ public class MenuService {
     }
 
 
-    public List<Program> getAllPrograms() {
-        return programRepository.findAll();
+    public List<ProgramDto> getAllPrograms() {
+        return programRepository.findAll().stream()
+                .map(ProgramDto::from)
+                .collect(Collectors.toList());
     }
 
     public List<MenuCreateDto> selectMenuCreatManagList(@NonNull BaseSearchDto searchVO) {

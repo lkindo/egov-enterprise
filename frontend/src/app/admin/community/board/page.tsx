@@ -212,16 +212,29 @@ function CommunityBoardContent() {
 }
 
 export default function CommunityBoardPage() {
- return (
- <Suspense fallback={
- <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
- <div className="w-16 h-11 rounded-lg bg-primary/5 flex items-center justify-center animate-bounce">
- <Loader2 className="w-8 h-8 text-primary animate-spin" />
- </div>
- <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.5em] animate-pulse">Syncing Matrix Stream...</p>
- </div>
- }>
- <CommunityBoardContent />
- </Suspense>
- );
+  return (
+    <Suspense fallback={
+      <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 py-8 animate-pulse">
+        {/* PageHeader 1:1 스켈레톤 */}
+        <div className="flex justify-between items-center pb-6 border-b border-slate-100">
+          <div className="space-y-2 w-1/3">
+            <div className="h-8 bg-slate-200 rounded-lg w-3/4" />
+            <div className="h-4 bg-slate-100/80 rounded-lg w-1/2" />
+          </div>
+          <div className="h-10 bg-slate-200 rounded-lg w-28" />
+        </div>
+        {/* StandardSearchFilter 1:1 스켈레톤 */}
+        <div className="h-16 bg-slate-100/80 rounded-xl border border-slate-100" />
+        {/* StandardDataTable 1:1 스켈레톤 */}
+        <div className="space-y-3">
+          <div className="h-12 bg-slate-200/80 rounded-lg" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 bg-slate-100/50 rounded-lg border border-slate-50" />
+          ))}
+        </div>
+      </div>
+    }>
+      <CommunityBoardContent />
+    </Suspense>
+  );
 }

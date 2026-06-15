@@ -33,4 +33,15 @@ public class ProgramDto {
     @Schema(description = "프로그램 설명")
     @Size(max = 4000)
     private String prgrmExpln;
+
+    public static ProgramDto from(nuri.business.domain.program.Program entity) {
+        if (entity == null) return null;
+        return ProgramDto.builder()
+                .prgrmFileNm(entity.getPrgrmFileNm())
+                .prgrmStrgPath(entity.getPrgrmStrgPath())
+                .prgrmKornNm(entity.getPrgrmKornNm())
+                .url(entity.getUrl())
+                .prgrmExpln(entity.getPrgrmExpln())
+                .build();
+    }
 }

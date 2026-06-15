@@ -5,10 +5,12 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
+import nuri.business.service.template.dto.TemplateDto;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 템플릿 정보 서비스
@@ -23,22 +25,28 @@ public class TmplatInfoService extends BaseAbstractService {
         this.templateRepository = required(templateRepository, "TemplateRepository 는 null 일 수 없습니다");
     }
 
-    public List<Template> selectTmplatInfoList() {
-        return templateRepository.findAll();
+    public List<TemplateDto> selectTmplatInfoList() {
+        return templateRepository.findAll().stream()
+                .map(TemplateDto::from)
+                .collect(Collectors.toList());
     }
 
-    public List<Template> selectTmplatInfoListByType(String seCode) {
-        return templateRepository.findByTmpltSeCd(seCode);
+    public List<TemplateDto> selectTmplatInfoListByType(String seCode) {
+        return templateRepository.findByTmpltSeCd(seCode).stream()
+                .map(TemplateDto::from)
+                .collect(Collectors.toList());
     }
 
-    public Template selectTmplatInfoDetail(String tmplatId) {
-        return templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
+    public TemplateDto selectTmplatInfoDetail(String tmplatId) {
+        Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        return TemplateDto.from(template);
     }
 
     @Transactional
-    public void insertTmplatInfo(Template template) {
-        templateRepository.save(required(template, "템플릿 정보는 null 일 수 없습니다"));
+    public void insertTmplatInfo(TemplateDto templateDto) {
+        required(templateDto, "템플릿 정보는 null 일 수 없습니다");
+        templateRepository.save(templateDto.toEntity());
     }
 
     @Transactional

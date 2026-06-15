@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { ApiErrorNotifier } from './components/ui/api-error-notifier';
 import { StandardErrorBoundary } from './components/ui/standard-error-boundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { MotionConfig } from 'framer-motion';
 
 const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
 const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
@@ -56,27 +57,29 @@ export default function Providers({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ConfirmProvider>
-          <GlobalShortcutProvider>
-            <AuthProvider initialUser={initialUser}>
-              <LayoutProvider>
-                <WebSocketProvider>
-                  <TooltipProvider delayDuration={0}>
-                    <StandardErrorBoundary>
-                      <ApiErrorNotifier />
-                      {children}
-                    </StandardErrorBoundary>
-                    <GlobalCommandCenter />
-                    <SessionExpiryWarning />
-                    <SmartOnboardingHub />
-                  </TooltipProvider>
-                </WebSocketProvider>
-              </LayoutProvider>
-            </AuthProvider>
-          </GlobalShortcutProvider>
-        </ConfirmProvider>
-      </ToastProvider>
+      <MotionConfig reducedMotion="user">
+        <ToastProvider>
+          <ConfirmProvider>
+            <GlobalShortcutProvider>
+              <AuthProvider initialUser={initialUser}>
+                <LayoutProvider>
+                  <WebSocketProvider>
+                    <TooltipProvider delayDuration={0}>
+                      <StandardErrorBoundary>
+                        <ApiErrorNotifier />
+                        {children}
+                      </StandardErrorBoundary>
+                      <GlobalCommandCenter />
+                      <SessionExpiryWarning />
+                      <SmartOnboardingHub />
+                    </TooltipProvider>
+                  </WebSocketProvider>
+                </LayoutProvider>
+              </AuthProvider>
+            </GlobalShortcutProvider>
+          </ConfirmProvider>
+        </ToastProvider>
+      </MotionConfig>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

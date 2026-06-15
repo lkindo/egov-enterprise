@@ -26,7 +26,10 @@ export const commonRules = {
 
 export const pollSchema = OnlinePollManageDtoSchema.extend({
   pollId: z.string().optional(),
+  pollNm: commonRules.required('설문 주제는 필수입니다.'),
   pollDsuseYn: z.string().optional().default('N'),
+  pollBgngYmd: z.string().min(0).max(10).optional(),
+  pollEndYmd: z.string().min(0).max(10).optional(),
 }).refine(data => {
   if (data.pollBgngYmd && data.pollEndYmd) {
     return new Date(data.pollEndYmd) >= new Date(data.pollBgngYmd);
@@ -46,6 +49,7 @@ export const smsSchema = SmsDtoSchema.extend({
 export const menuSchema = MenuDtoSchema.extend({
   menuNo: z.coerce.number().min(1, '메뉴 번호는 필수입니다.'),
   upperMenuId: z.coerce.number().optional().default(0),
+  menuOrdr: z.coerce.number(),
 });
 
 export const boardMasterSchema = BoardMasterDtoSchema.extend({

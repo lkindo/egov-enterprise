@@ -45,6 +45,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    testImplementation libs.archunit.junit5
+    testImplementation libs.archunit
 
     // testFixtures dependencies
     testFixturesApi project(':foundation')
@@ -64,7 +66,7 @@ jar { enabled = true }
 
 test {
     useJUnitPlatform()
-    exclude '**/ArchitectureTest.class'
+    // exclude '**/ArchitectureTest.class'
 }
 
 // Querydsl generated source directory configuration for better IDE support

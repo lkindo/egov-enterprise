@@ -2,6 +2,7 @@ package nuri.business.service.template;
 
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
+import nuri.business.service.template.dto.TemplateDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class TmplatInfoServiceTest {
         when(templateRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
-        List<Template> result = tmplatInfoService.selectTmplatInfoList();
+        List<TemplateDto> result = tmplatInfoService.selectTmplatInfoList();
 
         // then
         assertThat(result).isEmpty();
@@ -55,7 +56,7 @@ class TmplatInfoServiceTest {
         when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(tmplat));
 
         // when
-        Template result = tmplatInfoService.selectTmplatInfoDetail("TMPLT_001");
+        TemplateDto result = tmplatInfoService.selectTmplatInfoDetail("TMPLT_001");
 
         // then
         assertThat(result).isNotNull();
@@ -67,12 +68,13 @@ class TmplatInfoServiceTest {
     void insertTmplatInfo() {
         // given
         Template tmplat = Template.builder().tmpltNm("New Template").build();
+        TemplateDto tmplatDto = TemplateDto.from(tmplat);
 
         // when
-        tmplatInfoService.insertTmplatInfo(tmplat);
+        tmplatInfoService.insertTmplatInfo(tmplatDto);
 
         // then
-        verify(templateRepository, times(1)).save(tmplat);
+        verify(templateRepository, times(1)).save(any(Template.class));
     }
 
     @Test
@@ -82,7 +84,7 @@ class TmplatInfoServiceTest {
         when(templateRepository.findByTmpltSeCd("TYPE01")).thenReturn(Collections.emptyList());
 
         // when
-        List<Template> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
+        List<TemplateDto> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
 
         // then
         assertThat(result).isEmpty();

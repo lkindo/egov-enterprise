@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -20,10 +21,17 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     // 프로덕션 환경에서는 에러 리포팅 서비스로 전송
     console.error('[AdminErrorBoundary]', error);
   }, [error]);
+
+  const handleReset = () => {
+    queryClient.refetchQueries();
+    reset();
+  };
 
   // 에러 메시지에서 HTTP 상태 코드 추출
   const is401 = error.message?.includes('401');
@@ -102,7 +110,7 @@ export default function AdminError({
       description="서버와의 통신 중 문제가 발생했습니다. 잠시 후 다시 시도하시거나, 문제가 지속되면 관리자에게 문의해 주세요."
       actions={
         <>
-          <ActionButton primary icon={<RefreshCcw size={18} />} label="다시 시도" onClick={reset} />
+          <ActionButton primary icon={<RefreshCcw size={18} />} label="다시 시도" onClick={handleReset} />
           <ActionButton icon={<Home size={18} />} label="메인으로" onClick={() => (window.location.href = '/admin')} />
         </>
       }

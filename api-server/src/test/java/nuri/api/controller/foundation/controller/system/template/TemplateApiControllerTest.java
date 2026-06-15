@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system.template;
 
-import nuri.business.domain.template.Template;
+import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.TmplatInfoService;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(role = "ADMIN")
     @DisplayName("템플릿 목록 조회 테스트")
     void selectTmplatInfoListTest() throws Exception {
-        given(tmplatInfoService.selectTmplatInfoList()).willReturn(List.of(Template.builder().build()));
+        given(tmplatInfoService.selectTmplatInfoList()).willReturn(List.of(TemplateDto.builder().build()));
 
         mockMvc.perform(get("/api/v1/admin/system/templates"))
                 .andExpect(status().isOk())

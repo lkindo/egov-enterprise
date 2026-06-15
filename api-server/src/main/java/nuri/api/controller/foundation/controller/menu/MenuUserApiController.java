@@ -1,9 +1,9 @@
 package nuri.api.controller.foundation.controller.menu;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.domain.menu.Menu;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.service.program.dto.ProgramDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -47,19 +47,18 @@ public class MenuUserApiController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "메뉴 목록 테스트 - Menu 엔티티 직접 반환")
+    @Operation(summary = "메뉴 목록 테스트 - DTO 반환")
     @GetMapping("/test/raw")
-    public ResponseEntity<Map<String, Object>> getRawMenus() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRawMenus() {
         log.info("getRawMenus called");
         try {
-            List<Menu> menus = menuService.getAllMenusCached();
+            List<MenuDto> menus = menuService.getAllMenus();
             log.info("getRawMenus returned {} items", menus.size());
 
             Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
             result.put("count", menus.size());
             result.put("menus", menus);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
         }
@@ -67,16 +66,16 @@ public class MenuUserApiController {
 
     @Operation(summary = "메뉴 목록 테스트 - Program 조회")
     @GetMapping("/test/programs")
-    public ResponseEntity<Map<String, Object>> getPrograms() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPrograms() {
         log.info("getPrograms called");
         try {
-            List<nuri.business.domain.program.Program> programs = menuService.getAllPrograms();
+            List<ProgramDto> programs = menuService.getAllPrograms();
             log.info("getPrograms returned {} items", programs.size());
 
             Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
             result.put("count", programs.size());
-            return ResponseEntity.ok(result);
+            result.put("programs", programs);
+            return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
         }

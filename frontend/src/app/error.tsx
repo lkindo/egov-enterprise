@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, RotateCcw, Home, MessageSquare } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,10 +14,17 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
+    const queryClient = useQueryClient();
+
     useEffect(() => {
         // 에러 로그 기록 (실제 서비스에서는 Sentry 등에 전송)
         console.error('Global Error:', error);
     }, [error]);
+
+    const handleReset = () => {
+        queryClient.refetchQueries();
+        reset();
+    };
 
     return (
         <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
@@ -43,7 +51,7 @@ export default function Error({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                     <Button
-                        onClick={() => reset()}
+                        onClick={handleReset}
                         size="lg"
                         className="rounded-lg h-11 font-bold bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
                     >

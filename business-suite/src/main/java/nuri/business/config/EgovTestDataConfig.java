@@ -1,4 +1,4 @@
-package nuri.config;
+package nuri.business.config;
 
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;

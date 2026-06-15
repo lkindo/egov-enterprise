@@ -36,6 +36,11 @@ type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 
 
 export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { defaultTab?: StatsTab }) {
   const [activeTab, setActiveTab] = useState<StatsTab>(defaultTab);
+  const [nowStr, setNowStr] = useState<string>('');
+
+  React.useEffect(() => {
+    setNowStr(new Date().toISOString());
+  }, []);
 
   // --- Data Fetching ---
   const { data: userStats, isLoading: isUserLoading } = useQuery({
@@ -178,11 +183,11 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                               <div className="flex items-center gap-3">
                                 <span className={cn(
                                   "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
-                                  s.qestnrEndDe > new Date().toISOString() 
+                                  (nowStr && s.qestnrEndDe > nowStr)
                                     ? "bg-emerald-500/10 text-emerald-500" 
                                     : "bg-slate-500/10 text-slate-500"
                                 )}>
-                                  {s.qestnrEndDe > new Date().toISOString() ? 'Active' : 'Archived'}
+                                  {(nowStr && s.qestnrEndDe > nowStr) ? 'Active' : 'Archived'}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400 font-mono">END: {s.qestnrEndDe}</span>
                               </div>

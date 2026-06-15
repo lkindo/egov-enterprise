@@ -60,42 +60,54 @@ class MenuUserApiControllerTest {
     }
 
     @Test
-    @DisplayName("메뉴 목록 테스트 - 엔티티 직접 반환 성공")
+    @DisplayName("메뉴 목록 테스트 - DTO 반환 성공")
     void getRawMenus_Success() throws Exception {
-        given(menuService.getAllMenusCached()).willReturn(new ArrayList<>());
+        given(menuService.getAllMenus()).willReturn(new ArrayList<>());
 
         mockMvc.perform(get("/api/v1/menus/test/raw"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.data.count").value(0))
+                .andExpect(jsonPath("$.data.menus").exists());
     }
 
     @Test
-    @DisplayName("메뉴 목록 테스트 - 엔티티 직접 반환 실패")
+    @DisplayName("메뉴 목록 테스트 - DTO 반환 실패")
     void getRawMenus_Fail() throws Exception {
-        given(menuService.getAllMenusCached()).willThrow(new RuntimeException("Error"));
+        given(menuService.getAllMenus()).willThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/menus/test/raw"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.code").exists());
     }
 
     @Test
-    @DisplayName("프로그램 목록 테스트 성공")
+    @DisplayName("프로그램 목록 테스트 - DTO 반환 성공")
     void getPrograms_Success() throws Exception {
         given(menuService.getAllPrograms()).willReturn(new ArrayList<>());
 
         mockMvc.perform(get("/api/v1/menus/test/programs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.data.count").value(0))
+                .andExpect(jsonPath("$.data.programs").exists());
     }
 
     @Test
-    @DisplayName("프로그램 목록 테스트 실패")
+    @DisplayName("프로그램 목록 테스트 - DTO 반환 실패")
     void getPrograms_Fail() throws Exception {
         given(menuService.getAllPrograms()).willThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/menus/test/programs"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.code").exists());
     }
 }

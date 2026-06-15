@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Search,  
  MessageSquare,  
@@ -150,7 +151,7 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  {posts.map(post => (
  <div key={post.id} className="group overflow-hidden rounded-lg bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-48 overflow-hidden relative">
- <img src={post.image} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" />
+ <Image src={post.image} alt={post.title} fill className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
  <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-lg text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
  </div>
  <div className="p-8 space-y-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -96,7 +96,12 @@ interface BannerAdminClientProps {
 }
 
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
- const { toast } = useToast();
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  const { toast } = useToast();
  const confirm = useConfirm();
  const [activeTab, setTab] = useState<'banner' | 'popup'>('banner');
 
@@ -444,7 +449,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <HubMetricGrid>
  <HubMetricCard title="활성 배너" value={banners.filter(b => b.rfltYn === 'Y').length} icon={ImageIcon} color="primary" />
  <HubMetricCard title="활성 팝업" value={popups.filter(p => p.ntceYn === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
- <HubMetricCard title="예약 자산" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
+ <HubMetricCard title="예약 자산" value={now ? popups.filter(p => new Date(p.ntceBgnde) > now).length : 0} icon={Calendar} color="amber" />
  <HubMetricCard title="전체 자산" value={banners.length + popups.length} icon={Layers} color="indigo" />
  </HubMetricGrid>
 

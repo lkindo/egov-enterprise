@@ -35,4 +35,14 @@ public class TemplateDto {
                 .crtDt(entity.getCrtDt())
                 .build();
     }
+
+    public Template toEntity() {
+        return Template.builder()
+                .tmpltId(this.tmpltId)
+                .tmpltNm(this.tmpltNm)
+                .tmpltPath(this.tmpltPath)
+                .tmpltSeCd(this.tmpltSeCd)
+                .useYn(this.useYn)
+                .build();
+    }
 }

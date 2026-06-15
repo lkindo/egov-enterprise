@@ -47,8 +47,8 @@ dependencies {
     testImplementation testFixtures(project(':business-suite'))
     testRuntimeOnly libs.h2
     // ArchUnit - disabled due to test engine conflicts
-    // testImplementation libs.archunit.junit5
-    // testImplementation libs.archunit
+    testImplementation libs.archunit.junit5
+    testImplementation libs.archunit
 }
 
 bootJar {
@@ -61,5 +61,5 @@ jar {
 
 test {
     useJUnitPlatform()
-    exclude '**/ArchitectureTest.class'
+    // exclude '**/ArchitectureTest.class'
 }

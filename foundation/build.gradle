@@ -74,9 +74,9 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
     testRuntimeOnly libs.postgresql
     
-    // ArchUnit - disabled due to test engine conflicts
-    // testImplementation libs.archunit.junit5
-    // testImplementation libs.archunit
+    // ArchUnit
+    testImplementation libs.archunit.junit5
+    testImplementation libs.archunit
 
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
     testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.16'
@@ -85,8 +85,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
-    // ArchUnit 테스트는 제외 (별도 실행)
-    exclude '**/ArchunitTest.class'
+    // ArchUnit 테스트 활성화
+    // exclude '**/ArchunitTest.class'
     finalizedBy jacocoTestReport
 }
 
