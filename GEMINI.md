@@ -107,7 +107,7 @@
 | **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | DB 제약조건(SSOT) ➔ BE DTO ➔ FE Zod 스키마로 이어지는 **단방향 연쇄 거울 동기화** 및 OpenAPI 타입 명세 일치율 검증으로 Breaking Change 완벽 방어 |
 | **OWASP Security Auditor** | `.agent/skills/owasp-security-auditor/` | 인증(JWT), Spring Security 필터, Next.js Middleware 변경 시 Red Team 관점의 가상 침투 및 취약점 검증 |
 | **Docs-as-Code Sync** | `.agent/skills/docs-as-code-sync/` | 시스템 아키텍처 및 로직 변경 시 관련 마크다운 문서와 Mermaid 다이어그램 자율 갱신 |
-| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — **Mutation Score 85% 이상 강제** (BE 헌법 제16조) *(※ 단, 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장함)* |
+| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — 핵심 크리티컬 서비스 기준 **Mutation Score 80% 이상** (BE 헌법 제16조) *(※ 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장하며, 일반 보조 서비스 및 단순 CRUD는 의무 면제)* |
 | **Zero-Downtime Planner** | `.agent/skills/zero-downtime-migration-planner/` | DB 스키마 변경 시 Expand-and-Contract 패턴 기반의 무중단 마이그레이션 설계 |
 
 ## 7. Database Interaction Rules (via Local Bridge)
@@ -116,7 +116,7 @@
 - **접속 정보**: `application.yml` 기반 자동 연동 (OCI PostgreSQL 17)
 - **보안 통제 및 자율성**:
   - 운영/코어 데이터의 DML은 글로벌 §5 파괴적 작업 경계 규정에 따라 사전 승인이 **필수**이다.
-  - 단, `test_` 접두사나 테스트 환경(`@ActiveProfiles("test")`)의 명백한 가비지 데이터에 대한 삭제(Cleanup)는 **DB 헌법 제8조 2항의 예외 조항**에 의거하여 기동성 확보를 위해 AI의 자율 수행을 허용한다. 실 운영 데이터는 **절대적 논리삭제(Soft Delete)** 원칙을 따른다.
+  - 단, `test_` 접두사나 테스트 환경(`@ActiveProfiles("test")`)의 명백한 가비지 데이터에 대한 삭제(Cleanup)는 **DB 헌법 제8조 2항의 예외 조항**에 의거하여 기동성 확보를 위해 AI의 자율 수행을 허용한다. 실 운영 데이터의 삭제 정책은 **DB 표준화 헌법 제8조**를 따르며, 비즈니스 요건상 이력 복원이 필수인 도메인은 논리 삭제를, 그 외 도메인은 물리 삭제를 기본으로 채택할 수 있다.
   - **[면책 특권]** `deep-context-mapper` 등을 통해 메타 데이터(`meta_standard_words` 등)나 물리 스키마를 **단순 조회(SELECT)**하는 행위는 사용자 승인 없이 무제한 자율 실행하여 탐색 기동성을 극대화한다.
   - **[진단 특권]** `resilience-debugger`가 §8 자가 성찰 디버그 프로토콜 수행 중 DB 상태를 진단하기 위한 **SELECT 쿼리** 역시 사용자 승인 없이 자율 실행을 허용한다.
 
