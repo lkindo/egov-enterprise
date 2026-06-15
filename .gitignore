@@ -106,6 +106,8 @@
 **/tests_debug.txt
 **/coverage_output.txt
 **/dependency-analysis*.txt
+**/LOG_FILE_IS_UNDEFINED*
+**/LOG_PATH_IS_UNDEFINED*
 
 # ----- Tools & Infrastructure -----
 **/docker-data/
