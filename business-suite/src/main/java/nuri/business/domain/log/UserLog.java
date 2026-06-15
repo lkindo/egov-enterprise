@@ -29,7 +29,7 @@ import jakarta.persistence.ManyToOne;
 public class UserLog extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DMND_USER_ID", referencedColumnName = "ESNTL_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "dmnd_user_id", referencedColumnName = "esntl_id", insertable = false, updatable = false)
     private User vnUserMaster;
 
     @Id
@@ -37,7 +37,7 @@ public class UserLog extends BaseEntity {
     private String ocrnYmd;
 
     @Id
-    @Column(name = "DMND_USER_ID", length = 20)
+    @Column(name = "dmnd_user_id", length = 20)
     private String dmndUserId;
 
     @Id
