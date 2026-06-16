@@ -2,7 +2,6 @@ package nuri.foundation.core.response;
 
 import nuri.foundation.core.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import java.time.LocalDateTime;
 

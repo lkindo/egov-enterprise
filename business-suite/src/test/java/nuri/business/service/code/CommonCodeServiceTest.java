@@ -133,13 +133,14 @@ class CommonCodeServiceTest {
                 .willReturn(page);
 
         List<CmmnDetailCodeDto> result = commonCodeService.selectCmmnDetailCodeList(searchVO);
-
+        assertNotNull(result);
     }
 
     @Test
     @DisplayName("공통분류코드 전체 건수 조회")
     void selectCmmnClCodeListTotCntTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
+        @SuppressWarnings("unchecked")
         Page<CommonCodeCategory> page = mock(Page.class);
         given(page.getTotalElements()).willReturn(10L);
         given(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any(Pageable.class)))
@@ -231,6 +232,7 @@ class CommonCodeServiceTest {
     @DisplayName("공통상세코드 전체 건수 조회")
     void selectCmmnDetailCodeListTotCntTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
+        @SuppressWarnings("unchecked")
         Page<nuri.business.domain.code.CommonCodeDetailProjection> page = mock(Page.class);
         given(page.getTotalElements()).willReturn(20L);
         given(commonCodeRepository.searchCommonCodeDetails(any(), any(), any(Pageable.class))).willReturn(page);

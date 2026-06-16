@@ -54,6 +54,10 @@ class AddressBookServiceIntegrationTest extends BusinessIntegrationTestSupport {
         // then
         assertThat(res1.getContent()).isNotEmpty();
         assertThat(res2.getContent()).isNotEmpty();
+        assertThat(res3).isNotNull();
+        assertThat(res4).isNotNull();
+        assertThat(res5).isNotNull();
+        assertThat(res6).isNotNull();
         // res3 can be empty or not, depending on other data, but branch is covered
         // res4, res5, res6 cover different combinations of wrterId, trgetOgnzId, searchWrd
     }

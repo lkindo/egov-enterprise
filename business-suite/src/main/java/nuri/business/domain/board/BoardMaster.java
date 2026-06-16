@@ -1,6 +1,5 @@
 package nuri.business.domain.board;
 
-import java.time.LocalDateTime;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.hibernate.annotations.DynamicUpdate;

@@ -3,10 +3,8 @@ package nuri.api.controller.business.smarttoolkit;
 import nuri.business.security.service.CustomUserDetails;
 import nuri.business.service.deptjob.EgovDeptJobBoxService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -14,7 +12,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import nuri.business.security.annotation.WithMockCustomUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 

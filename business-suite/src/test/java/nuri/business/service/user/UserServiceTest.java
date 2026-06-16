@@ -184,6 +184,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 목록 페이지 조회")
     void getPagedUserListTest() {
+        @SuppressWarnings("unchecked")
         Page<UserDto> page = mock(Page.class);
         given(userRepository.getPagedUserList(anyString(), any())).willReturn(page);
         
@@ -194,6 +195,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 목록 페이지 조회 (검색어 없음)")
     void getUserPageTest() {
+        @SuppressWarnings("unchecked")
         Page<UserDto> page = mock(Page.class);
         given(userRepository.getPagedUserList(isNull(), any())).willReturn(page);
         
@@ -204,6 +206,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 목록 페이지 조회 (기본 페이징 적용)")
     void searchUserPageTest() {
+        @SuppressWarnings("unchecked")
         Page<UserDto> page = mock(Page.class);
         given(userRepository.getPagedUserList(eq("search"), any())).willReturn(page);
         

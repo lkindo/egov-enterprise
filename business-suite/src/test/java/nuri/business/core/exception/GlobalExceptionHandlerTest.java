@@ -18,7 +18,6 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -97,7 +96,8 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("HttpMessageNotReadableException 처리 테스트 (일반)")
     void testHandleHttpMessageNotReadableException_Normal() {
-        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Not Readable");
+        org.springframework.http.HttpInputMessage inputMessage = mock(org.springframework.http.HttpInputMessage.class);
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Not Readable", inputMessage);
         ResponseEntity<ApiResponse<Void>> response = handler.handleHttpMessageNotReadableException(ex);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().success());
@@ -108,7 +108,8 @@ class GlobalExceptionHandlerTest {
     void testHandleHttpMessageNotReadableException_Unrecognized() {
         UnrecognizedPropertyException cause = mock(UnrecognizedPropertyException.class);
         when(cause.getPropertyName()).thenReturn("unknownField");
-        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Not Readable", cause);
+        org.springframework.http.HttpInputMessage inputMessage = mock(org.springframework.http.HttpInputMessage.class);
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Not Readable", cause, inputMessage);
         
         ResponseEntity<ApiResponse<Void>> response = handler.handleHttpMessageNotReadableException(ex);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

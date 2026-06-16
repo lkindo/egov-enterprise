@@ -3,7 +3,6 @@ package nuri.security;
 import nuri.business.support.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Security Headers 테스트
