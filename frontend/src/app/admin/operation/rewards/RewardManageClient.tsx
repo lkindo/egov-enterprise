@@ -29,11 +29,11 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { RewardManageDtoSchema } from '@/types/generated-zod';
 
 const rewardSchema = RewardManageDtoSchema.extend({
-  rwardNm: z.string().min(1, '포상 명칭은 필수 입력 사항입니다.'),
-  rwardwnrId: z.string().min(1, '수상자 ID는 필수 입력 사항입니다.'),
-  rwardCode: z.string().min(1, '포상 코드는 필수 입력 사항입니다.'),
-  rwardDe: z.string().min(8, '포상일자 8자리를 입력하세요(예: 20260515).').max(8),
-  pblenCn: z.string().min(1, '공적 내용은 필수 입력 사항입니다.'),
+  rwardNm: z.string().min(1),
+  rwardwnrId: z.string().min(1),
+  rwardCode: z.string().min(1),
+  rwardDe: z.string().length(8, '포상일자 8자리를 입력하세요(예: 20260515).'),
+  pblenCn: z.string().min(1),
 });
 
 type RewardFormValues = z.infer<typeof rewardSchema>;

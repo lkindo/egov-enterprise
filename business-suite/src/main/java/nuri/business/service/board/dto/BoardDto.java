@@ -1,119 +1,203 @@
 package nuri.business.service.board.dto;
 
-import jakarta.validation.constraints.*;
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import jakarta.validation.constraints.*;
+import lombok.Builder;
 import java.time.LocalDateTime;
+import nuri.business.domain.board.Board;
+import nuri.business.domain.board.BoardSearchResult;
+import nuri.business.domain.board.BoardDetailResult;
 
 /**
- * 게시글 정보 DTO (v5 standardized)
+ * 게시글 정보 DTO (v5 standardized - Record 버전)
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
-public class BoardDto {
-
+@Builder
+public record BoardDto(
     @Schema(description = "게시글 ID")
     @Size(max = 20)
-    private String pstId;
+    String pstId,
 
     @Schema(description = "게시판 ID")
     @Size(max = 20)
-    private String bbsId;
+    String bbsId,
 
     @Schema(description = "답글 번호")
-    private Long ansSn;
+    Long ansSn,
 
     @Schema(description = "제목")
     @Size(max = 100)
-    private String pstTtl;
+    String pstTtl,
 
     @Schema(description = "내용")
     @Size(max = 4000)
-    private String pstCn;
+    String pstCn,
 
     @Schema(description = "상위 게시글 ID")
     @Size(max = 20)
-    private String upPstId;
+    String upPstId,
 
     @Schema(description = "정렬 순서")
-    private Long sortOrdr;
+    Long sortOrdr,
 
     @Schema(description = "제목 굵게 표시 여부")
     @Size(max = 1)
-    private String ttlBoldYn;
+    String ttlBoldYn,
 
     @Schema(description = "조회수")
-    private Integer inqCnt;
+    Integer inqCnt,
 
     @Schema(description = "사용 여부")
     @Size(max = 1)
     @NotBlank
-    private String useYn;
+    String useYn,
 
     @Schema(description = "게시 시작일")
     @Size(max = 20)
-    private String pstBgngYmd;
+    String pstBgngYmd,
 
     @Schema(description = "게시 종료일")
     @Size(max = 20)
-    private String pstEndYmd;
+    String pstEndYmd,
 
     @Schema(description = "작성자 ID")
     @Size(max = 20)
     @NotBlank
-    private String userId;
+    String userId,
 
     @Schema(description = "작성자명")
     @Size(max = 100)
-    private String userNm;
+    String userNm,
 
     @Schema(description = "비밀번호")
     @Size(max = 200)
-    private String pswd;
+    String pswd,
 
     @Schema(description = "첨부파일 ID")
     @Size(max = 30)
-    private String atchFileId;
+    String atchFileId,
 
     @Schema(description = "비밀글 여부")
     @Size(max = 1)
-    private String scrtYn;
+    String scrtYn,
 
     @Schema(description = "블로그 ID")
     @Size(max = 20)
-    private String blogId;
+    String blogId,
 
     @Schema(description = "행사일")
-    private LocalDateTime evntDt;
+    LocalDateTime evntDt,
 
     @Schema(description = "QNA 상태")
-    private String qnaSttsCd;
+    String qnaSttsCd,
 
     @Schema(description = "QNA 카테고리")
     @Size(max = 12)
-    private String qnaCatCd;
+    String qnaCatCd,
 
     @Schema(description = "좋아요수")
-    private Integer likeCnt;
+    Integer likeCnt,
 
     @Schema(description = "댓글수")
-    private Integer commentCnt;
+    Integer commentCnt,
 
     @Schema(description = "파일수")
-    private Integer fileCnt;
+    Integer fileCnt,
 
     @Schema(description = "등록일시")
-    private LocalDateTime crtDt;
+    LocalDateTime crtDt,
 
     @Schema(description = "등록자명")
-    private String frstRegisterNm;
+    String frstRegisterNm,
 
     @Schema(description = "답글 단계")
-    private Integer ansLv;
+    Integer ansLv
+) {
+    public static BoardDto from(Board entity) {
+        if (entity == null) return null;
+        return BoardDto.builder()
+                .pstId(entity.getPstId())
+                .bbsId(entity.getBbsId())
+                .ansSn(entity.getAnsSn())
+                .pstTtl(entity.getPstTtl())
+                .pstCn(entity.getPstCn())
+                .upPstId(entity.getUpPstId())
+                .sortOrdr(entity.getSortOrdr())
+                .ttlBoldYn(entity.getTtlBoldYn())
+                .inqCnt(entity.getInqCnt())
+                .useYn(entity.getUseYn())
+                .pstBgngYmd(entity.getPstBgngYmd())
+                .pstEndYmd(entity.getPstEndYmd())
+                .userId(entity.getUserId())
+                .userNm(entity.getUserNm())
+                .pswd(entity.getPswd())
+                .atchFileId(entity.getAtchFileId())
+                .scrtYn(entity.getScrtYn())
+                .blogId(entity.getBlogId())
+                .evntDt(entity.getEvntDt())
+                .qnaSttsCd(entity.getQnaSttsCd())
+                .qnaCatCd(entity.getQnaCatCd())
+                .likeCnt(entity.getLikeCnt())
+                .commentCnt(entity.getCmntCnt())
+                .fileCnt(entity.getFileCnt())
+                .crtDt(entity.getCrtDt())
+                .ansLv(entity.getAnsLv())
+                .build();
+    }
 
+    public static BoardDto from(BoardSearchResult result) {
+        if (result == null) return null;
+        return BoardDto.builder()
+                .pstId(result.getPstId())
+                .bbsId(result.getBbsId())
+                .ansSn(result.getAnsSn())
+                .pstTtl(result.getPstTtl())
+                .upPstId(result.getUpPstId())
+                .ttlBoldYn(result.getTtlBoldYn())
+                .inqCnt(result.getInqCnt())
+                .useYn(result.getUseYn())
+                .pstBgngYmd(result.getPstBgngYmd())
+                .pstEndYmd(result.getPstEndYmd())
+                .userId(result.getFrstRgtrId())
+                .userNm(result.getUserNm())
+                .atchFileId(result.getAtchFileId())
+                .scrtYn(result.getScrtYn())
+                .evntDt(result.getEvntDt())
+                .qnaSttsCd(result.getQnaSttsCd())
+                .qnaCatCd(result.getQnaCatCd())
+                .likeCnt(result.getLikeCnt())
+                .commentCnt(result.getCommentCnt())
+                .crtDt(result.getCrtDt())
+                .ansLv(result.getAnsLv())
+                .build();
+    }
+
+    public static BoardDto from(BoardDetailResult detail) {
+        if (detail == null) return null;
+        return BoardDto.builder()
+                .pstId(detail.getPstId())
+                .bbsId(detail.getBbsId())
+                .ansSn(detail.getAnsSn())
+                .pstTtl(detail.getPstTtl())
+                .pstCn(detail.getPstCn())
+                .upPstId(detail.getUpPstId())
+                .sortOrdr(detail.getSortOrdr())
+                .ttlBoldYn(detail.getTtlBoldYn())
+                .inqCnt(detail.getInqCnt())
+                .useYn(detail.getUseYn())
+                .pstBgngYmd(detail.getPstBgngYmd())
+                .pstEndYmd(detail.getPstEndYmd())
+                .userId(detail.getUserId())
+                .userNm(detail.getUserNm())
+                .pswd(detail.getPswd())
+                .atchFileId(detail.getAtchFileId())
+                .scrtYn(detail.getScrtYn())
+                .evntDt(detail.getEvntDt())
+                .qnaSttsCd(detail.getQnaSttsCd())
+                .qnaCatCd(detail.getQnaCatCd())
+                .likeCnt(detail.getLikeCnt())
+                .commentCnt(detail.getCommentCnt())
+                .crtDt(detail.getCrtDt())
+                .ansLv(detail.getAnsLv())
+                .build();
+    }
 }

@@ -29,15 +29,15 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         }
 
         List<UserDto> content = queryFactory
-                .select(Projections.fields(UserDto.class,
+                .select(Projections.constructor(UserDto.class,
                         user.userId,
                         user.userNm,
                         user.esntlId,
-                        user.role.stringValue().as("role"),
+                        user.role.stringValue(),
                         user.emplNo,
-                        user.officeTelno.as("officeTelno"),
-                        user.mblTelno.as("mblTelno"),
-                        user.emlAddr.as("emlAddr"),
+                        user.officeTelno,
+                        user.mblTelno,
+                        user.emlAddr,
                         user.ofcpsNm,
                         user.crtDt))
                 .from(user)

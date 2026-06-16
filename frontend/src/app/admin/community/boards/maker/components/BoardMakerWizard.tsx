@@ -131,14 +131,8 @@ import { BoardMasterDtoSchema } from '@/types/generated-zod';
 
 const formSchema = BoardMasterDtoSchema.extend({
  bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
- bbsExpln: z.string(),
  ansPsbltyYn: z.boolean(),
  fileAtchPsbltyYn: z.boolean(),
- atchPsbltyFileQty: z.number(),
- atchPsbltyFileSz: z.number(),
- bbsTypeCd: z.string(),
- tmpltId: z.string(),
- cmntyId: z.string().optional(),
  permissions: z.record(z.string(), z.array(z.string())),
  menuNm: z.string(),
  upperMenuNo: z.string(),
@@ -481,9 +475,9 @@ export function BoardMakerWizard() {
  <h4 className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
  </div>
  <BoardPreview
- tmpltId={selectedTemplate}
+ tmpltId={selectedTemplate || 'TMPLT_HUB'}
  bbsTtl={bbsTtl}
- bbsExpln={bbsExpln}
+ bbsExpln={bbsExpln || ''}
  />
  </div>
  </div>

@@ -40,7 +40,6 @@ import {
 import { LoginPolicyDtoSchema } from '@/types/generated-zod';
 
 const loginPolicySchema = LoginPolicyDtoSchema.extend({
-  ipAddr: z.string().optional(),
   lmtYn: z.enum(['Y', 'N']),
   bgngTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
   endTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),

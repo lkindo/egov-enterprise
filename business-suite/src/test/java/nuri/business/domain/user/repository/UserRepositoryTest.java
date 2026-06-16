@@ -137,7 +137,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
     void getPagedUserList_WithKeyword() {
         var result = userRepository.getPagedUserList("testUser", PageRequest.of(0, 10));
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
+        assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");
     }
 
     @Test

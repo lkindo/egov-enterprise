@@ -1,25 +1,28 @@
 package nuri.business.service.user.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import io.swagger.v3.oas.annotations.media.Schema;
+import nuri.business.domain.user.entity.User;
 
-
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "사용자 응답 DTO")
-public class UserResponse {
+public record UserResponse(
     @Schema(description = "사용자 아이디")
-    private String userId;
+    String userId,
 
     @Schema(description = "사용자 이름")
-    private String userNm;
+    String userNm,
 
     @Schema(description = "사용자 역할")
-    private String role;
+    String role
+) {
+    public static UserResponse from(User user) {
+        if (user == null) return null;
+        return new UserResponse(
+            user.getUserId(),
+            user.getUserNm(),
+            user.getRole() != null ? user.getRole().name() : null
+        );
+    }
 }
 

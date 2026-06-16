@@ -5,11 +5,18 @@ import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 
-@Getter
+import nuri.business.domain.user.entity.UserAbsence;
+
 @Builder
-public class UserAbsenceDto {
+public record UserAbsenceDto(
     @Size(max = 20)
     @NotBlank
-    private String userId;
-    private String userAbsnYn;
+    String userId,
+
+    String userAbsnYn
+) {
+    public static UserAbsenceDto from(UserAbsence entity) {
+        if (entity == null) return null;
+        return new UserAbsenceDto(entity.getUserId(), entity.getUserAbsnYn());
+    }
 }

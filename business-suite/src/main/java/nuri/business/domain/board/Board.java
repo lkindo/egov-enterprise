@@ -4,7 +4,9 @@ import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 
 import java.io.Serializable;
 
@@ -19,7 +21,8 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_bbs_item")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@SQLRestriction("use_yn = 'Y'")
+@FilterDef(name = "softDeleteFilter", parameters = @ParamDef(name = "useYn", type = String.class))
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 @SuperBuilder
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;

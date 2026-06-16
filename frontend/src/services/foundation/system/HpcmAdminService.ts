@@ -7,6 +7,10 @@ export interface Hpcm {
   hpcmSe: string;
   hpcmNm: string;
   hpcmDc: string;
+  hlpId?: string;
+  hlpSeCd?: string;
+  hlpDfn?: string;
+  hlpExpln?: string;
   frstRgtrId?: string;
   lastMdfrId?: string;
 }

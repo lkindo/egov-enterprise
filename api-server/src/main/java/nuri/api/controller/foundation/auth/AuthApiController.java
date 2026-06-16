@@ -71,11 +71,11 @@ public class AuthApiController {
             nuri.business.service.user.dto.UserDto userDto = userService.getUserById(userId);
             
             Map<String, Object> userData = new HashMap<>();
-            userData.put("id", userDto.getUserId());
-            userData.put("name", userDto.getUserNm());
-            userData.put("role", userDto.getRole());
-            userData.put("userSe", userDto.getUserSe());
-            userData.put("email", userDto.getEmlAddr());
+            userData.put("id", userDto.userId());
+            userData.put("name", userDto.userNm());
+            userData.put("role", userDto.role());
+            userData.put("userSe", userDto.userSe());
+            userData.put("email", userDto.emlAddr());
 
             return ApiResponse.success(userData);
         }

@@ -12,6 +12,7 @@ export interface InfrmlSanctn {
  confmAt: 'Y' | 'N' | 'R' | 'A';
  sancltNm: string;
  returnResn?: string;
+ rjctRsnCn?: string;
  reqstDe?: string;
  frstRgtrId?: string;
  lastMdfrId?: string;

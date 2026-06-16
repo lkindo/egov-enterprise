@@ -1,0 +1,26 @@
+{
+  "ignores": [
+    "tailwindcss",
+    "@tailwindcss/postcss",
+    "tailwindcss-animate",
+    "cross-env",
+    "@vitest/coverage-v8",
+    "babel-plugin-istanbul",
+    "eslint-config-next",
+    "shadcn",
+    "ts-morph",
+    "yargs-parser",
+    "postcss",
+    "@eslint/eslintrc",
+    "@storybook/react",
+    "@storybook/test",
+    "pg",
+    "pretty-format",
+    "tw-animate-css"
+  ],
+  "ignore-dirs": [
+    "dist",
+    "build",
+    ".next"
+  ]
+}

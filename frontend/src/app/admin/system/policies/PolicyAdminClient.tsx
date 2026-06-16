@@ -30,9 +30,9 @@ import {
 
 import { PolicySchema as GeneratedPolicySchema } from '@/types/generated-zod';
 
-const policySchema = GeneratedPolicySchema.partial().extend({
- plcyTtl: z.string().min(1, '정책 제목은 필수입니다.').max(100, '정책 제목은 최대 100자 이하로 입력하십시오.'),
- plcyCn: z.string().min(1, '정책 내용은 필수입니다.').max(4000, '정책 내용은 최대 4000자 이하로 입력하십시오.')
+const policySchema = GeneratedPolicySchema.extend({
+  plcyTtl: z.string().min(1).max(100),
+  plcyCn: z.string().min(1).max(4000)
 });
 
 type PolicyFormValues = z.infer<typeof policySchema>;

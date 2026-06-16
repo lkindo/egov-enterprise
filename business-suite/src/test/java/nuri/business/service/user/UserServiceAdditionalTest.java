@@ -6,7 +6,6 @@ import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
-import nuri.business.service.user.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,14 +34,11 @@ class UserServiceAdditionalTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private UserMapper userMapper;
-
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userAuthorityRepository, passwordEncoder, userMapper);
+        userService = new UserService(userRepository, userAuthorityRepository, passwordEncoder);
     }
 
     private User.UserBuilder<?, ?> createBaseUser(String userId) {

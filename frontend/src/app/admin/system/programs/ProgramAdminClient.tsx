@@ -38,25 +38,12 @@ import { useAppForm } from '@/hooks/useAppForm';
 
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
-const programSchema = ProgramDtoSchema.partial().extend({
- prgrmFileNm: z.string()
- .min(1, '파일명은 필수입니다.')
- .max(60, '파일명은 60자 이내여야 합니다.'),
- prgrmStrgPath: z.string()
- .max(100, '경로가 너무 깁니다. (최대 100자)')
- .optional()
- .or(z.literal('')),
- prgrmKornNm: z.string()
- .min(1, '프로그램 명칭은 필수입니다.')
- .max(60, '명칭은 60자 이내여야 합니다.'),
- url: z.string()
- .min(1, '엔드포인트 URL은 필수입니다.')
- .startsWith('/', 'URL은 /로 시작해야 합니다.')
- .max(100, 'URL은 100자 이내여야 합니다.'),
- prgrmExpln: z.string()
- .max(200, '설명이 너무 깁니다. (최대 200자)')
- .optional()
- .or(z.literal('')),
+const programSchema = ProgramDtoSchema.extend({
+ prgrmFileNm: z.string().min(1).max(60),
+ prgrmStrgPath: z.string().max(100).optional().or(z.literal('')),
+ prgrmKornNm: z.string().min(1).max(60),
+ url: z.string().min(1).startsWith('/', 'URL은 /로 시작해야 합니다.').max(100),
+ prgrmExpln: z.string().max(200).optional().or(z.literal('')),
 });
 
 type ProgramFormValues = z.infer<typeof programSchema>;

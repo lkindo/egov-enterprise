@@ -8,7 +8,6 @@ import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
-import nuri.business.service.user.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +40,7 @@ class UserServiceCrudTest {
   @Mock
   private PasswordEncoder passwordEncoder;
 
-  @Mock
-  private UserMapper userMapper;
+
 
   @InjectMocks
   private UserService userService;
@@ -99,13 +97,11 @@ class UserServiceCrudTest {
     when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
     when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
         UserAuthority.builder().scrtyDcsnTrgtId("USR_1234567890123456").authrtId("ROLE_USER").build()));
-    when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build());
 
     UserDto result = userService.getUserById("testUser");
 
     assertThat(result).isNotNull();
-    assertThat(result.getUserId()).isEqualTo("testUser");
+    assertThat(result.userId()).isEqualTo("testUser");
   }
 
   @Test
@@ -122,13 +118,11 @@ class UserServiceCrudTest {
   @DisplayName("사용자 목록 조회 성공")
   void getUserList_success() {
     when(userRepository.findAllWithAuthorities()).thenReturn(java.util.Collections.singletonList(new Object[]{mockUser, null}));
-    when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build());
 
     List<UserDto> result = userService.getUserList();
 
     assertThat(result).isNotNull().hasSize(1);
-    assertThat(result.get(0).getUserId()).isEqualTo("testUser");
+    assertThat(result.get(0).userId()).isEqualTo("testUser");
   }
 
   @Test
@@ -141,7 +135,7 @@ class UserServiceCrudTest {
     Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
     assertThat(result).isNotNull().hasSize(1);
-    assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
+    assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");
     verify(userRepository).getPagedUserList(any(), any());
   }
 
@@ -151,12 +145,10 @@ class UserServiceCrudTest {
     when(userRepository.existsById(any())).thenReturn(false);
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-    when(userMapper.toResponse(any())).thenReturn(UserResponse.builder().userId("newUser").userNm("name").role("USER").build());
-
 
     UserResponse result = userService.signup(signupRequest);
 
-    assertThat(result.getUserId()).isEqualTo("newUser");
+    assertThat(result.userId()).isEqualTo("newUser");
     verify(userRepository).save(any());
   }
 

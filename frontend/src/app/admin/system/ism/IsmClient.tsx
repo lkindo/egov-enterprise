@@ -42,8 +42,11 @@ import {
 
 import { InformalSanctionDtoSchema } from '@/types/generated-zod';
 
-const ismSchema = InformalSanctionDtoSchema.partial().extend({
- returnResn: z.string().min(1, '의결 의견은 필수 입력 사항입니다.'),
+const ismSchema = InformalSanctionDtoSchema.extend({
+ taskSeCd: z.string().optional(),
+ aplcntId: z.string().optional(),
+ aprvrId: z.string().optional(),
+ rjctRsnCn: z.string().min(1),
 });
 
 type IsmFormValues = z.infer<typeof ismSchema>;
@@ -61,7 +64,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
 
  const form = useAppForm(ismSchema, {
  defaultValues: {
- returnResn: ''
+ rjctRsnCn: ''
  }
  });
 
@@ -70,7 +73,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  const handleOpenConfirm = (sanctn: InfrmlSanctn) => {
  setSelectedSanctn(sanctn);
  form.reset({
- returnResn: ''
+ rjctRsnCn: ''
  });
  setIsOpen(true);
  };
@@ -79,7 +82,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  if (!selectedSanctn) return;
  try {
  setLoading(true);
- await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, values.returnResn);
+ await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, values.rjctRsnCn);
  toast(`결재 시퀀스가 ${status === 'C' ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
  setIsOpen(false);
  router.refresh();
@@ -323,7 +326,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
 
  <ShadcnFormField
  control={form.control}
- name="returnResn"
+ name="rjctRsnCn"
  render={({ field }) => (
  <FormItem className="space-y-4">
  <FormLabel className="text-xs font-bold tracking-[0.4em] text-slate-400 uppercase flex items-center gap-3">

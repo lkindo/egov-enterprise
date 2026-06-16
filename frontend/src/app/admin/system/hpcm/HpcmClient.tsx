@@ -28,10 +28,11 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { HpcmDtoSchema } from '@/types/generated-zod';
 
-const hpcmSchema = HpcmDtoSchema.partial().extend({
-  hpcmSe: z.string().min(1, '도움말 구분은 필수 입력 사항입니다.'),
-  hpcmNm: z.string().min(1, '도움말 명칭은 필수 입력 사항입니다.'),
-  hpcmDc: z.string().min(1, '도움말 설명은 필수 입력 사항입니다.'),
+const hpcmSchema = HpcmDtoSchema.extend({
+  hlpId: z.string().optional(),
+  hlpSeCd: z.string().min(1),
+  hlpDfn: z.string().min(1),
+  hlpExpln: z.string().min(1),
 });
 
 type HpcmFormValues = z.infer<typeof hpcmSchema>;
@@ -46,9 +47,9 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
 
   const form = useAppForm(hpcmSchema, {
     defaultValues: {
-      hpcmSe: '',
-      hpcmNm: '',
-      hpcmDc: '',
+      hlpSeCd: '',
+      hlpDfn: '',
+      hlpExpln: '',
     }
   });
 
@@ -57,7 +58,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       setRegisterLoading(true);
       const submitData = {
         ...values,
-        hpcmId: `HPCM_${Date.now()}`,
+        hlpId: `HPCM_${Date.now()}`,
         frstRgtrId: 'SYSTEM',
         lastMdfrId: 'SYSTEM',
       };
@@ -83,9 +84,9 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
           </div>
           <div className="flex flex-col gap-1 text-left">
             <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-xs font-bold tracking-tight border border-slate-200 w-fit">
-              {item.hpcmSe || 'SYSTEM'}
+              {item.hlpSeCd || item.hpcmSe || 'SYSTEM'}
             </span>
-            <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hpcmNm}</span>
+            <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hlpDfn || item.hpcmNm}</span>
           </div>
         </div>
       )
@@ -94,7 +95,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       header: 'ID / 레퍼런스',
       accessor: (item) => (
         <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">
-          ID: {item.hpcmId}
+          ID: {item.hlpId || item.hpcmId}
         </span>
       ),
       className: 'w-48'
@@ -103,7 +104,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       header: '요약 설명',
       accessor: (item) => (
         <p className="text-sm text-slate-500 font-medium line-clamp-1 max-w-md">
-          {item.hpcmDc || '설명이 존재하지 않는 아카이브입니다.'}
+          {item.hlpExpln || item.hpcmDc || '설명이 존재하지 않는 아카이브입니다.'}
         </p>
       )
     }
@@ -171,7 +172,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
           <form className="space-y-6 pt-4 text-left">
             <ShadcnFormField
               control={form.control}
-              name="hpcmSe"
+              name="hlpSeCd"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">분류 구분</FormLabel>
@@ -184,7 +185,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             />
             <ShadcnFormField
               control={form.control}
-              name="hpcmNm"
+              name="hlpDfn"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">도움말 명칭</FormLabel>
@@ -197,7 +198,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             />
             <ShadcnFormField
               control={form.control}
-              name="hpcmDc"
+              name="hlpExpln"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">도움말 상세 설명</FormLabel>

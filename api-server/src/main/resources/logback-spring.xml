@@ -7,6 +7,7 @@
     <springProperty scope="context" name="lokiUrl" source="logging.loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
 
 
+    <property name="LOG_FILE" value="${LOG_FILE:-logs/backend.log}"/>
     <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
     
     <springProfile name="prod">

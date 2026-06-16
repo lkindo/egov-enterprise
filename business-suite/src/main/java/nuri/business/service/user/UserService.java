@@ -12,7 +12,6 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
-import nuri.business.service.user.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,15 +39,13 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
         private final PasswordEncoder passwordEncoder;
-        private final UserMapper userMapper;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
-                        PasswordEncoder passwordEncoder, UserMapper userMapper) {
+                        PasswordEncoder passwordEncoder) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
                                 "UserAuthorityRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
-                this.userMapper = required(userMapper, "UserMapper 는 null 일 수 없습니다");
         }
 
         /**
@@ -75,7 +72,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
 
                 return userMap.values().stream()
-                                .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
+                                .map(user -> UserDto.from(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
         }
 
@@ -127,7 +124,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .authrtId(authorCode)
                                 .build() : null;
 
-                return userMapper.toDtoWithAuthority(user, authority);
+                return UserDto.from(user, authority);
         }
 
         /**
@@ -205,27 +202,27 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
 
                 user.update(
-                                userDto.getUserNm(),
+                                userDto.userNm(),
                                 user.getPswdHint(),
                                 user.getPswdCrans(),
-                                userDto.getEmplNo(),
+                                userDto.emplNo(),
                                 user.getRrno(),
                                 user.getGndrCd(),
                                 user.getBrthYmd(),
-                                userDto.getAreaNo(),
-                                userDto.getMiddleTelno(),
-                                userDto.getEndTelno(),
-                                userDto.getFaxNo(),
-                                userDto.getHomeAddr(),
-                                userDto.getDaddr(),
-                                userDto.getZip(),
-                                userDto.getOfficeTelno(),
-                                userDto.getMblTelno(),
-                                userDto.getEmlAddr(),
-                                userDto.getOfcpsNm(),
-                                userDto.getGroupId(),
-                                userDto.getOgnzId(),
-                                userDto.getPstinstCd(),
+                                userDto.areaNo(),
+                                userDto.middleTelno(),
+                                userDto.endTelno(),
+                                userDto.faxNo(),
+                                userDto.homeAddr(),
+                                userDto.daddr(),
+                                userDto.zip(),
+                                userDto.officeTelno(),
+                                userDto.mblTelno(),
+                                userDto.emlAddr(),
+                                userDto.ofcpsNm(),
+                                userDto.groupId(),
+                                userDto.ognzId(),
+                                userDto.pstinstCd(),
                                 user.getRole(),
                                 user.getCertDnVl());
         }
@@ -310,7 +307,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .build();
                 userAuthorityRepository.save(authority);
 
-                return userMapper.toResponse(user);
+                return UserResponse.from(user);
         }
 
         /**

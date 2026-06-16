@@ -27,13 +27,13 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { ExternalHrDtoSchema } from '@/types/generated-zod';
 
 const externalHrSchema = ExternalHrDtoSchema.extend({
-  otsdHrNm: z.string().min(1, '성명은 필수 입력 사항입니다.'),
-  ogdpInstNm: z.string().min(1, '소속기관은 필수 입력 사항입니다.'),
-  areaNo: z.string().min(1, '지역번호는 필수입니다.').max(4),
-  mdTelno: z.string().min(1, '국번은 필수입니다.').max(4),
-  endTelno: z.string().min(1, '종번은 필수입니다.').max(4),
-  emlAddr: z.string().email('올바른 이메일 주소를 입력하세요.'),
-  brdtYmd: z.string().min(8, '생년월일 8자리를 입력하세요(예: 19900101).').max(8),
+  otsdHrNm: z.string().min(1),
+  ogdpInstNm: z.string().min(1),
+  areaNo: z.string().min(1).max(4),
+  mdTelno: z.string().min(1).max(4),
+  endTelno: z.string().min(1).max(4),
+  emlAddr: z.string().email(),
+  brdtYmd: z.string().length(8, '생년월일 8자리를 입력하세요(예: 19900101).'),
 });
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;

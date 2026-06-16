@@ -22,12 +22,12 @@ import { motion } from 'framer-motion';
 import { UserDtoSchema } from '@/types/generated-zod';
 
 export const userSchema = UserDtoSchema.partial().extend({
-  userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
-  userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
-  emlAddr: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
+  userId: z.string().min(1),
+  userNm: z.string().min(1),
+  emlAddr: z.string().optional().or(z.literal('')),
   mblTelno: z.string().optional().or(z.literal('')),
   ognzId: z.string().optional().or(z.literal('')),
-  pswd: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
+  pswd: z.string().optional().or(z.literal('')),
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;

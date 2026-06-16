@@ -8,7 +8,7 @@ import nuri.business.domain.board.Board;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Filter;
 
 /**
  * 게시물 댓글 엔티티 (v5 standardized)
@@ -22,7 +22,7 @@ import org.hibernate.annotations.SQLRestriction;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bbs_comment")
-@SQLRestriction("use_yn = 'Y'")
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Comment extends BaseEntity implements Serializable {
 
     @Id

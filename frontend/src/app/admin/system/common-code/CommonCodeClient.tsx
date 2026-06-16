@@ -72,10 +72,9 @@ const INDENTATION_WIDTH = 24;
 import { CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
 
 const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
- dtlCd: z.string().min(1, '코드 식별자는 필수입니다.').max(12, '상세코드는 12자 이하로 입력해주세요.'),
- dtlCdNm: z.string().min(1, '표기 레이블은 필수입니다.').max(100, '상세코드명은 100자 이하로 입력해주세요.'),
+ dtlCd: z.string().min(1).max(12),
+ dtlCdNm: z.string().min(1).max(100),
  useYn: z.enum(['Y', 'N']).default('Y'),
- dtlCdExpln: z.string().max(4000, '상세코드 설명은 4000자 이하로 입력해주세요.').optional()
 });
 
 const dropAnimation: DropAnimation = {

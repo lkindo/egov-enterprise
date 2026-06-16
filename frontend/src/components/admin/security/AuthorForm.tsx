@@ -17,18 +17,15 @@ import { AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { cn } from '@/lib/utils';
 import { Zap, Key, ShieldCheck, Binary } from 'lucide-react';
 
-import { RoleManageDtoSchema } from '@/types/generated-zod';
+import { AuthorManageDtoSchema } from '@/types/generated-zod';
 
-export const authorSchema = RoleManageDtoSchema.partial().extend({
+export const authorSchema = AuthorManageDtoSchema.extend({
   authrtCd: z.string()
-    .min(1, '권한 코드는 필수입니다.')
-    .max(30, '권한 코드는 30자 이내여야 합니다.')
+    .min(1)
     .regex(/^[A-Z0-9_]+$/, '영문 대문자, 숫자, 언더바(_)만 가능합니다.'),
   authrtNm: z.string()
-    .min(1, '권한 명칭은 필수입니다.')
-    .max(60, '권한 명칭은 60자 이내여야 합니다.'),
+    .min(1),
   authrtExpln: z.string()
-    .max(200, '내용이 너무 깁니다. (최대 200자)')
     .optional()
     .or(z.literal('')),
 });

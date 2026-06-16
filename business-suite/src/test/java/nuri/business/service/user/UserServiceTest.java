@@ -7,7 +7,6 @@ import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserSignupRequest;
-import nuri.business.service.user.mapper.UserMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,26 +38,28 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private UserMapper userMapper;
-
     @InjectMocks
     private UserService userService;
 
     @Test
     @DisplayName("사용자 목록 조회 테스트")
     void getUserListTest() {
-        User user = mock(User.class);
-        given(user.getEsntlId()).willReturn("USR1");
+        User user = User.builder()
+                .userId("user1")
+                .userNm("User 1")
+                .esntlId("USR1")
+                .pswd("password")
+                .build();
         
-        UserAuthority authority = mock(UserAuthority.class);
-        given(authority.getScrtyDcsnTrgtId()).willReturn("USR1");
+        UserAuthority authority = UserAuthority.builder()
+                .scrtyDcsnTrgtId("USR1")
+                .authrtId("ROLE_USER")
+                .build();
         
         List<Object[]> list = new ArrayList<>();
         list.add(new Object[]{user, authority});
         
         given(userRepository.findAllWithAuthorities()).willReturn(list);
-        lenient().when(userMapper.toDtoWithAuthority(any(), any())).thenReturn(new UserDto());
 
         List<UserDto> result = userService.getUserList();
 
@@ -69,12 +70,15 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 상세 조회 테스트")
     void getUserByIdTest() {
-        User user = mock(User.class);
-        given(user.getEsntlId()).willReturn("USR1");
+        User user = User.builder()
+                .userId("USR1")
+                .userNm("User 1")
+                .esntlId("USR1")
+                .pswd("password")
+                .build();
         
         given(userRepository.findById("USR1")).willReturn(Optional.of(user));
         given(userAuthorityRepository.findById("USR1")).willReturn(Optional.empty());
-        lenient().when(userMapper.toDtoWithAuthority(any(), any())).thenReturn(new UserDto());
 
         UserDto result = userService.getUserById("USR1");
 
@@ -145,7 +149,7 @@ class UserServiceTest {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
-            userService.updateUser("user1", new UserDto());
+            userService.updateUser("user1", UserDto.builder().build());
             verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
         }
     }
@@ -160,7 +164,7 @@ class UserServiceTest {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
-            assertThrows(BusinessException.class, () -> userService.updateUser("user2", new UserDto()));
+            assertThrows(BusinessException.class, () -> userService.updateUser("user2", UserDto.builder().build()));
         }
     }
 
@@ -175,7 +179,6 @@ class UserServiceTest {
 
         given(userRepository.existsById("newuser")).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
-        lenient().when(userMapper.toResponse(any())).thenReturn(null);
 
         userService.signup(request);
         verify(userRepository).save(any());

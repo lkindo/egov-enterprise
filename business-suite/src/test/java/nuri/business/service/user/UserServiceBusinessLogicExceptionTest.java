@@ -6,7 +6,6 @@ import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.service.user.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +40,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Mock
         private PasswordEncoder passwordEncoder;
 
-        @Mock
-        private UserMapper userMapper;
+
 
         @InjectMocks
         private UserService userService;

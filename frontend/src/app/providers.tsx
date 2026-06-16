@@ -20,6 +20,23 @@ const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboardin
 const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
 
 
+import { z } from 'zod';
+z.setErrorMap((issue) => {
+  if (issue.code === 'invalid_format' && issue.format === 'email') {
+    return { message: '올바른 이메일 주소를 입력하세요.' };
+  }
+  if (issue.code === 'too_small' && issue.origin === 'string') {
+    if (issue.minimum === 1) {
+      return { message: '필수 입력 항목입니다.' };
+    }
+    return { message: `최소 ${issue.minimum}자 이상 입력해야 합니다.` };
+  }
+  if (issue.code === 'too_big' && issue.origin === 'string') {
+    return { message: `최대 ${issue.maximum}자 이하로 입력해야 합니다.` };
+  }
+  return { message: issue.message || '입력값이 올바르지 않습니다.' };
+});
+
 import { UserInfo } from '@/services/foundation/auth/authService';
 
 export default function Providers({ 

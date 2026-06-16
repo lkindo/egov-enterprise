@@ -65,8 +65,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("내 프로필 조회 성공")
     void getMe() throws Exception {
-        UserDto mockDto = new UserDto();
-        mockDto.setUserId("testuser");
+        UserDto mockDto = UserDto.builder()
+                .userId("testuser")
+                .userNm("테스트")
+                .pswd("ValidPass123!")
+                .build();
         when(userService.getUserById("testuser")).thenReturn(mockDto);
 
         mockMvc.perform(get("/api/v1/users/me"))
@@ -77,10 +80,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("내 프로필 수정 성공")
     void updateMe() throws Exception {
-        UserDto dto = new UserDto();
-        dto.setUserId("testuser");
-        dto.setUserNm("홍길동");
-        dto.setPswd("ValidPass123!");
+        UserDto dto = UserDto.builder()
+                .userId("testuser")
+                .userNm("홍길동")
+                .pswd("ValidPass123!")
+                .build();
         
         doNothing().when(userService).updateUser(eq("testuser"), any(UserDto.class));
 
@@ -149,7 +153,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 특정 사용자 조회 성공")
     void getUser() throws Exception {
-        UserDto mockDto = new UserDto();
+        UserDto mockDto = UserDto.builder()
+                .userId("targetUser")
+                .userNm("홍길동")
+                .pswd("ValidPass123!")
+                .build();
         when(userService.getUserById("targetUser")).thenReturn(mockDto);
 
         mockMvc.perform(get("/api/v1/admin/system/users/targetUser"))
@@ -159,10 +167,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 사용자 등록 성공")
     void insertUser() throws Exception {
-        UserDto dto = new UserDto();
-        dto.setUserId("newUser");
-        dto.setPswd("ValidPass123!");
-        dto.setUserNm("홍길동");
+        UserDto dto = UserDto.builder()
+                .userId("newUser")
+                .userNm("홍길동")
+                .pswd("ValidPass123!")
+                .build();
         
         when(userService.registerUser(any(), any(), any(), any(), any(), any())).thenReturn("newUser");
 
@@ -176,10 +185,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 사용자 정보 수정 성공")
     void updateUser() throws Exception {
-        UserDto dto = new UserDto();
-        dto.setUserId("targetUser");
-        dto.setUserNm("홍길동");
-        dto.setPswd("ValidPass123!");
+        UserDto dto = UserDto.builder()
+                .userId("targetUser")
+                .userNm("홍길동")
+                .pswd("ValidPass123!")
+                .build();
         doNothing().when(userService).updateUser(eq("targetUser"), any(UserDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")

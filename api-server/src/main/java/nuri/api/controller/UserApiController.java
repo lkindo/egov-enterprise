@@ -107,12 +107,12 @@ public class UserApiController {
     @PostMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody @Valid UserDto dto) {
         String resultId = userService.registerUser(
-                dto.getUserId(),
-                dto.getPswd(),
-                dto.getUserNm(),
-                dto.getPswdHint(),
-                dto.getPswdCrans(),
-                dto.getRole());
+                dto.userId(),
+                dto.pswd(),
+                dto.userNm(),
+                dto.pswdHint(),
+                dto.pswdCrans(),
+                dto.role());
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }
 

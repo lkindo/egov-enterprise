@@ -43,28 +43,28 @@ public class SanctionEventListener {
                     event.getReason() != null ? event.getReason() : "없음");
 
             // SMS 발송
-            if (org.springframework.util.StringUtils.hasText(user.getMblTelno())) {
+            if (org.springframework.util.StringUtils.hasText(user.mblTelno())) {
                 nuri.business.service.sms.dto.SmsDto smsDto = nuri.business.service.sms.dto.SmsDto.builder()
                         .sndngTelno("02-1234-5678") // 대표번호
                         .sndngCn(message)
                         .recipients(java.util.List.of(nuri.business.service.sms.dto.SmsRecptnDto.builder()
-                                .rcptnTelno(user.getMblTelno())
+                                .rcptnTelno(user.mblTelno())
                                 .build()))
                         .build();
                 smsService.sendSms("SYSTEM", smsDto);
-                log.info("SMS notification sent to {}", user.getMblTelno());
+                log.info("SMS notification sent to {}", user.mblTelno());
             }
 
             // Mail 발송
-            if (org.springframework.util.StringUtils.hasText(user.getEmlAddr())) {
+            if (org.springframework.util.StringUtils.hasText(user.emlAddr())) {
                 nuri.business.service.mail.dto.SentMailDto mailDto = nuri.business.service.mail.dto.SentMailDto.builder()
                         .dsptchPerson("admin@egov.enterprise")
                         .sj("[eGov] 결재 상태 변경 알림")
                         .emailCn(message)
-                        .recptnPerson(user.getEmlAddr())
+                        .recptnPerson(user.emlAddr())
                         .build();
                 mailService.sendMail("SYSTEM", mailDto);
-                log.info("Mail notification sent to {}", user.getEmlAddr());
+                log.info("Mail notification sent to {}", user.emlAddr());
             }
 
         } catch (Exception e) {

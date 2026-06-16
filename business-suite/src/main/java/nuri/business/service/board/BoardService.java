@@ -46,7 +46,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         private final EgovFileService fileService;
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
-        private final BoardMapper boardMapper;
         private final BoardViewCountService viewCountService;
 
         public BoardService(BoardRepository boardRepository,
@@ -55,7 +54,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         EgovFileService fileService,
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
-                        BoardMapper boardMapper,
                         BoardViewCountService viewCountService) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
@@ -63,7 +61,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 this.fileService = required(fileService, "fileService 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "eventPublisher 는 null 일 수 없습니다");
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
-                this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
         }
 
@@ -118,7 +115,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 condition.validateDates();
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
-                                .map(boardMapper::toDto);
+                                .map(BoardDto::from);
 
         }
 
@@ -167,12 +164,32 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
                         String userIdToSet = request.userId() != null ? request.userId() : userId;
-                        String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.getUserNm() : "익명");
+                        String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.userNm() : "익명");
 
                         // DB 시퀀스를 사용하여 유니크한 ID 생성
                         String pstIdToSet = String.valueOf(boardRepository.getNextPstId());
 
-                        Board board = boardMapper.toEntity(request, master.getBbsId(), userIdToSet, userNmToSet, sortOrdr);
+                        Board board = Board.builder()
+                                        .bbsId(master.getBbsId())
+                                        .ansSn(1L)
+                                        .upPstId("0")
+                                        .useYn(request.useYn() != null ? request.useYn() : "Y")
+                                        .qnaSttsCd(request.qnaSttsCd() != null ? request.qnaSttsCd() : "OPEN")
+                                        .evntDt(parseDateTime(request.evntDt()))
+                                        .inqCnt(0)
+                                        .likeCnt(0)
+                                        .userId(userIdToSet)
+                                        .userNm(userNmToSet)
+                                        .sortOrdr(sortOrdr)
+                                        .pstTtl(request.pstTtl())
+                                        .pstCn(request.pstCn())
+                                        .pstBgngYmd(request.pstBgngYmd())
+                                        .pstEndYmd(request.pstEndYmd())
+                                        .atchFileId(request.atchFileId())
+                                        .qnaCatCd(request.qnaCatCd())
+                                        .scrtYn(request.scrtYn())
+                                        .pswd(request.pswd())
+                                        .build();
                         board.setPstId(pstIdToSet);
 
                         String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -235,9 +252,30 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 Long ansSn = boardRepository.findMaxAnsSn(master.getBbsId(), parent.getSortOrdr()) + 1;
 
                 String userIdToSet = userId;
-                String userNmToSet = author != null ? author.getUserNm() : "익명";
+                String userNmToSet = author != null ? author.userNm() : "익명";
 
-                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), userIdToSet, userNmToSet, parent.getSortOrdr(), ansSn, parentId, 0);
+                Board board = Board.builder()
+                                .bbsId(master.getBbsId())
+                                .ansSn(ansSn)
+                                .upPstId(parentId)
+                                .useYn(request.useYn() != null ? request.useYn() : "Y")
+                                .qnaSttsCd(request.qnaSttsCd() != null ? request.qnaSttsCd() : "OPEN")
+                                .evntDt(parseDateTime(request.evntDt()))
+                                .inqCnt(0)
+                                .likeCnt(0)
+                                .userId(userIdToSet)
+                                .userNm(userNmToSet)
+                                .sortOrdr(parent.getSortOrdr())
+                                .ansLv(0)
+                                .pstTtl(request.pstTtl())
+                                .pstCn(request.pstCn())
+                                .pstBgngYmd(request.pstBgngYmd())
+                                .pstEndYmd(request.pstEndYmd())
+                                .atchFileId(request.atchFileId())
+                                .qnaCatCd(request.qnaCatCd())
+                                .scrtYn(request.scrtYn())
+                                .pswd(request.pswd())
+                                .build();
                 
                 // ID 생성
                 board.setPstId(String.valueOf(System.currentTimeMillis()));
@@ -279,7 +317,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 // Redis 기반 쓰기 지연 처리
                 viewCountService.increaseViewCount(pstId);
 
-                return boardMapper.toDto(detail);
+                return BoardDto.from(detail);
         }
 
         @Override
@@ -370,5 +408,17 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 board.increaseLikeCnt();
                 return board.getLikeCnt();
+        }
+
+        private java.time.LocalDateTime parseDateTime(String dateStr) {
+                if (dateStr == null || dateStr.isEmpty()) return null;
+                try {
+                        if (dateStr.length() == 10) {
+                                return java.time.LocalDate.parse(dateStr).atStartOfDay();
+                        }
+                        return java.time.LocalDateTime.parse(dateStr);
+                } catch (Exception e) {
+                        return null;
+                }
         }
 }

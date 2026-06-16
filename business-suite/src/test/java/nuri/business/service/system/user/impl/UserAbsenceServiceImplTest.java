@@ -2,7 +2,6 @@ package nuri.business.service.system.user.impl;
 
 import nuri.business.domain.user.dto.UserAbsenceDto;
 import nuri.business.domain.user.entity.UserAbsence;
-import nuri.business.domain.user.mapper.UserAbsenceMapper;
 import nuri.business.domain.user.repository.UserAbsenceRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,23 +28,19 @@ class UserAbsenceServiceImplTest {
     @Mock
     private UserAbsenceRepository userAbsenceRepository;
 
-    @Mock
-    private UserAbsenceMapper userAbsenceMapper;
-
     @Test
     @DisplayName("부재 목록 조회 성공")
     void getAbsences_Success() {
         // given
-        UserAbsence absence = UserAbsence.builder().userId("user1").build();
+        UserAbsence absence = UserAbsence.builder().userId("user1").userAbsnYn("N").build();
         given(userAbsenceRepository.findAll()).willReturn(List.of(absence));
-        given(userAbsenceMapper.toDtoList(any())).willReturn(List.of(UserAbsenceDto.builder().userId("user1").build()));
 
         // when
         List<UserAbsenceDto> result = userAbsenceService.getAbsences();
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUserId()).isEqualTo("user1");
+        assertThat(result.get(0).userId()).isEqualTo("user1");
     }
 
     @Test
@@ -54,13 +49,12 @@ class UserAbsenceServiceImplTest {
         // given
         UserAbsence absence = UserAbsence.builder().userId("user1").userAbsnYn("Y").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
-        given(userAbsenceMapper.toDto(any())).willReturn(UserAbsenceDto.builder().userId("user1").userAbsnYn("Y").build());
 
         // when
         UserAbsenceDto result = userAbsenceService.getAbsence("user1");
 
         // then
-        assertThat(result.getUserAbsnYn()).isEqualTo("Y");
+        assertThat(result.userAbsnYn()).isEqualTo("Y");
     }
 
     @Test
@@ -68,16 +62,12 @@ class UserAbsenceServiceImplTest {
     void getAbsence_NotFound() {
         // given
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.empty());
-        given(userAbsenceMapper.toDto(any())).willAnswer(inv -> {
-            UserAbsence a = inv.getArgument(0);
-            return UserAbsenceDto.builder().userId(a.getUserId()).userAbsnYn(a.getUserAbsnYn()).build();
-        });
 
         // when
         UserAbsenceDto result = userAbsenceService.getAbsence("user1");
 
         // then
-        assertThat(result.getUserAbsnYn()).isEqualTo("N");
+        assertThat(result.userAbsnYn()).isEqualTo("N");
     }
 
     @Test
@@ -86,7 +76,7 @@ class UserAbsenceServiceImplTest {
         // given
         UserAbsence absence = UserAbsence.builder().userId("user1").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
-        UserAbsenceDto dto = UserAbsenceDto.builder().userAbsnYn("Y").build();
+        UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnYn("Y").build();
 
         // when
         userAbsenceService.updateAbsence("user1", dto);

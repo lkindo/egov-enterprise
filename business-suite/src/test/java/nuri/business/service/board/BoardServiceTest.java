@@ -49,8 +49,6 @@ class BoardServiceTest {
     private ApplicationEventPublisher eventPublisher;
     private MeterRegistry meterRegistry;
     @Mock
-    private BoardMapper boardMapper;
-    @Mock
     private BoardViewCountService viewCountService;
     @Mock
     private Timer timer;
@@ -71,7 +69,6 @@ class BoardServiceTest {
                 fileService,
                 eventPublisher,
                 meterRegistry,
-                boardMapper,
                 viewCountService);
     }
 
@@ -89,17 +86,16 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
         BoardSearchResult resultItem = BoardSearchResult.builder().pstId("1").build();
         Page<BoardSearchResult> page = new PageImpl<>(Collections.singletonList(resultItem));
-        BoardDto dto = BoardDto.builder().pstId("1").build();
 
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
         given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(page);
-        given(boardMapper.toDto(resultItem)).willReturn(dto);
 
         // when
         Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).pstId()).isEqualTo("1");
     }
 
     @Test
@@ -178,14 +174,12 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board board = Board.builder().pstId("1").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
-        given(boardRepository.save(board)).willReturn(board);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         String pstId = boardService.createPost(userId, request);
@@ -205,14 +199,12 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-        Board reply = Board.builder().pstId("2").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
-        given(boardRepository.save(reply)).willReturn(reply);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         String pstId = boardService.replyPost(userId, parentId, request);
@@ -227,17 +219,18 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         String pstId = "1";
-        BoardDetailResult detail = mock(BoardDetailResult.class);
-        BoardDto dto = BoardDto.builder().pstId(pstId).build();
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .pstId(pstId)
+                .bbsId(bbsId)
+                .build();
 
         given(boardRepository.findArticleDetail(pstId)).willReturn(Optional.of(detail));
-        given(boardMapper.toDto(detail)).willReturn(dto);
 
         // when
         BoardDto result = boardService.getPostDetail(bbsId, pstId);
 
         // then
-        assertThat(result.getPstId()).isEqualTo(pstId);
+        assertThat(result.pstId()).isEqualTo(pstId);
         verify(viewCountService).increaseViewCount(pstId);
     }
 
@@ -341,21 +334,19 @@ class BoardServiceTest {
         String userId = "unknown";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId("1").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
-        given(boardRepository.save(any())).willReturn(board);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         String pstId = boardService.createPost(userId, request);
 
         // then
         assertThat(pstId).isEqualTo("1");
-        verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
+        verify(boardRepository).save(argThat(b -> "unknown".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
     }
 
     @Test
@@ -365,21 +356,19 @@ class BoardServiceTest {
         String userId = "errorUser";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId("1").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
-        given(boardRepository.save(any())).willReturn(board);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         String pstId = boardService.createPost(userId, request);
 
         // then
         assertThat(pstId).isEqualTo("1");
-        verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
+        verify(boardRepository).save(argThat(b -> "errorUser".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
     }
 
     @Test
@@ -389,19 +378,17 @@ class BoardServiceTest {
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, "customId", "customNm", null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board board = Board.builder().pstId("1").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
-        given(boardRepository.save(any())).willReturn(board);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         boardService.createPost(userId, request);
 
         // then
-        verify(boardMapper).toEntity(any(), any(), eq("customId"), eq("customNm"), any());
+        verify(boardRepository).save(argThat(b -> "customId".equals(b.getUserId()) && "customNm".equals(b.getUserNm())));
     }
 
     @Test
@@ -419,15 +406,14 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().pstId("1").build());
-        given(boardRepository.save(any())).willReturn(Board.builder().pstId("1").build());
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         boardService.createPostWithFiles(userId, request, files);
 
         // then
         verify(fileService).uploadFiles(files);
-        verify(boardMapper).toEntity(argThat(req -> "ATCH_001".equals(req.atchFileId())), any(), any(), any(), any());
+        verify(boardRepository).save(argThat(b -> "ATCH_001".equals(b.getAtchFileId())));
     }
 
     @Test
@@ -439,20 +425,18 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
-        Board reply = Board.builder().pstId("2").build();
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxAnsSn(any(), any())).willReturn(0L);
-        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
-        given(boardRepository.save(any())).willReturn(reply);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         boardService.replyPost(userId, parentId, request);
 
         // then
-        verify(boardMapper).toReplyEntity(any(), any(), eq(userId), eq("익명"), any(), any(), any(), any());
+        verify(boardRepository).save(argThat(b -> "unknown".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
     }
 
     @Test
@@ -472,9 +456,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
-        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(Board.builder().pstId("2").build());
-        given(boardRepository.save(any())).willReturn(Board.builder().pstId("2").build());
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         boardService.replyPostWithFiles(userId, parentId, request, files);
@@ -638,8 +620,7 @@ class BoardServiceTest {
         // create
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().pstId("1").build());
-        given(boardRepository.save(any())).willReturn(Board.builder().pstId("1").build());
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         boardService.createPostWithFiles(userId, request, null);
         boardService.createPostWithFiles(userId, request, Collections.emptyList());
@@ -655,8 +636,6 @@ class BoardServiceTest {
         // reply
         Board parent = Board.builder().pstId("1").sortOrdr(100L).ansLv(0).build();
         given(boardRepository.findById("1")).willReturn(Optional.of(parent));
-        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(Board.builder().pstId("2").build());
         
         boardService.replyPostWithFiles(userId, "1", request, null);
         boardService.replyPostWithFiles(userId, "1", request, Collections.emptyList());

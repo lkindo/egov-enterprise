@@ -27,17 +27,9 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
 
 const boardSchema = BoardSaveRequestSchema.extend({
-  pstTtl: z.string().min(1, '제목을 입력해주세요.'),
-  pstCn: z.string().min(1, '내용을 입력해주세요.'),
-  userNm: z.string().optional(),
-  password: z.string().optional(),
-  bbsId: z.string(),
   pstId: z.string().optional(),
   parnts: z.string().optional(),
-  replyYn: z.enum(['Y', 'N']).default('N'),
-  atchFileId: z.string().optional(),
-  secretYn: z.enum(['Y', 'N']).default('N'),
-  noticeYn: z.enum(['Y', 'N']).default('N'),
+  replyYn: z.string().optional(),
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
@@ -62,12 +54,12 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
       pstTtl: initialData?.pstTtl || '',
       pstCn: initialData?.pstCn || '',
       userNm: initialData?.userNm || '관리자',
-      password: initialData?.password || '1',
+      pswd: initialData?.pswd || '1',
       parnts: parnts || initialData?.parnts,
       replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
       atchFileId: initialData?.atchFileId || '',
-      secretYn: initialData?.secretYn || 'N',
-      noticeYn: initialData?.noticeYn || 'N',
+      scrtYn: initialData?.scrtYn || 'N',
+      useYn: initialData?.useYn || 'Y',
     } as BoardFormValues
   });
 

@@ -1,66 +1,86 @@
 package nuri.business.service.user.dto;
 
-import nuri.business.domain.user.entity.Role;
+import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DisplayName("User DTO (사용자 DTO) 테스트")
+@DisplayName("UserDto 및 UserResponse 매핑 테스트")
 class UserDtoTest {
 
     @Test
-    @DisplayName("User 엔티티에서 UserDto로 변환 테스트")
-    void userDtoFromEntityTest() {
-        // Given
-        User user = User.builder()
-                .userId("tester")
-                .userNm("테스터")
-                .esntlId("USR_0000000000001")
-                .pswd("password") // Fixed: Add required field
-                .role(Role.ADMIN)
-                .emplNo("12345")
-                .ofcpsNm("과장")
-                .build();
-
-        // When
+    @DisplayName("from - null check")
+    void testFrom_NullCheck() {
+        assertNull(UserDto.from(null));
+        
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
         UserDto dto = UserDto.from(user);
-
-        // Then
-        assertThat(dto.getUserId()).isEqualTo("tester");
-        assertThat(dto.getUserNm()).isEqualTo("테스터");
-        assertThat(dto.getEsntlId()).isEqualTo("USR_0000000000001");
-        assertThat(dto.getRole()).isEqualTo("ADMIN");
-        assertThat(dto.getEmplNo()).isEqualTo("12345");
-        assertThat(dto.getOfcpsNm()).isEqualTo("과장");
+        assertNotNull(dto);
+        assertEquals("user1", dto.userId());
+        assertNull(dto.role());
     }
 
     @Test
-    @DisplayName("null User 엔티티 변환 테스트")
-    void userDtoFromNullEntityTest() {
-        assertThat(UserDto.from(null)).isNull();
+    @DisplayName("from - with role")
+    void testFrom_WithRole() {
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(Role.ADMIN).build();
+        UserDto dto = UserDto.from(user);
+        assertEquals("ADMIN", dto.role());
     }
 
     @Test
-    @DisplayName("UserSignupRequest 생성 테스트")
-    void userSignupRequestTest() {
-        // Given & When
-        UserSignupRequest request = UserSignupRequest.builder()
-                .userId("signupUser")
-                .pswd("password123!")
-                .userNm("가입자")
-                .role("USER")
-                .pswdHint("Hint")
-                .pswdCrans("Answer")
-                .build();
+    @DisplayName("from with authority - all null")
+    void testFromWithAuthority_AllNull() {
+        assertNull(UserDto.from(null, null));
+    }
 
-        // Then
-        assertThat(request.getUserId()).isEqualTo("signupUser");
-        assertThat(request.getPswd()).isEqualTo("password123!");
-        assertThat(request.getUserNm()).isEqualTo("가입자");
-        assertThat(request.getRole()).isEqualTo("USER");
-        assertThat(request.getPswdHint()).isEqualTo("Hint");
-        assertThat(request.getPswdCrans()).isEqualTo("Answer");
+    @Test
+    @DisplayName("from with authority - null authority, user with role")
+    void testFromWithAuthority_NullAuthority() {
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(Role.ADMIN).build();
+        UserDto dto = UserDto.from(user, null);
+        assertNotNull(dto);
+        assertEquals("ROLE_ADMIN", dto.role());
+        assertEquals("USR", dto.userSe());
+    }
+
+    @Test
+    @DisplayName("from with authority - null authority, user without role")
+    void testFromWithAuthority_NullAuthority_NullRole() {
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
+        UserDto dto = UserDto.from(user, null);
+        assertNotNull(dto);
+        assertEquals("ROLE_USER", dto.role());
+        assertEquals("USR", dto.userSe());
+    }
+
+    @Test
+    @DisplayName("from with authority - with authority")
+    void testFromWithAuthority_WithAuthority() {
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
+        UserAuthority auth = UserAuthority.builder().scrtyDcsnTrgtId("esntl1").authrtId("ROLE_SYS").mbrTypeCd("USR").build();
+        UserDto dto = UserDto.from(user, auth);
+        assertNotNull(dto);
+        assertEquals("ROLE_SYS", dto.role());
+        assertEquals("USR", dto.userSe());
+    }
+
+    @Test
+    @DisplayName("from with authority - null user, with authority")
+    void testFromWithAuthority_NullUser_WithAuthority() {
+        UserAuthority auth = UserAuthority.builder().scrtyDcsnTrgtId("esntl1").authrtId("ROLE_SYS").mbrTypeCd("USR").build();
+        assertNull(UserDto.from(null, auth));
+    }
+
+    @Test
+    @DisplayName("UserResponse from - basic mapping")
+    void testUserResponseFrom() {
+        assertNull(UserResponse.from(null));
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
+        UserResponse response = UserResponse.from(user);
+        assertNotNull(response);
+        assertEquals("user1", response.userId());
     }
 }

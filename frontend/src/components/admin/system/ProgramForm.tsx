@@ -32,10 +32,10 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
 const formSchema = ProgramDtoSchema.extend({
-  prgrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
-  prgrmStrgPath: z.string().min(1, { message: "저장경로는 필수입니다." }),
-  prgrmKornNm: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
-  url: z.string().min(1, { message: "URL은 필수입니다." }),
+  prgrmFileNm: z.string().min(1),
+  prgrmStrgPath: z.string().min(1),
+  prgrmKornNm: z.string().min(1),
+  url: z.string().min(1),
 });
 
 type ProgramFormValues = z.infer<typeof formSchema>;

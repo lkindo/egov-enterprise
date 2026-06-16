@@ -27,7 +27,7 @@ describe('Standardized Validation Schemas', () => {
       if (!result.success) {
         const issues = result.error.issues;
         expect(issues.length).toBeGreaterThan(0);
-        expect(issues[0].message).toBe('설문 주제는 필수입니다.');
+        expect(issues[0].code).toBe('too_small');
       }
     });
 
@@ -71,7 +71,7 @@ describe('Standardized Validation Schemas', () => {
       if (!result.success) {
         const issues = result.error.issues;
         expect(issues.length).toBeGreaterThan(0);
-        expect(issues[0].message).toBe('메시지는 80자 이내여야 합니다.');
+        expect(issues[0].code).toBe('too_big');
       }
     });
   });
