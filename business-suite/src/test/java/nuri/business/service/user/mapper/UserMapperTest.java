@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("UserMapper Tests")
 public class UserMapperTest {
 
-    private final UserMapper mapper = new UserMapperImpl();
+    private final UserMapper mapper = UserMapper.INSTANCE;
 
     @Test
     @DisplayName("toDto - null check")
