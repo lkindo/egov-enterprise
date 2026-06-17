@@ -303,7 +303,7 @@ class BoardMasterServiceTest {
     void isDeletable_Success() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
 
         boolean result = boardMasterService.isDeletable("BBS_01");
 
@@ -326,7 +326,7 @@ class BoardMasterServiceTest {
     void isDeletable_HasArticles() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(5L);
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(5L);
 
         boolean result = boardMasterService.isDeletable("BBS_01");
 
@@ -338,7 +338,7 @@ class BoardMasterServiceTest {
     void deleteBoardMasterPhysically_Success() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
 
         boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01");
 
@@ -360,7 +360,7 @@ class BoardMasterServiceTest {
     void deleteBoardMasterPhysically_HasArticles() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(3L);
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(3L);
 
         assertThrows(BusinessException.class, 
             () -> boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01"));
@@ -387,8 +387,8 @@ class BoardMasterServiceTest {
         BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
         given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
-        given(boardRepository.countAllByBbsIdNative("BBS_02")).willReturn(0L);
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsId("BBS_02")).willReturn(0L);
 
         boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02"));
 
@@ -415,8 +415,8 @@ class BoardMasterServiceTest {
         BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
         given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
-        given(boardRepository.countAllByBbsIdNative("BBS_01")).willReturn(0L);
-        given(boardRepository.countAllByBbsIdNative("BBS_02")).willReturn(2L); // 게시글 있음
+        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
+        given(boardRepository.countAllByBbsId("BBS_02")).willReturn(2L); // 게시글 있음
 
         assertThrows(BusinessException.class,
             () -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02")));

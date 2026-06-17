@@ -129,7 +129,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         if (!"N".equals(master.getUseYn())) {
             return false;
         }
-        long count = boardRepository.countAllByBbsIdNative(bbsId);
+        long count = boardRepository.countAllByBbsId(bbsId);
         return count == 0;
     }
 
@@ -142,7 +142,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
             throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
         }
 
-        long count = boardRepository.countAllByBbsIdNative(bbsId);
+        long count = boardRepository.countAllByBbsId(bbsId);
         if (count > 0) {
             throw new BusinessException(ErrorCode.BOARD_HAS_ARTICLES);
         }
@@ -176,7 +176,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
             }
 
-            long count = boardRepository.countAllByBbsIdNative(bbsId);
+            long count = boardRepository.countAllByBbsId(bbsId);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BOARD_HAS_ARTICLES);
             }

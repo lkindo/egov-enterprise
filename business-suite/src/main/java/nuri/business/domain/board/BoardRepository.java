@@ -32,8 +32,8 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
 
         long countByBbsIdAndUseYn(String bbsId, String useYn);
 
-        @Query(value = "SELECT COUNT(*) FROM tb_bbs_item WHERE bbs_id = :bbsId", nativeQuery = true)
-        long countAllByBbsIdNative(@Param("bbsId") String bbsId);
+        @Query("SELECT COUNT(b) FROM Board b WHERE b.bbsId = :bbsId")
+        long countAllByBbsId(@Param("bbsId") String bbsId);
 
         @Query("SELECT COALESCE(SUM(b.inqCnt), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
         long sumInqCntByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
