@@ -72,6 +72,15 @@
 # ----- Local Configuration & Secrets -----
 **/egovProps/conf/
 **/*.local.properties
+# Private keys & certificates — never commit (SSH/RSA/TLS)
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+ssh-key-*.key
+id_rsa
+id_rsa.*
 **/.env
 **/.env*.local
 **/.env.development.local
