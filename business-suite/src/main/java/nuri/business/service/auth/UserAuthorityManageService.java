@@ -5,7 +5,6 @@ import nuri.business.domain.auth.DeptAuthorProjection;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.business.service.auth.dto.UserAuthorityDto;
@@ -108,7 +107,7 @@ public class UserAuthorityManageService {
         if (request.isAllMembers()) {
             // 부서 내 모든 사용자 조회
             userIds = userRepository.findByOgnzId(request.getDeptId()).stream()
-                    .map(User::getEsntlId)
+                    .map(user -> user.getEsntlId())
                     .collect(Collectors.toList());
         } else {
             userIds = request.getUserIds();

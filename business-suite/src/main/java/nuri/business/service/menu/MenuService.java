@@ -60,7 +60,7 @@ public class MenuService {
 
         List<Program> programs = programRepository.findAll();
         Map<String, String> legacyUrlMap = programs.stream()
-            .collect(Collectors.toMap(Program::getPrgrmFileNm, Program::getUrl, (a, b) -> a));
+            .collect(Collectors.toMap(p -> p.getPrgrmFileNm(), p -> p.getUrl(), (a, b) -> a));
 
         for (Menu m : menus) {
             String route = inferModernRoute(m.getPrgrmFileNm());
@@ -130,7 +130,7 @@ public class MenuService {
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getPrgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getPrgrmFileNm, Function.identity(), (a, b) -> a));
+                .collect(Collectors.toMap(p -> p.getPrgrmFileNm(), Function.identity(), (a, b) -> a));
 
         Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
@@ -378,7 +378,7 @@ public class MenuService {
         if (url == null || url.isEmpty())
             return null;
         return programRepository.findByUrl(Objects.requireNonNull(url))
-                .map(Program::getPrgrmFileNm)
+                .map(p -> p.getPrgrmFileNm())
                 .orElse(null);
     }
 

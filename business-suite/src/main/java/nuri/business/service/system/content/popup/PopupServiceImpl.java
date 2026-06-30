@@ -100,7 +100,7 @@ public class PopupServiceImpl implements PopupService {
     @Override
     public List<String> getPopupWhiteList() {
         return popupRepository.findAll().stream()
-                .map(Popup::getFileUrl)
+                .map(p -> p.getFileUrl())
                 .collect(Collectors.toList());
     }
 }

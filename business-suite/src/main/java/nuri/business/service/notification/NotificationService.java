@@ -110,6 +110,6 @@ public class NotificationService implements EgovNotificationService {
     @Transactional
     public void markAsRead(String notiSn) {
         log.info("Marking notification ID: {} as read", notiSn);
-        notificationRepository.findById(notiSn).ifPresent(Notification::markAsRead);
+        notificationRepository.findById(notiSn).ifPresent(noti -> noti.markAsRead());
     }
 }

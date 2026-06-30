@@ -62,6 +62,6 @@ public class FaqService extends BaseAbstractService {
 
     @Transactional
     public void increaseInqCnt(@NonNull String faqId) {
-        faqRepository.findById(faqId).ifPresent(Faq::increaseInqCnt);
+        faqRepository.findById(faqId).ifPresent(faq -> faq.increaseInqCnt());
     }
 }

@@ -3,7 +3,6 @@ package nuri.business.security.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +119,7 @@ public class JwtTokenProvider {
         if (request.getCookies() == null) return null;
         return Arrays.stream(request.getCookies())
                 .filter(cookie -> "refreshToken".equals(cookie.getName()))
-                .map(Cookie::getValue)
+                .map(cookie -> cookie.getValue())
                 .findFirst()
                 .orElse(null);
     }

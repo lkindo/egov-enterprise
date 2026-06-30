@@ -8,8 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 
@@ -56,7 +55,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         
         // use_yn = 'Y'인 데이터 1개만 조회되어야 함
         assertThat(results)
-                .extracting(Board::getPstId)
+                .extracting(b -> b.getPstId())
                 .containsExactly("SOFT_DEL_Y");
     }
 
@@ -67,7 +66,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         
         // use_yn = 'Y', 'N' 둘 다 조회되어야 함
         assertThat(results)
-                .extracting(Board::getPstId)
+                .extracting(b -> b.getPstId())
                 .containsExactlyInAnyOrder("SOFT_DEL_Y", "SOFT_DEL_N");
     }
 }

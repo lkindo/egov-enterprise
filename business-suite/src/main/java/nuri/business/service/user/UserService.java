@@ -116,7 +116,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 String authorCode = userAuthorityRepository
                                 .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
-                                .map(UserAuthority::getAuthrtId)
+                                .map(auth -> auth.getAuthrtId())
                                 .orElse(null);
 
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()

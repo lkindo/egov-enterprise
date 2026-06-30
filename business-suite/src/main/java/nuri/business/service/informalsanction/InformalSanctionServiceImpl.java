@@ -55,7 +55,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
         List<CommonCodeDto> jobCodes = commonCodeService.getCodesByGroup("COM075");
         dto.setTaskSeNm(jobCodes.stream()
                 .filter(c -> c.dtlCd().equals(dto.getTaskSeCd()))
-                .findFirst().map(CommonCodeDto::dtlCdNm).orElse(""));
+                .findFirst().map(c -> c.dtlCdNm()).orElse(""));
 
         return dto;
     }

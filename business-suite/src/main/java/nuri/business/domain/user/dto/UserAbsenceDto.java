@@ -3,7 +3,6 @@ package nuri.business.domain.user.dto;
 import jakarta.validation.constraints.*;
 
 import lombok.Builder;
-import lombok.Getter;
 
 import nuri.business.domain.user.entity.UserAbsence;
 

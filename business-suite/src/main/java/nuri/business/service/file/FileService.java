@@ -172,7 +172,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
-                .mapToInt(FileDetail::getAtchFileSeq)
+                .mapToInt(detail -> detail.getAtchFileSeq())
                 .max()
                 .orElse(0);
 

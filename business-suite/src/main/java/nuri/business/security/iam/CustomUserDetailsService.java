@@ -4,7 +4,6 @@ import nuri.business.security.service.CustomUserDetails;
 
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                                                 "User not found: " + username));
 
                 String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
-                                .map(UserAuthority::getAuthrtId)
+                                .map(auth -> auth.getAuthrtId())
                                 .map(code -> code.startsWith("ROLE_") ? code : "ROLE_" + code)
                                 .orElse("ROLE_USER");
 
