@@ -72,7 +72,7 @@
 ## 4. 트러블슈팅 매트릭스 (Troubleshooting Gotchas)
 
 - **인증(401)**: `AuthContext`의 `accessToken`과 브라우저 쿠키 값 동기화 여부를 먼저 확인한다.
-- **타입 에러**: 백엔드 DTO 변경 후 `pnpm run codegen:ts`를 실행하여 `generated-api.d.ts`를 최신화한다.
+- **타입 에러**: 백엔드 DTO 변경 시 OpenAPI(`api-docs.json`)를 갱신한 뒤 `pnpm run codegen:zod`(= `node .agent/scripts/codegen-zod.js`)로 Zod SSOT(`generated-zod.ts`)를 재생성한다.
 - **렌더링**: App Router 기본은 Server Component다. 이벤트 훅 사용 위치에만 `'use client'`를 선언한다.
 
 ## 5. 주요 명령어 (Key Commands)
@@ -82,7 +82,7 @@
 | 명령 | 경로 | 설명 |
 |------|------|------|
 | `npm run dev` | Root | API + WEB 동시 개발 서버 실행 |
-| `pnpm run codegen:ts` | `frontend/` | OpenAPI 명세 기반 TS 타입 생성 (**※ API 서버 기동 필요**) |
+| `pnpm run codegen:zod` | `frontend/` | api-docs.json → Zod SSOT(`generated-zod.ts`) 재생성 (**※ api-docs.json 최신화 선행**) |
 | `pnpm run analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
 | `pnpm run storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
 | `pnpm run test:e2e` | `frontend/` | E2E 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
