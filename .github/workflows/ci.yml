@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# 같은 브랜치에 새 push 가 오면 진행 중인 이전 run 을 취소해 러너·시간을 절약한다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # 공통 환경 변수
   NODE_VERSION: "20"

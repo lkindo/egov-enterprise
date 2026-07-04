@@ -24,7 +24,8 @@ export function middleware(request: NextRequest) {
   //    (완전한 httpOnly 세션 전환은 FE·BE 동일 오리진(리버스 프록시) 선행 필요 — 별도 과제)
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole?.toUpperCase() || '';
-    const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
+    // 백엔드 ApiSecurityConfig 가 hasAnyRole('ADMIN','SYSTEM') 로 인가하므로 SYSTEM 도 포함한다.
+    const isAdmin = ['ADMIN', 'ROLE_ADMIN', 'SYSTEM', 'ROLE_SYSTEM'].includes(normalizedRole);
 
     // 시스템 사용자 보안 민감관리경로
     const isSensitivePath = pathname.startsWith('/admin/system') ||
