@@ -28,10 +28,24 @@ public class CustomUserDetailsService implements UserDetailsService {
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found: " + username));
 
-                String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
+                // 요청마다 수행되는 권한 재도출을 로그인 시점(EgovAuthenticationProvider)과 동일하게 맞춘다.
+                // 과거에는 권한테이블(NEMPLYRSCRTYESTBS)만 보고 없으면 무조건 ROLE_USER 로 떨어뜨려,
+                // 권한행이 없는 role 컬럼 기반 관리자(및 webmaster 특례)가 매 요청 ROLE_USER 로 강등돼
+                // /api/v1/admin/** 등에서 403 을 맞았다. 로그인 응답의 role 과 요청 authz 가 불일치했다.
+                String authorFromTable = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
                                 .map(auth -> auth.getAuthrtId())
-                                .map(code -> code.startsWith("ROLE_") ? code : "ROLE_" + code)
-                                .orElse("ROLE_USER");
+                                .orElse(null);
+                String authorCode;
+                if ("webmaster".equals(user.getUserId())) {
+                        authorCode = "ROLE_ADMIN";
+                } else if (authorFromTable != null) {
+                        authorCode = authorFromTable;
+                } else {
+                        authorCode = user.getRole() != null ? user.getRole().name() : "ROLE_USER";
+                }
+                if (!authorCode.startsWith("ROLE_")) {
+                        authorCode = "ROLE_" + authorCode;
+                }
 
                 return CustomUserDetails.builder()
                                 .userId(user.getUserId())

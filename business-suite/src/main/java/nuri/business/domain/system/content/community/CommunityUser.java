@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import java.io.Serializable;
 
 @EntityListeners(AuditingEntityListener.class)
@@ -16,6 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "tb_cmnty_user_map")
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class CommunityUser extends BaseEntity implements Serializable {
 
     @EmbeddedId

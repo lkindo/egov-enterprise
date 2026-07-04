@@ -1,8 +1,11 @@
 package nuri.business.service.code;
 
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.domain.code.AdministCode;
 import nuri.business.repository.code.AdministCodeRepository;
 import nuri.business.service.code.dto.AdministCodeDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +19,7 @@ public class AdministCodeService {
 
     private final AdministCodeRepository administCodeRepository;
 
+    @DisableSoftDelete
     public Page<AdministCodeDto> getAdministCodeList(String searchWrd, Pageable pageable) {
         Page<AdministCode> entities;
         if (searchWrd != null && !searchWrd.isEmpty()) {
@@ -26,6 +30,7 @@ public class AdministCodeService {
         return entities.map(this::convertToDto);
     }
 
+    @DisableSoftDelete
     public AdministCodeDto getAdministCodeDetail(String code) {
         return administCodeRepository.findById(code)
                 .map(this::convertToDto)
@@ -55,7 +60,12 @@ public class AdministCodeService {
 
     @Transactional
     public void deleteAdministCode(String code) {
-        administCodeRepository.deleteById(code);
+        // 물리삭제 대신 소프트삭제(use_yn='N'). 읽기 경로가 @DisableSoftDelete 로 비활성 코드도 노출하는 설계이고,
+        // 물리삭제 시 자식 up_admdst_cd 참조가 고아가 된다.
+        // 존재하지 않는 code 는 과거 deleteById() 와 동일하게 예외로 알린다(조용한 no-op 방지).
+        administCodeRepository.findById(code)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND))
+                .delete();
     }
 
     private AdministCodeDto convertToDto(AdministCode entity) {

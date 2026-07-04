@@ -2,6 +2,7 @@ package nuri.business.domain.code;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.Objects;
 @IdClass(CommonCodeId.class)
 @Table(name = "tb_com_dtl_cd")
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class CommonCode extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

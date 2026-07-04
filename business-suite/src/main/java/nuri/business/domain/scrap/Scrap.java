@@ -2,6 +2,7 @@ package nuri.business.domain.scrap;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Scrap extends BaseEntity {
 
     @Id
@@ -52,6 +54,11 @@ public class Scrap extends BaseEntity {
         this.scrapUrl = scrapUrl;
         this.scrapExpln = scrapExpln;
         this.useYn = useYn;
+    }
+
+    /** 소프트 삭제(@Filter softDeleteFilter 대상). 물리 DELETE 는 소프트삭제 설계를 무력화한다. */
+    public void delete() {
+        this.useYn = "N";
     }
 
 

@@ -2,6 +2,7 @@ package nuri.business.domain.menu;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Entity
 @Table(name = "tb_menu_info")
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

@@ -14,6 +14,7 @@ import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.core.softdelete.DisableSoftDelete;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     private final EgovIdGnrService egovBBSMstrIdGnrService;
     private final BoardRepository boardRepository;
 
+    @DisableSoftDelete
     public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
         cond.setSearchCnd(searchCondition);
@@ -43,6 +45,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .map(this::toDto);
     }
 
+    @DisableSoftDelete
     public List<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword) {
         Pageable pageable = PageRequest.of(0, 1000);
         return getBoardMasterList(searchCondition, searchKeyword, pageable).getContent();

@@ -4,6 +4,7 @@ import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Filter;
 
 /**
  * 템플릿 정보 엔티티
@@ -15,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Template extends BaseEntity {
 
     @Id
@@ -41,5 +43,10 @@ public class Template extends BaseEntity {
         this.tmpltSeCd = tmpltSeCd;
         this.tmpltPath = tmpltPath;
         this.useYn = useYn;
+    }
+
+    /** 소프트 삭제(@Filter softDeleteFilter 대상). 템플릿은 게시판/커뮤니티에서 참조되므로 물리삭제 금지. */
+    public void delete() {
+        this.useYn = "N";
     }
 }

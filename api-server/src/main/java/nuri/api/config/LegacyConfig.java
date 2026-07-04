@@ -74,7 +74,7 @@ public class LegacyConfig {
         idGnrService.setDataSource(dataSource);
         idGnrService.setStrategy(strategy);
         idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTable("ecopseq");
         idGnrService.setTableName("BBS_ID");
         return idGnrService;
     }
@@ -96,7 +96,7 @@ public class LegacyConfig {
         idGnrService.setDataSource(dataSource);
         idGnrService.setStrategy(strategy);
         idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTable("ecopseq");
         idGnrService.setTableName("BLOG_ID");
         return idGnrService;
     }
@@ -117,7 +117,7 @@ public class LegacyConfig {
         idGnrService.setDataSource(dataSource);
         idGnrService.setStrategy(strategy);
         idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTable("ecopseq");
         idGnrService.setTableName("ANSWER_NO");
         return idGnrService;
     }
@@ -138,7 +138,7 @@ public class LegacyConfig {
         idGnrService.setDataSource(dataSource);
         idGnrService.setStrategy(strategy);
         idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTable("ecopseq");
         idGnrService.setTableName("STSFDG_NO");
         return idGnrService;
     }

@@ -1,5 +1,6 @@
 package nuri.business.service.menu;
 
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.auth.MenuAuthority;
 import nuri.business.domain.auth.MenuAuthorityProjection;
@@ -431,6 +432,7 @@ public class MenuService {
         return java.util.Collections.emptyList();
     }
 
+    @DisableSoftDelete
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
         List<nuri.business.service.menu.dto.MenuWithProgramDto> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
@@ -459,10 +461,12 @@ public class MenuService {
     }
 
 
+    @DisableSoftDelete
     public int selectMenuManageListTotCnt(@NonNull BaseSearchDto searchVO) {
         return (int) menuRepository.count();
     }
 
+    @DisableSoftDelete
     public MenuDto selectMenuManage(Long menuNo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));

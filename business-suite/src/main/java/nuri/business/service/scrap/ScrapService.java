@@ -62,7 +62,11 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     @Override
     @Transactional
     public void deleteScrap(@NonNull String scrapId) {
-        scrapRepository.deleteById(scrapId);
+        // 소프트삭제(use_yn='N'). Scrap 은 @Filter softDeleteFilter 대상이라 물리삭제는 설계와 어긋난다.
+        // 존재하지 않는 id 는 과거 deleteById() 와 동일하게 예외로 알린다(조용한 no-op 방지).
+        scrapRepository.findById(scrapId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND))
+                .delete();
     }
 
     private ScrapDto convertToDto(Scrap entity) {

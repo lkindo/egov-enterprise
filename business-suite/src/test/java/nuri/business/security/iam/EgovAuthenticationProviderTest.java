@@ -40,6 +40,9 @@ class EgovAuthenticationProviderTest {
     @Mock
     private EgovPasswordEncoder egovPasswordEncoder;
 
+    @Mock
+    private LoginAttemptService loginAttemptService;
+
     @InjectMocks
     private EgovAuthenticationProvider authenticationProvider;
 
@@ -92,7 +95,9 @@ class EgovAuthenticationProviderTest {
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(BadCredentialsException.class);
-        verify(userRepository).save(any(User.class)); // Lock count incremented
+        // BE-01: 실패 카운트 증가는 롤백에 휩쓸리지 않도록 독립 트랜잭션 서비스로 위임됨.
+        // (더 이상 인증 트랜잭션 안에서 userRepository.save 로 저장하지 않는다)
+        verify(loginAttemptService).recordFailure("testuser");
     }
 
     @Test

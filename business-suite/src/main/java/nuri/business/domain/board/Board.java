@@ -55,7 +55,9 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String ttlBoldYn;
 
+    // 실제 tb_bbs_item 컬럼명은 ans_lvl (기본 매핑 ans_lv 는 존재하지 않아 게시판 조회/저장이 prod 에서 실패)
     @Builder.Default
+    @Column(name = "ans_lvl")
     private Integer ansLv = 0;
 
     @Builder.Default

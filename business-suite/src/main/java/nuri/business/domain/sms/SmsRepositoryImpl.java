@@ -17,8 +17,12 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
 
     @Override
     public Page<Sms> searchSmsUnits(String searchCondition, String searchKeyword, Pageable pageable) {
+        // Sms 1건이 여러 SmsRecptn(수신자)을 가지므로 leftJoin 은 Sms 를 수신자 수만큼 중복시킨다.
+        // count 는 countDistinct 를 쓰는데 content 에 distinct 가 없으면 한 SMS 가 페이지에 여러 번 나오고
+        // 총건수/페이지가 어긋난다. distinct 로 Sms 단위 중복을 제거한다.
         List<Sms> content = queryFactory
                 .selectFrom(QSms.sms)
+                .distinct()
                 .leftJoin(QSmsRecptn.smsRecptn).on(QSms.sms.smsId.eq(QSmsRecptn.smsRecptn.id.smsId))
                 .where(searchExpression(searchCondition, searchKeyword))
                 .orderBy(QSms.sms.smsId.desc())

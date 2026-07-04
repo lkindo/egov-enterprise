@@ -24,31 +24,36 @@ spring:
       mode: never
 
   datasource:
-    # Supabase connection (Commented)
-    # url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # jdbc-url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # username: postgres.kmtcbkxvrbnfijvbdsrx
-    # password: s5isI0KE48Bd9kD1
-    
+    # (legacy Supabase datasource removed — credentials externalized to env)
+
     # Oracle Cloud connection
     url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
     jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
     username: ${DB_USERNAME:egov}
     password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
+    # [pool] LegacyConfig 의 커스텀 @Primary DataSource 는 @ConfigurationProperties("spring.datasource")
+    # 로 바인딩되어 아래 `hikari:` 중첩블록을 인식하지 못한다(그 블록은 Boot 자동설정 전용이며,
+    # 커스텀 DataSource 가 존재하면 Boot 자동설정은 back-off 한다). 따라서 실제로 적용돼야 하는 풀
+    # 튜닝은 여기 top-level flat 키로 둬야 HikariDataSource setter 에 직접 바인딩된다.
+    # DB-07: connection-timeout 을 30s 로(기본 30s 와 동일하지만 명시), 풀 크기/누수감지도 실제 적용.
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 300000
+    max-lifetime: 600000
+    connection-timeout: 30000
+    leak-detection-threshold: 60000
+    pool-name: egov-hikaricp
+    connection-init-sql: "SET search_path TO public"
+    validation-timeout: 10000
+    initialization-fail-timeout: -1
+    # 아래 hikari.* 는 test 프로파일의 Boot 자동설정 경로에서만 사용된다(커스텀 DataSource 는 무시).
     hikari:
-      # jdbc-url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
       jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
       maximum-pool-size: 20
       minimum-idle: 5
-      idle-timeout: 300000
-      max-lifetime: 600000
-      connection-timeout: 300000
-      leak-detection-threshold: 60000
+      connection-timeout: 30000
       pool-name: egov-hikaricp
-      connection-init-sql: "SET search_path TO public"
-      validation-timeout: 10000
-      initialization-fail-timeout: -1
 
   jpa:
     open-in-view: false
@@ -125,7 +130,9 @@ management:
         include: "health,info,metrics,prometheus,env,beans"
   endpoint:
     health:
-      show-details: always
+      # 비인증 /actuator/health 가 컴포넌트 상세(DB 벤더/검증, 디스크 경로/여유바이트 등)를
+      # 노출하지 않도록 인증 시에만 상세를 보인다(prod 와 동일). 기본/dev/e2e 도 이 값을 상속.
+      show-details: when_authorized
   health:
     mail:
       enabled: false

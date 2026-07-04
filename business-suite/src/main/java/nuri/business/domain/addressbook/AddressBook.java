@@ -5,6 +5,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -20,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class AddressBook extends BaseEntity {
 
     @lombok.Builder.Default

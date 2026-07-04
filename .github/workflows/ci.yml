@@ -1,13 +1,21 @@
 name: Java CI with Gradle
 
 on:
+  # [CI 비용 절감] feature/** push 는 트리거하지 않는다 — feature 브랜치는 자신의 PR(→main/master)을 통해
+  # 한 번만 CI 를 돈다. (과거엔 push+pull_request 로 매 push 마다 ci.yml 이 2회 중복 실행됐다.)
+  # PR 이 없는 feature 브랜치에서 CI 가 필요하면 draft PR 을 열면 된다.
   push:
-    branches: [main, master, "feature/**"]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
 
 permissions:
   contents: read
+
+# 같은 브랜치에 새 push 가 오면 진행 중인 이전 run 을 취소해 러너·시간을 절약한다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # 공통 환경 변수
@@ -16,6 +24,17 @@ env:
   PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-browsers
 
 jobs:
+  # 신규 시크릿 유입 차단 (현재 working tree 스캔; 히스토리 내 과거 시크릿은 별도 purge 과제).
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secret scan (gitleaks)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" -w /repo \
+            zricethezav/gitleaks:latest detect --no-git --source /repo \
+            --config /repo/.gitleaks.toml --redact --verbose
+
   backend-build:
     runs-on: ubuntu-latest
     steps:
@@ -41,6 +60,8 @@ jobs:
       - name: Detect Schema and JPA Entity Changes
         id: schema-changes
         uses: dorny/paths-filter@v3
+        # 단순 변경 감지 헬퍼가 GitHub API 장애로 실패해도 파이프라인을 하드-실패시키지 않는다.
+        continue-on-error: true
         with:
           filters: |
             schema:
@@ -51,11 +72,15 @@ jobs:
               - 'foundation/src/test/resources/application-test-dump.yml'
 
       - name: Strict Schema Integrity Validation (No Cache Gateway)
-        if: steps.schema-changes.outputs.schema == 'true'
+        # 스키마 변경이 감지됐거나, 감지 자체가 실패한 경우(fail-safe) 엄격 검증을 수행한다.
+        if: steps.schema-changes.outputs.schema == 'true' || steps.schema-changes.outcome != 'success'
         run: ./gradlew :foundation:test --no-build-cache
 
       - name: Build and Test with Gradle
-        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+        # 절대경로로 생성해야 한다. OpenApiDocumentationTest 는 Paths.get(openapi.export.path) 를
+        # JUnit 프로세스의 workingDir(=api-server projectDir) 기준 상대경로로 해석하므로, 상대값이면
+        # 스펙이 api-server/api-docs.json 에 떨어져 아래 워크스페이스 루트 업로드가 파일을 못 찾는다.
+        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path="$GITHUB_WORKSPACE/api-docs.json"
 
       - name: Export OpenAPI Spec
         run: ./gradlew :api-server:bootRun & sleep 30 && curl -s http://localhost:8080/v3/api-docs > openapi-generated.json || true
@@ -81,20 +106,6 @@ jobs:
           retention-days: 30
         continue-on-error: true
 
-      - name: OWASP Dependency-Check Security Scan
-        run: ./gradlew dependencyCheckAnalyze --info
-        continue-on-error: true
-
-      - name: Upload OWASP Security Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owasp-security-report
-          path: |
-            **/build/reports/dependency-check-report.html
-            **/build/reports/dependency-check-report.xml
-          retention-days: 30
-
       - name: Upload Quality and Security Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,6 +126,39 @@ jobs:
         with:
           name: openapi-spec
           path: api-docs.json
+          # 스펙이 생성되지 않았으면 여기서 즉시 실패시킨다. 그렇지 않으면 아티팩트가 조용히
+          # 누락돼 frontend-build 의 'Download OpenAPI Spec'(needs 아티팩트)이 뒤늦게 실패한다.
+          if-no-files-found: error
+
+  # OWASP NVD 스캔은 느려(NVD DB 다운로드) backend-build 완료를 지연시키므로 별도 non-blocking 잡으로 분리 —
+  # frontend-build/e2e(needs: backend-build)가 스캔을 기다리지 않게 한다.
+  security-scan:
+    # [CI 비용 절감] 느린 OWASP NVD 스캔은 main push 또는 non-draft PR 에서만 실행(주간 스케줄은 zap-scan 이 담당).
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: OWASP Dependency-Check Security Scan
+        run: ./gradlew dependencyCheckAnalyze --info
+        continue-on-error: true
+      - name: Upload OWASP Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-security-report
+          path: |
+            **/build/reports/dependency-check-report.html
+            **/build/reports/dependency-check-report.xml
+          retention-days: 30
 
   frontend-build:
     needs: backend-build
@@ -122,12 +166,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Download OpenAPI Spec
         uses: actions/download-artifact@v4
@@ -136,18 +185,22 @@ jobs:
           path: frontend
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Security Audit
-        run: npm audit --audit-level=high
+        run: pnpm audit --audit-level=high
         working-directory: frontend
         continue-on-error: true
 
+      - name: Type Check
+        run: pnpm run type-check
+        working-directory: frontend
+
       - name: Build and Test
         run: |
-          npm run build
-          npm run test
+          pnpm run build
+          pnpm run test
         working-directory: frontend
 
       - name: Upload Next.js build cache
@@ -159,18 +212,21 @@ jobs:
 
   e2e-tests:
     needs: [backend-build, frontend-build]
+    # [CI 비용 절감] 비싼 e2e(러너 수십분)는 main push 또는 non-draft PR 에서만 실행한다.
+    # PR 을 draft 로 두면 e2e 가 skip 되어 반복 개발이 저렴하고, ready 로 표시하면 전체 e2e 가 돈다.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        # 3 개의 shard 로 분할하여 병렬 실행
-        shard: [1/3, 2/3, 3/3]
+        # 2 개의 shard 로 분할 (3→2 로 축소해 shard 당 setup 오버헤드를 줄인다)
+        shard: [1/2, 2/2]
     steps:
       - uses: actions/checkout@v4
 
       - name: Start Docker Infrastructure (DB & API)
-        run: docker-compose up -d db api
+        run: docker compose up -d db api
 
       - name: Wait for API and Prometheus Metrics
         run: |
@@ -187,15 +243,20 @@ jobs:
           curl -f http://localhost:8080/actuator/prometheus || exit 1
           echo "Backend is ready!"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Cache Playwright Browsers
@@ -203,7 +264,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
 
@@ -227,7 +288,7 @@ jobs:
       - name: Run E2E Tests (Sharded)
         run: |
           # Start frontend in background
-          npm run dev -- -p 3001 &
+          pnpm run dev -- -p 3001 &
           npx wait-on http://127.0.0.1:3001/login --timeout 60000
           # Run tests with sharding for parallel execution
           npx playwright test --shard=${{ matrix.shard }}
@@ -249,9 +310,16 @@ jobs:
   e2e-merge-reports:
     needs: e2e-tests
     runs-on: ubuntu-latest
-    if: always()
+    # e2e 가 실행된 경우에만 리포트 병합. always() 는 e2e 실패 시에도 병합하기 위한 것이며,
+    # e2e 가 skip 된 경우(draft PR 등)엔 이 job 도 함께 skip 되도록 동일 조건을 결합한다.
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false))
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -259,7 +327,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Download all reports

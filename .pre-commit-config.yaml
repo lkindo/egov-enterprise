@@ -1,0 +1,7 @@
+# Local secret-leak guard. Setup:  pip install pre-commit && pre-commit install
+# Uses the repo's .gitleaks.toml (known dev defaults allowlisted; new secrets blocked).
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks

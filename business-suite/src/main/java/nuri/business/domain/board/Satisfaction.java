@@ -2,6 +2,7 @@ package nuri.business.domain.board;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Filter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,7 @@ import java.io.Serializable;
 @Table(name = "tb_dgstfn_info")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Satisfaction extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

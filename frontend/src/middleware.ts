@@ -11,9 +11,6 @@ export function middleware(request: NextRequest) {
   const hasToken = request.cookies.has('accessToken');
   const userRole = request.cookies.get('userRole')?.value;
 
-  // Always log in E2E environment for debugging
-  console.log(`[Middleware Check] Path: ${pathname} | hasToken: ${hasToken} | userRole: ${userRole}`);
-
   // 1. 로그인여부 확인
   if (!hasToken) {
     const loginUrl = new URL('/login', request.url);
@@ -21,10 +18,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. 관리자/사용자경로 관리(/admin 경로 보호)
+  // 2. 관리자 경로 UX 리다이렉트(/admin)
+  //    ⚠ 보안 경계 아님: userRole 쿠키는 클라이언트가 위조 가능하다.
+  //    실제 인가는 백엔드가 강제한다 — ApiSecurityConfig: `/api/v1/admin/** → hasAnyRole('ADMIN','SYSTEM')`.
+  //    (완전한 httpOnly 세션 전환은 FE·BE 동일 오리진(리버스 프록시) 선행 필요 — 별도 과제)
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole?.toUpperCase() || '';
-    const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
+    // 백엔드 ApiSecurityConfig 가 hasAnyRole('ADMIN','SYSTEM') 로 인가하므로 SYSTEM 도 포함한다.
+    const isAdmin = ['ADMIN', 'ROLE_ADMIN', 'SYSTEM', 'ROLE_SYSTEM'].includes(normalizedRole);
 
     // 시스템 사용자 보안 민감관리경로
     const isSensitivePath = pathname.startsWith('/admin/system') ||

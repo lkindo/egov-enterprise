@@ -49,7 +49,11 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
     @Override
     public NoteDto getNoteDetail(String noteId, String type, String relationId) {
         if ("sent".equals(type)) {
+            // NoteTrnsmit 은 @Filter 보호가 없으므로(다른 소프트삭제 엔티티와 달리) 여기서 직접
+            // delYn 을 확인해야 한다. 그렇지 않으면 softDelete() 로 "삭제"한 보낸 쪽지가
+            // 상세조회에서는 그대로 노출된다(목록 조회는 searchNoteTrnsmits 의 delYn='N' 조건으로 이미 보호됨).
             return noteTrnsmitRepository.findById(relationId)
+                    .filter(n -> !"Y".equals(n.getDelYn()))
                     .map(this::convertToDto)
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         } else {
@@ -106,8 +110,14 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
     @Transactional
     public void deleteNote(String relationId, String type) {
         if ("sent".equals(type)) {
-            noteTrnsmitRepository.deleteById(relationId);
+            // 물리 DELETE 는 자식 tb_note_rcptn 의 FK(fk_tb_note_rcptn_tb_note_sndng) 위반으로 500 이 나거나,
+            // 수신자가 없으면 행이 영구 삭제돼 del_yn 소프트삭제 설계가 무력화된다. 소프트삭제로 전환.
+            // 존재하지 않는 id 는 과거 deleteById() 와 동일하게 예외로 알린다(조용한 no-op 방지).
+            noteTrnsmitRepository.findById(relationId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND))
+                    .softDelete();
         } else {
+            // NoteRecptn 은 소프트삭제 대상이 아니고(FK 로 참조되지 않는 leaf) 물리삭제해도 안전하다.
             noteRecptnRepository.deleteById(relationId);
         }
     }

@@ -219,3 +219,7 @@ module-knowledge/
 
 # Database Dumps
 database/dumps/
+
+# graphify skill output (must never be committed into source roots)
+**/graphify-out/
+graphify-out/

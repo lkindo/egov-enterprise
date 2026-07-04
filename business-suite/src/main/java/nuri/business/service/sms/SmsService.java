@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -76,10 +78,19 @@ public class SmsService implements EgovSmsService {
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
             }
             
-            // 비동기로 실제 발송 처리 요청
-            // 주의: 현재 트랜잭션이 커밋된 후에 가동되도록 보장하거나, 
-            // 별도 컴포넌트에서 REQUIRES_NEW로 조회하도록 설계됨
-            smsAsyncProcessor.processSending(smsId, dto.getSndngTelno(), dto.getSndngCn());
+            // 비동기 발송은 이 트랜잭션이 커밋된 뒤에만 실행해야 한다. 커밋 전에 실행하면
+            // REQUIRES_NEW 로 여는 별도 트랜잭션이 아직 커밋되지 않은 수신자 행을 못 보고
+            // 아무것도 발송하지 못한 채 끝난다(발송 누락). 활성 트랜잭션이 없으면(예: 테스트) 즉시 실행한다.
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        smsAsyncProcessor.processSending(smsId, dto.getSndngTelno(), dto.getSndngCn());
+                    }
+                });
+            } else {
+                smsAsyncProcessor.processSending(smsId, dto.getSndngTelno(), dto.getSndngCn());
+            }
         }
 
         log.info("SMS request registered successfully for ID: {}", smsId);

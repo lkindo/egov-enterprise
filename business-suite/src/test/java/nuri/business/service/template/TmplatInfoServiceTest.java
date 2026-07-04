@@ -106,10 +106,15 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("템플릿 삭제")
     void deleteTmplatInfo() {
+        // given: 물리삭제가 아닌 소프트삭제(use_yn='N')로 전환됨(템플릿은 게시판/커뮤니티에서 참조되므로)
+        Template tmplat = Template.builder().tmpltId("TMPLT_001").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(tmplat));
+
         // when
         tmplatInfoService.deleteTmplatInfo("TMPLT_001");
 
         // then
-        verify(templateRepository, times(1)).deleteById("TMPLT_001");
+        assertThat(tmplat.getUseYn()).isEqualTo("N");
+        verify(templateRepository, never()).deleteById(any());
     }
 }

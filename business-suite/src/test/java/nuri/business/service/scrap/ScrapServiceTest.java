@@ -97,10 +97,15 @@ class ScrapServiceTest {
     @Test
     @DisplayName("스크랩 삭제")
     void deleteScrap_Success() {
+        // Given: 물리삭제가 아닌 소프트삭제(use_yn='N')로 전환됨
+        Scrap entity = Scrap.builder().scrapId("S1").useYn("Y").build();
+        given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
+
         // When
         scrapService.deleteScrap("S1");
 
         // Then
-        verify(scrapRepository).deleteById("S1");
+        assertThat(entity.getUseYn()).isEqualTo("N");
+        verify(scrapRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 }

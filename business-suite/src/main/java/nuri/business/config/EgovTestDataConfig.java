@@ -9,6 +9,7 @@ import nuri.business.domain.board.BoardMasterRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,13 +18,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * 테스트용 데이터 초기화 설정
- * - 운영(prod) 환경을 제외한 개발/테스트 환경에서만 동작
+ * 테스트용 데이터 초기화 설정.
+ *
+ * <p>[보안] 이 시더는 webmaster/TEST1 계정을 비밀번호 "1"·ROLE_ADMIN 으로 생성하고,
+ * 이미 존재하면 매 부팅마다 비밀번호를 "1" 로 <b>리셋</b>한다. 과거에는 {@code @Profile("!prod & !test")}
+ * 만 걸려 있어, 프로파일 없이(=default) 부팅하면 default datasource 가 가리키는 <b>운영 OCI DB</b>에
+ * 대고 실행됐다. 결과적으로 (1) 누구나 webmaster/"1" 로 ADMIN 로그인 가능, (2) 자격증명 로테이션이
+ * 매 부팅 "1" 로 되돌려져 무력화됐다.
+ *
+ * <p>이제 명시적 opt-in 프로퍼티 {@code egov.seed-test-data=true} 가 있을 때만 동작한다.
+ * CI e2e 는 docker-compose 의 SPRING_APPLICATION_JSON 에서 이 값을 켠다. 운영/기본 부팅에서는
+ * 프로퍼티가 없어 시더가 아예 등록되지 않는다({@code @Profile("!prod & !test")} 는 방어적으로 유지).
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 @Profile("!prod & !test")
+@ConditionalOnProperty(name = "egov.seed-test-data", havingValue = "true")
 public class EgovTestDataConfig {
 
     private final UserRepository userRepository;
