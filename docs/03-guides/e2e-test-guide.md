@@ -23,6 +23,28 @@
 
 ---
 
+## 🗄️ E2E 데이터베이스 아키텍처
+
+E2E는 **공유 OCI DB가 아니라, 실행마다 격리된 ephemeral PostgreSQL 17 컨테이너**를 사용한다(샤드별 별도 러너 → 완전 격리, 데이터 경쟁·오염 없음, 빠름, 무비용). OCI PostgreSQL 17은 **운영 DB**이며 e2e 타깃이 아니다.
+
+**동작 방식** (`docker-compose.yml`):
+- `db`(postgres:17)가 기동 시 `dump/e2e_full_dump.sql`을 `/docker-entrypoint-initdb.d/`로 실행 → **스키마 + 비-PII 설정데이터 + `webmaster`(admin, pw `1`) 테스트 계정**을 시드한다.
+- `api` 컨테이너는 `ddl-auto: none` + `flyway.enabled: false` → 스키마는 오롯이 시드 덤프에서 온다(Hibernate/Flyway가 스키마를 만들지 않음).
+- CI e2e(`ci.yml`)는 `docker compose up -d db api`로 이 구조를 그대로 사용한다.
+
+**시드 재생성** (OCI dev 스키마/데이터가 바뀌면):
+```bash
+# 1) OCI dev DB 를 덤프 (단일라인 INSERT 형식)
+pg_dump -h <oci-dev-host> -U egov -d egovdb --inserts --column-inserts > /tmp/oci_dump.sql
+# 2) PII 제거 e2e 시드로 변환 (스키마 + 비-PII 설정 + webmaster 만; PII 감사 내장)
+scripts/gen-e2e-seed.sh /tmp/oci_dump.sql   # -> dump/e2e_full_dump.sql
+```
+`scripts/gen-e2e-seed.sh`는 유저·주소록·이메일·SMS·게시글 등 **PII 보유 테이블을 제외**하고, 결과에 이메일/전화/추가 유저가 남으면 **감사 실패로 커밋을 거부**한다.
+
+> ⚠ **주의**: `database/dumps/`(gitignore된 실 덤프)에는 개인정보·비밀번호 해시가 있으므로 절대 그대로 커밋하지 않는다. e2e 시드는 반드시 위 스크립트로 정제한 `dump/e2e_full_dump.sql`만 사용한다.
+
+---
+
 ## 🚀 실행 환경 최적화
 
 ### 1. 좀비 프로세스 정리

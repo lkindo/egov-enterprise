@@ -13,6 +13,8 @@ services:
       POSTGRES_PASSWORD: egov123
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # e2e/dev seed: schema + PII-scrubbed config + webmaster admin (runs only on first init of an empty data dir)
+      - ./dump/e2e_full_dump.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U egov -d egovdb"]
       interval: 10s
@@ -46,6 +48,9 @@ services:
               "hibernate": {
                 "ddl-auto": "none"
               }
+            },
+            "flyway": {
+              "enabled": false
             }
           },
           "management": {

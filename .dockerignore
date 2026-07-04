@@ -24,3 +24,5 @@ hs_err_pid*
 replay_pid*
 db_columns.json
 api-docs.json
+# e2e seed is mounted into the db container as a volume; the api image doesn't need it
+dump/
