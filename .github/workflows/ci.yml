@@ -16,6 +16,17 @@ env:
   PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-browsers
 
 jobs:
+  # 신규 시크릿 유입 차단 (현재 working tree 스캔; 히스토리 내 과거 시크릿은 별도 purge 과제).
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secret scan (gitleaks)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" -w /repo \
+            zricethezav/gitleaks:latest detect --no-git --source /repo \
+            --config /repo/.gitleaks.toml --redact --verbose
+
   backend-build:
     runs-on: ubuntu-latest
     steps:

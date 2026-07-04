@@ -1,0 +1,24 @@
+# gitleaks config — prevent NEW secrets from being committed.
+# The known dev/test defaults below are pending credential rotation (tracked separately);
+# they are allowlisted so the gate passes today while still catching anything new/unknown.
+title = "eGov Enterprise gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known dev/test default credentials (pending rotation) and the PII-free e2e seed"
+regexTarget = "match"
+regexes = [
+  # OCI dev DB default password (env-overridable; rotation is the real fix)
+  '''egov123''',
+  # base64 JWT dev/test default secret
+  '''dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==''',
+  # base application.yml JWT fallback (dev only)
+  '''4s3cr3tK3yF0rJWT51gn1ngMu5tB3L0ngEn0ughT0M33tTh3R3qu1r3m3nt5!''',
+]
+paths = [
+  # e2e seed: contains only the 'webmaster' test-account hash; no real PII (verified by scripts/gen-e2e-seed.sh)
+  '''dump/e2e_full_dump\.sql''',
+  '''database/dumps/''',
+]
