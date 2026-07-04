@@ -197,6 +197,10 @@ jobs:
         run: pnpm run type-check
         working-directory: frontend
 
+      - name: Lint
+        run: pnpm run lint
+        working-directory: frontend
+
       - name: Build and Test
         run: |
           pnpm run build
