@@ -13,7 +13,7 @@ import {
   ShieldCheck, 
   BarChart3
 } from 'lucide-react';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';

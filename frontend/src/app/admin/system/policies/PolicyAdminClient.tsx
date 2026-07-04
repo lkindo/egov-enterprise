@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 ;
 import dynamic from 'next/dynamic';
 import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
  ssr: false,
