@@ -147,6 +147,10 @@ jobs:
         working-directory: frontend
         continue-on-error: true
 
+      - name: Type Check
+        run: npm run type-check
+        working-directory: frontend
+
       - name: Build and Test
         run: |
           npm run build
