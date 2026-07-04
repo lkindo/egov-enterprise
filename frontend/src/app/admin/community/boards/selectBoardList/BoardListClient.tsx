@@ -5,7 +5,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { likeBoardArticle } from '@/app/actions/boardActions';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
-import { useBoardList } from '@/hooks/api/use-board-list';
+import { useBoardList } from '@/lib/hooks/use-board-list';
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
