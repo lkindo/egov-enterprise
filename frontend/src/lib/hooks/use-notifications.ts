@@ -85,7 +85,10 @@ export function useNotifications() {
       // 사용자별 알림 구독
       let userSub: StompSubscription | null = null;
       if (user?.id) {
-        userSub = wsClient.subscribe(`/user/${user.id}/queue/notifications`, handleNewNotification);
+        // Spring convertAndSendToUser + userDestinationPrefix '/user' 는 인증된 STOMP 세션의
+        // principal 로 사용자를 식별한다. 경로에 id 를 넣으면(/user/{id}/queue/...) 서버 전송
+        // 목적지와 매칭되지 않아 개인 알림이 뱃지/목록에 반영되지 않는다. 올바른 형태:
+        userSub = wsClient.subscribe('/user/queue/notifications', handleNewNotification);
       }
 
       return () => {
