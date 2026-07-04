@@ -28,10 +28,10 @@ spring:
 
   datasource:
     # OCI (Oracle Cloud Infrastructure) Production-like DB
-    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
-    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
-    username: egov
-    password: egov123
+    url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    username: ${DB_USERNAME:egov}
+    password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
     hikari:
       jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
@@ -60,7 +60,7 @@ logging:
     org.springframework.security: warn
 
 jwt:
-  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
 
 management:
   health:

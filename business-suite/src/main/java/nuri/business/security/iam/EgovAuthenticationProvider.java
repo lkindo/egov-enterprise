@@ -54,20 +54,20 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             boolean isMatched = false;
             String encodedPassword = userEntity.getPswd();
             
-            log.info(">>> [EgovAuthenticationProvider] User found: {}, DB password hash: {}", userEntity.getUserId(), encodedPassword);
+            log.debug(">>> [EgovAuthenticationProvider] User found: {}", userEntity.getUserId());
             
             if (encodedPassword != null && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
                 String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
                 
                 // Try 1: Using userId as salt
                 String generatedHash = egovPasswordEncoder.encode(password, userId);
-                log.info(">>> [EgovAuthenticationProvider] Checking with userId salt. Hash: {}", generatedHash);
+                log.debug(">>> [EgovAuthenticationProvider] Checking with userId salt.");
                 isMatched = cleanHash.equals(generatedHash);
                 
                 // Try 2: Using esntlId as salt if Try 1 failed (Legacy Egov behavior)
                 if (!isMatched && userEntity.getEsntlId() != null) {
                     generatedHash = egovPasswordEncoder.encode(password, userEntity.getEsntlId());
-                    log.info(">>> [EgovAuthenticationProvider] Checking with esntlId salt. Hash: {}", generatedHash);
+                    log.debug(">>> [EgovAuthenticationProvider] Checking with esntlId salt.");
                     isMatched = cleanHash.equals(generatedHash);
                 }
                 

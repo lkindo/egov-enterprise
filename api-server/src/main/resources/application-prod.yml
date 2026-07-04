@@ -22,6 +22,10 @@ spring:
       hibernate:
         format_sql: false
 
+jwt:
+  # prod: fail-fast — JWT_SECRET must be provided (no fallback default)
+  secret: ${JWT_SECRET}
+
 management:
   endpoints:
     web:

@@ -1,6 +1,7 @@
 package nuri.business.service.user.dto;
 
 import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.lang.NonNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -31,12 +32,15 @@ public record UserDto(
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String pswd,
 
     @Size(max = 300, message = "비밀번호 힌트는 최대 300 자입니다")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String pswdHint,
 
     @Size(max = 100, message = "비밀번호 정답은 최대 100 자입니다")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String pswdCrans,
     
     @Size(max = 50, message = "권한명은 최대 50 자입니다")
