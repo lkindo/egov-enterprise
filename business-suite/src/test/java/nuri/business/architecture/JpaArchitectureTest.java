@@ -40,10 +40,9 @@ public class JpaArchitectureTest {
                     .as("Entities with a useYn (soft-delete) column must declare @Filter(name=\"softDeleteFilter\") so logically-deleted rows are hidden from normal reads.");
 
     private static final Set<String> SOFT_DELETE_EXEMPT = Set.of(
-            // FILTER_WITH_DISABLE (admin 이 비활성 행 관리 — @Filter + @DisableSoftDelete 배선 후속 과제):
-            "BoardMaster", "AdministCode", "CommonCode", "CommonCodeCategory", "CommonCodeGroup", "Menu", "Template",
-            // SKIP_RISKY (read-path 얽힘으로 현재 보류):
-            "Community", "OnlinePollManage"
+            // SKIP_RISKY (read-path 얽힘으로 @Filter 미적용 — 현재 보류):
+            //   "Template" 은 board.Template(BoardTemplate) 를 커버한다. (template.Template 은 @Filter 적용 완료)
+            "Template", "Community", "OnlinePollManage"
     );
 
     private static DescribedPredicate<JavaClass> haveUseYnField() {

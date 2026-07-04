@@ -9,12 +9,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Filter;
 
 @Entity
 @Table(name = "tb_admdst_cd")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class AdministCode extends BaseEntity {
 
     @Id

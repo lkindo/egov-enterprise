@@ -3,6 +3,7 @@ package nuri.business.service.code;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeRepository;
 import nuri.business.service.code.dto.CommonCodeDto;
@@ -86,6 +87,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         // --- 공통분류코드 (CmmnClCode) ---
 
         @Override
+        @DisableSoftDelete
         public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -97,6 +99,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         }
 
         @Override
+        @DisableSoftDelete
         public int selectCmmnClCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeCategoryRepository.searchCommonCodeCategories(
@@ -168,6 +171,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         // --- 공통코드 (CmmnCode) ---
 
         @Override
+        @DisableSoftDelete
         public List<CmmnCodeDto> selectCmmnCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -180,6 +184,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         }
 
         @Override
+        @DisableSoftDelete
         public int selectCmmnCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeGroupRepository.searchCommonCodeGroups(
@@ -267,6 +272,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         // --- 공통상세코드 (CmmnDetailCode) ---
 
         @Override
+        @DisableSoftDelete
         public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -279,6 +285,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         }
 
         @Override
+        @DisableSoftDelete
         public int selectCmmnDetailCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeRepository.searchCommonCodeDetails(

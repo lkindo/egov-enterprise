@@ -3,6 +3,7 @@ package nuri.business.service.template;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
@@ -25,6 +26,7 @@ public class TmplatInfoService extends BaseAbstractService {
         this.templateRepository = required(templateRepository, "TemplateRepository 는 null 일 수 없습니다");
     }
 
+    @DisableSoftDelete
     public List<TemplateDto> selectTmplatInfoList() {
         return templateRepository.findAll().stream()
                 .map(TemplateDto::from)
@@ -37,6 +39,7 @@ public class TmplatInfoService extends BaseAbstractService {
                 .collect(Collectors.toList());
     }
 
+    @DisableSoftDelete
     public TemplateDto selectTmplatInfoDetail(String tmplatId) {
         Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));

@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.service.template.dto.TemplateDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ public class TemplateService implements EgovTemplateService {
     }
 
     @Override
+    @DisableSoftDelete
     public Page<TemplateDto> getTemplateList(String keyword, Pageable pageable) {
         Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
@@ -42,6 +44,7 @@ public class TemplateService implements EgovTemplateService {
     }
 
     @Override
+    @DisableSoftDelete
     public TemplateDto getTemplate(String tmpltId) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));

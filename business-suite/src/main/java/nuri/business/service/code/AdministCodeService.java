@@ -1,5 +1,6 @@
 package nuri.business.service.code;
 
+import nuri.business.core.softdelete.DisableSoftDelete;
 import nuri.business.domain.code.AdministCode;
 import nuri.business.repository.code.AdministCodeRepository;
 import nuri.business.service.code.dto.AdministCodeDto;
@@ -16,6 +17,7 @@ public class AdministCodeService {
 
     private final AdministCodeRepository administCodeRepository;
 
+    @DisableSoftDelete
     public Page<AdministCodeDto> getAdministCodeList(String searchWrd, Pageable pageable) {
         Page<AdministCode> entities;
         if (searchWrd != null && !searchWrd.isEmpty()) {
@@ -26,6 +28,7 @@ public class AdministCodeService {
         return entities.map(this::convertToDto);
     }
 
+    @DisableSoftDelete
     public AdministCodeDto getAdministCodeDetail(String code) {
         return administCodeRepository.findById(code)
                 .map(this::convertToDto)

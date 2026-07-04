@@ -3,6 +3,7 @@ package nuri.business.domain.board;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Filter;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -23,6 +24,7 @@ import lombok.Builder;
 @Table(name = "tb_bbs_master")
 @SuperBuilder
 @DynamicUpdate
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class BoardMaster extends BaseEntity {
 
     @Id

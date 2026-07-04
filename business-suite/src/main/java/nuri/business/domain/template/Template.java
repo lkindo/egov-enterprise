@@ -4,6 +4,7 @@ import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Filter;
 
 /**
  * 템플릿 정보 엔티티
@@ -15,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Template extends BaseEntity {
 
     @Id
