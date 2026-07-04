@@ -49,7 +49,8 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 300)
     private String pswdHint;
 
-    @Column(length = 300)
+    // 실제 tb_user_info 컬럼명은 pswd_cnsr (기본 매핑 pswd_crans 는 존재하지 않아 prod 에서 실패)
+    @Column(name = "pswd_cnsr", length = 300)
     private String pswdCrans;
 
     private LocalDateTime chgPswdLastDt;
@@ -67,7 +68,8 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 32)
     private String otpSecret;
 
-    @Column(length = 100)
+    // 실제 컬럼명 crtfc_dn_value (cert_dn_vl 는 존재하지 않음)
+    @Column(name = "crtfc_dn_value", length = 100)
     private String certDnVl;
 
     // ■ 개인 정보
@@ -91,10 +93,11 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 5)
     private String zip;
 
-    @Column(length = 300)
+    // 실제 컬럼명 base_addr / dtl_addr (home_addr / daddr 는 존재하지 않음)
+    @Column(name = "base_addr", length = 300)
     private String homeAddr;
 
-    @Column(length = 300)
+    @Column(name = "dtl_addr", length = 300)
     private String daddr;
 
     @Column(length = 4)

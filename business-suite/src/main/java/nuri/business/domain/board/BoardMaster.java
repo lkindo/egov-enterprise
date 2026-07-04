@@ -79,13 +79,26 @@ public class BoardMaster extends BaseEntity {
     private BoardMasterOption option;
 
     // --- [JPA Mapping] ---
-    @Column(length = 1, nullable = false)
+    // ansYn/stsfdgYn 은 물리적으로 tb_bbs_master 가 아니라 tb_bbs_master_optn(= option 연관)에만 존재한다.
+    // 과거엔 tb_bbs_master 의 컬럼으로 매핑돼 있어 실제 스키마 조회/저장 시
+    // `column "ans_yn" of relation "tb_bbs_master" does not exist` 로 게시판 마스터 기능이 죽었다.
+    // 이제 @Transient 로 두어 영속화는 option 을 통해서만 하고, 로드 후 @PostLoad 로 값을 채운다.
+    @Transient
     @Builder.Default
     private String ansYn = "N";
 
-    @Column(length = 1, nullable = false)
+    @Transient
     @Builder.Default
     private String stsfdgYn = "N";
+
+    /** 로드 시 tb_bbs_master_optn 의 값으로 편의 필드를 채운다(쓰기 경로는 option 을 직접 갱신). */
+    @PostLoad
+    private void syncOptionFlags() {
+        if (this.option != null) {
+            this.ansYn = this.option.getAnsYn() != null ? this.option.getAnsYn() : "N";
+            this.stsfdgYn = this.option.getStsfdgYn() != null ? this.option.getStsfdgYn() : "N";
+        }
+    }
 
     public void registerOption(String ansYn, String stsfdgYn) {
         this.ansYn = ansYn != null ? ansYn : "N";
