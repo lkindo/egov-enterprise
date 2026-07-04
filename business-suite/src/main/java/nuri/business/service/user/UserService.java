@@ -194,10 +194,13 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-                // [보안] 본인 또는 관리자만 수정 가능
+                // [보안] 본인 또는 관리자만 수정 가능.
+                // getCurrentUserId() 는 CustomUserDetails.getUsername() == esntlId 를 돌려주므로,
+                // 파라미터 userId(로그인 id)와 직접 비교하면 소유자 본인도 항상 불일치 → 403 이 된다.
+                // 로드한 대상 사용자의 esntlId 와 비교해야 소유자 판정이 올바르게 동작한다.
                 String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-                if (!currentUserId.equals(userId) && !nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!currentUserId.equals(user.getEsntlId()) && !nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
 

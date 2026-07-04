@@ -41,10 +41,14 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));
         
+        // authentication.getName() == CustomUserDetails.getUsername() == esntlId (로그인 id 아님).
+        // JWT subject/RefreshToken 키로는 esntlId 를 그대로 쓰지만, 로그인 정책(LoginPolicy)의
+        // PK 는 로그인 userId 이므로 정책 조회는 반드시 request.getUserId() 로 해야 한다.
         String userId = authentication.getName();
 
         // 2. OTP 검증 (정책에 활성화된 경우)
-        loginPolicyRepository.findById(userId).ifPresent(policy -> {
+        // [보안] esntlId 로 조회하면 정책이 없는 것으로 처리돼 OTP 2차인증이 조용히 우회된다.
+        loginPolicyRepository.findById(request.getUserId()).ifPresent(policy -> {
             if ("Y".equals(policy.getOtpUseYn())) {
                 if (request.getOtpCode() == null) {
                     log.warn(">>> [Login] OTP Required for userId: {}", userId);

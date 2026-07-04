@@ -144,11 +144,14 @@ class UserServiceTest {
     void updateUserSelfSuccessTest() {
         User user = mock(User.class);
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
-        
+        given(user.getEsntlId()).willReturn("USR1");
+
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            // 실제 인증 컨텍스트에서 getCurrentUserId() 는 로그인 id 가 아니라 esntlId 를 돌려준다.
+            // 소유자 본인은 대상 사용자의 esntlId 와 일치하므로 수정에 성공해야 한다.
+            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("USR1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
-            
+
             userService.updateUser("user1", UserDto.builder().build());
             verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
         }
@@ -159,9 +162,11 @@ class UserServiceTest {
     void updateUserOtherFailTest() {
         User user = mock(User.class);
         given(userRepository.findById("user2")).willReturn(Optional.of(user));
-        
+        given(user.getEsntlId()).willReturn("USR2");
+
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            // 대상 사용자(esntlId=USR2)를 다른 사용자(esntlId=USR1)가 수정 시도 → 소유자 불일치로 거부.
+            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("USR1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.updateUser("user2", UserDto.builder().build()));

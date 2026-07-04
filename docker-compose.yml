@@ -53,6 +53,9 @@ services:
               "enabled": false
             }
           },
+          "egov": {
+            "seed-test-data": true
+          },
           "management": {
             "health": {
               "mail": {
