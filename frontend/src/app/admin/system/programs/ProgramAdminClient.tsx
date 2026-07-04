@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { Plus, 
  Trash2, 
  Settings, 
@@ -48,7 +48,7 @@ const programSchema = ProgramDtoSchema.extend({
 
 type ProgramFormValues = z.infer<typeof programSchema>;
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 export default function ProgramAdminClient({ initialData, searchWrd }: { initialData: PageResponse<Program>; searchWrd: string }) {
  const { toast } = useToast();

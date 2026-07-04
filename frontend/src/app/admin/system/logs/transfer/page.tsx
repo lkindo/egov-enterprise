@@ -6,7 +6,7 @@ import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdm
 import { TransferLog, SearchParams, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { Share2, Tag, Calendar, Box } from 'lucide-react';
 
 const TransferLogAdminPage = () => {

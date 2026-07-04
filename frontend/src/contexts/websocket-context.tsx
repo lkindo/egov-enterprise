@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from './AuthContext';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 
 interface WebSocketContextType {
   client: Client | null;

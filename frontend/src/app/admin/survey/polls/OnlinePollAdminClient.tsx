@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
 import { onlinePollAdminService,  OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';

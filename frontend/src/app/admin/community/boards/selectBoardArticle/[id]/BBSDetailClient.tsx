@@ -24,9 +24,9 @@ import {
   ShieldCheck,
   Calendar
 } from "lucide-react";
-import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
-import { StandardForm } from '@/app/components/ui/standard-form';
-import { useToast } from '@/app/components/ui/toast';
+import { StandardFileUploader } from '@/components/composite/standard-file-uploader';
+import { StandardForm } from '@/components/composite/standard-form';
+import { useToast } from '@/components/providers/toast';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const BBSDetailClient = () => {

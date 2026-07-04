@@ -20,11 +20,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
+import { useToast } from '@/components/providers/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Dialog, 

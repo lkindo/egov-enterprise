@@ -22,7 +22,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useNotifications } from '@/lib/hooks/use-notifications';
-import { AppNotificationDrawer } from '../ui/app-notification-drawer';
+import { AppNotificationDrawer } from '@/components/features/app-notification-drawer';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

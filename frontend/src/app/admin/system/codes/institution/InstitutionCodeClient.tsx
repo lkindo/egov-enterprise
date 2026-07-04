@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { codeAdminService, InstitutionCode, InstitutionCodeRecptn } from '@/services/foundation/system/CodeAdminService';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Clock,  
  RefreshCw,  
  Database,  

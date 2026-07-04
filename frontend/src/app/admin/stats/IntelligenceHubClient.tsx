@@ -29,7 +29,7 @@ import { XAxis,
   AreaChart, 
   Area } from 'recharts';
 import { HubMetricSkeleton, HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { SafeResponsiveContainer } from '@/components/features/observability-charts';
 
 // --- Types ---
 type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 'SURVEYS' | 'REPORTS';

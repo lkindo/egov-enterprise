@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import axios from '@/lib/api/client';
-import { StandardTabs } from '@/app/components/ui/standard-tabs';
+import { StandardTabs } from '@/components/composite/standard-tabs';
 
 export const SearchResultsContent = ({ initialResults = { articles: [], users: [], menus: [] }, query: initialQuery = '' }: { initialResults: { articles: any[], users: any[], menus: any[] }, query: string }) => {
     const searchParams = useSearchParams();

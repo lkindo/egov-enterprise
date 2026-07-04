@@ -9,7 +9,7 @@ import { Plus,  Eye,  Megaphone,  Loader2,
 import { motion } from 'framer-motion';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

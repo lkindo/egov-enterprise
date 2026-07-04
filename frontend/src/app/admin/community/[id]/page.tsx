@@ -3,11 +3,11 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
+import { StandardSearchFilter } from '@/components/composite/standard-search-filter';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
 

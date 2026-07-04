@@ -28,7 +28,7 @@ import {
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { toast } from 'sonner';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
 const formSchema = ProgramDtoSchema.extend({

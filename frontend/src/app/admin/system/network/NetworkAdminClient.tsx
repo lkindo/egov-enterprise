@@ -6,9 +6,9 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
 import dynamic from 'next/dynamic';
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NetworkForm } from '@/components/admin/system/NetworkForm';
@@ -24,8 +24,8 @@ import { Plus,
     Globe, 
     Database } from 'lucide-react';
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import {
     saveNetworkAction as saveNetworkNodeAction,
     deleteNetworkAction as deleteNetworkNodeAction

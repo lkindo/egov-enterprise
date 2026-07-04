@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { StatsDto } from '@/services/foundation/system/StatsAdminService';
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { SafeResponsiveContainer } from '@/components/features/observability-charts';
 
 interface ChartProps {
   data: StatsDto[];

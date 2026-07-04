@@ -6,7 +6,7 @@ import { systemLogAdminService, SysLog } from '@/services/foundation/system/Syst
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { Activity, Clock, Terminal, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

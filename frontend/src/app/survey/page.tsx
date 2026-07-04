@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
+import { StandardSearchFilter } from '@/components/composite/standard-search-filter';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { Survey } from '@/types/business/survey';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Calendar, ArrowRight } from 'lucide-react';
 ;
 

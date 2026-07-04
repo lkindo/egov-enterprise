@@ -6,18 +6,18 @@ import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
-import { ToastProvider } from '@/app/components/ui/toast';
-import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
-import { GlobalShortcutProvider } from '@/app/components/ui/global-shortcut-provider';
+import { ToastProvider } from '@/components/providers/toast';
+import { ConfirmProvider } from '@/components/providers/confirm-modal';
+import { GlobalShortcutProvider } from '@/components/providers/global-shortcut-provider';
 import dynamic from 'next/dynamic';
-import { ApiErrorNotifier } from './components/ui/api-error-notifier';
-import { StandardErrorBoundary } from './components/ui/standard-error-boundary';
+import { ApiErrorNotifier } from '@/components/providers/api-error-notifier';
+import { StandardErrorBoundary } from '@/components/composite/standard-error-boundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { MotionConfig } from 'framer-motion';
 
-const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
-const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
-const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
+const GlobalCommandCenter = dynamic(() => import('@/components/features/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
+const SmartOnboardingHub = dynamic(() => import('@/components/features/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
+const SessionExpiryWarning = dynamic(() => import('@/components/features/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
 
 
 import { z } from 'zod';

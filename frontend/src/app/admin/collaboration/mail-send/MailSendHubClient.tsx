@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { mailService } from '@/services/business/mail/MailService';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { motion, AnimatePresence } from 'framer-motion';

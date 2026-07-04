@@ -14,7 +14,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { BoardMaster } from '@/services/foundation/system/BoardAdminService';

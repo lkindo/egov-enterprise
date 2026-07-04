@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { useToast } from '@/app/components/ui/toast';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
+import { useToast } from '@/components/providers/toast';
 import { ShieldCheck,  
  Users,  
  ChevronRight,  

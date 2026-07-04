@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 
 // --- 디자인 토큰 기본값 ---
 const DEFAULT_THEME_CONFIG = {

@@ -34,8 +34,8 @@ import { Layers,
  Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -50,9 +50,9 @@ import {
  FormMessage 
 } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardModal } from '@/components/composite/standard-modal';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { z } from 'zod';
 import { 

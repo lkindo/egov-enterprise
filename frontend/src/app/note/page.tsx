@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
 import dynamic from 'next/dynamic';
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
-import { FormField } from '@/app/components/ui/standard-form';
-import { UserPicker } from '@/app/components/ui/user-picker';
-import { StatusBadge } from '@/app/components/ui/status-badge';
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+import { FormField } from '@/components/composite/standard-form';
+import { UserPicker } from '@/components/composite/user-picker';
+import { StatusBadge } from '@/components/composite/status-badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

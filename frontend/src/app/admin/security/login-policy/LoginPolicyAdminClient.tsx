@@ -5,7 +5,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { loginPolicyAdminService, LoginPolicy } from '@/services/foundation/system/LoginPolicyAdminService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

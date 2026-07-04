@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { DataExportExcel } from '@/app/components/ui/data-export-excel';
+import { StandardChartWrapper } from '@/components/composite/standard-chart-wrapper';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
+import { DataExportExcel } from '@/components/composite/data-export-excel';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -24,7 +24,7 @@ import { BarChart3,
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 
-const NationalDistributionMap = dynamic(() => import('@/app/components/ui/national-distribution-map').then(mod => mod.NationalDistributionMap), {
+const NationalDistributionMap = dynamic(() => import('@/components/features/national-distribution-map').then(mod => mod.NationalDistributionMap), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-lg space-y-4">

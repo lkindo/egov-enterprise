@@ -9,7 +9,7 @@ import { renderHook } from '@testing-library/react';
 import { describe,  it,  expect,  vi } from 'vitest';
 import { WebSocketProvider, useWebSocket } from '../websocket-context';
 import { AuthProvider } from '../AuthContext';
-import { ToastProvider } from '@/app/components/ui/toast';
+import { ToastProvider } from '@/components/providers/toast';
 import React from 'react';
 
 // Mock STOMP and SockJS

@@ -17,7 +17,7 @@ import { CheckSquare,
  Layers, 
  UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---

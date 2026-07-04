@@ -15,7 +15,7 @@ import { Search,
   GitBranch, 
   Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useShortcut } from './global-shortcut-provider';
+import { useShortcut } from '@/components/providers/global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
 

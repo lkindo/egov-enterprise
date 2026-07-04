@@ -6,7 +6,7 @@ import {
     LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { SafeResponsiveContainer } from '@/components/features/observability-charts';
 
 const CHART_COLORS = ['#0055FB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
 

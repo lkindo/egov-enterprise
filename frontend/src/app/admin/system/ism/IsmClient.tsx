@@ -6,10 +6,10 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { ShieldCheck, 
  FileText, 
  CheckCircle2, 
@@ -51,7 +51,7 @@ const ismSchema = InformalSanctionDtoSchema.extend({
 
 type IsmFormValues = z.infer<typeof ismSchema>;
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 export default function IsmClient({ initialData }: { initialData: { list: InfrmlSanctn[] } }) {
  const router = useRouter();

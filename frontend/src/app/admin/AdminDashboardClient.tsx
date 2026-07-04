@@ -33,13 +33,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
+import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/components/features/visual-audit-timeline';
 import { InsightBanner } from './components/InsightBanner';
 
-const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
-const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
-const ActivityAreaChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.ActivityAreaChart), { ssr: false });
-const DistributionPieChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.DistributionPieChart), { ssr: false });
+const GaugeChart = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
+const RealtimeSparkline = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
+const ActivityAreaChart = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.ActivityAreaChart), { ssr: false });
+const DistributionPieChart = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.DistributionPieChart), { ssr: false });
 
 const MOCK_METRICS = {
   cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + (Math.sin(i) + 1) * 10 })),

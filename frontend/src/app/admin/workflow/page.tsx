@@ -11,7 +11,7 @@ import { GitBranch,
     Activity, 
     RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/app/components/ui/workflow-canvas';
+import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/components/features/workflow-canvas';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';

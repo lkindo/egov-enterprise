@@ -32,9 +32,9 @@ import { authorAdminService, AuthorInfo } from '@/services/foundation/system/Aut
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
-import { useToast } from '@/app/components/ui/toast';
-import { StandardModal } from '@/app/components/ui/standard-modal';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { useToast } from '@/components/providers/toast';
+import { StandardModal } from '@/components/composite/standard-modal';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 ;
 ;
 import { Input } from '@/components/ui/input';

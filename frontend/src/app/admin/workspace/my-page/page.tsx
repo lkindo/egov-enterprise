@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Settings,  LayoutGrid,  Layers,  Zap,  Activity,  RefreshCcw,  Search,  MoreVertical } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 

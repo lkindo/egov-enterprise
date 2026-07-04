@@ -26,7 +26,7 @@ vi.mock('date-fns', () => ({
 }));
 
 // Mock toast
-vi.mock('@/app/components/ui/toast', () => ({
+vi.mock('@/components/providers/toast', () => ({
   useToast: () => ({
     toast: vi.fn(),
   }),

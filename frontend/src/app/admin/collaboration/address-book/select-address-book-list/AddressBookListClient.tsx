@@ -9,7 +9,7 @@ import { Search,  Plus,  Trash2,  UserCircle,  Layers,  Zap,  RefreshCcw,  Activ
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
 
 interface AddressBookListClientProps {

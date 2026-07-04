@@ -26,14 +26,14 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 ;
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { PagePagination } from "@/components/common/PagePagination";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { StandardModal } from '@/app/components/ui/standard-modal';
-import { FormField } from '@/app/components/ui/standard-form';
-import { useToast } from '@/app/components/ui/toast';
+import { StandardModal } from '@/components/composite/standard-modal';
+import { FormField } from '@/components/composite/standard-form';
+import { useToast } from '@/components/providers/toast';
 ;
 
 export default function GroupManagePage() {

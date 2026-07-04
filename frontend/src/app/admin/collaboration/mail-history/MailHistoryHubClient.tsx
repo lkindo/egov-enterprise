@@ -20,13 +20,13 @@ import { RefreshCcw,
  Activity, 
  MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { mailService, SentMail } from '@/services/business/mail/MailService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
 
 export default function MailHistoryHubClient() {

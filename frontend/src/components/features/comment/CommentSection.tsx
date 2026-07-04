@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { CommentVO } from '@/types/business/comment';
 import { format } from 'date-fns';
 import { createComment, deleteComment, updateComment } from '@/app/actions/commentActions';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 
 interface CommentSectionProps {
   pstId: string;

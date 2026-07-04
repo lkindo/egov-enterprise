@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { SmartNotificationHub } from '@/app/components/ui/smart-notification-hub';
-import { NotificationSender } from '@/app/components/ui/notification-sender';
+import { SmartNotificationHub } from '@/components/features/smart-notification-hub';
+import { NotificationSender } from '@/components/features/notification-sender';
 import { Button } from '@/components/ui/button';
 import {
   Bell,

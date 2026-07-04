@@ -38,13 +38,13 @@ const toastMock = {
   info: vi.fn(),
   warning: vi.fn()
 };
-vi.mock('@/app/components/ui/toast', () => ({
+vi.mock('@/components/providers/toast', () => ({
   useToast: () => toastMock,
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock useConfirm
-vi.mock('@/app/components/ui/confirm-modal', () => ({
+vi.mock('@/components/providers/confirm-modal', () => ({
   useConfirm: () => vi.fn().mockResolvedValue(true),
 }));
 

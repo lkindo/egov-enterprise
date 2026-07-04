@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

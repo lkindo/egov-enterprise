@@ -23,7 +23,7 @@ vi.mock('@/components/ui/hub/HubSectionCard', () => ({
 vi.mock('@/app/components/layout/page-header', () => ({
   PageHeader: ({ title }: any) => <div data-testid="page-header"><h1>{title}</h1></div>
 }));
-vi.mock('@/app/components/ui/standard-modal', () => ({
+vi.mock('@/components/composite/standard-modal', () => ({
   StandardModal: ({ children, isOpen, title, footer }: any) => isOpen ? (
     <div data-testid="standard-modal">
       <h2>{title}</h2>
@@ -32,7 +32,7 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
     </div>
   ) : null
 }));
-vi.mock('@/app/components/ui/standard-data-table', () => ({
+vi.mock('@/components/composite/standard-data-table', () => ({
   StandardDataTable: ({ data }: any) => <div data-testid="data-table">{data?.length || 0} items</div>
 }));
 

@@ -42,10 +42,10 @@ import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { useRouter } from 'next/navigation';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 import { 
@@ -55,7 +55,7 @@ import {
   bulkUpdateUserRoleAction
 } from '@/app/actions/userActions';
 
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardModal } from '@/components/composite/standard-modal';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';

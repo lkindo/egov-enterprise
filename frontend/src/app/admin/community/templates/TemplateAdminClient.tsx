@@ -2,7 +2,7 @@
 
 import React, { useState, use } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable } from '@/components/composite/standard-data-table';
 import { templateAdminService, TmplatInfo } from '@/services/foundation/system/TemplateAdminService';
 import { Layout, 
  Plus, 

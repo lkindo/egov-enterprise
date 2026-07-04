@@ -4,13 +4,13 @@ import React, { useState, useMemo, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { PagePagination } from '@/components/common/PagePagination';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardModal } from '@/components/composite/standard-modal';
 import {
   Terminal,
   Activity,

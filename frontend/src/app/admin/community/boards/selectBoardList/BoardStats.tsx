@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp,  Users } from "lucide-react";
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { SafeResponsiveContainer } from '@/components/features/observability-charts';
 
 const trafficData = [
   { name: '02.11', views: 400 },

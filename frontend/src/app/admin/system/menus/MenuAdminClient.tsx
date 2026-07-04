@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { MenuInfo } from '@/types/foundation/menu';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import {
   Plus,
   ChevronRight,
@@ -76,7 +76,7 @@ import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './tree
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 const INDENTATION_WIDTH = 32;
 

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search,  Plus,  Mail,  Inbox,  ShieldCheck,  MoreVertical,  Zap,  Layers,  RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 ;
 import { memoReportService, MemoReportInfo } from '@/services/business/memoreport/memoReportService';
 ;
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
 
 type ReportTab = 'MY' | 'RECEIVED' | 'ALL';

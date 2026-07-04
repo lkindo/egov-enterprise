@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Plus, 
  MapPin, 
  Search, 
@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/form';
 import dynamic from 'next/dynamic';
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 import { AdministCodeDtoSchema } from '@/types/generated-zod';
 

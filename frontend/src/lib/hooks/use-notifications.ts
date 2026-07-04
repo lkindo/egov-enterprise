@@ -5,7 +5,7 @@ import { IMessage, StompSubscription } from '@stomp/stompjs';
 import client from '@/lib/api/client';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 
 export interface Notification {
   notiSn: string;

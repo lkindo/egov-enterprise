@@ -18,7 +18,7 @@ vi.mock('@/components/ui/hub/HubHeader', () => ({
 vi.mock('@/components/ui/hub/HubSectionCard', () => ({
   HubSectionCard: ({ title, children }: any) => <div><h2>{title}</h2>{children}</div>
 }));
-vi.mock('@/app/components/ui/standard-data-table', () => ({
+vi.mock('@/components/composite/standard-data-table', () => ({
   StandardDataTable: ({ data }: any) => (
     <table>
       <tbody>

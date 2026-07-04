@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import dynamic from 'next/dynamic';

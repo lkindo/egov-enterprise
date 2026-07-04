@@ -23,7 +23,7 @@ import { Users,
 import { communityService } from '@/services/business/community/communityService';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 export default function CommunityDetailHubClient({ 

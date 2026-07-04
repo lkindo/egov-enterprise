@@ -1,9 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { Plus, Search, Users, ShieldCheck, Zap, RefreshCcw, Layers } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import dynamic from 'next/dynamic';
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+const StandardModal = dynamic(() => import('@/components/composite/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 import { ExternalHrDtoSchema } from '@/types/generated-zod';
 

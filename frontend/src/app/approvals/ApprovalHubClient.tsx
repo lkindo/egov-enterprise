@@ -20,8 +20,8 @@ import { Inbox,
   Loader2, 
   Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/components/providers/toast';
+import { useConfirm } from '@/components/providers/confirm-modal';
 import { approvalUserService, Approval } from '@/services/business/user/approval/ApprovalUserService';
 import { motion, AnimatePresence } from 'framer-motion';
 ;

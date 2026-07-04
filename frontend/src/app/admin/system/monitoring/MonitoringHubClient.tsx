@@ -32,19 +32,19 @@ import { Activity,
   FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { monitoringAdminService } from '@/services/foundation/system/MonitoringAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/components/composite/standard-data-table';
 import dynamic from 'next/dynamic';
-const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
-const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
-const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), { ssr: false });
+const GaugeChart = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
+const RealtimeSparkline = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
+const SystemStatusRadar = dynamic(() => import('@/components/features/observability-charts').then(mod => mod.SystemStatusRadar), { ssr: false });
 
-const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
+const TopologyMap = dynamic(() => import('@/components/features/topology-map').then(mod => mod.TopologyMap), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-slate-950 rounded-lg space-y-6">
@@ -53,7 +53,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
     </div>
   )
 });
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardModal } from '@/components/composite/standard-modal';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';

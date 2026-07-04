@@ -7,7 +7,7 @@ import { Search,  Plus,
  User,  Eye,  ShieldAlert,  Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/app/components/ui/toast';
+import { useToast } from '@/components/providers/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
