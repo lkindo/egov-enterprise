@@ -5,14 +5,16 @@ server:
 spring:
   datasource:
     url: ${DB_URL}
+    jdbc-url: ${DB_URL}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
+    # [pool] flat 키로 둬야 커스텀 @Primary DataSource 에 실제 바인딩된다(base application.yml 주석 참조).
+    # 중첩 hikari.* 로 두면 무시되어 prod 가 Hikari 기본값(pool 10)으로 동작한다.
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 300000
+    connection-timeout: 20000
   jpa:
     open-in-view: false
     hibernate:

@@ -74,7 +74,10 @@ jobs:
         run: ./gradlew :foundation:test --no-build-cache
 
       - name: Build and Test with Gradle
-        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+        # 절대경로로 생성해야 한다. OpenApiDocumentationTest 는 Paths.get(openapi.export.path) 를
+        # JUnit 프로세스의 workingDir(=api-server projectDir) 기준 상대경로로 해석하므로, 상대값이면
+        # 스펙이 api-server/api-docs.json 에 떨어져 아래 워크스페이스 루트 업로드가 파일을 못 찾는다.
+        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path="$GITHUB_WORKSPACE/api-docs.json"
 
       - name: Export OpenAPI Spec
         run: ./gradlew :api-server:bootRun & sleep 30 && curl -s http://localhost:8080/v3/api-docs > openapi-generated.json || true
@@ -120,6 +123,9 @@ jobs:
         with:
           name: openapi-spec
           path: api-docs.json
+          # 스펙이 생성되지 않았으면 여기서 즉시 실패시킨다. 그렇지 않으면 아티팩트가 조용히
+          # 누락돼 frontend-build 의 'Download OpenAPI Spec'(needs 아티팩트)이 뒤늦게 실패한다.
+          if-no-files-found: error
 
   # OWASP NVD 스캔은 느려(NVD DB 다운로드) backend-build 완료를 지연시키므로 별도 non-blocking 잡으로 분리 —
   # frontend-build/e2e(needs: backend-build)가 스캔을 기다리지 않게 한다.
