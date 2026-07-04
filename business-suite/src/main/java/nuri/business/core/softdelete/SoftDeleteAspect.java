@@ -35,6 +35,10 @@ public class SoftDeleteAspect {
 
         boolean hasDisableAnnotation = hasDisableSoftDeleteAnnotation(joinPoint);
 
+        // BE-02 fix: 진입 시점의 필터 상태를 저장해 finally 에서 정확히 복원한다.
+        // (무조건 재활성화하면 중첩 호출 시 바깥 @DisableSoftDelete 스코프가 오염된다.)
+        boolean wasEnabledOnEntry = session.getEnabledFilter(FILTER_NAME) != null;
+
         if (hasDisableAnnotation) {
             log.debug(">>> SoftDelete disabled for method: {}", joinPoint.getSignature().toShortString());
             session.disableFilter(FILTER_NAME);
@@ -46,9 +50,13 @@ public class SoftDeleteAspect {
         try {
             return joinPoint.proceed();
         } finally {
-            // 다른 세션의 재사용이나 잔여 작업 시 오염 방지를 위해 무조건 기본값으로 복구 활성화
+            // 진입 시점 상태로 정확히 복원 (중첩 호출 시 바깥 스코프 오염 방지).
             if (session != null && session.isOpen()) {
-                session.enableFilter(FILTER_NAME).setParameter("useYn", "Y");
+                if (wasEnabledOnEntry) {
+                    session.enableFilter(FILTER_NAME).setParameter("useYn", "Y");
+                } else {
+                    session.disableFilter(FILTER_NAME);
+                }
             }
         }
     }

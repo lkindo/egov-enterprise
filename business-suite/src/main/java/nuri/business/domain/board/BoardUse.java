@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Filter;
 import java.io.Serializable;
 
 @Getter
@@ -22,6 +23,7 @@ import java.io.Serializable;
 @Table(name = "tb_bbs_use_info")
 @IdClass(BoardUseId.class)
 @SuperBuilder
+@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class BoardUse extends BaseTimeEntity implements Serializable {
 
     @Id
