@@ -73,8 +73,8 @@ When mapping complex module topologies, write a concise structural sandbox index
   - [x] Java entity mappings match physical table columns exactly.
   - [x] TypeScript generated fields have 100% property compliance.
 - **Architectural Rules Applied**:
-  - Backend API Constitution (15 Articles) -> Article 4 (Unified response structure) applied.
-  - Database Standard Constitution (8 Articles) -> Article 2 (Standard abbreviations only) applied.
+  - Backend API Constitution (18 Articles) -> Article 6 (Unified response structure) applied.
+  - Database Standard Constitution (10 Articles) -> Article 2 (Standard abbreviations only) applied.
 #####################################
 ```
 
