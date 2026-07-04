@@ -193,12 +193,11 @@ cp frontend/.env.example frontend/.env.local
 
 ## 📚 추가 문서
 
-- [제품 요구사항 정의서 (PRD)](./docs/PRD.MD)
-- [기술 요구사항 정의서 (TRD)](./docs/TRD.MD)
-- [상세 설계 문서 (LLD)](./docs/LLD.MD)
-- [백엔드 아키텍처 요약](./docs/BACKEND_ARCHITECTURE_SUMMARY.md)
-- [통합 메뉴 및 아키텍처 결과 보고서](./docs/integrated-menu-report.md)
-- [2026-03 관리자 모듈 통합 리팩토링 백서](./docs/refactoring-summary-2026-03.md)
+- [제품 요구사항 정의서 (PRD)](./docs/archived/PRD.MD)
+- [기술 요구사항 정의서 (TRD)](./docs/archived/TRD.MD)
+- [상세 설계 문서 (LLD)](./docs/archived/LLD.MD)
+- [백엔드 아키텍처](./docs/02-architecture/backend-architecture.md)
+- [프론트엔드 아키텍처](./docs/02-architecture/frontend-architecture.md)
 
 ---
 
@@ -208,13 +207,13 @@ cp frontend/.env.example frontend/.env.local
 
 | 문서 | 설명 |
 |------|------|
-| [CHANGELOG](./CHANGELOG.md) | 버전별 변경사항 기록 |
-| [API 문서화 가이드](./docs/API_DOCUMENTATION_GUIDE.md) | OpenAPI/Swagger 사용법 |
-| [CI/CD 파이프라인 가이드](./docs/CICD_PIPELINE.md) | GitHub Actions 설정 및 사용법 |
-| [테스트 가이드](./docs/TESTING_GUIDE.md) | 단위/통합/E2E 테스트 작성법 |
-| [성능 최적화 가이드](./docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) | N+1 쿼리 해결, 캐싱, 프론트엔드 최적화 |
-| [데이터베이스 최적화 가이드](./docs/DATABASE_OPTIMIZATION_GUIDE.md) | 인덱스, 쿼리 튜닝 |
-| [E2E 테스트 가이드](./E2E_GUIDE.md) | Playwright 테스트 작성법 |
+| [API 문서화 가이드](./docs/03-guides/api-documentation-guide.md) | OpenAPI/Swagger 사용법 |
+| [CI/CD 파이프라인 가이드](./docs/03-guides/cicd-pipeline.md) | GitHub Actions 설정 및 사용법 |
+| [테스트 가이드](./docs/03-guides/testing-guide.md) | 단위/통합/E2E 테스트 작성법 |
+| [성능 최적화 가이드](./docs/04-operations/performance-optimization-guide.md) | N+1 쿼리 해결, 캐싱, 프론트엔드 최적화 |
+| [데이터베이스 최적화 가이드](./docs/04-operations/database-optimization-guide.md) | 인덱스, 쿼리 튜닝 |
+| [E2E 테스트 가이드](./docs/03-guides/e2e-test-guide.md) | Playwright 테스트 작성법 |
+| [보안 하드닝 플레이북](./docs/03-guides/security-hardening-playbook.md) | 보안 점검 및 대응 |
 
 ---
 
@@ -234,7 +233,7 @@ cp frontend/.env.example frontend/.env.local
 - ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
 - ✅ **JaCoCo 커버리지 목표** - 60% 이상 (클래스별 50%)
 
-자세한 내용은 [CHANGELOG](./CHANGELOG.md) 를 확인하세요.
+자세한 변경 이력은 커밋 히스토리(`git log`)를 참고하세요.
 
 ---
 
