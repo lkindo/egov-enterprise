@@ -216,11 +216,14 @@ public class User extends BaseEntity implements Serializable {
 
 
 
+    /** 연속 로그인 실패 임계값 — 도달 시 계정을 잠근다(lckYn='Y'). */
+    private static final int LOCK_THRESHOLD = 5;
+
     public void incrementLockCount() {
-        if (this.lckCnt == null) {
-            this.lckCnt = 1;
-        } else {
-            this.lckCnt++;
+        this.lckCnt = (this.lckCnt == null ? 0 : this.lckCnt) + 1;
+        this.lckLastPnttm = LocalDateTime.now();
+        if (this.lckCnt >= LOCK_THRESHOLD) {
+            this.lckYn = "Y";
         }
     }
 

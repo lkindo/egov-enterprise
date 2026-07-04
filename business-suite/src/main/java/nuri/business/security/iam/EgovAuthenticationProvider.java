@@ -27,6 +27,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private final UserAuthorityRepository userAuthorityRepository;
     private final PasswordEncoder passwordEncoder;
     private final EgovPasswordEncoder egovPasswordEncoder;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     @Transactional
@@ -97,8 +98,10 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             
             if (!isMatched) {
                 log.warn(">>> Password mismatch for user: {}", userId);
-                userEntity.incrementLockCount();
-                userRepository.save(userEntity);
+                // BE-01: 실패 카운트는 독립 트랜잭션(REQUIRES_NEW)으로 커밋해야 한다.
+                // 여기서 던지는 BadCredentialsException 이 인증 트랜잭션을 롤백시키므로,
+                // 같은 트랜잭션에서 저장하면 카운트 증가가 사라져 잠금이 영영 작동하지 않는다.
+                loginAttemptService.recordFailure(userId);
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
             
