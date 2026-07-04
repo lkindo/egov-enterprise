@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: egov
       POSTGRES_PASSWORD: egov123
     volumes:
-      - ./dump/supabase_e2e_full.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
+      - ./dump/e2e_full_dump.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
       - ./dump/init_users.sql:/docker-entrypoint-initdb.d/02_init_users.sql:ro
       - ./dump/03_seed_extra.sql:/docker-entrypoint-initdb.d/03_seed_extra.sql:ro
       - e2e_postgres_data:/var/lib/postgresql/data

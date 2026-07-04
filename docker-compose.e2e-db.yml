@@ -19,7 +19,7 @@ services:
       POSTGRES_PASSWORD: egov123
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
     volumes:
-      - ./dump/supabase_e2e_full.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
+      - ./dump/e2e_full_dump.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
       - ./dump/init_users.sql:/docker-entrypoint-initdb.d/02_init_users.sql:ro
       - e2e_postgres_data:/var/lib/postgresql/data
     healthcheck:

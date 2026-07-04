@@ -37,10 +37,10 @@ egov:
 ### 분석 스크립트 실행
 
 ```bash
-# PostgreSQL 연결 (OCI PostgreSQL 17 / Supabase)
+# PostgreSQL 연결 (OCI PostgreSQL 17)
 # 로컬: psql -h localhost -p 5432 -U egov -d egovdb
-# 원격(Supabase pooler): port 6543
-psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
+# 원격(OCI): port 5432
+psql -h <oci-db-host> -p 5432 -U egov -d egovdb
 
 # 분석 스크립트 실행
 \i config/db/performance-analysis.sql
