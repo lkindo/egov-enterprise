@@ -4,6 +4,7 @@ WORKDIR /app
 # Only copy dependency files first for better caching
 COPY gradle /app/gradle
 COPY gradlew /app/gradlew
+RUN chmod +x /app/gradlew
 COPY build.gradle /app/
 COPY settings.gradle /app/
 COPY gradle.properties /app/
