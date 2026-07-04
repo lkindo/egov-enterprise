@@ -1,9 +1,10 @@
 name: Performance Load Test
 
 on:
+  # [CI 비용 절감] 부하 테스트는 러너 수십분을 소비하므로 매 PR/push 마다 돌리지 않는다.
+  # main 병합 시 1회 + 필요 시 수동(workflow_dispatch)으로만 실행한다.
+  # (과거엔 pull_request 트리거로 열린 PR 의 매 push 마다 최대 60분 잡이 실행됐다.)
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
   workflow_dispatch:
     inputs:
