@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * 메일 서비스 구현체
@@ -67,8 +69,19 @@ public class MailService implements EgovMailService {
 
         sentMailRepository.save(Objects.requireNonNull(sentMail));
 
-        // 비동기로 실제 발송 처리 요청
-        mailAsyncProcessor.processSending(mssageId, dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
+        // 비동기 발송은 이 트랜잭션이 커밋된 뒤에만 실행해야 한다. 커밋 전에 실행하면 별도(REQUIRES_NEW)
+        // 트랜잭션이 아직 커밋되지 않은 SentMail 행을 findById 로 찾지 못해, 메일은 실제 발송되는데도
+        // dsptchRsltCd 는 영원히 'P'(Pending)로 남는다. 활성 트랜잭션이 없으면(예: 테스트) 즉시 실행한다.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    mailAsyncProcessor.processSending(mssageId, dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
+                }
+            });
+        } else {
+            mailAsyncProcessor.processSending(mssageId, dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
+        }
 
         log.info("Mail request registered successfully for ID: {}", mssageId);
         return mssageId;

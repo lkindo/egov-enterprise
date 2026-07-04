@@ -145,10 +145,18 @@ class AdministCodeServiceTest {
     @Test
     @DisplayName("행정코드 삭제 성공")
     void deleteAdministCode_Success() {
+        // given: 물리삭제가 아닌 소프트삭제(use_yn='N')로 전환됨
+        AdministCode entity = AdministCode.builder()
+                .admdstCd("1100000000")
+                .useYn("Y")
+                .build();
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+
         // when
         administCodeService.deleteAdministCode("1100000000");
 
         // then
-        verify(administCodeRepository).deleteById("1100000000");
+        assertThat(entity.getUseYn()).isEqualTo("N");
+        verify(administCodeRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 }

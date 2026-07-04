@@ -68,7 +68,8 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 목록 조회")
     void getCommunities() throws Exception {
         Page<CommunityDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(communityService.getCommunityList(anyString(), anyString(), any())).thenReturn(page);
+        // 관리자 목록은 비활성(use_yn='N') 커뮤니티도 봐야 하므로 전용 메서드를 사용한다.
+        when(communityService.getCommunityListForAdmin(anyString(), anyString(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/content/community")
                         .param("searchCnd", "1")

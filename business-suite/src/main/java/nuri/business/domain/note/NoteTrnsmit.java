@@ -39,4 +39,9 @@ public class NoteTrnsmit extends BaseEntity {
         if (this.delYn == null)
             this.delYn = "N";
     }
+
+    /** 소프트 삭제. 자식(tb_note_rcptn)이 FK 로 참조하므로 물리 DELETE 는 제약위반을 일으킨다. */
+    public void softDelete() {
+        this.delYn = "Y";
+    }
 }

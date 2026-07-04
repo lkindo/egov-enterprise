@@ -32,7 +32,8 @@ public class CommunityApiController {
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommunityDto> page = communityService.getCommunityList(searchCnd, searchWrd, pageable);
+        // 관리자 화면: 비활성(use_yn='N') 커뮤니티도 검토/재활성화할 수 있어야 하므로 전용 메서드 사용.
+        Page<CommunityDto> page = communityService.getCommunityListForAdmin(searchCnd, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

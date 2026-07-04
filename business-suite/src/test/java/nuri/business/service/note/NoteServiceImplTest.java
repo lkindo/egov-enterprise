@@ -230,14 +230,17 @@ class NoteServiceImplTest {
     @Test
     @DisplayName("보낸 쪽지 삭제")
     void deleteNote_sent() {
-        // given
+        // given: 물리삭제가 아닌 소프트삭제(del_yn='Y')로 전환됨(자식 tb_note_rcptn 의 FK 참조 때문)
         String relationId = "T1";
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).delYn("N").build();
+        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
 
         // when
         noteService.deleteNote(relationId, "sent");
 
         // then
-        verify(noteTrnsmitRepository, times(1)).deleteById(relationId);
+        assertThat(trnsmit.getDelYn()).isEqualTo("Y");
+        verify(noteTrnsmitRepository, never()).deleteById(anyString());
         verify(noteRecptnRepository, never()).deleteById(anyString());
     }
 

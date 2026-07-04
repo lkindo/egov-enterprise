@@ -48,4 +48,14 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @org.springframework.data.jpa.repository.Modifying
         @Query("UPDATE Board b SET b.likeCnt = COALESCE(b.likeCnt, 0) + 1 WHERE b.pstId = :pstId")
         int incrementLikeCntAtomic(@Param("pstId") String pstId);
+
+        // 조회수 배치 동기화(BoardViewCountService)용 원자 증분. find+setInqCnt+save 방식은
+        // @Version 낙관적 잠금 충돌 시 배치 전체가 롤백되며, 이미 비워둔 버퍼가 유실된다.
+        // 호출부(BoardViewCountService.syncViewCountsToDb)가 @Transactional 이 아니므로,
+        // 이 커스텀 @Query 메서드는 Spring Data 의 기본 트랜잭션 프록시를 타지 않는다 — 명시적으로
+        // @Transactional 을 달아야 한다(없으면 TransactionRequiredException 으로 매번 실패한다).
+        @Transactional
+        @org.springframework.data.jpa.repository.Modifying
+        @Query("UPDATE Board b SET b.inqCnt = COALESCE(b.inqCnt, 0) + :delta WHERE b.pstId = :pstId")
+        int incrementInqCntAtomic(@Param("pstId") String pstId, @Param("delta") int delta);
 }

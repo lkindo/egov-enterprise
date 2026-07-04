@@ -11,11 +11,18 @@ CREATE SEQUENCE IF NOT EXISTS answer_no_seq
                 MINVALUE 1 
                 MAXVALUE 9223372036854775807 
                 NO CYCLE;
-CREATE SEQUENCE IF NOT EXISTS ntt_id_seq 
-                START WITH 1 
-                INCREMENT BY 1 
-                MINVALUE 1 
-                MAXVALUE 9223372036854775807 
+CREATE SEQUENCE IF NOT EXISTS ntt_id_seq
+                START WITH 1
+                INCREMENT BY 1
+                MINVALUE 1
+                MAXVALUE 9223372036854775807
+                NO CYCLE;
+-- 게시글 ID 시퀀스(BoardRepository.getNextPstId). 기존 pst_id 대역과 충돌하지 않도록 100000 에서 시작.
+CREATE SEQUENCE IF NOT EXISTS pst_id_seq
+                START WITH 100000
+                INCREMENT BY 1
+                MINVALUE 1
+                MAXVALUE 9223372036854775807
                 NO CYCLE;
 CREATE SEQUENCE IF NOT EXISTS revinfo_seq 
                 START WITH 1 

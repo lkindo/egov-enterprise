@@ -56,6 +56,11 @@ public class Scrap extends BaseEntity {
         this.useYn = useYn;
     }
 
+    /** 소프트 삭제(@Filter softDeleteFilter 대상). 물리 DELETE 는 소프트삭제 설계를 무력화한다. */
+    public void delete() {
+        this.useYn = "N";
+    }
+
 
     // 레거시 별칭 완전 철폐 (표준화 동기화)
 }

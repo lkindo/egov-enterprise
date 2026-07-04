@@ -83,7 +83,8 @@ public class TemplateService implements EgovTemplateService {
     public void deleteTemplate(String tmpltId) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        templateRepository.delete(Objects.requireNonNull(template));
+        // 물리삭제 금지: 템플릿은 게시판/커뮤니티에서 참조된다. 소프트삭제(use_yn='N')로 전환(managed 엔티티 dirty-check).
+        template.delete();
     }
 
     @Override

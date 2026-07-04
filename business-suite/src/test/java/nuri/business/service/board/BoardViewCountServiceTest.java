@@ -1,6 +1,5 @@
 package nuri.business.service.board;
 
-import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,13 +8,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+// syncViewCountsToDb 는 find+setInqCnt+save 대신 boardRepository.incrementInqCntAtomic(pstId, delta)
+// 원자 UPDATE 를 사용한다(낙관적 잠금 충돌로 배치 전체가 유실되는 문제를 없애기 위함).
 @DisplayName("BoardViewCountService 단위 테스트")
 class BoardViewCountServiceTest {
 
@@ -31,25 +30,18 @@ class BoardViewCountServiceTest {
     }
 
     @Test
-    @DisplayName("조회수 증가 요청 시 버퍼에 정상 누적 검증")
+    @DisplayName("조회수 증가 요청 시 버퍼에 누적되어 합산된 delta 로 원자 UPDATE 호출 검증")
     void increaseViewCount_ShouldAccumulateInBuffer() {
         // given
         String pstId = "PST_001";
-        Board board = Board.builder()
-                .pstId(pstId)
-                .inqCnt(5)
-                .build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
 
         // when
         boardViewCountService.increaseViewCount(pstId);
-        boardViewCountService.increaseViewCount(pstId); // 두 번 호출
+        boardViewCountService.increaseViewCount(pstId); // 두 번 호출 -> delta=2 로 합산
         boardViewCountService.syncViewCountsToDb();
 
         // then
-        verify(boardRepository, times(1)).findById(pstId);
-        verify(boardRepository, times(1)).save(board);
-        assertThat(board.getInqCnt()).isEqualTo(7); // 기존 5 + 누적 2
+        verify(boardRepository, times(1)).incrementInqCntAtomic(pstId, 2);
     }
 
     @Test
@@ -63,68 +55,44 @@ class BoardViewCountServiceTest {
     }
 
     @Test
-    @DisplayName("기존 조회수가 null인 경우 0으로 취급하여 동기화 검증")
-    void syncViewCountsToDb_WhenInqCntIsNull_ShouldTreatAsZero() {
+    @DisplayName("여러 게시글의 버퍼가 각각 독립적으로 원자 UPDATE 되는지 검증")
+    void syncViewCountsToDb_WithMultiplePosts_ShouldUpdateEachIndependently() {
         // given
-        String pstId = "PST_002";
-        Board board = Board.builder()
-                .pstId(pstId)
-                .inqCnt(null) // null 조회수
-                .build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        boardViewCountService.increaseViewCount("PST_002");
+        boardViewCountService.increaseViewCount("PST_003");
+        boardViewCountService.increaseViewCount("PST_003");
 
         // when
-        boardViewCountService.increaseViewCount(pstId);
         boardViewCountService.syncViewCountsToDb();
 
         // then
-        verify(boardRepository, times(1)).save(board);
-        assertThat(board.getInqCnt()).isEqualTo(1); // 0 + 1
+        verify(boardRepository, times(1)).incrementInqCntAtomic("PST_002", 1);
+        verify(boardRepository, times(1)).incrementInqCntAtomic("PST_003", 2);
     }
 
     @Test
-    @DisplayName("게시글이 존재하지 않을 때 동기화가 무시되는지 검증")
-    void syncViewCountsToDb_WhenBoardNotFound_ShouldDoNothing() {
-        // given
-        String pstId = "PST_003";
-        given(boardRepository.findById(pstId)).willReturn(Optional.empty());
-
-        // when
-        boardViewCountService.increaseViewCount(pstId);
-        boardViewCountService.syncViewCountsToDb();
-
-        // then
-        verify(boardRepository, never()).save(any(Board.class));
-    }
-
-    @Test
-    @DisplayName("DB 동기화 중 예외 발생 시 실패한 항목 버퍼에 롤백 검증")
+    @DisplayName("DB 동기화 중 예외 발생 시 실패한 항목만 버퍼에 롤백되어 다음 주기에 재시도되는지 검증")
     void syncViewCountsToDb_WhenExceptionOccurs_ShouldRollbackToBuffer() {
         // given
         String pstId = "PST_004";
-        
-        // findById 호출 시 런타임 예외 발생 시뮬레이션
-        given(boardRepository.findById(pstId)).willThrow(new RuntimeException("DB Connection Error"));
+        given(boardRepository.incrementInqCntAtomic(anyString(), anyInt()))
+                .willThrow(new RuntimeException("DB Connection Error"));
 
-        // when
+        // when: 첫 번째 동기화 시도 — 실패하여 버퍼로 롤백됨
         boardViewCountService.increaseViewCount(pstId);
-        boardViewCountService.syncViewCountsToDb(); // 첫 번째 동기화 시도 (실패 및 롤백)
+        boardViewCountService.syncViewCountsToDb();
 
         // then
-        // 1회 호출 완료 확인 (예외 발생으로 save는 무시됨)
-        verify(boardRepository, times(1)).findById(pstId);
-        verify(boardRepository, never()).save(any(Board.class));
+        verify(boardRepository, times(1)).incrementInqCntAtomic(pstId, 1);
 
-        // 롤백 확인을 위해 mock 설정 재조정 후 두 번째 동기화 기동
+        // 두 번째 시도부터는 성공하도록 재설정
         reset(boardRepository);
-        Board board = Board.builder().pstId(pstId).inqCnt(10).build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        given(boardRepository.incrementInqCntAtomic(anyString(), anyInt())).willReturn(1);
 
-        boardViewCountService.syncViewCountsToDb(); // 두 번째 동기화 시도 (버퍼가 롤백되었으므로 재시도됨)
+        // when: 두 번째 동기화 시도 — 롤백된 delta(1)로 재시도됨
+        boardViewCountService.syncViewCountsToDb();
 
         // then
-        verify(boardRepository, times(1)).findById(pstId);
-        verify(boardRepository, times(1)).save(board);
-        assertThat(board.getInqCnt()).isEqualTo(11); // 10 + 롤백된 1
+        verify(boardRepository, times(1)).incrementInqCntAtomic(pstId, 1);
     }
 }

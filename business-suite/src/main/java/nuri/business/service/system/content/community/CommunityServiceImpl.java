@@ -33,10 +33,28 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
             @org.springframework.lang.NonNull Pageable pageable) {
+        // 사용자 대상 목록: 소프트삭제된(use_yn='N') 커뮤니티는 노출하지 않는다.
+        return searchCommunityList(searchCnd, searchWrd, pageable, true);
+    }
+
+    @Override
+    public Page<CommunityDto> getCommunityListForAdmin(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        // 관리자 대상 목록: 비활성(use_yn='N') 커뮤니티도 보여야 검토/재활성화가 가능하다.
+        // (사용자용 getCommunityList 에 use_yn='Y' 필터를 추가하면서, 두 컨트롤러가 같은 메서드를
+        //  공유하던 시절엔 관리자도 함께 필터링돼 비활성 커뮤니티를 볼 수 없었다 — 경로 분리.)
+        return searchCommunityList(searchCnd, searchWrd, pageable, false);
+    }
+
+    private Page<CommunityDto> searchCommunityList(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable, boolean activeOnly) {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
         builder.and(qCommunity.regSeCd.eq("REGC01"));
+        if (activeOnly) {
+            builder.and(qCommunity.useYn.eq("Y"));
+        }
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
             if ("0".equals(searchCnd)) {

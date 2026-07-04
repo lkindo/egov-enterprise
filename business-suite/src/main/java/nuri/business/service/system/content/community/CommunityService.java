@@ -10,6 +10,10 @@ public interface CommunityService {
     Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
             @org.springframework.lang.NonNull Pageable pageable);
 
+    // 관리자 전용: use_yn 무관하게 전체 커뮤니티를 조회한다(getCommunityList 는 활성만 조회).
+    Page<CommunityDto> getCommunityListForAdmin(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable);
+
     CommunityDto getCommunity(String cmmntyId);
 
     CommunityDto createCommunity(String userId, CommunityDto dto);

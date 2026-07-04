@@ -122,12 +122,14 @@ class TemplateServiceTest {
     @Test
     @DisplayName("템플릿 삭제")
     void deleteTemplate() {
-        Template template = Template.builder().tmpltId("T1").build();
+        // 물리삭제가 아닌 소프트삭제(use_yn='N')로 전환됨(템플릿은 게시판/커뮤니티에서 참조되므로)
+        Template template = Template.builder().tmpltId("T1").useYn("Y").build();
         given(templateRepository.findById("T1")).willReturn(Optional.of(template));
 
         templateService.deleteTemplate("T1");
 
-        verify(templateRepository).delete(template);
+        assertThat(template.getUseYn()).isEqualTo("N");
+        verify(templateRepository, never()).delete(any());
     }
 
     @Test
