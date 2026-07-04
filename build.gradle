@@ -91,7 +91,9 @@ subprojects {
         systemProperty 'file.encoding', 'UTF-8'
         useJUnitPlatform()
         systemProperties System.properties
-        maxHeapSize = "6144m"
+        // 메모리 상한: 물리 RAM 대비 과다 요청(6GB×병렬 모듈 ≈ 18GB) 방지 — 네이티브 OOM 완화
+        maxHeapSize = "3072m"
+        jvmArgs '-XX:MaxMetaspaceSize=512m'
         ignoreFailures = false
         
         // Jacoco 명시적 설정: 하위 프로젝트별 물리적 build 폴더 하위에 격리하여 생성 강제
