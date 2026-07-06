@@ -16,8 +16,8 @@ class HpcmTest {
                 .hlpSeCd("001")
                 .hlpDfn("Help Definition")
                 .hlpExpln("Help Content")
-                .frstRgtrId("admin")
                 .build();
+        hpcm.setFrstRgtrId("admin");
 
         assertThat(hpcm.getHlpId()).isEqualTo("HPCM_001");
         assertThat(hpcm.getHlpSeCd()).isEqualTo("001");

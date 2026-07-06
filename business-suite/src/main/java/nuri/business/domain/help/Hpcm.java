@@ -3,7 +3,6 @@ package nuri.business.domain.help;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
@@ -15,8 +14,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class Hpcm extends BaseEntity {
 
@@ -32,6 +29,18 @@ public class Hpcm extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String hlpExpln;
+
+    private Hpcm(String hlpId, String hlpSeCd, String hlpDfn, String hlpExpln) {
+        this.hlpId = hlpId;
+        this.hlpSeCd = hlpSeCd;
+        this.hlpDfn = hlpDfn;
+        this.hlpExpln = hlpExpln;
+    }
+
+    @Builder
+    public static Hpcm create(String hlpId, String hlpSeCd, String hlpDfn, String hlpExpln) {
+        return new Hpcm(hlpId, hlpSeCd, hlpDfn, hlpExpln);
+    }
 
     public void update(String hlpSeCd, String hlpDfn, String hlpExpln) {
         this.hlpSeCd = hlpSeCd;

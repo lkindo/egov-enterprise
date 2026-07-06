@@ -5,7 +5,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 마이페이지 설정 엔티티
@@ -16,8 +15,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_indv_pg")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class IndividualPage extends BaseEntity {
 
     @Id
@@ -32,6 +29,18 @@ public class IndividualPage extends BaseEntity {
 
     @Column(length = 30, nullable = false)
     private String userId;
+
+    private IndividualPage(String pageId, String pageTtl, String pageExpln, String userId) {
+        this.pageId = pageId;
+        this.pageTtl = pageTtl;
+        this.pageExpln = pageExpln;
+        this.userId = userId;
+    }
+
+    @Builder
+    public static IndividualPage create(String pageId, String pageTtl, String pageExpln, String userId) {
+        return new IndividualPage(pageId, pageTtl, pageExpln, userId);
+    }
 
     public void update(String pageTtl, String pageExpln) {
         this.pageTtl = pageTtl;

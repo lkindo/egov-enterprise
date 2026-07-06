@@ -32,8 +32,6 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
                 .rptSeCd(dto.getRptSeCd())
                 .userId(dto.getUserId())
                 .atchFileId(dto.getAtchFileId())
-                .frstRgtrId(dto.getUserId())
-                .lastMdfrId(dto.getUserId())
                 .build();
         workReportRepository.save(entity);
     }

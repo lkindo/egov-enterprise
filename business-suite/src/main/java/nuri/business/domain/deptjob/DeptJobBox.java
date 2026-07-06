@@ -3,7 +3,6 @@ package nuri.business.domain.deptjob;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 부서업무함
@@ -14,8 +13,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_dept_job_bx")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class DeptJobBox extends BaseEntity {
 
     @Id
@@ -29,6 +26,23 @@ public class DeptJobBox extends BaseEntity {
     private String deptId;
 
     private Integer sortOrdr;
+
+    // 정적 팩토리 전용 생성자 (빌더 위임 대상)
+    private DeptJobBox(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Integer sortOrdr) {
+        this.deptTaskBoxId = deptTaskBoxId;
+        this.deptTaskBoxNm = deptTaskBoxNm;
+        this.deptId = deptId;
+        this.sortOrdr = sortOrdr;
+    }
+
+    /**
+     * 부서업무함 생성 정적 팩토리.
+     * 기존 {@code DeptJobBox.builder()...build()} 호출부와 호환.
+     */
+    @Builder
+    public static DeptJobBox create(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Integer sortOrdr) {
+        return new DeptJobBox(deptTaskBoxId, deptTaskBoxNm, deptId, sortOrdr);
+    }
 
     public void update(String deptTaskBoxNm, String deptId, Integer sortOrdr) {
         this.deptTaskBoxNm = deptTaskBoxNm;

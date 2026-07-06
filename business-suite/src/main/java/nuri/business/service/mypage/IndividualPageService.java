@@ -28,7 +28,6 @@ public class IndividualPageService implements EgovIndividualPageService {
                 .pageTtl(dto.getPageTtl())
                 .pageExpln(dto.getPageExpln())
                 .userId(dto.getUserId())
-                .frstRgtrId(dto.getUserId())
                 .build();
         individualPageRepository.save(Objects.requireNonNull(page));
     }

@@ -3,7 +3,6 @@ package nuri.business.domain.report;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
@@ -13,8 +12,6 @@ import java.io.Serializable;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class WorkReport extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -43,6 +40,24 @@ public class WorkReport extends BaseEntity implements Serializable {
 
     @Column(length = 8)
     private String rptYmd;
+
+    private WorkReport(String rptId, String rptTtl, String rptCn, String atchFileId,
+                       String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
+        this.rptId = rptId;
+        this.rptTtl = rptTtl;
+        this.rptCn = rptCn;
+        this.atchFileId = atchFileId;
+        this.rptSeCd = rptSeCd;
+        this.userId = userId;
+        this.rptSttsCd = rptSttsCd;
+        this.rptYmd = rptYmd;
+    }
+
+    @Builder
+    public static WorkReport create(String rptId, String rptTtl, String rptCn, String atchFileId,
+                                    String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
+        return new WorkReport(rptId, rptTtl, rptCn, atchFileId, rptSeCd, userId, rptSttsCd, rptYmd);
+    }
 
     public void update(String rptTtl, String rptCn, String atchFileId, String rptSeCd) {
         this.rptTtl = rptTtl;

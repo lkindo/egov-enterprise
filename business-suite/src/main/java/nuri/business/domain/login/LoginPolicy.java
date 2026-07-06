@@ -8,11 +8,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 로그인 정책 엔티티
@@ -24,8 +23,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class LoginPolicy extends BaseEntity {
 
     @Id
@@ -49,6 +46,21 @@ public class LoginPolicy extends BaseEntity {
 
     @Column(length = 1)
     private String otpUseYn;
+
+    private LoginPolicy(String userId, String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {
+        this.userId = userId;
+        this.ipAddr = ipAddr;
+        this.dpcnPrmYn = dpcnPrmYn;
+        this.lmtYn = lmtYn;
+        this.bgngTm = bgngTm;
+        this.endTm = endTm;
+        this.otpUseYn = otpUseYn;
+    }
+
+    @Builder
+    public static LoginPolicy create(String userId, String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {
+        return new LoginPolicy(userId, ipAddr, dpcnPrmYn, lmtYn, bgngTm, endTm, otpUseYn);
+    }
 
     public void update(String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {
         this.ipAddr = ipAddr;

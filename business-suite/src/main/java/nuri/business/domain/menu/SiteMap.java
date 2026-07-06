@@ -2,13 +2,13 @@ package nuri.business.domain.menu;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "tb_stmp_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class SiteMap extends BaseEntity {
 
     @Id
@@ -34,11 +33,15 @@ public class SiteMap extends BaseEntity {
     @Column(length = 1000)
     private String mpngFilePath;
 
-    public SiteMap(String mpngCrtId, String crtrId, String mpngFileNm, String mpngFilePath) {
+    private SiteMap(String mpngCrtId, String crtrId, String mpngFileNm, String mpngFilePath) {
         this.mpngCrtId = mpngCrtId;
         this.crtrId = crtrId;
         this.mpngFileNm = mpngFileNm;
         this.mpngFilePath = mpngFilePath;
     }
-}
 
+    @Builder
+    public static SiteMap create(String mpngCrtId, String crtrId, String mpngFileNm, String mpngFilePath) {
+        return new SiteMap(mpngCrtId, crtrId, mpngFileNm, mpngFilePath);
+    }
+}

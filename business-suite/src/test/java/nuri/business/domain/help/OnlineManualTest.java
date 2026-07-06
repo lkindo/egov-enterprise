@@ -15,8 +15,8 @@ class OnlineManualTest {
                 .onlnMnlId("MNL_001")
                 .onlnMnlNm("Manual 1")
                 .onlnMnlSeCd("001")
-                .frstRgtrId("admin")
                 .build();
+        mnl.setFrstRgtrId("admin");
 
         assertThat(mnl.getOnlnMnlId()).isEqualTo("MNL_001");
         assertThat(mnl.getOnlnMnlNm()).isEqualTo("Manual 1");

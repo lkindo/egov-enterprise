@@ -5,7 +5,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 휴일 정보 엔티티
@@ -13,8 +12,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_hldy_info")
@@ -36,6 +33,25 @@ public class Restde extends BaseEntity {
 
     @Column(length = 12)
     private String hldySeCd;
+
+    /**
+     * 팩토리 위임용 private 생성자 (선언 순서대로 전체 own 필드 설정)
+     */
+    private Restde(Integer hldySn, String hldyYmd, String hldyNm, String hldyExpln, String hldySeCd) {
+        this.hldySn = hldySn;
+        this.hldyYmd = hldyYmd;
+        this.hldyNm = hldyNm;
+        this.hldyExpln = hldyExpln;
+        this.hldySeCd = hldySeCd;
+    }
+
+    /**
+     * 빌더 팩토리: 기존 Restde.builder()...build() 호출부 호환용
+     */
+    @Builder
+    public static Restde create(Integer hldySn, String hldyYmd, String hldyNm, String hldyExpln, String hldySeCd) {
+        return new Restde(hldySn, hldyYmd, hldyNm, hldyExpln, hldySeCd);
+    }
 
     public void update(String hldyYmd, String hldyNm, String hldyExpln, String hldySeCd) {
         validateDateFormat(hldyYmd);

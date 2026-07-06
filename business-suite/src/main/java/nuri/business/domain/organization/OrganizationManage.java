@@ -6,14 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "tb_ognz_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class OrganizationManage extends BaseEntity {
 
     @Id
@@ -25,5 +22,16 @@ public class OrganizationManage extends BaseEntity {
 
     @Column(length = 4000)
     private String ognzExpln;
+
+    private OrganizationManage(String ognzId, String ognzNm, String ognzExpln) {
+        this.ognzId = ognzId;
+        this.ognzNm = ognzNm;
+        this.ognzExpln = ognzExpln;
+    }
+
+    @Builder
+    public static OrganizationManage create(String ognzId, String ognzNm, String ognzExpln) {
+        return new OrganizationManage(ognzId, ognzNm, ognzExpln);
+    }
 
 }

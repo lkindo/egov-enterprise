@@ -3,7 +3,6 @@ package nuri.business.domain.help;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
@@ -15,8 +14,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class OnlineManual extends BaseEntity {
 
@@ -35,6 +32,20 @@ public class OnlineManual extends BaseEntity {
 
     @Column(columnDefinition = "TEXT", length = 4000)
     private String onlnMnlExpln;
+
+    // 전체 own 필드 위임 생성자 (팩토리 전용, 시그니처 충돌 방지 위해 private)
+    private OnlineManual(String onlnMnlId, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
+        this.onlnMnlId = onlnMnlId;
+        this.onlnMnlNm = onlnMnlNm;
+        this.onlnMnlSeCd = onlnMnlSeCd;
+        this.onlnMnlDfn = onlnMnlDfn;
+        this.onlnMnlExpln = onlnMnlExpln;
+    }
+
+    @Builder
+    public static OnlineManual create(String onlnMnlId, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
+        return new OnlineManual(onlnMnlId, onlnMnlNm, onlnMnlSeCd, onlnMnlDfn, onlnMnlExpln);
+    }
 
     public void update(String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
         this.onlnMnlNm = onlnMnlNm;

@@ -3,17 +3,14 @@ package nuri.business.domain.auth;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 import java.io.Serializable;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Entity
 @Table(name = "tb_menu_crt_dtl")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@SuperBuilder
 public class MenuAuthority extends BaseEntity {
 
     @EmbeddedId
@@ -21,6 +18,16 @@ public class MenuAuthority extends BaseEntity {
 
     @Column(length = 20)
     private String mapngCrtId;
+
+    private MenuAuthority(MenuAuthorityId id, String mapngCrtId) {
+        this.id = id;
+        this.mapngCrtId = mapngCrtId;
+    }
+
+    @Builder
+    public static MenuAuthority create(MenuAuthorityId id, String mapngCrtId) {
+        return new MenuAuthority(id, mapngCrtId);
+    }
 
     @Embeddable
     @Getter

@@ -2,7 +2,6 @@ package nuri.business.domain.menu;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +13,6 @@ import java.io.Serializable;
 @Table(name = "tb_bkmk_menu_mng_rslt")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class BkmkMenu extends BaseEntity {
 
     @EmbeddedId
@@ -26,10 +24,15 @@ public class BkmkMenu extends BaseEntity {
     @Column(length = 100)
     private String progrmStrePath;
 
-    public BkmkMenu(BkmkMenuId id, String menuNm, String progrmStrePath) {
+    private BkmkMenu(BkmkMenuId id, String menuNm, String progrmStrePath) {
         this.id = id;
         this.menuNm = menuNm;
         this.progrmStrePath = progrmStrePath;
+    }
+
+    @Builder
+    public static BkmkMenu create(BkmkMenuId id, String menuNm, String progrmStrePath) {
+        return new BkmkMenu(id, menuNm, progrmStrePath);
     }
 
     @Embeddable
