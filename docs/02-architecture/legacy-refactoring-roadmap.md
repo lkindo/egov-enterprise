@@ -132,7 +132,7 @@ public class FileDetail {
 ### 3.1. 전사 표준 Auditing Superclass 정의
 
 > [!NOTE] **실제 구현 반영**
-> 표준 감사 상위클래스는 이미 **2단 상속 구조**(`BaseTimeEntity` ← `BaseEntity`)로 확립되어 있으며, eGov 레거시 컬럼 별칭(`crtDt/mdfcnDt/frstRgtrId/lastMdfrId`)을 사용한다. 아래는 실제 코드 기준이며, Phase 5 의 목표는 컬럼명을 새로 바꾸는 것이 **아니라 전 엔티티가 이 상위클래스를 상속하도록 통일**하는 것이다. (2026-07-06 전수 조사 기준, 87개 엔티티 중 4개가 미상속: `ExternalHr`·`InstitutionCodeRecptnLog` 는 감사값 출처 변경 리스크로 **보류**, `SmsRecptn` 은 복합키·자체 감사 부재, `RefreshToken` 은 토큰 standalone 성격 — 각각 별도 검토)
+> 표준 감사 상위클래스는 이미 **2단 상속 구조**(`BaseTimeEntity` ← `BaseEntity`)로 확립되어 있으며, eGov 레거시 컬럼 별칭(`crtDt/mdfcnDt/frstRgtrId/lastMdfrId`)을 사용한다. 아래는 실제 코드 기준이며, Phase 5 의 목표는 컬럼명을 새로 바꾸는 것이 **아니라 전 엔티티가 이 상위클래스를 상속하도록 통일**하는 것이다. (2026-07-06 전수 조사 기준, 87개 엔티티 중 4개가 미상속: `ExternalHr`·`InstitutionCodeRecptnLog` 는 감사값 출처 변경 리스크로 **보류**, `SmsRecptn` 은 복합키·자체 감사 부재, `RefreshToken` 은 토큰 standalone 성격. **2026-07-06 방침 확정: 4개 모두 의도적 예외로 마감** — 보류 2개는 감사값 출처(수동 `now()`→Spring 감사) 변경 리스크로 현행 유지, standalone 2개는 감사 불필요. 상속 통일은 대상 83개 전량 달성으로 **실질 완료**.)
 
 ```java
 // 시간 메타데이터: nuri.business.domain.common.BaseTimeEntity
@@ -189,11 +189,16 @@ public abstract class BaseEntity extends BaseTimeEntity {
 > [!IMPORTANT] **규칙(a) 회귀 가드는 ArchUnit 으로 강제 불가**
 > Lombok `@SuperBuilder`/`@Builder` 는 `RetentionPolicy.SOURCE` 라 컴파일된 바이트코드에 흔적이 남지 않는다. 따라서 바이트코드 분석 기반의 ArchUnit 으로는 클래스 레벨 빌더를 **탐지할 수 없다.** 규칙(a) 의 회귀 차단은 소스 레벨 도구(Checkstyle 정규식) 또는 코드리뷰로 보완해야 한다. (종합 리포트의 "ArchUnit 규칙으로 빌더 금지" 권고는 이 이유로 실현 불가하며, 본 문서로 정정한다.)
 
-**잔여 대상 (2026-07-06 전수 조사 기준 갱신 — 이전 수치는 문서 미갱신에 따른 stale 값이었음)**
-- 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **0개 (완료, 2026-07-06)** — `RefreshToken` 전환으로 87/87 준수. ※ 이전 "82개"는 도메인 전량 전환 이전 stale 수치였음.
-- 규칙(b): 클래스 레벨 `@Setter` **0개 (완료)**. 규칙 외 `@AllArgsConstructor` **5개**(`Schedule`, `LeaderSchedule`, `NoteRecptn`, `NoteTrnsmit`, `RefreshToken` — 기존 `new X(...)` 호출부 호환 위해 의도적 유지).
-- §3.1: `@EntityListeners` 중복 재선언 **0개 (완료)**. BaseEntity 미상속 **4개**(`ExternalHr`·`InstitutionCodeRecptnLog` 보류 + `SmsRecptn`·`RefreshToken` standalone).
-- (신규 식별) 복합키용 **중첩 식별자 클래스**는 아직 구패턴 유지: `BlogUserId`(`@SuperBuilder`), `AuthorityRoleId`·`MenuAuthorityId`·`BkmkMenuId`(클래스 레벨 `@Builder`+`@AllArgsConstructor`). 규칙(a)/(b)를 `@Embeddable`/`@IdClass` 식별자까지 확장할지 방침 결정 필요.
+**이행 결과 및 예외 처리 방침 확정 (2026-07-06 전수 조사 기준 — 이전 수치는 문서 미갱신에 따른 stale 값이었음)**
+- ✅ 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **0개 (완료)** — `RefreshToken` 전환으로 87/87 준수. ※ 이전 "82개"는 도메인 전량 전환 이전 stale 수치.
+- ✅ 규칙(b): 클래스 레벨 `@Setter` **0개 (완료)**.
+- ✅ §3.1 `@EntityListeners` 중복 재선언 **0개 (완료, 56개 제거)**.
+- ➖ 규칙 외 `@AllArgsConstructor` **5개**(`Schedule`, `LeaderSchedule`, `NoteRecptn`, `NoteTrnsmit`, `RefreshToken`) — 기존 `new X(...)` 호출부 호환 위해 **의도적 유지**(private 팩토리 병행, 규범 위반 아님).
+- ➖ BaseEntity 미상속 **4개**(`ExternalHr`·`InstitutionCodeRecptnLog`·`SmsRecptn`·`RefreshToken`) — **의도적 예외로 마감**(위 §3.1 NOTE 참조).
+- ➖ 복합키용 **중첩 식별자 클래스**(`BlogUserId`, `AuthorityRoleId`, `MenuAuthorityId`, `BkmkMenuId`)의 클래스 레벨 빌더/AllArgs — **규범 범위 밖으로 확정**. 규칙(a)/(b)와 `EntityConventionArchTest` 는 `@Entity` 만 대상으로 하며, `@Embeddable`/`@IdClass` 불변 값 객체는 빌더/AllArgs 유지가 관용적이므로 전환하지 않는다.
+
+> [!NOTE] **Phase 5 종결 (2026-07-06)**
+> 강제 규범(규칙 a/b/c, §3.1 중복 리스너 제거, 상속 통일)은 모두 **달성 또는 의도적 예외로 마감**되었다. 위 `➖` 항목(`@AllArgsConstructor` 5개·미상속 4개·중첩 식별자 클래스)은 문서화된 의도적 예외이며 추가 작업 대상이 아니다. **Phase 3·4·5 전 과제 완료.**
 
 ---
 
