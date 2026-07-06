@@ -42,9 +42,9 @@
 - **초판 전제(무효)**: 고정형 글로벌 필터 `@Where(clause="use_yn='Y'")` 로 인해 부모가 논리 삭제되면 자식 조회 시 `EntityNotFoundException` 발생.
 - **현재 사실**:
   - **`@Where` 는 코드에 존재하지 않는다**(Java 소스 0건; 문서/아카이브에만 잔존). 고정형 필터 전제 자체가 사라졌다.
-  - **동적 Hibernate `@Filter` 로 이미 전환**되어 있다: `Board.java`(`@FilterDef`+`@Filter softDeleteFilter`), `Comment.java`(`@Filter`).
+  - **동적 Hibernate `@Filter` 로 이미 전환**되어 있다. `@FilterDef(softDeleteFilter)` 는 **`nuri.business.domain` 의 `package-info.java` 에 중앙 선언(2026-07-06)** 하고, `@Filter` 는 소프트삭제 대상 엔티티(`Board`·`Comment`)에 적용한다. (이전에는 `Board` 가 `@FilterDef` 를 호스팅해 `Comment` 가 암묵 의존했으나 결합을 제거함.)
   - **트랜잭션 단위 동적 제어가 구현**되어 있다: `SoftDeleteAspect` 가 `@Service`/`@Transactional` 경계에서 `softDeleteFilter(useYn='Y')` 를 켜고, `@DisableSoftDelete` 애노테이션 시 끈다. `SoftDeleteDynamicTest` 로 검증됨.
-- **🟡 남은 문제(재정의)**: 적용 범위가 **Board·Comment 2개 엔티티에 국한**되고, 공통 부모(Base) 추상화나 소프트삭제 마커 인터페이스가 없어 **엔티티마다 개별 선언**해야 한다. 즉 초판의 "위험"은 해소됐고, 과제는 "인프라(FilterDef/AOP/@DisableSoftDelete/테스트)는 완성됐으니 **공통화하여 전사 확산**"으로 바뀌었다(→ 방안4 참조).
+- **🟡 남은 문제(재정의)**: `@FilterDef` 중앙화는 완료됐으나 `@Filter` **적용은 Board·Comment 2개**뿐이다. 확산은 각 엔티티의 소프트삭제 대상 여부(전용 `use_yn` 컬럼·"비활성=조회 제외" 의미)를 판단해야 하는 **도메인 결정**이며, `SoftDeleteAspect` 가 서비스 읽기를 전역 필터링하므로 무분별 적용은 조회 누락 위험이 있다(→ 방안4에 확산 관례 명시).
 
 ---
 
@@ -110,9 +110,9 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 - **현황**: **MapStruct 사용처 0**(`import org.mapstruct` 0건, `@Mapper`/`MapperImpl` 없음). record/정적 팩토리(`X.from(entity)`)가 이미 표준(예: `BoardDto`, `UserDto`, `SatisfactionDto`... 다수), `BaseAbstractService` 가 수동 `toDto/toDtoList/toPage` 를 중앙화. `foundation` 의 `GenericMapper` 는 MapStruct가 아닌 손수 작성 인터페이스.
 - **✅ 정리 완료 (2026-07-06)**: `foundation`/`business-suite` build.gradle의 **미사용 MapStruct 의존성 6줄**(라이브러리 + processor + lombok-mapstruct-binding)을 삭제. 소스 마이그레이션 없이 전 모듈(foundation/business-suite/api-server, main+test) 컴파일 무영향 확인. 방안3 종결.
 
-### 방안 4: Hibernate `@Filter` 기반 동적 소프트삭제 — 🟡 인프라 완성, 공통화·확산 미완
-- **현황**: 동적 `@Filter` + `SoftDeleteAspect` + `@DisableSoftDelete` + `SoftDeleteDynamicTest` **이미 구축**(초판이 제안한 골격 그대로). 단 **적용은 Board·Comment 2개**뿐이고 공통 부모/마커 추상화가 없다.
-- **도입 권고(재정의)**: "도입"이 아니라 **"확산"**. `foundation`/`business-suite` 공통 부모 또는 소프트삭제 마커 인터페이스로 `@FilterDef`/필터 활성 로직을 추상화한 뒤, 소프트삭제 대상 엔티티에 일괄 확대.
+### 방안 4: Hibernate `@Filter` 기반 동적 소프트삭제 — 🟡 인프라 완성 + @FilterDef 중앙화, 확산은 도메인 판단
+- **현황**: 동적 `@Filter` + `SoftDeleteAspect` + `@DisableSoftDelete` + `SoftDeleteDynamicTest` 구축 완료. **2026-07-06: `@FilterDef` 를 `nuri.business.domain/package-info.java` 로 중앙화**하여 Board 호스팅 결합을 제거(full `@SpringBootTest` 로 필터 동작 회귀 없음 확인). 적용 엔티티는 `Board`·`Comment`.
+- **확산 관례(도입 권고)**: 새 소프트삭제 대상 엔티티는 `@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")` 한 줄만 추가하면 된다(@FilterDef 재선언 불필요). 단 **무분별 확산 금지** — `SoftDeleteAspect` 가 모든 서비스 읽기에 필터를 걸므로, 대상은 (a) 전용 `use_yn` 컬럼과 (b) "비활성=조회 제외" 비즈니스 의미를 가진 엔티티로 한정하고 엔티티별 조회 영향 테스트 후 추가한다. (마커 인터페이스 자동 적용은 Hibernate 가 인터페이스의 @Filter 를 스캔하지 않으므로 불가.)
 
 ---
 
@@ -124,7 +124,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
 2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
-4. **🟡 확산 (중기)**: 소프트삭제 `@Filter` 공통화·전사 확대(방안4), 인라인 `z.object` 금지 ESLint 규칙.
+4. **🟡 확산 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화 완료(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 도메인 판단 후 진행 · 🟡 인라인 `z.object` 금지 ESLint 규칙.
 5. **🟡 감사 (중기)**: 79개 전면-클라이언트 `page.tsx` 의 `'use client'` 리프 다운 감사(§4.2).
 
 > [!NOTE] **검증 근거**

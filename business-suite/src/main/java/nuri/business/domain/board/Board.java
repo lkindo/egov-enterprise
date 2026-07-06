@@ -4,8 +4,6 @@ import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 import java.io.Serializable;
 
@@ -22,7 +20,6 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_bbs_item")
-@FilterDef(name = "softDeleteFilter", parameters = @ParamDef(name = "useYn", type = String.class))
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
