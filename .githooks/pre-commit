@@ -1,0 +1,17 @@
+#!/bin/sh
+# eGov Enterprise — pre-commit (계약/타입 드리프트 경고, 빠름·오프라인)
+# 우회: git commit --no-verify   |   비활성화: git config --unset core.hooksPath
+# 참고: 드리프트는 '경고'만 한다(BLOCK 아님) — api-docs.json 자체가 stale일 수 있어 오탐을 피한다.
+[ -n "$SKIP_HOOKS" ] && exit 0
+
+STAGED=$(git diff --cached --name-only)
+if echo "$STAGED" | grep -qE '(api-docs\.json|Dto\.java|Controller\.java|src/types/generated-)'; then
+  if command -v pnpm >/dev/null 2>&1; then
+    echo "[pre-commit] API 계약 드리프트 점검 (codegen:verify)…"
+    pnpm -C frontend run codegen:verify >/dev/null 2>&1 \
+      || echo "⚠  generated-api.d.ts 드리프트 가능 — 'pnpm -C frontend codegen:file' 후 스테이징 (GEMINI.md §4). 원인이 stale api-docs.json인지 먼저 확인."
+    pnpm -C frontend run codegen:verify:zod >/dev/null 2>&1 \
+      || echo "⚠  generated-zod.ts 드리프트 가능 — 'pnpm -C frontend codegen:zod' 후 스테이징."
+  fi
+fi
+exit 0

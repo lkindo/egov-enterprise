@@ -1,0 +1,19 @@
+#!/bin/sh
+# eGov Enterprise — pre-push = GEMINI.md §0.6 컴파일 무결성 게이트 (HARD, 차단)
+# 우회: git push --no-verify   |   비활성화: git config --unset core.hooksPath
+[ -n "$SKIP_HOOKS" ] && exit 0
+set -e
+
+echo "[pre-push] §0.6 Compilation Integrity Gate"
+
+echo "  → backend: ./gradlew compileJava compileTestJava"
+./gradlew compileJava compileTestJava -q \
+  || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (GEMINI.md §0.6)"; exit 1; }
+
+if [ -f frontend/package.json ]; then
+  echo "  → frontend: npx tsc --noEmit"
+  ( cd frontend && npx tsc --noEmit ) \
+    || { echo "❌ TypeScript 타입 컴파일 실패 (GEMINI.md §0.6)"; exit 1; }
+fi
+
+echo "[pre-push] ✅ 컴파일 게이트 통과"
