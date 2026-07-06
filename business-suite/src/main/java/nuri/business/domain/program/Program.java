@@ -6,15 +6,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_prgrm_lst")
-@SuperBuilder
 public class Program extends BaseEntity {
 
     @Id
@@ -33,6 +32,19 @@ public class Program extends BaseEntity {
     @Column(length = 4000)
     private String prgrmExpln;
 
+    private Program(String prgrmFileNm, String prgrmStrgPath, String prgrmKornNm, String url, String prgrmExpln) {
+        this.prgrmFileNm = prgrmFileNm;
+        this.prgrmStrgPath = prgrmStrgPath;
+        this.prgrmKornNm = prgrmKornNm;
+        this.url = url;
+        this.prgrmExpln = prgrmExpln;
+    }
+
+    @Builder
+    public static Program create(String prgrmFileNm, String prgrmStrgPath, String prgrmKornNm, String url, String prgrmExpln) {
+        return new Program(prgrmFileNm, prgrmStrgPath, prgrmKornNm, url, prgrmExpln);
+    }
+
     public void update(String prgrmStrgPath, String prgrmKornNm, String url, String prgrmExpln) {
         this.prgrmStrgPath = prgrmStrgPath;
         this.prgrmKornNm = prgrmKornNm;
@@ -40,4 +52,3 @@ public class Program extends BaseEntity {
         this.prgrmExpln = prgrmExpln;
     }
 }
-

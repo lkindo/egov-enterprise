@@ -126,7 +126,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .clsfCdNm(required(dto.getClsfCdNm(), "dto.getClsfCdNm() 는 null 일 수 없습니다"))
                                 .clsfCdExpln(dto.getClsfCdExpln())
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }

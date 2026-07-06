@@ -41,7 +41,6 @@ public class AdministCodeService {
                 .upAdmdstCd(dto.getUpAdmdstCd())
                 .useYn(dto.getUseYn())
                 .crtYmd(dto.getCrtYmd())
-                .frstRgtrId(userId)
                 .build();
         return administCodeRepository.save(entity).getAdmdstCd();
     }

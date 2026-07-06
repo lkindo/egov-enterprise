@@ -4,9 +4,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -18,7 +18,6 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "tb_cmnty_info")
-@SuperBuilder
 public class Community extends BaseEntity implements Serializable {
 
     @Id
@@ -39,6 +38,20 @@ public class Community extends BaseEntity implements Serializable {
 
     @Column(length = 1)
     private String useYn;
+
+    private Community(String cmntyId, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
+        this.cmntyId = cmntyId;
+        this.cmntyNm = cmntyNm;
+        this.cmntyIntroCn = cmntyIntroCn;
+        this.regSeCd = regSeCd;
+        this.tmpltId = tmpltId;
+        this.useYn = useYn;
+    }
+
+    @Builder
+    public static Community create(String cmntyId, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
+        return new Community(cmntyId, cmntyNm, cmntyIntroCn, regSeCd, tmpltId, useYn);
+    }
 
     public void update(String cmntyNm, String cmntyIntroCn, String tmpltId, String useYn) {
         this.cmntyNm = cmntyNm;

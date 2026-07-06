@@ -3,9 +3,9 @@ package nuri.business.domain.operation;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,7 +19,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "tb_event_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class EventInfo extends BaseEntity {
 
     @Id
@@ -57,4 +56,33 @@ public class EventInfo extends BaseEntity {
 
     @Column(length = 20)
     private String evntAprvYmd;
+
+    /**
+     * [Phase 5.2] 빌더를 정적 팩토리에 배치. 기존 EventInfo.builder()...build() 호출부는 그대로 동작한다.
+     * 감사 필드(frstRgtrId/lastMdfrId 등)는 JPA Auditing 이 채우므로 빌더 파라미터에서 제외한다.
+     */
+    private EventInfo(String evntId, String bizYr, String bizCd, String evntCn,
+                      String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
+                      String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
+        this.evntId = evntId;
+        this.bizYr = bizYr;
+        this.bizCd = bizCd;
+        this.evntCn = evntCn;
+        this.evntBgngYmd = evntBgngYmd;
+        this.evntEndYmd = evntEndYmd;
+        this.evntUseCnt = evntUseCnt;
+        this.picNm = picNm;
+        this.prepMttr = prepMttr;
+        this.evntTypeCd = evntTypeCd;
+        this.evntAprvYn = evntAprvYn;
+        this.evntAprvYmd = evntAprvYmd;
+    }
+
+    @Builder
+    public static EventInfo create(String evntId, String bizYr, String bizCd, String evntCn,
+                                   String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
+                                   String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
+        return new EventInfo(evntId, bizYr, bizCd, evntCn, evntBgngYmd, evntEndYmd, evntUseCnt,
+                picNm, prepMttr, evntTypeCd, evntAprvYn, evntAprvYmd);
+    }
 }

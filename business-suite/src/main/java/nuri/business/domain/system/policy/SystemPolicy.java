@@ -7,10 +7,9 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
@@ -22,8 +21,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "tb_plcy_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class SystemPolicy extends BaseEntity {
 
     @Id
@@ -35,6 +32,18 @@ public class SystemPolicy extends BaseEntity {
 
     @Column(columnDefinition = "text", nullable = false, length = 4000)
     private String plcyCn;
+
+    // 팩토리 위임용 private 생성자 (own 필드 전체)
+    private SystemPolicy(String plcyTypeCd, String plcyTtl, String plcyCn) {
+        this.plcyTypeCd = plcyTypeCd;
+        this.plcyTtl = plcyTtl;
+        this.plcyCn = plcyCn;
+    }
+
+    @Builder
+    public static SystemPolicy create(String plcyTypeCd, String plcyTtl, String plcyCn) {
+        return new SystemPolicy(plcyTypeCd, plcyTtl, plcyCn);
+    }
 
     public void update(String plcyTtl, String plcyCn) {
         this.plcyTtl = plcyTtl;

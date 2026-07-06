@@ -8,10 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 메인 이미지 엔티티
@@ -21,8 +20,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_main_image")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class MainImage extends BaseEntity {
 
     @Id
@@ -43,6 +40,20 @@ public class MainImage extends BaseEntity {
 
     @Column(length = 1)
     private String rfltYn;
+
+    private MainImage(String imgId, String imgNm, String mainImgFilePath, String imgFileNm, String mainImgExpln, String rfltYn) {
+        this.imgId = imgId;
+        this.imgNm = imgNm;
+        this.mainImgFilePath = mainImgFilePath;
+        this.imgFileNm = imgFileNm;
+        this.mainImgExpln = mainImgExpln;
+        this.rfltYn = rfltYn;
+    }
+
+    @Builder
+    public static MainImage create(String imgId, String imgNm, String mainImgFilePath, String imgFileNm, String mainImgExpln, String rfltYn) {
+        return new MainImage(imgId, imgNm, mainImgFilePath, imgFileNm, mainImgExpln, rfltYn);
+    }
 
     public void update(String imgNm, String mainImgFilePath, String imgFileNm, String mainImgExpln, String rfltYn) {
         this.imgNm = imgNm;

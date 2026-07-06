@@ -6,9 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 보고서 통계 JPA Entity
@@ -18,7 +18,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_rptp_stats")
-@SuperBuilder
 public class ReprtStats extends BaseEntity {
 
     @Id
@@ -33,4 +32,16 @@ public class ReprtStats extends BaseEntity {
 
     @Column(length = 1)
     private String reprtType;
+
+    private ReprtStats(String reprtId, String reprtNm, String reprtSttus, String reprtType) {
+        this.reprtId = reprtId;
+        this.reprtNm = reprtNm;
+        this.reprtSttus = reprtSttus;
+        this.reprtType = reprtType;
+    }
+
+    @Builder
+    public static ReprtStats create(String reprtId, String reprtNm, String reprtSttus, String reprtType) {
+        return new ReprtStats(reprtId, reprtNm, reprtSttus, reprtType);
+    }
 }

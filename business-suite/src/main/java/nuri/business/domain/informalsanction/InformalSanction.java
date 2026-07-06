@@ -7,10 +7,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
@@ -20,8 +19,6 @@ import java.time.LocalDateTime;
 @Table(name = "tb_ifml_atrz_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class InformalSanction extends BaseEntity {
 
     @Version
@@ -50,6 +47,30 @@ public class InformalSanction extends BaseEntity {
 
     @Column(length = 4000)
     private String rjctRsnCn;
+
+    // 팩토리 create() 전용 생성자 (선언 순서에 맞춘 비즈니스 필드; 감사 필드/@Version 제외)
+    private InformalSanction(String ifmlAtrzId, String taskSeCd, String aplcntId,
+                             String reqYmd, String aprvrId, String aprvYn,
+                             LocalDateTime atrzDt, String rjctRsnCn) {
+        this.ifmlAtrzId = ifmlAtrzId;
+        this.taskSeCd = taskSeCd;
+        this.aplcntId = aplcntId;
+        this.reqYmd = reqYmd;
+        this.aprvrId = aprvrId;
+        this.aprvYn = aprvYn;
+        this.atrzDt = atrzDt;
+        this.rjctRsnCn = rjctRsnCn;
+    }
+
+    /**
+     * 빌더 정적 팩토리 - 기존 InformalSanction.builder()...build() 호출부 호환 유지
+     */
+    @Builder
+    public static InformalSanction create(String ifmlAtrzId, String taskSeCd, String aplcntId,
+                                          String reqYmd, String aprvrId, String aprvYn,
+                                          LocalDateTime atrzDt, String rjctRsnCn) {
+        return new InformalSanction(ifmlAtrzId, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn);
+    }
 
     public void update(String taskSeCd, String reqYmd, String aprvrId) {
         validateRequestedState();

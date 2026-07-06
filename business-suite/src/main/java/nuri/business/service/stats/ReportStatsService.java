@@ -108,10 +108,6 @@ public class ReportStatsService {
                 .reprtNm(reprtStats.getReprtNm())
                 .reprtType(reprtStats.getReprtType())
                 .reprtSttus(reprtStats.getReprtSttus())
-                .frstRgtrId(reprtStats.getFrstRgtrId())
-                .crtDt(java.time.LocalDateTime.now())
-                .lastMdfrId(reprtStats.getFrstRgtrId())
-                .mdfcnDt(java.time.LocalDateTime.now())
                 .build();
         reprtStatsRepository.save(Objects.requireNonNull(newStats));
     }

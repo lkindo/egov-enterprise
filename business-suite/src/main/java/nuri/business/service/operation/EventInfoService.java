@@ -54,8 +54,6 @@ public class EventInfoService {
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
                 .evntAprvYmd(dto.getEvntAprvYmd())
-                .frstRgtrId(userId)
-                .lastMdfrId(userId)
                 .build();
  
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -69,7 +67,7 @@ public class EventInfoService {
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
  
-        eventInfoRepository.save(EventInfo.builder()
+        EventInfo updated = EventInfo.builder()
                 .evntId(eventId)
                 .bizYr(dto.getBizYr())
                 .bizCd(dto.getBizCd())
@@ -82,9 +80,10 @@ public class EventInfoService {
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
                 .evntAprvYmd(dto.getEvntAprvYmd())
-                .frstRgtrId(eventInfo.getFrstRgtrId())
-                .lastMdfrId(userId)
-                .build());
+                .build();
+        // 재빌드-merge 패턴: 작성자(frstRgtrId)는 @CreatedBy 가 update 시 재적용되지 않으므로 기존 값 보존
+        updated.setFrstRgtrId(eventInfo.getFrstRgtrId());
+        eventInfoRepository.save(updated);
         log.info("Event updated successfully: {}", eventId);
     }
  

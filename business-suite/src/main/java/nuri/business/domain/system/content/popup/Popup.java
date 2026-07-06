@@ -1,7 +1,7 @@
 package nuri.business.domain.system.content.popup;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 import java.time.LocalDate;
 
 import nuri.business.domain.common.BaseEntity;
@@ -19,7 +19,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "tb_popup_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class Popup extends BaseEntity {
 
     @Id
@@ -54,7 +53,7 @@ public class Popup extends BaseEntity {
     @Column(length = 1)
     private String ntceYn;
 
-    public Popup(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
+    private Popup(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
             String popupVrtcPstn, String popupVrtcSz, String popupWdthSz,
             LocalDate ntceBgnde, LocalDate ntceEndde, String stopvewSetupYn, String ntceYn) {
         this.popupId = popupId;
@@ -68,6 +67,15 @@ public class Popup extends BaseEntity {
         this.ntceEndde = ntceEndde;
         this.stopvewSetupYn = stopvewSetupYn;
         this.ntceYn = ntceYn;
+    }
+
+    @Builder
+    public static Popup create(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
+            String popupVrtcPstn, String popupVrtcSz, String popupWdthSz,
+            LocalDate ntceBgnde, LocalDate ntceEndde, String stopvewSetupYn, String ntceYn) {
+        return new Popup(popupId, popupTtlNm, fileUrl, popupWdthPstn,
+                popupVrtcPstn, popupVrtcSz, popupWdthSz,
+                ntceBgnde, ntceEndde, stopvewSetupYn, ntceYn);
     }
 
     public void update(String popupTtlNm, String fileUrl, String popupWdthPstn, String popupVrtcPstn,

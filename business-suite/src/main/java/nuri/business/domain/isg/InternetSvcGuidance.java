@@ -5,7 +5,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -14,8 +13,6 @@ import org.hibernate.annotations.DynamicUpdate;
 @Table(name = "tb_intrn_svc")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @DynamicInsert
 @DynamicUpdate
 public class InternetSvcGuidance extends BaseEntity {
@@ -32,6 +29,18 @@ public class InternetSvcGuidance extends BaseEntity {
 
     @Column(length = 1)
     private String rfltYn;
+
+    private InternetSvcGuidance(String itntSvcId, String itntSvcNm, String itntSvcExpln, String rfltYn) {
+        this.itntSvcId = itntSvcId;
+        this.itntSvcNm = itntSvcNm;
+        this.itntSvcExpln = itntSvcExpln;
+        this.rfltYn = rfltYn;
+    }
+
+    @Builder
+    public static InternetSvcGuidance create(String itntSvcId, String itntSvcNm, String itntSvcExpln, String rfltYn) {
+        return new InternetSvcGuidance(itntSvcId, itntSvcNm, itntSvcExpln, rfltYn);
+    }
 
     public void update(String itntSvcNm, String itntSvcExpln, String rfltYn) {
         this.itntSvcNm = itntSvcNm;

@@ -8,7 +8,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 배너 정보 Entity
@@ -19,8 +18,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_bnr_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class Banner extends BaseEntity {
 
     @Id
@@ -46,6 +43,24 @@ public class Banner extends BaseEntity {
 
     @Column(length = 20)
     private String atchFileId;
+
+    private Banner(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
+                   String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+        this.bnrId = bnrId;
+        this.bnrNm = bnrNm;
+        this.linkUrl = linkUrl;
+        this.bnrImgNm = bnrImgNm;
+        this.bnrExpln = bnrExpln;
+        this.sortOrdr = sortOrdr;
+        this.rfltYn = rfltYn;
+        this.atchFileId = atchFileId;
+    }
+
+    @Builder
+    public static Banner create(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
+                                String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+        return new Banner(bnrId, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileId);
+    }
 
     public void update(String bnrNm, String linkUrl, String bnrImgNm,
                       String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {

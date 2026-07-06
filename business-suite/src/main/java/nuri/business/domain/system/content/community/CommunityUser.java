@@ -4,9 +4,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
 import java.io.Serializable;
 
@@ -15,7 +15,6 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "tb_cmnty_user_map")
-@SuperBuilder
 public class CommunityUser extends BaseEntity implements Serializable {
 
     @EmbeddedId
@@ -35,6 +34,20 @@ public class CommunityUser extends BaseEntity implements Serializable {
 
     @Column(length = 1)
     private String useYn;
+
+    private CommunityUser(CommunityUserId id, String mngrYn, String joinYmd, String whdwlYmd, String mbrSttsCd, String useYn) {
+        this.id = id;
+        this.mngrYn = mngrYn;
+        this.joinYmd = joinYmd;
+        this.whdwlYmd = whdwlYmd;
+        this.mbrSttsCd = mbrSttsCd;
+        this.useYn = useYn;
+    }
+
+    @Builder
+    public static CommunityUser create(CommunityUserId id, String mngrYn, String joinYmd, String whdwlYmd, String mbrSttsCd, String useYn) {
+        return new CommunityUser(id, mngrYn, joinYmd, whdwlYmd, mbrSttsCd, useYn);
+    }
 
     public void approve() {
         this.mbrSttsCd = "P"; // Example status for approved

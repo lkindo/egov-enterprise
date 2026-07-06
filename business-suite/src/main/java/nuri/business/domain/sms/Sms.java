@@ -3,7 +3,6 @@ package nuri.business.domain.sms;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * SMS JPA Entity
@@ -13,8 +12,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_sms_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class Sms extends BaseEntity {
 
     @Id
@@ -28,4 +25,19 @@ public class Sms extends BaseEntity {
     private String sndngCn;
 
     // 레거시 별칭 완전 철폐 (표준화 동기화)
+
+    // 팩토리 위임용 생성자 (own 필드 전체)
+    private Sms(String smsId, String sndngTelno, String sndngCn) {
+        this.smsId = smsId;
+        this.sndngTelno = sndngTelno;
+        this.sndngCn = sndngCn;
+    }
+
+    /**
+     * 정적 팩토리 빌더. 기존 Sms.builder()...build() 호출부와 100% 호환.
+     */
+    @Builder
+    public static Sms create(String smsId, String sndngTelno, String sndngCn) {
+        return new Sms(smsId, sndngTelno, sndngCn);
+    }
 }
