@@ -1,159 +1,162 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
- GitBranch,
- Settings,
- History,
- Play,
- Plus,
- ArrowLeft,
- Search,
- CheckCircle2,
- Clock,
- MoreHorizontal
-} from 'lucide-react';
+import { GitBranch, 
+    History, 
+    Plus, 
+    CheckCircle2, 
+    Clock, 
+    Layers, 
+    Zap, 
+    Activity, 
+    RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/app/components/ui/workflow-canvas';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { PageHeader } from '@/app/components/layout/page-header';
+import { Button } from '@/components/ui/button';
 
 const MOCK_WORKFLOW_NODES: WorkflowNode[] = [
- { id: '1', type: 'start', label: '휴가 신청 시작', status: 'completed', position: { x: 50, y: 100 } },
- { id: '2', type: 'step', label: '신청서 작성 및 제출', assignee: '홍길동 (신청자)', status: 'completed', position: { x: 300, y: 100 } },
- { id: '3', type: 'decision', label: '팀장 검토 및 승인', assignee: '이순신 (팀장)', status: 'current', position: { x: 550, y: 100 } },
- { id: '4', type: 'step', label: '인사과 최종 확정', assignee: '강감찬 (인사팀)', status: 'pending', position: { x: 800, y: 300 } },
- { id: '5', type: 'end', label: '휴가 승인 완료', status: 'pending', position: { x: 1050, y: 300 } },
+    { id: '1', type: 'start', label: '휴가 신청 시작됨', status: 'completed', position: { x: 50, y: 100 } },
+    { id: '2', type: 'step', label: '신청서 작성 및 제출', assignee: '홍길동 (신청자)', status: 'completed', position: { x: 300, y: 100 } },
+    { id: '3', type: 'decision', label: '팀장 검토 및 승인', assignee: '이순신 (팀장)', status: 'current', position: { x: 550, y: 100 } },
+    { id: '4', type: 'step', label: '인사과 최종 확정', assignee: '강감찬 (인사팀)', status: 'pending', position: { x: 800, y: 300 } },
+    { id: '5', type: 'end', label: '휴가 승인 프로세스 완료', status: 'pending', position: { x: 1050, y: 300 } },
 ];
 
 const MOCK_WORKFLOW_EDGES: WorkflowEdge[] = [
- { id: 'e1-2', from: '1', to: '2' },
- { id: 'e2-3', from: '2', to: '3' },
- { id: 'e3-4', from: '3', to: '4', label: '승인됨' },
- { id: 'e4-5', from: '4', to: '5' },
+    { id: 'e1-2', from: '1', to: '2' },
+    { id: 'e2-3', from: '2', to: '3' },
+    { id: 'e3-4', from: '3', to: '4', label: '승인됨' },
+    { id: 'e4-5', from: '4', to: '5' },
 ];
 
 export default function WorkflowPage() {
- const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(MOCK_WORKFLOW_NODES[2]);
+    const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(MOCK_WORKFLOW_NODES[2]);
 
- return (
- <div className="space-y-10 pb-20 animate-in fade-in duration-700">
- {/* 1. Page Header */}
- <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
- <div className="space-y-2">
- <div className="flex items-center gap-3">
- <div className="p-2 bg-primary/10 rounded-xl text-primary">
- <GitBranch size={18} />
- </div>
- <span className="text-sm font-black text-primary tracking-tight">워크플로우 엔진</span>
- </div>
- <h1 className="text-3xl font-black tracking-tighter text-foreground ">
- Process <span className="text-primary ">캔버스</span>
- </h1>
- <p className="text-muted-foreground font-bold text-sm max-w-lg">
- 도메인 이벤트 기반의 워크플로우 엔진을 통해 비즈니스 프로세스를 설계하고 실시간 진행 상태를 시각화합니다.
- </p>
- </div>
+    return (
+        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+            <PageHeader
+                title="프로세스 설계 및 관제"
+                breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
+            />
 
- <div className="flex items-center gap-3">
- <button className="flex items-center gap-2 px-6 py-3 bg-muted rounded-full font-black text-sm tracking-tight hover:bg-muted/80 transition-all">
- <History size={16} /> History
- </button>
- <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl hover:bg-primary/90 transition-all">
- <Plus size={16} /> New Workflow
- </button>
- </div>
- </div>
+            <HubHeader 
+                title="Process" 
+                highlight="Studio" 
+                subtitle="실시간 이벤트 기반 워크플로우를 설계하고 비즈니스 로직을 시각화합니다." 
+                icon={GitBranch} 
+                actions={
+                    <div className="flex gap-4">
+                        <Button variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm">
+                            <History size={18} /> 히스토리
+                        </Button>
+                        <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+                            <Plus size={20} /> 설계 등록
+                        </Button>
+                    </div>
+                }
+            />
 
- {/* 2. Main Canvas Area */}
- <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
- <div className="xl:col-span-3 space-y-6">
- <div className="flex items-center justify-between px-6">
- <div className="flex items-center gap-6">
- <div className="flex items-center gap-2">
- <span className="text-sm font-black text-foreground">WORKFLOW:</span>
- <span className="text-sm font-bold text-muted-foreground ">연차/휴가 결재 프로세스_v1.2</span>
- </div>
- <div className="h-4 w-px bg-muted" />
- <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-full bg-emerald-500" />
- <span className="text-[10px] font-black text-muted-foreground ">활성</span>
- </div>
- </div>
- <div className="flex items-center gap-2">
- <button className="p-2 hover:bg-muted rounded-full transition-colors"><Settings size={14} /></button>
- <button className="p-2 hover:bg-muted rounded-full transition-colors"><Search size={14} /></button>
- </div>
- </div>
+            <HubMetricGrid>
+                <HubMetricCard title="활성 설계" value="24" icon={Layers} color="primary" />
+                <HubMetricCard title="실행 중" value="156" icon={Zap} color="emerald" status="정상" />
+                <HubMetricCard title="성공률" value="99.9%" icon={CheckCircle2} color="indigo" />
+                <HubMetricCard title="시스템 부하" value="LOW" icon={Activity} color="amber" />
+            </HubMetricGrid>
 
- <WorkflowCanvas
- nodes={MOCK_WORKFLOW_NODES}
- edges={MOCK_WORKFLOW_EDGES}
- onNodeClick={setSelectedNode}
- />
- </div>
+            <div className="grid grid-cols-12 gap-10">
+                <div className="col-span-12 lg:col-span-8">
+                    <HubSectionCard 
+                        title="프로세스 캔버스" 
+                        description="현재 활성화된 비즈니스 프로세스의 노드 및 엣지 스트림입니다." 
+                        icon={Layers}
+                        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+                    >
+                        <div className="space-y-6 pt-4">
+                            <div className="flex items-center justify-between px-2">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">Active_Process:</span>
+                                    <span className="text-sm font-bold text-slate-900">연차/휴가 결재 v1.2</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                                    <RefreshCcw size={14} className="text-slate-400" />
+                                </Button>
+                            </div>
+                            <WorkflowCanvas
+                                nodes={MOCK_WORKFLOW_NODES}
+                                edges={MOCK_WORKFLOW_EDGES}
+                                onNodeClick={setSelectedNode}
+                            />
+                        </div>
+                    </HubSectionCard>
+                </div>
 
- {/* 3. Detail Sidebar */}
- <div className="space-y-6">
- <div className="p-8 border rounded-[3rem] bg-card shadow-lg space-y-8">
- <div className="flex items-center justify-between">
- <h3 className="text-sm font-black text-foreground tracking-tight">단계 상세</h3>
- <button className="p-2 hover:bg-muted rounded-full"><MoreHorizontal size={14} /></button>
- </div>
+                <div className="col-span-12 lg:col-span-4">
+                    <HubSectionCard 
+                        title="노드 인텔리전스" 
+                        description="선택된 단계의 상세 전송 프로토콜입니다." 
+                        icon={Zap}
+                        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 h-full"
+                    >
+                        {selectedNode ? (
+                            <div className="space-y-8 py-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className="space-y-4">
+                                    <div className={cn(
+                                        "w-14 h-11 rounded-xl flex items-center justify-center shadow-lg",
+                                        selectedNode.status === 'current' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+                                    )}>
+                                        {selectedNode.status === 'completed' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-bold tracking-tighter text-slate-900">{selectedNode.label}</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {selectedNode.id} / TYPE: {selectedNode.type}</p>
+                                    </div>
+                                </div>
 
- {selectedNode ? (
- <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
- <div className="space-y-4">
- <div className={cn(
- "w-14 h-14 rounded-2xl flex items-center justify-center",
- selectedNode.status === 'current' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
- )}>
- {selectedNode.status === 'completed' ? <CheckCircle2 size={30} /> : <Clock size={30} />}
- </div>
- <div>
- <h4 className="text-xl font-black tracking-tight">{selectedNode.label}</h4>
- <p className="text-[10px] font-black text-muted-foreground mt-1 tracking-tight">{selectedNode.id} / {selectedNode.type}</p>
- </div>
- </div>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Assignee_Node</span>
+                                        <div className="flex items-center gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                                {selectedNode.assignee?.charAt(0) || 'U'}
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-700">{selectedNode.assignee || 'UNASSIGNED'}</span>
+                                        </div>
+                                    </div>
 
- <div className="space-y-6">
- <div className="space-y-2">
- <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">현재 담당자</span>
- <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-white/5">
- <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm ">
- {selectedNode.assignee?.charAt(0)}
- </div>
- <span className="text-sm font-black">{selectedNode.assignee || '미정'}</span>
- </div>
- </div>
+                                    <div className="space-y-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit_Log</span>
+                                        <div className="space-y-4 border-l-2 border-slate-100 ml-2 pl-6 pt-2">
+                                            <div className="relative">
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-emerald-500 border-4 border-white shadow-sm" />
+                                                <p className="text-xs font-bold text-slate-900">Protocol Received</p>
+                                                <p className="text-[10px] text-slate-400 font-bold tabular-nums">2026.05.10 14:20:01</p>
+                                            </div>
+                                            <div className="relative opacity-50">
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-slate-200 border-4 border-white shadow-sm" />
+                                                <p className="text-xs font-bold text-slate-400">Queue Synchronizing</p>
+                                                <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Waiting...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
- <div className="space-y-2">
- <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">처리 로그</span>
- <div className="space-y-4 border-l-2 border-muted ml-2 pl-6 pt-2">
- <div className="relative">
- <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-background" />
- <p className="text-sm font-black">신청서 수신 완료</p>
- <p className="text-[10px] text-muted-foreground font-bold ">2026-02-22 14:20:01</p>
- </div>
- <div className="relative opacity-50">
- <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-muted border-4 border-background" />
- <p className="text-sm font-black">팀장 내부 상신</p>
- <p className="text-[10px] text-muted-foreground font-bold ">대기중...</p>
- </div>
- </div>
- </div>
- </div>
-
- <button className="w-full py-5 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
- 승인 처리하기
- </button>
- </div>
- ) : (
- <div className="py-20 text-center opacity-30 ">
- <p className="text-sm font-bold">노드를 선택하여 상세 정보를 확인하세요.</p>
- </div>
- )}
- </div>
- </div>
- </div>
- </div>
- );
+                                <Button className="w-full h-12 bg-slate-900 hover:bg-primary text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
+                                    Execute Action
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="py-20 text-center opacity-20">
+                                <GitBranch size={48} className="mx-auto mb-4" />
+                                <p className="text-xs font-bold uppercase tracking-widest">Select Node to Analyze</p>
+                            </div>
+                        )}
+                    </HubSectionCard>
+                </div>
+            </div>
+        </div>
+    );
 }

@@ -1,0 +1,56 @@
+import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/foundation/system';
+
+export interface Note {
+ noteId: string;
+ noteSj: string;
+ noteCn: string;
+ dsptchUserId: string;
+ trnsmiterNm?: string;
+ rcverId: string;
+ rcverNm?: string;
+ crtDt: string;
+ openYn: 'Y' | 'N';
+}
+
+class NoteService extends ApiService {
+ constructor() {
+ super('/notes');
+ }
+
+ /**
+ * 諛쏆? 쪽지 목록 조회
+ */
+ async getReceivedNotes(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResponse<Note>> {
+ return this.get<PageResponse<Note>>('/received', { params });
+ }
+
+ /**
+ * 보냄 쪽지 목록 조회
+ */
+ async getSentNotes(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResponse<Note>> {
+ return this.get<PageResponse<Note>>('/sent', { params });
+ }
+
+ /**
+ * 쪽지 蹂대궡湲 */
+ async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<Note> {
+ return this.post<Note>('', data);
+ }
+
+ /**
+ * 쪽지 상세 조회 諛님쎌쓬 泥섎━
+ */
+ async getNote(id: string, params: { type: string; relationId: string }): Promise<Note> {
+ return this.get<Note>(`/${id}`, { params });
+ }
+
+ /**
+ * 쪽지 님젣
+ */
+ async deleteNote(relationId: string, params: { type: string }): Promise<void> {
+  return this.delete<void>(`/${relationId}`, { params });
+ }
+}
+
+export const noteService = new NoteService();

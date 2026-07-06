@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
@@ -5,7 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('next/navigation', () => ({
  usePathname: () => '/smart-toolkit/schedule',
- useSearchParams: () => new URLSearchParams(),
+ useSearchParams: () => ({ get: vi.fn().mockReturnValue('calendar') }),
  useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -23,6 +30,6 @@ describe('ScheduleListPage', () => {
   <ScheduleListPage />
   </QueryClientProvider>
   );
-  expect(await screen.findByText(/업무 및 인텔리전스/i)).toBeInTheDocument();
+  expect(await screen.findByText(/허브/i)).toBeInTheDocument();
  });
 });

@@ -1,0 +1,11 @@
+{
+  "experimental": {},
+  "general": {
+    "plan": {
+      "enabled": true
+    }
+  },
+  "agents": {
+    "overrides": {}
+  }
+}

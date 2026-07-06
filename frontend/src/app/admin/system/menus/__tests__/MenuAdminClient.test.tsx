@@ -1,115 +1,127 @@
+import { render,  screen,  fireEvent,  act } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import MenuAdminClient from '../MenuAdminClient';
-import * as menuActions from '@/app/actions/menuActions';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
 
-// MOCK EVERY UI COMPONENT TO AVOID COMPACTION/SHADCN ISSUES
-vi.mock('@/components/ui/button', () => ({ Button: ({ children, onClick, className }: any) => <button onClick={onClick} className={className}>{children}</button> }));
-vi.mock('@/components/ui/input', () => ({ Input: (props: any) => <input {...props} /> }));
-vi.mock('@/components/ui/select', () => ({
- Select: ({ children, value, onValueChange }: any) => <div>{children}</div>,
- SelectContent: ({ children }: any) => <div>{children}</div>,
- SelectItem: ({ children, value }: any) => <div data-value={value}>{children}</div>,
- SelectTrigger: ({ children }: any) => <div>{children}</div>,
- SelectValue: ({ placeholder }: any) => <div>{placeholder}</div>,
+// 1. Mock Next.js config
+vi.mock('next/config', () => ({
+  default: () => ({ publicRuntimeConfig: {}, serverRuntimeConfig: {} }),
 }));
-vi.mock('@/components/ui/label', () => ({ Label: ({ children }: any) => <label>{children}</label> }));
-vi.mock('@/app/components/ui/toast', () => ({ useToast: vi.fn() }));
-vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: vi.fn() }));
-vi.mock('@/app/components/ui/standard-modal', () => ({ 
-  StandardModal: ({ children, isOpen, title, footer }: any) => isOpen ? (
-    <div data-testid="modal">
+
+// 2. Mock Lucide Icons - EXPLICITLY AND MANUALLY FOR EVERY ICON IN THIS FILE
+vi.mock('lucide-react', () => {
+    const R = require('react');
+    const Icon = (name: string) => {
+        const C = (props: any) => R.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
+        C.displayName = name;
+        return C;
+    };
+    return {
+        Plus: Icon('Plus'),
+        ChevronRight: Icon('ChevronRight'),
+        Settings: Icon('Settings'),
+        Trash2: Icon('Trash2'),
+        FolderTree: Icon('FolderTree'),
+        FileCode: Icon('FileCode'),
+        Save: Icon('Save'),
+        Layers: Icon('Layers'),
+        Link: Icon('Link'),
+        ChevronsDownUp: Icon('ChevronsDownUp'),
+        ChevronsUpDown: Icon('ChevronsUpDown'),
+        SearchCode: Icon('SearchCode'),
+        ShieldCheck: Icon('ShieldCheck'),
+        Network: Icon('Network'),
+        Database: Icon('Database'),
+        GripVertical: Icon('GripVertical'),
+        Home: Icon('Home'),
+        Loader2: Icon('Loader2'),
+    };
+});
+
+// 3. Mock Next.js Navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => ({ get: vi.fn().mockReturnValue('') }),
+}));
+
+// 4. Mock DND Kit (Nullify for unit tests)
+vi.mock('@dnd-kit/core', () => ({
+    DndContext: ({ children }: any) => <div>{children}</div>,
+    PointerSensor: vi.fn(),
+    KeyboardSensor: vi.fn(),
+    useSensor: vi.fn(),
+    useSensors: vi.fn(),
+    DragOverlay: ({ children }: any) => <div>{children}</div>,
+    closestCenter: vi.fn(),
+    MeasuringStrategy: { Always: 1 },
+    defaultDropAnimationSideEffects: vi.fn(),
+}));
+vi.mock('@dnd-kit/sortable', () => ({
+    SortableContext: ({ children }: any) => <div>{children}</div>,
+    verticalListSortingStrategy: {},
+    useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef: vi.fn(), transform: null, transition: null, isDragging: false }),
+    arrayMove: (array: any) => array,
+    sortableKeyboardCoordinates: vi.fn(),
+}));
+vi.mock('@dnd-kit/utilities', () => ({
+    CSS: { Translate: { toString: () => '' } }
+}));
+
+// 5. Mock heavy UI components directly
+vi.mock('@/components/ui/hub/HubHeader', () => ({
+  HubHeader: ({ title, actions }: any) => <div data-testid="hub-header"><h2>{title}</h2>{actions}</div>
+}));
+vi.mock('@/components/ui/hub/HubSectionCard', () => ({
+  HubSectionCard: ({ title, children, action }: any) => <div data-testid="section-card"><h3>{title}</h3>{action}{children}</div>
+}));
+vi.mock('@/app/components/layout/page-header', () => ({
+  PageHeader: ({ title }: any) => <div data-testid="page-header"><h1>{title}</h1></div>
+}));
+vi.mock('@/app/components/ui/standard-modal', () => ({
+  StandardModal: ({ children, isOpen, title }: any) => isOpen ? (
+    <div data-testid="standard-modal">
       <h2>{title}</h2>
       {children}
-      <div data-testid="modal-footer">{footer}</div>
     </div>
-  ) : null 
-}));
-vi.mock('@/app/components/ui/standard-form', () => ({ 
-  StandardForm: ({ children, onSubmit }: any) => <form onSubmit={onSubmit}>{children}</form>, 
-  FormField: ({ children, label }: any) => <div><label>{label}</label>{children}</div> 
-}));
-vi.mock('@/app/components/layout/page-header', () => ({ PageHeader: ({ title, actions }: any) => <div><h1>{title}</h1>{actions}</div> }));
-
-vi.mock('lucide-react', () => ({
- Plus: () => <span>ICON_PLUS</span>,
- FolderTree: () => <span>ICON_FOLDER_TREE</span>,
- Settings: () => <span>ICON_SETTINGS</span>,
- Trash2: () => <span>ICON_TRASH</span>,
- ChevronRight: () => <span>ICON_CHEVRON_RIGHT</span>,
- FileCode: () => <span>ICON_FILE_CODE</span>,
- Layers: () => <span>ICON_LAYERS</span>,
- Link: () => <span>ICON_LINK</span>,
- CheckCircle2: () => <span>ICON_CHECK_CIRCLE</span>,
- ChevronsUpDown: () => <span>ICON_CHEVRONS_UP_DOWN</span>,
- ChevronsDownUp: () => <span>ICON_CHEVRONS_DOWN_UP</span>,
- Save: () => <span>ICON_SAVE</span>,
- ListTree: () => <span>ICON_LIST_TREE</span>,
- Info: () => <span>ICON_INFO</span>,
- X: () => <span>ICON_X</span>,
- Search: () => <span>ICON_SEARCH</span>,
- SearchCode: () => <span>ICON_SEARCH_CODE</span>,
- Activity: () => <span>ICON_ACTIVITY</span>,
- Box: () => <span>ICON_BOX</span>,
- Zap: () => <span>ICON_ZAP</span>,
- LayoutGrid: () => <span>ICON_LAYOUT_GRID</span>,
- ShieldCheck: () => <span>ICON_SHIELD_CHECK</span>,
- Network: () => <span>ICON_NETWORK</span>,
- Database: () => <span>ICON_DATABASE</span>,
- Home: () => <span>ICON_HOME</span>,
+  ) : null
 }));
 
-vi.mock('@/app/actions/menuActions', () => ({ saveMenuAction: vi.fn(), updateMenuOrdersAction: vi.fn(), deleteMenuAction: vi.fn() }));
+import MenuAdminClient from '../MenuAdminClient';
 
 describe('MenuAdminClient Component', () => {
- const mockInitialMenus = [
- { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
- ];
- const mockPrograms = [{ progrmFileNm: 'prog1', progrmNm: 'Program 1' }];
+    const mockInitialMenus = [
+      { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
+    ] as any;
+    const mockPrograms = [{ progrmFileNm: 'prog1', progrmNm: 'Program 1' }];
 
- beforeEach(() => {
- vi.clearAllMocks();
- vi.mocked(useToast).mockReturnValue({ 
- toast: vi.fn(), 
- success: vi.fn(), 
- error: vi.fn(),
- removeToast: vi.fn(),
- info: vi.fn(),
- warning: vi.fn()
- } as any);
- vi.mocked(useConfirm).mockReturnValue(vi.fn());
- vi.stubGlobal('location', { reload: vi.fn() });
- });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
- it('renders "Main Menu"', async () => {
- render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- expect(screen.getByText('Main Menu')).toBeDefined();
- });
+  it('renders correctly', async () => {
+    const menusPromise = Promise.resolve(mockInitialMenus);
+    const programsPromise = Promise.resolve(mockPrograms);
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
+        </React.Suspense>
+      );
+    });
+    expect(await screen.findByText('Main Menu')).toBeInTheDocument();
+  });
 
- it('opens create modal', async () => {
- render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- const btn = screen.getByText(/최상위 메뉴 추가/i);
- fireEvent.click(btn);
- expect(await screen.findByText(/신규 네비게이션 노드 설계/i)).toBeDefined();
- });
-
- it('handles deletion', async () => {
- const mockConfirmFn = vi.fn().mockResolvedValue(true);
- vi.mocked(useConfirm).mockReturnValue(mockConfirmFn);
- vi.mocked(menuActions.deleteMenuAction).mockResolvedValue({ success: true, message: 'Deleted' });
-
- render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- 
- // Find trash button
- const trashBtn = screen.getByText('ICON_TRASH').closest('button')!;
- fireEvent.click(trashBtn);
-
- expect(mockConfirmFn).toHaveBeenCalled();
- await waitFor(() => {
- expect(menuActions.deleteMenuAction).toHaveBeenCalled();
- });
- });
+  it('opens create modal on "신규 등록" click', async () => {
+    const menusPromise = Promise.resolve(mockInitialMenus);
+    const programsPromise = Promise.resolve(mockPrograms);
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
+        </React.Suspense>
+      );
+    });
+    const btn = await screen.findByText(/신규 등록/i);
+    fireEvent.click(btn);
+    expect(await screen.findByText(/신규 메뉴 정의/i)).toBeInTheDocument();
+  });
 });

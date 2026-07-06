@@ -5,7 +5,7 @@
 
 ---
 
-## � 프로젝트 개요 (Overview)
+## 📑 프로젝트 개요 (Overview)
 
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
@@ -29,29 +29,24 @@
 ### Backend
 - **Core**: Spring Boot 3.4.x, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
-- **Architecture**: Modular Monolith & Event-Driven (Spring Events)
+- **Architecture**: 2-Tier Modular Monolith (Foundation & Business-Suite)
 - **Security**: Spring Security 6.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
-- **Build**: Gradle 8.12 (Version Catalog)
+- **Build**: Gradle 9.4.1 (Version Catalog)
 
 ---
 
-## 📂 프로젝트 구조 (Project Structure - Vertical Slicing)
+## 📂 프로젝트 구조 (Project Structure - 2-Tier Architecture)
 
-본 프로젝트는 비즈니스 도메인을 중심으로 독립적인 배포 및 관리가 가능한 **수직 슬라이싱(Vertical Slicing) 아키텍처**를 채택하고 있습니다.
+본 프로젝트는 핵심 기반 기능과 비즈니스 로직을 분리하여 유지보수성을 극대화한 **2계층 모듈 구조**를 채택하고 있습니다.
 
 ```bash
 egov-enterprise/
-├── api-server/             # Spring Boot 진입점 (War 배포 모듈)
-├── common-core/            # 공통 유틸리티, 예외, 로깅, 기반 Config
-├── common-security/        # 인증/인가 (JWT, Spring Security RBAC)
-├── module-core-iam/        # [기능] 계정 관리, 권한, 그룹, 인증 서비스
-├── module-system-admin/    # [기능] 통합 관리 센터 (사용자/권한, 콘텐츠/배너/팝업, 서비스/설문/상담 관리)
-├── module-workspace/       # [기능] 사용자 협업 도구 (일정, 쪽지, 주소록, 게시판 콘텐츠 소비)
-├── module-operation/       # [기능] 사용자 운영 지원 (설문 참여, 상담 등록, Q&A 접수)
-├── module-knowledge/       # [기능] 공식 지식 베이스, 문서 관리
+├── api-server/             # Spring Boot 진입점 (War 배포 모듈, Presentation Layer)
+├── business-suite/         # 업무 도구 통합 모듈 (Business Layer: Workspace, Operation, Knowledge 등)
+├── foundation/             # 시스템 기반 통합 모듈 (Infrastructure Layer: Security, IAM, Common, System Admin 등)
 ├── frontend/               # Next.js 15 프런트엔드 애플리케이션
-└── legacy/                 # 레거시 eGovFrame 원본 소스 (폐쇄형 참조용)
+└── egov-libs/              # 전자정부 프레임워크 레거시 라이브러리 (Binary 참조용)
 ```
 
 ---
@@ -67,8 +62,9 @@ egov-enterprise/
 | **Phase 3: 운영 지원** | 일정 관리, 부서 업무, 온라인 설문, 약관 관리, 보고서 | ✅ 완료 (100%) |
 | **Phase 4: 통합/통계** | 실시간 사용자/화면 통계, 디지털 자산 관리, 모니터링 | ✅ 완료 (100%) |
 | **Phase 5: 구조 리팩토링** | 관리자 기능 통합(System Admin), 메뉴 계층 구조 전면 재편 | ✅ 완료 (100%) |
-| **Phase 6: 안정화** | 모듈 간 의존성 검증, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
-| **Phase 7: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | 🔄 진행중 (85%) |
+| **Phase 6: 아키텍처 혁신** | **2-Tier (Foundation-Business) 모듈 통합 리팩토링** | ✅ 완료 (100%) |
+| **Phase 7: 최적화** | 빌드 자동화, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
+| **Phase 8: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | ✅ 완료 (100%) |
 
 ### 핵심 모듈 상술 (Key Migrated Modules)
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
@@ -205,6 +201,42 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
+## 📚 문서 가이드
+
+프로젝트의 주요 문서들은 `docs/` 폴더에 있습니다.
+
+| 문서 | 설명 |
+|------|------|
+| [CHANGELOG](./CHANGELOG.md) | 버전별 변경사항 기록 |
+| [API 문서화 가이드](./docs/API_DOCUMENTATION_GUIDE.md) | OpenAPI/Swagger 사용법 |
+| [CI/CD 파이프라인 가이드](./docs/CICD_PIPELINE.md) | GitHub Actions 설정 및 사용법 |
+| [테스트 가이드](./docs/TESTING_GUIDE.md) | 단위/통합/E2E 테스트 작성법 |
+| [성능 최적화 가이드](./docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) | N+1 쿼리 해결, 캐싱, 프론트엔드 최적화 |
+| [데이터베이스 최적화 가이드](./docs/DATABASE_OPTIMIZATION_GUIDE.md) | 인덱스, 쿼리 튜닝 |
+| [E2E 테스트 가이드](./E2E_GUIDE.md) | Playwright 테스트 작성법 |
+
+---
+
+## 🚀 최근 주요 변경사항 (2026-03)
+
+### 성능 최적화
+- ✅ **N+1 쿼리 해결** - MenuService, UserService, UserLogRepository (95% 성능 향상)
+- ✅ **캐싱 최적화** - menuHierarchy, users 캐시 적용 (응답 시간 10-50ms)
+- ✅ **프론트엔드 빌드 최적화** - 11 개 패키지 최적화 (200-800ms 단축)
+
+### CI/CD 개선
+- ✅ **Gradle 캐싱 활성화** - 빌드 시간 91% 단축 (2m13s → 12s)
+- ✅ **Playwright Sharding** - 3 shard 병렬 실행 (66% 시간 단축)
+- ✅ **OWASP Dependency-Check** - 보안 취약점 자동 스캔
+
+### 테스트 보강
+- ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
+- ✅ **JaCoCo 커버리지 목표** - 60% 이상 (클래스별 50%)
+
+자세한 내용은 [CHANGELOG](./CHANGELOG.md) 를 확인하세요.
+
+---
+
 ## 🤝 기여 가이드
 
 ### Pull Request 전 확인사항
@@ -240,4 +272,4 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-*Last Updated: 2026-03-12*
+*Last Updated: 2026-03-26 (Upgraded to Gradle 9.4.1 & Stabilized 2-Tier Architecture)*

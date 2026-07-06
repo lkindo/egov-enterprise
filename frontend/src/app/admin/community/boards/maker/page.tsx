@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { BoardMakerWizard } from './components/BoardMakerWizard';
+import dynamic from 'next/dynamic';
+
+const BoardMakerWizard = dynamic(
+  () => import('./components/BoardMakerWizard').then(mod => mod.BoardMakerWizard),
+  { ssr: false }
+);
 
 /**
  * 게시판 빌더 마법사 페이지 (Admin)

@@ -4,11 +4,11 @@ import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-export interface HubListItem {
+interface HubListItem {
   id?: string | number;
-  nttId?: string | number;
+  pstId?: string | number;
   title?: string;
-  nttSj?: string;
+  pstTtl?: string;
   date?: string;
   frstRegisterPnttmStr?: string;
   isNew?: boolean;
@@ -52,7 +52,7 @@ export function HubListCard({
 }: HubListCardProps) {
   const renderIcon = () => {
     if (React.isValidElement(icon)) return icon;
-    if (typeof icon === 'function') {
+    if (typeof icon === 'function' || (icon && (icon as any).render)) {
       const Icon = icon as any;
       return <Icon size={20} />;
     }
@@ -68,8 +68,8 @@ export function HubListCard({
       )}
     >
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
-        <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", colorMap[color])}>
+        <h3 className="font-bold text-2xl flex items-center gap-4 tracking-tight">
+          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", colorMap[color])}>
             {renderIcon()}
           </div>
           {title}
@@ -77,39 +77,42 @@ export function HubListCard({
         {moreHref && (
           <Link
             href={moreHref}
-            className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${title} 더보기`}
+            className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label={`${title} 상세보기`}
           >
             <ArrowRight size={20} />
           </Link>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
+      <div 
+        className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '0 400px' } as React.CSSProperties}
+      >
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item, idx) => (
             <motion.div
-              key={`list-item-${title}-${item.id || item.nttId || idx}`}
+              key={`list-item-${title}-${item.id || item.pstId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
-                "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
+                "flex flex-col gap-2 p-6 rounded-lg border border-transparent transition-all cursor-pointer group/item",
                 itemHoverColorMap[color]
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-muted-foreground/40 tracking-tight tabular-nums">
+                <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
                   {item.date || item.frstRegisterPnttmStr?.split(' ')[0] || '-'}
                 </span>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
+                <div className="w-1.5 h-1.5 rounded-lg bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
               </div>
-              <span className="text-[15px] font-black text-foreground line-clamp-1 tracking-tight">
-                {item.title || item.nttSj}
+              <span className="text-[15px] font-bold text-foreground line-clamp-1 tracking-tight">
+                {item.title || item.pstTtl}
               </span>
             </motion.div>
           ))
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-black tracking-tight">데이터가 없습니다…</p>
+            <p className="text-sm font-bold tracking-tight">데이터가 없습니다.</p>
           </div>
         )}
       </div>

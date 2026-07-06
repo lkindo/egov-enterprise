@@ -4,10 +4,10 @@ import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
-import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
-import { NameCard } from '@/types/addressbook';
-import { Search, User, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
+import { NameCard } from '@/types/business/addressbook';
+import { Search,  User } from 'lucide-react';
+;
 
 interface UserPickerProps {
  isOpen: boolean;
@@ -33,7 +33,7 @@ export function UserPicker({
  try {
  setLoading(true);
  const res = await addressbookUserService.searchUsers(keyword);
- setResults(res || []);
+ setResults(res.list || []);
  } catch (error) {
  console.error('Search failed', error);
  } finally {
@@ -50,16 +50,16 @@ export function UserPicker({
  }}
  >
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+ <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
  <User size={16} />
  </div>
  <div>
- <p className="text-sm font-bold text-foreground">{user.ncrdNm}</p>
- <p className="text-[10px] text-muted-foreground">{user.deptNm} / {user.cmpnyNm}</p>
+ <p className="text-sm font-bold text-foreground">{user.nm}</p>
+ <p className="text-xs text-muted-foreground">{user.emlAddr}</p>
  </div>
  </div>
  <div className="text-sm font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
- ID: {user.ncrdId}
+ ID: {user.userId || user.adbkConstntId}
  </div>
  </div>
  );
@@ -80,28 +80,27 @@ export function UserPicker({
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
  placeholder="이름, 부서, ID 검색..."
- className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+ className="w-full h-11 pl-10 pr-4 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
  autoFocus
  />
  <button
  type="submit"
  className="absolute right-2 top-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-bold shadow-sm"
  >
- 검색
- </button>
+ 검색 </button>
  </form>
 
  {/* Results Area */}
- <div className="bg-card border rounded-2xl overflow-hidden min-h-[350px] flex flex-col">
+ <div className="bg-card border rounded-lg overflow-hidden min-h-[350px] flex flex-col">
  {loading ? (
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
- 검색 중...
+ 검색 중..
  </div>
  ) : results.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
  <Search size={32} className="opacity-10" />
  <p className="text-sm font-bold">검색 결과가 없습니다.</p>
- <p className="text-[10px]">이름이나 부서명을 입력하고 엔터를 눌러주세요.</p>
+ <p className="text-xs">이름이나 부서명을 입력하고 엔터를 눌러주세요</p>
  </div>
  ) : (
  <VirtualScrollList

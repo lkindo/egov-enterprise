@@ -1,38 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
-import client from '@/lib/api/client';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import { BoardPost } from '@/types/business/board';
 
 export interface BoardListParams {
- bbsId: string;
- page번호: number;
- pageUnit: number;
- searchWrd: string;
- searchCnd: string;
- orderBy: string;
- startDate?: string;
- endDate?: string;
+  bbsId: string;
+  page: number; // 0-based index
+  pageUnit: number;
+  searchWrd: string;
+  searchCnd: string;
+  orderBy: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-export const useBoardList = (params: BoardListParams, initialData?: any) => {
- return useQuery({
- queryKey: ['boardList', params],
- initialData,
- queryFn: async () => {
- const { bbsId, page번호, pageUnit, ...restParams } = params;
- const queryParams = {
- page: page번호 - 1,
- size: pageUnit || 10,
- ...restParams
- };
+export const useBoardList = (params: BoardListParams, initialData?: { list: BoardPost[]; total: number; totalPage: number }) => {
+  const { bbsId } = params;
+  return useQuery({
+    queryKey: ['boardList', bbsId, params],
+    initialData,
+    queryFn: async () => {
+      const { page, pageUnit, searchWrd, searchCnd } = params;
+      
+      const data = await boardUserService.getPosts(bbsId, {
+        page: page, // Passing 0-based page, ApiService will handle pageIndex
+        size: pageUnit || 10,
+        searchWrd,
+        searchCnd
+      });
 
- const data: any = await client.get(`/boards/${bbsId}`, { params: queryParams });
-
- // Spring Data Page 구조 반영
- return {
- resultList: data.content || [],
- totalCount: data.totalElements || 0,
- totalPages: data.totalPages || 0
- };
- },
- staleTime: 60 * 1000,
- });
+      return {
+        list: data.list || [],
+        total: data.total || 0,
+        totalPage: data.totalPage || 0
+      };
+    },
+    staleTime: 60 * 1000,
+  });
 };

@@ -41,14 +41,15 @@ export const MESSAGES = {
     hidePassword: '비밀번호 숨기기',
   },
   dashboard: {
-    badge: '디지털 인텔리전스 엔진',
-    greeting: '안녕하세요,',
+    badge: '인텔리전트 엔진',
+    greeting: '안녕하세요',
     newTasks: '{count}개의 새로운 업무가 배정되었습니다.',
     securityStatus: {
       safe: '안전',
-      desc: '암호화 활성화 및 신원 확인 완료',
+      desc: '방화벽 활성 및 세션 확인 완료',
     },
     liveBadge: '실시간',
+    createNewPost: '새 포스팅 작성',
   },
   admin: {
     user: {
@@ -90,7 +91,7 @@ export const MESSAGES = {
       codeId: '코드 ID',
       codeNm: '코드명',
       codeDc: '코드 설명',
-      useAt: '사용 여부',
+      useYn: '사용 여부',
       group: '코드 그룹',
       detail: '상세 코드',
       newDetail: '신규 상세 코드 등록',
@@ -115,16 +116,6 @@ export const MESSAGES = {
       hierarchySystemDesc: '메타데이터 계층 관리 시스템',
       deleteDetailTitle: '상세 코드 삭제',
       deleteDetailConfirm: '[{code}] 삭제하시겠습니까?',
-      deleteClTitle: '분류 코드 삭제',
-      deleteClConfirm: '[{clCode}] 분류 코드를 삭제하시겠습니까? 관련 공통 코드가 모두 삭제될 수 있습니다.',
-      deleteGroupTitle: '공통 코드(그룹) 삭제',
-      deleteGroupConfirm: '[{codeId}] 공통 코드를 삭제하시겠습니까? 관련 상세 코드가 모두 삭제됩니다.',
-      newClTitle: '신규 분류 코드 등록',
-      updateClTitle: '분류 코드 수정',
-      newGroupTitle: '신규 공통 코드 등록',
-      updateGroupTitle: '공통 코드 수정',
-      integratedControlCenter: '통합 코드 관리 센터',
-      selectGroupDesc: '트리에서 공통코드 그룹을 선택하여 상세 내용을 관리하세요.',
     },
     menu: {
       title: '메뉴 관리',
@@ -133,4 +124,4 @@ export const MESSAGES = {
   },
 } as const;
 
-export type MessageKey = keyof typeof MESSAGES;
+type MessageKey = keyof typeof MESSAGES;

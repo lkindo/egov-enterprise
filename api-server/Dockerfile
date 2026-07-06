@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:8.12-jdk21 AS builder
+FROM gradle:9.4.1-jdk21 AS builder
 WORKDIR /app
 # Only copy dependency files first for better caching
 COPY gradle /app/gradle
@@ -7,10 +7,8 @@ COPY gradlew /app/gradlew
 COPY build.gradle /app/
 COPY settings.gradle /app/
 COPY gradle.properties /app/
-COPY common-core/build.gradle /app/common-core/
-COPY common-domain/build.gradle /app/common-domain/
-COPY common-security/build.gradle /app/common-security/
-COPY common-service/build.gradle /app/common-service/
+COPY foundation/build.gradle /app/foundation/
+COPY business-suite/build.gradle /app/business-suite/
 COPY api-server/build.gradle /app/api-server/
 COPY gradle/libs.versions.toml /app/gradle/
 
@@ -25,11 +23,14 @@ RUN ./gradlew :api-server:bootJar -x test --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
+# Create non-root user and setup directory permissions
+RUN addgroup -S spring && adduser -S spring -G spring && \
+    mkdir -p logs && \
+    chown -R spring:spring /app
+
 USER spring:spring
 
-COPY --from=builder /app/api-server/build/libs/*.jar app.jar
+COPY --from=builder --chown=spring:spring /app/api-server/build/libs/*.jar app.jar
 
 ENV TZ=Asia/Seoul
 ENV JAVA_OPTS="-Xms512m -Xmx512m -XX:+UseParallelGC"

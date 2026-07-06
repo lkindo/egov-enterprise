@@ -2,89 +2,218 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X,  
+  Bell,  
+  ShieldAlert,  
+  Activity,  
+  Database,  
+  Zap,  
+  ArrowRight, 
+  Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface Notification {
- id: string;
- title: string;
- message: string;
- time: string;
- isRead: boolean;
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  isRead: boolean;
+  type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
 }
 
 interface AppNotificationDrawerProps {
- isOpen: boolean;
- onClose: () => void;
- notifications: Notification[];
+  isOpen: boolean;
+  onClose: () => void;
+  notifications: Notification[];
+  onMarkRead: (id: string) => void;
+  onMarkAllRead: () => void;
 }
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNotificationDrawerProps) {
- const [mounted, setMounted] = useState(false);
+type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
- useEffect(() => {
- setMounted(true);
- }, []);
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead }: AppNotificationDrawerProps) {
+  const [mounted, setMounted] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
 
- if (!mounted) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
- return createPortal(
- <>
- {isOpen ? <div className="fixed inset-0 z-[9998] bg-[#020617]/90" onClick={onClose} /> : null}
- <div className={cn(
- "fixed right-0 top-0 z-[9999] h-full w-full max-w-sm border-l bg-white dark:bg-slate-950 shadow-[-20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-out",
- isOpen ? "translate-x-0" : "translate-x-full"
- )}>
- <div className="flex h-16 items-center justify-between border-b px-6 bg-white dark:bg-slate-950 sticky top-0 z-10">
- <h2 className="text-lg font-bold flex items-center gap-2">
- <Bell size={20} className="text-primary animate-bounce-subtle" />
- 알림
- </h2>
- <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all hover:rotate-90">
- <X size={20} />
- </button>
- </div>
+  if (!mounted) return null;
 
- <div className="overflow-y-auto h-[calc(100vh-4rem)] p-4 space-y-4 custom-scrollbar">
- {notifications.length === 0 ? (
- <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60">
- <Bell size={48} className="mb-4 opacity-10" />
- <p className="text-sm font-medium">새로운 소식이 아직 없네요.</p>
- </div>
- ) : (
- <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
- {notifications.map((notif) => (
- <div
- key={notif.id}
- className={cn(
- "group p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer",
- notif.isRead
- ? "bg-muted border-transparent opacity-80"
- : "bg-card border-primary/20 shadow-sm ring-1 ring-primary/5"
- )}
- >
- <div className="flex justify-between items-start gap-2">
- <h3 className={cn("text-sm font-bold transition-colors", !notif.isRead && "text-primary")}>
- {notif.title}
- </h3>
- {!notif.isRead ? <span className="w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" /> : null}
- </div>
- <p className="text-[11px] leading-relaxed text-muted-foreground mt-1.5 line-clamp-3">
- {notif.message}
- </p>
- <div className="flex items-center justify-between mt-4">
- <span className="text-[9px] font-medium text-muted-foreground/40">{notif.time}</span>
- <button className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
- 자세히 보기
- </button>
- </div>
- </div>
- ))}
- </div>
- )}
- </div>
- </div>
- </>,
- document.body
- );
+  const filteredNotifications = notifications.filter(n => {
+    if (activeFilter === 'ALL') return true;
+    return n.type === activeFilter;
+  });
+
+  const getIcon = (type?: string) => {
+    switch (type) {
+      case 'SECURITY': return <ShieldAlert size={18} className="text-rose-500" />;
+      case 'SYSTEM': return <Database size={18} className="text-amber-500" />;
+      case 'ACTIVITY': return <Activity size={18} className="text-emerald-500" />;
+      default: return <Bell size={18} className="text-primary" />;
+    }
+  };
+
+  return createPortal(
+    <>
+      <AnimatePresence>
+        {isOpen && (
+           <>
+            <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="fixed inset-0 z-[9998] bg-slate-900/60 backdrop-blur-sm" 
+               onClick={onClose} 
+            />
+            <motion.div 
+               initial={{ x: '100%' }}
+               animate={{ x: 0 }}
+               exit={{ x: '100%' }}
+               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+               className="fixed right-0 top-0 z-[9999] h-full w-full max-w-md border-l bg-white dark:bg-slate-950 shadow-[-40px_0_80px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col"
+            >
+              {/* Header Fabric */}
+              <div className="flex h-24 items-center justify-between border-b px-8 bg-white dark:bg-slate-950 sticky top-0 z-20">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold flex items-center gap-3 tracking-tighter uppercase">
+                    <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                       <Bell size={20} className="animate-pulse" />
+                    </div>
+                    알림 센터
+                  </h2>
+                  <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {notifications.some(n => !n.isRead) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={onMarkAllRead}
+                      className="text-xs font-bold tracking-widest uppercase hover:text-primary h-8 px-2"
+                    >
+                      모두 읽음
+                    </Button>
+                  )}
+                  <button 
+                    onClick={onClose} 
+                    data-testid="e2e-drawer-close"
+                    className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all hover:rotate-90 group"
+                  >
+                    <X size={24} className="group-hover:text-primary transition-colors" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Advanced Filter Matrix */}
+              <div className="p-6 border-b bg-slate-50/50 flex gap-2">
+                 {(['ALL', 'SECURITY', 'SYSTEM', 'ACTIVITY'] as FilterType[]).map((f) => (
+                    <button
+                       key={f}
+                       onClick={() => setActiveFilter(f)}
+                       className={cn(
+                          "px-4 py-2 rounded-lg text-xs font-bold tracking-widest uppercase transition-all",
+                          activeFilter === f 
+                             ? "bg-slate-900 text-white shadow-lg scale-105" 
+                             : "bg-white text-slate-400 hover:bg-slate-100 border-2 border-slate-100"
+                       )}
+                    >
+                       {f === 'ALL' ? '전체' : f === 'SECURITY' ? '보안' : f === 'SYSTEM' ? '시스템' : '활동'}
+                    </button>
+                 ))}
+                 <button className="ml-auto w-10 h-10 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
+                    <Trash2 size={16} />
+                 </button>
+              </div>
+
+              {/* Notification Stream */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10">
+                <AnimatePresence mode="popLayout">
+                  {filteredNotifications.length === 0 ? (
+                    <motion.div 
+                       initial={{ opacity: 0, scale: 0.9 }}
+                       animate={{ opacity: 1, scale: 1 }}
+                       className="flex flex-col items-center justify-center h-full text-slate-200"
+                    >
+                      <Zap size={100} className="mb-8 opacity-20" />
+                      <span className="text-sm font-bold tracking-widest uppercase text-slate-400">활성화된 알림이 없습니다</span>
+                    </motion.div>
+                  ) : (
+                    filteredNotifications.map((notif, idx) => (
+                      <motion.div
+                        layout
+                        key={notif.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={cn(
+                          "group relative p-6 rounded-lg border-2 transition-all duration-500 cursor-pointer overflow-hidden backdrop-blur-sm",
+                          notif.isRead
+                            ? "bg-slate-50/30 border-slate-50 opacity-60"
+                            : "bg-white border-slate-100 shadow-xl hover:shadow-primary/5 hover:border-primary/20",
+                          !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 bg-rose-50/20"
+                        )}
+                        onClick={() => !notif.isRead && onMarkRead(notif.id)}
+                      >
+                        <div className="flex justify-between items-start gap-4 relative z-10">
+                          <div className={cn(
+                             "w-10 h-10 rounded-lg flex items-center justify-center shadow-md shrink-0",
+                             notif.isRead ? "bg-slate-100 text-slate-400" : "bg-white"
+                          )}>
+                             {getIcon(notif.type)}
+                          </div>
+                          <div className="flex-1 space-y-1 min-w-0">
+                             <div className="flex items-center justify-between">
+                                <h3 className={cn("text-sm font-bold tracking-tight transition-colors truncate pr-4", !notif.isRead && "text-slate-900")}>
+                                   {notif.title}
+                                </h3>
+                                {!notif.isRead && <div className="w-2 h-2 rounded-lg bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] animate-pulse" />}
+                             </div>
+                             <p className="text-xs leading-relaxed text-slate-500 line-clamp-2 font-medium">
+                                {notif.message}
+                             </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-6 relative z-10 px-1">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{notif.time}</span>
+                          <button className="flex items-center gap-2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase">
+                            상세 보기 <ArrowRight size={14} />
+                          </button>
+                        </div>
+
+                        {/* Background Decoration */}
+                        {!notif.isRead && notif.type === 'SECURITY' && (
+                           <div className="absolute right-0 top-0 p-4 opacity-5">
+                              <ShieldAlert size={80} />
+                           </div>
+                        )}
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Bottom Sticky Control */}
+              <div className="p-8 border-t bg-white dark:bg-slate-950">
+                 <Button
+                   data-testid="read-all-broadcasts-btn"
+                   onClick={onMarkAllRead}
+                   className="w-full h-11 rounded-lg bg-slate-900 text-white font-bold tracking-[0.3em] uppercase text-xs shadow-2xl hover:bg-primary transition-all"
+                 >
+                    모든 알림 읽음 처리
+                 </Button>
+              </div>
+            </motion.div>
+           </>
+        )}
+      </AnimatePresence>
+    </>,
+    document.body
+  );
 }
+

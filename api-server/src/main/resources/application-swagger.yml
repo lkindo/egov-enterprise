@@ -1,0 +1,67 @@
+# Swagger UI 설정
+springdoc:
+  swagger-ui:
+    # Swagger UI 경로
+    path: /swagger-ui.html
+    # JWT 인증을 위한 UI 설정
+    oauth2-redirect-url: /swagger-ui/oauth2-redirect.html
+    # JWT 토큰 입력을 위한 프리셋 설정
+    oauth:
+      client-id: swagger-ui
+      use-basic-authentication-with-access-code-grant: false
+    # 태그 정렬
+    tags-sorter: alpha
+    # operations 정렬
+    operations-sorter: alpha
+    # doc-expansion: none (모두 접음), list (목록만), full (모두 펼침)
+    doc-expansion: none
+    # deep-linking: URL 로 직접 접근 가능
+    deep-linking: true
+    # display-request-duration: 요청 시간 표시
+    display-request-duration: true
+    # filter: API 그룹 필터링
+    filter: true
+    # show-extensions: 확장 정보 표시
+    show-extensions: false
+    # show-common-extensions: 공통 확장 정보 표시
+    show-common-extensions: false
+    # syntax-highlight: 코드 하이라이트
+    syntax-highlight:
+      theme: agate
+    # try-it-out-enabled: 테스트 기능 활성화
+    try-it-out-enabled: true
+    
+  # API Docs 설정
+  api-docs:
+    path: /v3/api-docs
+    # 특정 그룹만 활성화 (선택사항)
+    # groups:
+    #   - all
+    #   - admin
+    
+  # 그룹별 API 문서화
+  group-configs:
+    - group: all
+      paths-to-match: /api/v1/**
+    - group: admin
+      paths-to-match: /api/v1/admin/**
+    - group: common-code
+      paths-to-match: /api/v1/common-codes/**
+      
+  # 모델 및 API 표시 설정
+  model-and-view:
+    # default-models-page: 기본 모델 페이지
+    default-models-page: ""
+    
+  # 캐싱 (프로덕션에서 활성화)
+  cache:
+    disabled: true
+    
+  # 자동 API 문서 생성
+  auto-tag-operations: true
+  
+  # 정적 파일 지원
+  show-actuator: false
+  
+  # 버전 정보 표시
+  version: '@project.version@'

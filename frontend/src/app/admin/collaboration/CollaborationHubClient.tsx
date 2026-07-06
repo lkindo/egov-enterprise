@@ -1,312 +1,276 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { 
-  RefreshCcw,
-  Mail, 
-  Send, 
-  Inbox, 
-  Contact2, 
-  Bookmark, 
-  Search, 
-  Plus, 
-  MoreVertical, 
-  UserPlus, 
-  MessageSquare, 
-  Calendar, 
-  ChevronRight,
-  Filter,
-  ArrowUpRight,
-  Star,
-  Hash,
-  Paperclip,
-  ExternalLink,
-  Trash2,
-  Users,
-  Zap,
-  Share2,
-  CheckCircle2
+import { Input } from '@/components/ui/input';
+import {
+ RefreshCcw,
+ Inbox,
+ Bookmark,
+ Search,
+ Plus,
+ Users,
+ Zap,
+ Share2,
+ Activity,
+ MoreVertical
 } from 'lucide-react';
+import {
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
-import { noteService, Note } from '@/services/user/NoteService';
-import { scrapService } from '@/services/user/ScrapService';
-import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
-import { motion, AnimatePresence } from 'framer-motion';
+import { noteService } from '@/services/business/user/NoteService';
+import { scrapService } from '@/services/business/user/ScrapService';
+import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { PageHeader } from '@/app/components/layout/page-header';
 
-// --- Types ---
 type CollaborationTab = 'MESSAGES' | 'ADDRESS_BOOK' | 'SCRAPS';
 
-export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { defaultTab?: CollaborationTab }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any) {
+ const router = useRouter();
+ const queryClient = useQueryClient();
+ const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
+ const [searchKeyword, setSearchKeyword] = useState('');
 
-  // --- Queries ---
+ React.useEffect(() => {
+   if (defaultTab) {
+     setActiveTab(defaultTab);
+   }
+ }, [defaultTab]);
 
-  // 1. Notes (Messages)
-  const { data: noteData, isLoading: isNoteLoading } = useQuery({
-    queryKey: ['collab-notes', activeTab],
-    queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50 }),
-    enabled: activeTab === 'MESSAGES'
-  });
-  const notes = noteData?.list || [];
+ // --- Data Fetching ---
+ const { data: noteData, isLoading: notesLoading } = useQuery({
+ queryKey: ['collab-notes', activeTab, searchKeyword],
+ queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50 }),
+ enabled: activeTab === 'MESSAGES'
+ });
+ const notes = (noteData as any)?.list || [];
 
-  // 2. Address Book
-  const { data: addressData, isLoading: isAddressLoading } = useQuery({
-    queryKey: ['collab-addressbook', searchKeyword],
-    queryFn: () => addressbookUserService.getAddressBooks({ page번호: 1, pageUnit: 50, searchWrd: searchKeyword }),
-    enabled: activeTab === 'ADDRESS_BOOK'
-  });
-  const addresses = addressData?.list || [];
+ const { data: addressData, isLoading: addressLoading } = useQuery({
+ queryKey: ['collab-addressbook', searchKeyword],
+ queryFn: () => addressbookUserService.getAddressBooks({ size: 50, searchWrd: searchKeyword }),
+ enabled: activeTab === 'ADDRESS_BOOK'
+ });
+ const addresses = (addressData as any)?.list || [];
 
-  // 3. Scraps
-  const { data: scrapData, isLoading: isScrapLoading } = useQuery({
-    queryKey: ['collab-scraps', searchKeyword],
-    queryFn: () => scrapService.getMyScraps({ page: 0, size: 50 }),
-    enabled: activeTab === 'SCRAPS'
-  });
-  const scraps = scrapData?.list || [];
+ const { data: scrapData, isLoading: scrapsLoading } = useQuery({
+ queryKey: ['collab-scraps', activeTab, searchKeyword],
+ queryFn: () => scrapService.getMyScraps({ page: 0, size: 50 }),
+ enabled: activeTab === 'SCRAPS'
+ });
+ const scraps = (scrapData as any)?.list || [];
 
-  // --- Selection Logic ---
-  const selectedItem = useMemo(() => {
-    if (!selectedItemId) return null;
-    if (activeTab === 'MESSAGES') return notes.find(n => n.noteId === selectedItemId);
-    if (activeTab === 'ADDRESS_BOOK') return addresses.find((a: any) => a.adbkId === selectedItemId);
-    if (activeTab === 'SCRAPS') return scraps.find((s: any) => s.scrapId === selectedItemId);
-    return null;
-  }, [selectedItemId, activeTab, notes, addresses, scraps]);
+ const isLoading = 
+    (activeTab === 'MESSAGES' && notesLoading) ||
+    (activeTab === 'ADDRESS_BOOK' && addressLoading) ||
+    (activeTab === 'SCRAPS' && scrapsLoading);
 
-  // --- Renderers ---
+ const messageColumns: Column<any>[] = [
+ {
+ header: '번호',
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ className: 'w-20 text-center'
+ },
+ {
+ header: '쪽지 제목',
+ accessor: (item) => (
+ <div className="flex flex-col gap-1 py-1">
+ <div className="flex items-center gap-2">
+ {item.openYn === 'N' && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
+ <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.noteSj}</span>
+ </div>
+ <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.noteId}</span>
+ </div>
+ )
+ },
+ {
+ header: '발신자',
+ accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.trnsmiterNm || item.dsptchUserId}</span>,
+ className: 'w-32'
+ },
+ {
+ header: '발신일시',
+ accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 16)}</span>,
+ className: 'w-48'
+ },
+ {
+ header: '관리',
+ accessor: () => (
+ <div className="flex justify-end pr-4">
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
+ <MoreVertical size={16} className="text-slate-400" />
+ </Button>
+ </div>
+ ),
+ className: 'w-20 text-right'
+ }
+ ];
 
-  const renderMessageList = () => (
-    <div className="space-y-3">
-      {notes.map((note) => (
-        <div 
-          key={note.noteId}
-          onClick={() => setSelectedItemId(note.noteId)}
-          className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between",
-            selectedItemId === note.noteId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
-              : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
-          )}
-        >
-          <div className="flex items-start gap-6">
-            <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
-              selectedItemId === note.noteId ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
-            )}>
-              <Inbox size={20} />
-            </div>
-            <div className="space-y-1">
-              <h4 className={cn("text-sm font-black ", selectedItemId === note.noteId ? "text-white" : "text-slate-900 tracking-tight")}>{note.noteSj}</h4>
-              <p className="text-[8px] font-black tracking-tight opacity-40">보낸 사람: {note.trnsmitterNm || note.trnsmitterId}</p>
-            </div>
-          </div>
-          {note.openYn === 'N' && <div className="w-2 h-2 rounded-full bg-primary" />}
-        </div>
-      ))}
-    </div>
-  );
+ const addressColumns: Column<any>[] = [
+ {
+ header: '번호',
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ className: 'w-20 text-center'
+ },
+ {
+ header: '성명',
+ accessor: (item) => <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.adbkNm}</span>
+ },
+ {
+ header: '이메일',
+ accessor: (item) => <span className="text-xs font-bold text-slate-500 tracking-tight">{item.email || '-'}</span>,
+ className: 'w-64'
+ },
+ {
+ header: '관리',
+ accessor: () => (
+ <div className="flex justify-end pr-4">
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
+ <MoreVertical size={16} className="text-slate-400" />
+ </Button>
+ </div>
+ ),
+ className: 'w-20 text-right'
+ }
+ ];
 
-  const renderAddressList = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {addresses.map((address) => (
-        <Card 
-          key={address.adbkId}
-          onClick={() => setSelectedItemId(address.adbkId)}
-          className={cn(
-            "rounded-[2.5rem] border-2 transition-all cursor-pointer p-6 flex items-center gap-6",
-            selectedItemId === address.adbkId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
-              : "bg-white border-transparent hover:border-slate-50"
-          )}
-        >
-          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black ">
-            {address.adbkNm?.charAt(0)}
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-sm font-black tracking-tight">{address.adbkNm}</h4>
-            <p className="text-[10px] opacity-40">{address.email || '이메일 없음'}</p>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
+ const scrapColumns: Column<any>[] = [
+ {
+ header: '번호',
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ className: 'w-20 text-center'
+ },
+ {
+ header: '스크랩 제목',
+ accessor: (item) => <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.scrapNm}</span>
+ },
+ {
+ header: '등록일자',
+ accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 10)}</span>,
+ className: 'w-48'
+ },
+ {
+ header: '관리',
+ accessor: () => (
+ <div className="flex justify-end pr-4">
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
+ <MoreVertical size={16} className="text-slate-400" />
+ </Button>
+ </div>
+ ),
+ className: 'w-20 text-right'
+ }
+ ];
 
-  return (
-    <div className="space-y-10 pb-20 animate-in fade-in duration-1000">
-      {/* --- Header --- */}
-      <div className="flex items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-3xl flex items-center justify-center shadow-2xl skew-x-2">
-            <Share2 size={28} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-              협업 통합 허브
-            </h2>
-            <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
-              통합 기업용 소셜 및 메시징 센터
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-black tracking-tight gap-2">
-            <Mail size={18} /> 쪽지 쓰기
-          </Button>
-          <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
-            <Plus size={20} /> 연락처 추가
-          </Button>
-        </div>
-      </div>
+ const headerAction = useMemo(() => {
+    if (activeTab === 'ADDRESS_BOOK') {
+      return (
+        <Button onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
+          <Plus size={18} /> 신규 연락처
+        </Button>
+      );
+    }
+    return (
+      <Button onClick={() => router.push('/admin/collaboration/mail-send')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
+        <Plus size={18} /> 신규 전송
+      </Button>
+    );
+  }, [activeTab, router]);
 
-      <div className="grid grid-cols-12 gap-8 px-2 min-h-[700px]">
-        
-        {/* --- Left Column: Navigation (20%) --- */}
-        <div className="col-span-12 lg:col-span-3 space-y-6">
-          <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
-            <NavButton icon={<Inbox size={20} />} label="메신저" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
-            <NavButton icon={<Users size={20} />} label="전체 연락처" active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
-            <NavButton icon={<Bookmark size={20} />} label="스크랩 관리" active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
-          </Card>
+ return (
+ <TooltipProvider delayDuration={0}>
+ <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+ <PageHeader
+ title="협업 및 네트워크 허브"
+ breadcrumbs={[{ label: '협업관리' }, { label: '커넥트매트릭스' }]}
+ />
 
-          <Card className="rounded-[3rem] border-0 bg-primary text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
-            <Zap size={48} className="text-white/20 absolute -right-4 -top-4 rotate-12" />
-            <div className="space-y-2 relative z-10">
-              <h4 className="text-[10px] font-black tracking-tight opacity-60">응답률</h4>
-              <p className="text-3xl font-black tracking-tighter">98.2%</p>
-            </div>
-          </Card>
-        </div>
+ <HubHeader 
+ title="Connect" 
+ highlight="Matrix" 
+ subtitle="조직 내 원활한 소통과 정보 공유를 위한 통합 협업 공간입니다." 
+ icon={Share2} 
+ actions={
+ <div className="flex gap-4 items-center">
+ <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+ <Button
+ variant="ghost"
+ size="sm"
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'MESSAGES' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ onClick={() => { setActiveTab('MESSAGES'); setSearchKeyword(''); }}
+ >
+ MESSAGES
+ </Button>
+ <Button
+ variant="ghost"
+ size="sm"
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'ADDRESS_BOOK' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ onClick={() => { setActiveTab('ADDRESS_BOOK'); setSearchKeyword(''); }}
+ >
+ CONTACTS
+ </Button>
+ <Button
+ variant="ghost"
+ size="sm"
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'SCRAPS' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ onClick={() => { setActiveTab('SCRAPS'); setSearchKeyword(''); }}
+ >
+ SCRAPS
+ </Button>
+ </div>
+ {headerAction}
+ </div>
+ }
+ />
 
-        {/* --- Center Column: Asset List (40%) --- */}
-        <div className="col-span-12 lg:col-span-5 h-full flex flex-col gap-6">
-          <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
-            <CardHeader className="bg-slate-50/50 border-b p-10 space-y-8">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] leading-tight">
-                  {activeTab === 'MESSAGES' ? '보안 채널' : activeTab === 'ADDRESS_BOOK' ? '전체 주소록' : '스크랩 저장소'}
-                </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-8 text-[9px] font-black tracking-tight gap-2">
-                  <RefreshCcw size={12} /> 동기화
-                </Button>
-              </div>
-              <div className="flex gap-4">
-                <div className="relative flex-1 group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <Input 
-                    className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm" 
-                    placeholder="이름, 부서, 회사명 검색..." 
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['collab-addressbook'] })}
-                  className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
-                >
-                  검색 실행
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-6">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  {activeTab === 'MESSAGES' && renderMessageList()}
-                  {activeTab === 'ADDRESS_BOOK' && renderAddressList()}
-                  {activeTab === 'SCRAPS' && (
-                    <div className="p-10 text-center opacity-30 font-black tracking-[0.3em]">
-                      스크랩 서비스 노드 연결 중
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-        </div>
+ <HubMetricGrid>
+ <HubMetricCard title="메시지 노드" value={notes.length} icon={Inbox} color="primary" />
+ <HubMetricCard title="인적 자산" value={addresses.length} icon={Users} color="emerald" />
+ <HubMetricCard title="지식 노드" value={scraps.length} icon={Bookmark} color="amber" />
+ <HubMetricCard title="데이터 상태" value="Normal" icon={Activity} color="indigo" />
+ </HubMetricGrid>
 
-        {/* --- Right Column: Detail/Inspect (40%) --- */}
-        <div className="col-span-12 lg:col-span-4 h-full">
-          <AnimatePresence mode="wait">
-            {selectedItemId ? (
-              <motion.div 
-                key={selectedItemId}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="h-full flex flex-col gap-8"
-              >
-                <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
-                  <CardHeader className="bg-slate-50/50 p-10 border-b">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
-                      상세 정보
-                    </h2>
-                  </CardHeader>
-                  <CardContent className="flex-1 p-10 space-y-12">
-                    <div className="space-y-6">
-                      <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100">
-                        <pre className="text-[10px] font-mono whitespace-pre-wrap">
-                          {JSON.stringify(selectedItem, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 열기</Button>
-                      <Button variant="outline" className="h-14 w-14 rounded-2xl border-2"><Trash2 size={20} /></Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ) : (
-              <Card className="h-full rounded-[3.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
-                <Share2 size={64} className="mb-8" />
-                <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
-                  항목을 선택하세요
-                </h3>
-                <p className="text-[10px] mt-4 font-black tracking-tight">항목을 선택하여 내용을 확인하세요.</p>
-              </Card>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
-  );
-}
+ <HubSectionCard 
+ title={activeTab === 'MESSAGES' ? "메시지 스트림 매트릭스" : activeTab === 'ADDRESS_BOOK' ? "네트워크 인덱스" : "지식 스크랩 아카이브"}
+ description="조직 내에서 발생하는 실시간 협업 데이터 스트림 및 자산 명세입니다." 
+ icon={Zap}
+ className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+ >
+ <div className="space-y-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="relative group max-w-xl w-full">
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Input 
+ value={searchKeyword}
+ onChange={(e) => setSearchKeyword(e.target.value)}
+ className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ placeholder="검색어를 입력하십시오.." 
+ />
+ </div>
+ <Button variant="outline" onClick={() => queryClient.invalidateQueries()} className="h-11 px-6 rounded-xl border-2 border-slate-100 text-slate-400 hover:text-primary transition-all">
+ <RefreshCcw size={20} />
+ </Button>
+ </div>
 
-// --- Sub-components ---
-
-function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={cn(
-        "w-full group p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5",
-        active 
-          ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
-          : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
-      )}
-    >
-      <div className={cn(
-        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-        active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
-      )}>
-        {icon}
-      </div>
-      <span className="text-[11px] font-black tracking-tight ">{label}</span>
-    </button>
-  );
+ <div className="min-h-[500px]">
+ <StandardDataTable
+ columns={activeTab === 'MESSAGES' ? messageColumns : activeTab === 'ADDRESS_BOOK' ? addressColumns : scrapColumns}
+ data={activeTab === 'MESSAGES' ? notes : activeTab === 'ADDRESS_BOOK' ? addresses : scraps}
+ loading={isLoading}
+ emptyMessage="식별된 협업 데이터 유닛이 없습니다."
+ isPremium={true}
+ className="border-none bg-transparent shadow-none"
+ />
+ </div>
+ </div>
+ </HubSectionCard>
+ </div>
+ </TooltipProvider>
+ );
 }

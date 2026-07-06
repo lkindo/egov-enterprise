@@ -1,6 +1,6 @@
 # ==========================================
 # eGovFrame / Java / Gradle / Next.js .gitignore
-# Optimized Version
+# Optimized Version 2.0
 # ==========================================
 
 # ----- OS & IDE -----
@@ -39,6 +39,7 @@
 **/.factorypath
 **/generated-sources/
 **/apt-generated/
+**/src/main/generated/
 **/node_modules/
 **/.npm/
 **/npm-debug.log*
@@ -48,15 +49,25 @@
 **/.next/
 **/dist/
 **/export/
-# package-lock.json  # DO NOT IGNORE: Committed for consistent builds
-# yarn.lock          # DO NOT IGNORE: Committed for consistent builds
-pnpm-lock.yaml
+**/storybook-static/
+**/playwright/.auth/
+**/playwright-reports/
+
+# ----- Lock Files (Committed for consistency) -----
+# package-lock.json  - Committed
+# yarn.lock          - Committed
+# pnpm-lock.yaml     - Committed (primary)
+
+# ----- Office Documents (Binary) -----
 *.xlsx
 *.xls
 *.doc
 *.docx
 *.ppt
 *.pptx
+*.pdf
+*.hwp
+*.hwpx
 
 # ----- Local Configuration & Secrets -----
 **/egovProps/conf/
@@ -68,11 +79,17 @@ pnpm-lock.yaml
 **/.env.production.local
 **/application-local.properties
 **/application-local.yml
+**/application-dev.properties
+**/application-dev.yml
+**/application-prod.properties
+**/application-prod.yml
 
 # ----- Logs & Temp Files -----
 **/*.log
 **/logs/
+!**/src/**/logs/
 **/*_log.txt
+**/*_output.txt
 **/boot_error*
 **/server_run_*.txt
 **/temp_*/
@@ -83,6 +100,14 @@ pnpm-lock.yaml
 **/*.swp
 **/*~
 **/*.orig
+**/auth_error.txt
+**/build_output*.txt
+**/tests_output.txt
+**/tests_debug.txt
+**/coverage_output.txt
+**/dependency-analysis*.txt
+**/LOG_FILE_IS_UNDEFINED*
+**/LOG_PATH_IS_UNDEFINED*
 
 # ----- Tools & Infrastructure -----
 **/docker-data/
@@ -96,7 +121,9 @@ pnpm-lock.yaml
 **/test-results/
 **/playwright-report/
 **/blob-report/
+**/playwright-screenshots/
 **/playwright/.cache/
+**/.playwright/
 **/jacoco/
 **/*.exec
 **/coverage/
@@ -107,6 +134,12 @@ pnpm-lock.yaml
 **/.server/
 **/.prisma/
 
+# -- Custom Tools & Binaries --
+**/tools/k6/
+**/*.exe
+**/*.zip
+**/*.msi
+
 # ----- Java Tools (JRebel, etc.) -----
 **/rebel.xml
 **/*.rebel.xml.bak
@@ -114,20 +147,65 @@ pnpm-lock.yaml
 # ----- AI Tools -----
 **/.jules/
 **/.sisyphus/
-**/.agent/
-**/.gemini/
+!**/.agent/
+.agent/logs/
+.agent/temp/
+!**/.agent/knowledge/
+!**/.agent/skills/
+!**/.agent/workflows/
+!**/.agent/scripts/
+!**/.agent/mcp-servers/
+**/.gemini/*
+!**/.gemini/tasks/
+!**/.claude/settings.json
 
 # ----- Upload/Storage -----
 **/upload/
 **/uploads/
 **/files/
-**/storage/
+# storage/ - Active project directory
 
 # ----- Project Specific -----
 **/convert-*.py
 **/encoding-logs/
 **/utf8-project-template/
+**/check_db_menus.py
+**/check_menus.py
+**/fix_menus.py
+**/fix_networkidle.ps1
+**/restore-non-session-files.ps1
+
+# ----- Deleted Legacy Modules (prevent re-creation) -----
+# These modules were integrated into foundation/business-suite (2026-03)
+common-core/
+common-security/
+module-core-iam/
+module-system-admin/
+module-workspace/
+module-operation/
+module-knowledge/
 
 # ----- Git Worktrees -----
 .worktrees/
 
+# ----- Analysis & Reports -----
+**/analysis/
+**/lighthouse-reports/
+**/bundle-analysis/
+**/next-build-cache/
+
+# ----- Storybook -----
+**/storybook-static/
+**/.storybook-generated/
+
+# ----- Lighthouse CI -----
+**/.lighthouseci/
+**/lhci-reports/
+
+# ----- Security -----
+**/.snyk
+
+
+
+# Database Dumps
+database/dumps/

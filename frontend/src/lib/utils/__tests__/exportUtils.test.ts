@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportToCsv } from '../exportUtils';
 
@@ -15,8 +22,8 @@ describe('exportUtils', () => {
  { id: 2, name: 'Bob' }
  ];
  const columns = [
- { header: '아이디', accessorKey: 'id' },
- { header: '이름', accessorKey: 'name' }
+  { header: '아이디', accessorKey: 'id' },
+  { header: '이름', accessorKey: 'name' }
  ];
 
  const appendChildSpy = vi.spyOn(document.body, 'appendChild');

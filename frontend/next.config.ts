@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
-const nextConfig: NextConfig = {
-  output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+const nextConfig = {
+  cacheComponents: true,
+  // output: 'standalone', // Standalone mode causes symlink EPERM on Windows without Developer Mode/Admin. Disabling for local build verification.
   experimental: {
+    // ppr: 'incremental', // Merged into cacheComponents
     // [bundle-barrel-imports] 배럴 임포트 자동 최적화 - 200-800ms 빌드 속도 향상
     optimizePackageImports: [
       'lucide-react',
@@ -19,7 +19,12 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-label',
       '@radix-ui/react-slot',
       'framer-motion',
+      'recharts',
+      'date-fns',
     ],
+  },
+  turbopack: {
+    root: '..',
   },
   async headers() {
     return [
@@ -34,7 +39,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' blob: data:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:8080 ws://localhost:8080 http://127.0.0.1:8080 ws://127.0.0.1:8080; object-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;"
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 ws://localhost:8080 ws://127.0.0.1:8080 wss://localhost:8080 wss://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
           },
         ],
       },
@@ -44,11 +49,38 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://127.0.0.1:8080/api/v1/:path*',
+        destination: `${(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/').replace(/\/$/, '')}/:path*`,
+      },
+      {
+        source: '/actuator/:path*',
+        destination: `${(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/').replace(/api\/v1\/?$/, '')}actuator/:path*`,
+      },
+      {
+        source: '/ws/:path*',
+        destination: 'http://127.0.0.1:8080/ws/:path*',
       },
     ]
   },
+  images: {
+    localPatterns: [
+      {
+        pathname: '/api/**',
+      },
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https' as const,
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
+// Bundle Analyzer 적용 (ANALYZE=true 환경변수 설정 시 활성화)
+const bundleAnalyzerConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})(nextConfig);
 
-export default nextConfig;
+export default bundleAnalyzerConfig;

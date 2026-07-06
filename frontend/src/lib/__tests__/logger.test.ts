@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { logger } from '../logger';
 

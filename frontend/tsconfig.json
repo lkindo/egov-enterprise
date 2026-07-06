@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ESNext",
     "lib": [
       "dom",
       "dom.iterable",
@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -24,6 +24,7 @@
     ],
     "types": [
       "vitest/globals",
+      "@testing-library/jest-dom",
       "node",
       "pg"
     ],
@@ -43,6 +44,12 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts"
+    "scripts",
+    "skills",
+    "**/*.stories.tsx",
+    "**/*.stories.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "e2e"
   ]
 }

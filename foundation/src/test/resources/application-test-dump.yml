@@ -1,0 +1,72 @@
+# Schema Dump Profile Configuration
+# Used strictly by SchemaDumper to extract clean DDL from JPA Entities
+# Overrides ddl-auto to create and disables flyway to isolate entity schema generation
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: jdbc:h2:mem:dumpdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        use_sql_comments: false
+    # Disable lazy loading for tests to avoid LazyInitializationException
+    open-in-view: true
+
+  flyway:
+    enabled: false
+
+  # Cache (disable for tests)
+  cache:
+    type: none
+
+  # Email (disable for tests)
+  mail:
+    host: localhost
+    port: 25
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 3000
+          timeout: 3000
+          writetimeout: 3000
+
+  # File Upload
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-key-for-foundation-test
+    ollama:
+      enabled: false
+
+# Logging
+logging:
+  level:
+    root: INFO
+    nuri: INFO
+    org.hibernate.SQL: ERROR
+
+# Actuator (disable in tests)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: none
+
+# JWT (test secret)
+jwt:
+  secret: test-secret-key-for-integration-testing-minimum-32-chars

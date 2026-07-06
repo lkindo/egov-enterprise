@@ -1,41 +1,62 @@
 import { test as setup } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { TEST_CREDENTIALS } from './test-credentials';
 
 const adminFile = path.resolve('playwright/.auth/admin.json');
 const userFile = path.resolve('playwright/.auth/user.json');
 
-async function authenticate(request: any, id: string, authFilePath: string) {
-    const url = 'http://127.0.0.1:8080/api/v1/auth/login';
-    const response = await request.post(url, {
-        data: { id: id, password: '1' }
-    }).catch((err: Error) => {
-        throw new Error(`Connection failed for ${id}: ${err.message}`);
-    });
+async function authenticate(request: any, id: string, password: string, authFilePath: string) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/';
+    const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
 
-    if (!response.ok()) throw new Error(`Login failed for ${id} ${response.status()}`);
+    let token: string = '';
+    let refreshToken: string = '';
+    let role: string = '';
+    let success = false;
+    let lastErr: any;
 
-    const resBody = await response.json();
-    const token = resBody.data.accessToken;
-    const role = resBody.data.role;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await request.post(url, {
+                data: { userId: id, password: password },
+                timeout: 5000
+            });
 
+            if (response.ok()) {
+                const resBody = await response.json();
+                token = resBody.data.accessToken;
+                refreshToken = resBody.data.refreshToken;
+                role = resBody.data.role;
+                success = true;
+                break;
+            } else {
+                lastErr = new Error(`status: ${response.status()}`);
+            }
+        } catch (err: any) {
+            lastErr = err;
+        }
+        
+        if (!success && attempt < 3) {
+            await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
+        }
+    }
+
+    if (!success) {
+        throw new Error(`[AUTH SETUP] Backend unreachable for ${id} after 3 attempts (${lastErr?.message || 'unknown'}).`);
+    }
+
+    const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
+    const domain = new URL(webUrl).hostname;
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },  
-            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 },
-            { name: 'accessToken', value: token, domain: '127.0.0.1', path: '/', expires: -1 },  
-            { name: 'userRole', value: role, domain: '127.0.0.1', path: '/', expires: -1 }       
+            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' },
+            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' },
+            { name: 'userRole', value: role, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' }
         ],
         origins: [
             {
-                origin: 'http://localhost:3001',
-                localStorage: [
-                    { name: 'accessToken', value: token },
-                    { name: 'egov_smart_tour_v1', value: 'true' }
-                ]
-            },
-            {
-                origin: 'http://127.0.0.1:3001',
+                origin: webUrl,
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }
@@ -50,9 +71,9 @@ async function authenticate(request: any, id: string, authFilePath: string) {
 }
 
 setup('authenticate-admin', async ({ request }) => {
-    await authenticate(request, 'webmaster', adminFile);
+    await authenticate(request, TEST_CREDENTIALS.admin.id, TEST_CREDENTIALS.admin.password, adminFile);
 });
 
 setup('authenticate-user', async ({ request }) => {
-    await authenticate(request, 'user_regular', userFile);
+    await authenticate(request, TEST_CREDENTIALS.user.id, TEST_CREDENTIALS.user.password, userFile);
 });

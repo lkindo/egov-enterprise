@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { LucideIcon, Maximize2, Download, Filter } from 'lucide-react';
+import { Maximize2,  Download,  Filter } from 'lucide-react';
 import { hubItemVariants } from '@/lib/hub-animations';
 
 interface HubChartCardProps {
@@ -53,7 +53,7 @@ export function HubChartCard({
           <div className="flex items-center gap-4">
             {icon && (
               <div className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl border border-white/10",
+                "w-14 h-11 rounded-lg flex items-center justify-center shadow-xl border border-white/10",
                 color === 'blue' ? "bg-hub-blue/10 text-hub-blue" :
                 color === 'emerald' ? "bg-hub-emerald/10 text-hub-emerald" :
                 color === 'purple' ? "bg-hub-purple/10 text-hub-purple" : "bg-hub-orange/10 text-hub-orange"
@@ -62,7 +62,7 @@ export function HubChartCard({
               </div>
             )}
             <div>
-              <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none uppercase">
+              <h3 className="text-3xl font-bold tracking-tighter text-foreground leading-none uppercase">
                 {title}
               </h3>
               {subtitle && (
@@ -76,13 +76,13 @@ export function HubChartCard({
         <div className="flex items-center gap-3">
           {actions || (
             <>
-              <button className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Filter size={18} />
               </button>
-              <button className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Download size={18} />
               </button>
-              <button className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Maximize2 size={18} />
               </button>
             </>
@@ -96,7 +96,7 @@ export function HubChartCard({
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-lg blur-[60px] pointer-events-none" />
     </motion.div>
   );
 }

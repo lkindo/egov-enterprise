@@ -1,58 +1,78 @@
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { cookies } from 'next/headers';
-import UnifiedDashboardClient from './UnifiedDashboardClient';
+import { redirect } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import client from '@/lib/api/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
+import { DashboardTask } from '@/types/foundation/dashboard';
+import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 
-async function getDashboardData() {
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+/**
+ * P2: Dynamic Import for Heavy Dashboard Client
+ * Reduces initial bundle size by lazy loading the heavy dashboard component.
+ */
+const UnifiedDashboardClient = dynamic(() => import('./UnifiedDashboardClient'), {
+  loading: () => <DashboardSkeleton />
+});
 
- try {
- const dashboardRes = await client.get<any>('/dashboard', axiosConfig);
+/**
+ * P3: Server-side Data Refinement
+ * Minifies the JSON payload sent to the client by picking only required fields.
+ * cache() ensures that even if this is called multiple times in one request, only one API call is made.
+ */
+const getDashboardData = cache(async () => {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
 
- let initialNotiList: DashboardNoti[] = [];
- let initialTaskList: DashboardTask[] = [];
- let pendingApprovalCount = 0;
+  if (!accessToken) {
+    redirect('/login');
+  }
 
- if (dashboardRes) {
- initialNotiList = (dashboardRes.notiList || []).slice(0, 6);
- initialTaskList = (dashboardRes.taskList || []).slice(0, 6);
- pendingApprovalCount = dashboardRes.pendingApprovalCount || 0;
- }
+  const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
 
- return { initialNotiList, initialTaskList, pendingApprovalCount };
- } catch (err) {
- return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
- }
-}
+  try {
+    const dashboardRes = await client.get<{
+      notiList: Record<string, unknown>[];
+      taskList: Record<string, unknown>[];
+      pendingApprovalCount: number;
+    }>('/dashboard', axiosConfig);
+
+    if (!dashboardRes) return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
+
+    // Picking only necessary fields and slicing to minimize payload size
+    const initialNotiList: DashboardTask[] = (dashboardRes.notiList || [])
+      .slice(0, 6)
+      .map((item: Record<string, unknown>) => ({
+        id: String(item.id || item.pstId || ''),
+        title: String(item.title || item.pstTtl || ''),
+        date: String(item.frstRegisterPnttmStr || item.date || ''),
+        isNew: Boolean(item.isNew || false)
+      }));
+
+    const initialTaskList: DashboardTask[] = (dashboardRes.taskList || [])
+      .slice(0, 6)
+      .map((item: Record<string, unknown>) => ({
+        id: String(item.id || item.pstId || ''),
+        title: String(item.title || item.pstTtl || ''),
+        date: String(item.frstRegisterPnttmStr || item.date || ''),
+        isNew: Boolean(item.isNew || false)
+      }));
+
+    return {
+      initialNotiList,
+      initialTaskList,
+      pendingApprovalCount: dashboardRes.pendingApprovalCount || 0
+    };
+  } catch {
+    return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
+  }
+});
 
 export default async function UnifiedDashboardPage() {
- const data = await getDashboardData();
- return (
- <Suspense fallback={<DashboardSkeleton />}>
- <UnifiedDashboardClient
- initialNotiList={data.initialNotiList}
- initialTaskList={data.initialTaskList}
- pendingApprovalCount={data.pendingApprovalCount}
- />
- </Suspense>
- );
-}
+  const dataPromise = getDashboardData();
 
-function DashboardSkeleton() {
- return (
- <div className="space-y-8 pb-10 animate-pulse">
- <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
- <div className="space-y-4"><Skeleton className="h-6 w-32 rounded-full" /><Skeleton className="h-12 w-64 rounded-xl" /><Skeleton className="h-4 w-96 rounded-lg" /></div>
- <div className="flex gap-3 w-full lg:w-auto"><Skeleton className="h-14 w-full lg:w-40 rounded-2xl" /><Skeleton className="h-14 w-full lg:w-40 rounded-2xl" /></div>
- </div>
- <Skeleton className="h-[200px] w-full rounded-[3rem]" />
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
- {[1, 2, 3, 4].map((i) => <Skeleton key={`page-skeleton-${i}`} className="h-48 rounded-[2.5rem]" />)}
- </div>
- </div>
- );
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <UnifiedDashboardClient dataPromise={dataPromise} />
+    </Suspense>
+  );
 }

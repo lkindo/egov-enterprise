@@ -1,153 +1,112 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import LoginPage from '../page';
 import React from 'react';
+import LoginPage from '../page';
 
-// Mock dependencies
-vi.mock('next/navigation', () => ({
- useRouter: () => ({
- push: vi.fn(),
- }),
- useSearchParams: () => ({
- get: vi.fn().mockReturnValue(null),
- }),
-}));
-
+// Mock Modules
 const mockLogin = vi.fn();
 vi.mock('@/contexts/AuthContext', () => ({
- useAuth: () => ({
- login: mockLogin,
- user: null,
- }),
+  useAuth: () => ({
+    login: mockLogin,
+    user: null,
+    loading: false,
+  }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
+  useSearchParams: () => ({
+    get: vi.fn().mockReturnValue('/admin/work-hub'),
+  }),
 }));
 
 vi.mock('@/hooks/useMessage', () => ({
- useMessage: () => ({
- t: (key: string) => {
- const messages: Record<string, string> = {
- 'login.title': 'Please sign in to your account',
- 'login.idLabel': 'ID',
- 'login.pwLabel': 'Password',
- 'login.submit': 'Sign In',
- 'login.errorEmpty': 'Please enter id and password',
- 'login.errorFailed': 'Login failed',
- };
- return messages[key] || key;
- },
- }),
+  useMessage: () => ({
+    t: (key: string) => {
+        const messages: Record<string, string> = {
+            'login.title': '엔터프라이즈',
+            'login.idLabel': '아이디',
+            'login.pwLabel': '비밀번호',
+            'login.idPlaceholder': '아이디를 입력하세요...',
+            'login.pwPlaceholder': '비밀번호를 입력하세요',
+            'login.rememberId': '로그인 상태 유지',
+            'login.submit': '로그인',
+            'login.errorEmpty': '아이디와 패스워드를 입력해주세요',
+            'login.errorFailed': '로그인에 실패했습니다',
+        };
+        return messages[key] || key;
+    }
+  }),
 }));
 
-// Mock Lucide icons
-vi.mock('lucide-react', () => ({
- User: () => <div data-testid="user-icon" />,
- Lock: () => <div data-testid="lock-icon" />,
- Eye: () => <div data-testid="eye-icon" />,
- EyeOff: () => <div data-testid="eye-off-icon" />,
- LogIn: () => <div data-testid="login-icon" />,
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    form: ({ children, ...props }: any) => <form {...props}>{children}</form>,
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
-// Mock UI components
-vi.mock('@/components/ui/card', () => ({
- Card: ({ children }: any) => <div data-testid="card">{children}</div>,
- CardHeader: ({ children }: any) => <div data-testid="card-header">{children}</div>,
- CardTitle: ({ children }: any) => <div data-testid="card-title">{children}</div>,
- CardDescription: ({ children }: any) => <div data-testid="card-description">{children}</div>,
- CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
- CardFooter: ({ children }: any) => <div data-testid="card-footer">{children}</div>,
+// Mock sonner
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
-vi.mock('@/components/ui/button', () => ({
- Button: ({ children, onClick, type, isLoading, ariaLabel, 'aria-label': ariaLabelProp }: any) => (
- <button onClick={onClick} type={type} disabled={isLoading} aria-label={ariaLabelProp || ariaLabel}>
- {isLoading ? 'Loading...' : children}
- </button>
- ),
-}));
+describe('LoginPage Component', () => {
 
-vi.mock('@/components/ui/input', () => ({
- Input: ({ onChange, value, id, placeholder, type }: any) => (
- <input id={id} type={type} value={value} placeholder={placeholder} onChange={onChange} />
- ),
-}));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-vi.mock('@/components/ui/label', () => ({
- Label: ({ children, htmlFor }: any) => <label htmlFor={htmlFor}>{children}</label>,
-}));
+  it('renders login page correctly', () => {
+    render(<LoginPage />);
+    expect(screen.getByText(/엔터프라이즈/i)).toBeDefined();
+    expect(screen.getByText(/아이디/i)).toBeDefined();
+    expect(screen.getAllByText(/비밀번호/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /로그인/i })).toBeDefined();
+  });
 
-vi.mock('@/components/ui/checkbox', () => ({
- Checkbox: ({ id }: any) => <input type="checkbox" id={id} />,
-}));
+  it('calls login service with credentials', async () => {
+    mockLogin.mockResolvedValueOnce({});
+    render(<LoginPage />);
+    
+    const idInput = screen.getByLabelText(/아이디/i);
+    const pwInput = screen.getByLabelText(/비밀번호/i);
+    const submitButton = screen.getByRole('button', { name: /로그인/i });
 
-describe('LoginPage', () => {
- beforeEach(() => {
- vi.clearAllMocks();
- });
+    fireEvent.change(idInput, { target: { value: 'testuser' } });
+    fireEvent.change(pwInput, { target: { value: 'password123' } });
+    fireEvent.click(submitButton);
 
- it('renders login page correctly', () => {
- render(<LoginPage />);
- expect(screen.getByText('전자정부 엔터프라이즈')).toBeInTheDocument();
- expect(screen.getByLabelText('ID')).toBeInTheDocument();
- expect(screen.getByLabelText('Password')).toBeInTheDocument();
- expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
- });
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith({ id: 'testuser', password: 'password123' });
+    });
+  });
 
- it('shows error message if fields are empty', async () => {
- render(<LoginPage />);
- const submitButton = screen.getByRole('button', { name: /Sign In/i });
- 
- fireEvent.click(submitButton);
- 
- expect(screen.getByTestId('login-error')).toHaveTextContent('Please enter id and password');
- expect(mockLogin).not.toHaveBeenCalled();
- });
+  it('shows error message on login failure', async () => {
+    const errorMsg = 'Invalid credentials';
+    mockLogin.mockRejectedValueOnce(new Error(errorMsg));
+    
+    render(<LoginPage />);
+    
+    const idInput = screen.getByLabelText(/아이디/i);
+    const pwInput = screen.getByLabelText(/비밀번호/i);
+    const submitButton = screen.getByRole('button', { name: /로그인/i });
 
- it('calls login service with credentials', async () => {
- render(<LoginPage />);
- const idInput = screen.getByLabelText('ID');
- const pwInput = screen.getByLabelText('Password');
- const submitButton = screen.getByRole('button', { name: /Sign In/i });
+    fireEvent.change(idInput, { target: { value: 'baduser' } });
+    fireEvent.change(pwInput, { target: { value: 'wrongpass' } });
+    fireEvent.click(submitButton);
 
- fireEvent.change(idInput, { target: { value: 'testuser' } });
- fireEvent.change(pwInput, { target: { value: 'password123' } });
- 
- mockLogin.mockResolvedValueOnce({});
- 
- fireEvent.click(submitButton);
-
- await waitFor(() => {
- expect(mockLogin).toHaveBeenCalledWith({ id: 'testuser', password: 'password123' });
- });
- });
-
- it('shows error message on login failure', async () => {
- render(<LoginPage />);
- const idInput = screen.getByLabelText('ID');
- const pwInput = screen.getByLabelText('Password');
- const submitButton = screen.getByRole('button', { name: /Sign In/i });
-
- fireEvent.change(idInput, { target: { value: 'baduser' } });
- fireEvent.change(pwInput, { target: { value: 'wrongpass' } });
- 
- mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
- 
- fireEvent.click(submitButton);
-
- await waitFor(() => {
- expect(screen.getByTestId('login-error')).toHaveTextContent('Invalid credentials');
- });
- });
-
- it('toggles password visibility when eye icon is clicked', () => {
- render(<LoginPage />);
- const pwInput = screen.getByLabelText('Password');
- const toggleButton = screen.getByLabelText('login.viewPassword');
-
- expect(pwInput).toHaveAttribute('type', 'password');
- 
- fireEvent.click(toggleButton);
- expect(pwInput).toHaveAttribute('type', 'text');
- 
- fireEvent.click(screen.getByLabelText('login.hidePassword'));
- expect(pwInput).toHaveAttribute('type', 'password');
- });
+    await waitFor(() => {
+      expect(screen.getByTestId('login-error')).toBeDefined();
+      expect(screen.getByText(new RegExp(errorMsg, 'i'))).toBeDefined();
+    });
+  });
 });

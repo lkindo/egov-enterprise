@@ -1,5 +1,5 @@
-/**
- * 클라이언트 컴포넌트로 전달하기 전 서버 데이터를 필요한 필드만 남기고 정리합니다.
+﻿/**
+ * ?대씪?댁뼵님컴포넌트濡님꾨떖?섍린 님?쒕쾭 ?곗씠?곕? ?꾩슂님?꾨뱶留님④린怨님뺣━합니다
  * (Server Serialization Optimization)
  */
 export function selectFields<T extends object, K extends keyof T>(

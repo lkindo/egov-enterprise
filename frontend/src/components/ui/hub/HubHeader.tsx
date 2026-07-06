@@ -37,19 +37,19 @@ export function HubHeader({
           </div>
         </div>
         <div className="space-y-1">
-          <h2 className="hub-title-main flex items-center gap-3">
+          <h1 className="hub-title-main flex items-center gap-3">
              <span className="hub-label-accent mr-2">전자정부</span>
              {title} {highlight && <span className="text-primary">{highlight}</span>} HUB
-          </h2>
+          </h1>
           {subtitle && (
-            <p className="hub-subtitle-label mt-2 uppercase tracking-widest opacity-50">
+            <p className="hub-subtitle-label mt-2 tracking-tight">
                {subtitle}
             </p>
           )}
         </div>
       </div>
       {actions && (
-        <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-2xl border border-border/50 shadow-inner">
+        <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-lg border border-border/50 shadow-inner">
           {actions}
         </div>
       )}

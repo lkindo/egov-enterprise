@@ -1,0 +1,10 @@
+{
+  "title": "Lombok @SuperBuilder Shadowing Gotchas",
+  "summary": "Lombok @SuperBuilder를 상속하는 수동 빌더 구현 시 발생하는 필드 섀도잉(Shadowing) 버그와 방지 대책을 정의합니다. 엔티티 상속 구조에서의 빌더 확장 표준 패턴을 제시합니다.",
+  "category": "Development Gotchas",
+  "tags": ["Lombok", "SuperBuilder", "Java", "Design Pattern", "Gotchas"],
+  "updatedAt": "2026-05-22T20:55:00Z",
+  "references": [
+    "file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/notification/Notification.java"
+  ]
+}

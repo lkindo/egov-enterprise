@@ -1,9 +1,9 @@
-import { onlinePollAdminService } from '@/services/admin/system/OnlinePollAdminService';
+import { onlinePollAdminService } from '@/services/foundation/system/OnlinePollAdminService';
 import { cookies } from 'next/headers';
 import OnlinePollAdminClient from './OnlinePollAdminClient';
 
 export const metadata = {
-  title: '온라인 설문 관리 | 설문관리',
+  title: '온라인 설문 관리 | 설문 관리',
 };
 
 export default async function OnlinePollAdminPage({

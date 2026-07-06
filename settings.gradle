@@ -1,10 +1,6 @@
 rootProject.name = 'egov-enterprise'
 
-include 'common-core'
-include 'common-security'
-include 'module-core-iam'
-include 'module-system-admin'
-include 'module-workspace'
-include 'module-operation'
-include 'module-knowledge'
+// Project Modules
+include 'foundation'
+include 'business-suite'
 include 'api-server'

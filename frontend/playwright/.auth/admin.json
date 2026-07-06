@@ -2,31 +2,33 @@
   "cookies": [
     {
       "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDQ0NTczNSwiZXhwIjoxNzc0NDQ5MzM1fQ.UDh9JlpRN5LuukwkJrojGyFMCwW2fgaimfrZDjpHuZAqvUDV98ihGOegL3YUSioIeaVjj0jvvmA64R0K126Plw",
+      "value": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzgwNjIyODExLCJleHAiOjE3ODA2MjY0MTF9.ZGkzbqqT-4I1hG5IjOTR4mL7XmAmVS7pTxKn7AufqMgOB0yme77toAMJ3-GkJ6uB",
       "domain": "localhost",
       "path": "/",
-      "expires": -1
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsImlhdCI6MTc4MDYyMjgxMSwiZXhwIjoxNzgxMjI3NjExfQ.l3WXEAQzHQNL19O_PF-KyohY0Kv9kX7XF1CDR4lFqxALN5X665lxVRrAgttq8rFr",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
     },
     {
       "name": "userRole",
       "value": "ROLE_ADMIN",
       "domain": "localhost",
       "path": "/",
-      "expires": -1
-    },
-    {
-      "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDQ0NTczNSwiZXhwIjoxNzc0NDQ5MzM1fQ.UDh9JlpRN5LuukwkJrojGyFMCwW2fgaimfrZDjpHuZAqvUDV98ihGOegL3YUSioIeaVjj0jvvmA64R0K126Plw",
-      "domain": "127.0.0.1",
-      "path": "/",
-      "expires": -1
-    },
-    {
-      "name": "userRole",
-      "value": "ROLE_ADMIN",
-      "domain": "127.0.0.1",
-      "path": "/",
-      "expires": -1
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
     }
   ],
   "origins": [
@@ -35,20 +37,7 @@
       "localStorage": [
         {
           "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDQ0NTczNSwiZXhwIjoxNzc0NDQ5MzM1fQ.UDh9JlpRN5LuukwkJrojGyFMCwW2fgaimfrZDjpHuZAqvUDV98ihGOegL3YUSioIeaVjj0jvvmA64R0K126Plw"
-        },
-        {
-          "name": "egov_smart_tour_v1",
-          "value": "true"
-        }
-      ]
-    },
-    {
-      "origin": "http://127.0.0.1:3001",
-      "localStorage": [
-        {
-          "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDQ0NTczNSwiZXhwIjoxNzc0NDQ5MzM1fQ.UDh9JlpRN5LuukwkJrojGyFMCwW2fgaimfrZDjpHuZAqvUDV98ihGOegL3YUSioIeaVjj0jvvmA64R0K126Plw"
+          "value": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzgwNjIyODExLCJleHAiOjE3ODA2MjY0MTF9.ZGkzbqqT-4I1hG5IjOTR4mL7XmAmVS7pTxKn7AufqMgOB0yme77toAMJ3-GkJ6uB"
         },
         {
           "name": "egov_smart_tour_v1",

@@ -1,4 +1,11 @@
-import { render, screen } from '@testing-library/react';
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
+import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { StandardModal } from '../standard-modal';
 import React from 'react';
@@ -9,7 +16,7 @@ describe('StandardModal', () => {
  render(
  <div id="modal-root">
  <StandardModal isOpen={true} onClose={() => { }} title="Base Title">
- <div>내용</div>
+ <div>?�용</div>
  </StandardModal>
  </div>
  );

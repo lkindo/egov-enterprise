@@ -1,112 +1,160 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { NetworkInfo } from '@/services/networkService';
+import React from 'react';
+import { useAppForm } from '@/hooks/useAppForm';
+import * as z from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { NetworkInfo } from '@/services/foundation/system/networkService';
+import { networkSchema } from '@/lib/validation/schemas';
+
+type NetworkFormValues = z.infer<typeof networkSchema>;
 
 interface NetworkFormProps {
- initialData?: Partial<NetworkInfo>;
- onSubmit: (data: Partial<NetworkInfo>) => Promise<void>;
- onCancel: () => void;
+    initialData?: Partial<NetworkInfo>;
+    onSubmit: (data: NetworkFormValues) => Promise<void>;
+    onCancel: () => void;
 }
 
 export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProps) {
- const [formData, setFormData] = useState<Partial<NetworkInfo>>({
- manageIem: '',
- ntwrkIp: '',
- subnet: '',
- gtwy: '',
- domnServer: '',
- userNm: '',
- useAt: 'Y',
- ...initialData
- });
+    const form = useAppForm(networkSchema, {
+        defaultValues: {
+            manageIem: initialData?.manageIem || '',
+            ntwrkIp: initialData?.ntwrkIp || '',
+            subnet: initialData?.subnet || '',
+            gtwy: initialData?.gtwy || '',
+            domnServer: initialData?.domnServer || '',
+            userNm: initialData?.userNm || '',
+            useYn: initialData?.useYn || 'Y',
+        },
+    });
 
- const handleSubmit = async (e: React.FormEvent) => {
- e.preventDefault();
- await onSubmit(formData);
- };
+    const { isSubmitting } = form.formState;
 
- return (
- <StandardForm onSubmit={handleSubmit} className="border-none shadow-none rounded-none p-0">
- <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- <FormField label="관리 항목" required>
- <input
- type="text"
- value={formData.manageIem || ''}
- onChange={(e) => setFormData({ ...formData, manageIem: e.target.value })}
- placeholder="예: 내부망 서버실"
- className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
- required
- />
- </FormField>
- <FormField label="사용자/관리자" required>
- <input
- type="text"
- value={formData.userNm || ''}
- onChange={(e) => setFormData({ ...formData, userNm: e.target.value })}
- placeholder="관리자 성명"
- className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
- required
- />
- </FormField>
- <FormField label="IP 주소" required>
- <input
- type="text"
- value={formData.ntwrkIp || ''}
- onChange={(e) => setFormData({ ...formData, ntwrkIp: e.target.value })}
- placeholder="192.168.0.1"
- className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
- required
- />
- </FormField>
- <FormField label="서브넷 마스크" required>
- <input
- type="text"
- value={formData.subnet || ''}
- onChange={(e) => setFormData({ ...formData, subnet: e.target.value })}
- placeholder="255.255.255.0"
- className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
- required
- />
- </FormField>
- <FormField label="게이트웨이" required>
- <input
- type="text"
- value={formData.gtwy || ''}
- onChange={(e) => setFormData({ ...formData, gtwy: e.target.value })}
- placeholder="192.168.0.254"
- className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
- required
- />
- </FormField>
- <FormField label="DNS 서버">
- <input
- type="text"
- value={formData.domnServer || ''}
- onChange={(e) => setFormData({ ...formData, domnServer: e.target.value })}
- placeholder="8.8.8.8"
- className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
- />
- </FormField>
- </div>
- <FormField label="사용 여부" required>
- <select
- value={formData.useAt}
- onChange={(e) => setFormData({ ...formData, useAt: e.target.value as 'Y' | 'N' })}
- className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
- >
- <option value="Y">사용 중</option>
- <option value="N">미사용/중지</option>
- </select>
- </FormField>
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="manageIem"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>관리항목 <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="예: 내부망 서버" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="userNm"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>사용자명 <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="관리자 성명" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="ntwrkIp"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>IP 주소 <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="192.168.0.1" className="font-mono" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="subnet"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>서브넷 마스크 <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="255.255.255.0" className="font-mono" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="gtwy"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>게이트웨이 <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="192.168.0.254" className="font-mono" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="domnServer"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>DNS 서버</FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="8.8.8.8" className="font-mono" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                <FormField
+                    control={form.control}
+                    name="useYn"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>사용 여부 <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                                <select
+                                    {...field}
+                                    className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="Y">사용 중</option>
+                                    <option value="N">미사용</option>
+                                </select>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
- <div className="flex justify-end gap-2 pt-4">
- <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
- <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">
- 저장하기
- </button>
- </div>
- </StandardForm>
- );
+                <div className="flex justify-end gap-2 pt-4">
+                    <button 
+                      type="button" 
+                      onClick={onCancel} 
+                      className="px-6 h-10 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium"
+                    >
+                      취소
+                    </button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? '저장 중...' : '저장하기'}
+                    </Button>
+                </div>
+            </form>
+        </Form>
+    );
 }

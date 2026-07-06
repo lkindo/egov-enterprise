@@ -4,12 +4,23 @@ import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
 
-export async function createComment(prevState: any, formData: FormData) {
-  const nttId = formData.get('nttId') as string;
-  const bbsId = formData.get('bbsId') as string;
-  const commentCn = formData.get('commentCn') as string;
+interface ActionResponse {
+  success: boolean;
+  message: string;
+}
 
-  if (!commentCn || commentCn.trim() === '') {
+interface CreateCommentData {
+  pstId: string;
+  bbsId: string;
+  ansCn: string;
+}
+
+export async function createComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
+  const pstId = formData.get('pstId') as string;
+  const bbsId = formData.get('bbsId') as string;
+  const ansCn = formData.get('ansCn') as string;
+
+  if (!ansCn || ansCn.trim() === '') {
     return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
@@ -18,11 +29,13 @@ export async function createComment(prevState: any, formData: FormData) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: any = await client.post(`/comments`, {
-      nttId: parseInt(nttId),
+    const commentData: CreateCommentData = {
+      pstId,
       bbsId,
-      commentCn
-    }, axiosConfig);
+      ansCn
+    };
+
+    const response: unknown = await client.post(`/comments`, commentData, axiosConfig);
 
     if (response) {
       revalidatePath(`/admin/community/boards/detail`);
@@ -31,31 +44,69 @@ export async function createComment(prevState: any, formData: FormData) {
       return { success: false, message: '댓글 등록에 실패했습니다.' };
     }
   } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : '오류가 발생했습니다.';
     console.error('Comment Create Error:', error);
-    return { success: false, message: error.response?.data?.message || '오류가 발생했습니다.' };
+    return { success: false, message: errorMessage };
   }
 }
 
-export async function deleteComment(prevState: any, formData: FormData) {
-  const id = formData.get('commentId') as string;
+export async function deleteComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
+  const id = formData.get('id') as string;
   const bbsId = formData.get('bbsId') as string;
-  const nttId = formData.get('nttId') as string;
+  const pstId = formData.get('pstId') as string;
 
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: any = await client.delete(`/comments/${id}`, axiosConfig);
+    const response: unknown = await client.delete(`/comments/${id}`, axiosConfig);
 
     if (response !== undefined) {
-      revalidatePath(`/admin/community/boards/detail`);
+      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
       return { success: true, message: '댓글이 삭제되었습니다.' };
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
     }
   } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
     console.error('Comment Delete Error:', error);
-    return { success: false, message: error.response?.data?.message || '삭제 중 오류가 발생했습니다.' };
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function updateComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
+  const id = formData.get('id') as string;
+  const bbsId = formData.get('bbsId') as string;
+  const pstId = formData.get('pstId') as string;
+  const ansCn = formData.get('ansCn') as string;
+
+  if (!ansCn || ansCn.trim() === '') {
+    return { success: false, message: '댓글 내용을 입력해주세요.' };
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    const commentData = {
+      pstId,
+      bbsId,
+      ansCn
+    };
+
+    const response: unknown = await client.put(`/comments/${id}`, commentData, axiosConfig);
+
+    if (response) {
+      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
+      return { success: true, message: '댓글이 수정되었습니다.' };
+    } else {
+      return { success: false, message: '수정에 실패했습니다.' };
+    }
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : '수정 중 오류가 발생했습니다.';
+    console.error('Comment Update Error:', error);
+    return { success: false, message: errorMessage };
   }
 }

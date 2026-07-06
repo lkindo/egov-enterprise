@@ -1,24 +1,28 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
+import { cache } from 'react';
 
 // 백엔드 공통 응답 포맷
 export interface ApiResponse<T = unknown> {
- success: boolean;
- code: string;
- message: string;
- data: T;
+  success: boolean;
+  code: string;
+  message: string;
+  data: T;
 }
 
 const getBaseURL = () => {
-  if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1/';
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/`;
   }
-  return '/api/v1/';
+  return 'http://127.0.0.1:8080/api/v1/';
 };
 
 const axiosInstance = axios.create({
   baseURL: getBaseURL(),
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    ...(typeof window === 'undefined' ? { 'Connection': 'close' } : {})
+  },
   withCredentials: true,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
@@ -27,215 +31,197 @@ const axiosInstance = axios.create({
 
 // Request interceptor: Access Token 첨부
 axiosInstance.interceptors.request.use(
- (config) => {
- let token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
- 
- // 문자열 "null"이나 "undefined"가 들어오는 경우 방지
- if (token === 'null' || token === 'undefined') {
- if (process.env.NODE_ENV === 'development') {
- console.warn(`[API Request] Token is invalid string: "${token}". Clearing it.`);
- }
- token = null;
- if (typeof window !== 'undefined') localStorage.removeItem('accessToken');
- }
+  async (config) => {
+    let token = null;
+    
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('accessToken');
+    } else {
+      // SSR 환경: next/headers의 cookies()를 사용하여 토큰 추출 (Next.js 15 대응)
+      try {
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        token = cookieStore.get('accessToken')?.value || null;
+      } catch (e) {
+        // 빌드 타임이나 만료된 세션 시 cookies() 접근 불가 상황 대응
+        token = null;
+      }
+    }
+    
+    if (token === 'null' || token === 'undefined') {
+      token = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('accessToken');
+    }
 
- // 이미 헤더가 있거나(재시도 등) 토큰이 있는 경우 처리
- if (token && !config.headers['Authorization']) {
- config.headers['Authorization'] = `Bearer ${token}`;
- }
+    if (token && !config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
 
- if (process.env.NODE_ENV === 'development') {
- const hasAuth = !!config.headers['Authorization'];
- const tokenPreview = token ? `${token.substring(0, 10)}...` : 'NONE';
- console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url} | AuthHeader: ${hasAuth} | TokenInJS: ${tokenPreview}`);
- }
- return config;
- },
- (error) => Promise.reject(error)
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
-let isRetrying = false;
-let failedQueue: any[] = [];
+interface QueueItem {
+  resolve: (value: string | null) => void;
+  reject: (reason?: unknown) => void;
+}
 
-const processQueue = (error: any, token: string | null = null) => {
- failedQueue.forEach((prom) => {
- if (error) {
- prom.reject(error);
- } else {
- prom.resolve(token);
- }
- });
- failedQueue = [];
+let isRetrying = false;
+let failedQueue: QueueItem[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
 };
 
-// Response interceptor: 401 → token refresh
+// Response interceptor: 401 시 token refresh
 axiosInstance.interceptors.response.use(
- (response) => response,
- async (error) => {
- const originalRequest = error.config as any;
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
- if (error.response?.status === 401 && !originalRequest._retry) {
- console.warn(`[API Response] 401 Unauthorized detected for: ${originalRequest.url}`);
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (typeof window !== 'undefined' &&
+        (window.location.pathname.includes('/login') ||
+        originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/reissue'))) {
+        return Promise.reject(error);
+      }
 
- // 현재 페이지가 로그인 페이지이거나 요청 자체가 인증 관련(login, reissue)이면 재시도하지 않음
- if (typeof window !== 'undefined' &&
- (window.location.pathname.includes('/login') ||
- originalRequest.url?.includes('/auth/login') ||
- originalRequest.url?.includes('/auth/reissue'))) {
- console.log('[API interceptor] Authentication-related request failed, not retrying.');
- return Promise.reject(error);
- }
+      if (isRetrying) {
+        return new Promise<string | null>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+        .then((token) => {
+          if (originalRequest.headers) {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          }
+          return axiosInstance(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+      }
 
- if (isRetrying) {
- console.log(`[API interceptor] Refresh already in progress, queuing request: ${originalRequest.url}`);
- return new Promise((resolve, reject) => {
- failedQueue.push({ resolve, reject });
- })
- .then((token) => {
- console.log(`[API interceptor] Token refreshed, retrying queued request: ${originalRequest.url}`);
- originalRequest.headers['Authorization'] = `Bearer ${token}`;
- return axiosInstance(originalRequest);
- })
- .catch((err) => Promise.reject(err));
- }
+      if (typeof window === 'undefined') {
+        return Promise.reject(error);
+      }
 
- // 서버 사이드인 경우 reissue 시도하지 않고 즉시 에러 반환
- if (typeof window === 'undefined') {
- return Promise.reject(error);
- }
+      originalRequest._retry = true;
+      isRetrying = true;
 
- console.log(`[API interceptor] Starting token reissue for: ${originalRequest.url}`);
- originalRequest._retry = true;
- isRetrying = true;
+      try {
+        const res = await axiosInstance.post<ApiResponse<{ accessToken: string }>>(
+          '/auth/reissue',
+          {},
+          { 
+            _retry: true, 
+            headers: { 'Authorization': '' } 
+          } as AxiosRequestConfig & { _retry: boolean }
+        );
 
- try {
- // 재발급 요청은 인터셉터의 401 재시도 로직을 타지 않도록 별도 처리하거나 플래그 사용
- const res = await axiosInstance.post<ApiResponse<{ accessToken: string }>>(
- '/auth/reissue',
- {},
- { 
- _retry: true, 
- headers: { 'Authorization': '' } 
- } as any
- );
+        const responseData = res.data;
+        const accessToken = responseData?.data?.accessToken;
 
- const responseData = res.data;
- const accessToken = responseData?.data?.accessToken;
+        if (!accessToken) throw new Error('Token reissue failed: Empty token');
 
- if (!accessToken) {
- console.error('[API interceptor] No access token in reissue response', responseData);
- throw new Error('Token reissue failed: Empty token');
- }
+        localStorage.setItem('accessToken', accessToken);
+        document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; SameSite=Lax`;
 
- console.log('[API interceptor] Token reissue successful.');
+        processQueue(null, accessToken);
+        isRetrying = false;
+        
+        if (originalRequest.headers) {
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        return axiosInstance(originalRequest);
+      } catch (reissueError: unknown) {
+        let finalReissueError: Error;
+        if (reissueError instanceof Error) {
+          finalReissueError = reissueError;
+        } else {
+          finalReissueError = new Error('Token reissue failed');
+        }
 
- if (typeof window !== 'undefined') {
- localStorage.setItem('accessToken', accessToken);
- // 서버 사이드와 동기화를 위해 쿠키도 업데이트 (선택 사항)
- document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; SameSite=Lax`;
- }
+        processQueue(finalReissueError, null);
+        isRetrying = false;
 
- processQueue(null, accessToken);
- isRetrying = false;
- 
- originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
- console.log(`[API interceptor] Retrying original request: ${originalRequest.url}`);
- return axiosInstance(originalRequest);
-  } catch (reissueError: any) {
-   // [object Event] 방지: reissueError가 Error 객체가 아닐 수 있음 (예: ProgressEvent)
-   let finalReissueError = reissueError;
-   if (!(reissueError instanceof Error) && typeof reissueError === 'object' && reissueError !== null) {
-    finalReissueError = new Error((reissueError as any).message || 'Token reissue failed');
-    Object.assign(finalReissueError, reissueError);
-   }
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('role');
+          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          window.location.href = `/login?expired=true&redirect=${encodeURIComponent(window.location.pathname)}`;
+        }
 
-   console.error('[API interceptor] Token reissue failed, redirecting to login.', finalReissueError.message);
-   processQueue(finalReissueError, null);
-   isRetrying = false;
-
-   if (typeof window !== 'undefined') {
-    if (reissueError.response?.status === 401 || reissueError.response?.status === 403) {
-     localStorage.removeItem('accessToken');
-     localStorage.removeItem('role');
-     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
- 
-     if (!window.location.pathname.includes('/login')) {
-      console.warn('[API interceptor] Redirecting to login due to failed reissue');
-      window.location.href = `/login?expired=true&redirect=${encodeURIComponent(window.location.pathname)}`;
-     }
+        return Promise.reject(finalReissueError);
+      }
     }
-   }
 
-   return Promise.reject(finalReissueError);
+    const backendMessage = error.response?.data?.message;
+    const message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
+    
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('api-error', {
+        detail: { message, status: error.response?.status }
+      }));
+    }
+
+    let finalError = error;
+    if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
+      finalError = new Error((error as Record<string, unknown>).message as string || backendMessage || 'Unknown Network/System Error');
+      Object.assign(finalError, error);
+    }
+
+    if (backendMessage && finalError instanceof Error) {
+      finalError.message = backendMessage;
+    }
+
+    return Promise.reject(finalError);
   }
- }
-
- // 에러 메시지 추출 및 이벤트 발생은 401 재시도 대상이 아닐 때만 수행 (선택 사항)
- const backendMessage = error.response?.data?.message;
- let message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
- 
- if (typeof window !== 'undefined') {
-  window.dispatchEvent(new CustomEvent('api-error', {
-   detail: { message, status: error.response?.status }
-  }));
- }
-
- // [object Event] 방지: error가 실제 Error 객체가 아닌 경우 대응 (예: ProgressEvent)
- let finalError = error;
- if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
-  finalError = new Error((error as any).message || backendMessage || 'Unknown Network/System Error');
-  Object.assign(finalError, error);
- }
-
- // 백엔드 메시지가 있는 경우 에러 객체의 메시지를 오버라이드하여 전달
- if (backendMessage) {
-  finalError.message = backendMessage;
- }
-
- return Promise.reject(finalError);
- }
 );
 
 /**
- * 타입 안전 API 클라이언트.
- * 반환값은 백엔드 ApiResponse<T>.data (실제 페이로드).
- * 실패(success=false) 시 Error를 throw합니다.
+ * 표준화된 API 클라이언트
+ * Optimization: Priority 3 - React.cache를 사용한 서버 사이드 요청 중복 제거
  */
 const client = {
- async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
- const res = await axiosInstance.get<ApiResponse<T>>(url, config);
- return extractData<T>(res.data);
- },
- async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
- const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
- return extractData<T>(res.data);
- },
- async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
- const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
- return extractData<T>(res.data);
- },
- async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
- const res = await axiosInstance.patch<ApiResponse<T>>(url, data, config);
- return extractData<T>(res.data);
- },
- async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
- const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
- return extractData<T>(res.data);
- },
+  get: cache(async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await axiosInstance.get<ApiResponse<T>>(url, config);
+    return extractData<T>(res.data);
+  }),
+  post: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
+    return extractData<T>(res.data);
+  },
+  put: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
+    return extractData<T>(res.data);
+  },
+  patch: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await axiosInstance.patch<ApiResponse<T>>(url, data, config);
+    return extractData<T>(res.data);
+  },
+  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
+    return extractData<T>(res.data);
+  },
 };
 
 /** ApiResponse에서 data를 추출. success=false면 Error throw. */
 function extractData<T>(body: ApiResponse<T> | T): T {
- // 백엔드 표준 응답 구조인 경우
- if (body && typeof body === 'object' && 'success' in body) {
- const apiBody = body as ApiResponse<T>;
- if (!apiBody.success) {
- throw new Error(apiBody.message || '요청 처리 중 오류가 발생했습니다.');
- }
- return apiBody.data;
- }
- // 표준 구조가 아닌 경우 그대로 반환
- return body as T;
+  if (body && typeof body === 'object' && 'success' in body) {
+    const apiBody = body as ApiResponse<T>;
+    if (!apiBody.success) {
+      throw new Error(apiBody.message || '요청 처리 중 오류가 발생했습니다.');
+    }
+    return apiBody.data;
+  }
+  return body as T;
 }
 
 export default client;

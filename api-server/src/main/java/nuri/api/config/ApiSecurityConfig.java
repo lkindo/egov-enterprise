@@ -1,0 +1,167 @@
+package nuri.api.config;
+
+import nuri.business.security.iam.EgovAuthenticationProvider;
+import nuri.business.security.jwt.JwtAuthenticationFilter;
+import nuri.business.security.jwt.JwtTokenProvider;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import nuri.business.security.service.EgovPasswordEncoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Configuration
+@Profile("!mock-security & !mock-security-test & (default | local | dev | prod | security-test | e2e | test)")
+@EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
+@Slf4j
+public class ApiSecurityConfig {
+        private final JwtTokenProvider jwtTokenProvider;
+
+        public ApiSecurityConfig(JwtTokenProvider jwtTokenProvider) {
+                this.jwtTokenProvider = jwtTokenProvider;
+        }
+
+        @Bean
+        public SecurityContextRepository securityContextRepository() {
+                return new HttpSessionSecurityContextRepository();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                String encodingId = "bcrypt";
+                Map<String, PasswordEncoder> encoders = new HashMap<>();
+                encoders.put("bcrypt", new BCryptPasswordEncoder());
+                return new DelegatingPasswordEncoder(encodingId, encoders);
+        }
+
+        @Bean
+        public EgovPasswordEncoder egovPasswordEncoder() {
+                return new EgovPasswordEncoder();
+        }
+
+        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
+        private List<String> allowedOrigins;
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(allowedOrigins);
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("*"));
+                configuration.setAllowCredentials(true);
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
+
+        @Bean
+        @Order(1)
+        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EgovAuthenticationProvider egovAuthenticationProvider) throws Exception {
+                http
+                                .securityMatchers(matchers -> matchers.requestMatchers(
+                                                AntPathRequestMatcher.antMatcher("/api/v1/**"),
+                                                AntPathRequestMatcher.antMatcher("/actuator/**")))
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .logout(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/menus/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/signup"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"),
+                                                                AntPathRequestMatcher.antMatcher("/actuator/health"))
+                                                .permitAll()
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        log.warn(">>> Access denied to {}: {}", request.getRequestURI(), accessDeniedException.getMessage());
+                                                        response.setContentType("application/json;charset=UTF-8");
+                                                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                                                        response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied (CSRF verification failed or Insufficient privileges)\"}");
+                                                }))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authenticationProvider(egovAuthenticationProvider)
+                                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                                                UsernamePasswordAuthenticationFilter.class);
+                return http.build();
+        }
+
+        @Bean
+        @Order(2)
+        public SecurityFilterChain legacySecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(csrf -> csrf
+                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                                .ignoringRequestMatchers(
+                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
+                                                AntPathRequestMatcher.antMatcher("/ws/**")))
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .logout(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                AntPathRequestMatcher.antMatcher("/css/**"),
+                                                                AntPathRequestMatcher.antMatcher("/js/**"),
+                                                                AntPathRequestMatcher.antMatcher("/images/**"),
+                                                                AntPathRequestMatcher.antMatcher("/validator.do"),
+                                                                AntPathRequestMatcher.antMatcher("/cmm/fms/getImage.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/egovLoginUsr.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogout.do"),
+                                                                AntPathRequestMatcher.antMatcher("/ws/**"),
+                                                                AntPathRequestMatcher.antMatcher("/index.jsp"),
+                                                                AntPathRequestMatcher.antMatcher("/"),
+                                                                AntPathRequestMatcher.antMatcher("/uss/olp/qri/**"),
+                                                                AntPathRequestMatcher.antMatcher("/favicon.ico"),
+                                                                AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
+                                                                AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                                                                AntPathRequestMatcher.antMatcher("/error"))
+                                                .permitAll()
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                return http.build();
+        }
+
+        @Bean
+        public AuthenticationManager authenticationManager(org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration authenticationConfiguration) throws Exception {
+                return authenticationConfiguration.getAuthenticationManager();
+        }
+}

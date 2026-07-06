@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { StandardSearchFilter } from '../standard-search-filter';
@@ -34,7 +41,7 @@ describe('StandardSearchFilter', () => {
     const input = screen.getByPlaceholderText('이름 검색');
     fireEvent.change(input, { target: { value: '홍길동' } });
 
-    const submitBtn = screen.getByRole('button', { name: /검색/i });
+    const submitBtn = screen.getByRole('button', { name: /조회/i });
     fireEvent.click(submitBtn);
 
     expect(onSearch).toHaveBeenCalledWith({ keyword: '홍길동' });

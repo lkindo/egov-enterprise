@@ -1,30 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { codeAdminService, AdministCode } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { 
-  Plus, 
-  MapPin, 
-  Globe, 
-  CheckCircle2, 
-  XCircle, 
-  Search, 
-  Layers, 
-  Zap, 
-  ShieldCheck, 
-  Database,
-  SearchCode,
-  Milestone,
-  Monitor,
-  BarChart3,
-  RefreshCcw,
-  Maximize2,
-  Settings,
-  Map,
-  Compass
-} from 'lucide-react';
+import { Plus, 
+ MapPin, 
+ Search, 
+ Layers, 
+ ShieldCheck, 
+ Database, 
+ SearchCode, 
+ Milestone, 
+ Monitor, 
+ RefreshCcw, 
+ Map, 
+ Compass } from 'lucide-react';
 import { PagePagination } from '@/components/common/PagePagination';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -34,215 +25,367 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import dynamic from 'next/dynamic';
+
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+
+import { AdministCodeDtoSchema } from '@/types/generated-zod';
+
+const administCodeSchema = AdministCodeDtoSchema.extend({
+  admdstCd: z.string().min(1).max(10),
+  admdstZoneNm: z.string().min(1),
+  admdstSeCd: z.string().min(1),
+  upAdmdstCd: z.string().min(1),
+  useYn: z.string().min(1),
+});
+
+type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 
 export default function AdministCodeClient({ initialData }: { initialData: any }) {
-  const [data, setData] = useState(initialData?.list || []);
-  const [total, setTotal] = useState(initialData?.total || 0);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const [searchWrd, setSearchWrd] = useState('');
-  const [pageNumber, setPageNumber] = useState(1);
+ const [data, setData] = useState(initialData?.list || []);
+ const [total, setTotal] = useState(initialData?.total || 0);
+ const [loading, setLoading] = useState(false);
+ const [isModalOpen, setIsModalOpen] = useState(false);
+ const [registerLoading, setRegisterLoading] = useState(false);
+ const { toast } = useToast();
+ const [searchWrd, setSearchWrd] = useState('');
+ const [pageNumber, setPageNumber] = useState(1);
 
-  const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
-    try {
-      setLoading(true);
-      const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, page번호: page });
-      setData(res.list || []);
-      setTotal(res.total || 0);
-      setPageNumber(page);
-    } catch (error) {
-      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const form = useAppForm(administCodeSchema, {
+   defaultValues: {
+     admdstCd: '',
+     admdstZoneNm: '',
+     admdstSeCd: '1',
+     upAdmdstCd: '',
+     useYn: 'Y',
+   }
+ });
 
-  const stats = useMemo(() => {
-    const totalCount = total;
-    const legalDist = data.filter((item: any) => item.administZoneSe === '1').length;
-    const adminDist = data.filter((item: any) => item.administZoneSe === '2').length;
-    const syncStatus = (data.filter((item: any) => item.useAt === 'Y').length / (data.length || 1) * 100).toFixed(0);
-    
-    return { totalCount, legalDist, adminDist, syncStatus };
-  }, [total, data]);
+ const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
+ try {
+ setLoading(true);
+ const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageNo: page });
+ setData(res.list || []);
+ setTotal(res.total || 0);
+ setPageNumber(page);
+ } catch (error) {
+ toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+ } finally {
+ setLoading(false);
+ }
+ };
 
-  const columns: Column<AdministCode>[] = [
-    { 
-        header: '행정역 코드 (식별자)', 
-        accessor: (item: any) => (
-            <div className="flex items-center gap-4 py-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-                    <MapPin size={18} />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                    <span className="font-mono font-black text-foreground tracking-tighter text-sm uppercase">{item.administZoneCode}</span>
-                    <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">구역 식별자</span>
-                </div>
-            </div>
-        ),
-        className: 'w-56' 
-    },
-    { 
-      header: '도메인 구분', 
-      accessor: (item: any) => (
-        <div className={cn(
-            "px-3 py-1.5 rounded-lg border w-fit text-[9px] font-black tracking-widest uppercase shadow-sm",
-            item.administZoneSe === '1' ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
-        )}>
-            {item.administZoneSe === '1' ? '법정동' : '행정동'}
-        </div>
-      ),
-      className: 'w-32'
-    },
-    { 
-        header: '행정 구역 명세 (메타데이터)', 
-        accessor: (item: any) => (
-            <div className="flex flex-col gap-1 py-4">
-                <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.administZoneNm}</span>
-                <div className="flex items-center gap-2">
-                    <Compass size={10} className="text-primary opacity-40" />
-                    <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em] font-mono uppercase italic leading-none">지리적 네임스페이스</span>
-                </div>
-            </div>
-        )
-    },
-    { 
-        header: '상위 노드 ID', 
-        accessor: (item: any) => (
-            <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground/60 tabular-nums tracking-tighter italic">
-                {item.upperAdministZoneCode || '최상위 섹터'}
-            </div>
-        ), 
-        className: 'w-32' 
-    },
-    { 
-      header: '동기화 상태', 
-      accessor: (item: any) => (
-        <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit shadow-sm",
-            item.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-        )}>
-            <div className={cn("w-1.5 h-1.5 rounded-full shadow-sm", item.useAt === 'Y' ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
-            <span className="text-[9px] font-black tracking-widest uppercase">{item.useAt === 'Y' ? '활성' : '중단'}</span>
-        </div>
-      ),
-      className: 'w-32'
-    },
-  ];
+ const onRegisterSubmit = async (values: AdministCodeFormValues) => {
+   try {
+     setRegisterLoading(true);
+     await codeAdminService.createAdministCode(values);
+     toast('행정 구역 코드가 등록되었습니다.', 'success');
+     setIsModalOpen(false);
+     form.reset();
+     loadData(searchWrd, 1);
+   } catch (error) {
+     toast('코드 등록 중 오류가 발생했습니다.', 'error');
+   } finally {
+     setRegisterLoading(false);
+   }
+ };
 
-  return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      
-      <HubHeader 
-        title="행정 표준" 
-        highlight="레지스트리" 
-        subtitle="국가 행정 표준에 따른 법정동 및 행정동 코드 체계의 공간 인텔리전스 통합 관리" 
-        icon={Milestone} 
-        actions={
-          <div className="flex gap-4 p-2 items-center">
-            <Button
-                variant="ghost"
-                onClick={() => loadData()}
-                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
-            >
-                <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
-            </Button>
-             <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 신규 행정 코드 인스턴스 등록
-             </Button>
-          </div>
-        }
-      />
+ const stats = useMemo(() => {
+ const totalCount = total || 0;
+ const legalDist = (data || []).filter((item: any) => item?.admdstSeCd === '1').length;
+ const adminDist = (data || []).filter((item: any) => item?.admdstSeCd === '2').length;
+ const syncStatus = ((data || []).filter((item: any) => item?.useYn === 'Y').length / ((data || []).length || 1) * 100).toFixed(0);
+ 
+ return { totalCount, legalDist, adminDist, syncStatus };
+ }, [total, data]);
 
-      <HubMetricGrid>
-        <HubMetricCard title="등록 구역 수" value={stats.totalCount} icon={Database} color="primary" />
-        <HubMetricCard title="법정동 수" value={stats.legalDist} icon={Map} color="indigo" />
-        <HubMetricCard title="행정동 수" value={stats.adminDist} icon={Compass} color="amber" />
-        <HubMetricCard title="동기화 지표" value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
-      </HubMetricGrid>
+ const columns: Column<AdministCode>[] = [
+ { 
+ header: '식별 코드', 
+ accessor: (item: any) => (
+ <div className="flex items-center gap-4 py-2">
+ <div className="w-10 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
+ <MapPin size={18} />
+ </div>
+ <div className="flex flex-col gap-0.5">
+ <span className="font-black text-slate-900 tracking-tighter text-xs uppercase">{item.admdstCd}</span>
+ <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ADMIN_CODE</span>
+ </div>
+ </div>
+ ),
+ className: 'w-48 py-4' 
+ },
+ { 
+ header: '구분', 
+ accessor: (item: any) => (
+ <div className={cn(
+ "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
+ item.admdstSeCd === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-500 border-slate-200'
+ )}>
+ {item.admdstSeCd === '1' ? '법정동' : '행정동'}
+ </div>
+ ),
+ className: 'w-24 py-4'
+ },
+ { 
+ header: '행정구역명', 
+ accessor: (item: any) => (
+ <div className="flex flex-col gap-0.5 py-4">
+ <span className="font-black text-slate-900 tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
+ <div className="flex items-center gap-1.5 mt-1">
+ <Compass size={10} className="text-primary opacity-40" />
+ <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase leading-none">Namespace</span>
+ </div>
+ </div>
+ ),
+ className: 'py-4'
+ },
+ { 
+ header: '상위 코드', 
+ accessor: (item: any) => (
+ <div className="font-black text-slate-400 tabular-nums tracking-widest text-[10px] uppercase">
+ {item.upAdmdstCd || 'ROOT'}
+ </div>
+ ), 
+ className: 'w-32 py-4' 
+ },
+ { 
+ header: '상태', 
+ accessor: (item: any) => (
+ <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} />
+ ),
+ className: 'w-24 py-4'
+ },
+ ];
 
-      <div className="grid grid-cols-12 gap-12">
-        {/* Navigation Sidebar */}
-        <div className="col-span-12 lg:col-span-4 h-full">
-            <div className="rounded-[4rem] bg-slate-900 text-white p-12 shadow-2xl relative overflow-hidden group h-full border-none min-h-[500px]">
-                <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-                    <Milestone size={240} className="text-primary" />
-                </div>
-                <div className="relative z-10 space-y-12">
-                    <div className="space-y-4">
-                        <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
-                            <Monitor size={36} className="text-primary" />
-                        </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">관할 인텔리전스<br />허브</h4>
-                    </div>
-                    
-                    <p className="text-sm text-slate-400 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
-                        행정표준코드 체계(KAS)와의 데이터 무결성을 보장하며, 국가 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
-                    </p>
+ return (
+ <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
+ 
+ <HubHeader 
+ title="행정 구역" 
+ highlight="관리 인벤토리" 
+ subtitle="전국 행정 구역에 따른 법정동 및 행정동 코드 체계를 관리합니다." 
+ icon={Milestone} 
+ actions={
+ <div className="flex gap-3 p-1 items-center">
+ <Button
+ variant="ghost"
+ onClick={() => loadData()}
+ className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
+ >
+ <RefreshCcw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
+ </Button>
+ <Button 
+  onClick={() => setIsModalOpen(true)}
+  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
+ >
+ <Plus size={18} /> 신규 등록
+ </Button>
+ </div>
+ }
+ />
 
-                    <div className="space-y-6 pt-12 border-t border-white/5">
-                        <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">섹터 엔진</span>
-                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">정상</span>
-                        </div>
-                        <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
-                            <span className="text-lg font-black font-mono tracking-tighter">매일 00시</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+ <HubMetricGrid>
+ <HubMetricCard title="전체 구역" value={stats.totalCount} icon={Database} color="primary" />
+ <HubMetricCard title="법정동" value={stats.legalDist} icon={Map} color="indigo" />
+ <HubMetricCard title="행정동" value={stats.adminDist} icon={Compass} color="amber" />
+ <HubMetricCard title="동기화" value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
+ </HubMetricGrid>
 
-        {/* Data Area */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
-            <HubSectionCard title="행무 코드 매트릭스 탐색기" description="시스템에 등록된 모든 행정 구역 및 법정동 메타데이터의 저수준 프로토콜 상세입니다." icon={SearchCode}>
-                <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
-                    <div className="relative group/search flex-1">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={18} />
-                        <Input
-                            placeholder="행정구역명을 입력하여 메타데이터 엔티티를 조회하세요..."
-                            value={searchWrd}
-                            onChange={(e) => setSearchWrd(e.target.value)}
-                            className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-2xl text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
-                        />
-                    </div>
-                    <Button type="submit" size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-3 group">
-                        <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> 엔진 필터링 실행
-                    </Button>
-                </form>
+ <div className="grid grid-cols-12 gap-8">
+ {/* Navigation Sidebar */}
+ <div className="col-span-12 lg:col-span-4 h-full">
+ <div className="rounded-2xl bg-white/40 backdrop-blur-md text-slate-900 p-10 shadow-xl relative overflow-hidden group h-full border border-white/60 ring-1 ring-black/5 min-h-[500px]">
+ <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
+ <Milestone size={240} className="text-primary" />
+ </div>
+ <div className="relative z-10 space-y-10">
+ <div className="space-y-4">
+ <div className="w-16 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-2xl">
+ <Monitor size={28} className="text-primary" />
+ </div>
+ <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-slate-900">공간 인텔리전스<br />허브</h4>
+ </div>
+ 
+ <p className="text-xs font-bold text-slate-500 leading-relaxed border-l-4 border-primary pl-6">
+ 행정구역코드 체계(KAS)는 전국 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
+ </p>
 
-                <div className="overflow-hidden min-h-[600px]">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={searchWrd + pageNumber}
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.02 }}
-                            transition={{ duration: 0.4, ease: "circOut" }}
-                        >
-                            <StandardDataTable
-                                columns={columns}
-                                data={data}
-                                loading={loading}
-                                emptyMessage="검색 결과에 부합하는 행정코드가 현재 섹터에 존재하지 않습니다."
-                                className="border-none bg-transparent"
-                            />
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+ <div className="space-y-5 pt-10 border-t border-slate-100/50">
+ <div className="flex items-center justify-between group/stat">
+ <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase group-hover/stat:text-primary transition-colors">데이터 수집 엔진</span>
+ <span className="text-sm font-black text-emerald-500 uppercase tracking-widest">Normal</span>
+ </div>
+ <div className="flex items-center justify-between group/stat">
+ <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
+ <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Daily 00:00</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div className="mt-12 flex justify-center">
-                    <PagePagination
-                        total={total}
-                        size={10}
-                        page={pageNumber}
-                        onPageChange={(p) => loadData(searchWrd, p)}
-                    />
-                </div>
-            </HubSectionCard>
-        </div>
-      </div>
-    </div>
-  );
+ {/* Data Area */}
+ <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
+ <HubSectionCard title="행정 코드 탐색기" description="행정 구역 및 법정동 메타데이터 상세 정보입니다." icon={SearchCode}>
+ <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-8 mb-8 ring-1 ring-black/5">
+ <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+ <div className="relative group/search flex-1">
+ <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Input
+ placeholder="행정구역명을 입력하세요..."
+ value={searchWrd}
+ onChange={(e) => setSearchWrd(e.target.value)}
+ className="h-10 pl-14 pr-6 w-full bg-slate-50/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ />
+ </div>
+ <Button type="submit" size="lg" className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 group active:scale-95">
+ <Layers size={18} className="group-hover:rotate-180 transition-transform duration-700" /> 검색 실행
+ </Button>
+ </form>
+ </div>
+
+ <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5">
+ <div className="overflow-hidden min-h-[500px] p-2">
+ <AnimatePresence mode="wait">
+ <motion.div
+ key={searchWrd + pageNumber}
+ initial={{ opacity: 0, scale: 0.99 }}
+ animate={{ opacity: 1, scale: 1 }}
+ exit={{ opacity: 0, scale: 1.01 }}
+ transition={{ duration: 0.4, ease: "circOut" }}
+ >
+ <StandardDataTable
+ columns={columns}
+ data={data}
+ loading={loading}
+ emptyMessage="데이터가 존재하지 않습니다."
+ className="border-none bg-transparent shadow-none"
+ isPremium={true}
+ />
+ </motion.div>
+ </AnimatePresence>
+ </div>
+ </div>
+
+ <div className="mt-10 flex justify-center">
+ <PagePagination
+ total={total}
+ size={10}
+ page={pageNumber}
+ onPageChange={(p) => loadData(searchWrd, p)}
+ />
+ </div>
+ </HubSectionCard>
+ </div>
+ </div>
+
+ <StandardModal
+   isOpen={isModalOpen}
+   onClose={() => setIsModalOpen(false)}
+   title="행정 구역 코드 등록"
+   maxWidth="xl"
+   footer={
+     <div className="flex w-full gap-4">
+       <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+       <Button 
+         onClick={form.handleSubmit(onRegisterSubmit)}
+         disabled={registerLoading}
+         className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+       >
+         <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
+       </Button>
+     </div>
+   }
+ >
+   <Form {...form}>
+     <form className="space-y-6 pt-4 text-left">
+       <ShadcnFormField
+         control={form.control}
+         name="admdstCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 1111051500" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="admdstSeCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">구분</FormLabel>
+             <FormControl>
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+                 <option value="1">법정동</option>
+                 <option value="2">행정동</option>
+               </select>
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="admdstZoneNm"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 명칭</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="upAdmdstCd"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
+             <FormControl>
+               <Input {...field} placeholder="예: 1111000000" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+       <ShadcnFormField
+         control={form.control}
+         name="useYn"
+         render={({ field }) => (
+           <FormItem>
+             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">사용 여부</FormLabel>
+             <FormControl>
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+                 <option value="Y">활성 (사용함)</option>
+                 <option value="N">중단 (사용안함)</option>
+               </select>
+             </FormControl>
+             <FormMessage />
+           </FormItem>
+         )}
+       />
+     </form>
+   </Form>
+ </StandardModal>
+ </div>
+ );
 }
+
+

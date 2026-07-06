@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from '@/lib/api/client';
@@ -22,17 +29,17 @@ describe('DeptJobListPage', () => {
  it('renders list of department jobs', async () => {
  const mockData = {
  data: {
- resultList: [
+ list: [
  {
- deptJobId: 'JOB_0001',
- deptJobNm: '주간 보고 작성',
- priort: '1', // High
- frstRegisterNm: '팀장',
- frstRegisterPnttm: '2024-06-01'
+ deptTaskId: 'JOB_0001',
+ deptTaskNm: '주간 보고 작성',
+ prrtyRnk: '1', // High
+ frstRegisterNm: '테스트님',
+ crtDt: '2024-06-01'
  }
  ],
- totalCount: 1,
- totalPages: 1
+ total: 1,
+ totalPage: 1
  }
  };
  (axios.get as any).mockResolvedValue(mockData);

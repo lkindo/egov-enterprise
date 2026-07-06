@@ -1,5 +1,12 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
+import { renderHook } from '@testing-library/react';
+import { describe,  it,  expect,  vi } from 'vitest';
 import { WebSocketProvider, useWebSocket } from '../websocket-context';
 import { AuthProvider } from '../AuthContext';
 import { ToastProvider } from '@/app/components/ui/toast';

@@ -1,100 +1,102 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, use, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ShieldCheck, 
+import { ShieldCheck, 
   Users, 
   Layers, 
   Search, 
   Plus, 
-  Pencil, 
   Trash2, 
-  ChevronRight, 
-  Folder, 
   File, 
   Save, 
-  RefreshCcw,
-  CheckCircle2,
-  XCircle,
-  UserPlus,
-  Key,
-  Activity,
-  Lock,
-  Globe,
-  Monitor,
-  Fingerprint,
-  RotateCcw,
-  ShieldAlert,
-  Zap,
-  ArrowUpRight,
-  Database,
-  LayoutGrid,
-  Box,
-  Binary,
-  Workflow,
-  Network,
-  SearchCode,
-  Milestone,
-  Building2,
-  Contact2,
-  Settings
-} from 'lucide-react';
+  RefreshCcw, 
+  CheckCircle2, 
+  UserPlus, 
+  Key, 
+  Activity, 
+  Lock, 
+  Fingerprint, 
+  RotateCcw, 
+  ArrowUpRight, 
+  Settings } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
-import { authorAdminService, AuthorInfo } from '@/services/admin/system/AuthorAdminService';
-import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/admin/system/UserAuthorityAdminService';
-import { menuAdminService, Menu } from '@/services/admin/system/MenuAdminService';
+import { SecurityMatrixVisualizer } from './components/SecurityMatrixVisualizer';
+import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
+import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
+import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
+import { MenuByAuthority } from '@/types/foundation/security';
 import { useToast } from '@/app/components/ui/toast';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { FormField } from '@/app/components/ui/standard-form';
-import { Label } from '@/components/ui/label';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+;
+;
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+;
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 
+import { AuthorForm, AuthorFormValues } from '@/components/admin/security/AuthorForm';
+
+// --- Types ---
 interface MenuNode extends Menu {
   children?: MenuNode[];
   isChecked?: boolean;
 }
 
-export default function SecurityHubClient() {
+export default function SecurityHubClient({ 
+  authoritiesPromise 
+}: { 
+  authoritiesPromise: Promise<any> 
+}) {
+  const initialAuthorities = use(authoritiesPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
+  const [isPending, startTransition] = useTransition();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
   const [userSearchKeyword, setUserSearchKeyword] = useState('');
   const [roleSearchKeyword, setRoleSearchKeyword] = useState('');
-  
+
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
   const [authorMode, setAuthorMode] = useState<'create' | 'edit'>('create');
-  const [authorFormData, setAuthorFormData] = useState<Partial<AuthorInfo>>({
-    authorCode: '',
-    authorNm: '',
-    authorDc: ''
-  });
-
+  
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
 
-  const { data: authorsData, isLoading: isAuthorsLoading } = useQuery({
-    queryKey: ['admin-authorities', roleSearchKeyword],
-    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, searchKeyword: roleSearchKeyword }),
+  // --- Matrix Mode States ---
+  const [viewMode, setViewMode] = useState<'TOPOLOGY' | 'MATRIX'>('TOPOLOGY');
+  const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
+  const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+
+  // --- Pagination States ---
+  const [rolePage, setRolePage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
+
+  const { data: authorsData, isLoading: isAuthorsLoading, error: authorsError, refetch: refetchAuthors } = useQuery({
+    queryKey: ['admin-authorities', roleSearchKeyword, rolePage],
+    queryFn: () => authorAdminService.getAuthorList({ pageIndex: rolePage, searchKeyword: roleSearchKeyword }),
+    initialData: (rolePage === 1 && !roleSearchKeyword) ? initialAuthorities : undefined
   });
   const authorities = authorsData?.list || [];
 
-  const { data: usersData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword],
-    queryFn: () => userAuthorityAdminService.getUserAuthorityList({ 
+  const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
+    queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword, userPage],
+    queryFn: () => userAuthorityAdminService.getUserAuthorityList({
       searchKeyword: userSearchKeyword,
       searchCondition: '1',
-      authorCode: selectedAuthorCode 
-    } as any),
+      authorCode: selectedAuthorCode,
+      page: userPage
+    }),
     enabled: !!selectedAuthorCode
   });
   const users = usersData?.list || [];
@@ -111,21 +113,23 @@ export default function SecurityHubClient() {
 
   useEffect(() => {
     if (usersData?.list) {
-      const registeredUsers = usersData.list.filter(u => u.regYn === 'Y').map(u => u.uniqId);
+      const list = Array.isArray(usersData.list) ? usersData.list : [];
+      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.scrtyDcsnTrgtId);
       setTempUserMappings(new Set(registeredUsers));
     }
   }, [usersData, selectedAuthorCode]);
 
   useEffect(() => {
     if (menusData?.authorMenus) {
-      const mappedMenuIds = (menusData.authorMenus as any[]).map(m => m.menuNo);
+      const menus = Array.isArray(menusData.authorMenus) ? menusData.authorMenus : [];
+      const mappedMenuIds = (menus as MenuByAuthority[]).map(m => m.menuNo);
       setTempMenuMappings(new Set(mappedMenuIds));
     }
   }, [menusData, selectedAuthorCode]);
 
   const menuTree = useMemo(() => {
     if (!menusData?.allMenus) return [];
-    
+
     const map = new Map<number, MenuNode>();
     const roots: MenuNode[] = [];
 
@@ -134,10 +138,10 @@ export default function SecurityHubClient() {
     });
 
     map.forEach(node => {
-      if (node.upperMenuNo === 0 || !map.has(node.upperMenuNo)) {
+      if (node.upMenuSn === 0 || !map.has(node.upMenuSn)) {
         roots.push(node);
       } else {
-        const parent = map.get(node.upperMenuNo);
+        const parent = map.get(node.upMenuSn);
         if (parent) {
           parent.children = parent.children || [];
           parent.children.push(node);
@@ -148,27 +152,33 @@ export default function SecurityHubClient() {
     return roots;
   }, [menusData, tempMenuMappings]);
 
-  const saveAuthorMutation = useMutation({
-    mutationFn: (data: Partial<AuthorInfo>) => 
-      authorMode === 'create' ? authorAdminService.createAuthor(data) : authorAdminService.updateAuthor(data.authorCode!, data),
-    onSuccess: () => {
+  const onAuthorSubmit = async (values: AuthorFormValues) => {
+    try {
+      if (authorMode === 'create') {
+        await authorAdminService.createAuthor(values as AuthorInfo);
+        toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
+      } else {
+        await authorAdminService.updateAuthor(values.authrtCd, values as AuthorInfo);
+        toast('보안 권한 아키텍처가 성공적으로 수정되었습니다.', 'success');
+      }
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
-      toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
       setIsAuthorModalOpen(false);
+    } catch (error) {
+      toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
     }
-  });
+  };
 
   const saveUserMappingMutation = useMutation({
     mutationFn: async () => {
       const mappings: UserAuthorityDto[] = Array.from(tempUserMappings).map(uid => ({
-        uniqId: uid,
-        authorCode: selectedAuthorCode,
-        mberTyCode: users.find(u => u.uniqId === uid)?.mberTyCode || 'USR'
+        scrtyDcsnTrgtId: uid,
+        authrtId: selectedAuthorCode,
+        mbrTypeCd: users.find(u => u.scrtyDcsnTrgtId === uid)?.mbrTypeCd || 'USR'
       }));
       return userAuthorityAdminService.saveUserAuthorities(mappings);
     },
     onSuccess: () => {
-      toast('사용자-권한 할당 매트릭스가 업데이트되었습니다.', 'success');
+      toast('사용자 권한 할당이 반영되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
     }
   });
@@ -176,20 +186,70 @@ export default function SecurityHubClient() {
   const saveMenuMappingMutation = useMutation({
     mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
     onSuccess: () => {
-      toast('메뉴 접근 거버넌스 정책이 동기화되었습니다.', 'success');
+      toast('메뉴 접근 권한이 업데이트되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
     }
   });
+
+  const loadGlobalMappings = async () => {
+    if (!authorities.length) return;
+    setIsGlobalLoading(true);
+    try {
+      const allMappings = new Map<string, Set<number>>();
+      const promises = (authorities as AuthorInfo[]).map(async (auth) => {
+        const menus = await authorAdminService.getAuthorMenus(auth.authrtCd);
+        const menuList = Array.isArray(menus) ? menus : [];
+        allMappings.set(auth.authrtCd, new Set(menuList.map(m => m.menuNo)));
+      });
+      await Promise.all(promises);
+      setGlobalMappings(allMappings);
+    } catch (e) {
+      toast('글로벌 매트릭스 데이터 로드 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  };
+
+  const handleToggleGlobal = (authorCode: string, menuNo: number) => {
+    setGlobalMappings(prev => {
+      const next = new Map(prev);
+      const set = new Set(next.get(authorCode) || []);
+      if (set.has(menuNo)) set.delete(menuNo);
+      else set.add(menuNo);
+      next.set(authorCode, set);
+
+      if (authorCode === selectedAuthorCode) {
+        setTempMenuMappings(set);
+      }
+      return next;
+    });
+  };
+
+  const handleSaveGlobal = async () => {
+    setIsGlobalLoading(true);
+    try {
+      const promises = Array.from(globalMappings.entries()).map(([code, set]) =>
+        menuAdminService.saveMenuCreation(code, Array.from(set))
+      );
+      await Promise.all(promises);
+      toast('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
+    } catch (e) {
+      toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  };
 
   const handleRoleSelect = (code: string) => {
     setSelectedAuthorCode(code);
   };
 
-  const toggleUserMapping = (uniqId: string) => {
+  const toggleUserMapping = (scrtyDcsnTrgtId: string) => {
     setTempUserMappings(prev => {
       const next = new Set(prev);
-      if (next.has(uniqId)) next.delete(uniqId);
-      else next.add(uniqId);
+      if (next.has(scrtyDcsnTrgtId)) next.delete(scrtyDcsnTrgtId);
+      else next.add(scrtyDcsnTrgtId);
       return next;
     });
   };
@@ -205,40 +265,87 @@ export default function SecurityHubClient() {
 
   const handleOpenAuthorCreate = () => {
     setAuthorMode('create');
-    setAuthorFormData({ authorCode: '', authorNm: '', authorDc: '' });
     setIsAuthorModalOpen(true);
   };
 
   const handleOpenAuthorEdit = (auth: AuthorInfo) => {
     setAuthorMode('edit');
-    setAuthorFormData(auth);
     setIsAuthorModalOpen(true);
   };
 
   const handleAuthorDelete = async (code: string) => {
-    if (!confirm('권한 아키텍처를 삭제하시겠습니까? 관련 할당 정보가 모두 영구적으로 소멸됩니다.')) return;
+    if (!confirm('권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.')) return;
     try {
       await authorAdminService.deleteAuthor(code);
-      toast('권한 프로필이 성공적으로 삭제되었습니다.', 'success');
+      toast('권한이 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
     } catch (e) {
-      toast('삭제 중 시스템 예외가 발생했습니다.', 'error');
+      toast('삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
+  const roleColumns: Column<AuthorInfo>[] = [
+    {
+      header: 'ROLE_MANIFEST',
+      accessor: (auth) => (
+        <div className="flex items-center justify-between w-full group/role-item py-1">
+          <div className="flex flex-col gap-1">
+            <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authrtCd ? "text-white" : "text-slate-900")}>
+              {auth.authrtNm}
+            </span>
+            <span className={cn("text-xs font-bold tracking-tight ", selectedAuthorCode === auth.authrtCd ? "text-white/30" : "text-slate-300")}>
+              {auth.authrtCd}
+            </span>
+          </div>
+          <div className={cn("flex gap-1", selectedAuthorCode === auth.authrtCd ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
+            <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-lg transition-all"><Settings size={12} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authrtCd); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"><Trash2 size={12} /></button>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const userColumns: Column<AuthorGroupProjection>[] = [
+    {
+      header: 'IDENTITY_PROBE',
+      accessor: (user) => (
+        <div className="flex items-center justify-between w-full py-1">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+              tempUserMappings.has(user.scrtyDcsnTrgtId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+            )}>
+              <Fingerprint size={16} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-tight">{user.userNm}</span>
+              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.scrtyDcsnTrgtId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
+            </div>
+          </div>
+          {tempUserMappings.has(user.scrtyDcsnTrgtId) ? (
+            <CheckCircle2 size={20} className="text-white relative z-10" />
+          ) : (
+            <UserPlus size={16} className="text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+        </div>
+      )
+    }
+  ];
+
   const renderMenuTreeNodes = (nodes: MenuNode[], depth = 0) => {
     return nodes.map((node, idx) => (
-      <motion.div 
-        key={node.menuNo} 
+      <motion.div
+        key={node.menuNo}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: idx * 0.02 }}
         className="space-y-1"
       >
-        <div 
+        <div
           className={cn(
-            "group flex items-center gap-4 py-3 px-6 rounded-2xl transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
+            "group flex items-center gap-4 py-3 px-6 rounded-lg transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
             tempMenuMappings.has(node.menuNo) ? "bg-slate-900 border-none shadow-xl text-white" : "hover:bg-slate-50 border border-transparent"
           )}
           style={{ marginLeft: `${depth * 24}px` }}
@@ -252,32 +359,32 @@ export default function SecurityHubClient() {
           </div>
 
           <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-              node.children && node.children.length > 0 ? "text-amber-500 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white" : "text-slate-400 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+            node.children && node.children.length > 0 ? "text-amber-500 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white" : "text-slate-400 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
           )}>
-            {node.children && node.children.length > 0 ? <Folder size={14} /> : <File size={14} />}
+            {node.children && node.children.length > 0 ? <ShieldCheck size={14} /> : <File size={14} />}
           </div>
 
           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
             <span className={cn(
-                "text-[11px] font-black tracking-tight truncate",
-                tempMenuMappings.has(node.menuNo) ? "text-white" : "text-slate-600"
+              "text-xs font-bold tracking-tight truncate",
+              tempMenuMappings.has(node.menuNo) ? "text-white" : "text-slate-600"
             )}>
-                {node.menuNm}
+              {node.menuNm}
             </span>
             <span className={cn(
-                "text-[8px] font-black tracking-widest font-mono opacity-40 uppercase truncate",
-                tempMenuMappings.has(node.menuNo) ? "text-white/40" : "text-slate-400"
+              "text-xs font-bold tracking-tight opacity-40 truncate",
+              tempMenuMappings.has(node.menuNo) ? "text-white/40" : "text-slate-400"
             )}>
-                NODE_{node.menuNo}
+              NODE_{node.menuNo}
             </span>
           </div>
 
           <div className={cn(
-              "hidden md:block px-2 py-0.5 rounded bg-white/10 border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity",
-              tempMenuMappings.has(node.menuNo) ? "text-white" : "text-slate-300"
+            "hidden md:block px-2 py-0.5 rounded bg-white/10 border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity",
+            tempMenuMappings.has(node.menuNo) ? "text-white" : "text-slate-300"
           )}>
-              <ArrowUpRight size={10} />
+            <ArrowUpRight size={10} />
           </div>
         </div>
         {node.children && renderMenuTreeNodes(node.children, depth + 1)}
@@ -285,35 +392,89 @@ export default function SecurityHubClient() {
     ));
   };
 
-  const currentAuth = authorities.find((a: AuthorInfo) => a.authorCode === selectedAuthorCode);
+  const currentAuth = (authorities as AuthorInfo[]).find((a) => a.authrtCd === selectedAuthorCode);
 
   return (
+    <TooltipProvider delayDuration={0}>
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="통합 보안 거버넌스 허브"
-        breadcrumbs={[{ label: '보안관리' }, { label: '권한 설정' }, { label: '통합 콘트롤' }]}
+        breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }, { label: '통합 컨트롤' }]}
       />
 
-      <HubHeader 
-        title="Security" 
-        highlight="Fabric" 
-        subtitle="시스템 전반의 보안 역할(Role), 사용자 할당 매트릭스 및 다차원 접근 제어 정책 통합 아키텍처" 
-        icon={Lock} 
+      <HubHeader
+        title="Security"
+        highlight="Fabric"
+        subtitle="시스템 전반 보안 역할(Role), 사용자 할당 매트릭스 및 계층적 접근 제어 정책 통합 아키텍처"
+        icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <Button
-                variant="ghost"
-                onClick={() => queryClient.invalidateQueries()}
-                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
-            >
-                <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
-            </Button>
-            <Button 
-                onClick={handleOpenAuthorCreate} 
-                className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
-            >
-                <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 실장
-            </Button>
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg mr-4 border-2 border-slate-100">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={() => startTransition(() => setViewMode('TOPOLOGY'))}
+                    className={cn(
+                      "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
+                      viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                    )}
+                  >
+                    TOPOLOGY_VIEW
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                  보안 객체 간의 계층적 관계 시각화
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={() => startTransition(() => { setViewMode('MATRIX'); loadGlobalMappings(); })}
+                    className={cn(
+                      "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
+                      viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                    )}
+                  >
+                    MATRIX_PLANE
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                  전사적 권한 할당 현황 일괄 검토 및 수정
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={() => queryClient.invalidateQueries()}
+                  className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                >
+                  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                서버로부터 최신 정책 정보 로드
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleOpenAuthorCreate}
+                  className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                >
+                  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                새로운 역할 또는 보안 그룹 정의
+              </TooltipContent>
+            </Tooltip>
           </div>
         }
       />
@@ -325,250 +486,223 @@ export default function SecurityHubClient() {
         <HubMetricCard title="IDENTITY_POOL" value={users.length || "IDLE"} icon={Fingerprint} color="amber" />
       </HubMetricGrid>
 
-      <div className="grid grid-cols-12 gap-12 min-h-[850px]">
-        
-        {/* Left: Role Inventory */}
-        <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
-            <HubSectionCard title="역할 인벤토리" description="시스템 접근 수준을 정의하는 보안 프로필 리스트입니다." icon={Lock}>
-                <div className="space-y-8 pt-4">
-                    <div className="relative group/search">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
-                        <Input 
-                            className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                            placeholder="역할 검색 (ID, 명칭)..."
-                            value={roleSearchKeyword}
-                            onChange={(e) => setRoleSearchKeyword(e.target.value)}
-                        />
-                    </div>
-                    
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                        {authorities.map((auth: AuthorInfo) => (
-                            <div 
-                                key={auth.authorCode}
-                                onClick={() => handleRoleSelect(auth.authorCode)}
-                                className={cn(
-                                    "w-full group p-6 rounded-[2rem] border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
-                                    selectedAuthorCode === auth.authorCode 
-                                        ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-                                        : "bg-white border-slate-50 hover:border-slate-200 text-slate-600 shadow-sm"
-                                )}
-                            >
-                                <div className="flex flex-col gap-1 relative z-10">
-                                    <span className={cn("text-md font-black tracking-tighter truncate leading-none", selectedAuthorCode === auth.authorCode ? "text-white" : "text-slate-900")}>
-                                        {auth.authorNm}
-                                    </span>
-                                    <span className={cn("text-[9px] font-black tracking-[0.3em] font-mono", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
-                                        {auth.authorCode}
-                                    </span>
-                                </div>
-                                <div className={cn("flex gap-1 relative z-10", selectedAuthorCode === auth.authorCode ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity")}>
-                                    <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-xl transition-all"><Settings size={14} /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-xl transition-all"><Trash2 size={14} /></button>
-                                </div>
-                                {selectedAuthorCode === auth.authorCode && (
-                                    <motion.div layoutId="active-role-indicator" className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full shadow-[0_0_15px_rgba(var(--primary-rgb),0.8)]" />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </HubSectionCard>
-        </div>
+      <AnimatePresence mode="wait">
+        {viewMode === 'MATRIX' ? (
+          <motion.div
+            key="matrix-view"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.5 }}
+          >
+            <SecurityMatrixVisualizer
+              authors={authorities}
+              menus={menusData?.allMenus || []}
+              mappings={globalMappings}
+              onToggle={handleToggleGlobal}
+              onSave={handleSaveGlobal}
+              isSaving={isGlobalLoading}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="topology-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-12 gap-12 min-h-[850px]"
+          >
 
-        {/* Center: Identity Matrix */}
-        <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
-            <HubSectionCard 
-                title="아이디 " 
-                description="선택된 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다." 
+            <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
+              <HubSectionCard title="역할 인벤토리" description="시스템 접근 권한을 정의하는 보안 프로파일 리스트입니다." icon={Lock}>
+                <div className="space-y-8 pt-4">
+                  <div className="relative group/search">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
+                    <Input
+                      className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
+                      placeholder="역할 검색(ID, 명칭)..."
+                      value={roleSearchKeyword}
+                      onChange={(e) => setRoleSearchKeyword(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
+                    <StandardDataTable<AuthorInfo>
+                      columns={roleColumns}
+                      data={authorities as AuthorInfo[]}
+                      loading={isAuthorsLoading}
+                      error={authorsError as Error | null}
+                      onRetry={() => refetchAuthors()}
+                      onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authrtCd)}
+                      keyField="authrtCd"
+                      isPremium={false}
+                      className="border-none bg-transparent"
+                      pagination={{
+                        currentPage: rolePage,
+                        totalPages: authorsData?.totalPage || 1,
+                        onPageChange: (p) => setRolePage(p)
+                      }}
+                    />
+                  </div>
+                </div>
+              </HubSectionCard>
+            </div>
+
+            <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
+              <HubSectionCard
+                title="사용자 할당"
+                description="선택한 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
                 icon={Users}
                 action={
-                    <Button 
-                        size="sm" 
-                        onClick={() => saveUserMappingMutation.mutate()} 
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => saveUserMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
-                    >
+                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                      >
                         <Save size={14} /> COMMIT_ENTITY
-                    </Button>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                      수정된 사용자 매핑 정보를 DB에 최종 반영
+                    </TooltipContent>
+                  </Tooltip>
                 }
-            >
+              >
                 <div className="relative h-full flex flex-col pt-4">
-                    <div className="relative group/search mb-8">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
-                        <Input 
-                            className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                            placeholder="사용자 검색 (ID, 성명)..."
-                            value={userSearchKeyword}
-                            onChange={(e) => setUserSearchKeyword(e.target.value)}
+                  <div className="relative group/search mb-8">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
+                    <Input
+                      className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
+                      placeholder="사용자 검색(ID, 성명)..."
+                      value={userSearchKeyword}
+                      onChange={(e) => setUserSearchKeyword(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
+                    <AnimatePresence mode="wait">
+                      {!selectedAuthorCode ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
+                          <div className="w-20 h-11 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200">
+                            <Users size={40} className="관리자 권한" />
+                          </div>
+                          <div className="space-y-2">
+                            <h4 className="text-xl font-bold text-slate-300 tracking-tighter">Identity_Idle</h4>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <StandardDataTable<AuthorGroupProjection>
+                          columns={userColumns}
+                          data={users as AuthorGroupProjection[]}
+                          loading={isUsersLoading}
+                          error={usersError as Error | null}
+                          onRetry={() => refetchUsers()}
+                          onRowClick={(item) => toggleUserMapping((item as AuthorGroupProjection).scrtyDcsnTrgtId)}
+                          keyField="scrtyDcsnTrgtId"
+                          isPremium={false}
+                          className="border-none bg-transparent"
+                          pagination={{
+                            currentPage: userPage,
+                            totalPages: usersData?.totalPage || 1,
+                            onPageChange: (p) => setUserPage(p)
+                          }}
                         />
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar min-h-[500px]">
-                        <AnimatePresence mode="wait">
-                            {!selectedAuthorCode ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-                                    <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200">
-                                        <Users size={40} className="opacity-20" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Identity_Idle</h4>
-                                        <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오.</p>
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                users.map((user: any) => (
-                                    <div 
-                                        key={user.uniqId}
-                                        onClick={() => toggleUserMapping(user.uniqId)}
-                                        className={cn(
-                                            "p-5 rounded-3xl border-2 transition-all flex items-center justify-between group cursor-pointer relative overflow-hidden",
-                                            tempUserMappings.has(user.uniqId) 
-                                                ? "bg-primary border-primary text-white shadow-xl scale-[1.02]" 
-                                                : "bg-white border-slate-50 hover:border-slate-100 text-slate-600 shadow-sm"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-4 relative z-10">
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                                                tempUserMappings.has(user.uniqId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
-                                            )}>
-                                                <Fingerprint size={20} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black tracking-tight">{user.userNm}</span>
-                                                <span className={cn("text-[9px] font-black tracking-widest font-mono opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
-                                            </div>
-                                        </div>
-                                        {tempUserMappings.has(user.uniqId) ? (
-                                            <CheckCircle2 size={24} className="text-white relative z-10" />
-                                        ) : (
-                                            <UserPlus size={20} className="text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </AnimatePresence>
-                    </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-            </HubSectionCard>
-        </div>
+              </HubSectionCard>
+            </div>
 
-        {/* Right: Policy Topology */}
-        <div className="col-span-12 lg:col-span-5 h-full">
-            <HubSectionCard 
-                title="접근 정책 토폴로지" 
-                description="역할별 동적인 메뉴 노드 계층 및 아키텍처 접근 수준 설정입니다." 
+            <div className="col-span-12 lg:col-span-5 h-full">
+              <HubSectionCard
+                title="접근 정책 토폴로지"
+                description="역할별 동적 메뉴 노드 계층 및 아키텍처 접근 수준 설정입니다."
                 icon={Layers}
                 action={
-                    <Button 
-                        size="sm" 
-                        onClick={() => saveMenuMappingMutation.mutate()} 
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => saveMenuMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
-                    >
+                        className="h-10 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                      >
                         <RefreshCcw size={14} /> SYNC_POLICY
-                    </Button>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                      현재 노드 구조를 보안 정책에 동기화
+                    </TooltipContent>
+                  </Tooltip>
                 }
-            >
+              >
                 <div className="relative h-full flex flex-col pt-4">
-                     <div className="flex items-center gap-4 bg-slate-900 rounded-[2rem] p-8 mb-10 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-6">
-                            <ShieldCheck size={120} className="text-primary" />
-                        </div>
-                        <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 relative z-10">
-                            <ShieldCheck size={28} className="text-primary" />
-                        </div>
-                        <div className="relative z-10 space-y-1">
-                            <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Policy_Manifest</span>
-                            <div className="text-white text-lg font-black tracking-tighter leading-none">
-                                {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
-                            </div>
-                        </div>
+                  <div className="flex items-center gap-4 bg-slate-900 rounded-lg p-8 mb-10 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-6">
+                      <ShieldCheck size={120} className="text-primary" />
                     </div>
+                    <div className="w-14 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 relative z-10">
+                      <ShieldCheck size={28} className="text-primary" />
+                    </div>
+                    <div className="relative z-10 space-y-1">
+                      <span className="text-xs font-bold text-white/30 tracking-tight">Policy_Manifest</span>
+                      <div className="text-white text-lg font-bold tracking-tighter leading-none">
+                        {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
+                      </div>
+                    </div>
+                  </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
-                        <AnimatePresence mode="wait">
-                            {!selectedAuthorCode ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-                                    <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200">
-                                        <Layers size={40} className="opacity-20" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Topology_Idle</h4>
-                                        <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 프로드하십시오.</p>
-                                    </div>
-                                </motion.div>
-                            ) : isMenusLoading ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-6">
-                                    <RotateCcw className="animate-spin text-primary opacity-40 shadow-inner" size={48} />
-                                    <p className="text-[11px] font-black tracking-[0.4em] text-muted-foreground/40 uppercase">Mapping_Topology_Stream...</p>
-                                </motion.div>
-                            ) : (
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-[2.5rem] bg-slate-50/50">
-                                    {renderMenuTreeNodes(menuTree)}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
+                    <AnimatePresence mode="wait">
+                      {!selectedAuthorCode ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
+                          <div className="w-20 h-11 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200">
+                            <Layers size={40} className="opacity-20" />
+                          </div>
+                          <div className="space-y-2">
+                            <h4 className="text-xl font-bold text-slate-300 tracking-tighter">Topology_Idle</h4>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 로드하십시오</p>
+                          </div>
+                        </motion.div>
+                      ) : isMenusLoading ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-6">
+                          <RotateCcw className="animate-spin text-primary opacity-40 shadow-inner" size={48} />
+                          <p className="text-xs font-bold tracking-tight text-muted-foreground/40">Mapping_Topology_Stream...</p>
+                        </motion.div>
+                      ) : (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-lg bg-slate-50/50">
+                          {renderMenuTreeNodes(menuTree)}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-            </HubSectionCard>
-        </div>
-      </div>
+              </HubSectionCard>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Authority Profile Modal */}
       <StandardModal
         isOpen={isAuthorModalOpen}
         onClose={() => setIsAuthorModalOpen(false)}
-        title={authorMode === 'create' ? '신규 보안 역할 프로비저닝' : '보안 역할 아키텍처 상세 수정'}
+        title={authorMode === 'create' ? '신규 권한 등록' : '보안 역할 아키텍처 상세 수정'}
         maxWidth="xl"
       >
-        <div className="p-4 space-y-12">
-            <div className="grid grid-cols-2 gap-10">
-                <FormField label="보안 역할 식별자 (Role Code)" required description="시스템 전반에 적용되는 유일한 역할 고유 코드">
-                    <div className="relative group/id">
-                        <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
-                        <Input 
-                            value={authorFormData.authorCode}
-                            onChange={(e) => setAuthorFormData({...authorFormData, authorCode: e.target.value})}
-                            disabled={authorMode === 'edit'}
-                            className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                            placeholder="ROLE_IDENTIFIER"
-                        />
-                    </div>
-                </FormField>
-                <FormField label="역할 레이블 명칭" required description="UI 및 비즈니스 레이어에서 식별될 명문화된 이름">
-                    <div className="relative group/nm">
-                        <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
-                        <Input 
-                            value={authorFormData.authorNm}
-                            onChange={(e) => setAuthorFormData({...authorFormData, authorNm: e.target.value})}
-                            className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                            placeholder="역할 명칭 입력"
-                        />
-                    </div>
-                </FormField>
-            </div>
-
-            <FormField label="보안 정책 정밀 명세" description="해당 역할의 상세 목적 및 데이터 접근 범위에 대한 정밀 명세">
-                <div className="relative group/dc">
-                    <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
-                    <Textarea 
-                        value={authorFormData.authorDc}
-                        onChange={(e) => setAuthorFormData({...authorFormData, authorDc: e.target.value})}
-                        className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                        placeholder="상세 명세 입력..."
-                    />
-                </div>
-            </FormField>
-
-            <div className="flex gap-6 pt-4">
-                <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
-                <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-                    <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? 'DEPLOY_AUTHORITY' : 'PATCH_AUTHORITY'}
-                </Button>
-            </div>
-        </div>
+        <AuthorForm
+          mode={authorMode}
+          initialData={authorMode === 'edit' ? (currentAuth as AuthorInfo) : undefined}
+          onSubmit={onAuthorSubmit}
+          onCancel={() => setIsAuthorModalOpen(false)}
+        />
       </StandardModal>
     </div>
+    </TooltipProvider>
   );
 }

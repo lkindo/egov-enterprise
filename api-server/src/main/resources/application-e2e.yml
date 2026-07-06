@@ -1,0 +1,68 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  config:
+    activate:
+      on-profile: e2e
+  
+  # eGovFrame Property Service 지원을 위한 기본값 설정 (SystemLogApiController 등에서 사용)
+  pageUnit: 10
+  pageSize: 10
+
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration
+      - org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
+
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-api-key-for-e2e
+    ollama:
+      enabled: false
+
+  datasource:
+    # OCI (Oracle Cloud Infrastructure) Production-like DB
+    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    username: egov
+    password: egov123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+      maximum-pool-size: 10
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+logging:
+  level:
+    root: warn
+    nuri: info
+    egovframework: info
+    org.hibernate.SQL: warn
+    org.springframework.security: warn
+
+jwt:
+  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
+
+management:
+  health:
+    mail:
+      enabled: false

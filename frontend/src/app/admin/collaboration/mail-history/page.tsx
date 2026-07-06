@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import CollaborationHubClient from '../CollaborationHubClient';
+import MailHistoryHubClient from './MailHistoryHubClient';
 
 export default function MailHistoryPage() {
- return <CollaborationHubClient defaultTab="MESSAGES" />;
+  return <MailHistoryHubClient />;
 }

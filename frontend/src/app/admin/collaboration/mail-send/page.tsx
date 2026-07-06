@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import CollaborationHubClient from '../CollaborationHubClient';
+import MailSendHubClient from './MailSendHubClient';
 
 export default function MailSendPage() {
- return <CollaborationHubClient defaultTab="MESSAGES" />;
+  return <MailSendHubClient />;
 }

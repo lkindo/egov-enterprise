@@ -1,0 +1,32 @@
+# Testcontainers PostgreSQL Profile
+# Matches production PostgreSQL 16 environment as closely as possible
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    # Testcontainers JDBC URL format: jdbc:tc:<image>:<version>://<db>
+    url: jdbc:tc:postgresql:16.4:///egovdb?TC_INITSCRIPT=file:../config/db/init-test.sql
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: egov
+    password: egov123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    open-in-view: false # Match production best practice
+
+  cache:
+    type: none
+
+jwt:
+  secret: test-secret-key-for-integration-testing-minimum-32-chars
+  expiration: 3600000

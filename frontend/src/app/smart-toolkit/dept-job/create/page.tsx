@@ -7,101 +7,124 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
- Select,
- SelectContent,
- SelectItem,
- SelectTrigger,
- SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { createDeptJob } from '@/services/deptJob/deptJobService';
-import { DeptJobVO } from '@/types/deptJob';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { DeptJobVO } from '@/types/business/deptJob';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
 
 export default function CreateDeptJobPage() {
- const router = useRouter();
- const [formData, setFormData] = useState<DeptJobVO>({
- deptJobNm: '',
- deptJobCn: '',
- priort: '2', // Default: 보통
- chargerNm: '', // 담당자명 (임시 텍스트)
- });
+  const router = useRouter();
+  const [formData, setFormData] = useState<Partial<DeptJobVO>>({
+    deptTaskNm: '',
+    deptTaskCn: '',
+    prrtyRnk: '2', // Default: 보통
+    picNm: '',
+  });
 
- const handleSave = async () => {
- if (!formData.deptJobNm || !formData.deptJobCn) {
- alert('업무명과 내용은 필수입니다.');
- return;
- }
+  const handleSave = async () => {
+    if (!formData.deptTaskNm || !formData.deptTaskCn) {
+      alert('업무명과 내용은 필수입니다.');
+      return;
+    }
 
- try {
- await createDeptJob(formData);
- alert('업무가 등록되었습니다.');
- router.push('/smart-toolkit/dept-job');
- } catch (error) {
- console.error(error);
- alert('업무 등록에 실패했습니다.');
- }
- };
+    try {
+      await deptJobUserService.createDeptJob(formData as DeptJobVO);
+      alert('업무가 성공적으로 등록되었습니다.');
+      router.push('/smart-toolkit/dept-job/selectDeptJobList');
+    } catch (error) {
+      console.error(error);
+      alert('업무 등록에 실패했습니다.');
+    }
+  };
 
- return (
- <div className="max-w-2xl mx-auto space-y-8">
- <div>
- <h2 className="text-2xl font-bold tracking-tight">부서 업무 등록</h2>
- <p className="text-muted-foreground">새로운 부서 업무를 등록합니다.</p>
- </div>
+  return (
+    <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2">
+            <ArrowLeft className="w-4 h-4" /> 뒤로가기
+        </Button>
+      </div>
 
- <div className="space-y-6">
- <div className="space-y-2">
- <Label htmlFor="deptJobNm">업무명 (필수)</Label>
- <Input
- id="deptJobNm"
- value={formData.deptJobNm}
- onChange={(e) => setFormData(prev => ({ ...prev, deptJobNm: e.target.value }))}
- placeholder="예: 2024년 1분기 실적 보고"
- />
- </div>
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white">
+        <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
+                <Briefcase size={120} />
+            </div>
+            <div className="relative z-10 space-y-2">
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/10 w-fit rounded-lg border border-white/10 mb-4">
+                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                    <span className="text-xs font-bold tracking-widest uppercase">부서 업무 시스템</span>
+                </div>
+                <CardTitle className="text-3xl font-bold tracking-tighter">부서 업무 등록</CardTitle>
+                <p className="text-slate-400 font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
+            </div>
+        </CardHeader>
+        <CardContent className="p-10 space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <Label htmlFor="deptTaskNm" className="text-sm font-bold text-slate-500 ml-1">업무명 (필수)</Label>
+              <Input
+                id="deptTaskNm"
+                value={formData.deptTaskNm}
+                onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskNm: e.target.value }))}
+                placeholder="과업의 핵심 명칭을 입력하세요"
+                className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+              />
+            </div>
 
- <div className="space-y-2">
- <Label htmlFor="priort">우선순위</Label>
- <Select
- value={formData.priort}
- onValueChange={(value) => setFormData(prev => ({ ...prev, priort: value }))}
- >
- <SelectTrigger>
- <SelectValue placeholder="우선순위 선택" />
- </SelectTrigger>
- <SelectContent>
- <SelectItem value="1">높음</SelectItem>
- <SelectItem value="2">보통</SelectItem>
- <SelectItem value="3">낮음</SelectItem>
- </SelectContent>
- </Select>
- </div>
+            <div className="space-y-3">
+              <Label htmlFor="prrtyRnk" className="text-sm font-bold text-slate-500 ml-1">우선 순위</Label>
+              <Select
+                value={formData.prrtyRnk}
+                onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, prrtyRnk: value }))}
+              >
+                <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
+                  <SelectValue placeholder="순위 선택" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg border-none shadow-2xl">
+                  <SelectItem value="1" className="font-bold py-3">🔴 높음</SelectItem>
+                  <SelectItem value="2" className="font-bold py-3">🟡 보통</SelectItem>
+                  <SelectItem value="3" className="font-bold py-3">🟢 낮음</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
- <div className="space-y-2">
- <Label htmlFor="chargerNm">담당자 (선택)</Label>
- <Input
- id="chargerNm"
- value={formData.chargerNm}
- onChange={(e) => setFormData(prev => ({ ...prev, chargerNm: e.target.value }))}
- placeholder="담당자 이름 입력"
- />
- </div>
+          <div className="space-y-3">
+            <Label htmlFor="picNm" className="text-sm font-bold text-slate-500 ml-1">담당자 (선택)</Label>
+            <Input
+              id="picNm"
+              value={formData.picNm}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, picNm: e.target.value }))}
+              placeholder="담당자 성함을 입력하세요"
+              className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+            />
+          </div>
 
- <div className="space-y-2">
- <Label htmlFor="deptJobCn">업무 내용 (필수)</Label>
- <Textarea
- id="deptJobCn"
- value={formData.deptJobCn}
- onChange={(e) => setFormData(prev => ({ ...prev, deptJobCn: e.target.value }))}
- className="min-h-[200px]"
- placeholder="업무 상세 내용을 입력하세요..."
- />
- </div>
+          <div className="space-y-3">
+            <Label htmlFor="deptTaskCn" className="text-sm font-bold text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
+            <Textarea
+              id="deptTaskCn"
+              value={formData.deptTaskCn}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskCn: e.target.value }))}
+              className="min-h-[250px] p-8 rounded-lg border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
+              placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
+            />
+          </div>
 
- <div className="flex justify-end gap-2">
- <Button variant="outline" onClick={() => router.back()}>취소</Button>
- <Button onClick={handleSave}>등록 저장</Button>
- </div>
- </div>
- </div>
- );
+          <div className="flex pt-6">
+            <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+              <Send className="w-5 h-5" /> 업무 등록 완료
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

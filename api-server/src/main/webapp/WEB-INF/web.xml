@@ -23,9 +23,8 @@
 	</filter-mapping>
 
 	<!--
-		Tomcat 10 ??곴맒??野껋럩??multipart ????????됱뒠??롫뮉 筌ㅼ뮆? ?봔????? ??쀫립??롫뮉 ?닌딄쉐???袁る퉸 maxPartCount ?곕떽?
-		- 10.1 ??곴맒 甕곌쑴?얗겫????袁⑹뿯,  ?醫롮삺?怨몄뵥 ??뺥돩??椰꾧퀡?(DoS) ?띯뫁鍮?癒?뱽 ??욧퍙
-		<Context docBase="" path="/" reloadable="true" maxPartCount="1000">
+		Tomcat 10 호환성 유지를 위한 multipart 설정 관련 안내
+		- 10.1 호환성 보장을 위한 설정, 대규모 파일 업로드 시 DoS 방지를 위해 maxPartCount 설정 권고
 	-->
 	<filter>
 		<display-name>springMultipartFilter</display-name>
@@ -38,9 +37,8 @@
 	</filter-mapping>
 
 	<!--
-		HTMLTagFilter??野껋럩??????뵬沃섎챸苑??????뤿연 XSS ??살첒 獄쎻뫗????袁る립 癰궰??륁뱽 筌ｌ꼶???몃빍??
-		XSS 癰귣똻釉??袁る퓮 獄쎻뫗????袁る릭??獄쏆꼶諭????쇱젟 ??뤿????몃빍??
-		(<c:out />??野껋럩???????됯퀡?????????⑤끃肉???뽰젟??뤿연 ?怨쀬뵠???곗뮆???XSS 獄쎻뫗? 筌ｌ꼶?곩첎? ??
+		HTMLTagFilter는 웹페이지의 보안 취약점인 XSS 방지를 위해 제공됨
+		XSS 공격 방지를 위해 입력 값에 대해 상세한 필터링을 수행함
 	-->
 	<filter>
 		<filter-name>HTMLTagFilter</filter-name>
@@ -71,38 +69,6 @@
 		<listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
 	</listener>
 	<!-- security end -->
-
-	<!--
-	<context-param>
-		<param-name>contextConfigLocation</param-name>
-		<param-value>classpath*:egovframework/spring/com/context-*.xml</param-value>
-	</context-param>
-
-	<listener>
-		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-	</listener>
-	-->
-
-	<!--
-	<servlet>
-		<servlet-name>action</servlet-name>
-		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-		<init-param>
-			<param-name>contextConfigLocation</param-name>
-			<param-value>/WEB-INF/config/egovframework/springmvc/*.xml</param-value>
-		</init-param>
-		<load-on-startup>1</load-on-startup>
-		<multipart-config>
-			<max-file-size>10485760</max-file-size>
-			<max-request-size>104857600</max-request-size>
-			<file-size-threshold>1048576</file-size-threshold>
-		</multipart-config>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>action</servlet-name>
-		<url-pattern>*.do</url-pattern>
-	</servlet-mapping>
-	-->
 
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>

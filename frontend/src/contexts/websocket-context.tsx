@@ -1,14 +1,13 @@
-'use client';
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 
 interface WebSocketContextType {
- client: Client | null;
- isConnected: boolean;
+  client: Client | null;
+  isConnected: boolean;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({ client: null, isConnected: false });
@@ -16,67 +15,108 @@ const WebSocketContext = createContext<WebSocketContextType>({ client: null, isC
 export const useWebSocket = () => useContext(WebSocketContext);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
- const { user } = useAuth();
- const { toast, success, info } = useToast() as any; // 기존 toast 시스템 활용
- const [isConnected, setIsConnected] = useState(false);
- const stompClient = useRef<Client | null>(null);
+  const { user } = useAuth();
+  const { toast, success } = useToast();
+  const [isConnected, setIsConnected] = useState(false);
+  const stompClient = useRef<Client | null>(null);
+  const isConnecting = useRef(false);
 
- useEffect(() => {
- if (!user) {
- if (stompClient.current) {
- stompClient.current.deactivate();
- }
- return;
- }
+  const handleNotice = useCallback((message: any) => {
+    try {
+      const payload = JSON.parse(message.body);
+      toast(payload.message || '새로운 공지사항이 등록되었습니다.', 'info');
+    } catch (e) {
+      console.error('Failed to parse notice message:', e);
+    }
+  }, [toast]);
 
- const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
- const socketUrl = API_URL.replace('/api/v1', '/ws');
+  const handleNotification = useCallback((message: any) => {
+    try {
+      const payload = JSON.parse(message.body);
+      if (payload.type === 'APPROVAL') {
+        success(`[결재 알림] ${payload.message}`);
+      } else {
+        toast(payload.message, 'info');
+      }
+    } catch (e) {
+      console.error('Failed to parse notification message:', e);
+    }
+  }, [toast, success]);
 
- const client = new Client({
- webSocketFactory: () => new SockJS(socketUrl),
- reconnectDelay: 5000,
- heartbeatIncoming: 4000,
- heartbeatOutgoing: 4000,
- });
+  const handleNoticeRef = useRef(handleNotice);
+  const handleNotificationRef = useRef(handleNotification);
 
- client.onConnect = (frame) => {
- console.log('Connected to WebSocket');
- setIsConnected(true);
+  useEffect(() => {
+    handleNoticeRef.current = handleNotice;
+    handleNotificationRef.current = handleNotification;
+  }, [handleNotice, handleNotification]);
 
- // 1. 공통 공지사항 채널 구독
- client.subscribe('/topic/notices', (message) => {
- const payload = JSON.parse(message.body);
- toast(payload.message || '새로운 공지사항이 등록되었습니다.', 'info');
- });
+  useEffect(() => {
+    if (!user) {
+      if (stompClient.current?.active) {
+        stompClient.current.deactivate();
+        setIsConnected(false);
+      }
+      return;
+    }
 
- // 2. 사용자 개별 알림 채널 구독 (결재, 댓글 등)
- client.subscribe('/user/queue/notifications', (message) => {
- const payload = JSON.parse(message.body);
- // 중요도에 따라 success 또는 info 사용
- if (payload.type === 'APPROVAL') {
- success(`[결재 알림] ${payload.message}`);
- } else {
- toast(payload.message, 'info');
- }
- });
- };
+    if (isConnecting.current || stompClient.current?.active) {
+      return;
+    }
 
- client.onStompError = (frame) => {
- console.error('STOMP error', frame);
- setIsConnected(false);
- };
+    isConnecting.current = true;
 
- client.activate();
- stompClient.current = client;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+    const socketUrl = API_URL.replace('/api/v1', '/ws');
 
- return () => {
- client.deactivate();
- };
- }, [user, toast, success]);
+    const client = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      debug: (str) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[WebSocket]', str);
+        }
+      },
+    });
 
- return (
- <WebSocketContext.Provider value={{ client: stompClient.current, isConnected }}>
- {children}
- </WebSocketContext.Provider>
- );
+    client.onConnect = () => {
+      console.log('Connected to WebSocket');
+      setIsConnected(true);
+      isConnecting.current = false;
+      client.subscribe('/topic/notices', (msg) => handleNoticeRef.current(msg));
+      client.subscribe('/user/queue/notifications', (msg) => handleNotificationRef.current(msg));
+    };
+
+    client.onStompError = (frame) => {
+      console.error('STOMP error', frame);
+      setIsConnected(false);
+      isConnecting.current = false;
+    };
+
+    client.onDisconnect = () => {
+      console.log('Disconnected from WebSocket');
+      setIsConnected(false);
+      isConnecting.current = false;
+    };
+
+    client.activate();
+    stompClient.current = client;
+
+    return () => {
+      if (client.active) {
+        client.deactivate();
+      }
+      stompClient.current = null;
+      setIsConnected(false);
+      isConnecting.current = false;
+    };
+  }, [user]);
+
+  return (
+    <WebSocketContext.Provider value={{ client: stompClient.current, isConnected }}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 }

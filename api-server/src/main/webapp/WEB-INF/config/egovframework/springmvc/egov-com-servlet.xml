@@ -7,8 +7,8 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-	<!-- Security ??깆뵠?됰슢??뵳???@Configuration ??????癒?짗 ??쇳떔 -->
-	<context:component-scan base-package="org.egovframe.rte.fdl.security,egovframework,com.company.project">
+	<!-- Security 설정관련 빈 및 @Configuration 클래스 스캔 -->
+	<context:component-scan base-package="org.egovframe.rte.fdl.security,egovframework,nuri">
 		<context:include-filter type="annotation" expression="org.springframework.context.annotation.Configuration"/>
 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
@@ -16,10 +16,10 @@
         <context:exclude-filter type="regex" expression="org\.egovframe\.rte\.fdl\.security\.config\.EgovSecurityConfiguration"/>
 	</context:component-scan>
 
-	<!-- GlobalMenuAdvice??XML ?뚢뫂???쎈뱜?癒?즲 筌뤿굞??怨몄몵嚥??源낆쨯??뤿연 eGovFrame ?뚢뫂?껅에?살쑎?癒?퐣????덉삂??롫즲嚥???-->
-	<bean id="globalMenuAdvice" class="com.company.project.api.advice.GlobalMenuAdvice" />
+	<!-- GlobalMenuAdvice를 빈으로 등록하여 공통 메뉴 데이터를 제공함 -->
+	<bean id="globalMenuAdvice" class="nuri.api.advice.GlobalMenuAdvice" />
 
-	<!-- ??뺥닜?깆슦鍮??쇱뵠??됯맒??exception????????살첒 ??륁뵠筌왖???怨뚭퍙??롫뮉 mvc ??쇱젟 -->
+	<!-- 예외 발생 시 에러 페이지 매핑을 위한 설정 -->
 	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
 	        <property name="defaultErrorView" value="cmm/error/egovError"/>
 	        <property name="exceptionMappings">
@@ -38,12 +38,12 @@
 		</property>
 	</bean>
 
-	<!-- ?遺얇늺筌ｌ꼶???JSP ???뵬筌뤿굞?? prefix, suffix 筌ｌ꼶???????mvc ??쇱젟  -->
+	<!-- JSP 뷰 리졸버 설정 (prefix, suffix) -->
 	<bean class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="1"
 		p:viewClass="org.springframework.web.servlet.view.JstlView"
 		p:prefix="/WEB-INF/jsp/" p:suffix=".jsp"/>
 
-	<!-- 嚥≪뮄???筌ｋ똾寃뺝첎? ?袁⑹뒄??URL??嚥≪뮄????????筌ｋ똾寃?????-->
+	<!-- 인터셉터 설정 안내 (필요 시 주석 제거하여 사용) -->
 	<!--
 	<mvc:interceptors>
 		<mvc:interceptor>

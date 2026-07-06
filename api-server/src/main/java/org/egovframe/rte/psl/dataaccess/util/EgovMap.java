@@ -4,9 +4,9 @@ import java.util.LinkedHashMap;
 
 /**
 
- * eGovFrame EgovMap ?          ??  ???
+ * eGovFrame EgovMap 클래스 설명
 
- * MyBatis          ??            ??SnakeCase ?                  ??CamelCase ??               ??   ???      .
+ * MyBatis 연동            SnakeCase에서 CamelCase로 변환하는 유틸리티      .
 
  */
 

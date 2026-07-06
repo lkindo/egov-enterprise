@@ -1,0 +1,20 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run start:3001",
+      "url": [
+        "http://localhost:3001/admin"
+      ],
+      "numberOfRuns": 3
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.85 }],
+        "categories:accessibility": ["error", { "minScore": 0.90 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

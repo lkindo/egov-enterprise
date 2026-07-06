@@ -21,7 +21,7 @@ export function StandardForm({
   footer
 }: StandardFormProps) {
   return (
-    <div className={cn("bg-card border border-border rounded-xl shadow-sm overflow-hidden", className)}>
+    <div className={cn("bg-card border border-border rounded-lg shadow-sm overflow-hidden", className)}>
       {(title || description) && (
         <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
           {title ? <h3 className="text-base font-bold text-foreground tracking-tight">{title}</h3> : null}
@@ -49,12 +49,14 @@ export function StandardForm({
  */
 export function FormField({
   label,
+  htmlFor,
   error,
   children,
   required,
   description
 }: {
   label: string;
+  htmlFor?: string;
   error?: string;
   children: React.ReactNode;
   required?: boolean;
@@ -62,15 +64,15 @@ export function FormField({
 }) {
   return (
     <div className="space-y-1.5 p-0.5">
-      <label className="text-[11px] font-bold text-muted-foreground/80 flex items-center gap-1.5 ml-1">
+      <label htmlFor={htmlFor} className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
         {label}
-        {required ? <span className="text-destructive font-black text-[10px]">*</span> : null}
+        {required ? <span className="text-rose-500 font-bold text-xs" aria-hidden="true">*</span> : null}
       </label>
       <div className="relative">
         {children}
       </div>
-      {error ? <p className="text-[10px] font-bold text-destructive px-1 mt-1">{error}</p> : null}
-      {description ? <p className="text-[10px] font-medium text-muted-foreground/60 px-1 mt-1">{description}</p> : null}
+      {error ? <p id={`${htmlFor}-error`} role="alert" className="text-xs font-bold text-rose-600 px-1 mt-1">{error}</p> : null}
+      {description ? <p id={`${htmlFor}-description`} className="text-xs font-bold text-slate-500 px-1 mt-1 leading-relaxed">{description}</p> : null}
     </div>
   );
 }

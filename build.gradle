@@ -4,10 +4,12 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
+    id 'org.owasp.dependencycheck' version '12.1.0'
+    id 'info.solidsoft.pitest' version '1.19.0' apply false
 }
 
 allprojects {
-    group = 'com.company'
+    group = 'nuri'
     version = '0.0.1-SNAPSHOT'
 
     repositories {
@@ -17,20 +19,62 @@ allprojects {
     }
 
     apply plugin: 'jacoco'
+    apply plugin: 'org.owasp.dependencycheck'
+    
     jacoco {
-        toolVersion = "0.8.12"
+        toolVersion = "0.8.14"
     }
+    
+    // OWASP Dependency-Check 설정
+    dependencyCheck {
+        // 분석 실패 기준 CVE 스코어 (0-10, 7 이상은 High)
+        failBuildOnCVSS = 7
+        
+        // 분석 제외 의존성
+        skipConfigurations = [
+            'compileOnly',
+            'testCompileOnly',
+            'annotationProcessor',
+            'testAnnotationProcessor'
+        ]
+        
+        // NVD API 키 (선택사항, 있으면 업데이트 속도 향상)
+        // nvd.apiKey = System.getenv('NVD_API_KEY')
+        
+        // 리포트 설정
+        formats = ['HTML', 'JUNIT']
+        
+        // 스캔 제외 파일 패턴
+        suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
+        
+        // 데이터베이스 디렉토리 설정
+        data.directory = file("${rootProject.buildDir}/dependency-check-cache")
+        
+        
+        /* 
+        // 스캔 대상 아키텍처
+        analyzers {
+            // Jar 파일 분석
+            jarEnabled = true
+            // Maven Central 검색 사용
+            centralEnabled = true
+            // NVD 데이터베이스 사용
+            nvdEnabled = true
+        }
+        */
+    }
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform()
+    systemProperty "spring.main.allow-bean-definition-overriding", "true"
 }
 
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
-    apply plugin: 'jacoco'
-
-    jacoco {
-        toolVersion = "0.8.12"
-    }
+    apply plugin: 'info.solidsoft.pitest'
 
     java {
         toolchain {
@@ -40,7 +84,7 @@ subprojects {
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
-        options.compilerArgs << "-parameters"
+        options.compilerArgs << "-parameters" << "-Werror"
     }
 
     tasks.withType(Test).configureEach {
@@ -48,14 +92,40 @@ subprojects {
         useJUnitPlatform()
         systemProperties System.properties
         maxHeapSize = "6144m"
-        ignoreFailures = true
+        ignoreFailures = false
+        
+        // Jacoco 명시적 설정: 하위 프로젝트별 물리적 build 폴더 하위에 격리하여 생성 강제
+        jacoco {
+            enabled = true
+            destinationFile = layout.buildDirectory.file("jacoco/test.exec").map { it.asFile }.get()
+        }
         
         finalizedBy 'jacocoTestReport'
+    }
+
+    // 실행 시(bootRun 포함) UTF-8 인코딩 강제 설정
+    tasks.withType(JavaExec).configureEach {
+        systemProperty 'file.encoding', 'UTF-8'
+        systemProperty 'sun.jnu.encoding', 'UTF-8'
     }
 
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.1"
+            mavenBom "org.junit:junit-bom:5.12.2"
+        }
+    }
+
+    configurations.all {
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+        
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.junit.platform') {
+                details.useVersion '1.11.4'
+            }
+            if (details.requested.group.startsWith('org.junit.jupiter')) {
+                details.useVersion '5.11.4'
+            }
         }
     }
 
@@ -70,7 +140,6 @@ subprojects {
         implementation 'com.google.code.findbugs:jsr305:3.0.2'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
-        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
     jacocoTestReport {
@@ -79,19 +148,62 @@ subprojects {
             html.required = true
         }
     }
+
+    // PITest (점진적 Mutation Testing) 설정
+    pitest {
+        junit5PluginVersion = '1.2.1'
+        // 증분식(Incremental) 뮤테이션 분석: PIT_TARGET_CLASSES / PIT_TARGET_TESTS 환경변수로
+        // 리팩토링 대상 클래스에 한정할 수 있다 (기본값 'nuri.*' = 전체). 백엔드 헌법 제16조 '--targetClasses 한정' 이행.
+        targetClasses = (System.getenv('PIT_TARGET_CLASSES') ?: 'nuri.*').split(',').collect { it.trim() }
+        targetTests = (System.getenv('PIT_TARGET_TESTS') ?: 'nuri.*').split(',').collect { it.trim() }
+        outputFormats = ['HTML', 'XML']
+        threads = 4
+
+        // 도메인 분석과 무관한 설정/예외/DTO 보일러플레이트 제외
+        excludedClasses = [
+            "nuri.foundation.core.config.*",
+            "nuri.foundation.core.exception.*",
+            "nuri.api.config.*",
+            "nuri.business.support.*",
+            "nuri.foundation.support.*",
+            "**.*Dto",
+            "**.*VO",
+            "**.*DAO",
+            "**.*Mapper",
+            "**.*Request",
+            "**.*Response",
+            "**.*Entity",
+            "**.*Q*.class",
+            "**.*Q*Entity.class"
+        ]
+
+        // Incremental Mutation Analysis 활성화 (분석 속도 10배 향상)
+        historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
+        historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
+
+        // 백엔드 헌법 제16조 (Mutation Score 85% 이상 강제) 유동적 연동
+        // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
+        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
+    }
 }
 
-// 통합 리포트 태스크 (Gradle 8.x 공식 가이드 방식)
-task jacocoRootReport(type: JacocoReport) {
-    description = 'Generates an aggregate report from all subprojects'
+// 통합 리포트 태스크 (현대적인 Gradle 9 멀티프로젝트 집계 설정)
+tasks.register('jacocoRootReport', JacocoReport) {
+    description = 'Generates an aggregate report from all subprojects using explicit paths'
     group = 'Verification'
 
-    def subprojectTests = subprojects.collect { it.tasks.withType(Test) }.flatten()
-    dependsOn subprojectTests
-
-    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(subprojects.sourceSets.main.output.classesDirs).collect {
-        fileTree(dir: it, exclude: [
+    // 모든 하위 프로젝트 및 루트 프로젝트의 테스트 태스크에 의존
+    dependsOn subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
+    mustRunAfter subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
+ 
+    // 소스 디렉토리 통합 (물리적 경로로 명시)
+    sourceDirectories.setFrom(subprojects.collect { 
+        file("${it.projectDir}/src/main/java") 
+    })
+ 
+    // 클래스 디렉토리 통합 및 필터링
+    classDirectories.setFrom(subprojects.collect { 
+        fileTree(dir: "${it.projectDir}/build/classes/java/main", exclude: [
             "**/Q*.class",
             "**/Q*Entity.class",
             "**/*Request.class",
@@ -103,17 +215,37 @@ task jacocoRootReport(type: JacocoReport) {
             "**/*VO.class",
             "**/*DAO.class",
             "**/*Mapper.class",
+            "**/*MapperImpl.class",
             "**/*Initializer.class",
-            "**/*Advice.class",
-            "**/*RepositoryImpl.class"
+            "**/*Advice.class"
         ])
-    }
-    executionData.from = files(subprojects.jacocoTestReport.executionData).filter { it.exists() }
+    })
+ 
+    // 실행 데이터(.exec) 통합: 모든 하위 프로젝트가 루트의 단일 파일로 모이는 현상 활용
+    executionData.setFrom(file("${rootProject.buildDir}/jacoco/test.exec"))
 
     reports {
-        html.required = true
         xml.required = true
-        csv.required = true
+        html.required = true
         html.outputLocation = layout.buildDirectory.dir("reports/jacoco/aggregated")
+    }
+}
+
+// 루트 프로젝트 JaCoCo 커버리지 검증
+tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
+    description = 'Verifies code coverage for all subprojects'
+    group = 'Verification'
+    
+    dependsOn jacocoRootReport
+    
+    violationRules {
+        rule {
+            // 전체 프로젝트 최소 커버리지 목표
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50 // 50% 이상 목표
+            }
+        }
     }
 }

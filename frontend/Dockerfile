@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -12,6 +12,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Next.js 15 optimization: Skip lint and type check if already done in CI
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG BACKEND_API_URL
+ARG NEXT_PUBLIC_API_URL
+ENV BACKEND_API_URL=$BACKEND_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # Stage 3: Runner
@@ -25,14 +29,15 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./next.config.ts
 
-# Automatically leverage standalone output to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy the full .next directory (standalone mode is disabled in next.config.ts)
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-# server.js is created by next build from the standalone output
-CMD ["node", "server.js"]
+CMD ["node", "node_modules/.bin/next", "start"]

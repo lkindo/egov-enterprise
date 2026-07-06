@@ -1,31 +1,37 @@
+import { useCallback } from 'react';
 import { MESSAGES } from '@/constants/messages';
 
 /**
- * 메시지 조회 훅
- * - 추후 i18n 라이브러리(next-intl 등) 도입 시 이 훅만 수정하면 전역 반영 가능
+ * 메시지 조회 - 추후 i18n 라이브러리(next-intl 등) 도입 시 이곳만 수정하면 전역 반영 가능
  */
 export function useMessage() {
-  const t = (keyPath: string, params?: Record<string, string | number>): string => {
+  const t = useCallback((keyPath: string, params?: Record<string, string | number>): string => {
     const keys = keyPath.split('.');
-    let current: any = MESSAGES;
+    let current: unknown = MESSAGES;
 
     for (const key of keys) {
-      if (current[key] === undefined) {
+      if (typeof current === 'object' && current !== null && key in current) {
+        current = (current as Record<string, unknown>)[key];
+      } else {
         console.warn(`Message key not found: ${keyPath}`);
         return keyPath;
       }
-      current = current[key];
     }
 
-    let message = current as string;
+    if (typeof current !== 'string') {
+      console.warn(`Message key is not a string: ${keyPath}`);
+      return keyPath;
+    }
+
+    let message: string = current;
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        message = message.replace(`{${key}}`, String(value));
+        message = message.split(`{${key}}`).join(String(value));
       });
     }
 
     return message;
-  };
+  }, []);
 
   return { t };
 }
