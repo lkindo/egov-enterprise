@@ -113,7 +113,8 @@ class ScheduleServiceTest {
         // given
         String schdulId = "S1";
         String userId = "user1";
-        Schedule entity = Schedule.builder().schdlId(schdulId).frstRgtrId(userId).build();
+        Schedule entity = Schedule.builder().schdlId(schdulId).build();
+        entity.setFrstRgtrId(userId); // 감사 필드는 빌더 대신 세터로 세팅(테스트 시나리오 구성용)
         given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
         // when
@@ -128,7 +129,8 @@ class ScheduleServiceTest {
     void deleteSchedule_fail_notCreator() {
         // given
         String schdulId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdulId).frstRgtrId("creator").build();
+        Schedule entity = Schedule.builder().schdlId(schdulId).build();
+        entity.setFrstRgtrId("creator"); // 감사 필드는 빌더 대신 세터로 세팅(테스트 시나리오 구성용)
         given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
         // when & then

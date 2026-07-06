@@ -3,18 +3,22 @@ package nuri.business.domain.schedule;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 
+/**
+ * 일정 엔티티 (tb_schdl_info)
+ *
+ * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
+ * (@AllArgsConstructor 는 {@code new Schedule(...)} 호출부가 존재하여 유지, create() 가 위임)
+ */
 @Entity
 @Table(name = "tb_schdl_info")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class Schedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -49,7 +53,7 @@ public class Schedule extends BaseEntity implements Serializable {
 
     @Column(length = 30)
     private String atchFileId;
-    
+
     // Additional fields used in service
     @Column(length = 20)
     private String schdlDeptId;
@@ -59,6 +63,17 @@ public class Schedule extends BaseEntity implements Serializable {
     private String schdlPlcNm;
     @Column(length = 12)
     private String schdlImprtCd;
+
+    /**
+     * 일정 생성 정적 팩토리(빌더 진입점). {@code Schedule.builder()...build()} 호출부는 그대로 동작한다.
+     */
+    @Builder
+    public static Schedule create(String schdlId, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
+            String schdlBgngYmd, String schdlEndYmd, String schdlIpAddr, String schdlPicId, String atchFileId,
+            String schdlDeptId, String schdlKndCd, String schdlPlcNm, String schdlImprtCd) {
+        return new Schedule(schdlId, schdlSeCd, schdlNm, schdlCn, reptSeCd, schdlBgngYmd, schdlEndYmd, schdlIpAddr,
+                schdlPicId, atchFileId, schdlDeptId, schdlKndCd, schdlPlcNm, schdlImprtCd);
+    }
 
     public void update(String schdlNm, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
                        String reptSeCd, String schdlPicId, String atchFileId) {
@@ -71,7 +86,7 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlPicId = schdlPicId;
         this.atchFileId = atchFileId;
     }
-    
+
     public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,
                        String schdlPlcNm, String schdlImprtCd, String schdlPicId, String reptSeCd) {
         this.schdlNm = schdlNm;

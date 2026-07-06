@@ -68,7 +68,6 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                     .noteId(noteId)
                     .noteTtl(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
-                    .frstRgtrId(dsptchUserId)
                     .build();
             noteRepository.save(note);
 
@@ -77,7 +76,6 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                     .noteSndngId(trnsmitId)
                     .note(note)
                     .sndrId(dsptchUserId)
-                    .frstRgtrId(dsptchUserId)
                     .build();
             noteTrnsmitRepository.save(trnsmit);
 
@@ -91,7 +89,6 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
                             .rcvrId(rcverId.trim())
                             .openYn("N")
                             .rcptnSeCd("0")
-                            .frstRgtrId(dsptchUserId)
                             .build();
                     noteRecptnRepository.save(recptn);
                 }

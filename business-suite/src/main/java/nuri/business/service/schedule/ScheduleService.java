@@ -82,8 +82,8 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
                 .schdlIpAddr(dto.getSchdlIpAddr())
                 .reptSeCd(dto.getReptSeCd())
                 .atchFileId(dto.getAtchFileId())
-                .frstRgtrId(userId)
                 .build();
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         scheduleRepository.save(entity);
         return entity.getSchdlId();
     }
