@@ -1,6 +1,4 @@
 package nuri.business.domain.note;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -15,7 +13,6 @@ import org.hibernate.annotations.DynamicUpdate;
  * 연관(note, noteDsptch)은 빌더로 설정하므로 팩토리 파라미터에 포함. 감사 필드는 표준 Auditing에 위임.
  * (@AllArgsConstructor 는 {@code new NoteRecptn(...)} 호출부가 존재하여 유지, create() 가 위임)
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_note_rcptn")
 @Getter

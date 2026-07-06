@@ -3,7 +3,6 @@ package nuri.business.domain.user.entity;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -17,7 +16,6 @@ import java.util.Objects;
 @Table(name = "tb_user_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

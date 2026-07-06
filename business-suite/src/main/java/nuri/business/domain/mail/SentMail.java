@@ -1,8 +1,6 @@
 package nuri.business.domain.mail;
 
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.Builder;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -13,7 +11,6 @@ import lombok.NoArgsConstructor;
  * 발송 메일 정보 엔티티 (HEMAILDSPTCHMANAGE 테이블 매핑)
  * [Cleanup] 한글 인코딩 복구 및 감사 필드 표준화
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_email_dsptch_manage")
 @Getter

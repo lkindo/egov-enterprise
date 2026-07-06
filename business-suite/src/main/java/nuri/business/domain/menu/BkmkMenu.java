@@ -1,14 +1,11 @@
 package nuri.business.domain.menu;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.Builder;
 import java.io.Serializable;
 
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bkmk_menu_mng_rslt")
 @Getter

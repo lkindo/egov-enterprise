@@ -1,7 +1,5 @@
 package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,7 +11,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_login_log")
 @Getter

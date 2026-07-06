@@ -1,6 +1,4 @@
 package nuri.business.domain.note;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -15,7 +13,6 @@ import org.hibernate.annotations.DynamicUpdate;
  * 컬렉션 기본값(new ArrayList)은 필드 초기화로 유지, 감사 필드는 표준 Auditing 파이프라인에 위임.
  * (커스텀 4-인자 생성자는 {@code new Note(...)} 호출부가 있어 유지, create() 가 이를 위임)
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "NoteDomain")
 @Table(name = "tb_note_info")
 @Getter

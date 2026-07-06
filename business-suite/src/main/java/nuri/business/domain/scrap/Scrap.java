@@ -3,7 +3,6 @@ package nuri.business.domain.scrap;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 스크랩 정보 Entity (v5 standardized)
@@ -13,7 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "tb_bbs_scrap")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class Scrap extends BaseEntity {
 
     @Id

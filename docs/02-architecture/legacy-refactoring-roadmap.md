@@ -132,7 +132,7 @@ public class FileDetail {
 ### 3.1. 전사 표준 Auditing Superclass 정의
 
 > [!NOTE] **실제 구현 반영**
-> 표준 감사 상위클래스는 이미 **2단 상속 구조**(`BaseTimeEntity` ← `BaseEntity`)로 확립되어 있으며, eGov 레거시 컬럼 별칭(`crtDt/mdfcnDt/frstRgtrId/lastMdfrId`)을 사용한다. 아래는 실제 코드 기준이며, Phase 5 의 목표는 컬럼명을 새로 바꾸는 것이 **아니라 전 엔티티가 이 상위클래스를 상속하도록 통일**하는 것이다. (현 시점 87개 엔티티 중 2개(`ExternalHr`, `InstitutionCodeRecptnLog`)가 미상속 상태로 남아 있음 — 별도 안전 검토 후 전환 예정)
+> 표준 감사 상위클래스는 이미 **2단 상속 구조**(`BaseTimeEntity` ← `BaseEntity`)로 확립되어 있으며, eGov 레거시 컬럼 별칭(`crtDt/mdfcnDt/frstRgtrId/lastMdfrId`)을 사용한다. 아래는 실제 코드 기준이며, Phase 5 의 목표는 컬럼명을 새로 바꾸는 것이 **아니라 전 엔티티가 이 상위클래스를 상속하도록 통일**하는 것이다. (2026-07-06 전수 조사 기준, 87개 엔티티 중 4개가 미상속: `ExternalHr`·`InstitutionCodeRecptnLog` 는 감사값 출처 변경 리스크로 **보류**, `SmsRecptn` 은 복합키·자체 감사 부재, `RefreshToken` 은 토큰 standalone 성격 — 각각 별도 검토)
 
 ```java
 // 시간 메타데이터: nuri.business.domain.common.BaseTimeEntity
@@ -164,7 +164,7 @@ public abstract class BaseEntity extends BaseTimeEntity {
 }
 ```
 
-> [!TIP] `@EntityListeners(AuditingEntityListener.class)` 는 `BaseTimeEntity` 에 이미 선언되어 하위 엔티티로 전파되므로, **각 엔티티에서 개별 재선언은 불필요**하다. (현재 57개 엔티티가 중복 재선언 중 — 제거 대상)
+> [!TIP] `@EntityListeners(AuditingEntityListener.class)` 는 `BaseTimeEntity` 에 이미 선언되어 하위 엔티티로 전파되므로, **각 엔티티에서 개별 재선언은 불필요**하다. (**2026-07-06 완료**: 중복 재선언 **56개 엔티티**에서 애노테이션 + 미사용 import를 일괄 제거 — 총 153줄 순수 삭제, 잔여 0. 감사 동작은 상위클래스 리스너로 유지되며 컴파일·ArchUnit·JPA 리포지토리 테스트 그린 확인.)
 
 ### 3.2. 영속 엔티티 Builder / 생성자 규범
 - **무분별한 `@Builder` 금지**: 엔티티 클래스 레벨의 `@Builder`는 무분별한 필드 초기화를 허용하므로, 명확한 정적 팩토리 메서드(`of`, `create`)에 빌더를 배치하거나, 필수 값을 인자로 받는 커스텀 생성자에 배치합니다.
@@ -183,14 +183,17 @@ public abstract class BaseEntity extends BaseTimeEntity {
 - **규칙(c) 생성자 캡슐화 100% 달성 + 회귀 가드**: `Hpcm`, `PrivacyLog` 의 public 기본 생성자를 `protected` 로 교정. [EntityConventionArchTest.java](file:///d:/project/egov-enterprise/business-suite/src/test/java/nuri/business/architecture/EntityConventionArchTest.java) 로 "엔티티 기본 생성자 non-public" 규칙을 상시 강제(회귀 차단).
 - **규칙(a) 빌더 규범 예시 확립**: [FileDetail.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/file/FileDetail.java) 를 규범대로 리팩토링 — 클래스 레벨 `@SuperBuilder` 제거, 정적 팩토리 `create()` 에 `@Builder` 배치. 빌더 노출 표면을 비즈니스 필드로 한정하면서 기존 `FileDetail.builder()...build()` 호출부는 무수정 유지.
 - **증분 뮤테이션 실질화**: [build.gradle](file:///d:/project/egov-enterprise/build.gradle) 의 `targetClasses` 를 `PIT_TARGET_CLASSES` 환경변수로 한정 가능하게 개선하고, [ci.yml](file:///d:/project/egov-enterprise/.github/workflows/ci.yml) 에 `mutation-test` 잡을 추가(리포트 전용, 85% 확인 후 `STRICT_MUTATION` 옵트인).
+- **규칙(a)/(b) 도메인 전량 전환 (2026-07-06)**: 클래스 레벨 `@SuperBuilder`/`@Builder` 를 정적 팩토리 `create()` 로 이관하는 규범을 전 도메인에 적용 완료. 전수 조사 결과 규칙(a) 잔여 **1개**(`RefreshToken`)로 86/87 준수, 클래스 레벨 `@Setter` **0개**.
+- **§3.1 `@EntityListeners` 중복 재선언 전량 제거 (2026-07-06)**: `BaseTimeEntity` 가 이미 전파하는 리스너를 재선언하던 **56개 엔티티**에서 애노테이션과 미사용 import를 일괄 제거(153줄 순수 삭제). 감사 동작은 상위클래스 리스너로 그대로 유지되며, 컴파일·ArchUnit(`EntityConventionArchTest`)·JPA 리포지토리 테스트(`SentMail`/`Restde`/`BoardMaster`)로 회귀 없음 검증.
 
 > [!IMPORTANT] **규칙(a) 회귀 가드는 ArchUnit 으로 강제 불가**
 > Lombok `@SuperBuilder`/`@Builder` 는 `RetentionPolicy.SOURCE` 라 컴파일된 바이트코드에 흔적이 남지 않는다. 따라서 바이트코드 분석 기반의 ArchUnit 으로는 클래스 레벨 빌더를 **탐지할 수 없다.** 규칙(a) 의 회귀 차단은 소스 레벨 도구(Checkstyle 정규식) 또는 코드리뷰로 보완해야 한다. (종합 리포트의 "ArchUnit 규칙으로 빌더 금지" 권고는 이 이유로 실현 불가하며, 본 문서로 정정한다.)
 
-**잔여 대상 (도메인 단위 점진 이행)**
-- 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **82개** 엔티티 (FileDetail 완료로 83→82).
-- 규칙(b): 클래스 레벨 `@Setter` **28개**, 규칙 외 `@AllArgsConstructor` **58개**.
-- §3.1: `@EntityListeners` 중복 재선언 **57개**, BaseEntity 미상속 **2개**(`ExternalHr`, `InstitutionCodeRecptnLog` — 감사값 출처 변경 리스크로 **보류**, 별도 안전 검토 예정).
+**잔여 대상 (2026-07-06 전수 조사 기준 갱신 — 이전 수치는 문서 미갱신에 따른 stale 값이었음)**
+- 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **1개**(`RefreshToken` — standalone 엔티티, 전환 시 신중). ※ 이전 "82개"는 도메인 전량 전환 이전 수치.
+- 규칙(b): 클래스 레벨 `@Setter` **0개 (완료)**. 규칙 외 `@AllArgsConstructor` **5개**(`Schedule`, `LeaderSchedule`, `NoteRecptn`, `NoteTrnsmit`, `RefreshToken` — 기존 `new X(...)` 호출부 호환 위해 의도적 유지).
+- §3.1: `@EntityListeners` 중복 재선언 **0개 (완료)**. BaseEntity 미상속 **4개**(`ExternalHr`·`InstitutionCodeRecptnLog` 보류 + `SmsRecptn`·`RefreshToken` standalone).
+- (신규 식별) 복합키용 **중첩 식별자 클래스**는 아직 구패턴 유지: `BlogUserId`(`@SuperBuilder`), `AuthorityRoleId`·`MenuAuthorityId`·`BkmkMenuId`(클래스 레벨 `@Builder`+`@AllArgsConstructor`). 규칙(a)/(b)를 `@Embeddable`/`@IdClass` 식별자까지 확장할지 방침 결정 필요.
 
 ---
 

@@ -1,6 +1,4 @@
 package nuri.business.domain.schedule;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -14,7 +12,6 @@ import lombok.NoArgsConstructor;
  *
  * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_memo_todo_info")
 @Getter

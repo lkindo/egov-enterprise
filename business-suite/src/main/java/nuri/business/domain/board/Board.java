@@ -22,7 +22,6 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_bbs_item")
-@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @FilterDef(name = "softDeleteFilter", parameters = @ParamDef(name = "useYn", type = String.class))
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Board extends BaseEntity implements Serializable {

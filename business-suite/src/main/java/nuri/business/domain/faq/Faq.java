@@ -4,7 +4,6 @@ import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.Builder;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * FAQ 정보 Entity
@@ -14,7 +13,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "tb_faq_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class Faq extends BaseEntity {
 
     @Id

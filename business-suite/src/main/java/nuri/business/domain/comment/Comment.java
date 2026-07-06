@@ -1,7 +1,5 @@
 package nuri.business.domain.comment;
 
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.io.Serializable;
 import nuri.business.domain.common.BaseEntity;
 import nuri.business.domain.board.Board;
@@ -15,7 +13,6 @@ import org.hibernate.annotations.Filter;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bbs_comment")
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")

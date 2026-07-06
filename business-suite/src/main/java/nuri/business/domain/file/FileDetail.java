@@ -1,7 +1,5 @@
 package nuri.business.domain.file;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.Builder;
 
 import jakarta.persistence.*;
@@ -22,7 +20,6 @@ import lombok.Setter;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_file_detail", uniqueConstraints = {
     @UniqueConstraint(name = "uk_tb_file_detail_sn", columnNames = {"ATCH_FILE_ID", "atch_file_seq"})

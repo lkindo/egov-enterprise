@@ -1,7 +1,5 @@
 package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +13,6 @@ import java.time.LocalDateTime;
  *
  * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder/@AllArgsConstructor 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_privacy_log")
 @Getter

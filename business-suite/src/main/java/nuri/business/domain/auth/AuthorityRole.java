@@ -13,7 +13,6 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_authrt_role_map")
-@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 public class AuthorityRole extends BaseEntity {
 
     @EmbeddedId

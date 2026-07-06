@@ -1,7 +1,5 @@
 package nuri.business.domain.addressbook;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.Builder;
 
 import jakarta.persistence.*;
@@ -14,7 +12,6 @@ import lombok.NoArgsConstructor;
  * 주소록 구성원 정보를 관리하는 JPA Entity
  * 테이블명: COMTNADBK (레거시), NADBK (신규)
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_adbk_info")
 @Getter

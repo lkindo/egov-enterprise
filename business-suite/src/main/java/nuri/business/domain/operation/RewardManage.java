@@ -1,8 +1,6 @@
 package nuri.business.domain.operation;
 
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.Builder;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -13,7 +11,6 @@ import lombok.NoArgsConstructor;
  * 포상 관리 엔티티
  * [Standardization] BaseEntity 상속을 통한 감사 필드 통합
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_rward_manage")
 @Getter

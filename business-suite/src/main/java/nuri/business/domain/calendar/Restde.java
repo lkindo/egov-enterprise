@@ -1,6 +1,4 @@
 package nuri.business.domain.calendar;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -11,7 +9,6 @@ import lombok.*;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_hldy_info")
 

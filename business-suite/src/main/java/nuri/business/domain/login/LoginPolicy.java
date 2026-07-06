@@ -1,6 +1,4 @@
 package nuri.business.domain.login;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -17,7 +15,6 @@ import lombok.Setter;
  * 로그인 정책 엔티티
  * 매핑 테이블: TB_LOGIN_POLICY
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_login_policy")
 @Getter

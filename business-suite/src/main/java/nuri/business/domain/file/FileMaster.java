@@ -1,8 +1,6 @@
 package nuri.business.domain.file;
 
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -14,7 +12,6 @@ import java.util.List;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_file_master")
 public class FileMaster extends BaseEntity {

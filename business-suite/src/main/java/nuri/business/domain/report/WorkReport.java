@@ -3,7 +3,6 @@ package nuri.business.domain.report;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 
@@ -11,7 +10,6 @@ import java.io.Serializable;
 @Table(name = "tb_rpt_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class WorkReport extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

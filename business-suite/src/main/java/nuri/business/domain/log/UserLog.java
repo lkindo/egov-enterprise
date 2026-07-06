@@ -1,7 +1,5 @@
 package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +22,6 @@ import jakarta.persistence.ManyToOne;
  * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  * 읽기 전용 연관 vnUserMaster 는 빌더 대상이 아니므로 팩토리에서 제외.
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_user_log")
 @Getter
