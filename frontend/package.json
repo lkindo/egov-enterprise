@@ -13,6 +13,8 @@
     "codegen:ts": "openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated-api.d.ts",
     "codegen:file": "openapi-typescript ../api-docs.json -o src/types/generated-api.d.ts",
     "codegen:verify": "npm run codegen:file && git diff --exit-code src/types/generated-api.d.ts",
+    "codegen:zod": "node ../.agent/scripts/codegen-zod.js",
+    "codegen:verify:zod": "npm run codegen:zod && git diff --exit-code src/types/generated-zod.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "cross-env NODE_OPTIONS=--max-old-space-size=8192 playwright test --workers=2",

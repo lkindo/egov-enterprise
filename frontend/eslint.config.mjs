@@ -88,6 +88,14 @@ const eslintConfig = [
       "@typescript-eslint/ban-ts-comment": "warn",
       "react/no-unescaped-entities": "warn",
       "@typescript-eslint/no-unused-expressions": "warn",
+      // 프론트엔드 Zod SSOT 일원화(§4.1/방안1): 인라인 z.object(...) 금지 — 백엔드 생성 스키마를 .extend() 로 확장
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "CallExpression[callee.object.name='z'][callee.property.name='object']",
+          "message": "인라인 z.object(...) 금지 — 백엔드 SSOT 스키마(@/types/generated-zod)를 import 하여 .extend() 로 확장하세요 (project-audit-report §4.1/방안1)."
+        }
+      ],
     }
   },
   {
@@ -110,6 +118,13 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "warn",
       "react-hooks/rules-of-hooks": "off",
       "@typescript-eslint/no-unused-expressions": "off"
+    }
+  },
+  {
+    // 자동 생성 SSOT 스키마 파일은 인라인 z.object 금지 규칙에서 제외(생성물)
+    files: ["src/types/generated-zod.ts"],
+    rules: {
+      "no-restricted-syntax": "off"
     }
   }
 ];

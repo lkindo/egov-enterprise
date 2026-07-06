@@ -81,11 +81,12 @@
   - **17개 파일이 `@/types/generated-zod` 를 import**하고 `.extend(` 27회로 UI 전용 필드를 확장한다.
   - 초판이 지목한 `BoardRegistClient.tsx` 는 이미 `BoardSaveRequestSchema.extend({...})` 패턴을 사용 — **방안1이 처방한 컨벤션 그대로.**
   - 중앙 `lib/validation/schemas.ts` 가 생성 스키마 11개를 import·확장.
-- **🟡 남은 갭**: 인라인 `z.object` 를 **금지하는 ESLint 규칙이 없어** 컨벤션이 "사실상(de-facto)"일 뿐 기계 강제는 아니다. "최악의 문제" 라벨은 제거한다.
+- **✅ ESLint 강제 추가(2026-07-06)**: 인라인 `z.object` 금지 규칙(`no-restricted-syntax`, error)을 `eslint.config.mjs` 에 추가하여 컨벤션을 "사실상(de-facto)"에서 "기계 강제"로 승격(생성 파일 `generated-zod.ts` 는 예외). src 인라인 0건이라 회귀만 차단한다. "최악의 문제" 라벨은 제거. ⚠️ 단 현재 `npm run lint` 자체가 ESLint 9 + eslint-config-next(FlatCompat) 호환 오류로 크래시하므로(내 변경과 무관, 원본 설정에서도 재현), 규칙의 런타임 검증은 lint 복구 후 가능하다.
 
-### 4.1-b. Zod 코드젠 동기화 파이프라인 — 🟡 부분(배선 미완)
-- **현황(정정)**: `frontend/package.json` 의 `codegen:ts`/`codegen:file`/`codegen:verify` 는 전부 `openapi-typescript` 로 **`generated-api.d.ts`(TS 타입)만** 생성하며 **Zod 를 만들지 않는다.**
-- **🔴 갭**: `generated-zod.ts` 는 `node .agent/scripts/codegen-zod.js` 를 **수동 실행**해야만 갱신되고(입력 `api-docs.json`), **드리프트 가드가 없다**(`codegen:verify` 는 `generated-api.d.ts` 만 diff 검사). 또한 `generated-api.d.ts` 자체 소비처는 2곳뿐. → `codegen:zod` npm 스크립트 + diff 가드 추가 권장.
+### 4.1-b. Zod 코드젠 동기화 파이프라인 — 🟡 부분(배선 완료, 드리프트 재조정 필요)
+- **현황**: `frontend/package.json` 의 `codegen:ts`/`codegen:file`/`codegen:verify` 는 `openapi-typescript` 로 `generated-api.d.ts`(TS 타입)만 생성한다. Zod 생성기는 `.agent/scripts/codegen-zod.js`(입력 `api-docs.json`, `__dirname` 기반이라 CWD 독립).
+- **✅ 배선(2026-07-06)**: `codegen:zod`(= `node ../.agent/scripts/codegen-zod.js`) 와 드리프트 가드 `codegen:verify:zod`(= 재생성 후 `git diff --exit-code generated-zod.ts`) npm 스크립트를 추가.
+- **⚠️ 드리프트 발견(별도 재조정)**: `codegen:zod` 를 실제 실행하면 `generated-zod.ts` 가 변경된다(예: `NetworkDto` 스키마 삭제, `MenuDto.useYn` 삭제, `FileDto` 순서 이동) — 커밋된 파일이 SSOT(`api-docs.json`) 대비 **stale**이다. 게다가 프론트가 삭제된 스키마를 참조 중(`lib/validation/schemas.ts` 의 `networkSchema`)이라 **단순 재생성은 프론트 빌드를 깨뜨린다.** 따라서 재생성물은 커밋하지 않았으며, "재생성 + 참조 정리 + 빌드 검증"은 별도 재조정 작업으로 분리한다(가드 `codegen:verify:zod` 가 이 드리프트를 지속 감지).
 
 ### 4.2. 하이드레이션 안전 및 리프 컴포넌트 격리 — 🟡 부분(격리 실천되나 불균일)
 - **현황(계량)**: `src` 459개 파일 중 **210개(~46%)** 가 상단 `'use client'`. 라우트 `page.tsx` 122개 중 **79개(65%)** 가 통째로 클라이언트(예: 8줄짜리 `approvals/page.tsx` 도 client).
@@ -96,10 +97,11 @@
 
 ## 5. 유지보수 및 안정성 최적화 방안 (이행 현황 반영)
 
-### 방안 1: 자동 생성 Zod 스키마 활용 강제화 — ✅ 실질 완료(후속 배선만 남음)
-`generated-zod.ts` + `.extend()` 컨벤션이 **이미 정착**(인라인 0건, 17개 소비처). 초판 처방이 코드로 실현됨.
-- **남은 후속(선택)**: (a) 인라인 `z.object` 금지 **ESLint 규칙**으로 "사실상"을 "강제"로 승격, (b) `codegen-zod.js` 를 **npm 스크립트 + 드리프트 가드**로 배선(현재 수동).
-- **우선순위**: 하(정리성). 기능적 SSOT는 이미 확보됨.
+### 방안 1: 자동 생성 Zod 스키마 활용 강제화 — ✅ 정착 + 후속 배선 완료(드리프트 재조정 잔여)
+`generated-zod.ts` + `.extend()` 컨벤션 정착(인라인 0건, 17개 소비처)에 더해 2026-07-06 후속 완료:
+- ✅ 인라인 `z.object` 금지 ESLint 규칙(`no-restricted-syntax`) 추가 — 컨벤션을 기계 강제로 승격.
+- ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
+- **⚠️ 잔여(별도 작업)**: (a) `generated-zod.ts` 가 `api-docs.json` 대비 **드리프트** 상태 — 재생성 + 프론트 참조(`networkSchema` 등) 정리 + 빌드 검증이 함께 필요(단순 재생성 시 빌드 붕괴). (b) `npm run lint` 크래시(ESLint 9 / eslint-config-next FlatCompat) 복구 — 현재 lint 게이트가 동작하지 않아 신규 규칙도 실행 불가.
 
 ### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
 LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
@@ -124,7 +126,8 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
 2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
-4. **🟡 확산 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화 완료(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 도메인 판단 후 진행 · 🟡 인라인 `z.object` 금지 ESLint 규칙.
+4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
+6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) `generated-zod.ts` 가 `api-docs.json` 대비 **드리프트**(재생성 시 `NetworkDto` 등 제거 → 프론트 참조 정리 + 빌드 검증 동반, 단순 재생성 금지). (b) **`npm run lint` 크래시**(ESLint 9 + eslint-config-next FlatCompat 순환 구조) — 프론트 lint 게이트가 현재 미동작, 복구 필요.
 5. **🟡 감사 (중기)**: 79개 전면-클라이언트 `page.tsx` 의 `'use client'` 리프 다운 감사(§4.2).
 
 > [!NOTE] **검증 근거**
