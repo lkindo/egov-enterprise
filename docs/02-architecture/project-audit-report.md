@@ -95,7 +95,7 @@
 - **📋 리프 다운 감사(2026-07-06)**: 79개 client `page.tsx` 를 훅·이벤트 핸들러 직접 사용 여부로 분류했다:
   - **✅ 즉시 승격 가능(easy) 40개** — React 훅/핸들러 직접 사용 **0**. 이 중 **~28개는 이미 `<*Client/>` 아일랜드에 위임**만 하므로 page 의 `'use client'` 를 제거하면 그대로 서버 컴포넌트가 된다(순수 기계 승격). 나머지 ~12개는 정적 콘텐츠라 `'use client'` 자체가 불필요. (예: `admin/help/page.tsx`, `admin/stats/*`, `approvals/page.tsx`, `smart-toolkit/*` — 대부분 L8~12)
   - **🟡 아일랜드 추출 후 승격(refactor) 39개** — page 내부에서 훅·상태를 직접 사용(예: `note/page.tsx` L302/훅28, `admin/security/role/page.tsx` L357/훅23, `login/page.tsx` L249/훅14). 인터랙션을 `*Client` 아일랜드로 추출한 뒤 page 를 서버 셸로 전환해야 한다.
-  - **권고**: easy 40개(특히 아일랜드 위임 28개)부터 배치로 `'use client'` 제거→서버 셸화. 단 프론트 빌드/타입 검증 환경이 필요하므로(현 세션은 `npm run lint` 크래시로 검증 불가) 별도 배치 실행 작업으로 분리한다. 본 항목은 **감사·우선순위 산출**까지 완료.
+  - **✅ 실행(2026-07-06)**: 아일랜드 위임 `page.tsx` **31개**에서 `'use client'` 제거→서버 셸화 완료. 그 과정에서 정작 `'use client'` 가 없던 클라이언트 아일랜드 **3개**(`KnowledgeHubClient`/`WorkflowHubClient`/`LayoutManagerClient`, 훅 사용)에 `'use client'` 를 추가 — 부모 지시자에 얹혀 있던 **잠재 결함을 교정**(리프-다운의 실체). `next build` **Compiled successfully(서버/클라이언트 경계 검증 통과)** + `tsc --noEmit` 클린으로 검증. `next/dynamic({ ssr: false })` 를 쓰는 `admin/community/boards/master/page.tsx` **1개**는 'use client' 필수라 스킵. 🟡 잔여: 정적 콘텐츠(island 無) `page.tsx` 소수는 동일 방식 승격 가능 + refactor 39개는 아일랜드 추출 선행 필요.
 
 ---
 
@@ -132,7 +132,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
 6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 신규 규칙 warn 백로그 **53건**(`set-state-in-effect` 44 등) 점진 정리.
-5. **🟡 감사→실행 (중기)**: ✅ 리프 다운 감사 완료(2026-07-06) — 79개 client `page.tsx` = easy 40(즉시 승격, 그중 28개 아일랜드 위임) + refactor 39(아일랜드 추출 필요). 🟡 easy 40개 배치 승격은 프론트 빌드 검증 환경에서 실행 권장.
+5. **✅ 감사+실행 (2026-07-06)**: 리프 다운 감사 + **아일랜드 위임 31개 서버 셸화 실행 완료**(클라이언트 아일랜드 3개 `'use client'` 보정 포함, `next build` 경계 검증 통과). 1개 스킵(`ssr:false` dynamic). 🟡 잔여: 정적 콘텐츠 `page.tsx` 소수 + refactor 39개(아일랜드 추출 필요).
 
 > [!NOTE] **검증 근거**
 > 본 현행화는 2026-07-06 코드 전수 대조(DB/JPA·백엔드·프론트엔드 병렬 검증)로 각 항목의 상태와 file:line 근거를 확보하여 갱신하였다. `char/varchar`, `@Where` 0건, `z.object` 인라인 0건, `EAGER` 0건, `spring.threads.virtual.enabled:true`, MapStruct 사용처 0건 등은 grep/카운트로 실측되었다.

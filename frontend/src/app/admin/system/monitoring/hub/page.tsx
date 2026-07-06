@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense } from 'react';
 import MonitoringHubClient from '../MonitoringHubClient';
 import { TableSkeleton } from '@/components/common/TableSkeleton';
