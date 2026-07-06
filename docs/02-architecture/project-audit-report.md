@@ -58,9 +58,9 @@
   - `business-suite/.../architecture/JpaArchitectureTest.java`: LAZY 강제(§3.2).
 - **🔴 남은 실질 갭**: (a) 컨트롤러가 엔티티 "타입 의존"을 넘어 **DTO 변환/비즈니스 로직을 수행**하는지까지 잡는 규칙은 없다. (b) 모듈 방향 자체를 ArchUnit 슬라이스로 단언하는 규칙은 없다(Gradle 배선에만 의존). (c) `api-server/build.gradle:49` 에 "ArchUnit - disabled due to test engine conflicts" **낡은 주석**이 남아 있음(실제 테스트 클래스는 활성) — 정리 필요.
 
-### 3.2. JPA N+1 방어와 지연 로딩 — 🔴 미해결(LAZY 강제만 완료, 방안2 미구현)
-- **현황(강화됨)**: `@ManyToOne`/`@OneToOne` **100% `FetchType.LAZY`**(EAGER 0건, 24개 도메인 32개 연관 전부 LAZY)이며, 이는 이제 **`JpaArchitectureTest` 로 빌드타임 강제**된다(EAGER 선언 시 빌드 실패).
-- **🔴 미해결(방안2 본체)**: 런타임 N+1의 근본 방어인 **"조회 메서드의 fetchJoin()/DTO 프로젝션 누락"을 잡는 정적 게이트는 여전히 없다.** `JpaArchitectureTest` 는 엔티티 **필드 fetch 타입만** 검사하고 QueryDSL/JPQL 쿼리 메서드는 분석하지 않는다. 런타임 완화책(`default_batch_fetch_size:100`, `batch_size:25`)은 존재하나 초판이 요구한 빌드타임 정적 게이트는 아니다.
+### 3.2. JPA N+1 방어와 지연 로딩 — 🟡 부분(전 연관관계 LAZY 강제, 쿼리단 게이트는 유보)
+- **현황(강화됨, 2026-07-06)**: `@ManyToOne`/`@OneToOne` **100% LAZY**(EAGER 0건, 32개 연관)에 더해, **`JpaArchitectureTest` 를 `@OneToMany`/`@ManyToMany` 까지 확장**하여 **모든 JPA 연관관계의 LAZY 를 빌드타임 강제**한다(EAGER 컬렉션 = 카테시안/N+1 폭탄 회귀 차단). 컬렉션 7개 전부 LAZY 확인, 규칙 그린.
+- **🟡 유보(방안2 본체 — 쿼리단 정적 게이트)**: "조회 메서드의 fetchJoin()/@EntityGraph/DTO 프로젝션 누락"을 잡는 정적 게이트는 **의도적으로 유보**한다. 리포지토리 실측 결과 **@EntityGraph 0건**, @Query 62개 중 fetch join 4건뿐, 엔티티 컬렉션 반환 파생 쿼리 다수 — 지금 하드 룰을 걸면 수십 개 기존 메서드에서 **대량 오탐/빌드 붕괴**가 발생한다(ArchUnit 은 바이트코드만 보므로 JPQL/QueryDSL 문자열의 join fetch 여부도 판별 불가). **선행 조건**: 컬렉션 페치 메서드에 @EntityGraph 또는 DTO 프로젝션 관례를 먼저 도입한 뒤 핵심 테이블(게시판/회원/권한) 대상으로 좁게 게이트화. 런타임 완화책(`default_batch_fetch_size:100`, `batch_size:25`)은 유지.
 
 ### 3.3. Java 21 Virtual Threads 도입의 안전성 — 🟡 부분(관측 배선 완료, 튜닝은 부하 결과 대기)
 - **현황(정정)**: 가상 스레드는 "언급" 수준이 아니라 **완전 활성**이다 — `application.yml`의 `spring.threads.virtual.enabled: true`(Tomcat 요청 전역, false 프로파일 없음) + `AsyncConfig.logExecutor`의 `setVirtualThreads(true)`.
@@ -122,7 +122,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 
 ### 우선순위 기반 로드맵 (2026-07-06 갱신)
 1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
-2. **🔴 차상위 (성능 게이트)**: **N+1 정적 방어(방안2).** 핵심 테이블 대상 fetchJoin/DTO 프로젝션 관례 + 부분 정적 검증 도입.
+2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산 (중기)**: 소프트삭제 `@Filter` 공통화·전사 확대(방안4), 인라인 `z.object` 금지 ESLint 규칙.
 5. **🟡 감사 (중기)**: 79개 전면-클라이언트 `page.tsx` 의 `'use client'` 리프 다운 감사(§4.2).
