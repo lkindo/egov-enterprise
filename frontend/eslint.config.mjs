@@ -1,13 +1,5 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
 // 프론트엔드 UX 헌법 15조: 임의의 generic Tailwind 원색 계열 남용을 차단하고 HSL 디자인 토큰을 강제하는 커스텀 ESLint 규칙
 const enforceDesignTokensRule = {
@@ -59,8 +51,12 @@ const localThemePlugin = {
   },
 };
 
+// eslint-config-next 16 은 네이티브 flat config 배열을 export 한다. (ESLint 9 + next 16)
+// 이전의 FlatCompat("next/core-web-vitals", "next/typescript") 방식은 @eslint/eslintrc 검증기에서
+// 순환 구조 크래시를 일으켜, 네이티브 flat config 직접 spread 로 전환한다.
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
     ignores: [
       ".next/**",
@@ -96,6 +92,14 @@ const eslintConfig = [
           "message": "인라인 z.object(...) 금지 — 백엔드 SSOT 스키마(@/types/generated-zod)를 import 하여 .extend() 로 확장하세요 (project-audit-report §4.1/방안1)."
         }
       ],
+      // eslint-config-next 16(+eslint-plugin-react-hooks 6)이 React Compiler 계열 신규 규칙을 error 로 켜지만,
+      // 기존 코드베이스에 대량 존재(set-state-in-effect 등 53건)하므로 게이트 그린 유지 + 백로그 가시화를 위해
+      // repo 규범(warn 기반)에 맞춰 warn 으로 완화한다(점진 정리 대상).
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/error-boundaries": "warn",
     }
   },
   {

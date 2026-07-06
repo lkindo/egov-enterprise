@@ -81,7 +81,7 @@
   - **17개 파일이 `@/types/generated-zod` 를 import**하고 `.extend(` 27회로 UI 전용 필드를 확장한다.
   - 초판이 지목한 `BoardRegistClient.tsx` 는 이미 `BoardSaveRequestSchema.extend({...})` 패턴을 사용 — **방안1이 처방한 컨벤션 그대로.**
   - 중앙 `lib/validation/schemas.ts` 가 생성 스키마 11개를 import·확장.
-- **✅ ESLint 강제 추가(2026-07-06)**: 인라인 `z.object` 금지 규칙(`no-restricted-syntax`, error)을 `eslint.config.mjs` 에 추가하여 컨벤션을 "사실상(de-facto)"에서 "기계 강제"로 승격(생성 파일 `generated-zod.ts` 는 예외). src 인라인 0건이라 회귀만 차단한다. "최악의 문제" 라벨은 제거. ⚠️ 단 현재 `npm run lint` 자체가 ESLint 9 + eslint-config-next(FlatCompat) 호환 오류로 크래시하므로(내 변경과 무관, 원본 설정에서도 재현), 규칙의 런타임 검증은 lint 복구 후 가능하다.
+- **✅ ESLint 강제 추가(2026-07-06)**: 인라인 `z.object` 금지 규칙(`no-restricted-syntax`, error)을 `eslint.config.mjs` 에 추가하여 컨벤션을 "사실상(de-facto)"에서 "기계 강제"로 승격(생성 파일 `generated-zod.ts` 는 예외). src 인라인 0건이라 회귀만 차단한다. "최악의 문제" 라벨은 제거. ✅ `npm run lint` 크래시도 함께 복구(FlatCompat→eslint-config-next 16 네이티브 flat config)하여, 이 규칙이 **error 로 정상 발동**함을 확인했다(임의 `z.object` 삽입 시 에러).
 
 ### 4.1-b. Zod 코드젠 동기화 파이프라인 — 🟡 부분(배선 완료, 드리프트 재조정 필요)
 - **현황**: `frontend/package.json` 의 `codegen:ts`/`codegen:file`/`codegen:verify` 는 `openapi-typescript` 로 `generated-api.d.ts`(TS 타입)만 생성한다. Zod 생성기는 `.agent/scripts/codegen-zod.js`(입력 `api-docs.json`, `__dirname` 기반이라 CWD 독립).
@@ -105,7 +105,7 @@
 `generated-zod.ts` + `.extend()` 컨벤션 정착(인라인 0건, 17개 소비처)에 더해 2026-07-06 후속 완료:
 - ✅ 인라인 `z.object` 금지 ESLint 규칙(`no-restricted-syntax`) 추가 — 컨벤션을 기계 강제로 승격.
 - ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
-- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) `npm run lint` 크래시(ESLint 9 + eslint-config-next 15 ↔ next 16 버전 불일치 추정) 복구 — 현재 lint 게이트 미동작이라 신규 규칙도 실행 불가.
+- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) ✅ `npm run lint` 크래시 **복구 완료(2026-07-06)**: FlatCompat 제거 → eslint-config-next 16 네이티브 flat config 전환. lint 게이트 그린(0 errors), z.object 가드 발동 확인. 단 그간 가려졌던 **react-hooks 신규 규칙 위반 53건**(주로 `set-state-in-effect`)이 warn 으로 노출 → 점진 정리 백로그.
 
 ### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
 LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
@@ -131,7 +131,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
-6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) **`npm run lint` 크래시**(ESLint 9 + eslint-config-next `15.1.7` ↔ next `16` 메이저 불일치 추정) — lint 게이트 미동작, eslint-config-next 를 next 16 에 맞춰 정합화 필요.
+6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 신규 규칙 warn 백로그 **53건**(`set-state-in-effect` 44 등) 점진 정리.
 5. **🟡 감사→실행 (중기)**: ✅ 리프 다운 감사 완료(2026-07-06) — 79개 client `page.tsx` = easy 40(즉시 승격, 그중 28개 아일랜드 위임) + refactor 39(아일랜드 추출 필요). 🟡 easy 40개 배치 승격은 프론트 빌드 검증 환경에서 실행 권장.
 
 > [!NOTE] **검증 근거**
