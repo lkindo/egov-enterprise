@@ -86,7 +86,7 @@
 ### 4.1-b. Zod 코드젠 동기화 파이프라인 — 🟡 부분(배선 완료, 드리프트 재조정 필요)
 - **현황**: `frontend/package.json` 의 `codegen:ts`/`codegen:file`/`codegen:verify` 는 `openapi-typescript` 로 `generated-api.d.ts`(TS 타입)만 생성한다. Zod 생성기는 `.agent/scripts/codegen-zod.js`(입력 `api-docs.json`, `__dirname` 기반이라 CWD 독립).
 - **✅ 배선(2026-07-06)**: `codegen:zod`(= `node ../.agent/scripts/codegen-zod.js`) 와 드리프트 가드 `codegen:verify:zod`(= 재생성 후 `git diff --exit-code generated-zod.ts`) npm 스크립트를 추가.
-- **⚠️ 드리프트 발견(별도 재조정)**: `codegen:zod` 를 실제 실행하면 `generated-zod.ts` 가 변경된다(예: `NetworkDto` 스키마 삭제, `MenuDto.useYn` 삭제, `FileDto` 순서 이동) — 커밋된 파일이 SSOT(`api-docs.json`) 대비 **stale**이다. 게다가 프론트가 삭제된 스키마를 참조 중(`lib/validation/schemas.ts` 의 `networkSchema`)이라 **단순 재생성은 프론트 빌드를 깨뜨린다.** 따라서 재생성물은 커밋하지 않았으며, "재생성 + 참조 정리 + 빌드 검증"은 별도 재조정 작업으로 분리한다(가드 `codegen:verify:zod` 가 이 드리프트를 지속 감지).
+- **⚠️ 드리프트 진단(정정, 2026-07-06 조사)**: `codegen:zod` 재실행 시 `generated-zod.ts` 에서 `NetworkDto`·`MenuDto.useYn` 등이 사라지지만, 조사 결과 **원인은 `generated-zod.ts` 가 아니라 입력 `api-docs.json` 이 stale/불완전**하다는 것이다. 백엔드에는 `NetworkMonitoringApiController.NetworkDto`(create/update `@RequestBody`)가 실재하고 프론트 `NetworkForm.tsx` 가 `networkSchema` 로 이를 정상 사용 중인데, **현재 `api-docs.json` 에는 `NetworkDto` 스키마가 누락**되어 있다(springdoc 이 내부 static class 를 named schema 로 방출하지 않았거나 api-docs 스냅샷이 구버전). 즉 커밋된 `generated-zod.ts` 가 오히려 더 정확하며, **현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다 — 재생성 금지.** **올바른 재조정 순서**: (1) 실행 중 백엔드에서 `npm run codegen:ts`(=`/v3/api-docs`)로 **api-docs.json 을 먼저 최신화**(+필요 시 springdoc 이 inner DTO 를 방출하도록 보정) → (2) `codegen:zod` 실행. 가드 `codegen:verify:zod` 가 이 불일치를 지속 감지한다.
 
 ### 4.2. 하이드레이션 안전 및 리프 컴포넌트 격리 — 🟡 부분(격리 실천되나 불균일)
 - **현황(계량)**: `src` 459개 파일 중 **210개(~46%)** 가 상단 `'use client'`. 라우트 `page.tsx` 122개 중 **79개(65%)** 가 통째로 클라이언트(예: 8줄짜리 `approvals/page.tsx` 도 client).
@@ -105,7 +105,7 @@
 `generated-zod.ts` + `.extend()` 컨벤션 정착(인라인 0건, 17개 소비처)에 더해 2026-07-06 후속 완료:
 - ✅ 인라인 `z.object` 금지 ESLint 규칙(`no-restricted-syntax`) 추가 — 컨벤션을 기계 강제로 승격.
 - ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
-- **⚠️ 잔여(별도 작업)**: (a) `generated-zod.ts` 가 `api-docs.json` 대비 **드리프트** 상태 — 재생성 + 프론트 참조(`networkSchema` 등) 정리 + 빌드 검증이 함께 필요(단순 재생성 시 빌드 붕괴). (b) `npm run lint` 크래시(ESLint 9 / eslint-config-next FlatCompat) 복구 — 현재 lint 게이트가 동작하지 않아 신규 규칙도 실행 불가.
+- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) `npm run lint` 크래시(ESLint 9 + eslint-config-next 15 ↔ next 16 버전 불일치 추정) 복구 — 현재 lint 게이트 미동작이라 신규 규칙도 실행 불가.
 
 ### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
 LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
@@ -131,7 +131,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
-6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) `generated-zod.ts` 가 `api-docs.json` 대비 **드리프트**(재생성 시 `NetworkDto` 등 제거 → 프론트 참조 정리 + 빌드 검증 동반, 단순 재생성 금지). (b) **`npm run lint` 크래시**(ESLint 9 + eslint-config-next FlatCompat 순환 구조) — 프론트 lint 게이트가 현재 미동작, 복구 필요.
+6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) **`npm run lint` 크래시**(ESLint 9 + eslint-config-next `15.1.7` ↔ next `16` 메이저 불일치 추정) — lint 게이트 미동작, eslint-config-next 를 next 16 에 맞춰 정합화 필요.
 5. **🟡 감사→실행 (중기)**: ✅ 리프 다운 감사 완료(2026-07-06) — 79개 client `page.tsx` = easy 40(즉시 승격, 그중 28개 아일랜드 위임) + refactor 39(아일랜드 추출 필요). 🟡 easy 40개 배치 승격은 프론트 빌드 검증 환경에서 실행 권장.
 
 > [!NOTE] **검증 근거**
