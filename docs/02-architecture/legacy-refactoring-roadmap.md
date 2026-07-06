@@ -183,14 +183,14 @@ public abstract class BaseEntity extends BaseTimeEntity {
 - **규칙(c) 생성자 캡슐화 100% 달성 + 회귀 가드**: `Hpcm`, `PrivacyLog` 의 public 기본 생성자를 `protected` 로 교정. [EntityConventionArchTest.java](file:///d:/project/egov-enterprise/business-suite/src/test/java/nuri/business/architecture/EntityConventionArchTest.java) 로 "엔티티 기본 생성자 non-public" 규칙을 상시 강제(회귀 차단).
 - **규칙(a) 빌더 규범 예시 확립**: [FileDetail.java](file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/file/FileDetail.java) 를 규범대로 리팩토링 — 클래스 레벨 `@SuperBuilder` 제거, 정적 팩토리 `create()` 에 `@Builder` 배치. 빌더 노출 표면을 비즈니스 필드로 한정하면서 기존 `FileDetail.builder()...build()` 호출부는 무수정 유지.
 - **증분 뮤테이션 실질화**: [build.gradle](file:///d:/project/egov-enterprise/build.gradle) 의 `targetClasses` 를 `PIT_TARGET_CLASSES` 환경변수로 한정 가능하게 개선하고, [ci.yml](file:///d:/project/egov-enterprise/.github/workflows/ci.yml) 에 `mutation-test` 잡을 추가(리포트 전용, 85% 확인 후 `STRICT_MUTATION` 옵트인).
-- **규칙(a)/(b) 도메인 전량 전환 (2026-07-06)**: 클래스 레벨 `@SuperBuilder`/`@Builder` 를 정적 팩토리 `create()` 로 이관하는 규범을 전 도메인에 적용 완료. 전수 조사 결과 규칙(a) 잔여 **1개**(`RefreshToken`)로 86/87 준수, 클래스 레벨 `@Setter` **0개**.
+- **규칙(a)/(b) 도메인 전량 전환 (2026-07-06)**: 클래스 레벨 `@SuperBuilder`/`@Builder` 를 정적 팩토리 `create()` 로 이관하는 규범을 전 도메인에 적용 완료. 마지막 잔여였던 `RefreshToken` 까지 전환하여 규칙(a) **87/87 준수(잔여 0)**, 클래스 레벨 `@Setter` **0개**. `RefreshToken` 은 private 전체인자 생성자 + `create()` 팩토리 `@Builder` 로 전환했고 `AuthServiceTest` 로 빌더 호출부 회귀 없음 확인.
 - **§3.1 `@EntityListeners` 중복 재선언 전량 제거 (2026-07-06)**: `BaseTimeEntity` 가 이미 전파하는 리스너를 재선언하던 **56개 엔티티**에서 애노테이션과 미사용 import를 일괄 제거(153줄 순수 삭제). 감사 동작은 상위클래스 리스너로 그대로 유지되며, 컴파일·ArchUnit(`EntityConventionArchTest`)·JPA 리포지토리 테스트(`SentMail`/`Restde`/`BoardMaster`)로 회귀 없음 검증.
 
 > [!IMPORTANT] **규칙(a) 회귀 가드는 ArchUnit 으로 강제 불가**
 > Lombok `@SuperBuilder`/`@Builder` 는 `RetentionPolicy.SOURCE` 라 컴파일된 바이트코드에 흔적이 남지 않는다. 따라서 바이트코드 분석 기반의 ArchUnit 으로는 클래스 레벨 빌더를 **탐지할 수 없다.** 규칙(a) 의 회귀 차단은 소스 레벨 도구(Checkstyle 정규식) 또는 코드리뷰로 보완해야 한다. (종합 리포트의 "ArchUnit 규칙으로 빌더 금지" 권고는 이 이유로 실현 불가하며, 본 문서로 정정한다.)
 
 **잔여 대상 (2026-07-06 전수 조사 기준 갱신 — 이전 수치는 문서 미갱신에 따른 stale 값이었음)**
-- 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **1개**(`RefreshToken` — standalone 엔티티, 전환 시 신중). ※ 이전 "82개"는 도메인 전량 전환 이전 수치.
+- 규칙(a): 클래스 레벨 `@SuperBuilder`/`@Builder` **0개 (완료, 2026-07-06)** — `RefreshToken` 전환으로 87/87 준수. ※ 이전 "82개"는 도메인 전량 전환 이전 stale 수치였음.
 - 규칙(b): 클래스 레벨 `@Setter` **0개 (완료)**. 규칙 외 `@AllArgsConstructor` **5개**(`Schedule`, `LeaderSchedule`, `NoteRecptn`, `NoteTrnsmit`, `RefreshToken` — 기존 `new X(...)` 호출부 호환 위해 의도적 유지).
 - §3.1: `@EntityListeners` 중복 재선언 **0개 (완료)**. BaseEntity 미상속 **4개**(`ExternalHr`·`InstitutionCodeRecptnLog` 보류 + `SmsRecptn`·`RefreshToken` standalone).
 - (신규 식별) 복합키용 **중첩 식별자 클래스**는 아직 구패턴 유지: `BlogUserId`(`@SuperBuilder`), `AuthorityRoleId`·`MenuAuthorityId`·`BkmkMenuId`(클래스 레벨 `@Builder`+`@AllArgsConstructor`). 규칙(a)/(b)를 `@Embeddable`/`@IdClass` 식별자까지 확장할지 방침 결정 필요.
