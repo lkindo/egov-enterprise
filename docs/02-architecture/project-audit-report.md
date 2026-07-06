@@ -105,7 +105,7 @@
 `generated-zod.ts` + `.extend()` 컨벤션 정착(인라인 0건, 17개 소비처)에 더해 2026-07-06 후속 완료:
 - ✅ 인라인 `z.object` 금지 ESLint 규칙(`no-restricted-syntax`) 추가 — 컨벤션을 기계 강제로 승격.
 - ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
-- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) ✅ `npm run lint` 크래시 **복구 완료(2026-07-06)**: FlatCompat 제거 → eslint-config-next 16 네이티브 flat config 전환. lint 게이트 그린(0 errors), z.object 가드 발동 확인. 단 그간 가려졌던 **react-hooks 신규 규칙 위반 53건**(주로 `set-state-in-effect`)이 warn 으로 노출 → 점진 정리 백로그.
+- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) ✅ `npm run lint` 크래시 **복구 완료(2026-07-06)**: FlatCompat 제거 → eslint-config-next 16 네이티브 flat config 전환. lint 게이트 그린(0 errors), z.object 가드 발동 확인. 단 그간 lint 크래시로 가려졌던 **react-hooks 규칙 위반 67건/51파일**(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity`[Date.now 등] 4 등)이 warn 으로 노출됨. 이는 **런타임 검증(해당 UI 플로우 구동)이 필수**인 정합성 백로그이며(dep 배열 수정은 무한 루프 유발 위험), blind 일괄 수정은 지양하고 러닝 환경에서 컴포넌트별 점진 정리 권장.
 
 ### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
 LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
@@ -131,7 +131,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
-6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 신규 규칙 warn 백로그 **53건**(`set-state-in-effect` 44 등) 점진 정리.
+6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 위반 **67건/51파일** warn 백로그(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity` 4 등) — **런타임 검증 필수**(dep 배열 blind 수정 시 무한루프 위험)라 러닝 환경에서 컴포넌트별 점진 정리.
 5. **✅ 감사+실행 (2026-07-06)**: 리프 다운 감사 + **아일랜드 위임 31개 서버 셸화 실행 완료**(클라이언트 아일랜드 3개 `'use client'` 보정 포함, `next build` 경계 검증 통과). 1개 스킵(`ssr:false` dynamic). 🟡 잔여: 정적 콘텐츠 `page.tsx` 소수 + refactor 39개(아일랜드 추출 필요).
 
 > [!NOTE] **검증 근거**
