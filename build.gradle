@@ -104,9 +104,15 @@ subprojects {
     }
 
     // 실행 시(bootRun 포함) UTF-8 인코딩 강제 설정
+    def tracePinned = project.findProperty('trace-pinned') ?: System.getenv('TRACE_PINNED')
     tasks.withType(JavaExec).configureEach {
         systemProperty 'file.encoding', 'UTF-8'
         systemProperty 'sun.jnu.encoding', 'UTF-8'
+        // 가상 스레드 pinning 관측(기본 off): -Ptrace-pinned=full 또는 TRACE_PINNED=full 로 활성화.
+        // JDK 21 진단 플래그로, 가상 스레드가 캐리어에 고정될 때 스택트레이스를 stdout 에 출력한다.
+        if (tracePinned) {
+            systemProperty 'jdk.tracePinnedThreads', (tracePinned == 'true' ? 'full' : tracePinned)
+        }
     }
 
     dependencyManagement {

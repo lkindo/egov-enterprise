@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense } from 'react';
 import { SurveyHubClient } from './SurveyHubClient';
 import { TableSkeleton } from '@/components/common/TableSkeleton';

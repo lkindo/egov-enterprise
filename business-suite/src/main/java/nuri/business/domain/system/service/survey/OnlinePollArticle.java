@@ -1,6 +1,4 @@
 package nuri.business.domain.system.service.survey;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -17,7 +15,6 @@ import lombok.*;
  * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder/@AllArgsConstructor 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  * 감사 필드는 표준 Auditing 파이프라인에 위임. 연관 pollManage 는 빌더로 설정하므로 팩토리 파라미터에 포함.
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_onln_poll_artcl")
 @Getter

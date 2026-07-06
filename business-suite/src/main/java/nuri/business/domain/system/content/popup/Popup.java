@@ -1,6 +1,4 @@
 package nuri.business.domain.system.content.popup;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.Builder;
 import java.time.LocalDate;
 
@@ -14,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "PopupDomain")
 @Table(name = "tb_popup_info")
 @Getter

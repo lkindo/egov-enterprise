@@ -1,6 +1,4 @@
 package nuri.business.domain.system.content.banner;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -13,7 +11,6 @@ import lombok.*;
  * 배너 정보 Entity
  * 매핑 테이블: TB_BNR_INFO
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bnr_info")
 @Getter

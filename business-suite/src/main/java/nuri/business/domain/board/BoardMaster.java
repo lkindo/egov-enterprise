@@ -1,7 +1,5 @@
 package nuri.business.domain.board;
 
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.hibernate.annotations.DynamicUpdate;
 
 import nuri.business.domain.common.BaseEntity;
@@ -22,7 +20,6 @@ import lombok.Setter;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bbs_master")
 @DynamicUpdate

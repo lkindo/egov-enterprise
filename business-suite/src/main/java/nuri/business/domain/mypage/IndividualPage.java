@@ -1,6 +1,4 @@
 package nuri.business.domain.mypage;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -10,7 +8,6 @@ import lombok.*;
  * 마이페이지 설정 엔티티
  * 매핑 테이블: NINDVDLPGE
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_indv_pg")
 @Getter

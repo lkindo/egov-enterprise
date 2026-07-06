@@ -10,7 +10,6 @@ import java.io.Serializable;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_menu_crt_dtl")
-@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 public class MenuAuthority extends BaseEntity {
 
     @EmbeddedId

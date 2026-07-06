@@ -3,10 +3,10 @@
   "summary": "egov-enterprise 프로젝트의 백엔드 아키텍처 및 API 설계 원칙입니다. 계층 간 격리, 도메인 무결성, 보안 및 회복탄력성 규칙을 포함합니다.",
   "category": "Architecture",
   "tags": ["Backend", "API", "Java", "SpringBoot", "Constitution"],
-  "updatedAt": "2026-05-14T08:58:00Z",
+  "updatedAt": "2026-06-15T00:00:00Z",
   "references": [
-    "file:///d:/project/egov-enterprise/GEMINI.md",
-    "file:///d:/project/egov-enterprise/docs/02-architecture/domain-resilience.md",
-    "file:///d:/project/egov-enterprise/docs/03-guides/api-documentation-guide.md"
+    "GEMINI.md",
+    "docs/02-architecture/domain-resilience.md",
+    "docs/03-guides/api-documentation-guide.md"
   ]
 }

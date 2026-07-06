@@ -1,12 +1,12 @@
 {
   "title": "Frontend Design & UX Constitution",
-  "summary": "egov-enterprise 프로젝트의 프리미엄 UI/UX 및 프론트엔드 아키텍처 원칙입니다. Next.js 15, Tailwind 4 기반의 디자인 시스템과 성능 최적화 가이드를 포함합니다.",
+  "summary": "egov-enterprise 프로젝트의 프리미엄 UI/UX 및 프론트엔드 아키텍처 원칙입니다. Next.js 16, Tailwind 4 기반의 디자인 시스템과 성능 최적화 가이드를 포함합니다.",
   "category": "Design",
   "tags": ["Frontend", "UX", "Nextjs", "TailwindCSS", "RichAesthetics"],
-  "updatedAt": "2026-05-14T09:12:00Z",
+  "updatedAt": "2026-07-06T00:00:00Z",
   "references": [
-    "file:///d:/project/egov-enterprise/GEMINI.md",
-    "file:///d:/project/egov-enterprise/docs/02-architecture/design.md",
-    "file:///d:/project/egov-enterprise/docs/02-architecture/frontend-architecture.md"
+    "GEMINI.md",
+    "docs/02-architecture/frontend-design-system.md",
+    "docs/02-architecture/frontend-architecture.md"
   ]
 }

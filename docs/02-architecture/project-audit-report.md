@@ -1,130 +1,138 @@
 # ⚖️ eGov Enterprise 프로젝트 아키텍처 정밀 점검 보고서
 
-본 보고서는 `egov-enterprise` 프로젝트의 데이터베이스(DB), 백엔드, 프론트엔드 전반의 아키텍처 정합성을 비판적 관점에서 철저히 분석하고, 시스템의 안정성 및 유지보수 편의성을 극대화하기 위한 구조 개선 방안과 그에 따른 기술적 트레이드오프(장단점)를 제시합니다.
+본 보고서는 `egov-enterprise` 프로젝트의 데이터베이스(DB), 백엔드, 프론트엔드 전반의 아키텍처 정합성을 비판적 관점에서 분석하고, 안정성 및 유지보수성 극대화를 위한 구조 개선 방안과 트레이드오프를 제시합니다.
+
+> [!IMPORTANT] **현행화 이력 (2026-07-06 코드 전수 대조)**
+> 본 보고서의 초판 진단 이후 상당수 항목이 이미 해결되었다. 각 항목에 코드 대조 기준 상태를 표기한다:
+> **✅ 해결** · **🟡 부분(진행/일부만)** · **⚠️ 전제 낡음(문제 소멸/사실 변경)** · **🔴 미해결(여전히 유효)**
+>
+> **요약**: 초판이 "최악의 문제"로 지목한 **Zod 파편화(§4.1)** 와 **`@Where` 고정 필터 소프트삭제(§2.2)** 는 이미 해소돼 있었다. 2026-07-06 후속 조치로 **가상 스레드 pinning 관측 배선(§3.3)**, **전 연관관계 LAZY 빌드 강제(§3.2/방안2)**, **소프트삭제 @FilterDef 중앙화(방안4)**, **Zod codegen 배선 + 인라인 금지 ESLint(방안1)**, **리프 다운 감사(§4.2)** 를 완료했다. 남은 실질 과제는 ① 가상 스레드 **부하 결과 기반 튜닝**, ② 쿼리단 **fetchJoin 정적 게이트**, 그리고 신규 발견 2건(**generated-zod 드리프트**·**프론트 lint 크래시**)이다.
 
 ---
 
 ## 1. 개요 (Executive Summary)
 
-현재 `egov-enterprise` 프로젝트는 **멀티 모듈 구조**(`api-server` ➔ `business-suite` ➔ `foundation`)의 백엔드와 **Next.js App Router 기반의 프론트엔드**를 구축하고 있습니다. 3대 헌법(DB, 백엔드, 프론트엔드)을 수립하여 기강을 바로잡으려는 흔적이 돋보이나, 실제 구현 코드를 비판적으로 분석한 결과 **개념적 설계(헌법)와 물리적 구현(코드) 간의 심각한 단절 및 병목 지점**이 발견되었습니다.
+현재 `egov-enterprise` 프로젝트는 **멀티 모듈 구조**(`api-server` ➔ `business-suite` ➔ `foundation`)의 백엔드와 **Next.js App Router 기반 프론트엔드**로 구성됩니다. 3대 헌법(DB/백엔드/프론트엔드)과 이를 강제하는 하네스(ArchUnit, Fail-Fast 테스트, 코드젠)가 상당 수준으로 정비되어, 초판에서 지적한 "개념(헌법)과 구현(코드)의 단절"은 **대부분 좁혀졌습니다.**
 
-특히 **프론트엔드 폼 검증 스키마(Zod)의 파편화로 인한 SSOT(Single Source of Truth) 붕괴**와 **Virtual Threads 도입에 따른 런타임 안정성 위험**, **물리/논리 삭제 혼용에 따른 JPA 런타임 사이드 이펙트**가 가장 시급히 해결되어야 할 핵심 과제입니다.
+**현시점 잔여 핵심 과제**(2026-07-06 후속 반영):
+1. **🟡 가상 스레드 Thread Pinning (런타임 안정성)** — 전역 활성. pinning 관측 배선 완료(§3.3), **부하 테스트 실행 후 결과 기반 풀/스케줄러 튜닝**만 잔여. 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음.
+2. **🟡 JPA N+1 (§3.2/방안2)** — 전 연관관계 LAZY 빌드 강제 완료. **쿼리단 fetchJoin/DTO 정적 게이트는 유보**(@EntityGraph 0건, 선행 관례 도입 필요).
+3. **⚠️ 신규 발견(별도 재조정)** — `generated-zod.ts` 드리프트(재생성 시 스키마 제거 → 프론트 참조 정리 동반) 및 `npm run lint` 크래시(ESLint 9 / next-config compat). ※ 정리성 부채(MapStruct 제거·@FilterDef 중앙화·codegen 배선)는 완료.
 
 ---
 
 ## 2. DB & JPA 레이어 점검 결과 및 문제점
 
-### 2.1. 표준 메타데이터 거버넌스(SSOT) 및 명명 규칙 점검
-- **현황**: `meta_standard_words`, `meta_standard_terms`, `meta_standard_domains` 테이블을 기반으로 표준 명칭 및 타입을 강제하고 있으며, 실제 데이터베이스의 모든 컬럼 타입이 `char`를 배제하고 `varchar`로 잘 이전되어 있는 등 물리적 명명 규칙은 매우 우수하게 정비되어 있습니다.
-- **비판적 쟁점 및 디자인 철학**:
-  - **암묵적 명명 전략(Convention over Configuration)과 클린 코드**: 엔티티 클래스 내 다수의 `@Column` 필드에서 명시적으로 `name` 속성을 기술하지 않고 하이버네이트의 명명 전략(`CamelCaseToUnderscoresNamingStrategy`)에 의존하고 있습니다. 이는 일견 암묵적 설정으로 보일 수 있으나, **불필요하게 하드코딩된 중복 텍스트(문자열 부채)를 전면 제거하여 엔티티 가독성을 극대화하는 매우 유효한 전략**입니다.
-  - **Fail-Fast 방어막 구축**: 필드명 리팩토링 시 매핑이 깨질 수 있는 위험성은, 코드를 지저분하게 방치하는 수동적 방어가 아닌 **빌드 타임 통합 테스트 및 JPA Validation 검증(Fail-Fast)의 강력한 세이프티 넷(Safety Net)**을 통해 즉각 걸러내도록 설계 철학을 조율합니다. 결과적으로 간결한 엔티티 설계와 테스트 보호망의 결합은 유지보수 관점에서 훨씬 가독성 높고 유효한 최선의 대안입니다.
+### 2.1. 표준 메타데이터 거버넌스(SSOT) 및 명명 규칙 점검 — 🟡 부분(일부 전제 정정)
+- **현황(정정)**:
+  - **명명 전략은 "명시적 CamelCase 전략 배선"이 아니라 프레임워크 기본값 의존**이다. `application.yml`·Java 어디에도 `physical-strategy`/`NamingStrategy` 설정이 없으며(0건), Spring Boot 3.4.1의 **기본 물리 명명 전략(camelCase→snake_case)** 에 암묵 의존한다. 즉 "전략을 골라 배선했다"기보다 "기본 동작에 의존한다"가 정확하다.
+  - **물리 타입은 `char` 전면 배제·`varchar` 이전이 실제로 완료**되어 있다(마이그레이션 `V1..V1.10`에 standalone `char` 0건, `varchar` 47건). ✅
+  - **`@Column`의 `name=` 생략**은 사실이다(예: `Board.java`가 `pst_id`/`bbs_id`/`atch_file_id`에만 `name=`을 두고 `pstTtl`·`ansLv`·`inqCnt` 등은 생략).
+  - **정정 필요**: `meta_standard_words/terms/domains` 는 **런타임 DB 테이블이 아니다.** Flyway 마이그레이션(`V1..V1.10`)에 존재하지 않으며, 표준 명칭/타입은 **거버넌스 하네스(문서·스킬·`db_columns.json`)가 "저작 시점"에 강제**한다. "DB 테이블이 런타임에 표준을 강제한다"는 초판 서술은 부정확하다.
+- **평가**: 간결한 엔티티(암묵 명명) + varchar 정비는 유효하나, 그 안전성은 아래 2.1 Fail-Fast 세이프티넷에 전적으로 의존한다.
 
-### 2.2. 물리 삭제(Hard Delete)와 논리 삭제(Soft Delete) 혼용 및 런타임 조인 위험
-- **현황**: DB 헌법 제8조 2항에 따라 비즈니스 성격에 따라 물리 삭제와 논리 삭제를 혼용합니다.
-- **비판적 쟁점**:
-  - **고정형 글로벌 필터의 연관관계 충돌**: 부모 테이블(예: 부서)이 논리 삭제되어 DB에 물리 데이터는 있지만 `use_yn = 'N'` 상태일 때, 자식 테이블(예: 회원) 조회 시 부모에 설정된 고정형 글로벌 필터(`@Where(clause = "use_yn = 'Y'")`)로 인해 데이터를 읽지 못해 `EntityNotFoundException` 런타임 에러가 발생합니다.
-  - **이력 조회 요구사항과의 충돌**: 비즈니스적으로 부서가 폐쇄(논리 삭제)되더라도 과거 해당 부서에 근무했던 회원들과의 매핑 이력은 보존되어야 하지만, 고정형 필터는 이를 무시하고 에러를 내거나 공란으로 만듭니다.
+### 2.1-b. Fail-Fast 세이프티넷 — ✅ 해결(실재 확인)
+- 필드명 리팩토링 시 매핑 붕괴를 빌드/기동 시점에 잡는 안전망이 **실제로 배선되어 있다**:
+  - `api-server/src/main/resources/application.yml`의 `spring.jpa.hibernate.ddl-auto: validate`(운영), `foundation` 테스트도 `ddl-auto: validate`.
+  - Flyway로 스키마 이행 후 엔티티와 검증(Flyway-then-validate) → 매핑 불일치 즉시 Fail-Fast.
+  - `@DataJpaTest` 슬라이스 스위트(`BoardRepositoryTest`, `BoardMasterRepositoryTest`, `RestdeRepositoryTest`, `SentMailRepositoryTest`, `SimpleJpaTest`) 및 `PersistenceTestSupport`(`@AutoConfigureTestDatabase(replace=NONE)`).
+- 초판의 "테스트 보호망으로 커버한다"는 **아직 존재하지 않는 지향이 아니라 이미 갖춰진 사실**이다.
+
+### 2.2. 물리/논리 삭제 혼용 및 런타임 조인 위험 — ⚠️ 전제 낡음(이미 대체됨)
+- **초판 전제(무효)**: 고정형 글로벌 필터 `@Where(clause="use_yn='Y'")` 로 인해 부모가 논리 삭제되면 자식 조회 시 `EntityNotFoundException` 발생.
+- **현재 사실**:
+  - **`@Where` 는 코드에 존재하지 않는다**(Java 소스 0건; 문서/아카이브에만 잔존). 고정형 필터 전제 자체가 사라졌다.
+  - **동적 Hibernate `@Filter` 로 이미 전환**되어 있다. `@FilterDef(softDeleteFilter)` 는 **`nuri.business.domain` 의 `package-info.java` 에 중앙 선언(2026-07-06)** 하고, `@Filter` 는 소프트삭제 대상 엔티티(`Board`·`Comment`)에 적용한다. (이전에는 `Board` 가 `@FilterDef` 를 호스팅해 `Comment` 가 암묵 의존했으나 결합을 제거함.)
+  - **트랜잭션 단위 동적 제어가 구현**되어 있다: `SoftDeleteAspect` 가 `@Service`/`@Transactional` 경계에서 `softDeleteFilter(useYn='Y')` 를 켜고, `@DisableSoftDelete` 애노테이션 시 끈다. `SoftDeleteDynamicTest` 로 검증됨.
+- **🟡 남은 문제(재정의)**: `@FilterDef` 중앙화는 완료됐으나 `@Filter` **적용은 Board·Comment 2개**뿐이다. 확산은 각 엔티티의 소프트삭제 대상 여부(전용 `use_yn` 컬럼·"비활성=조회 제외" 의미)를 판단해야 하는 **도메인 결정**이며, `SoftDeleteAspect` 가 서비스 읽기를 전역 필터링하므로 무분별 적용은 조회 누락 위험이 있다(→ 방안4에 확산 관례 명시).
 
 ---
 
 ## 3. 백엔드 아키텍처 점검 결과 및 문제점
 
-### 3.1. 의존성 방향 및 계층 분립 (Module Dependency)
-- **현황**: 의존성이 `api-server` ➔ `business-suite` ➔ `foundation`으로 흐르는 3-Tier 멀티 모듈 아키텍처를 정확하게 준수하고 있어 순환 참조가 존재하지 않습니다.
-- **비판적 쟁점**:
-  - **비즈니스 로직의 api-server 침투**: 컨트롤러 레이어(`api-server`)에서 핵심 도메인 로직이나 DTO 변환 처리를 가볍게 넘겨받지 않고, 서비스 레이어의 역할을 침범할 여지가 상존합니다. DTO 변환의 원칙(백엔드 헌법 제4조)을 어기고 컨트롤러에서 엔티티 성격의 데이터 가공을 하는지 지속적인 모니터링이 부재합니다.
+### 3.1. 의존성 방향 및 계층 분립 — 🟡 부분(가드 일부 신설)
+- **현황**: `api-server ➔ business-suite ➔ foundation` 3-Tier 준수, 순환 없음(Gradle `project()` 배선으로 구조적으로 보장).
+- **정정된 비판 쟁점**: 초판의 "컨트롤러 침투 모니터링 부재"는 **일부 낡았다.** 다음 ArchUnit 가드가 신설되어 있다:
+  - `api-server/.../ArchitectureTest.java`: `nuri.api..` 가 `@Entity` 클래스에 의존 금지(백엔드 헌법 제3조 1항) — **컨트롤러의 엔티티 접근을 정적 차단.**
+  - `business-suite/.../ArchitectureTest.java`: Service/Domain 접근 계층 규칙, `@Service` 네이밍, 도메인→서비스 역참조 금지(dto projection 예외), 서비스 슬라이스 간 순환 금지.
+  - `business-suite/.../architecture/JpaArchitectureTest.java`: LAZY 강제(§3.2).
+- **🔴 남은 실질 갭**: (a) 컨트롤러가 엔티티 "타입 의존"을 넘어 **DTO 변환/비즈니스 로직을 수행**하는지까지 잡는 규칙은 없다. (b) 모듈 방향 자체를 ArchUnit 슬라이스로 단언하는 규칙은 없다(Gradle 배선에만 의존). (c) `api-server/build.gradle:49` 에 "ArchUnit - disabled due to test engine conflicts" **낡은 주석**이 남아 있음(실제 테스트 클래스는 활성) — 정리 필요.
 
-### 3.2. JPA N+1 방어와 지연 로딩 (Lazy Loading Integrity)
-- **현황**: `@ManyToOne` 및 `@OneToOne` 연관 관계에 `FetchType.LAZY`를 100% 선언하여 EAGER 로딩으로 인한 초기 성능 폭증은 완벽히 차단하고 있습니다.
-- **비판적 쟁점**:
-  - **조회 쿼리의 동적 Fetch Join 검증 부재**: 컴파일 시점에는 `LAZY`가 강제되나, 실제 런타임에 여러 건의 조인을 동시 처리할 때 QueryDSL이나 JPQL에서 `fetchJoin()` 선언을 누락하는 경우, 무조건 N+1 하이퍼 쿼리 루프가 발생합니다. 소스 코드 빌드 시점에 이를 잡아낼 수 있는 정적 분석 룰이 없으므로 성능 이슈가 운영 환경에서만 사후 발견됩니다.
+### 3.2. JPA N+1 방어와 지연 로딩 — 🟡 부분(전 연관관계 LAZY 강제, 쿼리단 게이트는 유보)
+- **현황(강화됨, 2026-07-06)**: `@ManyToOne`/`@OneToOne` **100% LAZY**(EAGER 0건, 32개 연관)에 더해, **`JpaArchitectureTest` 를 `@OneToMany`/`@ManyToMany` 까지 확장**하여 **모든 JPA 연관관계의 LAZY 를 빌드타임 강제**한다(EAGER 컬렉션 = 카테시안/N+1 폭탄 회귀 차단). 컬렉션 7개 전부 LAZY 확인, 규칙 그린.
+- **🟡 유보(방안2 본체 — 쿼리단 정적 게이트)**: "조회 메서드의 fetchJoin()/@EntityGraph/DTO 프로젝션 누락"을 잡는 정적 게이트는 **의도적으로 유보**한다. 리포지토리 실측 결과 **@EntityGraph 0건**, @Query 62개 중 fetch join 4건뿐, 엔티티 컬렉션 반환 파생 쿼리 다수 — 지금 하드 룰을 걸면 수십 개 기존 메서드에서 **대량 오탐/빌드 붕괴**가 발생한다(ArchUnit 은 바이트코드만 보므로 JPQL/QueryDSL 문자열의 join fetch 여부도 판별 불가). **선행 조건**: 컬렉션 페치 메서드에 @EntityGraph 또는 DTO 프로젝션 관례를 먼저 도입한 뒤 핵심 테이블(게시판/회원/권한) 대상으로 좁게 게이트화. 런타임 완화책(`default_batch_fetch_size:100`, `batch_size:25`)은 유지.
 
-### 3.3. Java 21 Virtual Threads 도입의 안전성 문제
-- **현황**: 고부하 I/O를 위해 Virtual Threads 활용이 언급되어 있습니다.
-- **비판적 쟁점**:
-  - **Thread Pinning 병목**: PostgreSQL JDBC 드라이버 및 스프링 프레임워크의 특정 내부 동기화 구간(`synchronized` 블록)에서 I/O 블로킹이 발생하면 가상 스레드가 플랫폼 스레드에 고정(Pinning)되어 전체 스레드 풀이 고갈되는 현상이 발생할 수 있습니다. 사전 프로파일링과 로드 테스트 없이 무작정 가상 스레드를 활성화할 경우 런타임 먹통 현상이 초래됩니다.
+### 3.3. Java 21 Virtual Threads 도입의 안전성 — 🟡 부분(관측 배선 완료, 튜닝은 부하 결과 대기)
+- **현황(정정)**: 가상 스레드는 "언급" 수준이 아니라 **완전 활성**이다 — `application.yml`의 `spring.threads.virtual.enabled: true`(Tomcat 요청 전역, false 프로파일 없음) + `AsyncConfig.logExecutor`의 `setVirtualThreads(true)`.
+- **재평가된 리스크(2026-07-06)**:
+  - ✅ **앱 코드에 pinning 유발 요인 없음**: 전 모듈 `src/main` 에 `synchronized` **0건**. pinning은 앱 코드가 아니라 PostgreSQL JDBC / HikariCP 내부 동기화 구간에서만 발생 가능하며, "`synchronized→ReentrantLock` 전환"으로 고칠 **앱 코드 대상이 존재하지 않는다.**
+  - ✅ **부하 테스트 하네스 존재**: `.github/workflows/load-test.yml`(k6, load level 파라미터). 초판의 "부하테스트 부재"는 부정확했다.
+  - ✅ **pinning 관측 배선**: `build.gradle` 에 게이트된 `jdk.tracePinnedThreads` 진단(`-Ptrace-pinned`/`TRACE_PINNED`, 기본 off) 추가. `load-test.yml` 이 k6 실행 중 이를 활성화하여 `backend.log` 에 pinning 스택을 캡처하고, "Report Virtual Thread Pinning" 단계가 감지 시 CI 경고 + 아티팩트 업로드.
+- **🟡 잔여(부하 결과 의존)**: pinning 실제 발생 여부는 **부하 테스트 실행 후 `backend.log` 로 확인**해야 한다. pinning이 관측될 때에만 HikariCP 풀(prod 20)·캐리어 스레드 병렬도(`jdk.virtualThreadScheduler.parallelism`) 튜닝을 검토한다. (관측 없는 선제 튜닝은 근거가 없으므로 지양.)
 
 ---
 
 ## 4. 프론트엔드 아키텍처 점검 결과 및 문제점
 
-### 4.1. [최악의 문제] Zod 스키마 파편화 및 SSOT 검증 붕괴
-- **현황**: 백엔드 API 문서를 기반으로 Zod 스키마를 생성하는 `codegen-zod.js` 파이프라인이 갖춰져 있으나, 실제 프론트엔드 코드(`BoardRegistClient.tsx` 등 수십 개의 클라이언트 파일)에서는 **인라인으로 Zod 스키마를 개별 구현**하고 있습니다.
-- **비판적 쟁점**:
-  - **DB-DTO-Zod 체인의 단절**: 백엔드 DTO(유효성 어노테이션) 및 DB 물리 제약조건이 변경되더라도, 프론트엔드의 화면단 폼 검증 스키마가 자동으로 갱신되지 않고 레거시로 잔존합니다. 이로 인해 **프론트엔드 통과 후 백엔드에서 400 Bad Request 에러로 튕기는 불일치**가 상시적으로 발생하여 유지보수 생산성이 극도로 나빠집니다.
+### 4.1. Zod 스키마 파편화 및 SSOT — ⚠️ 전제 낡음(이미 일원화 완료)
+- **초판 전제(무효)**: 클라이언트 파일들이 인라인 `z.object({...})` 를 개별 구현하여 SSOT가 붕괴, `generated-zod.ts` 파이프라인은 방치.
+- **현재 사실(2026-06, 커밋 `65c8c6778`)**:
+  - `frontend/src` 애플리케이션 코드의 인라인 **`z.object(` = 0건**(257건은 전부 `src/types/generated-zod.ts` 단일 파일 내부).
+  - **17개 파일이 `@/types/generated-zod` 를 import**하고 `.extend(` 27회로 UI 전용 필드를 확장한다.
+  - 초판이 지목한 `BoardRegistClient.tsx` 는 이미 `BoardSaveRequestSchema.extend({...})` 패턴을 사용 — **방안1이 처방한 컨벤션 그대로.**
+  - 중앙 `lib/validation/schemas.ts` 가 생성 스키마 11개를 import·확장.
+- **✅ ESLint 강제 추가(2026-07-06)**: 인라인 `z.object` 금지 규칙(`no-restricted-syntax`, error)을 `eslint.config.mjs` 에 추가하여 컨벤션을 "사실상(de-facto)"에서 "기계 강제"로 승격(생성 파일 `generated-zod.ts` 는 예외). src 인라인 0건이라 회귀만 차단한다. "최악의 문제" 라벨은 제거. ✅ `npm run lint` 크래시도 함께 복구(FlatCompat→eslint-config-next 16 네이티브 flat config)하여, 이 규칙이 **error 로 정상 발동**함을 확인했다(임의 `z.object` 삽입 시 에러).
 
-### 4.2. 하이드레이션 안전 및 리프 컴포넌트 격리 정책
-- **현황**: Next.js App Router 환경에서 기본적으로 서버 컴포넌트를 지향하고 있습니다.
-- **비판적 쟁점**:
-  - **인터랙션 격리 실패**: 단순한 호버 효과나 메뉴 토글 등을 위해 불필요하게 대규모 클라이언트 컴포넌트를 생성하여 상위 렌더링 노드를 통째로 `'use client'` 영역으로 오염시키는 사례가 발생하고 있습니다. 이는 Next.js의 SSR 이점을 저해하고 Hydration Mismatch를 양산하는 원인이 됩니다.
+### 4.1-b. Zod 코드젠 동기화 파이프라인 — 🟡 부분(배선 완료, 드리프트 재조정 필요)
+- **현황**: `frontend/package.json` 의 `codegen:ts`/`codegen:file`/`codegen:verify` 는 `openapi-typescript` 로 `generated-api.d.ts`(TS 타입)만 생성한다. Zod 생성기는 `.agent/scripts/codegen-zod.js`(입력 `api-docs.json`, `__dirname` 기반이라 CWD 독립).
+- **✅ 배선(2026-07-06)**: `codegen:zod`(= `node ../.agent/scripts/codegen-zod.js`) 와 드리프트 가드 `codegen:verify:zod`(= 재생성 후 `git diff --exit-code generated-zod.ts`) npm 스크립트를 추가.
+- **⚠️ 드리프트 진단(정정, 2026-07-06 조사)**: `codegen:zod` 재실행 시 `generated-zod.ts` 에서 `NetworkDto`·`MenuDto.useYn` 등이 사라지지만, 조사 결과 **원인은 `generated-zod.ts` 가 아니라 입력 `api-docs.json` 이 stale/불완전**하다는 것이다. 백엔드에는 `NetworkMonitoringApiController.NetworkDto`(create/update `@RequestBody`)가 실재하고 프론트 `NetworkForm.tsx` 가 `networkSchema` 로 이를 정상 사용 중인데, **현재 `api-docs.json` 에는 `NetworkDto` 스키마가 누락**되어 있다(springdoc 이 내부 static class 를 named schema 로 방출하지 않았거나 api-docs 스냅샷이 구버전). 즉 커밋된 `generated-zod.ts` 가 오히려 더 정확하며, **현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다 — 재생성 금지.** **올바른 재조정 순서**: (1) 실행 중 백엔드에서 `npm run codegen:ts`(=`/v3/api-docs`)로 **api-docs.json 을 먼저 최신화**(+필요 시 springdoc 이 inner DTO 를 방출하도록 보정) → (2) `codegen:zod` 실행. 가드 `codegen:verify:zod` 가 이 불일치를 지속 감지한다.
 
----
-
-## 5. 유지보수 및 안정성 최적화 방안 (상세 장단점 비교)
-
-프로젝트 아키텍처의 안정성과 유지보수 편의성을 극대화하기 위한 **4가지 구체적 최적화 방안**과 그 트레이드오프(장단점)입니다.
-
-### 방안 1: 자동 생성 Zod 스키마 (`generated-zod.ts`) 활용 강제화 및 인라인 스키마 제거
-
-프론트엔드의 화면단 폼 검증 시, 개별 파일에 수동 작성한 `z.object({...})`를 전면 제거하고 `codegen-zod.js`로 자동 빌드된 `generated-zod.ts`를 가져다 쓰도록 강제합니다.
-
-- **장점**:
-  - **단방향 SSOT 완벽 구현**: DB 제약조건 ➔ 백엔드 DTO 유효성 ➔ 프론트엔드 Zod 유효성으로 이어지는 연쇄 동기화 자동 완성.
-  - **유지보수 비용 극감**: API 명세 변경 시 `npm run codegen:ts` 및 Zod codegen을 실행하면 프론트엔드 폼 검증 로직이 자동으로 갱신됨.
-  - **타입 세이프티 확보**: 백엔드가 요구하는 엄격한 문자열 길이나 필수값 제약조건이 프론트엔드 진입점에서 자동 필터링되어 API 요청 실패 건수가 전무해짐.
-- **단점**:
-  - **커스텀 UI 전용 검증의 유연성 저하**: 비밀번호 확인 일치(`refine`), 약관 동의 여부 등 UI 화면에서만 요구되는 비즈니스 이외의 검증 규칙을 주입하기 위해 자동 생성 스키마를 수동으로 확장(`schema.extend` 또는 `refine`)해야 하는 보일러플레이트 코드 발생.
-- **도입 권고**: **필수 도입 (상급 우선순위)**. UI 전용 필드가 필요한 경우 자동 생성 Zod 스키마를 베이스로 하여 `.extend()` 하는 컨벤션을 정립하는 방식으로 절충 가능.
+### 4.2. 하이드레이션 안전 및 리프 컴포넌트 격리 — 🟡 부분(격리 실천되나 불균일)
+- **현황(계량)**: `src` 459개 파일 중 **210개(~46%)** 가 상단 `'use client'`. 라우트 `page.tsx` 122개 중 **79개(65%)** 가 통째로 클라이언트(예: 8줄짜리 `approvals/page.tsx` 도 client).
+- **반증(격리 실천의 증거)**: 서버 페이지→클라이언트 아일랜드 컨벤션이 널리 쓰임(`*Client.tsx` 아일랜드 56개), `components/ui` 리프 프리미티브 34개가 올바르게 리프 격리(tabs/dialog/popover/checkbox/select/calendar 등).
+- **🟡 결론**: 우려는 유효하나 "격리 실패"로 단정할 수는 없다. 검증 가능한 실제 신호는 **높은 전면-클라이언트 비율(page.tsx 65%)** 이다.
+- **📋 리프 다운 감사(2026-07-06)**: 79개 client `page.tsx` 를 훅·이벤트 핸들러 직접 사용 여부로 분류했다:
+  - **✅ 즉시 승격 가능(easy) 40개** — React 훅/핸들러 직접 사용 **0**. 이 중 **~28개는 이미 `<*Client/>` 아일랜드에 위임**만 하므로 page 의 `'use client'` 를 제거하면 그대로 서버 컴포넌트가 된다(순수 기계 승격). 나머지 ~12개는 정적 콘텐츠라 `'use client'` 자체가 불필요. (예: `admin/help/page.tsx`, `admin/stats/*`, `approvals/page.tsx`, `smart-toolkit/*` — 대부분 L8~12)
+  - **🟡 아일랜드 추출 후 승격(refactor) 39개** — page 내부에서 훅·상태를 직접 사용(예: `note/page.tsx` L302/훅28, `admin/security/role/page.tsx` L357/훅23, `login/page.tsx` L249/훅14). 인터랙션을 `*Client` 아일랜드로 추출한 뒤 page 를 서버 셸로 전환해야 한다.
+  - **✅ 실행(2026-07-06)**: 아일랜드 위임 `page.tsx` **31개**에서 `'use client'` 제거→서버 셸화 완료. 그 과정에서 정작 `'use client'` 가 없던 클라이언트 아일랜드 **3개**(`KnowledgeHubClient`/`WorkflowHubClient`/`LayoutManagerClient`, 훅 사용)에 `'use client'` 를 추가 — 부모 지시자에 얹혀 있던 **잠재 결함을 교정**(리프-다운의 실체). `next build` **Compiled successfully(서버/클라이언트 경계 검증 통과)** + `tsc --noEmit` 클린으로 검증. `next/dynamic({ ssr: false })` 를 쓰는 `admin/community/boards/master/page.tsx` **1개**는 'use client' 필수라 스킵. 🟡 잔여: 정적 콘텐츠(island 無) `page.tsx` 소수는 동일 방식 승격 가능 + refactor 39개는 아일랜드 추출 선행 필요.
 
 ---
 
-### 방안 2: QueryDSL fetchJoin() 검증용 빌드 타임 아키텍처 테스트(ArchUnit) 도입
+## 5. 유지보수 및 안정성 최적화 방안 (이행 현황 반영)
 
-런타임에 발생하는 JPA N+1 문제를 원천 차단하기 위해, 일괄 조회 리포지토리 메서드 작성 시 `fetchJoin()` 또는 전용 DTO 명시적 프로젝션 사용 여부를 검사하는 정적 검증 도구(ArchUnit 등) 또는 린트 룰을 빌드 단계에 포함시킵니다.
+### 방안 1: 자동 생성 Zod 스키마 활용 강제화 — ✅ 정착 + 후속 배선 완료(드리프트 재조정 잔여)
+`generated-zod.ts` + `.extend()` 컨벤션 정착(인라인 0건, 17개 소비처)에 더해 2026-07-06 후속 완료:
+- ✅ 인라인 `z.object` 금지 ESLint 규칙(`no-restricted-syntax`) 추가 — 컨벤션을 기계 강제로 승격.
+- ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
+- **⚠️ 잔여(별도 작업)**: (a) **`api-docs.json`(SSOT 입력)이 stale/불완전** — 백엔드에 존재하는 `NetworkDto` 가 누락되어, 현재 api-docs.json 으로 재생성하면 살아있는 `NetworkForm` 이 깨진다. 실행 백엔드에서 api-docs.json 을 최신화(`codegen:ts`) 후 `codegen:zod` 순으로 재조정(단순 재생성 금지). (b) ✅ `npm run lint` 크래시 **복구 완료(2026-07-06)**: FlatCompat 제거 → eslint-config-next 16 네이티브 flat config 전환. lint 게이트 그린(0 errors), z.object 가드 발동 확인. 단 그간 lint 크래시로 가려졌던 **react-hooks 규칙 위반 67건/51파일**(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity`[Date.now 등] 4 등)이 warn 으로 노출됨. 이는 **런타임 검증(해당 UI 플로우 구동)이 필수**인 정합성 백로그이며(dep 배열 수정은 무한 루프 유발 위험), blind 일괄 수정은 지양하고 러닝 환경에서 컴포넌트별 점진 정리 권장.
 
-- **장점**:
-  - **런타임 에러 사전 예방**: 개발자가 실수로 페치 조인을 누락하더라도 로컬 빌드 또는 CI 단계에서 실패 처리되어 데이터베이스 성능 장애 유발 코드가 배포되는 것을 원천 차단.
-  - **리뷰 오버헤드 감소**: 코드 리뷰 시 테크 리더가 소스 코드를 하나하나 눈으로 디버깅하며 N+1 발생 여부를 찾아내야 하는 리소스를 기계적으로 자동화.
-- **단점**:
-  - **빌드 속도 저하**: 정적 바이트코드 분석(ArchUnit)으로 인해 빌드 시 추가적인 시간 소요.
-  - **동적 쿼리의 분석 한계**: 매우 복잡하게 얽힌 다이내믹 QueryDSL 분기 쿼리의 경우, 정적 분석 도구가 페치 조인 여부를 완벽히 판별하지 못하고 오탐(False Positive)을 내어 개발 생산성을 방해할 수 있음.
-- **도입 권고**: **선택적 도입**. 우선 핵심 트래픽이 몰리는 주요 테이블(게시판, 회원, 권한 등)을 타겟으로 하는 아키텍처 검증 룰만 좁게 설정하여 도입하는 것을 권장.
+### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
+LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
+- **장점/단점**: (초판 서술 유효) 런타임 N+1 사전 차단 vs 동적 QueryDSL 오탐 가능.
+- **도입 권고**: **선택적 도입**. 핵심 트래픽 테이블(게시판/회원/권한)에 좁게 시작. 정적 분석 한계를 감안해, 리포지토리 관례(Fetch 전용 메서드 네이밍/DTO 프로젝션 필수) + 부분 ArchUnit 조합 권장.
 
----
+### 방안 3: MapStruct 제거 및 명시적 record 변환 — ✅ 완료 (2026-07-06)
+- **현황**: **MapStruct 사용처 0**(`import org.mapstruct` 0건, `@Mapper`/`MapperImpl` 없음). record/정적 팩토리(`X.from(entity)`)가 이미 표준(예: `BoardDto`, `UserDto`, `SatisfactionDto`... 다수), `BaseAbstractService` 가 수동 `toDto/toDtoList/toPage` 를 중앙화. `foundation` 의 `GenericMapper` 는 MapStruct가 아닌 손수 작성 인터페이스.
+- **✅ 정리 완료 (2026-07-06)**: `foundation`/`business-suite` build.gradle의 **미사용 MapStruct 의존성 6줄**(라이브러리 + processor + lombok-mapstruct-binding)을 삭제. 소스 마이그레이션 없이 전 모듈(foundation/business-suite/api-server, main+test) 컴파일 무영향 확인. 방안3 종결.
 
-### 방안 3: Entity-DTO 매핑 시 MapStruct 라이브러리 제거 및 명시적 record 생성자 변환 적용
-
-컴파일 타임에 자동으로 이중 매핑 바인딩 코드를 생성해 주는 MapStruct 프레임워크를 걷어내고, Java 21 **Record의 생성자 및 스태틱 팩토리 메서드**를 사용하여 DTO로 직접 명시적 변환을 구현합니다.
-
-- **장점**:
-  - **디버깅 편의성 비약적 향상**: MapStruct의 추상적인 인터페이스 및 자동 생성 구현체로 인해 데이터 매핑 에러 발생 시 에러 추적이 어려웠던 문제를 100% 해소. 순수 Java 코드로만 흐름이 보이므로 브레이크포인트를 걸고 직관적으로 디버깅 가능.
-  - **IDE 컴파일 정합성**: 롬복 및 MapStruct의 빌드 순서 충돌로 간헐적으로 발생하는 IDE 컴파일 깨짐 오류 영구 제거.
-- **단점**:
-  - **단순 매핑 보일러플레이트 증가**: 필드가 수십 개에 달하는 거대한 테이블의 경우, 단순 1:1 대입 코드를 서비스 레이어나 변환 팩토리에 수동 작성해야 하므로 코드 라인 수가 늘어남.
-- **도입 권고**: **검토 후 도입**. 신규 모듈에는 Java record 생성자를 통한 직접 변환을 유도하고, 기존 대규모 레거시 모듈은 MapStruct를 점진적으로 걷어내는 투-트랙 전략 추천.
+### 방안 4: Hibernate `@Filter` 기반 동적 소프트삭제 — 🟡 인프라 완성 + @FilterDef 중앙화, 확산은 도메인 판단
+- **현황**: 동적 `@Filter` + `SoftDeleteAspect` + `@DisableSoftDelete` + `SoftDeleteDynamicTest` 구축 완료. **2026-07-06: `@FilterDef` 를 `nuri.business.domain/package-info.java` 로 중앙화**하여 Board 호스팅 결합을 제거(full `@SpringBootTest` 로 필터 동작 회귀 없음 확인). 적용 엔티티는 `Board`·`Comment`.
+- **확산 관례(도입 권고)**: 새 소프트삭제 대상 엔티티는 `@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")` 한 줄만 추가하면 된다(@FilterDef 재선언 불필요). 단 **무분별 확산 금지** — `SoftDeleteAspect` 가 모든 서비스 읽기에 필터를 걸므로, 대상은 (a) 전용 `use_yn` 컬럼과 (b) "비활성=조회 제외" 비즈니스 의미를 가진 엔티티로 한정하고 엔티티별 조회 영향 테스트 후 추가한다. (마커 인터페이스 자동 적용은 Hibernate 가 인터페이스의 @Filter 를 스캔하지 않으므로 불가.)
 
 ---
 
-### 방안 4: Hibernate `@Filter` 기반 동적 필터 제어를 통한 논리 삭제 우회 및 이력 보존 프레임워크 구축
+## 6. 결론 및 현행 로드맵
 
-고정형 글로벌 필터(`@Where`)를 제거하고, 하이버네이트의 동적 `@Filter` 및 마커 인터페이스를 적용하여 비즈니스 상황에 맞게 조회 조건을 동적으로 활성화/비활성화합니다. 특히, 부모가 논리 삭제되었더라도 물리적 데이터가 보존되어 있다면 자식 조회 시 에러 없이 이력 관계를 정상 인식할 수 있도록 우회합니다.
+초판 대비 **뼈대(모듈 분리·의존성 방향·명명·Fail-Fast)뿐 아니라, 지적됐던 상위 결함 다수가 이미 해소**되었다(Zod SSOT 일원화, `@Where`→동적 `@Filter` 전환, 컨트롤러-엔티티 ArchUnit 가드, LAZY 빌드 강제). 남은 과제는 **런타임 안정성**과 **정리성 부채**로 성격이 이동했다.
 
-- **장점**:
-  - **이력 데이터 보존성 확보**: 부서가 폐쇄(논리 삭제)되어도 기존 회원 조회를 할 때 부모 조회 필터를 일시적으로 꺼서, 깨진 관계 없이 과거 이력 명칭을 정상적으로 화면에 맵핑 및 표출 가능.
-  - **런타임 복원력 향상**: 조회 시점에 데이터 부재로 발생하는 `EntityNotFoundException`을 아키텍처 레벨에서 근원적으로 예방.
-  - **지연 로딩(Lazy Loading) 보존**: `@NotFound(action = NotFoundAction.IGNORE)` 같은 성능 저하 유발 우회책 대신, 프록시 지연 로딩 장점을 그대로 활용 가능.
-- **단점**:
-  - **필터 라이프사이클 관리 오버헤드**: 트랜잭션 및 비즈니스 시나리오 단위로 필터를 활성/비활성 처리해 줄 전용 Aspect나 컨텍스트 인터셉터 로직(AOP)의 선행 구현 필요.
-- **도입 권고**: **일괄 적용 로드맵 수립 (사용자 전략)**. 우선순위 높은 도메인부터 적용하기보다는, 영속성 공통 모듈(`foundation` 및 `business-suite` 공통 부모) 단에서 Hibernate Filter를 추상화한 뒤, 추후 전사 엔티티에 일괄 교체 적용하는 로드맵 수립.
+### 우선순위 기반 로드맵 (2026-07-06 갱신)
+1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
+2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
+3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
+4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
+6. **⚠️ 신규 발견 (별도 처리 필요)**: (a) **`api-docs.json`(SSOT 입력) stale/불완전** — 백엔드 `NetworkDto` 미방출로 현재 api-docs.json 재생성 시 살아있는 `NetworkForm` 붕괴. 실행 백엔드에서 api-docs.json 최신화(+springdoc inner DTO 방출 보정) 후 `codegen:zod`. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 위반 **67건/51파일** warn 백로그(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity` 4 등) — **런타임 검증 필수**(dep 배열 blind 수정 시 무한루프 위험)라 러닝 환경에서 컴포넌트별 점진 정리.
+5. **✅ 감사+실행 (2026-07-06)**: 리프 다운 감사 + **아일랜드 위임 31개 서버 셸화 실행 완료**(클라이언트 아일랜드 3개 `'use client'` 보정 포함, `next build` 경계 검증 통과). 1개 스킵(`ssr:false` dynamic). 🟡 잔여: 정적 콘텐츠 `page.tsx` 소수 + refactor 39개(아일랜드 추출 필요).
 
----
-
-## 6. 결론 및 로드맵 제안
-
-현재 `egov-enterprise` 아키텍처는 전반적인 뼈대(모듈 분리, 의존성 방향, 데이터 명명 규칙)는 매우 안정적으로 서 있습니다. 그러나 실제 운영성과 유지보수 단계에서 치명적인 **프론트엔드 검증 스키마의 중복 정의(SSOT 단절)**와 **JPA 런타임 N+1 잠재 위험**이 아키텍처의 발목을 잡고 있습니다.
-
-### 우선순위 기반 단기/장기 로드맵
-1. **단기 (즉시 조치)**: 프론트엔드 내 중복 선언된 Zod 스키마를 `codegen-zod.js` 기반 `generated-zod.ts`를 활용하는 구조로 변환 작업 착수 (방안 1 수행).
-2. **중기 (3개월 내)**: Virtual Threads 프로파일링을 통한 PostgreSQL JDBC 스레드 핀 현상 진단 및 안전 역치 설정, 핵심 테이블 N+1 방어를 위한 테스트 자동화 게이트 설치 (방안 2 수행).
-3. **장기 (6개월 내)**: 비즈니스 수명주기에 맞춘 소프트 딜리트 공통 프레임워크 표준화 및 영속성 계층 100% 동기화 (방안 4 수행).
+> [!NOTE] **검증 근거**
+> 본 현행화는 2026-07-06 코드 전수 대조(DB/JPA·백엔드·프론트엔드 병렬 검증)로 각 항목의 상태와 file:line 근거를 확보하여 갱신하였다. `char/varchar`, `@Where` 0건, `z.object` 인라인 0건, `EAGER` 0건, `spring.threads.virtual.enabled:true`, MapStruct 사용처 0건 등은 grep/카운트로 실측되었다.

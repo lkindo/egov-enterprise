@@ -1,7 +1,5 @@
 package nuri.business.domain.addressbook;
  
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -11,7 +9,6 @@ import lombok.*;
  * 주소록 정보 JPA Entity
  * 테이블명: TB_ADBK_MANAGE
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_adbk_manage")
 @Getter

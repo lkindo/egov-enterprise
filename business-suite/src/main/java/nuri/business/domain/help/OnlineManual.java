@@ -3,7 +3,6 @@ package nuri.business.domain.help;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 온라인 메뉴얼 Entity
@@ -13,7 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "tb_onln_mnl_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class OnlineManual extends BaseEntity {
 
     @Id

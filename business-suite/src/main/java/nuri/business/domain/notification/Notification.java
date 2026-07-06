@@ -1,7 +1,6 @@
 package nuri.business.domain.notification;
 
 import jakarta.persistence.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -10,7 +9,6 @@ import java.time.LocalDateTime;
  * 사용자 알림 엔티티
  * [Standardization] BaseEntity 상속을 통한 감사 필드 통합
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_user_noti")
 @Getter

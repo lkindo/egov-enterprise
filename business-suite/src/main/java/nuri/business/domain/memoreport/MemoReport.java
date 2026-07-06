@@ -1,12 +1,9 @@
 package nuri.business.domain.memoreport;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_memo_rpt_info")
 @Getter

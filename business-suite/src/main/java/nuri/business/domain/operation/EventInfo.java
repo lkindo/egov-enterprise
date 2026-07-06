@@ -1,8 +1,6 @@
 package nuri.business.domain.operation;
 
 import nuri.business.domain.common.BaseEntity;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -14,7 +12,6 @@ import lombok.NoArgsConstructor;
  * [Standardization] BaseEntity 상속을 통한 감사 필드 통합
  * [Modernization] DB character varying(20) 스키마의 8자리 날짜 문자열 데이터와 맞추기 위해 String 타입으로 타입 강건화(Hardening)
  */
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_event_info")
 @Getter
