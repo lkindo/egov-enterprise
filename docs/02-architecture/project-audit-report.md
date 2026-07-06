@@ -104,10 +104,9 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 - **장점/단점**: (초판 서술 유효) 런타임 N+1 사전 차단 vs 동적 QueryDSL 오탐 가능.
 - **도입 권고**: **선택적 도입**. 핵심 트래픽 테이블(게시판/회원/권한)에 좁게 시작. 정적 분석 한계를 감안해, 리포지토리 관례(Fetch 전용 메서드 네이밍/DTO 프로젝션 필수) + 부분 ArchUnit 조합 권장.
 
-### 방안 3: MapStruct 제거 및 명시적 record 변환 — 🟡 목표 달성, 죽은 의존성만 잔존
+### 방안 3: MapStruct 제거 및 명시적 record 변환 — ✅ 완료 (2026-07-06)
 - **현황**: **MapStruct 사용처 0**(`import org.mapstruct` 0건, `@Mapper`/`MapperImpl` 없음). record/정적 팩토리(`X.from(entity)`)가 이미 표준(예: `BoardDto`, `UserDto`, `SatisfactionDto`... 다수), `BaseAbstractService` 가 수동 `toDto/toDtoList/toPage` 를 중앙화. `foundation` 의 `GenericMapper` 는 MapStruct가 아닌 손수 작성 인터페이스.
-- **🟡 유일한 잔여**: `foundation/build.gradle:25-27` 및 `business-suite/build.gradle:40-42` 에 **미사용 MapStruct 의존성 6줄**(라이브러리 + processor + lombok-mapstruct-binding)이 남아 애노테이션 처리만 지연시킨다.
-- **도입 권고**: **소스 마이그레이션 불필요.** 죽은 의존성 6줄 삭제만 하면 방안3 종결.
+- **✅ 정리 완료 (2026-07-06)**: `foundation`/`business-suite` build.gradle의 **미사용 MapStruct 의존성 6줄**(라이브러리 + processor + lombok-mapstruct-binding)을 삭제. 소스 마이그레이션 없이 전 모듈(foundation/business-suite/api-server, main+test) 컴파일 무영향 확인. 방안3 종결.
 
 ### 방안 4: Hibernate `@Filter` 기반 동적 소프트삭제 — 🟡 인프라 완성, 공통화·확산 미완
 - **현황**: 동적 `@Filter` + `SoftDeleteAspect` + `@DisableSoftDelete` + `SoftDeleteDynamicTest` **이미 구축**(초판이 제안한 골격 그대로). 단 **적용은 Board·Comment 2개**뿐이고 공통 부모/마커 추상화가 없다.
@@ -122,7 +121,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 ### 우선순위 기반 로드맵 (2026-07-06 갱신)
 1. **🔴 최우선 (런타임 안정성)**: **가상 스레드 Pinning 대응.** 전역 활성 상태이므로 즉시 — `-Djdk.tracePinnedThreads=full` 로 pinning 계측, 핫 I/O 경로 `synchronized→ReentrantLock` 점검, HikariCP 풀(20) 적정성 부하테스트, 필요 시 임계 구간 격리.
 2. **🔴 차상위 (성능 게이트)**: **N+1 정적 방어(방안2).** 핵심 테이블 대상 fetchJoin/DTO 프로젝션 관례 + 부분 정적 검증 도입.
-3. **🟡 정리성 (즉시 처리 가능)**: (a) **미사용 MapStruct 의존성 6줄 삭제(방안3)**, (b) `api-server/build.gradle` 의 낡은 "ArchUnit disabled" 주석 정리, (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속).
+3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산 (중기)**: 소프트삭제 `@Filter` 공통화·전사 확대(방안4), 인라인 `z.object` 금지 ESLint 규칙.
 5. **🟡 감사 (중기)**: 79개 전면-클라이언트 `page.tsx` 의 `'use client'` 리프 다운 감사(§4.2).
 
