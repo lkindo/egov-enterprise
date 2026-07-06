@@ -2,23 +2,26 @@ package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 시스템 로그 엔티티 (tb_sys_log)
+ *
+ * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
+ */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_sys_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class SysLog extends BaseEntity {
 
     @Id
@@ -55,7 +58,7 @@ public class SysLog extends BaseEntity {
     @Column(length = 12)
     private String errSeCd;
 
-    public SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
+    private SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
             String dmndUserId, String dmndUserIpAddr, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
         this.dmndId = dmndId;
         this.srvcNm = srvcNm;
@@ -70,4 +73,9 @@ public class SysLog extends BaseEntity {
         this.errSeCd = errSeCd;
     }
 
+    @Builder
+    public static SysLog create(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
+            String dmndUserId, String dmndUserIpAddr, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
+        return new SysLog(dmndId, srvcNm, mthdNm, prcsSeCd, prcsTm, dmndUserId, dmndUserIpAddr, ocrnYmd, rspnsCd, errCd, errSeCd);
+    }
 }

@@ -2,7 +2,6 @@ package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,13 +18,18 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * 사용자 로그(통계) 엔티티 (tb_user_log)
+ *
+ * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
+ * 읽기 전용 연관 vnUserMaster 는 빌더 대상이 아니므로 팩토리에서 제외.
+ */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_user_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(UserLogId.class)
-@SuperBuilder
 public class UserLog extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -60,7 +64,7 @@ public class UserLog extends BaseEntity {
 
     private Integer errCnt;
 
-    public UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
+    private UserLog(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
             Integer crtCnt, Integer mdfcnCnt, Integer inqCnt, Integer delCnt,
             Integer otptCnt, Integer errCnt) {
         this.ocrnYmd = ocrnYmd;
@@ -75,4 +79,10 @@ public class UserLog extends BaseEntity {
         this.errCnt = errCnt;
     }
 
+    @Builder
+    public static UserLog create(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
+            Integer crtCnt, Integer mdfcnCnt, Integer inqCnt, Integer delCnt,
+            Integer otptCnt, Integer errCnt) {
+        return new UserLog(ocrnYmd, dmndUserId, srvcNm, mthdNm, crtCnt, mdfcnCnt, inqCnt, delCnt, otptCnt, errCnt);
+    }
 }
