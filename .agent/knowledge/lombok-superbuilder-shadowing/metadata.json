@@ -5,6 +5,6 @@
   "tags": ["Lombok", "SuperBuilder", "Java", "Design Pattern", "Gotchas"],
   "updatedAt": "2026-05-22T20:55:00Z",
   "references": [
-    "file:///d:/project/egov-enterprise/business-suite/src/main/java/nuri/business/domain/notification/Notification.java"
+    "business-suite/src/main/java/nuri/business/domain/notification/Notification.java"
   ]
 }

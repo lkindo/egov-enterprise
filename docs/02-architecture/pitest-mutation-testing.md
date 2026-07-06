@@ -1,6 +1,6 @@
 # 🧬 PITest (점진적 Mutation Testing) Gradle 완전 연동 설계 보고서
 
-본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 85% 이상 강제)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
+본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 80% 이상 강제)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
 
 ---
 
@@ -57,9 +57,9 @@
           historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
           historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
-          // 백엔드 헌법 제16조 (Mutation Score 85% 이상 강제) 유동적 연동
-          // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
-          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
+          // 백엔드 헌법 제16조 (Mutation Score 80% 이상 강제) 유동적 연동
+          // STRICT_MUTATION 환경변수 활성화 시 엄격한 80% 게이트 통과 적용
+          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 80 : 0
       }
   }
   ```
@@ -96,7 +96,7 @@ PITest의 실행 시간 폭증 문제를 해결하기 위해 **두 가지 핵심
 ./gradlew :foundation:pitest "-Dpitest.targetClasses=nuri.foundation.domain.code.CommonCode" "-Dpitest.targetTests=nuri.foundation.domain.code.CommonCodeTest"
 ```
 
-### 4.4 헌법 제16조 (돌연변이 스코어 85% 이상) 강제 통과 모드 기동 (CI 파이프라인)
+### 4.4 헌법 제16조 (돌연변이 스코어 80% 이상) 강제 통과 모드 기동 (CI 파이프라인)
 ```powershell
 $env:STRICT_MUTATION="true"
 ./gradlew :business-suite:pitest

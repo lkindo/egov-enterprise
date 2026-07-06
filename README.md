@@ -1,7 +1,7 @@
 # eGov Enterprise Modernization (전자정부 프레임워크 모더니제이션)
 
 > **전자정부 표준프레임워크 5.0 기반 엔터프라이즈 모더니제이션 프로젝트**  
-> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 14 (App Router)**와 **Spring Boot 3.3 + JPA** 기반의 현대적인 Full-stack 아키텍처로 완전히 전환하고 고도화한 프로젝트입니다.
+> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 16 (App Router)**와 **Spring Boot 3.4 + JPA** 기반의 현대적인 Full-stack 아키텍처로 완전히 전환하고 고도화한 프로젝트입니다.
 
 ---
 
@@ -9,8 +9,8 @@
 
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
-- **Frontend**: 차세대 React 프레임워크인 Next.js 14를 활용한 고성능 UI/UX 구현.
-- **Backend**: Spring Boot 3.3 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
+- **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
+- **Backend**: Spring Boot 3.4 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
 - **Visual Analytics**: 데이터 시각화 라이브러리를 통한 실시간 통계 대시보드 제공.
 
 ---
@@ -18,7 +18,7 @@
 ## 🛠 기술 스택 (Modern Tech Stack)
 
 ### Frontend
-- **Framework**: Next.js 15.x (App Router)
+- **Framework**: Next.js 16.x (App Router)
 - **Language**: TypeScript 5.x (Strict Mode)
 - **Styling**: Tailwind CSS 4.x, Shadcn/UI (Modern Component System)
 - **State/Data**: Axios, TanStack Query 5.x, Client/Server Components
@@ -190,30 +190,38 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-## 📚 추가 문서
+## 📚 문서 (Documentation)
 
-- [제품 요구사항 정의서 (PRD)](./docs/PRD.MD)
-- [기술 요구사항 정의서 (TRD)](./docs/TRD.MD)
-- [상세 설계 문서 (LLD)](./docs/LLD.MD)
-- [백엔드 아키텍처 요약](./docs/BACKEND_ARCHITECTURE_SUMMARY.md)
-- [통합 메뉴 및 아키텍처 결과 보고서](./docs/integrated-menu-report.md)
-- [2026-03 관리자 모듈 통합 리팩토링 백서](./docs/refactoring-summary-2026-03.md)
+에이전트 운영 규칙은 [AGENTS.md](./AGENTS.md) · [GEMINI.md](./GEMINI.md)를 참조한다. 아래는 목적별 기술 문서 지도다. (문서는 `docs/` 이하 번호형 폴더로 분류되며 파일명은 kebab-case를 준수한다.)
 
----
-
-## 📚 문서 가이드
-
-프로젝트의 주요 문서들은 `docs/` 폴더에 있습니다.
-
+### 🏛 아키텍처 (`docs/02-architecture/`)
 | 문서 | 설명 |
 |------|------|
-| [CHANGELOG](./CHANGELOG.md) | 버전별 변경사항 기록 |
-| [API 문서화 가이드](./docs/API_DOCUMENTATION_GUIDE.md) | OpenAPI/Swagger 사용법 |
-| [CI/CD 파이프라인 가이드](./docs/CICD_PIPELINE.md) | GitHub Actions 설정 및 사용법 |
-| [테스트 가이드](./docs/TESTING_GUIDE.md) | 단위/통합/E2E 테스트 작성법 |
-| [성능 최적화 가이드](./docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) | N+1 쿼리 해결, 캐싱, 프론트엔드 최적화 |
-| [데이터베이스 최적화 가이드](./docs/DATABASE_OPTIMIZATION_GUIDE.md) | 인덱스, 쿼리 튜닝 |
-| [E2E 테스트 가이드](./E2E_GUIDE.md) | Playwright 테스트 작성법 |
+| [백엔드 아키텍처](./docs/02-architecture/backend-architecture.md) | 계층 구조·모듈 경계 단일 참조점 |
+| [프론트엔드 아키텍처](./docs/02-architecture/frontend-architecture.md) | App Router·서버 컴포넌트 전략 |
+| [프론트엔드 디자인 시스템](./docs/02-architecture/frontend-design-system.md) | 디자인 토큰·컴포넌트 시스템 |
+| [도메인 보안 & 회복탄력성](./docs/02-architecture/domain-resilience.md) | 고가용성 로직 설계 |
+| [JPA 성능 가드레일](./docs/02-architecture/jpa-performance-guardrail.md) | N+1·페치 전략 |
+| [Zero-Downtime 마이그레이션](./docs/02-architecture/zero-downtime-migration.md) | Expand-and-Contract 패턴 |
+| [Pitest 뮤테이션 테스트](./docs/02-architecture/pitest-mutation-testing.md) | 테스트 방어력 검증 |
+
+### 📗 개발 지침 (`docs/03-guides/`)
+| 문서 | 설명 |
+|------|------|
+| [오케스트레이션 프로토콜](./docs/03-guides/orchestration-protocol.md) | 태스크 등급·파이프라인 SSOT |
+| [테스트 종합 가이드](./docs/03-guides/testing-guide.md) | 단위/통합/E2E 전략 SSOT |
+| [E2E 운영 Runbook](./docs/03-guides/e2e-test-guide.md) | Playwright 환경·CI 최적화 |
+| [API 문서화 가이드](./docs/03-guides/api-documentation-guide.md) | OpenAPI/Swagger |
+| [DB 표준화 매뉴얼](./docs/03-guides/db-standardization-manual.md) | 물리 스키마 설계 실무 |
+| [보안 하드닝 플레이북](./docs/03-guides/security-hardening-playbook.md) | 인증·필터·JWT |
+| [CI/CD 파이프라인](./docs/03-guides/cicd-pipeline.md) | GitHub Actions |
+
+### ⚙️ 운영 (`docs/04-operations/`)
+| 문서 | 설명 |
+|------|------|
+| [성능 최적화 가이드](./docs/04-operations/performance-optimization-guide.md) | N+1·캐싱·FE 최적화 |
+| [데이터베이스 최적화 가이드](./docs/04-operations/database-optimization-guide.md) | 인덱스·쿼리 튜닝 |
+| [부하 테스트 가이드](./docs/04-operations/load-test-guide.md) | k6 부하 테스트 |
 
 ---
 

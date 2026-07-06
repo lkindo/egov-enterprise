@@ -1,6 +1,6 @@
 # Database Standardization & Governance Manual
 
-본 매뉴얼은 **eGov Enterprise v5** 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 이행하기 위한 공식 실무 가이드라인이다. 본 문서는 **DB 표준화 헌법 (10조)**의 기본 정신을 현업 테이블 설계 및 마이그레이션에 투영하여, 91개 모든 OCI PostgreSQL 테이블의 표준 일관성을 영구히 수호하는 단일 참조점(SSOT) 역할을 담당한다.
+본 매뉴얼은 **eGov Enterprise v5** 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 이행하기 위한 공식 실무 가이드라인이다. 본 문서는 **DB 표준화 헌법 (10조)**의 기본 정신을 현업 테이블 설계 및 마이그레이션에 투영하는 **실무 가이드**다. (표준의 유일 진실원천(SSOT)은 DB 메타 테이블 `meta_standard_words`/`meta_standard_terms`/`meta_standard_domains`이며(DB 헌법 제2조), 규범 원본은 [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)이다. 91개 OCI PostgreSQL 테이블에 이 표준을 일관 적용한다.)
 
 ---
 
@@ -10,18 +10,16 @@
 
 ```mermaid
 graph LR
-    excel["📊 database/<br>Public Data Standard.xlsx<br>(SSOT 메타사전)"]
-    meta["🏛️ OCI PostgreSQL<br>meta_standard_words<br>(실시간 단어 사전)"]
+    meta["🏛️ OCI PostgreSQL<br>meta_standard_words / terms / domains<br>(SSOT 메타 사전 · 실시간)"]
     sql["📝 DDL / Migration SQL<br>(접두사 & 타입 표준 집행)"]
     be["📦 Spring Boot Entity<br>(@Column 표준 일치)"]
 
-    excel -->|물리 동기화| meta
     meta -->|SELECT 검증| sql
     sql -->|Contract Mirroring| be
 ```
 
 ### 1.1 표준화 워크플로우
-1. **단어 사전 조회**: 신규 컬럼이나 테이블이 필요할 때, 먼저 `database/Public Data Standard.xlsx` 또는 DB 내의 `meta_standard_words` 테이블을 조회하여 공식 한글 단어에 1:1 매핑된 물리 영문 약어를 확인한다.
+1. **단어 사전 조회**: 신규 컬럼이나 테이블이 필요할 때, 먼저 DB 내의 `meta_standard_words` 테이블(DB 헌법 제2조의 유일 SSOT)을 `node .agent/scripts/db-bridge.js`로 실시간 조회하여 공식 한글 단어에 1:1 매핑된 물리 영문 약어를 확인한다.
 2. **조합 규칙**: 두 개 이상의 단어가 조합될 때는 언더스코어(`_`)를 구분자로 삼는 스네이크 케이스(Snake Case)를 적용한다 (예: `게시판_마스터_ID` ➔ `BBS_MSTR_ID`).
 3. **가드레일**: 사전에 정의되지 않은 영문 약어나 임의의 생략어(예: `board_id` 등)는 **DB 헌법 제2조에 의해 영구히 금지**된다.
 
