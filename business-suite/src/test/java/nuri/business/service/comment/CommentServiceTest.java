@@ -46,8 +46,8 @@ class CommentServiceTest {
                 .bbsId(bbsId)
                 .ansCn("Test Comment")
                 .useYn("Y")
-                .crtDt(LocalDateTime.now())
                 .build();
+        comment.setCrtDt(LocalDateTime.now());
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
         given(commentRepository.findByBbsIdAndPstId(bbsId, pstId, pageable)).willReturn(page);

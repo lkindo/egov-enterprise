@@ -3,7 +3,6 @@ package nuri.business.domain.auth;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
@@ -12,8 +11,6 @@ import java.util.Objects;
 @Table(name = "tb_user_authrt_map")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class UserAuthority extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -38,6 +35,17 @@ public class UserAuthority extends BaseEntity implements Serializable {
 
     @Column(length = 12)
     private String mbrTypeCd;
+
+    private UserAuthority(@NonNull String scrtyDcsnTrgtId, @NonNull String authrtId, String mbrTypeCd) {
+        this.scrtyDcsnTrgtId = scrtyDcsnTrgtId;
+        this.authrtId = authrtId;
+        this.mbrTypeCd = mbrTypeCd;
+    }
+
+    @Builder
+    public static UserAuthority create(@NonNull String scrtyDcsnTrgtId, @NonNull String authrtId, String mbrTypeCd) {
+        return new UserAuthority(scrtyDcsnTrgtId, authrtId, mbrTypeCd);
+    }
 
     public void update(@NonNull String authrtId, String mbrTypeCd) {
         this.authrtId = Objects.requireNonNull(authrtId);

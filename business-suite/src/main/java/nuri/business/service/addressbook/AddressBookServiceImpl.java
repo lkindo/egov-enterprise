@@ -66,7 +66,6 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .trgetOgnzId(dto.getTrgetOgnzId())
                     .useYn("Y")
                     .wrterId(userId)
-                    .frstRgtrId(userId)
                     .build();
 
             addressBookRepository.save(entity);

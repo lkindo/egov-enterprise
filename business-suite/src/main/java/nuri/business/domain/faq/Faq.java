@@ -3,7 +3,6 @@ package nuri.business.domain.faq;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -16,8 +15,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class Faq extends BaseEntity {
 
@@ -34,7 +31,6 @@ public class Faq extends BaseEntity {
     @Column(columnDefinition = "TEXT", length = 4000)
     private String ansCn;
 
-    @Builder.Default
     private Integer inqCnt = 0;
 
     @Column(name = "atch_file_id", length = 20)
@@ -44,6 +40,21 @@ public class Faq extends BaseEntity {
     @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
+
+    // 팩토리 위임용 private 생성자 (빌더로 설정되는 own 필드만 매핑, @Builder.Default 널병합 재현)
+    private Faq(String faqId, String qstnTtl, String qstnCn, String ansCn, Integer inqCnt, String atchFileId) {
+        this.faqId = faqId;
+        this.qstnTtl = qstnTtl;
+        this.qstnCn = qstnCn;
+        this.ansCn = ansCn;
+        this.inqCnt = inqCnt != null ? inqCnt : 0;
+        this.atchFileId = atchFileId;
+    }
+
+    @Builder
+    public static Faq create(String faqId, String qstnTtl, String qstnCn, String ansCn, Integer inqCnt, String atchFileId) {
+        return new Faq(faqId, qstnTtl, qstnCn, ansCn, inqCnt, atchFileId);
+    }
 
     public void update(String qstnTtl, String qstnCn, String ansCn, String atchFileId) {
         this.qstnTtl = qstnTtl;

@@ -3,14 +3,11 @@ package nuri.business.domain.deptjob;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "tb_dept_task_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class DeptJob extends BaseEntity {
 
     @Id
@@ -44,6 +41,24 @@ public class DeptJob extends BaseEntity {
     @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
+
+    // 팩토리 create() 전용 private 생성자 (own 필드 설정)
+    private DeptJob(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
+            String picId, String prrtyRnk, String atchFileId) {
+        this.deptTaskId = deptTaskId;
+        this.deptTaskBoxId = deptTaskBoxId;
+        this.deptTaskNm = deptTaskNm;
+        this.deptTaskCn = deptTaskCn;
+        this.picId = picId;
+        this.prrtyRnk = prrtyRnk;
+        this.atchFileId = atchFileId;
+    }
+
+    @Builder
+    public static DeptJob create(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
+            String picId, String prrtyRnk, String atchFileId) {
+        return new DeptJob(deptTaskId, deptTaskBoxId, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
+    }
 
     public void update(String deptTaskBoxId, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,
             String atchFileId) {

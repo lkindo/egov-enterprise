@@ -3,7 +3,6 @@ package nuri.business.domain.auth;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 
 /**
@@ -12,11 +11,9 @@ import java.io.Serializable;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Entity
 @Table(name = "tb_authrt_role_map")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@SuperBuilder
 public class AuthorityRole extends BaseEntity {
 
     @EmbeddedId
@@ -31,6 +28,15 @@ public class AuthorityRole extends BaseEntity {
     @MapsId("roleCd")
     @JoinColumn(name = "role_cd")
     private RoleInfo roleInfo;
+
+    private AuthorityRole(AuthorityRoleId id) {
+        this.id = id;
+    }
+
+    @Builder
+    public static AuthorityRole create(AuthorityRoleId id) {
+        return new AuthorityRole(id);
+    }
 
     @Embeddable
     @Getter

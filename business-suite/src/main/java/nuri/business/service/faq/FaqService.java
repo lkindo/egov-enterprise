@@ -41,7 +41,6 @@ public class FaqService extends BaseAbstractService {
                 .qstnCn(dto.getQstnCn())
                 .ansCn(dto.getAnsCn())
                 .atchFileId(dto.getAtchFileId())
-                .frstRgtrId(userId)
                 .build();
         faqRepository.save(entity);
         return entity.getFaqId();

@@ -3,7 +3,6 @@ package nuri.business.domain.file;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_file_master")
-@SuperBuilder
 public class FileMaster extends BaseEntity {
 
     @Id
@@ -28,13 +26,27 @@ public class FileMaster extends BaseEntity {
     @Column(nullable = false, length = 1)
     private String useYn;
 
-    @Builder.Default
     @OneToMany(mappedBy = "fileMaster", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileDetail> fileDetails = new ArrayList<>();
 
     public FileMaster(String atchFileId) {
         this.atchFileId = atchFileId;
         this.useYn = "Y";
+    }
+
+    /**
+     * 팩토리(create) 위임용 전체 필드 생성자.
+     * @Builder.Default 이던 fileDetails 는 널병합으로 기본값(빈 리스트)을 보장한다.
+     */
+    private FileMaster(String atchFileId, String useYn, List<FileDetail> fileDetails) {
+        this.atchFileId = atchFileId;
+        this.useYn = useYn;
+        this.fileDetails = fileDetails != null ? fileDetails : new ArrayList<>();
+    }
+
+    @Builder
+    public static FileMaster create(String atchFileId, String useYn, List<FileDetail> fileDetails) {
+        return new FileMaster(atchFileId, useYn, fileDetails);
     }
 
     public void addFileDetail(FileDetail detail) {

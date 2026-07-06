@@ -19,9 +19,9 @@ class AddressBookTest {
                 .trgetOgnzId("ORG_001")
                 .useYn("Y")
                 .wrterId("user1")
-                .frstRgtrId("admin")
-                .lastMdfrId("admin")
                 .build();
+        addressBook.setFrstRgtrId("admin");
+        addressBook.setLastMdfrId("admin");
 
         // Then
         assertThat(addressBook.getAdbkId()).isEqualTo("ADBK_001");

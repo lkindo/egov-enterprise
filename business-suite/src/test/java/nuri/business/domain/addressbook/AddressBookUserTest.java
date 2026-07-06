@@ -22,8 +22,8 @@ class AddressBookUserTest {
                 .mblTelno("01012345678")
                 .ofcTelno("029876543")
                 .faxNo("025554444")
-                .frstRgtrId("admin")
                 .build();
+        user.setFrstRgtrId("admin");
 
         // Then
         assertThat(user.getAdbkConstntId()).isEqualTo("CONST_001");
@@ -44,8 +44,8 @@ class AddressBookUserTest {
         // Given & When
         AddressBookUser user = AddressBookUser.builder()
                 .adbkConstntId("CONST_002")
-                .frstRgtrId("system")
                 .build();
+        user.setFrstRgtrId("system");
 
         // Then
         assertThat(user.getFrstRgtrId()).isEqualTo("system");

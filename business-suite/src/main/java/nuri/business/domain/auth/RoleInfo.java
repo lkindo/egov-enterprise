@@ -3,15 +3,12 @@ package nuri.business.domain.auth;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Entity
 @Table(name = "tb_role_info")
-@SuperBuilder
 public class RoleInfo extends BaseEntity {
 
     @Id
@@ -32,8 +29,24 @@ public class RoleInfo extends BaseEntity {
 
     private Integer roleSort;
 
-    @Builder.Default
     private LocalDate roleCrtYmd = LocalDate.now();
+
+    private RoleInfo(String roleId, String roleNm, String rolePatrn, String roleExpln, String roleTypeCd,
+                     Integer roleSort, LocalDate roleCrtYmd) {
+        this.roleId = roleId;
+        this.roleNm = roleNm;
+        this.rolePatrn = rolePatrn;
+        this.roleExpln = roleExpln;
+        this.roleTypeCd = roleTypeCd;
+        this.roleSort = roleSort;
+        this.roleCrtYmd = roleCrtYmd != null ? roleCrtYmd : LocalDate.now();
+    }
+
+    @Builder
+    public static RoleInfo create(String roleId, String roleNm, String rolePatrn, String roleExpln, String roleTypeCd,
+                                  Integer roleSort, LocalDate roleCrtYmd) {
+        return new RoleInfo(roleId, roleNm, rolePatrn, roleExpln, roleTypeCd, roleSort, roleCrtYmd);
+    }
 
     /**
      * Updates the role information.

@@ -6,7 +6,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 주소록 정보 JPA Entity
@@ -18,12 +17,9 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 
 public class AddressBook extends BaseEntity {
 
-    @lombok.Builder.Default
     @OneToMany(mappedBy = "addressBook", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<AddressBookUser> addressBookUsers = new java.util.ArrayList<>();
 
@@ -56,5 +52,25 @@ public class AddressBook extends BaseEntity {
         this.adbkNm = adbkNm;
         this.rlsScopeCd = rlsScopeCd;
         this.useYn = useYn;
+    }
+
+    // Phase 5.2 빌더 규범: @SuperBuilder 제거, 정적 팩토리 create()에 @Builder 배치.
+    // 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)는 파라미터에서 제외(Auditing 이 채움).
+    private AddressBook(java.util.List<AddressBookUser> addressBookUsers, String adbkId, String adbkNm,
+                        String rlsScopeCd, String trgetOgnzId, String useYn, String wrterId) {
+        // @Builder.Default 널병합 재현: 컬렉션은 null 이면 새 ArrayList 로 초기화
+        this.addressBookUsers = addressBookUsers != null ? addressBookUsers : new java.util.ArrayList<>();
+        this.adbkId = adbkId;
+        this.adbkNm = adbkNm;
+        this.rlsScopeCd = rlsScopeCd;
+        this.trgetOgnzId = trgetOgnzId;
+        this.useYn = useYn;
+        this.wrterId = wrterId;
+    }
+
+    @Builder
+    public static AddressBook create(java.util.List<AddressBookUser> addressBookUsers, String adbkId, String adbkNm,
+                                     String rlsScopeCd, String trgetOgnzId, String useYn, String wrterId) {
+        return new AddressBook(addressBookUsers, adbkId, adbkNm, rlsScopeCd, trgetOgnzId, useYn, wrterId);
     }
 }

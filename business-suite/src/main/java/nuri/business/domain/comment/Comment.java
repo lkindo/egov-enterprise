@@ -7,7 +7,6 @@ import nuri.business.domain.common.BaseEntity;
 import nuri.business.domain.board.Board;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Filter;
 
 /**
@@ -17,8 +16,6 @@ import org.hibernate.annotations.Filter;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_bbs_comment")
@@ -54,8 +51,36 @@ public class Comment extends BaseEntity implements Serializable {
     private String ansCn;
 
     @Column(length = 1)
-    @Builder.Default
     private String useYn = "Y";
+
+    /**
+     * 팩토리 전용 생성자 (private).
+     * 팩토리 파라미터(= 빌더로 설정되는 own 필드의 합집합)를 위임받는다.
+     * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)와
+     * 읽기전용 연관(board: insertable=false, updatable=false)은 제외한다.
+     * @Builder.Default 재현: useYn 널병합 처리(널이면 기본값 "Y").
+     */
+    private Comment(Long ansSn, String pstId, String bbsId, String wrterId, String wrterNm,
+                    String pswd, String ansCn, String useYn) {
+        this.ansSn = ansSn;
+        this.pstId = pstId;
+        this.bbsId = bbsId;
+        this.wrterId = wrterId;
+        this.wrterNm = wrterNm;
+        this.pswd = pswd;
+        this.ansCn = ansCn;
+        this.useYn = useYn != null ? useYn : "Y";
+    }
+
+    /**
+     * 표준 정적 팩토리 (Phase 5.2 빌더 규범).
+     * 기존 Comment.builder()...build() 호출부와 완전 호환된다.
+     */
+    @Builder
+    public static Comment create(Long ansSn, String pstId, String bbsId, String wrterId, String wrterNm,
+                                 String pswd, String ansCn, String useYn) {
+        return new Comment(ansSn, pstId, bbsId, wrterId, wrterNm, pswd, ansCn, useYn);
+    }
 
     public void update(String ansCn) {
         this.ansCn = ansCn;
