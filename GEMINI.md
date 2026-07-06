@@ -19,7 +19,7 @@
 
 1.  **Task Grading (Inline)**: 모든 작업 시작 전, 아래 등급 기준에 따라 **태스크 등급(L0/L1/L2)을 판정**하고 `TASK PROPOSAL` 블록을 출력한다.
     *(⚠ 인라인 정의와 상충 시 `docs/03-guides/orchestration-protocol.md`가 절대적 최우위 SSOT로 군림한다.)*
-    - **L0 (Trivial)**: 코드 변경 없는 단순 조회·탐색·질문 응답. TASK PROPOSAL 1줄 축약 허용, GStack Review 생략 가능. `caveman` 프로토콜로 `[대상] [상태] [증거]` 형식만 보고.
+    - **L0 (Trivial)**: 단순 조회·탐색·질문 응답 및 오타·주석·CSS 등 저위험 미세 수정(오케스트레이션 프로토콜 §2와 정합). TASK PROPOSAL 1줄 축약 허용, GStack Review 생략 가능. `caveman` 프로토콜로 `[대상] [상태] [증거]` 형식만 보고.
     - **L1 (Standard)**: 단일 모듈 내 코드 변경, 버그 수정, 문서 갱신. TASK PROPOSAL 정식 출력, GStack Review 3줄 이내. Root Cause와 Diff는 생략하지 않는다.
     - **L2 (Critical)**: 다중 모듈 변경, DB 마이그레이션, 아키텍처 변경. 전문 서술형 감사 보고 의무, 보고 밀도 제한 없음.
 2.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 코드 변경을 수반하는 작업 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다. 특히 백엔드 DTO/Controller 수정 시에는 **`api-contract-guardian`** 스킬을, Spring Security/AuthContext 등 보안 영역 수정 시에는 **`owasp-security-auditor`** 스킬을 강제 가동하여 헌법 위반과 Breaking Change를 사전에 차단한다.
@@ -59,16 +59,16 @@
 
 본 프로젝트의 모든 코딩 컨벤션은 아래 3대 헌법을 최우위 규범으로 따른다. 상세 조항은 각 헌법 원문을 참조한다.
 
-- **Backend**: [API 및 백엔드 아키텍처 헌법](file:///.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (18조)
-- **Frontend**: [프론트엔드 디자인 및 UX 헌법](file:///.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) (15조)
-- **Database**: [DB 표준화 헌법](file:///.agent/knowledge/db-standard-constitution/artifacts/constitution.md) (10조)
+- **Backend**: [API 및 백엔드 아키텍처 헌법](.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (18조)
+- **Frontend**: [프론트엔드 디자인 및 UX 헌법](.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) (17조)
+- **Database**: [DB 표준화 헌법](.agent/knowledge/db-standard-constitution/artifacts/constitution.md) (10조)
 
 > **⚠ 헌법 불가침 원칙**: 위 3대 헌법(`constitution.md`) 파일 및 본 `GEMINI.md` 자체는 **사용자의 명시적 승인 없이 에이전트가 단독으로 수정할 수 없다.** 트러블슈팅 패턴, 작업 기록 등 운영성 지식(`.gemini/tasks/`, `docs/`)의 생성·갱신은 자율적으로 허용한다.
 
 ## 4. 에이전트 트러블슈팅 매트릭스 (Troubleshooting Gotchas)
 
 - **인증(401) 이슈**: `AuthContext`의 `accessToken`과 브라우저 쿠키 값이 동기화되어 있는지 먼저 확인하라. 
-- **타입 에러**: 백엔드 DTO 변경 후에는 반드시 `npm run codegen:ts`를 실행하여 `generated-api.d.ts`를 최신화하라.
+- **타입 에러**: 백엔드 DTO 변경 후에는 `pnpm -C frontend codegen:file`(오프라인, `api-docs.json` 기반) + `pnpm -C frontend codegen:zod`로 `generated-api.d.ts`·`generated-zod.ts`를 함께 최신화하라. (`codegen:ts`는 로컬 서버 `:8080` 기동 필요. `api-docs.json`이 stale이면 재생성 전 원인부터 확인.)
 - **컴포넌트 렌더링**: Next.js App Router에서 `'use client'` 지시어가 필요한 위치인지(이벤트 훅 사용 여부) 항상 확인하라. 기본은 Server Component다.
 
 ## 5. 주요 명령어 (Key Commands)
@@ -130,6 +130,6 @@
   - **E2E 교차 검증 의무**: Playwright E2E 테스트 실패 시, 콘솔 로그만 분석하지 않고 반드시 브라우저 실행 결과 아티팩트(DOM 상태, S크린샷, WebP 비디오)와 JVM 에러 로그를 상호 교차 검증하여 실패 원인을 증명한다.
 
 ---
-*Last Updated: 2026-06-09 (Updated via Antigravity — Global-Project Ruleset Inheritance & Optimization Applied)*
+*Last Updated: 2026-07-06 (하네스 정합성 감사 반영 — 헌법 링크(relative)·프론트 조문수(17)·codegen 안내·L0 정의 정합. Claude 브리지 CLAUDE.md/AGENTS.md 신설)*
 
 
