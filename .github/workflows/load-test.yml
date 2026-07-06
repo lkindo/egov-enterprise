@@ -101,7 +101,7 @@ jobs:
           EOF
 
           # Start backend in background
-          ./gradlew :api-server:bootRun --daemon &
+          ./gradlew :api-server:bootRun --daemon > backend.log 2>&1 &
 
           # Wait for server to be ready
           echo "Waiting for backend server to start..."
@@ -116,6 +116,8 @@ jobs:
           exit 1
         env:
           SPRING_PROFILES_ACTIVE: test
+          # 가상 스레드 pinning 관측: 부하 테스트 중 pinning 발생 시 backend.log 에 스택트레이스 기록
+          TRACE_PINNED: full
 
       - name: Run k6 Load Test
         run: |
@@ -154,6 +156,23 @@ jobs:
           # Generate summary
           k6 inspect --execution-requirements test/load-tests/scenarios/load-levels.js
 
+      - name: Report Virtual Thread Pinning
+        if: always()
+        run: |
+          echo "=== Virtual thread pinning events during load test (jdk.tracePinnedThreads=full) ==="
+          if [ -f backend.log ]; then
+            PINNED=$(grep -ic "pinned" backend.log || true)
+            echo "Pinning-related log lines: ${PINNED:-0}"
+            if [ "${PINNED:-0}" -gt 0 ]; then
+              echo "::warning::Virtual thread pinning detected during load test (${PINNED} lines). Review backend.log artifact; consider ReentrantLock on hot I/O or Hikari pool tuning."
+              grep -i -A 15 "pinned" backend.log | head -120 || true
+            else
+              echo "No virtual thread pinning detected under this load level."
+            fi
+          else
+            echo "backend.log not found (backend may not have started)."
+          fi
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -161,6 +180,7 @@ jobs:
           name: k6-results-${{ github.run_id }}
           path: |
             test-results/k6/
+            backend.log
           retention-days: 30
 
       - name: Upload HTML Report

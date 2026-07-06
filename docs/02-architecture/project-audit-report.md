@@ -62,11 +62,13 @@
 - **현황(강화됨)**: `@ManyToOne`/`@OneToOne` **100% `FetchType.LAZY`**(EAGER 0건, 24개 도메인 32개 연관 전부 LAZY)이며, 이는 이제 **`JpaArchitectureTest` 로 빌드타임 강제**된다(EAGER 선언 시 빌드 실패).
 - **🔴 미해결(방안2 본체)**: 런타임 N+1의 근본 방어인 **"조회 메서드의 fetchJoin()/DTO 프로젝션 누락"을 잡는 정적 게이트는 여전히 없다.** `JpaArchitectureTest` 는 엔티티 **필드 fetch 타입만** 검사하고 QueryDSL/JPQL 쿼리 메서드는 분석하지 않는다. 런타임 완화책(`default_batch_fetch_size:100`, `batch_size:25`)은 존재하나 초판이 요구한 빌드타임 정적 게이트는 아니다.
 
-### 3.3. Java 21 Virtual Threads 도입의 안전성 문제 — 🔴 미해결(전역 활성·완화 전무, 초판보다 위험 상향)
-- **현황(정정)**: 가상 스레드는 "언급"된 수준이 아니라 **완전 활성화**되어 있다:
-  - `api-server/.../application.yml`: `spring.threads.virtual.enabled: true` — **Tomcat 요청 처리를 전역으로 가상 스레드에서 수행**(false로 덮는 프로파일 없음).
-  - `foundation/.../config/AsyncConfig.java`: `logExecutor` 에 `setVirtualThreads(true)`.
-- **🔴 리스크(여전히, 오히려 과소평가됨)**: 스택이 정확히 pinning 위험 조합이다 — PostgreSQL JDBC + **HikariCP `maximum-pool-size: 20`**(협소). 그런데 완화·계측이 **전무**하다: `-Djdk.tracePinnedThreads`/스케줄러 튜닝 없음, `synchronized→ReentrantLock` 마이그레이션 없음, 프로파일링/부하테스트 산출물 없음. 유일한 대비는 헌법 문서의 **서술적 권고**(ReentrantLock 권장)뿐이다. **전역 활성 + 완화 부재 = 현시점 최우선 런타임 리스크.**
+### 3.3. Java 21 Virtual Threads 도입의 안전성 — 🟡 부분(관측 배선 완료, 튜닝은 부하 결과 대기)
+- **현황(정정)**: 가상 스레드는 "언급" 수준이 아니라 **완전 활성**이다 — `application.yml`의 `spring.threads.virtual.enabled: true`(Tomcat 요청 전역, false 프로파일 없음) + `AsyncConfig.logExecutor`의 `setVirtualThreads(true)`.
+- **재평가된 리스크(2026-07-06)**:
+  - ✅ **앱 코드에 pinning 유발 요인 없음**: 전 모듈 `src/main` 에 `synchronized` **0건**. pinning은 앱 코드가 아니라 PostgreSQL JDBC / HikariCP 내부 동기화 구간에서만 발생 가능하며, "`synchronized→ReentrantLock` 전환"으로 고칠 **앱 코드 대상이 존재하지 않는다.**
+  - ✅ **부하 테스트 하네스 존재**: `.github/workflows/load-test.yml`(k6, load level 파라미터). 초판의 "부하테스트 부재"는 부정확했다.
+  - ✅ **pinning 관측 배선**: `build.gradle` 에 게이트된 `jdk.tracePinnedThreads` 진단(`-Ptrace-pinned`/`TRACE_PINNED`, 기본 off) 추가. `load-test.yml` 이 k6 실행 중 이를 활성화하여 `backend.log` 에 pinning 스택을 캡처하고, "Report Virtual Thread Pinning" 단계가 감지 시 CI 경고 + 아티팩트 업로드.
+- **🟡 잔여(부하 결과 의존)**: pinning 실제 발생 여부는 **부하 테스트 실행 후 `backend.log` 로 확인**해야 한다. pinning이 관측될 때에만 HikariCP 풀(prod 20)·캐리어 스레드 병렬도(`jdk.virtualThreadScheduler.parallelism`) 튜닝을 검토한다. (관측 없는 선제 튜닝은 근거가 없으므로 지양.)
 
 ---
 
@@ -119,7 +121,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 초판 대비 **뼈대(모듈 분리·의존성 방향·명명·Fail-Fast)뿐 아니라, 지적됐던 상위 결함 다수가 이미 해소**되었다(Zod SSOT 일원화, `@Where`→동적 `@Filter` 전환, 컨트롤러-엔티티 ArchUnit 가드, LAZY 빌드 강제). 남은 과제는 **런타임 안정성**과 **정리성 부채**로 성격이 이동했다.
 
 ### 우선순위 기반 로드맵 (2026-07-06 갱신)
-1. **🔴 최우선 (런타임 안정성)**: **가상 스레드 Pinning 대응.** 전역 활성 상태이므로 즉시 — `-Djdk.tracePinnedThreads=full` 로 pinning 계측, 핫 I/O 경로 `synchronized→ReentrantLock` 점검, HikariCP 풀(20) 적정성 부하테스트, 필요 시 임계 구간 격리.
+1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
 2. **🔴 차상위 (성능 게이트)**: **N+1 정적 방어(방안2).** 핵심 테이블 대상 fetchJoin/DTO 프로젝션 관례 + 부분 정적 검증 도입.
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산 (중기)**: 소프트삭제 `@Filter` 공통화·전사 확대(방안4), 인라인 `z.object` 금지 ESLint 규칙.
