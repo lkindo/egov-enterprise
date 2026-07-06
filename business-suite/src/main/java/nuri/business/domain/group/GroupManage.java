@@ -6,15 +6,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Entity
 @Table(name = "tb_authrt_group_info")
-@SuperBuilder
 public class GroupManage extends BaseEntity {
 
     @Id
@@ -27,8 +24,21 @@ public class GroupManage extends BaseEntity {
     @Column(length = 4000)
     private String groupDc;
 
-    @Builder.Default
     private LocalDateTime groupCrtYmd = LocalDateTime.now();
+
+    // @SuperBuilder -> 정적 팩토리 @Builder 전환에 따른 전체 인자 private 생성자
+    // groupCrtYmd 는 기존 @Builder.Default 재현: null 이면 기본값(LocalDateTime.now()) 병합
+    private GroupManage(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtYmd) {
+        this.groupId = groupId;
+        this.groupNm = groupNm;
+        this.groupDc = groupDc;
+        this.groupCrtYmd = groupCrtYmd != null ? groupCrtYmd : LocalDateTime.now();
+    }
+
+    @Builder
+    public static GroupManage create(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtYmd) {
+        return new GroupManage(groupId, groupNm, groupDc, groupCrtYmd);
+    }
 
     public void update(String groupNm, String groupDc) {
         this.groupNm = groupNm;

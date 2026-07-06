@@ -3,7 +3,7 @@ package nuri.business.domain.mail;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "tb_email_dsptch_manage")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class SentMail extends BaseEntity {
 
     @Id
@@ -52,16 +51,21 @@ public class SentMail extends BaseEntity {
 
 
 
-    public SentMail(String mssageId, String sj, String emailCn, String dsptchPerson,
-            String recptnPerson, String sndngResultCode, String atchFileId) {
-        this.msgId = mssageId;
-        this.emlTtl = sj;
-        this.emlCn = emailCn;
-        this.sndptyNm = dsptchPerson;
-        this.rcvrNm = recptnPerson;
-        this.dsptchRsltCd = sndngResultCode;
-        this.dsptchDt = java.time.LocalDateTime.now();
+    private SentMail(String msgId, String emlTtl, String emlCn, String sndptyNm,
+            String rcvrNm, String dsptchRsltCd, String atchFileId) {
+        this.msgId = msgId;
+        this.emlTtl = emlTtl;
+        this.emlCn = emlCn;
+        this.sndptyNm = sndptyNm;
+        this.rcvrNm = rcvrNm;
+        this.dsptchRsltCd = dsptchRsltCd;
         this.atchFileId = atchFileId;
+    }
+
+    @Builder
+    public static SentMail create(String msgId, String emlTtl, String emlCn, String sndptyNm,
+            String rcvrNm, String dsptchRsltCd, String atchFileId) {
+        return new SentMail(msgId, emlTtl, emlCn, sndptyNm, rcvrNm, dsptchRsltCd, atchFileId);
     }
 
     @jakarta.persistence.PrePersist

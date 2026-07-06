@@ -40,7 +40,6 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
                     .notiCn("Content " + i)
                     .rcvrId("testUser")
                     .readYn(i % 5 == 0 ? "Y" : "N")
-                    .crtDt(LocalDateTime.now())
                     .build();
             notificationRepository.save(notification);
         }

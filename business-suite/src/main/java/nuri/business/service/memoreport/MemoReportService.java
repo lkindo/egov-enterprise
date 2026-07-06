@@ -62,7 +62,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
                     .rptrId(dto.getRptrId())
                     .rptCn(dto.getRptCn())
                     .atchFileId(dto.getAtchFileId())
-                    .frstRgtrId(userId)
                     .build();
             memoReportRepository.save(entity);
             return id;

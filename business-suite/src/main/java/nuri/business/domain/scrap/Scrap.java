@@ -3,7 +3,6 @@ package nuri.business.domain.scrap;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
@@ -15,8 +14,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class Scrap extends BaseEntity {
 
@@ -45,8 +42,25 @@ public class Scrap extends BaseEntity {
     private String scrapExpln;
 
     @Column(length = 1)
-    @Builder.Default
     private String useYn = "Y";
+
+    private Scrap(String scrapId, String bbsId, String pstId, String scrapNm,
+                  String scrapUrl, String scrapExpln, String useYn) {
+        this.scrapId = scrapId;
+        this.bbsId = bbsId;
+        this.pstId = pstId;
+        this.scrapNm = scrapNm;
+        this.scrapUrl = scrapUrl;
+        this.scrapExpln = scrapExpln;
+        this.useYn = useYn != null ? useYn : "Y";
+    }
+
+    @Builder
+    public static Scrap create(String scrapId, String bbsId, String pstId, String scrapNm,
+                               String scrapUrl, String scrapExpln, String useYn) {
+        return new Scrap(scrapId, bbsId, pstId, scrapNm, scrapUrl, scrapExpln, useYn);
+    }
+
     public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {
         this.scrapNm = scrapNm;
         this.scrapUrl = scrapUrl;

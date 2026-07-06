@@ -9,19 +9,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import lombok.Builder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Table(name = "tb_dscsn_list")
-@SuperBuilder
 public class CnsltManage extends BaseEntity {
 
     @Id
@@ -71,11 +67,9 @@ public class CnsltManage extends BaseEntity {
     private String wrtYmd;
 
     @Column
-    @Builder.Default
     private Integer inqCnt = 0;
 
     @Column(length = 12)
-    @Builder.Default
     private String qnaProcSttsCd = "1";
 
     @Column(length = 20)
@@ -86,6 +80,46 @@ public class CnsltManage extends BaseEntity {
 
     @Column(length = 20)
     private String mngYmd;
+
+    // 팩토리 위임 대상 생성자. @Builder.Default 기본값(inqCnt=0, qnaProcSttsCd="1")을 널병합으로 재현한다.
+    private CnsltManage(String dscsnId, String dscsnTtl, String dscsnCn, String rlsYn,
+            String wrtPswd, String areaNo, String mdTelno, String endTelno, String mblFrstTelno,
+            String mblMdTelno, String mblEndTelno, String emlAddr, String emlAnsYn, String wrterNm,
+            String wrtYmd, Integer inqCnt, String qnaProcSttsCd, String atchFileId, String procCn,
+            String mngYmd) {
+        this.dscsnId = dscsnId;
+        this.dscsnTtl = dscsnTtl;
+        this.dscsnCn = dscsnCn;
+        this.rlsYn = rlsYn;
+        this.wrtPswd = wrtPswd;
+        this.areaNo = areaNo;
+        this.mdTelno = mdTelno;
+        this.endTelno = endTelno;
+        this.mblFrstTelno = mblFrstTelno;
+        this.mblMdTelno = mblMdTelno;
+        this.mblEndTelno = mblEndTelno;
+        this.emlAddr = emlAddr;
+        this.emlAnsYn = emlAnsYn;
+        this.wrterNm = wrterNm;
+        this.wrtYmd = wrtYmd;
+        this.inqCnt = inqCnt != null ? inqCnt : 0;
+        this.qnaProcSttsCd = qnaProcSttsCd != null ? qnaProcSttsCd : "1";
+        this.atchFileId = atchFileId;
+        this.procCn = procCn;
+        this.mngYmd = mngYmd;
+    }
+
+    // Phase 5.2: 클래스 레벨 빌더 대신 정적 팩토리에 @Builder 배치. 기존 CnsltManage.builder()...build() 호출부 호환 유지.
+    @Builder
+    public static CnsltManage create(String dscsnId, String dscsnTtl, String dscsnCn, String rlsYn,
+            String wrtPswd, String areaNo, String mdTelno, String endTelno, String mblFrstTelno,
+            String mblMdTelno, String mblEndTelno, String emlAddr, String emlAnsYn, String wrterNm,
+            String wrtYmd, Integer inqCnt, String qnaProcSttsCd, String atchFileId, String procCn,
+            String mngYmd) {
+        return new CnsltManage(dscsnId, dscsnTtl, dscsnCn, rlsYn, wrtPswd, areaNo, mdTelno,
+                endTelno, mblFrstTelno, mblMdTelno, mblEndTelno, emlAddr, emlAnsYn, wrterNm, wrtYmd,
+                inqCnt, qnaProcSttsCd, atchFileId, procCn, mngYmd);
+    }
 
     public void update(String dscsnTtl, String dscsnCn, String rlsYn, String wrtPswd,
             String areaNo, String mdTelno, String endTelno, String mblFrstTelno, String mblMdTelno,

@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 메뉴 정보 엔티티 (NMENUINFO)
@@ -16,7 +15,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "tb_menu_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class Menu extends BaseEntity {
 
     @Id
@@ -44,7 +42,6 @@ public class Menu extends BaseEntity {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Menu parent;
 
-    @Builder.Default
     @org.hibernate.annotations.BatchSize(size = 50)
     @jakarta.persistence.OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Menu> children = new java.util.ArrayList<>();
@@ -71,8 +68,38 @@ public class Menu extends BaseEntity {
     private String routeMdfcnYn;
 
     @Column(length = 1)
-    @Builder.Default
     private String useYn = "Y";
+
+    /**
+     * 영속 엔티티 생성용 private 생성자.
+     * 팩토리(create)에서만 위임 호출한다.
+     * (@Builder.Default 재현: useYn 은 null 병합으로 기본값 "Y" 유지, children 은 필드 초기화로 빈 리스트 유지)
+     */
+    private Menu(Long menuSn, String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+                 String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
+        this.menuSn = menuSn;
+        this.menuNm = menuNm;
+        this.prgrmFileNm = prgrmFileNm;
+        this.upMenuSn = upMenuSn;
+        this.menuOrdr = menuOrdr;
+        this.menuExpln = menuExpln;
+        this.relImgPath = relImgPath;
+        this.relImgNm = relImgNm;
+        this.modernRoute = modernRoute;
+        // @Builder.Default 널병합 재현 (기본값 "Y")
+        this.useYn = useYn != null ? useYn : "Y";
+    }
+
+    /**
+     * 메뉴 엔티티 생성 정적 팩토리.
+     * 기존 Menu.builder()...build() 호출부와 동일하게 동작한다.
+     */
+    @Builder
+    public static Menu create(Long menuSn, String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
+                              String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
+        return new Menu(menuSn, menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm,
+                modernRoute, useYn);
+    }
 
     /**
      * 메뉴 정보 수정
@@ -105,4 +132,3 @@ public class Menu extends BaseEntity {
         this.modernRoute = modernRoute;
     }
 }
-

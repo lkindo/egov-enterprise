@@ -20,9 +20,9 @@ class NotificationDomainTest {
                 .notiCn("Content")
                 .rcvrId("user1")
                 .linkUrl("/home")
-                .crtDt(LocalDateTime.now())
-                .mdfcnDt(LocalDateTime.now())
                 .build();
+        ntfc.setCrtDt(LocalDateTime.now());
+        ntfc.setMdfcnDt(LocalDateTime.now());
         
         // Then
         assertEquals("NT1", ntfc.getNotiSn());

@@ -81,8 +81,6 @@ class MenuServiceIntegrationTest {
                 .menuOrdr(1)
                 .menuExpln("DESC")
                 .modernRoute("/root")
-                .frstRgtrId("admin")
-                .lastMdfrId("admin")
                 .build();
         menuRepository.save(root);
 
@@ -94,8 +92,6 @@ class MenuServiceIntegrationTest {
                 .menuOrdr(1)
                 .menuExpln("DESC")
                 .modernRoute("/child")
-                .frstRgtrId("admin")
-                .lastMdfrId("admin")
                 .build();
         menuRepository.save(child);
 

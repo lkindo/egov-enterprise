@@ -20,9 +20,9 @@ class ScrapTest {
                 .scrapUrl("https://example.com/posts/1")
                 .scrapExpln("스크랩 테스트 설명글")
                 .useYn("Y")
-                .frstRgtrId("user1")
-                .lastMdfrId("user1")
                 .build();
+        scrap.setFrstRgtrId("user1");
+        scrap.setLastMdfrId("user1");
 
         // Then
         assertThat(scrap.getScrapId()).isEqualTo("SCRAP_001");

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
@@ -16,8 +15,6 @@ import java.time.LocalDateTime;
 @Table(name = "tb_user_noti")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class Notification extends BaseEntity {
 
     @Id
@@ -38,7 +35,6 @@ public class Notification extends BaseEntity {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.user.entity.User receiver;
 
-    @Builder.Default
     @Column(length = 1)
     private String readYn = "N";
 
@@ -49,6 +45,31 @@ public class Notification extends BaseEntity {
 
     @Column(length = 100)
     private String notiIvlVal;
+
+    /**
+     * [Phase 5.2] 빌더 전용 생성자.
+     * @Builder.Default 이던 readYn 의 기본값("N")을 널병합으로 재현한다.
+     */
+    private Notification(String notiSn, String notiTtlNm, String notiCn, String rcvrId,
+                         String readYn, String linkUrl) {
+        this.notiSn = notiSn;
+        this.notiTtlNm = notiTtlNm;
+        this.notiCn = notiCn;
+        this.rcvrId = rcvrId;
+        this.readYn = readYn != null ? readYn : "N";
+        this.linkUrl = linkUrl;
+    }
+
+    /**
+     * [Phase 5.2] 정적 팩토리. 기존 Notification.builder()...build() 호출부와 100% 호환.
+     * 감사 필드(crtDt/mdfcnDt/frstRgtrId/lastMdfrId)와 읽기전용 연관(receiver),
+     * 빌더 미설정 필드(notiDt/notiIvlVal)는 파라미터에서 제외한다.
+     */
+    @Builder
+    public static Notification create(String notiSn, String notiTtlNm, String notiCn, String rcvrId,
+                                      String readYn, String linkUrl) {
+        return new Notification(notiSn, notiTtlNm, notiCn, rcvrId, readYn, linkUrl);
+    }
 
     public void markAsRead() {
         this.readYn = "Y";

@@ -45,7 +45,6 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         Scrap entity = Scrap.builder()
                 .scrapId(scrapId)
                 .scrapNm(dto.getScrapNm())
-                .frstRgtrId(userId)
                 .build();
         scrapRepository.save(entity);
     }

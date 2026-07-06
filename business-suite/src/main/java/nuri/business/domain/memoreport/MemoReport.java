@@ -5,7 +5,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -13,8 +12,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class MemoReport extends BaseEntity {
 
     @Id
@@ -52,6 +49,23 @@ public class MemoReport extends BaseEntity {
 
     @Column(length = 20)
     private String rptrInqDt;
+
+    private MemoReport(String rptId, String rptTtl, String memoRptYmd, String userId,
+                       String rptrId, String rptCn, String atchFileId) {
+        this.rptId = rptId;
+        this.rptTtl = rptTtl;
+        this.memoRptYmd = memoRptYmd;
+        this.userId = userId;
+        this.rptrId = rptrId;
+        this.rptCn = rptCn;
+        this.atchFileId = atchFileId;
+    }
+
+    @Builder
+    public static MemoReport create(String rptId, String rptTtl, String memoRptYmd, String userId,
+                                    String rptrId, String rptCn, String atchFileId) {
+        return new MemoReport(rptId, rptTtl, memoRptYmd, userId, rptrId, rptCn, atchFileId);
+    }
 
     public void update(String rptTtl, String memoRptYmd, String userId, String rptrId,
                       String rptCn, String atchFileId) {

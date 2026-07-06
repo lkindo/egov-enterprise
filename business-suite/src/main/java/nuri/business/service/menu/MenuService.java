@@ -324,11 +324,10 @@ public class MenuService {
                 .relImgNm(vo.getRelImgNm())
                 .modernRoute(vo.getModernRoute())
                 .useYn(vo.getUseYn() != null ? vo.getUseYn() : "Y")
-                .frstRgtrId("webmaster")
-                .crtDt(java.time.LocalDateTime.now())
-                .lastMdfrId("webmaster")
-                .mdfcnDt(java.time.LocalDateTime.now())
                 .build();
+        // 감사 필드: crtDt/mdfcnDt 는 auditing 이 채움, 작성자는 "webmaster" 명시 유지(하위 호환)
+        menu.setFrstRgtrId("webmaster");
+        menu.setLastMdfrId("webmaster");
         menuRepository.save(Objects.requireNonNull(menu));
     }
 

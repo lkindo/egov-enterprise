@@ -44,9 +44,10 @@ public class RewardManageService {
                 .rtnRsnCn(dto.getReturnResn())
                 .atchFileId(dto.getAtchFileId())
                 .ifmlAtrzId(dto.getInformlSanctnId())
-                .frstRgtrId(dto.getFrstRgtrId())
-                .lastMdfrId(dto.getLastMdfrId())
                 .build();
+        // 감사 필드는 빌더 대신 세터로 이월(insert 시 auditing 이 덮으며, merge 시 값 보존)
+        reward.setFrstRgtrId(dto.getFrstRgtrId());
+        reward.setLastMdfrId(dto.getLastMdfrId());
         return convertToDto(rewardManageRepository.save(reward));
     }
 
