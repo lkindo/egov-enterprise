@@ -1,5 +1,4 @@
 package nuri.business.domain.common;
-// Force re-scan
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
@@ -17,7 +16,7 @@ import java.time.LocalDateTime;
 
 /**
  * 기본 시간 메타데이터 엔티티
- * [Standardization] CreatedDate -> frstRegistPnttm, LastModifiedDate -> lastUpdtPnttm 별칭 제공
+ * [Standardization] @CreatedDate -> crtDt, @LastModifiedDate -> mdfcnDt (eGov 레거시 별칭)
  */
 @Getter
 @Setter

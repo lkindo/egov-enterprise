@@ -8,21 +8,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 /**
  * 간부 상태 엔티티
+ *
+ * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder/@AllArgsConstructor 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_leader_stts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 public class LeaderStatus extends BaseEntity {
 
     @Id
@@ -31,6 +30,16 @@ public class LeaderStatus extends BaseEntity {
 
     @Column(length = 12)
     private String leaderSttsCd;
+
+    private LeaderStatus(String leaderId, String leaderSttsCd) {
+        this.leaderId = leaderId;
+        this.leaderSttsCd = leaderSttsCd;
+    }
+
+    @Builder
+    public static LeaderStatus create(String leaderId, String leaderSttsCd) {
+        return new LeaderStatus(leaderId, leaderSttsCd);
+    }
 
     public void updateStatus(String leaderSttsCd) {
         this.leaderSttsCd = leaderSttsCd;

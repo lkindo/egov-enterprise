@@ -3,7 +3,6 @@ package nuri.business.domain.board;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
@@ -13,17 +12,20 @@ import java.io.Serializable;
 /**
  * 게시물 엔티티 (v5 standardized)
  * - DB Schema Sync: TB_BBS_ITEM (pst_id as VARCHAR)
+ *
+ * <p>[Phase 5.2 규범 적용] 클래스 레벨 {@code @SuperBuilder}/{@code @AllArgsConstructor} 를 제거하고,
+ * 빌더는 정적 팩토리 {@link #create}에 {@code @Builder} 로 배치한다. 컬럼 기본값(useYn="Y", qnaSttsCd="OPEN" 등)은
+ * 팩토리에서 재현하고, 감사 필드는 표준 Auditing 파이프라인에 위임한다. 연관(boardMaster/fileMaster),
+ * comments 컬렉션, {@code @Version} 은 빌더에서 제외한다. (참고: 클래스 레벨 {@code @Setter} 제거는 후속 단계)
  */
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Entity
 @Table(name = "tb_bbs_item")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @FilterDef(name = "softDeleteFilter", parameters = @ParamDef(name = "useYn", type = String.class))
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
-@SuperBuilder
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -55,14 +57,11 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String ttlBoldYn;
 
-    @Builder.Default
     private Integer ansLv = 0;
 
-    @Builder.Default
     private Integer inqCnt = 0;
 
     @Column(length = 1)
-    @Builder.Default
     private String useYn = "Y";
 
     @Column(length = 20)
@@ -97,35 +96,79 @@ public class Board extends BaseEntity implements Serializable {
     private java.time.LocalDateTime evntDt;
 
     @Column(length = 12)
-    @Builder.Default
     private String qnaSttsCd = "OPEN";
 
     @Column(length = 12)
     private String qnaCatCd;
 
-    @Builder.Default
     private Integer likeCnt = 0;
-    
+
     @Column(length = 1)
-    @Builder.Default
     private String ansYn = "N";
 
     @Column(length = 1)
-    @Builder.Default
     private String ntcYn = "N";
 
-    @Builder.Default
     private Integer cmntCnt = 0;
-    
-    @Builder.Default
+
     private Integer fileCnt = 0;
 
-    @Builder.Default
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<nuri.business.domain.comment.Comment> comments = new java.util.ArrayList<>();
 
     @Version
     private Integer version;
+
+    private Board(String pstId, String bbsId, Long ansSn, String pstTtl, String pstCn, String upPstId,
+            Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
+            String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
+            String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
+            String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
+            Integer cmntCnt, Integer fileCnt) {
+        this.pstId = pstId;
+        this.bbsId = bbsId;
+        this.ansSn = ansSn;
+        this.pstTtl = pstTtl;
+        this.pstCn = pstCn;
+        this.upPstId = upPstId;
+        this.sortOrdr = sortOrdr;
+        this.ttlBoldYn = ttlBoldYn;
+        // 기존 @Builder.Default 재현 (미지정 시 기본값)
+        this.ansLv = ansLv != null ? ansLv : 0;
+        this.inqCnt = inqCnt != null ? inqCnt : 0;
+        this.useYn = useYn != null ? useYn : "Y";
+        this.pstBgngYmd = pstBgngYmd;
+        this.pstEndYmd = pstEndYmd;
+        this.userId = userId;
+        this.userNm = userNm;
+        this.pswd = pswd;
+        this.atchFileId = atchFileId;
+        this.scrtYn = scrtYn;
+        this.blogId = blogId;
+        this.evntDt = evntDt;
+        this.qnaSttsCd = qnaSttsCd != null ? qnaSttsCd : "OPEN";
+        this.qnaCatCd = qnaCatCd;
+        this.likeCnt = likeCnt != null ? likeCnt : 0;
+        this.ansYn = ansYn != null ? ansYn : "N";
+        this.ntcYn = ntcYn != null ? ntcYn : "N";
+        this.cmntCnt = cmntCnt != null ? cmntCnt : 0;
+        this.fileCnt = fileCnt != null ? fileCnt : 0;
+    }
+
+    /**
+     * 게시물 생성 정적 팩토리(빌더 진입점). {@code Board.builder()...build()} 호출부는 그대로 동작한다.
+     */
+    @Builder
+    public static Board create(String pstId, String bbsId, Long ansSn, String pstTtl, String pstCn, String upPstId,
+            Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
+            String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
+            String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
+            String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
+            Integer cmntCnt, Integer fileCnt) {
+        return new Board(pstId, bbsId, ansSn, pstTtl, pstCn, upPstId, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
+                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileId, scrtYn, blogId, evntDt,
+                qnaSttsCd, qnaCatCd, likeCnt, ansYn, ntcYn, cmntCnt, fileCnt);
+    }
 
     public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String pstBgngYmd,
             String pstEndYmd, String atchFileId, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {

@@ -82,8 +82,8 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .cmntyId(dto.getCmntyId())
                 .ansYn(dto.getAnsYn())
                 .stsfdgYn(dto.getStsfdgYn())
-                .frstRgtrId(userId)
                 .build();
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         entity.registerOption(dto.getAnsYn(), dto.getStsfdgYn());
         boardMasterRepository.save(entity);
         return entity.getBbsId();
@@ -213,24 +213,24 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     @Transactional
     public void createBlog(String userId, BlogDto dto) {
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 persist 시 로그인 사용자로 설정하므로 빌더에서 제외
         Blog entity = Blog.builder()
                 .blogId(dto.getBlogId())
                 .blogTtl(dto.getBlogTtl())
                 .blogIntroCn(dto.getBlogIntroCn())
                 .useYn("Y")
-                .frstRgtrId(userId)
                 .build();
         blogRepository.save(entity);
     }
 
     @Transactional
     public void joinBlog(String blogId, String userId, String mngrYn) {
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         BlogUser entity = BlogUser.builder()
                 .blogId(blogId)
                 .userId(userId)
                 .mngrYn(mngrYn)
                 .useYn("Y")
-                .frstRgtrId(userId)
                 .build();
         blogUserRepository.save(entity);
     }

@@ -47,8 +47,8 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 .rgnTelno(dto.getRgnTelno())
                 .midTelno(dto.getMidTelno())
                 .endTelno(dto.getEndTelno())
-                .frstRgtrId(userId)
                 .build();
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         surveyRespondentRepository.save(Objects.requireNonNull(entity));
         return id;
     }

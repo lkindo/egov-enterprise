@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Table(name = "tb_privacy_log")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
 public class PrivacyLog extends BaseEntity {

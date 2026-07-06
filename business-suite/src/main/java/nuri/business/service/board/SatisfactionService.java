@@ -29,8 +29,8 @@ public class SatisfactionService extends BaseAbstractService {
                 .dgstfnScr(dto.getDgstfnScr())
                 .dgstfnCn(dto.getDgstfnCn())
                 .pswd(dto.getPswd())
-                .frstRgtrId(userId)
                 .build();
+        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         satisfactionRepository.save(entity);
     }
 

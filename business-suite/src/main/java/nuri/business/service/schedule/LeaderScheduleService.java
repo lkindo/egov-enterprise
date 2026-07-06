@@ -57,8 +57,8 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
                     .schdlEndYmd(dto.getSchdlEndYmd())
                     .schdlPicId(dto.getSchdlPicId())
                     .schdlPlcNm(dto.getSchdlPlcNm())
-                    .frstRgtrId(userId)
                     .build();
+            // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
             leaderScheduleRepository.save(entity);
             return schdlId;
         } catch (Exception e) {

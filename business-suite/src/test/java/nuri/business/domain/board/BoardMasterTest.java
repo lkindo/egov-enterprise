@@ -132,5 +132,30 @@ class BoardMasterTest {
         assertThat(master.getOption().getAnsYn()).isEqualTo("Y");
         assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
     }
+
+    @Test
+    @DisplayName("registerOption 미선행 상태에서 부분 setter 호출 시 Option 자동 생성·동기화 (동기화 균열 회귀 방지)")
+    void partialSetterSyncsOptionWhenAbsentTest() {
+        BoardMaster master = BoardMaster.builder()
+                .bbsId("BBS_004")
+                .bbsTtl("Notice C")
+                .build();
+
+        // registerOption 미호출 → option 은 아직 null
+        assertThat(master.getOption()).isNull();
+
+        master.updateAnsYn("Y");
+
+        // BoardMaster 컬럼과 Option 이 모두 동기화되어야 한다 (이전에는 option 이 생성되지 않아 값 누락)
+        assertThat(master.getAnsYn()).isEqualTo("Y");
+        assertThat(master.getOption()).isNotNull();
+        assertThat(master.getOption().getAnsYn()).isEqualTo("Y");
+        // 미지정 필드는 기본값("N")으로 정규화
+        assertThat(master.getOption().getStsfdgYn()).isEqualTo("N");
+
+        master.updateStsfdgYn("Y");
+        assertThat(master.getStsfdgYn()).isEqualTo("Y");
+        assertThat(master.getOption().getStsfdgYn()).isEqualTo("Y");
+    }
 }
 

@@ -12,7 +12,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 
 /**
  * 기본 생성/수정자 메타데이터 엔티티
- * [Standardization] CreatedBy -> frstRegisterId, LastModifiedBy -> lastUpdusrId 별칭 제공
+ * [Standardization] @CreatedBy -> frstRgtrId, @LastModifiedBy -> lastMdfrId (eGov 레거시 별칭)
  */
 @Getter
 @Setter

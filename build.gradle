@@ -152,8 +152,10 @@ subprojects {
     // PITest (점진적 Mutation Testing) 설정
     pitest {
         junit5PluginVersion = '1.2.1'
-        targetClasses = ['nuri.*']
-        targetTests = ['nuri.*']
+        // 증분식(Incremental) 뮤테이션 분석: PIT_TARGET_CLASSES / PIT_TARGET_TESTS 환경변수로
+        // 리팩토링 대상 클래스에 한정할 수 있다 (기본값 'nuri.*' = 전체). 백엔드 헌법 제16조 '--targetClasses 한정' 이행.
+        targetClasses = (System.getenv('PIT_TARGET_CLASSES') ?: 'nuri.*').split(',').collect { it.trim() }
+        targetTests = (System.getenv('PIT_TARGET_TESTS') ?: 'nuri.*').split(',').collect { it.trim() }
         outputFormats = ['HTML', 'XML']
         threads = 4
 

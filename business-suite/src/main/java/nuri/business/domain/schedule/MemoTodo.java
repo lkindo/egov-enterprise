@@ -5,16 +5,20 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
+/**
+ * 메모 할일 엔티티 (tb_memo_todo_info)
+ *
+ * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
+ */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_memo_todo_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class MemoTodo extends BaseEntity {
 
     @Id
@@ -35,6 +39,22 @@ public class MemoTodo extends BaseEntity {
 
     @Column(length = 20, nullable = false)
     private String userId;
+
+    private MemoTodo(String todoId, String todoTtl, String todoCn, String todoBgngTm,
+            String todoEndTm, String userId) {
+        this.todoId = todoId;
+        this.todoTtl = todoTtl;
+        this.todoCn = todoCn;
+        this.todoBgngTm = todoBgngTm;
+        this.todoEndTm = todoEndTm;
+        this.userId = userId;
+    }
+
+    @Builder
+    public static MemoTodo create(String todoId, String todoTtl, String todoCn, String todoBgngTm,
+            String todoEndTm, String userId) {
+        return new MemoTodo(todoId, todoTtl, todoCn, todoBgngTm, todoEndTm, userId);
+    }
 
     public void update(String todoTtl, String todoBgngTm, String todoEndTm, String todoCn) {
         this.todoTtl = todoTtl;
