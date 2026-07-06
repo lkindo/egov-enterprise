@@ -10,7 +10,6 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_rpt_info")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class WorkReport extends BaseEntity implements Serializable {

@@ -10,7 +10,6 @@ import lombok.*;
 @Entity
 @Table(name = "tb_memo_rpt_info")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemoReport extends BaseEntity {
 

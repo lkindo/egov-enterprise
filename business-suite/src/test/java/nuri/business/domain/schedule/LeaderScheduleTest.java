@@ -32,8 +32,8 @@ class LeaderScheduleTest {
         assertEquals("Pic1", schdl2.getSchdlPicId());
         assertEquals("Place1", schdl2.getSchdlPlcNm());
 
-        // Setter 검증
-        schdl2.setSchdlNm("NewTitle");
+        // Setter 검증 대신 비즈니스 메서드 update 검증
+        schdl2.update("Cd1", "Leader1", "NewTitle", "Content", "Rept1", "Imp1", "20260501", "20260505", "Pic1", "Place1");
         assertEquals("NewTitle", schdl2.getSchdlNm());
 
         // 3. SuperBuilder 검증

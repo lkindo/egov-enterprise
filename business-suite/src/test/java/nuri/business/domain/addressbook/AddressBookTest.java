@@ -53,25 +53,4 @@ class AddressBookTest {
         assertThat(addressBook.getRlsScopeCd()).isEqualTo("PERSONAL");
         assertThat(addressBook.getUseYn()).isEqualTo("N");
     }
-
-    @Test
-    @DisplayName("AddressBook 표준 Setter 검증")
-    void standardSettersTest() {
-        // Given
-        AddressBook addressBook = AddressBook.builder().build();
-
-        // When
-        addressBook.setAdbkId("ADBK_NEW");
-        addressBook.setAdbkNm("NEW_NAME");
-        addressBook.setRlsScopeCd("PUBLIC");
-        addressBook.setTrgetOgnzId("ORG_NEW");
-        addressBook.setWrterId("writer1");
-
-        // Then
-        assertThat(addressBook.getAdbkId()).isEqualTo("ADBK_NEW");
-        assertThat(addressBook.getAdbkNm()).isEqualTo("NEW_NAME");
-        assertThat(addressBook.getRlsScopeCd()).isEqualTo("PUBLIC");
-        assertThat(addressBook.getTrgetOgnzId()).isEqualTo("ORG_NEW");
-        assertThat(addressBook.getWrterId()).isEqualTo("writer1");
-    }
 }

@@ -16,7 +16,6 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_leader_schdl")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)

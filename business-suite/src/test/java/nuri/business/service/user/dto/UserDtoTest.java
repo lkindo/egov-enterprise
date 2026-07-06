@@ -15,7 +15,8 @@ class UserDtoTest {
     void testFrom_NullCheck() {
         assertNull(UserDto.from(null));
         
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
+        user.changeRole(null);
         UserDto dto = UserDto.from(user);
         assertNotNull(dto);
         assertEquals("user1", dto.userId());
@@ -49,7 +50,8 @@ class UserDtoTest {
     @Test
     @DisplayName("from with authority - null authority, user without role")
     void testFromWithAuthority_NullAuthority_NullRole() {
-        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(null).build();
+        User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").build();
+        user.changeRole(null);
         UserDto dto = UserDto.from(user, null);
         assertNotNull(dto);
         assertEquals("ROLE_USER", dto.role());

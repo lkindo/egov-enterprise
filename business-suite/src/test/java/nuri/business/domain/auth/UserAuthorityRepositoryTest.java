@@ -92,7 +92,7 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
                 .build();
         em.persist(dept);
 
-        testUser.setOgnzId("DEPT_001");
+        testUser.updateOrgnztId("DEPT_001");
         userRepository.save(testUser);
         em.flush();
 
@@ -124,7 +124,7 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
                 .ognzNm("테스트부서")
                 .build();
         em.persist(dept);
-        testUser.setOgnzId("DEPT_001");
+        testUser.updateOrgnztId("DEPT_001");
         userRepository.save(testUser);
         em.flush();
 

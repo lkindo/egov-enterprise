@@ -58,7 +58,6 @@ class LogServiceTest {
             assertEquals(mthd, savedLog.getCntnMthdCd());
             assertEquals(errAt, savedLog.getErrOcrnYn());
             assertEquals(errCode, savedLog.getErrCd());
-            assertNotNull(savedLog.getCrtDt());
         }
     }
 
@@ -75,16 +74,16 @@ class LogServiceTest {
                     .userId("user01")
                     .lgnIpAddr("127.0.0.1")
                     .cntnMthdCd("LOGIN")
-                    .crtDt(LocalDateTime.now())
                     .build();
+            log1.setCrtDt(LocalDateTime.now());
 
             LoginLog log2 = LoginLog.builder()
                     .logId("LGN_002")
                     .userId("user02")
                     .lgnIpAddr("127.0.0.1")
                     .cntnMthdCd("LOGIN")
-                    .crtDt(LocalDateTime.now().minusMinutes(1))
                     .build();
+            log2.setCrtDt(LocalDateTime.now().minusMinutes(1));
 
             when(loginLogRepository.findTop100ByOrderByCrtDtDesc()).thenReturn(Arrays.asList(log1, log2));
 

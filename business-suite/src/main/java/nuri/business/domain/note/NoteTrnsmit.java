@@ -19,7 +19,6 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @Table(name = "tb_note_sndng")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @DynamicInsert

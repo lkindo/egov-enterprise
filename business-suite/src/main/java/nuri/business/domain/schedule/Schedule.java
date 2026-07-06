@@ -16,7 +16,6 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_schdl_info")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -99,5 +98,9 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlImprtCd = schdlImprtCd;
         this.schdlPicId = schdlPicId;
         this.reptSeCd = reptSeCd;
+    }
+
+    public void setSchdlIpAddr(String schdlIpAddr) {
+        this.schdlIpAddr = schdlIpAddr;
     }
 }

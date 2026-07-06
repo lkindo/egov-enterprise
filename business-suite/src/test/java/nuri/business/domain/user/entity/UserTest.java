@@ -85,13 +85,13 @@ class UserTest {
     void testAuthorCode() {
         User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
         
-        user.setRole(Role.fromAuthorCode("ROLE_ADMIN"));
+        user.changeRole(Role.fromAuthorCode("ROLE_ADMIN"));
         assertEquals(Role.ADMIN, user.getRole());
         
-        user.setRole(Role.fromAuthorCode("INVALID_ROLE"));
+        user.changeRole(Role.fromAuthorCode("INVALID_ROLE"));
         assertEquals(Role.USER, user.getRole());
 
-        user.setRole(Role.fromAuthorCode(null));
+        user.changeRole(Role.fromAuthorCode(null));
         assertEquals(Role.USER, user.getRole());
     }
 
@@ -107,70 +107,4 @@ class UserTest {
         assertEquals("ORG123", user.getOgnzId());
     }
 
-    @Test
-    @DisplayName("Legacy Aliases (getter/setter) 확인")
-    void testLegacyAliases() {
-        User user = User.builder().userId("u").userNm("n").pswd("p").esntlId("e").build();
-        
-        user.setUserTypeCd("TYPE1");
-        assertEquals("TYPE1", user.getUserTypeCd());
-        
-        user.setPswd("pwd");
-        assertEquals("pwd", user.getPswd());
-
-        user.setPswdCrans("crans");
-        assertEquals("crans", user.getPswdCrans());
-        
-        user.setChgPwdCnt(5);
-        assertEquals(5, user.getChgPwdCnt());
-
-        LocalDateTime now = LocalDateTime.now();
-        user.setLckLastPnttm(now);
-        assertEquals(now, user.getLckLastPnttm());
-
-        user.setCertDnVl("subdn");
-        assertEquals("subdn", user.getCertDnVl());
-
-        user.setRrno("ihid");
-        assertEquals("ihid", user.getRrno());
-
-        user.setHomeAddr("addr1");
-        assertEquals("addr1", user.getHomeAddr());
-
-        user.setDaddr("addr2");
-        assertEquals("addr2", user.getDaddr());
-
-        user.setMiddleTelno("1234");
-        assertEquals("1234", user.getMiddleTelno());
-
-        user.setEndTelno("5678");
-        assertEquals("5678", user.getEndTelno());
-
-        user.setPstinstCd("instt");
-        assertEquals("instt", user.getPstinstCd());
-
-        user.setBizrNo("bizrno");
-        assertEquals("bizrno", user.getBizrNo());
-
-        user.setJurirNo("jurirno");
-        assertEquals("jurirno", user.getJurirNo());
-
-        user.setCmpnyNm("cxfc");
-        assertEquals("cxfc", user.getCmpnyNm());
-
-        user.setIndutyCd("induty");
-        assertEquals("induty", user.getIndutyCd());
-
-        user.setEntSeCd("entrprs");
-        assertEquals("entrprs", user.getEntSeCd());
-
-        user.setGndrCd("M");
-        assertEquals("M", user.getGndrCd());
-
-        user.setBrthYmd("1999");
-        assertEquals("1999", user.getBrthYmd());
-
-        user.setFaxNo("fx");
-        assertEquals("fx", user.getFaxNo());
-    }
 }

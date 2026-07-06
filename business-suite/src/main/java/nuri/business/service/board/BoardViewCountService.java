@@ -50,7 +50,7 @@ public class BoardViewCountService {
             try {
                 boardRepository.findById(pstId).ifPresent(board -> {
                     int currentCnt = board.getInqCnt() != null ? board.getInqCnt() : 0;
-                    board.setInqCnt(currentCnt + count);
+                    board.changeInqCnt(currentCnt + count);
                     boardRepository.save(board);
                 });
             } catch (Exception e) {

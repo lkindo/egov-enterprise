@@ -160,7 +160,7 @@ class UserRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent()).isNotEmpty();
 
         // 조건 OFFM_TELNO
-        testUser.setOfficeTelno("010-1234-5678");
+        testUser.changeOfficeTelno("010-1234-5678");
         userRepository.save(testUser);
         em.flush();
         em.clear();

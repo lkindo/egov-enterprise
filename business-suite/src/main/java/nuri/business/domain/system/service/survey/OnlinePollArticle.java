@@ -21,7 +21,6 @@ import lombok.*;
 @Entity
 @Table(name = "tb_onln_poll_artcl")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OnlinePollArticle extends BaseEntity {
 

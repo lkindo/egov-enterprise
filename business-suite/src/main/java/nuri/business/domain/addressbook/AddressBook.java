@@ -15,7 +15,6 @@ import lombok.*;
 @Entity
 @Table(name = "tb_adbk_manage")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 
 public class AddressBook extends BaseEntity {

@@ -112,7 +112,7 @@ class EgovAuthenticationProviderTest {
     @DisplayName("인증 실패 - 계정 잠금")
     void authenticate_fail_accountLocked() {
         // Given
-        testUser.setLckYn("Y");
+        testUser.lock();
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
 
@@ -125,7 +125,7 @@ class EgovAuthenticationProviderTest {
     @DisplayName("인증 성공 - webmaster 특수 처리")
     void authenticate_success_webmaster() {
         // Given
-        testUser.setUserId("webmaster");
+        testUser.changeUserId("webmaster");
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
         lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");

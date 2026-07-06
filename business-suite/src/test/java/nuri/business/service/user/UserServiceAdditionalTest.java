@@ -41,7 +41,7 @@ class UserServiceAdditionalTest {
         userService = new UserService(userRepository, userAuthorityRepository, passwordEncoder);
     }
 
-    private User.UserBuilder<?, ?> createBaseUser(String userId) {
+    private User.UserBuilder createBaseUser(String userId) {
         return User.builder()
                 .userId(userId)
                 .esntlId("ESNTL_" + userId)

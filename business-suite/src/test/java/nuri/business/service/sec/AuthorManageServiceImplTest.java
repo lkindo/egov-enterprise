@@ -234,7 +234,7 @@ class AuthorManageServiceImplTest {
     void toAuthorDto_DateFormat() {
         Authority auth1 = Authority.builder().authrtCd("A1").authrtNm("N1").authrtCrtYmd("20230528").build();
         Authority auth2 = Authority.builder().authrtCd("A2").authrtNm("N2").authrtCrtYmd("2023-05-28").build();
-        Authority auth3 = Authority.builder().authrtCd("A3").authrtNm("N3").authrtCrtYmd(null).build();
+        Authority auth3 = Authority.createRaw("A3", "N3", null, null);
         
         given(authorityRepository.findAll()).willReturn(List.of(auth1, auth2, auth3));
 

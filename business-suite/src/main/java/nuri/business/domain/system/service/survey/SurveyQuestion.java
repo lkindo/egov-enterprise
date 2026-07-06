@@ -15,7 +15,6 @@ import lombok.*;
 @Entity
 @Table(name = "tb_srvy_qstn")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SurveyQuestion extends BaseEntity {
 

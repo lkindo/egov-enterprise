@@ -19,7 +19,6 @@ import java.io.Serializable;
  * comments 컬렉션, {@code @Version} 은 빌더에서 제외한다. (참고: 클래스 레벨 {@code @Setter} 제거는 후속 단계)
  */
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_bbs_item")
@@ -208,4 +207,19 @@ public class Board extends BaseEntity implements Serializable {
         this.likeCnt++;
     }
 
+    public void changePstId(String pstId) {
+        this.pstId = pstId;
+    }
+
+    public void changeInqCnt(Integer inqCnt) {
+        this.inqCnt = inqCnt;
+    }
+
+    public void changeCmntCnt(Integer cmntCnt) {
+        this.cmntCnt = cmntCnt;
+    }
+
+    public void changeFileCnt(Integer fileCnt) {
+        this.fileCnt = fileCnt;
+    }
 }

@@ -48,10 +48,10 @@ class BoardEntityTest {
     void countUpdateTest() {
         Board board = Board.builder().cmntCnt(0).fileCnt(0).build();
         
-        board.setCmntCnt(5);
+        board.changeCmntCnt(5);
         assertThat(board.getCmntCnt()).isEqualTo(5);
         
-        board.setFileCnt(3);
+        board.changeFileCnt(3);
         assertThat(board.getFileCnt()).isEqualTo(3);
     }
 }

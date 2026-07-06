@@ -21,7 +21,6 @@ import lombok.Setter;
  * {@link #registerOption}으로 관리한다. (참고: 클래스 레벨 {@code @Setter} 제거는 후속 단계)
  */
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -155,8 +154,8 @@ public class BoardMaster extends BaseEntity {
         this.ansYn = this.ansYn != null ? this.ansYn : "N";
         this.stsfdgYn = this.stsfdgYn != null ? this.stsfdgYn : "N";
         if (this.option != null) {
-            this.option.setAnsYn(this.ansYn);
-            this.option.setStsfdgYn(this.stsfdgYn);
+            this.option.changeAnsYn(this.ansYn);
+            this.option.changeStsfdgYn(this.stsfdgYn);
         } else {
             registerOption(this.ansYn, this.stsfdgYn);
         }

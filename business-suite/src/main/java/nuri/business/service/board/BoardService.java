@@ -190,7 +190,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .scrtYn(request.scrtYn())
                                         .pswd(request.pswd())
                                         .build();
-                        board.setPstId(pstIdToSet);
+                        board.changePstId(pstIdToSet);
 
                         String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
@@ -278,7 +278,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .build();
                 
                 // ID 생성
-                board.setPstId(String.valueOf(System.currentTimeMillis()));
+                board.changePstId(String.valueOf(System.currentTimeMillis()));
 
                 String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")

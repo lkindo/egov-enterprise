@@ -158,7 +158,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         for (String bbsId : bbsIds) {
             BoardMaster entity = boardMasterRepository.findById(bbsId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-            entity.setUseYn(useYn);
+            entity.updateUseYn(useYn);
             entity.setLastMdfrId(userId);
         }
     }

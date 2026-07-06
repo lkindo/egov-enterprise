@@ -405,7 +405,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 String authorCode = "ROLE_" + role.name();
 
                 users.forEach(user -> {
-                        user.setRole(role);
+                        user.changeRole(role);
 
                         userAuthorityRepository.findById(user.getEsntlId())
                                 .ifPresentOrElse(

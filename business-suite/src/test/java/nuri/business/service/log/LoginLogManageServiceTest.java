@@ -48,8 +48,8 @@ class LoginLogManageServiceTest {
             LoginLog log1 = LoginLog.builder()
                     .logId("LGN_001")
                     .userId("user01")
-                    .crtDt(LocalDateTime.now())
                     .build();
+            log1.setCrtDt(LocalDateTime.now());
 
             Page<LoginLog> page = new PageImpl<>(Arrays.asList(log1));
             when(loginLogRepository.searchLoginLogs(any(), any(), any(), any())).thenReturn(page);
@@ -86,8 +86,8 @@ class LoginLogManageServiceTest {
             LoginLog log = LoginLog.builder()
                     .logId(logId)
                     .userId("user01")
-                    .crtDt(LocalDateTime.now())
                     .build();
+            log.setCrtDt(LocalDateTime.now());
 
             when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));
 

@@ -21,7 +21,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "tb_login_policy")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LoginPolicy extends BaseEntity {
 

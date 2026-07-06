@@ -208,7 +208,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .cdIdExpln(dto.getCdIdExpln())
                                 .clsfCd(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
@@ -314,7 +313,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .dtlCdNm(required(dto.getDtlCdNm(), "dto.getDtlCdNm() 는 null 일 수 없습니다"))
                                 .dtlCdExpln(dto.getDtlCdExpln())
                                 .useYn(dto.getUseYn())
-                                .frstRgtrId(dto.getFrstRgtrId())
                                 .build();
                 commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }

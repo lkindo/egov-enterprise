@@ -19,7 +19,6 @@ import java.io.Serializable;
  * (참고: 클래스 레벨 {@code @Setter} 제거는 후속 단계에서 도메인 메서드 캡슐화와 함께 진행)
  */
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_dgstfn_info")

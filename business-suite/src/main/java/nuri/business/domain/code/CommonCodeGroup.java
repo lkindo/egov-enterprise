@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
-import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
@@ -18,7 +17,6 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_com_cd")
-@SuperBuilder
 public class CommonCodeGroup extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -27,7 +25,6 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     @NonNull
     private String cdId;
 
-    @Builder.Default
     @OneToMany(mappedBy = "commonCodeGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<CommonCode> commonCodes = new java.util.ArrayList<>();
 
@@ -44,16 +41,23 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String useYn;
 
-    public CommonCodeGroup(@NonNull String cdId, @NonNull String cdIdNm, String cdIdExpln, String clsfCd,
-            String useYn,
-            String frstRegisterId) {
+    // 정적 팩토리에 빌더 배치 (Phase 5.2). 기존 CommonCodeGroup.builder()...build() 호출부 그대로 동작.
+    // 감사 필드(frstRgtrId/lastMdfrId)는 auditing 이 채우므로 파라미터에서 제외.
+    @Builder
+    public static CommonCodeGroup create(@NonNull String cdId, java.util.List<CommonCode> commonCodes,
+            @NonNull String cdIdNm, String cdIdExpln, String clsfCd, String useYn) {
+        return new CommonCodeGroup(cdId, commonCodes, cdIdNm, cdIdExpln, clsfCd, useYn);
+    }
+
+    private CommonCodeGroup(@NonNull String cdId, java.util.List<CommonCode> commonCodes,
+            @NonNull String cdIdNm, String cdIdExpln, String clsfCd, String useYn) {
         this.cdId = Objects.requireNonNull(cdId);
+        // @Builder.Default 재현: null 이면 빈 컬렉션으로 병합
+        this.commonCodes = commonCodes == null ? new java.util.ArrayList<>() : commonCodes;
         this.cdIdNm = Objects.requireNonNull(cdIdNm);
         this.cdIdExpln = cdIdExpln;
         this.clsfCd = clsfCd;
         this.useYn = useYn == null ? "Y" : useYn;
-        this.frstRgtrId = frstRegisterId;
-        this.lastMdfrId = frstRegisterId;
     }
 
     public void update(@NonNull String cdIdNm, String cdIdExpln, String useYn, String lastUpdusrId) {

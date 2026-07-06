@@ -3,9 +3,9 @@ package nuri.business.domain.code;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
@@ -18,7 +18,6 @@ import java.util.Objects;
 @Entity
 @IdClass(CommonCodeId.class)
 @Table(name = "tb_com_dtl_cd")
-@SuperBuilder
 public class CommonCode extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -47,16 +46,24 @@ public class CommonCode extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String useYn; // 사용여부 (Y/N)
 
-    public CommonCode(@NonNull String cdId, @NonNull String dtlCd, @NonNull String dtlCdNm, String dtlCdExpln,
-            String useYn,
-            String frstRegisterId) {
-        this.cdId = Objects.requireNonNull(cdId);
-        this.dtlCd = Objects.requireNonNull(dtlCd);
-        this.dtlCdNm = Objects.requireNonNull(dtlCdNm);
+    /**
+     * 빌더 기반 정적 팩토리.
+     * 기존 CommonCode.builder()...build() 호출부와 100% 동일하게 동작한다.
+     * 감사 필드(frstRgtrId/lastMdfrId)는 JPA Auditing 이 채우므로 파라미터에서 제외한다.
+     */
+    @Builder
+    private static CommonCode create(@NonNull String cdId, @NonNull String dtlCd, @NonNull String dtlCdNm,
+            String dtlCdExpln, String useYn) {
+        return new CommonCode(cdId, dtlCd, dtlCdNm, dtlCdExpln, useYn);
+    }
+
+    private CommonCode(@NonNull String cdId, @NonNull String dtlCd, @NonNull String dtlCdNm, String dtlCdExpln,
+            String useYn) {
+        this.cdId = cdId;
+        this.dtlCd = dtlCd;
+        this.dtlCdNm = dtlCdNm;
         this.dtlCdExpln = dtlCdExpln;
         this.useYn = useYn == null ? "Y" : useYn;
-        this.frstRgtrId = frstRegisterId;
-        this.lastMdfrId = frstRegisterId;
     }
 
     public void update(@NonNull String dtlCdNm, String dtlCdExpln, String useYn, String lastUpdusrId) {

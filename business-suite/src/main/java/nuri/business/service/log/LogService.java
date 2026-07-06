@@ -42,7 +42,6 @@ public class LogService extends BaseAbstractService implements EgovLogService {
                 .cntnMthdCd(mthd)
                 .errOcrnYn(errAt)
                 .errCd(errCode)
-                .crtDt(java.time.LocalDateTime.now())
                 .build();
         loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
     }

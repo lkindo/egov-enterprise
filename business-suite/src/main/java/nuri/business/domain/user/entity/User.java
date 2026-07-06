@@ -3,7 +3,6 @@ package nuri.business.domain.user.entity;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
@@ -17,10 +16,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "tb_user_info")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -34,7 +30,6 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String userId;
 
-    @Builder.Default
     @Column(nullable = false, length = 12)
     private String userTypeCd = "EMP";
 
@@ -56,7 +51,6 @@ public class User extends BaseEntity implements Serializable {
 
     private Integer chgPwdCnt;
 
-    @Builder.Default
     @Column(length = 1)
     private String lckYn = "N";
 
@@ -138,7 +132,6 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 300)
     private String ofcpsNm;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 50)
     private Role role = Role.USER;
@@ -163,7 +156,6 @@ public class User extends BaseEntity implements Serializable {
     private String entSeCd;
 
     // ■ 상태 및 감사
-    @Builder.Default
     @Column(length = 12)
     private String userSttsCd = "P";
 
@@ -230,6 +222,92 @@ public class User extends BaseEntity implements Serializable {
 
     public void updateOrgnztId(String ognzId) {
         this.ognzId = ognzId;
+    }
+
+    private User(String esntlId, String userId, String userTypeCd, String userNm, String pswd,
+            String pswdHint, String pswdCrans, LocalDateTime chgPswdLastDt, Integer chgPwdCnt,
+            String lckYn, Integer lckCnt, LocalDateTime lckLastPnttm, String otpSecret, String certDnVl,
+            String rrno, String gndrCd, String brthYmd, String emlAddr, String mblTelno,
+            String zip, String homeAddr, String daddr, String areaNo, String middleTelno, String endTelno,
+            String faxNo, String officeTelno, String groupId, String ognzId, String pstinstCd,
+            String emplNo, String ofcpsNm, Role role, String bizrNo, String jurirNo,
+            String cmpnyNm, String rprsvNm, String indutyCd, String entSeCd, String userSttsCd, String sbscrbYmd) {
+        this.esntlId = esntlId;
+        this.userId = userId;
+        this.userTypeCd = userTypeCd == null ? "EMP" : userTypeCd;
+        this.userNm = userNm;
+        this.pswd = pswd;
+        this.pswdHint = pswdHint;
+        this.pswdCrans = pswdCrans;
+        this.chgPswdLastDt = chgPswdLastDt;
+        this.chgPwdCnt = chgPwdCnt;
+        this.lckYn = lckYn == null ? "N" : lckYn;
+        this.lckCnt = lckCnt;
+        this.lckLastPnttm = lckLastPnttm;
+        this.otpSecret = otpSecret;
+        this.certDnVl = certDnVl;
+        this.rrno = rrno;
+        this.gndrCd = gndrCd;
+        this.brthYmd = brthYmd;
+        this.emlAddr = emlAddr;
+        this.mblTelno = mblTelno;
+        this.zip = zip;
+        this.homeAddr = homeAddr;
+        this.daddr = daddr;
+        this.areaNo = areaNo;
+        this.middleTelno = middleTelno;
+        this.endTelno = endTelno;
+        this.faxNo = faxNo;
+        this.officeTelno = officeTelno;
+        this.groupId = groupId;
+        this.ognzId = ognzId;
+        this.pstinstCd = pstinstCd;
+        this.emplNo = emplNo;
+        this.ofcpsNm = ofcpsNm;
+        this.role = role == null ? Role.USER : role;
+        this.bizrNo = bizrNo;
+        this.jurirNo = jurirNo;
+        this.cmpnyNm = cmpnyNm;
+        this.rprsvNm = rprsvNm;
+        this.indutyCd = indutyCd;
+        this.entSeCd = entSeCd;
+        this.userSttsCd = userSttsCd == null ? "P" : userSttsCd;
+        this.sbscrbYmd = sbscrbYmd;
+    }
+
+    @Builder
+    public static User create(String esntlId, String userId, String userTypeCd, String userNm, String pswd,
+            String pswdHint, String pswdCrans, LocalDateTime chgPswdLastDt, Integer chgPwdCnt,
+            String lckYn, Integer lckCnt, LocalDateTime lckLastPnttm, String otpSecret, String certDnVl,
+            String rrno, String gndrCd, String brthYmd, String emlAddr, String mblTelno,
+            String zip, String homeAddr, String daddr, String areaNo, String middleTelno, String endTelno,
+            String faxNo, String officeTelno, String groupId, String ognzId, String pstinstCd,
+            String emplNo, String ofcpsNm, Role role, String bizrNo, String jurirNo,
+            String cmpnyNm, String rprsvNm, String indutyCd, String entSeCd, String userSttsCd, String sbscrbYmd) {
+        return new User(esntlId, userId, userTypeCd, userNm, pswd, pswdHint, pswdCrans, chgPswdLastDt, chgPwdCnt,
+                lckYn, lckCnt, lckLastPnttm, otpSecret, certDnVl, rrno, gndrCd, brthYmd, emlAddr, mblTelno,
+                zip, homeAddr, daddr, areaNo, middleTelno, endTelno, faxNo, officeTelno, groupId, ognzId, pstinstCd,
+                emplNo, ofcpsNm, role, bizrNo, jurirNo, cmpnyNm, rprsvNm, indutyCd, entSeCd, userSttsCd, sbscrbYmd);
+    }
+
+    public void changeRole(Role role) {
+        this.role = role;
+    }
+
+    public void lock() {
+        this.lckYn = "Y";
+    }
+
+    public void changeUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void changeUserTypeCd(String userTypeCd) {
+        this.userTypeCd = userTypeCd;
+    }
+
+    public void changeOfficeTelno(String officeTelno) {
+        this.officeTelno = officeTelno;
     }
 }
 

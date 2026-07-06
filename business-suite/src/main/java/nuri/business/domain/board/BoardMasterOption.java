@@ -18,7 +18,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "tb_bbs_master_optn")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BoardMasterOption extends BaseEntity {
 
@@ -63,5 +62,13 @@ public class BoardMasterOption extends BaseEntity {
         if (this.getLastMdfrId() == null) {
             this.setLastMdfrId("webmaster");
         }
+    }
+
+    public void changeAnsYn(String ansYn) {
+        this.ansYn = ansYn;
+    }
+
+    public void changeStsfdgYn(String stsfdgYn) {
+        this.stsfdgYn = stsfdgYn;
     }
 }

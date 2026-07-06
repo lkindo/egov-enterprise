@@ -128,7 +128,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             }
 
             log.info(">>> Final resolved authorCode for user {}: {}", userId, authorCode);
-            userEntity.setRole(nuri.business.domain.user.entity.Role.fromAuthorCode(authorCode));
+            userEntity.changeRole(nuri.business.domain.user.entity.Role.fromAuthorCode(authorCode));
             CustomUserDetails userDetails = CustomUserDetails.builder()
                     .userId(userEntity.getUserId())
                     .esntlId(userEntity.getEsntlId())

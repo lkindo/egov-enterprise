@@ -10,7 +10,6 @@ import lombok.*;
 @Entity
 @Table(name = "tb_user_absn")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserAbsence extends BaseEntity {
 

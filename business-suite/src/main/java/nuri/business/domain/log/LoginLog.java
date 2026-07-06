@@ -2,24 +2,22 @@ package nuri.business.domain.log;
 import nuri.business.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "tb_login_log")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuperBuilder
 public class LoginLog extends BaseEntity {
 
     @Id
@@ -41,15 +39,20 @@ public class LoginLog extends BaseEntity {
     @Column(length = 12)
     private String errCd;
 
-    public LoginLog(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn, String errCd,
-            LocalDateTime createdDate) {
+    private LoginLog(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
+            String errCd) {
         this.logId = logId;
         this.userId = userId;
         this.lgnIpAddr = lgnIpAddr;
         this.cntnMthdCd = cntnMthdCd;
         this.errOcrnYn = errOcrnYn;
         this.errCd = errCd;
-        this.crtDt = createdDate;
+    }
+
+    @Builder
+    public static LoginLog create(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
+            String errCd) {
+        return new LoginLog(logId, userId, lgnIpAddr, cntnMthdCd, errOcrnYn, errCd);
     }
 
 }

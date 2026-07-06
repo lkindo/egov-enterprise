@@ -10,7 +10,6 @@ import lombok.*;
  * 휴일 정보 엔티티
  */
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
