@@ -101,7 +101,7 @@ export function GlobalCommandCenter() {
   }, [isOpen, menus.length]); 
 
   // 3. 고정 액션 정의
-  const quickActions: CommandItem[] = [
+  const quickActions: CommandItem[] = useMemo(() => [
     { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
     { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/자원 관리' },
     { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
@@ -111,7 +111,7 @@ export function GlobalCommandCenter() {
     { id: 'sys-1', name: '마이페이지', url: '/admin/workspace/my-page', icon: <User size={16} />, category: '시스템' },
     { id: 'sys-settings', name: '환경 설정', url: '/admin/system/menus', icon: <Settings size={16} />, category: '시스템' },
     { id: 'sys-logout', name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
-  ];
+  ], [logout]);
 
   // 4. 통합 검색 필터링
   const filteredItems = useMemo(() => {

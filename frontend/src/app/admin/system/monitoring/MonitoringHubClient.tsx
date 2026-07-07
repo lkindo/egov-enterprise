@@ -92,28 +92,28 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: 50, keyword: searchKeyword }),
     enabled: activeTab === 'SECURITY'
   });
-  const auditLogs = auditData?.list || [];
+  const auditLogs = useMemo(() => auditData?.list || [], [auditData]);
 
   const { data: systemLogData, isLoading: isSystemLoading } = useQuery({
     queryKey: ['admin-system-logs', searchKeyword, page],
     queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'SYSTEM'
   });
-  const systemLogs = systemLogData?.list || [];
+  const systemLogs = useMemo(() => systemLogData?.list || [], [systemLogData]);
 
   const { data: loginLogData, isLoading: isLoginLoading } = useQuery({
     queryKey: ['admin-login-logs', searchKeyword, page],
     queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'LOGIN'
   });
-  const loginLogs = loginLogData?.list || [];
+  const loginLogs = useMemo(() => loginLogData?.list || [], [loginLogData]);
 
   const { data: commentData, isLoading: isCommentLoading } = useQuery({
     queryKey: ['admin-comments', searchKeyword, page],
     queryFn: () => commentAdminService.getComments({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'COMMENTS'
   });
-  const comments = commentData?.list || [];
+  const comments = useMemo(() => commentData?.list || [], [commentData]);
 
   // Real-time Metrics Queries
   const { data: healthData } = useQuery({

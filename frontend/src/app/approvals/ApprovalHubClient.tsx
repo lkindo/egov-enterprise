@@ -33,6 +33,8 @@ import { HubListSkeleton, HubDetailSkeleton } from '@/components/ui/hub/HubSkele
 
 type ApprovalTab = 'PENDING' | 'HISTORY' | 'ARCHIVE';
 
+const EMPTY_APPROVALS: Approval[] = [];
+
 export default function ApprovalHubClient() {
   const router = useRouter();
   const { toast } = useToast();
@@ -52,7 +54,7 @@ export default function ApprovalHubClient() {
     }
   });
 
-  const list = approvalData?.list || [];
+  const list = approvalData?.list || EMPTY_APPROVALS;
   const selectedItem = useMemo(() => 
     list.find(item => item.approvalId === selectedItemId) || (list.length > 0 ? list[0] : null)
   , [list, selectedItemId]);
