@@ -108,8 +108,10 @@
 - ✅ `codegen:zod` + `codegen:verify:zod` npm 배선 — Zod 생성/드리프트 가드.
 - **✅ (a) `api-docs.json` 재조정 완료(2026-07-07)**: DB 복구 후 백엔드 기동 → live `/v3/api-docs`에 `NetworkDto` 방출 확인(256→257 schemas) → api-docs.json 갱신 + `codegen:zod`/`codegen:file` 재생성. `tsc`·`next build` exit 0, 결정성 확인. (직전까지의 stale 진단은 §4.1-b 참조.) (b) ✅ `npm run lint` 크래시 **복구 완료(2026-07-06)**: FlatCompat 제거 → eslint-config-next 16 네이티브 flat config 전환. lint 게이트 그린(0 errors), z.object 가드 발동 확인. 단 그간 lint 크래시로 가려졌던 **react-hooks 규칙 위반 67건/51파일**(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity`[Date.now 등] 4 등)이 warn 으로 노출됨. 이는 **런타임 검증(해당 UI 플로우 구동)이 필수**인 정합성 백로그이며(dep 배열 수정은 무한 루프 유발 위험), blind 일괄 수정은 지양하고 러닝 환경에서 컴포넌트별 점진 정리 권장.
 
-### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit/린트 게이트 — 🔴 미구현(핵심 잔여)
-LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin/DTO 프로젝션 누락을 잡는 정적 게이트는 없다.** 초판의 방안2 본체는 그대로 미해결.
+### 방안 2: fetchJoin() 검증용 빌드타임 ArchUnit 게이트 — 🟡 좁은 게이트 도입(2026-07-07)
+LAZY 강제(`JpaArchitectureTest`)에 더해, 2026-07-07 코어 페치 지형 매핑 + 좁은 회귀 게이트를 도입했다.
+- **✅ 좁은 게이트 도입(2026-07-07)**: 코어 도메인(게시판/회원/권한/메뉴) 페치 지형 정밀 매핑 결과 — **컬렉션(to-many) 소유 엔티티는 `Board.comments` 하나뿐**(회원/권한/메뉴는 복합키 조인 엔티티로 모델링 → 소유 컬렉션 0), 목록/상세 읽기 경로는 **이미 QueryDSL DTO 프로젝션**(`searchArticles`→`BoardSearchResult`, `findArticleDetail`→`BoardDetailResult` → `BoardDto`)으로 N+1 을 회피하며, `Board.getComments()`는 본소스에서 미순회 + `default_batch_fetch_size:100` 런타임 안전망까지 있다. 따라서 **@EntityGraph 강제는 실익이 없고(오히려 페이지네이션 함정 유발)**, 정적 fetchJoin 판별은 ArchUnit 바이트코드 한계로 불가하다. 대신 **실제 회귀 위험인 @EntityGraph+페이지네이션 함정(HHH000104 인메모리 페이징)** 을 `JpaArchitectureTest.entityGraphMustNotBeUsedWithPagination` 규칙으로 좁게 강제한다(`@EntityGraph` 붙은 리포 메서드는 `Pageable` 금지). `:business-suite:compileTestJava`+`test --tests JpaArchitectureTest` **BUILD SUCCESSFUL**(현재 @EntityGraph 0건 → allowEmptyShould, 회귀만 차단).
+- **⚠️ 런타임 SQL 카운트 검증 미완**: OCI DB 재차 불안정(db-bridge `timeout expired` 재발) + board 엔드포인트 인증 게이트(`/api/v1/boards/**` = authenticated)로 이번 세션엔 라이브 쿼리 카운트 캡처 불가. N+1-safety 는 상기 코드(DTO 프로젝션)·설정(batch fetch) 증거로 확정하며, 게이트가 회귀를 차단한다. DB 복구 후 board 목록/상세 요청의 `hibernate.generate_statistics` 로그로 카운트 확증 권장.
 - **장점/단점**: (초판 서술 유효) 런타임 N+1 사전 차단 vs 동적 QueryDSL 오탐 가능.
 - **도입 권고**: **선택적 도입**. 핵심 트래픽 테이블(게시판/회원/권한)에 좁게 시작. 정적 분석 한계를 감안해, 리포지토리 관례(Fetch 전용 메서드 네이밍/DTO 프로젝션 필수) + 부분 ArchUnit 조합 권장.
 
@@ -129,7 +131,7 @@ LAZY 강제(`JpaArchitectureTest`)는 됐으나, **쿼리 메서드의 fetchJoin
 
 ### 우선순위 기반 로드맵 (2026-07-06 갱신)
 1. **🟡 런타임 안정성**: **가상 스레드 Pinning — 관측 배선 완료(2026-07-06), 부하 결과 대기.** `jdk.tracePinnedThreads` 진단을 k6 부하 테스트에 배선(backend.log 캡처 + CI 경고). 앱 코드 `synchronized` 0건이라 코드 완화 대상 없음. **다음 단계: load-test.yml 실행 → pinning 관측 시에만 Hikari 풀/스케줄러 병렬도 튜닝.**
-2. **🟡 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제로 확장(2026-07-06, `JpaArchitectureTest` — EAGER 컬렉션 회귀 차단). 🟡 쿼리단 fetchJoin/DTO 정적 게이트는 유보 — @EntityGraph 0건 상태라 선행으로 @EntityGraph/DTO 프로젝션 관례 도입 후 핵심 테이블 대상 좁은 게이트화 권장.
+2. **🟡→🟢 성능 게이트 (방안2)**: ✅ 모든 연관관계 LAZY 빌드 강제(2026-07-06). ✅ **좁은 게이트 도입(2026-07-07)** — 코어 페치 지형 매핑(컬렉션 소유는 `Board.comments` 1개, 읽기경로 이미 DTO 프로젝션 → N+1-safe) 후, 실제 회귀 위험인 **@EntityGraph+페이지네이션 함정**을 `entityGraphMustNotBeUsedWithPagination` ArchUnit 규칙으로 강제(BUILD SUCCESSFUL). 🟡 라이브 SQL 카운트 검증은 OCI DB 재발 장애로 미완(코드/설정으로 N+1-safety 확정).
 3. **🟡 정리성**: ✅ (a) 미사용 MapStruct 의존성 6줄 삭제(방안3) **완료(2026-07-06)** · ✅ (b) `api-server/build.gradle` 낡은 "ArchUnit disabled" 주석 정리 **완료** · 🟡 (c) Zod `codegen:zod` npm 배선 + 드리프트 가드(방안1 후속) — 잔여.
 4. **🟡 확산/정리 (중기)**: ✅ 소프트삭제 `@FilterDef` 중앙화(2026-07-06) · ✅ Zod `codegen:zod` 배선 + 드리프트 가드 + 인라인 금지 ESLint 규칙(2026-07-06). 🟡 `@Filter` 대상 확대(방안4)는 엔티티별 판단 후 진행.
 6. **신규 발견**: (a) ✅ **`api-docs.json` 재조정 완료(2026-07-07)** — DB 복구→백엔드 기동→live `/v3/api-docs`에 `NetworkDto` 방출 확인(256→257 schemas)→api-docs.json 갱신 + `codegen:zod`/`codegen:file` 재생성. `tsc --noEmit`·`next build` exit 0, 재생성 결정성(md5 동일) 확인 → 커밋 후 `codegen:verify:zod` 그린. (b) ✅ **`npm run lint` 크래시 복구**(2026-07-06): eslint-config-next `16.2.10` + FlatCompat 제거→네이티브 flat config. lint 게이트 그린. 🟡 잔여: react-hooks 위반 **67건/51파일** warn 백로그(`set-state-in-effect` 44·`exhaustive-deps` 13·`purity` 4 등) — **런타임 검증 필수**(dep 배열 blind 수정 시 무한루프 위험)라 러닝 환경에서 컴포넌트별 점진 정리.
