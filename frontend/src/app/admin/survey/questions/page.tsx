@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HelpCircle } from 'lucide-react';

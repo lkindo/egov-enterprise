@@ -950,20 +950,18 @@ export const UserAuthorityDtoSchema = z.object({
 export type UserAuthorityDto = z.infer<typeof UserAuthorityDtoSchema>;
 
 // ==========================================================================
-// Template Schema
+// TemplateDto Schema
 // ==========================================================================
-export const TemplateSchema = z.object({
+export const TemplateDtoSchema = z.object({
   tmpltId: z.string().optional(),
   tmpltNm: z.string().optional(),
-  tmpltSeCd: z.string().optional(),
   tmpltPath: z.string().optional(),
-  useYn: z.string().optional(),
-  crtDt: z.string().optional(),
-  mdfcnDt: z.string().optional(),
+  tmpltSeCd: z.string().optional(),
+  useYn: z.string().min(0).max(1),
   frstRgtrId: z.string().optional(),
-  lastMdfrId: z.string().optional(),
+  crtDt: z.string().optional(),
 });
-export type Template = z.infer<typeof TemplateSchema>;
+export type TemplateDto = z.infer<typeof TemplateDtoSchema>;
 
 // ==========================================================================
 // DeptAuthorBatchRequest Schema
@@ -2189,30 +2187,30 @@ export const ApiResponseUserAbsenceDtoSchema = z.object({
 export type ApiResponseUserAbsenceDto = z.infer<typeof ApiResponseUserAbsenceDtoSchema>;
 
 // ==========================================================================
-// ApiResponseListTemplate Schema
+// ApiResponseListTemplateDto Schema
 // ==========================================================================
-export const ApiResponseListTemplateSchema = z.object({
+export const ApiResponseListTemplateDtoSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => TemplateSchema)).optional(),
+  data: z.array(z.lazy(() => TemplateDtoSchema)).optional(),
   timestamp: z.string().optional(),
 });
-export type ApiResponseListTemplate = z.infer<typeof ApiResponseListTemplateSchema>;
+export type ApiResponseListTemplateDto = z.infer<typeof ApiResponseListTemplateDtoSchema>;
 
 // ==========================================================================
-// ApiResponseTemplate Schema
+// ApiResponseTemplateDto Schema
 // ==========================================================================
-export const ApiResponseTemplateSchema = z.object({
+export const ApiResponseTemplateDtoSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => TemplateSchema).optional(),
+  data: z.lazy(() => TemplateDtoSchema).optional(),
   timestamp: z.string().optional(),
 });
-export type ApiResponseTemplate = z.infer<typeof ApiResponseTemplateSchema>;
+export type ApiResponseTemplateDto = z.infer<typeof ApiResponseTemplateDtoSchema>;
 
 // ==========================================================================
 // ApiResponseListSurveyQuestionDto Schema

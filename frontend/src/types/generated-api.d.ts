@@ -801,6 +801,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/ntwrksvc-monitoring/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 네트워크 정보 수정 */
+        put: operations["updateNetwork"];
+        post?: never;
+        /** 네트워크 정보 삭제 */
+        delete: operations["deleteNetwork"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/menus/{menuNo}": {
         parameters: {
             query?: never;
@@ -2095,6 +2113,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/ntwrksvc-monitoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 네트워크 서비스 상태 목록 조회 */
+        get: operations["getStatus"];
+        put?: never;
+        /** 네트워크 기초 정보 등록 */
+        post: operations["createNetwork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/menus": {
         parameters: {
             query?: never;
@@ -3090,7 +3126,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 메뉴 목록 테스트 - Menu 엔티티 직접 반환 */
+        /** 메뉴 목록 테스트 - DTO 반환 */
         get: operations["getRawMenus"];
         put?: never;
         post?: never;
@@ -3576,23 +3612,6 @@ export interface paths {
          * @description 시스템의 모든 정책 목록을 조회합니다.
          */
         get: operations["getPolicies"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/ntwrksvc-monitoring": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 네트워크 서비스 상태 목록 조회 */
-        get: operations["getStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4774,6 +4793,16 @@ export interface components {
              */
             crtDt?: string;
         };
+        NetworkDto: {
+            ntwrkId?: string;
+            manageIem?: string;
+            ntwrkIp?: string;
+            gtwy?: string;
+            subnet?: string;
+            domnServer?: string;
+            userNm?: string;
+            useYn?: string;
+        };
         /** @description 메뉴 정보 DTO */
         MenuDto: {
             /**
@@ -5496,18 +5525,15 @@ export interface components {
              */
             userNm?: string;
         };
-        Template: {
+        TemplateDto: {
             tmpltId?: string;
             tmpltNm?: string;
-            tmpltSeCd?: string;
             tmpltPath?: string;
-            useYn?: string;
+            tmpltSeCd?: string;
+            useYn: string;
+            frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
-            /** Format: date-time */
-            mdfcnDt?: string;
-            frstRgtrId?: string;
-            lastMdfrId?: string;
         };
         /** @description 부서별 권한 일괄 할당 요청 */
         DeptAuthorBatchRequest: {
@@ -6667,23 +6693,23 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseListTemplate: {
+        ApiResponseListTemplateDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["Template"][];
+            data?: components["schemas"]["TemplateDto"][];
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseTemplate: {
+        ApiResponseTemplateDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["Template"];
+            data?: components["schemas"]["TemplateDto"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -10060,6 +10086,54 @@ export interface operations {
             };
         };
     };
+    updateNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NetworkDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getMenu: {
         parameters: {
             query?: never;
@@ -12452,7 +12526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListTemplate"];
+                    "*/*": components["schemas"]["ApiResponseListTemplateDto"];
                 };
             };
         };
@@ -12466,7 +12540,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Template"];
+                "application/json": components["schemas"]["TemplateDto"];
             };
         };
         responses: {
@@ -13039,6 +13113,52 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getStatus: {
+        parameters: {
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseNetworkStatusDetailedDto"];
+                };
+            };
+        };
+    };
+    createNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NetworkDto"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -14755,9 +14875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": {
-                        [key: string]: Record<string, never>;
-                    };
+                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
@@ -14777,9 +14895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": {
-                        [key: string]: Record<string, never>;
-                    };
+                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
@@ -15209,7 +15325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseTemplate"];
+                    "*/*": components["schemas"]["ApiResponseTemplateDto"];
                 };
             };
         };
@@ -15368,28 +15484,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListPolicy"];
-                };
-            };
-        };
-    };
-    getStatus: {
-        parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseNetworkStatusDetailedDto"];
                 };
             };
         };
