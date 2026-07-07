@@ -29,6 +29,7 @@ async function run() {
         database: process.env.DB_NAME || 'egovdb',
         user: process.env.DB_USERNAME || 'egov',
         password: process.env.DB_PASSWORD || 'egov123',
+        connectionTimeoutMillis: 3000,
     };
     
     if (process.env.DB_SSL === 'true') {
