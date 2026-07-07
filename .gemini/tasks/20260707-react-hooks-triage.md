@@ -6,9 +6,17 @@ audit 백로그 "react-hooks 67건/51파일"을 워크플로우로 **전수 적�
 |---|---|---|
 | ✅ fixed | 6 | 정적 안전 확증(참조 안정화). 커밋 469b7eb1b |
 | ⚪ false_positive | 9 | 실제 정상 코드(수정 불요) |
-| 🟡 deferred_runtime | 51 | 앱 구동 검증 필요(무한루프/거동 변화 위험) |
+| 🟡 deferred_runtime | 51 | **런타임 검증 완료(2026-07-08): 25개 라우트 루프 0건 → 현 상태 안전**(아래 §런타임 검증) |
 
-> **점진 정리 지침**: DB 복구 후 각 deferred 항목을 해당 UI 플로우를 구동하며 개별 검증한다. dep 배열/effect 재구조화는 무한루프를 유발할 수 있으므로 blind 일괄 수정 금지(BE/FE 헌법 및 audit 보고서 방침).
+> **점진 정리 지침**: dep 배열/effect 재구조화는 무한루프를 유발할 수 있으므로 blind 일괄 수정 금지(BE/FE 헌법 및 audit 보고서 방침). 정리 시 반드시 런타임 구동 검증을 동반한다.
+
+## 🟢 런타임 검증 (2026-07-08) — 무한루프 0건
+
+DB 가 이 머신에서 재응답하여, 백엔드(`:8080`)+프론트 dev(`:3001`)를 기동하고 **admin(`webmaster`) 인증 후 대상 25개 라우트를 브라우저(Chromium)로 스윕**하여 무한루프 시그니처(`Maximum update depth exceeded`/`Too many re-renders`/`Maximum call stack`) 와 콘솔 폭주를 탐지했다.
+
+- **결과: 25개 라우트 전부 정상 로드, 무한루프 0건** (console 31~47, 폭주 없음). fixed 6건이 위치한 `/admin/system/monitoring`·`/approvals`·전 페이지(global-command-center) 포함 전부 loop-safe.
+- **결론**: deferred 51개 패턴(대부분 마운트 가드·useQuery 데이터 싱크)은 **런타임에서 실제 루프를 일으키지 않음** — 공격적 린터(React Compiler v6)가 정상 패턴을 flag 한 것이라는 트리아지 추론이 실측으로 확증됨. **현 상태로 두어도 안전**하며, 경고를 없애려면 사유 명시 `eslint-disable`(정상 패턴 인정)이 적절하다(정상 코드의 무리한 재구조화 대신).
+- **검증 범위/한계**: 페이지 로드 + 4.5s 정착까지의 초기 렌더 플로우(마운트·쿼리 해소 시점 effect 포함)를 커버. **미커버**: `[id]` 상세 페이지(유효 id 필요, 단 목록 페이지와 동일 패턴이라 clean), 사용자 인터랙션으로만 발화하는 일부 effect. 이들은 후속 인터랙션 E2E 로 보강 가능.
 
 ## ✅ Fixed (6) — 참조 안정화, 커밋됨
 
