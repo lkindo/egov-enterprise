@@ -40,8 +40,9 @@
 
 ### 3.1 곡률 (Border Radius)
 - `--radius-base`: `0.5rem` (8px) - 일반 버튼
-- `--radius-hub-widget`: `1rem` (16px) - 대시보드 카드
-- `--radius-hub-section`: `1.5rem` (24px) - 메인 컨테이너
+- `--radius-hub-widget`: `0.75rem` (12px) - 대시보드 미니 위젯
+- `--radius-hub-section`: `1rem` (16px) - 대시보드 메인 섹션 카드
+- `--radius-hub-item`: `0.5rem` (8px) - 대시보드 리스트 아이템/요약
 
 ### 3.2 그림자 레벨 (Shadow Levels)
 - **Low**: `shadow-sm` (일반 카드)

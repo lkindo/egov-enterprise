@@ -187,7 +187,7 @@ subprojects {
         historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
         historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
-        // 백엔드 헌법 제16조 (Mutation Score 85% 이상 강제) 유동적 연동
+        // 백엔드 헌법 제16조 (핵심 서비스 Mutation Score 80% 이상) — STRICT 게이트는 하한을 상회하는 85%로 상향 적용
         // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
         mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
     }

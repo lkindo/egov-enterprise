@@ -66,16 +66,3 @@ export const defaultOptions = {
     http_req_failed: ['rate<0.01'],   // 1% 미만 실패
   },
 };
-
-/**
- * 환경 설정 로드
- * @returns {object} 환경 설정 객체
- */
-export function loadEnvConfig() {
-  return {
-    baseUrl: __ENV.BASE_URL || 'http://localhost:8080',
-    testUsername: __ENV.TEST_USERNAME || 'testuser',
-    testPassword: __ENV.TEST_PASSWORD || 'testpass123!',
-    isProduction: __ENV.ENVIRONMENT === 'production',
-  };
-}
