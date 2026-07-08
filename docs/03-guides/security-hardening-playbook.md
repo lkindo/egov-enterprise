@@ -29,7 +29,7 @@ sequenceDiagram
 ```
 
 ### 1.1 쿠키 세션 & 헤더 바인딩 핵심 메커니즘
-- **Access Token 관리**: JWT 토큰은 브라우저의 `HttpOnly`, `Secure`, `SameSite=Strict` 옵션이 켜진 쿠키 공간에 안전하게 저장되어 CSRF 및 XSS 해킹 위협을 원천 봉쇄한다.
+- **Access Token 관리**: 현재 클라이언트 구현상 액세스 JWT는 `localStorage`에 보관되며, 토큰 재발급 시 JS로 심는 비-`HttpOnly` `SameSite=Lax` 쿠키(`frontend/src/lib/api/client.ts` 38·133·134행)로도 전파된다. 따라서 `HttpOnly`·`Secure`·`SameSite=Strict` 쿠키 저장은 아직 달성되지 않은 **목표 상태(target hardening)**이며, 이 이행 전까지 액세스 토큰은 XSS로 탈취될 수 있어 '원천 봉쇄'로 간주하지 않는다. (진정한 `HttpOnly` 저장은 §1.2의 refresh token에만 적용된다.)
 - **클라이언트 전파**: 프론트엔드 `AuthContext`는 마운트 시점에 해당 쿠키 토큰을 획득하여 `TanStack Query` 및 HTTP `ApiService` 통신 레이어의 HTTP Header `Authorization: Bearer {token}` 주입용 상태로 관리한다.
 - **CORS & Credentials 주의사항**: 로컬 개발(localhost:3000 -> localhost:8080) 및 실서버 이종 도메인 환경에서는 백엔드 CORS 설정 시 `allowedOrigins`에 와일드카드(`*`) 사용이 불가하며, 반드시 특정 Origin을 지정하고 `allowCredentials(true)`를 활성화해야 세션 쿠키가 정상 바인딩된다. SameSite는 개발 환경 로컬 테스트 편의를 위해 `Lax`로 유연화할 수 있으나 운영 배포 시에는 `Strict`를 강제한다.
 
@@ -48,30 +48,51 @@ sequenceDiagram
 
 ```typescript
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/request';
+import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-    const token = request.cookies.get('accessToken')?.value;
-    const userRole = request.cookies.get('userRole')?.value;
     const { pathname } = request.nextUrl;
 
-    // 1. 관리자(/admin/**) 경로 보안 강화
+    // 0. 공개 경로 조기 우회 (로그인/정적/API)
+    if (pathname.startsWith('/login') || pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
+        return NextResponse.next();
+    }
+
+    const hasToken = request.cookies.has('accessToken');
+    const userRole = request.cookies.get('userRole')?.value;
+
+    // 1. 미인증 접근 차단 — 모든 보호 경로에서 /login으로 리다이렉트 (redirect 쿼리 보존)
+    if (!hasToken) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // 2. 관리자 민감 경로(/admin/system|user|security|stats|workflow) 비관리자 차단
     if (pathname.startsWith('/admin')) {
-        // 비인증 사용자 포워딩
-        if (!token) {
-            return NextResponse.redirect(new URL('/login', request.url));
-        }
-        // 권한 부족 사용자 차단 (RBAC)
-        if (userRole !== 'ROLE_ADMIN') {
-            return NextResponse.rewrite(new URL('/403', request.url));
+        const normalizedRole = userRole?.toUpperCase() || '';
+        const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
+        const isSensitivePath =
+            pathname.startsWith('/admin/system') ||
+            pathname.startsWith('/admin/user') ||
+            pathname.startsWith('/admin/security') ||
+            pathname.startsWith('/admin/stats') ||
+            pathname.startsWith('/admin/workflow');
+
+        // 권한 부족 시 홈(/)으로 auth_error 쿼리를 붙여 리다이렉트
+        if (isSensitivePath && !isAdmin) {
+            const fallbackUrl = new URL('/', request.url);
+            fallbackUrl.searchParams.set('auth_error', 'unauthorized');
+            return NextResponse.redirect(fallbackUrl);
         }
     }
 
     return NextResponse.next();
 }
 
+// 전역 매처: API/정적 자원을 제외한 앱 전체를 가드
 export const config = {
-    matcher: ['/admin/:path*', '/work-hub/:path*'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
 ```
 
@@ -112,7 +133,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
    │            YES: 2단계로 진행.
    │
    ├──▶ 2단계: API 요청 헤더(Network ➔ Request Headers)에 "Authorization: Bearer eyJ..." 포맷이 정확한가?
-   │            NO: ApiService 또는 Axios interceptor 설정 에러. frontend/src/services/api.ts를 검사하십시오.
+   │            NO: ApiService 또는 Axios interceptor 설정 에러. frontend/src/lib/api/client.ts(Axios request/response 인터셉터 — Bearer 주입 및 401 Silent Refresh) 및 필요 시 frontend/src/services/core/ApiService.ts(client 위임 래퍼)를 검사하십시오.
    │            YES: 3단계로 진행.
    │
    └──▶ 3단계: 백엔드 서버 로그에 "ExpiredJwtException" 또는 "SignatureException"이 찍혀있는가?

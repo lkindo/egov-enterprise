@@ -37,10 +37,10 @@ egov:
 ### 분석 스크립트 실행
 
 ```bash
-# PostgreSQL 연결 (OCI PostgreSQL 17 / Supabase)
+# PostgreSQL 연결 (OCI PostgreSQL 17 — application.yml 활성 데이터소스)
 # 로컬: psql -h localhost -p 5432 -U egov -d egovdb
-# 원격(Supabase pooler): port 6543
-psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
+# (레거시/선택) 원격 Supabase pooler: psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
+psql -h 129.154.54.178 -p 5432 -U egov -d egovdb
 
 # 분석 스크립트 실행
 \i config/db/performance-analysis.sql
@@ -129,7 +129,7 @@ Hibernate 성능 분석 로그에서 다음을 확인:
 public class User {
     
     @OneToMany(mappedBy = "user")
-    @BatchSize(size = 20)  -- 20 개씩 일괄 조회
+    @BatchSize(size = 20)  // 20 개씩 일괄 조회
     private List<Post> posts;
 }
 ```
@@ -282,11 +282,20 @@ Prometheus 엔드포인트: `http://localhost:8080/actuator/prometheus`
 
 ---
 
+## 관련 문서
+
+- [성능 최적화 가이드](./performance-optimization-guide.md)
+- [부하 테스트 가이드](./load-test-guide.md)
+- [DB 표준화 매뉴얼](../03-guides/db-standardization-manual.md)
+- [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)
+
+---
+
 ## 📚 추가 리소스
 
 - [PostgreSQL 공식 문서 - 성능 최적화](https://www.postgresql.org/docs/current/performance-tips.html)
 - [Pg_stat_statements 문서](https://www.postgresql.org/docs/current/pgstatstatements.html)
-- [Hibernate 사용자 가이드](https://docs.jboss.org/hibernate/orm/6.4/userguide/html_single/)
+- [Hibernate 사용자 가이드](https://docs.jboss.org/hibernate/orm/current/userguide/html_single/)
 
 ---
 

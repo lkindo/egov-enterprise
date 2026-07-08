@@ -7,8 +7,8 @@
 ### 1. k6 설치 (PowerShell 관리자 권한으로 실행)
 
 ```powershell
-# 스크립트 다운로드 및 실행
-irm https://raw.githubusercontent.com/your-repo/main/scripts/install-k6.ps1 | iex
+# 저장소 루트에서 커밋된 설치 스크립트 실행
+powershell -ExecutionPolicy Bypass -File scripts/install-k6.ps1
 ```
 
 **또는 수동 설치:**

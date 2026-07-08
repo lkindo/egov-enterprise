@@ -3,7 +3,7 @@
 ## 1. 개요 (Overview)
 본 프로토콜은 **메인 에이전트(오퍼레이터)와 서브에이전트·워크플로우 간 협업**을 위한 **정형화된 공정(Standard Pipeline)**이다. 작업의 복잡도와 위험도에 따라 등급을 분류하고, 등급별로 최적화된 경로를 통해 무결성과 속도를 동시에 확보한다.
 
-> **이중(dual) 오퍼레이터 전제**: 본 저장소는 **Antigravity/Gemini 와 Claude Code 가 동일 워킹트리를 공유**한다. 두 오퍼레이터 모두 본 프로토콜을 상속·준수하며, 오퍼레이터별로 달라지는 것은 **실행 수단(§3 Stage 2.1 Mode)의 매핑**뿐이다. 규칙 본문의 SSOT 는 `GEMINI.md`, Claude Code 로의 매핑은 `CLAUDE.md` 가 담당한다.
+> **이중(dual) 오퍼레이터 전제**: 본 저장소는 **Antigravity/Gemini 와 Claude Code 가 동일 워킹트리를 공유**한다. 두 오퍼레이터 모두 본 프로토콜을 상속·준수하며, 오퍼레이터별로 달라지는 것은 **실행 수단(§3 Stage 2.1 Direct/위임)의 매핑**뿐이다. 규칙 본문의 SSOT 는 `GEMINI.md`, Claude Code 로의 매핑은 `CLAUDE.md` 가 담당한다.
 
 ---
 

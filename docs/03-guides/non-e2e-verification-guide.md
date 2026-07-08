@@ -250,8 +250,11 @@ graph TD
 
 2.  **API 성능 타겟 부하 테스트 (`k6` 스크립트 활용)**:
     E2E 시나리오 외에 독립적으로 구동되는 가벼운 JS 기반의 `k6` 부하 테스트 도구를 가동해 비즈니스 핵심 API의 한계 임계값(TPS, p99 Latency)을 정량 검증합니다.
+
+    > 📌 k6 스크립트 및 SLO 임계값의 SSOT는 [load-test-guide.md](../04-operations/load-test-guide.md) 및 [k6-load-test-quickstart.md](../04-operations/k6-load-test-quickstart.md)이며, 표준 스크립트는 `test/load-tests/scenarios/`에 있다. 아래 인라인 예시의 `p(95)<200`은 `/api/v1/menus/hierarchy` 엔드포인트에 한정한 예시 임계값으로, 프로젝트 표준 SLO(p95 < 500ms)가 아니다.
+
     ```javascript
-    // performance-test/k6-load-test.js
+    // 예시 k6 스크립트 (canonical 스크립트: test/load-tests/scenarios/ — docs/04-operations/load-test-guide.md 참조)
     import http from 'k6/http';
     import { sleep, check } from 'k6';
 
@@ -367,10 +370,10 @@ graph TD
 | 검증 단계 | 검증 대상 | 실행 트리거 | 강제 레벨 | 도구 및 명령어 |
 |:---|:---|:---|:---|:---|
 | **Local Commit** | 소스 코드 품질 & 문법 | `git commit` | **Optional** | ESLint, Prettier, Checkstyle |
-| **Local Push** | JPA-Flyway Entity 정합성 | `git push` | **Mandatory** | `Pre-Push Hook (gradlew :foundation:test)` |
-| **Pull Request** | 시큐리티 룰, 동시성, 비동기 통합 | PR 생성 및 업데이트 | **Mandatory** | `CI Server (./gradlew test jacocoTestReport)` |
+| **Local Push** | 컴파일 무결성 (Java compileJava/compileTestJava + TS 타입체크) | `git push` | **Mandatory** | Pre-Push Hook (.githooks/pre-push, core.hooksPath): `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` (GEMINI.md §0.6) |
+| **Pull Request** | 시큐리티 룰, 동시성, 비동기 통합 | PR 생성 및 업데이트 | **Mandatory** | `CI Server (./gradlew build jacocoRootReport check)` |
 | **Build & Deploy** | 정적 보안 스캔, 라이브러리 취약점 | Merge to main | **Mandatory** | `SonarQube`, `snyk test`, `DependencyCheck` |
-| **Staging Deploy** | API 부하 및 실제 백그라운드 성능 | 배포 직후 자동화 | **Recommended** | `k6 run performance-test/k6-load-test.js` |
+| **Staging Deploy** | API 부하 및 실제 백그라운드 성능 | 배포 직후 자동화 | **Recommended** | `k6 run --scenario users-100 test/load-tests/scenarios/load-levels.js` (SSOT: [load-test-guide.md](../04-operations/load-test-guide.md)) |
 
 ---
 

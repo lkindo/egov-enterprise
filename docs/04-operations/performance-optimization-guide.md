@@ -329,7 +329,7 @@ management:
 
 ```bash
 # k6 부하 테스트
-k6 run e2e/scripts/load-test.js
+k6 run --scenario users-100 test/load-tests/scenarios/load-levels.js
 
 # 결과 확인
 # Req Sent: 10000

@@ -1,6 +1,6 @@
 # Frontend Architecture: eGov Enterprise (Modernized)
 
-> **상위 헌법**: 본 아키텍처는 [프론트엔드 디자인 및 UX 헌법] (15조)의 논리적 지배를 받는다.
+> **상위 헌법**: 본 아키텍처는 [프론트엔드 디자인 및 UX 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)(17조)의 논리적 지배를 받는다.
 > **시각 규범**: 디자인 토큰 및 컬러 시스템은 [frontend-design-system.md](./frontend-design-system.md)를 참조한다.
 
 ## 🚀 Overview

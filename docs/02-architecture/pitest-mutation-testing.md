@@ -30,8 +30,10 @@
 
       pitest {
           junit5PluginVersion = '1.2.1'
-          targetClasses = ['nuri.*']
-          targetTests = ['nuri.*']
+          // 증분식(Incremental) 뮤테이션 분석: PIT_TARGET_CLASSES / PIT_TARGET_TESTS 환경변수로
+          // 리팩토링 대상 클래스에 한정할 수 있다 (기본값 'nuri.*' = 전체).
+          targetClasses = (System.getenv('PIT_TARGET_CLASSES') ?: 'nuri.*').split(',').collect { it.trim() }
+          targetTests = (System.getenv('PIT_TARGET_TESTS') ?: 'nuri.*').split(',').collect { it.trim() }
           outputFormats = ['HTML', 'XML']
           threads = 4
 
@@ -58,8 +60,8 @@
           historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
           // 백엔드 헌법 제16조 (Mutation Score 80% 이상 강제) 유동적 연동
-          // STRICT_MUTATION 환경변수 활성화 시 엄격한 80% 게이트 통과 적용
-          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 80 : 0
+          // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
+          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
       }
   }
   ```
@@ -93,10 +95,13 @@ PITest의 실행 시간 폭증 문제를 해결하기 위해 **두 가지 핵심
 
 ### 4.3 특정 테스트 클래스만 고속 집중 분석 (파워쉘 규격)
 ```powershell
-./gradlew :foundation:pitest "-Dpitest.targetClasses=nuri.foundation.domain.code.CommonCode" "-Dpitest.targetTests=nuri.foundation.domain.code.CommonCodeTest"
+$env:PIT_TARGET_CLASSES="nuri.foundation.domain.code.CommonCode"
+$env:PIT_TARGET_TESTS="nuri.foundation.domain.code.CommonCodeTest"
+./gradlew :foundation:pitest
 ```
+> `PIT_TARGET_CLASSES` / `PIT_TARGET_TESTS`는 콤마(,)로 복수 지정할 수 있으며, 변수를 해제하거나 새 셸을 열면 기본값 `nuri.*`(전체)로 복귀합니다.
 
-### 4.4 헌법 제16조 (돌연변이 스코어 80% 이상) 강제 통과 모드 기동 (CI 파이프라인)
+### 4.4 STRICT_MUTATION 강제 통과 모드 기동 (Mutation Score 85% — 헌법 제16조 80% 하한 상회, CI 파이프라인)
 ```powershell
 $env:STRICT_MUTATION="true"
 ./gradlew :business-suite:pitest

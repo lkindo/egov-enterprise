@@ -10,6 +10,8 @@ JPA N+1 및 비효율적인 SQL 루프 발생은 개발 및 테스트 단계에�
 
 본 하네스 시스템은 **"테스트 타임 검증 가드레일(Test-Time Shift-Left Guardrail)"**로서, 테스트 트랜잭션 수명 주기 동안 하이버네이트가 실제 데이터베이스에 실행하는 모든 SQL문 개수를 가로채고(Intercept), 지정된 임계값을 초과할 경우 **해당 테스트를 강제 실패(AssertionError)**시킵니다.
 
+> **규범 근거**: 본 가드레일은 [백엔드 API 헌법 제14조 (N+1 방어 전략의 하이브리드화 및 OOM 방어)](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)를 테스트 타임에 기계적으로 강제하는 이행 장치입니다.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -47,13 +49,13 @@ sequenceDiagram
 
 ## 2. 모듈 및 구현 소스 코드 (Core Classes)
 
-개발 경험(DX)을 해치지 않기 위해 모든 테스트용 가드레일 클래스는 production artifact(`src/main/java`)에 포함시키지 않고, **`foundation` 모듈의 `src/testFixtures/java`에 전적으로 격리**하여 설계했습니다. 이로 인해 타 모듈(`business-suite`, `api-server`)의 테스트 세트에서도 별도 설정 없이 바로 불러와 재사용할 수 있습니다.
+개발 경험(DX)을 해치지 않기 위해 모든 테스트용 가드레일 클래스는 production artifact(`src/main/java`)에 포함시키지 않고, **`business-suite` 모듈의 `src/testFixtures/java`에 전적으로 격리**하여 설계했습니다. 이로 인해 `business-suite` 자체 테스트에서는 바로 활용할 수 있으며, 타 모듈(`api-server`)에서 재사용하려면 해당 모듈에 `testFixtures` 의존성(예: `testImplementation(testFixtures(project(":business-suite")))`)을 선언해야 합니다.
 
 ### 2.1 `QueryCountInspector.java` (ThreadLocal Counter)
-* **경로**: `foundation/src/testFixtures/java/nuri/foundation/core/harness/QueryCountInspector.java`
+* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountInspector.java`
 * **역할**: 현재 실행 중인 테스트 스레드에 로컬 쿼리 카운터를 할당 및 관리합니다.
 ```java
-package nuri.foundation.core.harness;
+package nuri.business.core.harness;
 
 public class QueryCountInspector {
     private static final ThreadLocal<QueryCounter> queryCounter = new ThreadLocal<>();
@@ -102,10 +104,10 @@ public class QueryCountInspector {
 ```
 
 ### 2.2 `HibernateQueryCounterInspector.java` (Hibernate Interceptor)
-* **경로**: `foundation/src/testFixtures/java/nuri/foundation/core/harness/HibernateQueryCounterInspector.java`
+* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/HibernateQueryCounterInspector.java`
 * **역할**: 하이버네이트의 `StatementInspector`를 구현하여, SQL 질의가 들어오는 즉시 카운터를 1 올립니다.
 ```java
-package nuri.foundation.core.harness;
+package nuri.business.core.harness;
 
 import org.hibernate.resource.jdbc.spi.StatementInspector;
 import org.springframework.stereotype.Component;
@@ -121,10 +123,10 @@ public class HibernateQueryCounterInspector implements StatementInspector {
 ```
 
 ### 2.3 `HibernateHarnessConfig.java` (JPA Customizer)
-* **경로**: `foundation/src/testFixtures/java/nuri/foundation/core/harness/HibernateHarnessConfig.java`
+* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/HibernateHarnessConfig.java`
 * **역할**: Spring Boot JPA Auto-Configuration 시점에 위의 Inspector를 Hibernate Session Factory에 동적으로 영구 주입합니다.
 ```java
-package nuri.foundation.core.harness;
+package nuri.business.core.harness;
 
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -140,10 +142,10 @@ public class HibernateHarnessConfig {
 ```
 
 ### 2.4 `QueryCountGuard.java` (Meta-Annotation)
-* **경로**: `foundation/src/testFixtures/java/nuri/foundation/core/harness/QueryCountGuard.java`
+* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountGuard.java`
 * **역할**: 테스트 또는 클래스 단위로 적용 가능한 세이프가드 선언용 커스텀 메타 애노테이션입니다.
 ```java
-package nuri.foundation.core.harness;
+package nuri.business.core.harness;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 import java.lang.annotation.ElementType;
@@ -160,10 +162,10 @@ public @interface QueryCountGuard {
 ```
 
 ### 2.5 `QueryCountGuardExtension.java` (JUnit 5 Lifecycle Engine)
-* **경로**: `foundation/src/testFixtures/java/nuri/foundation/core/harness/QueryCountGuardExtension.java`
+* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountGuardExtension.java`
 * **역할**: JUnit 테스트가 돌기 전에 카운터를 기동하고, 완료 후에 카운트가 `max`를 상회하면 `AssertionError`를 출력시킵니다.
 ```java
-package nuri.foundation.core.harness;
+package nuri.business.core.harness;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -240,8 +242,8 @@ package nuri.business.harness;
 import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.support.BusinessIntegrationTestSupport;
-import nuri.foundation.core.harness.QueryCountGuard;
-import nuri.foundation.core.harness.QueryCountInspector;
+import nuri.business.core.harness.QueryCountGuard;
+import nuri.business.core.harness.QueryCountInspector;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -292,7 +294,7 @@ class QueryCountGuardrailIntegrationTest extends BusinessIntegrationTestSupport 
 * **인터페이스 구현체**: [`MonitoringHubClient.tsx`](file:///d:/project/egov-enterprise/frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx)
 
 ### 4.1 핵심 관제 화면 레이아웃 (Telemetry Modules)
-1. **3대 기술 헌법 무결성 검증 (Three Constitutions SSOT)**: DB 표준화(10조), 백엔드 API(18조), 프론트엔드 UX(15조)의 전사 정밀 준수율을 100% 실시간 합격 보증.
+1. **3대 기술 헌법 무결성 검증 (Three Constitutions SSOT)**: DB 표준화(10조), 백엔드 API(18조), 프론트엔드 UX(17조)의 전사 정밀 준수율을 100% 실시간 합격 보증.
 2. **JPA Performance Guardrail Telemetry (쿼리 계측기)**: 최근 백엔드 빌드 및 단위/통합 테스트에서 계측된 SQL 개수를 한계값(`maxAllowed`)과 비교하여 시각적 게이지 및 바 스트림으로 출력.
 3. **Ralph Loop 2.0 Trace (자가성찰 복구보드)**: 테스트 실패 또는 에러 발생 시 에이전트가 가동하는 '오판 진단 ➔ 근본원인 ➔ 해결가설 ➔ 무결성 치유' 루프를 순서도 형태로 실시간 관제.
 4. **8대 네이티브 오케스트레이션 엔진**: `Deep Context Mapper`, `API Contract Guardian`, `Resilience Debugger` 등 8가지 전문 엔진의 활성화 및 기동 상태 모니터링.

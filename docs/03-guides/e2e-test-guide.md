@@ -33,14 +33,14 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 
 ### 2. 서버 포트 및 타임아웃
 - 프론트엔드: `http://localhost:3001` / 백엔드: `http://localhost:8080` (API Proxy)
-- **Timeout**: CI 환경을 고려하여 120s로 설정되어 있습니다. (`playwright.config.ts` 참조)
+- **Timeout**: CI 환경을 고려하여 300,000ms(5분)로 설정되어 있습니다. (`playwright.config.ts` 참조)
 
 ### 3. CI 설정 (`playwright.config.ts`)
 
 | 항목 | 로컬 | CI 환경 |
 |------|------|---------|
-| **Retries** | 2 | 5 (플레이키 테스트 강력 안정화) |
-| **Workers** | 1 (OOM 방지 및 안정성) | 2 |
+| **Retries** | 0 | 0 (재시도 비활성화 — 포트 락/리소스 고갈 방지) |
+| **Workers** | 1 (OOM 방지 및 안정성) | 2 (`test:e2e`의 `--workers=2` 플래그 — `playwright.config.ts`는 `workers: 1`) |
 | **Timeout** | 300,000ms (5분) | 300,000ms (5분) |
 | **Expect Timeout** | 60,000ms | 60,000ms |
 

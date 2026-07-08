@@ -2,6 +2,8 @@
 
 본 문서는 프론트엔드 UI/UX 변경에 매우 민감한 E2E 테스트의 취약성(Flakiness)을 극복하고, 동적으로 셀렉터 일탈을 복구하는 **자가 치유형 Playwright E2E 테스트 하네스**의 구조 및 연동법에 대해 설명합니다.
 
+> **관련 문서 (See also)**: 본 하네스는 [테스트 종합 가이드 (testing-guide.md)](./testing-guide.md)를 상위 SSOT로 따르며, E2E 실행 명령·Tier 구조·워커 수는 [E2E 운영 런북 (e2e-test-guide.md)](./e2e-test-guide.md)을 참조하십시오.
+
 ---
 
 ## 1. 개요 및 설계 동기 (Self-Healing Motivation)
@@ -14,7 +16,7 @@
 
 ## 2. 자가 치유 에이전트 아키텍처
 
-자가 치유 엔진은 [`self-healing-agent.ts`](file:///d:/project/egov-enterprise/frontend/e2e/fixtures/self-healing-agent.ts)에 구현되어 있으며, Playwright의 전역 확장 피스처([`base-test.ts`](file:///d:/project/egov-enterprise/frontend/e2e/fixtures/base-test.ts))에 `healingAgent`로 이식되어 모든 E2E 테스트에서 즉시 사용할 수 있습니다.
+자가 치유 엔진은 [`self-healing-agent.ts`](../../frontend/e2e/fixtures/self-healing-agent.ts)에 구현되어 있으며, Playwright의 전역 확장 피스처([`base-test.ts`](../../frontend/e2e/fixtures/base-test.ts))에 `healingAgent`로 이식되어 모든 E2E 테스트에서 즉시 사용할 수 있습니다.
 
 ### 2.1 적용된 치유 매커니즘 흐름도
 ```mermaid
@@ -28,7 +30,7 @@ graph TD
     G -- Success --> F
     G -- Failure --> H{Try Form Elements Loop}
     H -- Success --> F
-    H -- Failure --> I[Throw Original Timeout Exception]
+    H -- Failure --> I[Throw SELF-HEALING FAILED Error]
 ```
 
 ---

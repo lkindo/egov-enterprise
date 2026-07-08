@@ -22,7 +22,7 @@
 
 - **로그인**: `POST /api/v1/login`
 - **대시보드 조회**: `GET /api/v1/dashboard`
-- **게시글 등록**: `POST /api/v1/posts`
+- **게시글 등록**: `POST /api/v1/boards/posts`
 - **사용자 목록 조회**: `GET /api/v1/admin/system/users`
 
 ### 부하 레벨
@@ -141,7 +141,7 @@ k6 run --scenario users-1000 test/load-tests/scenarios/load-levels.js
 # 기본 URL 변경 (기본값: http://localhost:8080)
 export BASE_URL=http://your-server.com
 
-# 테스트 계정 설정 (기본값: testuser / testpass123!)
+# 테스트 계정 설정 (기본값: admin / admin123!)
 export TEST_USERNAME=admin
 export TEST_PASSWORD=yourpassword
 
@@ -329,6 +329,8 @@ export const options = {
 
 ## 추가 리소스
 
+- [k6 부하 테스트 빠른 시작 (k6-load-test-quickstart.md)](./k6-load-test-quickstart.md)
+- [성능 최적화 가이드 (performance-optimization-guide.md)](./performance-optimization-guide.md)
 - [k6 공식 문서](https://k6.io/docs/)
 - [k6 GitHub 리포지토리](https://github.com/grafana/k6)
 - [k6-reporter](https://github.com/benc-uk/k6-reporter)

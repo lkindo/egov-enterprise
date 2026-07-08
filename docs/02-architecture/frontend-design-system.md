@@ -9,7 +9,7 @@
     *   **Selective Premium**: 고비용 시각 효과는 핵심 대시보드에 집중하여 성능과 가독성을 동시에 확보합니다.
 
 ## 2. Color Palette & Roles (Unified)
-모든 색상은 `design_tokens.md`에 정의된 CSS 변수를 통해 관리됩니다.
+모든 색상은 [design_tokens.md](../../.agent/knowledge/frontend-ux-constitution/artifacts/design_tokens.md)에 정의된 CSS 변수를 통해 관리됩니다.
 
 ### Core Colors
 *   **Vibrant Hub Blue (`--color-hub-blue`)**: `#0055FF` - 시스템 전체의 핵심 액션 및 브랜드 정체성.
@@ -32,8 +32,8 @@
 ### Geometry (Border Radius)
 *   **Base UI Radius (`--radius-base`)**: `0.5rem` (8px) - 버튼, 폼 입력창.
 *   **Premium Hub Radius**:
-    *   `--radius-hub-widget` (1rem / 16px): 대시보드 위젯.
-    *   `--radius-hub-section` (1.5rem / 24px): 대시보드 메인 섹션.
+    *   `--radius-hub-widget` (0.75rem / 12px): 대시보드 위젯.
+    *   `--radius-hub-section` (1rem / 16px): 대시보드 메인 섹션.
 
 ### Component Variants
 | Variant | 대상 | 주요 특징 |

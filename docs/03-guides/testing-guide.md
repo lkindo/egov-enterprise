@@ -189,7 +189,7 @@ public class TestcontainersConfig {
 
     @Bean
     public PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>("postgres:16")
+        return new PostgreSQLContainer<>("postgres:17")
                 .withDatabaseName("testdb")
                 .withUsername("test")
                 .withPassword("test");
@@ -206,7 +206,7 @@ public class TestcontainersConfig {
 class PostgresContainerTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
@@ -333,7 +333,7 @@ E2E 테스트 실행 중 브라우저 콘솔에 에러가 발생하거나 런타
 ### 3. 정밀 시각 회귀 테스트 (VRT)
 UI 프레임워크나 테마 변경 시 발생하는 미세한 레이아웃 시프트를 감지합니다.
 - **임계값**: `maxDiffPixelRatio` 기준 일반 페이지 **0.2%**, 통계 데이터 페이지 **0.5%** 이하로 제한.
-- **실행**: `npm run test:e2e -- visual-regression.spec.ts`
+- **실행**: `npm run test:e2e -- 04-quality-resilience.spec.ts`
 
 ### 4. 하이드레이션 오류 조기 경보 및 E2E 연동
 Next.js의 서버/클라이언트 불일치 문제를 신속히 잡기 위해, 클라이언트 컴포넌트의 `StandardErrorBoundary`가 수집한 불일치 정보를 콘솔에 `🌊 [HYDRATION MISMATCH DETECTED]` 플래그로 출력하며, 이는 `ConsoleErrorGuard`에 의해 실시간 가로채어져 E2E 빌드 파이프라인에서 100% 빌드 실패로 직결됩니다.
@@ -473,26 +473,27 @@ npx playwright install --with-deps chromium
   ```
 
 #### 3. Git Pre-Push Hook을 통한 로컬 Fail-Fast (생산성 밸런스 강제)
-개발 과정에서 커밋(Commit)할 때마다 매번 무거운 단위 테스트를 돌리는 것은 개발자의 기동성과 생산성을 크게 훼손합니다. 따라서, 로컬에서는 커밋 단계가 아닌 원격 저장소로 **PUSH**를 시도하는 최종 관문에서 JPA 정합성 테스트를 강제하는 **Pre-Push Hook** 방식의 도입이 기술적으로 매우 합리적입니다.
-- **자동화 인스톨러 배포**: 개발자가 수동으로 훅을 등록하는 오버헤드를 없애기 위해 원클릭 자동 설치 스크립트가 프로젝트에 제공됩니다.
-  - Windows 개발자: [install-git-hooks.bat](../../scripts/install-git-hooks.bat) 실행 (더블 클릭)
-  - macOS/Linux 개발자: `sh scripts/install-git-hooks.sh` 실행
-- **Pre-Push 훅 동작 쉘 스크립트 (`.git/hooks/pre-push`)**:
-  ```bash
-  #!/bin/sh
-  echo "🔍 [Pre-Push Hook] Git Push 전 로컬 데이터베이스 스키마 및 Entity 정합성을 검증합니다..."
-  ./gradlew :foundation:test
-  if [ $? -ne 0 ]; then
-      echo "❌ [Push Rejected] JPA Entity와 Flyway H2 DDL 정합성이 깨져있거나 테스트가 실패했습니다. 수정을 완료한 후 푸시하세요."
-      exit 1
-  fi
+개발 과정에서 커밋(Commit)할 때마다 무거운 검증을 돌리는 것은 개발자의 기동성과 생산성을 크게 훼손합니다. 따라서 로컬에서는 커밋 단계가 아닌 원격 저장소로 **PUSH**를 시도하는 최종 관문에서 무결성 게이트를 강제하는 **Pre-Push Hook** 방식을 채택합니다.
+- **정본 훅 경로 (`.githooks/pre-push`)**: 본 저장소의 활성 pre-push 훅은 `.git/hooks/`가 아니라 버전 관리되는 **`.githooks/pre-push`**에 위치합니다. 이는 GEMINI.md §0.6 컴파일 무결성 게이트를 prose 규칙에서 기계적 강제로 승격한 것으로, Gemini·Claude 등 어떤 operator가 푸시하든 동일하게 적용됩니다.
+- **설치 (클론마다 1회)**: 저장소 훅을 활성화하려면 클론 직후 아래 명령을 한 번 실행합니다. `core.hooksPath`는 클론별 로컬 설정이라 커밋되지 않습니다.
+  ```sh
+  git config core.hooksPath .githooks
   ```
+- **동작 (HARD 차단 게이트)**: pre-push는 §0.6 컴파일 무결성 게이트를 실행하며, 컴파일/타입 에러가 1건이라도 있으면 push를 차단합니다.
+  ```sh
+  # .githooks/pre-push (요지)
+  ./gradlew compileJava compileTestJava    # 백엔드 Java 컴파일 무결성
+  ( cd frontend && npx tsc --noEmit )       # 프론트엔드 TS 타입 컴파일 무결성
+  ```
+- **우회**: 일시 우회 `git push --no-verify`, 세션 우회 `SKIP_HOOKS=1 git push`, 완전 해제 `git config --unset core.hooksPath`.
+- **JPA 정합성 검증의 소재 (로컬 pre-push 아님)**: 무거운 JPA `:foundation:test` 스키마/엔티티 정합성 검증은 로컬 pre-push가 아니라 **CI에서 강제**됩니다(위 §2 CI 게이트키퍼 참조). `.github/workflows/ci.yml`의 **"Strict Schema Integrity Validation"** 단계가 스키마 변경이 감지될 때만(`schema == 'true'`) `./gradlew :foundation:test --no-build-cache`를 무캐시로 실행하여, DB 스키마와 자바 엔티티 매핑 불일치 시 PR 병합을 원천 차단합니다.
+- **⚠ 폐기된 방식**: 과거의 `.git/hooks/pre-push` 수동 등록 및 `scripts/install-git-hooks.bat`/`install-git-hooks.sh` 원클릭 인스톨러는 폐기·제거되었습니다. `core.hooksPath=.githooks` 설정이 `.git/hooks/`를 덮어쓰므로 해당 방식으로 설치한 훅은 실행되지 않습니다(inert). 훅 정책의 SSOT는 [.githooks/README.md](../../.githooks/README.md)입니다.
 
 #### 4. 스키마 변경 시 DDL 최신화 자동화 프로토콜 (Dump Clean Protocol)
 PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_test_schema.sql`도 동기화되어야 합니다. 이때 H2의 `SCRIPT` 엔진이 덤프하는 DDL 파일에는 H2 전용 환경 변수 설정(`SET DB_CLOSE_DELAY` 등) 및 불필요한 메타 정보 등의 불순물이 대거 유입됩니다.
-이를 완벽히 해결하기 위해 정규식(Regex) 기반의 실시간 후처리 청정 필터링을 내장한 [SchemaDumper.java](../../foundation/src/test/java/nuri/foundation/support/SchemaDumper.java)가 실무 코드로 구현되어 있습니다.
+이를 완벽히 해결하기 위해 정규식(Regex) 기반의 실시간 후처리 청정 필터링을 내장한 [SchemaDumper.java](../../business-suite/src/test/java/nuri/business/support/SchemaDumper.java)가 실무 코드로 구현되어 있습니다.
 
-- **실제 구현 클래스**: `nuri.foundation.support.SchemaDumper`
+- **실제 구현 클래스**: `nuri.business.support.SchemaDumper`
 - **검증 및 정제 동작 흐름**:
   1. 임시 파일 IO를 거치지 않고 H2 메모리로부터 직접 DDL 스트림을 쿼리로 로딩.
   2. H2 고유의 세팅(`SET ...`), 유저 생성(`CREATE USER ...`), LOB 데이터 스트림 등의 구문을 정규식 패턴으로 정밀 필터링하여 스킵.
@@ -502,7 +503,7 @@ PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_te
   1. `SchemaDumper.java` 소스 상의 `@Disabled` 주석을 잠시 비활성화하거나, IDE에서 해당 단위 테스트를 단독 러닝시킵니다.
   2. 또는 터미널에서 아래 명시적인 Gradle 테스트 명령을 통해 덤프 태스크만 단독 구동할 수 있습니다:
      ```bash
-     ./gradlew :foundation:test --tests nuri.foundation.support.SchemaDumper.dumpCleanSchema -Dspring.profiles.active=test-dump
+     ./gradlew :business-suite:test --tests nuri.business.support.SchemaDumper.dumpCleanSchema -Dspring.profiles.active=test-dump
      ```
   3. 추출 및 정제가 완료되면 변경된 `V1__init_test_schema.sql` 파일의 변경 내역(Git Diff)을 가볍게 검토한 후 소스 코드와 함께 커밋합니다.
 

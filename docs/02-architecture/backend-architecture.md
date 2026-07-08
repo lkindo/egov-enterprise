@@ -119,7 +119,8 @@ public class BoardService {
 
 ### 4.1 Mutation Score 강제 및 커버리지
 - 단위 테스트 및 통합 테스트 작성 시, 코드의 논리적 허점을 파고드는 **Mutation Testing (의도적 버그 주입)**을 통과해야 한다.
-- 빌드 파이프라인(`parse_jacoco.py`) 통과를 위한 최소 **Mutation Score는 85%**로 강제된다.
+- 돌연변이 스코어 게이트는 PITest Gradle 플러그인의 `mutationThreshold`로 강제되며, `STRICT_MUTATION=true`일 때 최소 **Mutation Score 85%**를 통과해야 한다. 이 85% 강제 게이트는 백엔드 헌법 제16조 2항의 80% 최소 기준을 충족·상회한다.
+- 상세: docs/02-architecture/pitest-mutation-testing.md · 테스트 전략 SSOT: docs/03-guides/testing-guide.md
 
 ### 4.2 글로벌 예외 처리 (Global Exception Handling)
 - 컨트롤러 내에서 `try-catch` 블록 사용을 지양하고, 대신 `@RestControllerAdvice` 기반의 `GlobalExceptionHandler`에 에러 처리를 위임한다. [백엔드 헌법 제7조]
@@ -183,7 +184,7 @@ public class DocumentService {
 타 기관 연동이나 외부 API 호출 시, 예측 불가능한 지연(Latency)이 우리 시스템 전체의 스레드(Thread) 고갈로 이어지는 것을 방어해야 한다. [백엔드 헌법 제10조]
 
 ### 6.1 타임아웃 격리 (Timeout Bulkhead)
-- 모든 `RestTemplate`, `WebClient`, 또는 `FeignClient` 설정 시 반드시 **3초 이내의 읽기 타임아웃(Read Timeout)**을 의무 적용한다.
+- 외부 클라이언트(`RestTemplate`/`WebClient`/`FeignClient`)의 읽기 타임아웃(Read Timeout)은 연동 유형별로 차등 적용한다 — 실시간 OLTP 동기 연동: 최대 3초(Fail-Fast) / 외부 결제·인증 트랜잭션(PG 등): 최대 10초 / 비동기·배치·대용량 파일 연동: 전용 스레드 풀로 격리 후 비즈니스 요건에 맞춰 타임아웃 상향.
 
 ### 6.2 재시도 및 서킷 브레이커
 - 일시적 네트워크 장애로 인한 실패는 `@Retryable`을 활용해 방어하며, 장애가 지속될 경우 `Resilience4j` 등의 서킷 브레이커를 통해 외부 호출을 즉시 차단(Fail-Fast)하여 시스템을 보호한다.

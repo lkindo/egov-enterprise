@@ -138,15 +138,21 @@ Swagger UI 에서 그룹별 필터링 가능.
 백엔드 API 명세가 변경되면 프론트엔드에서 다음 명령을 실행하여 TypeScript 타입을 최신화합니다.
 
 ### 1. API 타입 생성
-백엔드 서버가 실행 중인 상태에서 프론트엔드 폴더(`frontend/`)에서 실행:
+오프라인이 기본이며 백엔드 서버 기동이 필요 없습니다. 저장소 루트에서 실행:
 
 ```bash
-# OpenAPI Spec 기반 TS 타입 생성
-npm run codegen:ts
+# 오프라인(기본, api-docs.json 기반) — 서버 불필요
+pnpm -C frontend codegen:file
+pnpm -C frontend codegen:zod   # generated-zod.ts 동기화
+
+# 서버(:8080) 기동 시에는:
+pnpm -C frontend codegen:ts
 ```
 
+드리프트 점검(git diff --exit-code 기반): `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. (자세한 규칙은 GEMINI.md §4 참조)
+
 ### 2. 생성된 파일 확인
-`frontend/src/types/generated-api.d.ts` 파일이 갱신되었는지 확인합니다. 이 파일은 모든 서비스 레이어(`ApiService`)에서 타입 정의로 활용됩니다.
+`frontend/src/types/generated-api.d.ts`(타입 정의)와 `frontend/src/types/generated-zod.ts`(런타임 검증 스키마)가 함께 갱신되었는지 확인합니다. 전자는 모든 서비스 레이어(`ApiService`)에서 타입 정의로 활용됩니다.
 
 ---
 
@@ -157,9 +163,9 @@ npm run codegen:ts
 서버를 실행하지 않고 빌드 타임에 OpenAPI Spec을 정적으로 추출하여 CI 안정성을 확보합니다.
 
 ```bash
-# CI 에서 자동 실행 (springdoc-openapi-gradle-plugin 활용)
-./gradlew :api-server:generateOpenApiDocs
-# 추출된 파일 위치: api-server/build/openapi.json
+# CI: 테스트 단계에서 OpenApiDocumentationTest 가 system property 로 정적 추출 (별도 gradle 플러그인 아님)
+./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+# 추출된 파일 위치: <repo-root>/api-docs.json  (CI 아티팩트: openapi-spec / openapi-spec-changed)
 ```
 
 ### API 변경 감지
