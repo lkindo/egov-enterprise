@@ -117,7 +117,7 @@ export function BannerSlider() {
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(
-                  "w-2 h-2 rounded-lg transition-all",
+                  "w-2 h-2 rounded-full transition-all",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"
                 )}
               />

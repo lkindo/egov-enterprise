@@ -100,7 +100,7 @@ export function BoardStats() {
           <div className="grid grid-cols-2 gap-3 w-full mt-2">
             {authorData.map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-lg" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                 <span className="text-xs font-bold text-muted-foreground">{entry.name}</span>
               </div>
             ))}

@@ -114,7 +114,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn(
-            "w-2 h-2 rounded-lg",
+            "w-2 h-2 rounded-full",
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground">

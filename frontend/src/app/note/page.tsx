@@ -238,7 +238,7 @@ export default function NotePage() {
             <div className="flex justify-between items-start border-b border-slate-100 pb-10">
               <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                         <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+                         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
                          <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">쪽지 상세 데이터</span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>

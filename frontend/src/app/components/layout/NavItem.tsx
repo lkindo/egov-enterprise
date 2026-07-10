@@ -149,7 +149,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         )}
         {depth > 0 && (
           <div className={cn(
-            "absolute left-4 w-1.5 h-1.5 rounded-lg border border-current opacity-80 transition-transform duration-200",
+            "absolute left-4 w-1.5 h-1.5 rounded-full border border-current opacity-80 transition-transform duration-200",
             isActive ? "bg-primary border-primary scale-110 opacity-100" : "group-hover:scale-110"
           )} 
           style={{ left: `${(depth * 12) + 12}px` }}

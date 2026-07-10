@@ -69,8 +69,8 @@ const DataRow = memo(function DataRow({
 
   return (
     <tr
-      role="button"
-      tabIndex={0}
+      tabIndex={onRowClick ? 0 : undefined}
+      aria-label={onRowClick ? '상세 보기' : undefined}
       data-testid={rowTestId}
       onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
@@ -306,7 +306,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   )} scope="col">
                     <div className="flex items-center gap-2">
                       {column.header}
-                      <div className="w-1 h-1 bg-primary/30 rounded-lg" />
+                      <div className="w-1 h-1 bg-primary/30 rounded-full" />
                     </div>
                   </th>
                 ))}

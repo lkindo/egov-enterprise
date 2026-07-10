@@ -160,7 +160,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                             <h3 className={cn("text-sm font-bold tracking-tight transition-colors truncate pr-4 text-card-foreground", !notif.isRead && "text-foreground")}>
                                {notif.title}
                             </h3>
-                            {!notif.isRead && <div className="w-2 h-2 rounded-lg bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] animate-pulse" />}
+                            {!notif.isRead && <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] animate-pulse" />}
                          </div>
                          <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2 font-medium">
                             {notif.message}

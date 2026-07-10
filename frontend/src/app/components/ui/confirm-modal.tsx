@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -22,8 +22,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  const [isOpen, setIsOpen] = useState(false);
  const [options, setOptions] = useState<ConfirmOptions | null>(null);
  const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
+ // 다이얼로그를 연 요소(invoker)를 기억했다가 닫힐 때 포커스를 되돌린다 (DialogTrigger 부재 보완)
+ const triggerRef = useRef<HTMLElement | null>(null);
 
  const confirm = useCallback((opts: ConfirmOptions) => {
+ triggerRef.current = (document.activeElement as HTMLElement) ?? null;
  setOptions(opts);
  setIsOpen(true);
  return new Promise<boolean>((resolve) => {
@@ -46,7 +49,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCancel(); }}>
         {options && (
-          <DialogContent showCloseButton={false} className="max-w-md p-6">
+          <DialogContent
+            showCloseButton={false}
+            className="max-w-md p-6"
+            onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus?.(); }}
+          >
             <DialogHeader className="flex flex-row items-start gap-4 text-left">
               <div className={cn(
                 "p-2 rounded-lg shrink-0",

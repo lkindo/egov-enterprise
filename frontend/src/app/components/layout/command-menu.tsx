@@ -118,12 +118,12 @@ export function CommandMenu() {
           <CommandItem onSelect={() => runCommand(() => setTheme('light'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <Sun size={18} className="mr-3 text-amber-500" />
             <span className="font-bold">라이트 모드로 전환</span>
-            {theme === 'light' && <div className="ml-auto w-1.5 h-1.5 bg-amber-500 rounded-lg" />}
+            {theme === 'light' && <div className="ml-auto w-1.5 h-1.5 bg-amber-500 rounded-full" />}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => setTheme('dark'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <Moon size={18} className="mr-3 text-slate-900 dark:text-slate-100" />
             <span className="font-bold">다크 모드로 전환</span>
-            {theme === 'dark' && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-lg" />}
+            {theme === 'dark' && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-full" />}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => window.print())} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
             <Printer size={18} className="mr-3 text-slate-500" />

@@ -82,7 +82,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  accessor: (item) => (
  <div className="flex flex-col gap-1 py-1">
  <div className="flex items-center gap-2">
- {item.openYn === 'N' && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
+ {item.openYn === 'N' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
  <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.noteSj}</span>
  </div>
  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.noteId}</span>

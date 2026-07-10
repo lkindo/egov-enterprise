@@ -84,7 +84,7 @@ const SelectDeptJobDetailClient = () => {
                         {/* Task Title */}
                         <div className="space-y-6 group">
                             <Label htmlFor="deptTaskNm" className="text-xs font-bold tracking-[0.3em] text-slate-400 group-focus-within:text-slate-900 transition-all flex items-center gap-3">
-                                <span className="w-2 h-2 rounded-lg bg-primary" /> 핵심 업무명 지정
+                                <span className="w-2 h-2 rounded-full bg-primary" /> 핵심 업무명 지정
                             </Label>
                             <Input
                                 id="deptTaskNm"
@@ -160,7 +160,7 @@ const SelectDeptJobDetailClient = () => {
                         <Button type="submit" className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-lg" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-3 animate-pulse">
-                                    <div className="w-3 h-3 bg-white rounded-lg" /> 업무 배포 중...
+                                    <div className="w-3 h-3 bg-white rounded-full" /> 업무 배포 중...
                                 </span>
                             ) : (
                                 <>

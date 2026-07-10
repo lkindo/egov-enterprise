@@ -35,9 +35,9 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
  {/* Browser Bar */}
  <div className="h-12 bg-slate-900 flex items-center px-6 gap-2">
- <div className="w-3 h-3 rounded-lg bg-rose-500" />
- <div className="w-3 h-3 rounded-lg bg-amber-500" />
- <div className="w-3 h-3 rounded-lg bg-emerald-500" />
+ <div className="w-3 h-3 rounded-full bg-rose-500" />
+ <div className="w-3 h-3 rounded-full bg-amber-500" />
+ <div className="w-3 h-3 rounded-full bg-emerald-500" />
  <div className="flex-1 ml-4 bg-white/10 h-7 rounded-lg flex items-center px-4">
  <span className="text-xs font-bold text-white/40 tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
  </div>

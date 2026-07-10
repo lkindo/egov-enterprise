@@ -172,7 +172,7 @@ export function AuditTimelineClient() {
                     <div className="rounded-lg bg-slate-900 border-4 border-slate-900 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] h-full p-16 space-y-12 flex flex-col relative overflow-hidden group">
                        <div className="border-b border-white/5 pb-12 relative z-10 transition-transform duration-700 group-hover:-translate-y-1">
                           <div className="flex items-center gap-3 mb-6">
-                              <div className="w-3 h-3 rounded-lg bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
+                              <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
                               <h3 className="text-xs font-bold text-white/30 tracking-[0.5em] uppercase">_ 암호 분석 객체</h3>
                           </div>
                           <h2 className="text-5xl font-bold text-white tracking-tighter leading-none mb-6">행위 상세 <br /> 인스펙터</h2>

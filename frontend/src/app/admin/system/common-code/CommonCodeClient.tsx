@@ -171,7 +171,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  {isSelected && (
  <div className="ml-auto">
  <div className={cn(
- "w-1.5 h-1.5 rounded-lg",
+ "w-1.5 h-1.5 rounded-full",
  isCluster ? "bg-primary animate-pulse" : "bg-white animate-pulse"
  )} />
  </div>

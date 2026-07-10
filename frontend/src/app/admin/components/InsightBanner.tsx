@@ -109,7 +109,7 @@ export const InsightBanner: React.FC = () => {
  <div className="w-16 h-11 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
  <Sparkles size={32} className="animate-pulse" />
  </div>
- <div className="absolute -inset-4 bg-primary/20 rounded-lg blur-2xl animate-spin-slow opacity-40" />
+ <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-spin-slow opacity-40" />
  </div>
 
  {/* Message Stream */}
@@ -119,7 +119,7 @@ export const InsightBanner: React.FC = () => {
  {getIcon(activeInsight.type)}
  AI_INSIGHT_ENGINE
  </div>
- <div className="w-1.5 h-1.5 rounded-lg bg-current animate-ping" />
+ <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
  <span className="text-xs font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
  </div>
  
@@ -158,7 +158,7 @@ export const InsightBanner: React.FC = () => {
  <div 
  key={idx} 
  className={cn(
- "w-2 h-2 rounded-lg transition-all duration-500",
+ "w-2 h-2 rounded-full transition-all duration-500",
  idx === currentIndex ? "w-6 bg-slate-900" : "bg-slate-200"
  )} 
  />

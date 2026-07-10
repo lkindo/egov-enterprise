@@ -260,7 +260,7 @@ const BBSDetailClient = () => {
                   required
                 />
                 <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-xs font-bold text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-lg border border-primary/5 backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-pulse" /> {tmpltId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {tmpltId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
                 </div>
               </div>
             </div>
@@ -310,7 +310,7 @@ const BBSDetailClient = () => {
             >
               {isPending ? (
                 <span className="flex items-center gap-3 animate-pulse">
-                  <div className="w-3 h-3 bg-white rounded-lg" /> 처리 중...
+                  <div className="w-3 h-3 bg-white rounded-full" /> 처리 중...
                 </span>
               ) : (
                 <>

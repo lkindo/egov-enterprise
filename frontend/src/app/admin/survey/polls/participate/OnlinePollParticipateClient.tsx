@@ -97,7 +97,7 @@ export default function OnlinePollParticipateClient() {
  if (loading && viewMode === 'list') {
  return (
  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
- <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-lg animate-spin" />
+ <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
  <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Syncing Matrix Data...</p>
  </div>
  );
@@ -190,7 +190,7 @@ export default function OnlinePollParticipateClient() {
  onClick={handleVote}
  className="h-11 flex-1 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
  >
- {isVoting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-lg animate-spin" /> : <UserCheck size={20} />}
+ {isVoting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserCheck size={20} />}
  투표 제출하기
  </Button>
  )}
@@ -234,7 +234,7 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
 
  <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
+ <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
  <span className="text-xs font-bold text-slate-500 tracking-widest uppercase opacity-60">Ready for Interaction</span>
  </div>
  <ChevronRight size={18} className="text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />

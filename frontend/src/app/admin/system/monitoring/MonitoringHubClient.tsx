@@ -48,7 +48,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   ssr: false,
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-slate-950 rounded-lg space-y-6">
-      <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-lg animate-spin" />
+      <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">Initializing Topology Stream...</p>
     </div>
   )
@@ -597,7 +597,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-3 h-3 rounded-lg bg-primary shadow-lg shadow-primary/40" />
+                        <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
                         <h3 className="text-xs font-bold text-slate-600 tracking-tight">
                           {selectedItem && (selectedItem as any).type === 'SKILL' ? '아틀라스 엔진 명세' : selectedItem && (selectedItem as any).type === 'TEST' ? 'JPA SQL 실시간 계측' : '인스턴스 메타데이터'}
                         </h3>
@@ -740,7 +740,7 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
           <Icon size={16} className="text-white/20 group-hover:text-primary transition-colors" />
       </div>
       <div className="flex items-center gap-4">
-        <div className="w-2.5 h-2.5 rounded-lg bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)] animate-pulse" />
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)] animate-pulse" />
         <span className="text-2xl font-bold tracking-tighter text-white">{status}</span>
       </div>
     </div>
@@ -752,7 +752,7 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
     <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-10 space-y-10 flex flex-col relative overflow-hidden text-left font-sans">
       <div className="border-b border-slate-100 pb-6 relative z-10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-3 h-3 rounded-lg bg-emerald-500 shadow-lg shadow-emerald-400/40 animate-pulse" />
+          <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-400/40 animate-pulse" />
           <h3 className="text-xs font-bold text-slate-600 tracking-tight">Harness Governance SSOT</h3>
         </div>
         <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-3">아틀라스 통합 관제</h2>

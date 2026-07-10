@@ -58,7 +58,7 @@ export function SurveyHubClient() {
  <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
  <div className="space-y-3">
  <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-lg bg-rose-500 animate-pulse" />
+ <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
  <span className="text-xs font-bold tracking-tight text-rose-500 leading-none px-3 py-1 bg-rose-500/5 rounded-lg border border-rose-500/10">Survey Matrix</span>
  </div>
  <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none">

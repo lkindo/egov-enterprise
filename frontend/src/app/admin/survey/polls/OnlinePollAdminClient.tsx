@@ -295,7 +295,7 @@ export default function OnlinePollAdminClient({
  <div className="space-y-10 py-10 relative z-10">
  <section className="space-y-5">
  <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
- <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+ <div className="w-1.5 h-1.5 bg-primary rounded-full" />
  Poll Identity (Naming)
  </label>
  <Input
@@ -336,7 +336,7 @@ export default function OnlinePollAdminClient({
  <section className="space-y-6">
  <div className="flex items-center justify-between px-2">
  <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase flex items-center gap-3">
- <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+ <div className="w-1.5 h-1.5 bg-primary rounded-full" />
  Analytic Options (Items)
  </label>
  <button 

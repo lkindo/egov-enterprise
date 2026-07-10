@@ -6,7 +6,7 @@ import {
     LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { SafeResponsiveContainer, useChartColors } from '@/app/components/ui/observability-charts';
 
 const CHART_COLORS = ['#0055FB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
 
@@ -23,6 +23,7 @@ interface StandardChartWrapperProps {
 export function StandardChartWrapper({
     title, type, data, dataKeys, loading, className, height = 300
 }: StandardChartWrapperProps) {
+    const c = useChartColors();
     return (
         <div className={cn("p-6 border rounded-lg bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
@@ -44,21 +45,21 @@ export function StandardChartWrapper({
                                         <stop offset="100%" stopColor="#0055FB" stopOpacity={0.6} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
                                 <XAxis
                                     dataKey="name"
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                    tick={{ fill: c.tick }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                    tick={{ fill: c.tick }}
                                 />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(0, 85, 251, 0.05)' }}
@@ -82,21 +83,21 @@ export function StandardChartWrapper({
                                         <stop offset="100%" stopColor="#0055FB" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
                                 <XAxis
                                     dataKey="name"
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                    tick={{ fill: c.tick }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                    tick={{ fill: c.tick }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 {(dataKeys || []).map((key, idx) => (
@@ -136,9 +137,9 @@ export function StandardChartWrapper({
                             </PieChart>
                         ) : type === 'line' ? (
                             <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                                <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                                <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
+                                <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: c.tick }} />
+                                <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: c.tick }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {(dataKeys || []).map((key, idx) => (
                                     <Line
@@ -173,7 +174,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
                     {(payload as any[] || []).map((p, idx) => (
                         <div key={`tooltip-item-${idx}`} className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-lg" style={{ backgroundColor: p.color || p.fill }} />
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
                                 <span className="text-sm font-bold text-foreground">{p.name}</span>
                             </div>
                             <span className="text-sm font-bold text-primary">{p.value?.toLocaleString() || 0}</span>

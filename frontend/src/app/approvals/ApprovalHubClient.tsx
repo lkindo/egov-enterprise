@@ -216,7 +216,7 @@ export default function ApprovalHubClient() {
               </h1>
               <div className="flex items-center gap-3 text-xs font-bold text-slate-400 tracking-tight">
                 <span className="flex items-center gap-1"><Zap size={12} className="text-primary" /> 자율 결재 로직</span>
-                <span className="w-1 h-1 rounded-lg bg-slate-200" />
+                <span className="w-1 h-1 rounded-full bg-slate-200" />
                 <span>기업용 보안 암호화</span>
               </div>
             </div>
@@ -273,7 +273,7 @@ export default function ApprovalHubClient() {
               </div>
               <div className="relative z-10 space-y-6">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-tight">
-                  <div className="w-2 h-2 rounded-lg bg-emerald-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   체인 무결성 검증됨
                 </div>
                 <div className="space-y-1">
@@ -446,7 +446,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       {active && (
         <motion.div 
             layoutId="nav-active"
-            className="absolute right-4 w-1.5 h-1.5 rounded-lg bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" 
+            className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" 
         />
       )}
     </button>

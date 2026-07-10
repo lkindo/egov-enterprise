@@ -228,13 +228,13 @@ export default function ApprovalDraftHubClient() {
                            <Info size={14} className="text-primary" /> Logic Path
                         </div>
                         <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500" />
+                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                            <span className="text-xs font-bold text-slate-600 tracking-tight">Draft</span>
                            <ChevronRight size={12} className="text-slate-200" />
-                           <div className="w-1.5 h-1.5 rounded-lg bg-slate-200" />
+                           <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                            <span className="text-xs font-bold text-slate-300 tracking-tight opacity-50">L1 Approval</span>
                            <ChevronRight size={12} className="text-slate-200" />
-                           <div className="w-1.5 h-1.5 rounded-lg bg-slate-200" />
+                           <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                            <span className="text-xs font-bold text-slate-300 tracking-tight opacity-50">Commit</span>
                         </div>
                       </div>

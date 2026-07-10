@@ -32,11 +32,11 @@ export function NationalDistributionMap({ className }: { className?: string }) {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-lg bg-blue-600" />
+            <div className="w-2 h-2 rounded-full bg-blue-600" />
             <span className="text-xs font-bold text-slate-700">높음</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-lg bg-blue-500" />
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
             <span className="text-xs font-bold text-slate-700">보통</span>
           </div>
         </div>

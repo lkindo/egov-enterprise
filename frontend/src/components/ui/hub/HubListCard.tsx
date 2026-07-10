@@ -102,7 +102,7 @@ export function HubListCard({
                 <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
                   {item.date || item.frstRegisterPnttmStr?.split(' ')[0] || '-'}
                 </span>
-                <div className="w-1.5 h-1.5 rounded-lg bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
               </div>
               <span className="text-[15px] font-bold text-foreground line-clamp-1 tracking-tight">
                 {item.title || item.pstTtl}

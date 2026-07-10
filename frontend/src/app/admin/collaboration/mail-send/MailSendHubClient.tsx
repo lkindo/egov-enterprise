@@ -274,7 +274,7 @@ export default function MailSendHubClient() {
               <h3 className="text-sm font-bold text-slate-900 tracking-tight transition-colors">Mail Payload</h3>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-bold text-muted-foreground tracking-tight">Secure Transmission Ready</span>
             </div>
           </div>

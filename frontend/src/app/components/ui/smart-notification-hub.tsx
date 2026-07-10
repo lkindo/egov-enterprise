@@ -106,7 +106,7 @@ export function SmartNotificationHub() {
       accessor: (n) => (
         <div className="flex flex-col gap-1 py-1">
           <div className="flex items-center gap-2">
-            {n.status === 'new' && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
+            {n.status === 'new' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
             <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
               {n.title}
             </span>

@@ -263,15 +263,15 @@ export const TopologyMap = () => {
 
       <div className="absolute bottom-10 left-10 flex gap-6">
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
-            <div className="w-2 h-2 rounded-lg bg-emerald-500" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Up</span>
          </div>
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
-            <div className="w-2 h-2 rounded-lg bg-amber-500" />
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Warning</span>
          </div>
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
-            <div className="w-2 h-2 rounded-lg bg-rose-500" />
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
             <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Down</span>
          </div>
       </div>

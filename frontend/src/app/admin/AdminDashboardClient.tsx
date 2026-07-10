@@ -132,7 +132,7 @@ export default function AdminDashboardClient() {
               whileTap={{ scale: 0.95 }}
               className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-lg border border-emerald-200 font-bold text-xs tracking-widest shadow-sm cursor-default"
             >
-              <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               시스템 상태: 정상
             </motion.div>
             <Button 

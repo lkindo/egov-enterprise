@@ -150,11 +150,11 @@ export default function ServiceTopology() {
       {/* Metrics Legend */}
       <div className="absolute bottom-6 left-8 flex gap-6">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-lg bg-emerald-400 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Health: 100%</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
         </div>
       </div>

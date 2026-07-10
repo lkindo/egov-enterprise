@@ -205,7 +205,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  actions={
  <div className="flex gap-4 p-2 items-center">
  <div className="px-6 py-3 bg-emerald-50 border-2 border-emerald-100 rounded-lg flex items-center gap-4 shadow-sm">
- <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-ping" />
+ <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
  <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase">의사결정_허브: 온라인</span>
  </div>
  <Button

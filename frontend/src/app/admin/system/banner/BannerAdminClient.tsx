@@ -393,7 +393,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <span className="text-xs font-bold font-mono tracking-widest text-slate-900 uppercase">{item.popupWdthSz}px x {item.popupVrtcSz}px</span>
  </div>
  <div className="flex items-center gap-2 pl-11">
- <div className="w-1 h-1 rounded-lg bg-slate-300" />
+ <div className="w-1 h-1 rounded-full bg-slate-300" />
  <span className="text-xs font-bold text-muted-foreground/40 ">Coordinates: (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
  </div>
  </div>

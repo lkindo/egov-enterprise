@@ -28,7 +28,7 @@ const NationalDistributionMap = dynamic(() => import('@/app/components/ui/nation
   ssr: false,
   loading: () => (
     <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-lg space-y-4">
-      <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-lg animate-spin" />
+      <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
       <p className="text-xs font-bold tracking-[0.4em] text-slate-600 uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
     </div>
   )

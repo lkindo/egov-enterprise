@@ -155,12 +155,12 @@ export default function SurveyHubClient() {
                       <div className="flex items-center gap-2 mb-2">
                         {survey.status === '활성' ? (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 rounded-lg border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="text-xs font-bold text-emerald-500 tracking-tight">활성</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-lg border border-border/50">
-                            <span className="w-1.5 h-1.5 rounded-lg bg-slate-300" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                             <span className="text-xs font-bold text-slate-400 tracking-tight">{survey.status}</span>
                           </div>
                         )}
@@ -216,7 +216,7 @@ export default function SurveyHubClient() {
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-muted-foreground/40 tracking-tight flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-lg shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                           Temporal Flow Analysis
                         </h4>
                         <span className="text-xs font-bold text-primary tracking-tight">라이브 게이지</span>

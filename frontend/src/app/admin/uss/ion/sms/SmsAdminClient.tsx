@@ -260,7 +260,7 @@ export default function SmsAdminClient({
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Target Terminal Number
                       </FormLabel>
                       <FormControl>
@@ -284,7 +284,7 @@ export default function SmsAdminClient({
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Payload Content
                       </FormLabel>
                       <FormControl>

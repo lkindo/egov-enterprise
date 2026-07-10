@@ -171,7 +171,7 @@ export default function CommunityDetailHubClient({
                           <p className="text-xs text-slate-400 font-bold tracking-tight">Connected</p>
                         </div>
                       </div>
-                      <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     </div>
                   ))}
                </div>

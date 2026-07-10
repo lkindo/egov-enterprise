@@ -76,7 +76,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
           <div className="flex items-center gap-4">
               <span className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
               <span className="text-xs font-bold text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
-                  <div className="w-1 h-1 bg-emerald-500 rounded-lg animate-pulse" /> Live_Sync_Active
+                  <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" /> Live_Sync_Active
               </span>
           </div>
           <div className="text-xs font-bold text-slate-500 tracking-widest uppercase">

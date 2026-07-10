@@ -83,7 +83,7 @@ const SelectScrapDetailClient = () => {
   if (fetching) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-lg animate-spin" />
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -189,7 +189,7 @@ const SelectScrapDetailClient = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-lg animate-spin" /> 처리 중...
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> 처리 중...
                 </>
               ) : (
                 <>

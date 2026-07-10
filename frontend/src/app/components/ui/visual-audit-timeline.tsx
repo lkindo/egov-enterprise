@@ -211,11 +211,11 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-primary/5">
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-emerald-500" />
+ <div className="w-2 h-2 rounded-full bg-emerald-500" />
    <span className="text-xs font-bold text-slate-700 tracking-tight">마스터 저장소 동기화됨</span>
  </div>
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-blue-500 animate-pulse" />
+ <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
    <span className="text-xs font-bold text-slate-700 tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
  </div>
  </div>

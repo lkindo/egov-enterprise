@@ -91,7 +91,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   </div>
   <div className="relative z-10 space-y-4">
   <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-tight animate-pulse">
-  <div className="w-2 h-2 rounded-lg bg-emerald-400" /> Engine Healthy
+  <div className="w-2 h-2 rounded-full bg-emerald-400" /> Engine Healthy
   </div>
   <div className="space-y-1">
   <h4 className="text-2xl font-bold tracking-tighter">99.9% Uptime</h4>
@@ -319,7 +319,7 @@ function WorkflowNode({ type, label, date, active = false }: any) {
  <p className="text-xs font-bold text-slate-400 tracking-tight">{date}</p>
  <h5 className="text-sm font-bold tracking-tight text-slate-900">{label}</h5>
  </div>
- {active && <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />}
+ {active && <div className="w-2 h-2 rounded-full bg-primary animate-ping" />}
  </div>
  );
 }

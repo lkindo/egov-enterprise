@@ -108,7 +108,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 px-2">
  <div className="space-y-1.5 md:space-y-2">
  <div className="flex items-center gap-2 md:gap-3">
- <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-lg bg-primary animate-pulse" />
+ <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary animate-pulse" />
  <span className="text-xs md:text-xs font-bold tracking-tight md:tracking-tight text-primary leading-none">인텔리전스 허브 콘솔</span>
  </div>
  <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tighter leading-none">엔터프라이즈 지식 매트릭스</h2>
@@ -337,7 +337,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <p className="text-xs font-bold text-white/90 tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
  <div className="flex items-center gap-3 opacity-40">
  <span className="text-xs font-bold tracking-tight underline decoration-primary/50 underline-offset-2">{activity.user}</span>
- <div className="w-1 h-1 rounded-lg bg-white animate-pulse" />
+ <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
  <span className="text-xs font-bold tracking-tight tabular-nums">{activity.time}</span>
  </div>
  </div>
@@ -347,7 +347,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </HubSectionCard>
 
  <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 flex flex-col items-center justify-center text-center space-y-6">
- <div className="w-20 h-11 rounded-lg bg-white flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
+ <div className="w-20 h-11 rounded-full bg-white flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
  <Sparkles size={32} />
  </div>
  <div>
@@ -367,7 +367,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 function HubInsightBadge({ label, className }: { label: string, className?: string }) {
  return (
  <div className={cn("px-4 py-1.5 rounded-lg border border-primary/20 bg-primary/5 flex items-center gap-2", className)}>
- <div className="w-1 h-1 rounded-lg bg-primary" />
+ <div className="w-1 h-1 rounded-full bg-primary" />
  <span className="text-xs font-bold tracking-tight">{label}</span>
  </div>
  );
@@ -492,7 +492,7 @@ function HubSectionCard({ title, description, icon: Icon, children, className }:
  </div>
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-2">
- <div className="w-1.5 h-1.5 rounded-lg bg-emerald-500 animate-pulse" />
+ <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
  <span className="text-xs font-bold opacity-20 tracking-tight">라이브 데이터 피드</span>
  </div>
  </div>

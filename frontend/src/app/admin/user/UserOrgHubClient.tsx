@@ -171,7 +171,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                     </div>
                     {isSelected && (
                         <div className="ml-auto">
-                            <div className="w-1.5 h-1.5 rounded-lg bg-white animate-pulse" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                         </div>
                     )}
                 </div>
@@ -833,7 +833,7 @@ export default function UserOrgHubClient({
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-2 h-2 rounded-lg", s.color)} />
+                    <div className={cn("w-2 h-2 rounded-full", s.color)} />
                     <span className="text-sm font-bold tracking-tight text-slate-900">{s.label}</span>
                   </div>
                   {targetStatus === s.code && <div className="w-4 h-4 rounded-lg bg-primary flex items-center justify-center text-white"><ChevronRight size={10} /></div>}

@@ -57,7 +57,7 @@ function CommunityBoardContent() {
  <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
  <div className="space-y-3">
  <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+ <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
  <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Board Intelligence</span>
  </div>
  <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase leading-none transition-colors">

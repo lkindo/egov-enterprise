@@ -131,7 +131,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  {hasChildren ? (
  <ChevronRight className={cn("h-4 w-4 transition-transform text-slate-400 group-hover:text-primary", isExpanded ? 'rotate-90' : '')} />
  ) : (
- <div className="w-1.5 h-1.5 rounded-lg bg-slate-200 group-hover:bg-primary/40 transition-colors" />
+ <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-primary/40 transition-colors" />
  )}
  </div>
 

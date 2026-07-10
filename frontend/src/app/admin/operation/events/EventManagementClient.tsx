@@ -224,7 +224,7 @@ export default function EventManagementClient() {
  <div className="relative z-10 space-y-8">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-emerald-400" />
+ <div className="w-2 h-2 rounded-full bg-emerald-400" />
  <span className="text-xs font-bold tracking-widest text-emerald-400/80 uppercase">Live Operations</span>
  </div>
  <Settings2 size={20} className="text-white/20 group-hover:text-primary transition-colors cursor-pointer" />

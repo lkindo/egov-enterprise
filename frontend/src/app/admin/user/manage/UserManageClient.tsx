@@ -146,7 +146,7 @@ export default function UserManageClient() {
  <div className="mt-10 pt-6 border-t border-white/10 relative z-10">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-emerald-500 animate-pulse" />
+ <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
  <span className="text-xs font-bold tracking-widest opacity-60">REAL-TIME SYNC ACTIVE</span>
  </div>
  <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-white/40 hover:text-white hover:bg-white/5 h-8 px-2">
@@ -170,7 +170,7 @@ export default function UserManageClient() {
  </div>
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-lg">
- <span className="w-1.5 h-1.5 rounded-lg bg-primary" />
+ <span className="w-1.5 h-1.5 rounded-full bg-primary" />
  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">전체 {data?.total || 0}</span>
  </div>
  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
