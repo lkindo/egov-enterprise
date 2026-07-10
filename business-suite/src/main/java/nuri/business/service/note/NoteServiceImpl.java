@@ -47,15 +47,23 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
     }
 
     @Override
-    public NoteDto getNoteDetail(String noteId, String type, String relationId) {
+    public NoteDto getNoteDetail(String noteId, String type, String relationId, String currentUserId) {
         if ("sent".equals(type)) {
-            return noteTrnsmitRepository.findById(relationId)
-                    .map(this::convertToDto)
+            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            // [보안 H1] 발신자 본인만 조회 가능(IDOR 차단)
+            if (currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+            return convertToDto(trnsmit);
         } else {
-            return noteRecptnRepository.findById(relationId)
-                    .map(this::convertToDto)
+            NoteRecptn recptn = noteRecptnRepository.findById(relationId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            // [보안 H1] 수신자 본인만 조회 가능(IDOR 차단)
+            if (currentUserId == null || !currentUserId.equals(recptn.getRcvrId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+            return convertToDto(recptn);
         }
     }
 
@@ -101,11 +109,23 @@ public class NoteServiceImpl extends BaseAbstractService implements NoteService 
 
     @Override
     @Transactional
-    public void deleteNote(String relationId, String type) {
+    public void deleteNote(String relationId, String type, String currentUserId) {
         if ("sent".equals(type)) {
-            noteTrnsmitRepository.deleteById(relationId);
+            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            // [보안 H1] 발신자 본인만 삭제 가능(IDOR 차단)
+            if (currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+            noteTrnsmitRepository.delete(trnsmit);
         } else {
-            noteRecptnRepository.deleteById(relationId);
+            NoteRecptn recptn = noteRecptnRepository.findById(relationId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            // [보안 H1] 수신자 본인만 삭제 가능(IDOR 차단)
+            if (currentUserId == null || !currentUserId.equals(recptn.getRcvrId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+            noteRecptnRepository.delete(recptn);
         }
     }
 

@@ -1,6 +1,7 @@
 package nuri.api.interceptor;
 
 import nuri.business.security.service.CustomUserDetails;
+import nuri.api.support.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
             ModelAndView modelAndView) throws Exception {
         String reqURL = request.getRequestURI();
         String userId = "ANONYMOUS";
-        String userIp = getRemoteAddr(request);
+        String userIp = ClientIpResolver.resolve(request);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -46,19 +47,5 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
         }
 
         log.info("API Audit Log: URL={}, User={}, IP={}", reqURL, userId, userIp);
-    }
-
-    private String getRemoteAddr(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 }

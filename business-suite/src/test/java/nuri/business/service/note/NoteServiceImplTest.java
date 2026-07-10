@@ -102,7 +102,7 @@ class NoteServiceImplTest {
         given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
 
         // when
-        NoteDto result = noteService.getNoteDetail("N1", "sent", relationId);
+        NoteDto result = noteService.getNoteDetail("N1", "sent", relationId, "user1");
 
         // then
         assertThat(result.getNoteDsptchId()).isEqualTo(relationId);
@@ -118,7 +118,7 @@ class NoteServiceImplTest {
         given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId))
+        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -143,7 +143,7 @@ class NoteServiceImplTest {
         given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
 
         // when
-        NoteDto result = noteService.getNoteDetail("N1", "received", relationId);
+        NoteDto result = noteService.getNoteDetail("N1", "received", relationId, "user2");
 
         // then
         assertThat(result.getNoteRecptnId()).isEqualTo(relationId);
@@ -159,10 +159,26 @@ class NoteServiceImplTest {
         given(noteRecptnRepository.findById(relationId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "received", relationId))
+        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "received", relationId, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("[보안 H1] 받은 쪽지 상세 조회 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
+    void getNoteDetail_received_notOwner_accessDenied() {
+        // given: 수신자는 user2인데 요청자는 attacker
+        String relationId = "R1";
+        Note note = Note.builder().noteId("N1").noteTtl("T").noteCn("C").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(relationId).note(note).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
+
+        // when & then
+        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "received", relationId, "attacker"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ACCESS_DENIED);
     }
 
     @Test
@@ -228,30 +244,50 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("보낸 쪽지 삭제")
+    @DisplayName("보낸 쪽지 삭제 - 발신자 본인")
     void deleteNote_sent() {
         // given
         String relationId = "T1";
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").build();
+        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
 
         // when
-        noteService.deleteNote(relationId, "sent");
+        noteService.deleteNote(relationId, "sent", "user1");
 
         // then
-        verify(noteTrnsmitRepository, times(1)).deleteById(relationId);
-        verify(noteRecptnRepository, never()).deleteById(anyString());
+        verify(noteTrnsmitRepository, times(1)).delete(trnsmit);
+        verify(noteRecptnRepository, never()).delete(any());
     }
 
     @Test
-    @DisplayName("받은 쪽지 삭제")
+    @DisplayName("받은 쪽지 삭제 - 수신자 본인")
     void deleteNote_received() {
         // given
         String relationId = "R1";
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(relationId).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
 
         // when
-        noteService.deleteNote(relationId, "received");
+        noteService.deleteNote(relationId, "received", "user2");
 
         // then
-        verify(noteRecptnRepository, times(1)).deleteById(relationId);
-        verify(noteTrnsmitRepository, never()).deleteById(anyString());
+        verify(noteRecptnRepository, times(1)).delete(recptn);
+        verify(noteTrnsmitRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("[보안 H1] 쪽지 삭제 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
+    void deleteNote_notOwner_accessDenied() {
+        // given: 발신자는 user1인데 요청자는 attacker
+        String relationId = "T1";
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").build();
+        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+
+        // when & then
+        assertThatThrownBy(() -> noteService.deleteNote(relationId, "sent", "attacker"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ACCESS_DENIED);
+        verify(noteTrnsmitRepository, never()).delete(any());
     }
 }

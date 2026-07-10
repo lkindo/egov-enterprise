@@ -9,6 +9,8 @@ import nuri.business.security.jwt.JwtTokenProvider;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
+import nuri.api.controller.foundation.auth.dto.CurrentUserResponse;
+import nuri.api.support.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -32,7 +32,7 @@ public class AuthApiController {
     public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request,
             HttpServletResponse response) {
-        String clientIp = getClientIp(request);
+        String clientIp = ClientIpResolver.resolve(request);
         log.info(">>> [Login] Attempting login for userId: {} from IP: {}", loginRequest.getUserId(), clientIp);
         TokenResponse tokenResponse = authService.login(loginRequest, clientIp);
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
@@ -60,39 +60,25 @@ public class AuthApiController {
     private final nuri.business.service.user.UserService userService;
 
     @GetMapping("/me")
-    public ApiResponse<Map<String, Object>> getCurrentUser() {
+    public ApiResponse<CurrentUserResponse> getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
             String userId = auth.getName();
             if (auth.getPrincipal() instanceof CustomUserDetails) {
                 userId = ((CustomUserDetails) auth.getPrincipal()).getUserId();
             }
-            
-            nuri.business.service.user.dto.UserDto userDto = userService.getUserById(userId);
-            
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("id", userDto.userId());
-            userData.put("name", userDto.userNm());
-            userData.put("role", userDto.role());
-            userData.put("userSe", userDto.userSe());
-            userData.put("email", userDto.emlAddr());
 
-            return ApiResponse.success(userData);
+            nuri.business.service.user.dto.UserDto userDto = userService.getUserById(userId);
+
+            // [헌법 제3조] ad-hoc Map 대신 응답 전용 DTO(record)로 계약을 명시한다. JSON 필드명은 기존과 동일.
+            CurrentUserResponse body = new CurrentUserResponse(
+                    userDto.userId(),
+                    userDto.userNm(),
+                    userDto.role(),
+                    userDto.userSe(),
+                    userDto.emlAddr());
+            return ApiResponse.success(body);
         }
         throw new BusinessException(ErrorCode.INVALID_TOKEN);
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 }

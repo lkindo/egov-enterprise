@@ -82,4 +82,24 @@ class SecurityAuthorityAccessControlTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("보안 검증 - [Phase1 방어심층] 일반 USER가 비-admin alias(/api/v1/surveys)로 관리자 설문 등록 시도 시 403 (URL alias 우회 차단)")
+    void surveyAdminAlias_shouldBeForbidden_forNormalUser() throws Exception {
+        // Given: 일반 USER. /api/v1/surveys 는 URL admin 규칙(/api/v1/admin/**) 밖이라 URL 인가는 통과하지만,
+        //        SurveyApiController의 클래스 레벨 @PreAuthorize(ADMIN/SYSTEM)로 차단되어야 한다(방어심층).
+        CustomUserDetails normalUser = CustomUserDetails.builder()
+                .userId("normal_user")
+                .esntlId("USR_001")
+                .userNm("일반사용자")
+                .roleName("USER")
+                .build();
+
+        // When & Then: alias 경로(GET, @Valid 검증 개입 없음)로 관리자 설문 목록 접근 → @PreAuthorize에 의해 403 Forbidden.
+        // (POST는 @Valid(400)가 method-security(403)보다 먼저 평가되므로 순수 인가 검증에는 GET을 사용한다.)
+        mockMvc.perform(get("/api/v1/surveys")
+                        .with(user(normalUser))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
 }

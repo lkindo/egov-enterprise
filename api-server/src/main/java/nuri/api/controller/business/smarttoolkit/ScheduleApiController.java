@@ -79,10 +79,8 @@ public class ScheduleApiController {
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
+        // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
         String userId = getCurrentUserId();
-        if ("anonymous".equals(userId)) {
-            return ResponseEntity.status(401).build();
-        }
         String newId = egovScheduleService.createSchedule(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(newId));
     }

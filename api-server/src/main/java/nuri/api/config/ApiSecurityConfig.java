@@ -21,8 +21,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
@@ -42,11 +40,6 @@ public class ApiSecurityConfig {
 
         public ApiSecurityConfig(JwtTokenProvider jwtTokenProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
-        }
-
-        @Bean
-        public SecurityContextRepository securityContextRepository() {
-                return new HttpSessionSecurityContextRepository();
         }
 
         @Bean
@@ -109,10 +102,25 @@ public class ApiSecurityConfig {
                                                         log.warn(">>> Access denied to {}: {}", request.getRequestURI(), accessDeniedException.getMessage());
                                                         response.setContentType("application/json;charset=UTF-8");
                                                         response.setStatus(HttpStatus.FORBIDDEN.value());
-                                                        response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied (CSRF verification failed or Insufficient privileges)\"}");
+                                                        // 이 체인은 CSRF 비활성(STATELESS+JWT)이라 403은 권한 부족만을 의미 — 오해 소지의 CSRF 문구 제거.
+                                                        response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied - Insufficient privileges\"}");
                                                 }))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // [보안 H3] 활성 체인에 보안 응답 헤더 부여(HSTS/CSP/Referrer/frameOptions 등).
+                                // 이 헤더를 정의한 business-suite SecurityConfig는 @ConditionalOnMissingClass(ApiSecurityConfig)라
+                                // api-server 구동 시 항상 비활성이므로, 여기서 동등 세트를 직접 적용한다.
+                                .headers(headers -> headers
+                                                .frameOptions(frame -> frame.sameOrigin())
+                                                .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
+                                                .xssProtection(xss -> xss.headerValue(
+                                                                org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .maxAgeInSeconds(31536000L)
+                                                                .includeSubDomains(true)
+                                                                .preload(true))
+                                                .referrerPolicy(referrer -> referrer.policy(
+                                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authenticationProvider(egovAuthenticationProvider)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                                                 UsernamePasswordAuthenticationFilter.class);
@@ -121,7 +129,8 @@ public class ApiSecurityConfig {
 
         @Bean
         @Order(2)
-        public SecurityFilterChain legacySecurityFilterChain(HttpSecurity http) throws Exception {
+        public SecurityFilterChain legacySecurityFilterChain(HttpSecurity http,
+                        org.springframework.core.env.Environment environment) throws Exception {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
@@ -132,8 +141,8 @@ public class ApiSecurityConfig {
                                 .httpBasic(AbstractHttpConfigurer::disable)
                                 .formLogin(AbstractHttpConfigurer::disable)
                                 .logout(AbstractHttpConfigurer::disable)
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(
+                                .authorizeHttpRequests(auth -> {
+                                                auth.requestMatchers(
                                                                 AntPathRequestMatcher.antMatcher("/css/**"),
                                                                 AntPathRequestMatcher.antMatcher("/js/**"),
                                                                 AntPathRequestMatcher.antMatcher("/images/**"),
@@ -147,11 +156,22 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/"),
                                                                 AntPathRequestMatcher.antMatcher("/uss/olp/qri/**"),
                                                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
+                                                                AntPathRequestMatcher.antMatcher("/error"))
+                                                                .permitAll();
+                                                // [보안 H4] Swagger/OpenAPI 문서는 운영(prod)에서 인증(ADMIN/SYSTEM) 뒤로 숨긴다
+                                                // (미인증 전체 API 스펙 노출 = 공격 표면 지도 제공 방지). dev/local 등은 편의상 공개 유지.
+                                                AntPathRequestMatcher[] docs = {
                                                                 AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                                                                AntPathRequestMatcher.antMatcher("/error"))
-                                                .permitAll()
-                                                .anyRequest().authenticated())
+                                                                AntPathRequestMatcher.antMatcher("/swagger-ui.html")
+                                                };
+                                                if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
+                                                        auth.requestMatchers(docs).hasAnyRole("ADMIN", "SYSTEM");
+                                                } else {
+                                                        auth.requestMatchers(docs).permitAll();
+                                                }
+                                                auth.anyRequest().authenticated();
+                                })
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

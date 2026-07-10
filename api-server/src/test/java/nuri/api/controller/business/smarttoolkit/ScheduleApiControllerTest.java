@@ -134,20 +134,9 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
-    @Test
-    @DisplayName("일정 등록 실패 - 인증되지 않은 사용자")
-    void createSchedule_Anonymous() throws Exception {
-        // Given
-        setMockUser(null); // anonymous 세팅
-        ScheduleDto dto = ScheduleDto.builder().schdlNm("New Schedule").build();
-
-        // When & Then
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/schedules")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto))
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-    }
+    // [H2] 제거됨: createSchedule_Anonymous — 컨트롤러의 수동 빈-401(엔벨로프 우회)을 검증하던 테스트.
+    // 미인증 차단은 이제 Spring Security(anyRequest().authenticated())가 담당하며, 이는 standaloneSetup이
+    // 아니라 시큐리티를 로딩하는 슬라이스 테스트에서 검증해야 한다(Phase 3 RBAC 네거티브 테스트 참조).
 
     @Test
     @DisplayName("일정 수정 성공")

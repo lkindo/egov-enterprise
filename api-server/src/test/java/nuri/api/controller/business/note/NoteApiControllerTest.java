@@ -58,7 +58,7 @@ class NoteApiControllerTest extends ControllerTestSupport {
     @DisplayName("쪽지 상세 조회 테스트")
     void getNoteTest() throws Exception {
         NoteDto dto = NoteDto.builder().noteId("N1").build();
-        given(noteService.getNoteDetail("N1", "recv", "R1")).willReturn(dto);
+        given(noteService.getNoteDetail(eq("N1"), eq("recv"), eq("R1"), anyString())).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/notes/N1")
                         .param("type", "recv")

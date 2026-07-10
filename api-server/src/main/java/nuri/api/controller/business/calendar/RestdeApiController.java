@@ -5,14 +5,11 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.business.core.response.PageResponse;
 import nuri.business.service.calendar.RestdeService;
 import nuri.business.service.calendar.dto.RestdeDto;
-import nuri.business.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -49,13 +46,13 @@ public class RestdeApiController {
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
+    // [H2] 수동 401(ResponseEntity.status(401).build())는 ApiResponse 엔벨로프를 우회(제6조 위반)하고,
+    // 이 경로들은 Spring Security의 anyRequest().authenticated()로 이미 보호되어 익명은 컨트롤러에 도달하지 못하므로
+    // 사실상 dead code였다. 인증은 Security + GlobalExceptionHandler에 위임하고 수동 분기를 제거했다.
+
     @Operation(summary = "휴일 등록", description = "새로운 휴일 정보를 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Integer>> createRestde(@Valid @RequestBody RestdeDto dto) {
-        String userId = getCurrentUserId();
-        if ("anonymous".equals(userId)) {
-            return ResponseEntity.status(401).build();
-        }
         Integer newId = restdeService.createRestde(dto);
         return ResponseEntity.ok(ApiResponse.success(newId));
     }
@@ -63,10 +60,6 @@ public class RestdeApiController {
     @Operation(summary = "휴일 수정", description = "기존 휴일 정보를 수정합니다.")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateRestde(@PathVariable Integer id, @Valid @RequestBody RestdeDto dto) {
-        String userId = getCurrentUserId();
-        if ("anonymous".equals(userId)) {
-            return ResponseEntity.status(401).build();
-        }
         restdeService.updateRestde(id, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -74,19 +67,7 @@ public class RestdeApiController {
     @Operation(summary = "휴일 삭제", description = "등록된 휴일 정보를 삭제합니다.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteRestde(@PathVariable Integer id) {
-        String userId = getCurrentUserId();
-        if ("anonymous".equals(userId)) {
-            return ResponseEntity.status(401).build();
-        }
         restdeService.deleteRestde(id);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    private String getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
-        }
-        return "anonymous";
     }
 }

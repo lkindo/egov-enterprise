@@ -3,8 +3,6 @@ package nuri.api.config;
 import org.springframework.context.annotation.Bean;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.context.annotation.Profile;
 import java.util.Arrays;
 import java.util.List;
@@ -29,25 +27,11 @@ public class EgovConfig {
         return Arrays.asList("main/mainPage");
     }
 
-    // [context-email.xml] Email Configuration
-    @Bean
-    public JavaMailSenderImpl mntrngMailSender() {
-        JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost("smtp.test.com");
-        sender.setPort(587);
-        sender.setUsername("test");
-        sender.setPassword("test");
-        return sender;
-    }
-
-    @Bean
-    public SimpleMailMessage mntrngMessage() {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("no-reply@test.com");
-        message.setSubject("Monitoring Alert");
-        message.setText("System Alert");
-        return message;
-    }
+    // [정리] 하드코딩 SMTP 자격증명(smtp.test.com/test/test)을 담은 레거시 모니터링 메일 빈
+    // (mntrngMailSender/mntrngMessage)을 제거했다. 참조처가 없어 데드 코드였고, 무조건 등록되던 이
+    // JavaMailSender 빈이 Spring Boot mail auto-config(spring.mail.*)를 가려 실제 메일 발송 구현
+    // (business-suite RealEmailSender, @ConditionalOnProperty("spring.mail.host"))을 오염시키는
+    // 잠재 결함이 있었다. 메일 발송이 필요하면 spring.mail.* 프로퍼티로 표준 auto-config에 위임한다.
 
 }
 
