@@ -3,7 +3,11 @@ package nuri.foundation.constants;
 /**
  * 프로젝트 전체 상수 정의 클래스
  */
-public class Constants {
+public final class Constants {
+
+    private Constants() {
+        // 상수 홀더 — 인스턴스화 금지
+    }
 
     /**
      * 캐시 설정 상수

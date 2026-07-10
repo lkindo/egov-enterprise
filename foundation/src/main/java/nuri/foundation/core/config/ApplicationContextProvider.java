@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 public class ApplicationContextProvider implements ApplicationContextAware {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationContextProvider.class);
-    private static ApplicationContext applicationContext;
+    // [동시성] 컨텍스트 리프레시 스레드에서 write, 임의 스레드에서 read → 가시성 보장을 위해 volatile.
+    private static volatile ApplicationContext applicationContext;
 
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {

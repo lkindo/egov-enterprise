@@ -5,17 +5,33 @@ import java.util.UUID;
 
 /**
  * 고유 ID 생성을 위한 통합 유틸리티 클래스
+ *
+ * <p>⚠ [주의] generateId는 랜덤 UUID(128비트)를 {@code length} hex 자리로 <b>절단</b>한다.
+ * length가 작을수록 엔트로피가 급감하며(예: 10자리 = 40비트 → 약 130만건 누적 시 birthday 충돌),
+ * 여기서 만든 값은 PK(esntlId)로 저장되지만 충돌 시 재시도 로직이 없다.
+ * 대량/영속 PK에는 시퀀스 기반 무충돌 생성기({@code EgovIdGnrConfig}의 EgovTableIdGnrService) 사용을 권장한다.
  */
-public class IdGenerationUtil {
+public final class IdGenerationUtil {
+
+    private IdGenerationUtil() {
+        // 정적 유틸리티 — 인스턴스화 금지
+    }
 
     /**
      * 지정된 접두사와 UUID를 조합하여 고유 ID를 생성합니다.
-     * 
-     * @param prefix ID 접두사
-     * @param length UUID에서 추출할 길이
+     *
+     * @param prefix ID 접두사 (null 불가)
+     * @param length UUID hex에서 추출할 길이 (1..32)
      * @return 생성된 고유 ID
+     * @throws IllegalArgumentException prefix가 null이거나 length가 1..32 범위를 벗어난 경우
      */
     public static String generateId(String prefix, int length) {
+        if (prefix == null) {
+            throw new IllegalArgumentException("prefix must not be null");
+        }
+        if (length <= 0 || length > 32) {
+            throw new IllegalArgumentException("length must be in range 1..32 but was " + length);
+        }
         return prefix + UUID.randomUUID().toString().replace("-", "").substring(0, length).toUpperCase();
     }
 

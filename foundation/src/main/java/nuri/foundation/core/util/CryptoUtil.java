@@ -16,9 +16,18 @@ public class CryptoUtil implements ApplicationContextAware {
     private static EgovCryptoService cryptoService;
     private static String algorithmKey;
 
+    /** eGovFrame 공개 샘플키 등 약한 기본값 — 운영에서 사용 시 경고 대상(재암호화 동반 로테이션 필요). */
+    private static final java.util.Set<String> WEAK_DEFAULT_KEYS = java.util.Set.of("egovframe", "egoventerprise0123");
+
     @org.springframework.beans.factory.annotation.Value("${Globals.File.algorithmKey:egovframe}")
     public void setAlgorithmKey(String key) {
-        log.info("### CryptoUtil: algorithmKey injected: {}", key);
+        // [보안 H1] 마스터 키 원문을 로그로 남기지 않는다(로드 여부만 기록).
+        log.info("### CryptoUtil: algorithmKey injected (loaded={})", key != null && !key.isBlank());
+        // [보안 C1] 소스에 커밋된 약한 기본키를 운영에서 그대로 쓰면 PII 복호화 위험 → 큰 경고.
+        if (key != null && WEAK_DEFAULT_KEYS.contains(key)) {
+            log.warn("### [SECURITY] 약한 기본 암호화 키가 사용 중입니다. 외부 시크릿(ALGORITHM_KEY 등)으로 "
+                    + "고엔트로피 키를 주입하고, 키 로테이션 시 기존 암호문 재암호화 마이그레이션을 수행하십시오.");
+        }
         CryptoUtil.algorithmKey = key;
     }
 
@@ -72,6 +81,10 @@ public class CryptoUtil implements ApplicationContextAware {
         try {
             if (encryptedData == null)
                 return null;
+            // [정합성] encrypt()와 동일하게 초기화 상태를 명시적으로 검증(늦은 정적 주입으로 인한 불명확 NPE 방지).
+            if (cryptoService == null || algorithmKey == null) {
+                throw new RuntimeException("CryptoUtil not initialized properly");
+            }
             byte[] decoded = Base64.getDecoder().decode(encryptedData);
             byte[] decrypted = cryptoService.decrypt(decoded, algorithmKey);
             return new String(decrypted, StandardCharsets.UTF_8);

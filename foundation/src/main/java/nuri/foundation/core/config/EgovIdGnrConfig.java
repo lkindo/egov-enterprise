@@ -1,6 +1,7 @@
 package nuri.foundation.core.config;
 
 import javax.sql.DataSource;
+import nuri.foundation.constants.Constants;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl;
 import org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl;
@@ -97,7 +98,7 @@ public class EgovIdGnrConfig {
     // ========== 사용자 확인 ID 생성 (uss.umt) ==========
     @Bean(name = "egovUsrCnfrmIdGnrService")
     public EgovIdGnrService egovUsrCnfrmIdGnrService() {
-        return createIdGnrService("USRCNFRM_ID", "USRCNFRM_", 20);
+        return createIdGnrService("USRCNFRM_ID", Constants.User.USRCNFRM_PREFIX, 20);
     }
 
     // ========== ID 생성 헬퍼 메소드 ==========

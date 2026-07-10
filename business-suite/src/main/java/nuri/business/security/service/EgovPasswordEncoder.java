@@ -40,6 +40,11 @@ public class EgovPasswordEncoder implements PasswordEncoder {
         if (encodedPassword == null || salt == null)
             return false;
         String encrypted = encode(rawPassword, salt);
-        return encodedPassword.equals(encrypted);
+        if (encrypted == null)
+            return false;
+        // [보안] 타이밍 사이드채널 방지를 위해 String.equals 대신 상수시간 비교 사용.
+        return java.security.MessageDigest.isEqual(
+                encodedPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                encrypted.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 }

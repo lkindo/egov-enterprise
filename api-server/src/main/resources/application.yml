@@ -138,7 +138,10 @@ management:
 
 Globals:
   File:
-    algorithmKey: egovframe
+    # [보안 C1] 마스터 암호화 키(주민번호 등 PII 암복호화에 사용). 운영은 반드시 외부 시크릿(ALGORITHM_KEY 환경변수/Vault/KMS)으로
+    # 고엔트로피 키를 주입한다. 아래 기본값 'egovframe'은 로컬/개발 편의용 약한 값이며 CryptoUtil이 사용 시 경고한다.
+    # ⚠ 키를 실제로 로테이션하면 기존 암호문(RRN 등) 재암호화 마이그레이션이 반드시 선행되어야 한다.
+    algorithmKey: ${ALGORITHM_KEY:egovframe}
 
 # CORS 허용 오리진 (개발/기본 환경)
 # 운영 환경은 application-prod.yml에서 재정의

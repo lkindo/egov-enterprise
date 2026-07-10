@@ -40,6 +40,12 @@ public class EgovFileScrty {
 	// 버퍼사이즈
 	static final int BUFFER_SIZE = 1024;
 
+	/**
+	 * ⚠ [보안] 이름과 달리 실제 암호화가 아니라 <b>Base64 인코딩</b>만 수행한다(기밀성 없음).
+	 * 민감 파일의 실제 암호화가 필요하면 인증형 암호(AES-GCM 등)를 사용할 것.
+	 * @deprecated 이름 오해 방지 — 인코딩 용도로만 사용하고, 암호화가 필요하면 별도 구현 사용.
+	 */
+	@Deprecated
 	public static boolean encryptFile(String source, String target) throws Exception {
 
 
@@ -89,6 +95,11 @@ public class EgovFileScrty {
 		return result;
 	}
 
+	/**
+	 * ⚠ [보안] 이름과 달리 실제 복호화가 아니라 <b>Base64 디코딩</b>만 수행한다(기밀성 없음).
+	 * @deprecated encryptFile의 짝. 실제 파일 암호화가 필요하면 인증형 암호를 사용할 것.
+	 */
+	@Deprecated
 	public static boolean decryptFile(String source, String target) throws Exception {
 
 		// 복호화 결과
