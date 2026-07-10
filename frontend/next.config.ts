@@ -45,6 +45,26 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    // 레거시 camelCase 게시판 라우트 → kebab-case 정규 경로 (기존 북마크/딥링크 보존)
+    return [
+      {
+        source: '/admin/community/boards/selectBoardList',
+        destination: '/admin/community/boards/select-board-list',
+        permanent: true,
+      },
+      {
+        source: '/admin/community/boards/insertBoardArticle',
+        destination: '/admin/community/boards/insert-board-article',
+        permanent: true,
+      },
+      {
+        source: '/admin/community/boards/selectBoardArticle/:id*',
+        destination: '/admin/community/boards/select-board-article/:id*',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

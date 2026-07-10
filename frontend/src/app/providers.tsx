@@ -10,7 +10,7 @@ import { ToastProvider } from '@/app/components/ui/toast';
 import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 import { GlobalShortcutProvider } from '@/app/components/ui/global-shortcut-provider';
 import dynamic from 'next/dynamic';
-import { ApiErrorNotifier } from './components/ui/api-error-notifier';
+// ApiErrorNotifier removed due to duplicate toast listener in toast.tsx
 import { StandardErrorBoundary } from './components/ui/standard-error-boundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { MotionConfig } from 'framer-motion';
@@ -83,7 +83,6 @@ export default function Providers({
                   <WebSocketProvider>
                     <TooltipProvider delayDuration={0}>
                       <StandardErrorBoundary>
-                        <ApiErrorNotifier />
                         {children}
                       </StandardErrorBoundary>
                       <GlobalCommandCenter />

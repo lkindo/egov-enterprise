@@ -366,7 +366,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </Button>
  </Link>
  )}
- <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
+ <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
  <Button size="lg" className="h-14 px-10 gap-3 bg-primary text-white hover:scale-105 font-black shadow-[0_20px_40px_-10px_rgba(var(--primary-rgb),0.3)] transition-all rounded-2xl active:scale-95 group" aria-label="글쓰기">
  <div className="flex items-center gap-3">
  <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" /> 글쓰기

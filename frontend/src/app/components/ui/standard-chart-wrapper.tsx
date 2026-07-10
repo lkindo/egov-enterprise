@@ -26,7 +26,7 @@ export function StandardChartWrapper({
     return (
         <div className={cn("p-6 border rounded-lg bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs font-bold text-slate-700 tracking-tight">{title}</h3>
+                <h3 className="text-xs font-bold text-card-foreground tracking-tight">{title}</h3>
             </div>
 
             <div style={{ width: '100%', height }}>
@@ -44,21 +44,21 @@ export function StandardChartWrapper({
                                         <stop offset="100%" stopColor="#0055FB" stopOpacity={0.6} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                                 <XAxis
                                     dataKey="name"
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#475569' }}
+                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#475569' }}
+                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                 />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(0, 85, 251, 0.05)' }}
@@ -82,21 +82,21 @@ export function StandardChartWrapper({
                                         <stop offset="100%" stopColor="#0055FB" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                                 <XAxis
                                     dataKey="name"
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#475569' }}
+                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#475569' }}
+                                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 {(dataKeys || []).map((key, idx) => (
@@ -131,14 +131,14 @@ export function StandardChartWrapper({
                                     verticalAlign="bottom"
                                     align="center"
                                     iconType="circle"
-                                    formatter={(value) => <span className="text-xs font-bold text-slate-600 ml-1">{value}</span>}
+                                    formatter={(value) => <span className="text-xs font-bold text-muted-foreground ml-1">{value}</span>}
                                 />
                             </PieChart>
                         ) : type === 'line' ? (
                             <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
-                                <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                                <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {(dataKeys || []).map((key, idx) => (
                                     <Line

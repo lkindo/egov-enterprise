@@ -155,7 +155,7 @@ export function Header({
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
-            aria-label="알림"
+            aria-label={unreadCount > 0 ? `알림, 읽지 않음 ${unreadCount}건` : "알림"}
             className={cn(
               "relative text-muted-foreground transition-all group",
               unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
@@ -163,7 +163,7 @@ export function Header({
           >
             <Bell size={20} className={cn(unreadCount > 0 && "animate-bounce-subtle")} />
             {unreadCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
+              <Badge aria-hidden="true" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </Badge>
             )}

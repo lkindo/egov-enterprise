@@ -41,7 +41,20 @@ interface UserManageFormProps {
 }
 
 export function UserManageForm({ initialData, mode, departments, onSubmit, onCancel }: UserManageFormProps) {
-  const form = useAppForm(userSchema, {
+  const schema = React.useMemo(() => {
+    return UserDtoSchema.partial().extend({
+      userId: z.string().min(1),
+      userNm: z.string().min(1),
+      emlAddr: z.string().optional().or(z.literal('')),
+      mblTelno: z.string().optional().or(z.literal('')),
+      ognzId: z.string().optional().or(z.literal('')),
+      pswd: mode === 'create'
+        ? z.string().min(8, { message: '비밀번호는 최소 8자 이상이어야 합니다.' })
+        : z.string().optional().or(z.literal('')),
+    });
+  }, [mode]);
+
+  const form = useAppForm(schema, {
     defaultValues: {
       userId: initialData?.userId || '',
       userNm: initialData?.userNm || '',

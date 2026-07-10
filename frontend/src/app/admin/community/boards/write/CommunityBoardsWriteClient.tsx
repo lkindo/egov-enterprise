@@ -61,7 +61,7 @@ export default function CommunityBoardsWriteClient() {
  // 캐시 무효화 추가
  queryClient.invalidateQueries({ queryKey: ['boardList'] });
  toast('새 게시물이 성공적으로 생성되었습니다.', 'success');
- router.push(`/admin/community/boards/selectBoardList?bbsId=${data.bbsId}`);
+ router.push(`/admin/community/boards/select-board-list?bbsId=${data.bbsId}`);
  } catch (error) {
  console.error('>>> API Submission ERROR:', error);
  toast('게시물 저장 중 오류가 발생했습니다.', 'error');

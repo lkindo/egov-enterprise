@@ -75,7 +75,7 @@ test.describe('Tier 21: Advanced Resilience', () => {
 
     test('Data Integrity: Boundary Input (Huge Payload)', async ({ page }) => {
         // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.
-        await page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
+        await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
         const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR
         const hugeContent = 'Content '.repeat(500); // ~4000 characters

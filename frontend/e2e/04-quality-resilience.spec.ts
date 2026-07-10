@@ -62,7 +62,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
         });
 
         test('Resilience: Auto-save Draft Restoration', async ({ page }) => {
-            await page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
+            await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
             
             // Set up dialog listener BEFORE the action that triggers it (reload/refresh)
             page.on('dialog', async dialog => {

@@ -93,7 +93,7 @@ const BBSDetailClient = () => {
         customItems={[
           { name: pathname?.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
           { name: '게시물 상세' },
-          { name: pathname?.includes('insertBoardArticle') ? '신규 작성' : '수정' }
+          { name: pathname?.includes('insert-board-article') ? '신규 작성' : '수정' }
         ]}
       />
 
@@ -126,7 +126,7 @@ const BBSDetailClient = () => {
                   "text-primary"
                 )} />
                 <span className="text-xs font-bold tracking-[0.3em] text-white">
-                  {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
+                  {pathname?.includes('insert-board-article') ? 'NEW POST : ' : 'EDIT : '} 
                   {tmpltId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
                    tmpltId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
                    tmpltId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
@@ -136,7 +136,7 @@ const BBSDetailClient = () => {
                 </span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-bold tracking-tighter leading-tight ">
-                {pathname?.includes('insertBoardArticle') ? '새로운 통찰을' : '내용을 수정하여'} <br />
+                {pathname?.includes('insert-board-article') ? '새로운 통찰을' : '내용을 수정하여'} <br />
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
               <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">

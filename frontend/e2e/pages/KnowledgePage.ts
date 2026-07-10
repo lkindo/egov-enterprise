@@ -15,7 +15,7 @@ export class KnowledgePage {
         // Find the FAQ board (BBSMSTR_AAAAAAAAAAAA) if there are multiple, 
         // but assuming we are on the master list, we might need to click it.
         // For now, let's assume we can navigate directly to the FAQ insert page if we know the ID
-        await this.page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
+        await this.page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
     }
 
     async createFAQ(question: string, answer: string) {

@@ -81,7 +81,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 page.on('response', responseHandler);
 
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
-                await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
+                await page.goto(`/admin/community/boards/insert-board-article?bbsId=${template.id}`);
                 
                 // Anti-flaky: RichTextEditor(dynamic import) 마운트 완료를 먼저 대기
                 // → 마운트 후 react-hook-form이 defaultValues를 inject하고 나면
@@ -102,7 +102,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 console.log('>>> Waiting for navigation and toast...');
                 // Wait for either navigation or a success toast
                 await Promise.race([
-                    page.waitForURL((url) => !url.href.includes('insertBoardArticle'), { timeout: 60000, waitUntil: 'domcontentloaded' }),
+                    page.waitForURL((url) => !url.href.includes('insert-board-article'), { timeout: 60000, waitUntil: 'domcontentloaded' }),
                     page.waitForSelector('text=/성공|저장|완료/', { timeout: 30000 })
                 ]);
                 
@@ -116,8 +116,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
 
                 await test.step('User: Navigate to Created Article', async () => {
                     // Force go to list if still on same page or ID not found
-                    if (!createdpstId || page.url().includes('insertBoardArticle')) {
-                        await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                    if (!createdpstId || page.url().includes('insert-board-article')) {
+                        await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
                     }
                     
                     // 2. Anti-flaky: 스마트 재시도 로직 (데이터가 나타날 때까지 주기적으로 새로고침 및 확인)
@@ -125,7 +125,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                         if (createdpstId) {
                             await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
                         } else {
-                            await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                            await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
                             const targetLink = page.locator('a[href*="pstId="]', { hasText: articleTitle }).first();
                             await targetLink.waitFor({ state: 'visible', timeout: 5000 });
                             await targetLink.click();
@@ -162,7 +162,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 // Wait for save action completion (navigation or toast success)
                 await Promise.race([
-                    page.waitForURL((url) => !url.href.includes('updateBoardArticle') && !url.href.includes('insertBoardArticle'), { timeout: 30000, waitUntil: 'domcontentloaded' }),
+                    page.waitForURL((url) => !url.href.includes('updateBoardArticle') && !url.href.includes('insert-board-article'), { timeout: 30000, waitUntil: 'domcontentloaded' }),
                     page.waitForSelector('text=/성공|저장|완료/', { timeout: 15000 })
                 ]).catch(() => {
                     console.log('>>> Warning: Save action completion wait timed out, continuing...');
@@ -172,7 +172,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await test.step('User: Verify Updated Article', async () => {
                     // 2. Anti-flaky: 스마트 재시도 로직 (revalidatePath 반영 지연 방어)
                     await expect(async () => {
-                        await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                        await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
                         const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
                         await expect(updatedArticle).toBeVisible({ timeout: 5000 });
                     }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
@@ -188,7 +188,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
-                    await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                    await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
                     const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
                     await expect(updatedArticle).toBeHidden({ timeout: 5000 });
                 }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });

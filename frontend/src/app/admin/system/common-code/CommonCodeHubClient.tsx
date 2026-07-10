@@ -43,7 +43,7 @@ export default function CommonCodeHubClient({
         breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]} 
       />
 
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <HubHeader 
           title="코드" 
           highlight="통합 허브" 

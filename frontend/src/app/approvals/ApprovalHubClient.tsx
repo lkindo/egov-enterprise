@@ -199,7 +199,7 @@ export default function ApprovalHubClient() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8 animate-in fade-in duration-1000">
+    <div className="min-h-screen bg-background p-4 lg:p-8 animate-in fade-in duration-1000">
       <div className="max-w-[1600px] mx-auto space-y-8">
         
         {/* --- Premium Hub Header --- */}

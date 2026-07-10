@@ -121,7 +121,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
         clearDraft();
         toast(result.message || '저장되었습니다.', 'success');
-        router.push(result.redirect || `/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
+        router.push(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
       } else {
         toast(result.message || '저장 중 오류가 발생했습니다.', 'error');
       }
@@ -168,15 +168,15 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             animate={{ x: 0, opacity: 1 }}
             className="flex items-center gap-4"
           >
-            <span className="text-[10px] font-black tracking-[0.5em] text-primary uppercase leading-none px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 shadow-sm">Enterprise Intelligence</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-primary leading-none px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 shadow-sm">커뮤니티 게시판</span>
           </motion.div>
           <motion.h1 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none"
+            className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none"
           >
-            {pstId ? 'Update Knowledge Asset' : 'New Knowledge Asset'}
+            {pstId ? '게시글 수정' : '새 게시글 작성'}
           </motion.h1>
         </div>
       </div>
@@ -198,7 +198,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
                   <Zap size={24} />
                 </div>
-                <FormLabel className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase">Dataset Core Subject</FormLabel>
+                <FormLabel className="text-[10px] font-black tracking-[0.1em] text-muted-foreground">제목</FormLabel>
               </div>
               <FormField
                 control={form.control}
@@ -235,11 +235,11 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
                   <Package size={20} />
                 </div>
-                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.4em]">Knowledge Node Payload</h3>
+                <h3 className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</h3>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Real-time Sync Active</span>
+                <span className="text-[10px] font-black text-muted-foreground tracking-tight">작성 중</span>
               </div>
             </div>
             <FormField
@@ -252,7 +252,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="DESCRIBE THE CORE LOGIC AND DATASETS..."
+                        placeholder="내용을 입력하세요..."
                       />
                     </div>
                   </FormControl>
@@ -271,14 +271,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           >
             <div className="flex items-center gap-10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-2">Dataset Type</span>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">게시판 유형</span>
                 <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
               </div>
               <div className="w-[2px] h-10 bg-slate-100" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-2">Security Clearance</span>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">보안 등급</span>
                 <span className="text-sm font-black text-emerald-500 uppercase tracking-tight flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Authenticated
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 인증됨
                 </span>
               </div>
             </div>
@@ -291,7 +291,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-slate-200 font-black tracking-widest text-[10px] uppercase hover:bg-slate-50 transition-all active:scale-95"
                 aria-label="취소"
               >
-                Abort
+                취소
               </Button>
               <Button
                 type="submit"
@@ -302,11 +302,11 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin w-5 h-5" />
-                    <span>Committing Node...</span>
+                    <span>저장 중...</span>
                   </>
                 ) : (
                   <>
-                    <Save size={20} className="group-hover:rotate-12 transition-transform" /> Commit Knowledge
+                    <Save size={20} className="group-hover:rotate-12 transition-transform" /> 저장
                   </>
                 )}
               </Button>

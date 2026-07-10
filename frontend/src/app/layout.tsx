@@ -7,12 +7,20 @@ import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
+import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
 import { cookies } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
+
+const pretendard = localFont({
+  src: '../../public/fonts/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+  variable: '--font-pretendard',
+});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -107,7 +115,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`}>
+      <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { TEST_CREDENTIALS } from './test-credentials';
+import { injectAxe, checkA11y } from '@axe-core/playwright';
 
 /**
  * [Tier 1] Core Base: Authentication & Dashboard Hub
@@ -28,6 +29,19 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         await expect(page.locator('text=전자정부 5.0').first()).toBeVisible({ timeout: 15000 });
     });
 
+    test('Accessibility Audit for Login Page', async ({ page }) => {
+        await page.goto('/login?e2e=true');
+        await injectAxe(page);
+        await checkA11y(page, undefined, {
+            axeOptions: {
+                rules: {
+                    'color-contrast': { enabled: false }, // CI 환경 테마 가변성 방어
+                }
+            },
+            detailedReport: true,
+        });
+    });
+
     test.describe('Dashboard Integrity (Session Preserved)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
@@ -49,6 +63,18 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             // Update to match current Dashboard UI
             await expect(page.locator('text=보안 감사 이력').first()).toBeVisible();
             await expect(page.locator('text=활동 인텔리전스').first()).toBeVisible();
+        });
+
+        test('Accessibility Audit for Admin Dashboard', async ({ page }) => {
+            await injectAxe(page);
+            await checkA11y(page, undefined, {
+                axeOptions: {
+                    rules: {
+                        'color-contrast': { enabled: false }, // CI 환경 테마 가변성 방어
+                    }
+                },
+                detailedReport: true,
+            });
         });
 
         test('Global Layout & Navigation Mapping', async ({ page }) => {

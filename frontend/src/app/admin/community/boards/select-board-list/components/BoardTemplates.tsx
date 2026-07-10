@@ -330,10 +330,10 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-7 gap-5"
+        className="grid grid-cols-7 gap-1 md:gap-4 lg:gap-5"
       >
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} className="text-center font-black text-slate-300 text-[10px] tracking-[0.4em] pb-6 border-b-2 border-slate-50 uppercase">{d}</div>
+          <div key={d} className="text-center font-black text-slate-300 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-slate-50 uppercase">{d}</div>
         ))}
         {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
           const isCurrentMonth = day > 0 && day <= daysInMonth;
@@ -345,14 +345,14 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               key={i} 
               variants={itemVariants}
               className={cn(
-                "min-h-[180px] p-6 border-2 transition-all relative group rounded-3xl",
+                "min-h-[60px] md:min-h-[140px] lg:min-h-[180px] p-1 md:p-3 lg:p-6 border-2 transition-all relative group rounded-xl md:rounded-3xl",
                 isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-slate-50 hover:border-slate-200 hover:shadow-xl",
                 !isCurrentMonth ? "opacity-10 pointer-events-none bg-slate-50/50" : ""
               )}
             >
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-2 md:mb-6">
                 <span className={cn(
-                  "text-2xl font-black tracking-tighter", 
+                  "text-xs md:text-xl lg:text-2xl font-black tracking-tighter", 
                   isToday ? "text-primary" : "text-slate-200 group-hover:text-slate-900",
                   (i % 7 === 0) && isCurrentMonth ? "text-rose-400" : "", // Sunday
                   (i % 7 === 6) && isCurrentMonth ? "text-indigo-400" : "" // Saturday
@@ -360,13 +360,13 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                   {isCurrentMonth ? day : ''}
                 </span>
                 {dayPosts.length > 0 && (
-                  <Badge className="bg-slate-900 text-white hover:bg-primary text-[10px] font-black h-6 w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
+                  <Badge className="bg-slate-900 text-white hover:bg-primary text-[8px] md:text-[10px] font-black h-4 w-4 md:h-6 md:w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
                     {dayPosts.length}
                   </Badge>
                 )}
               </div>
               
-              <div className="space-y-2.5 max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-1 md:space-y-2.5 max-h-[40px] md:max-h-[80px] lg:max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
                 {dayPosts.map((post) => (
                   <Link 
                     key={post.pstId}
@@ -383,7 +383,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               </div>
 
               {isCurrentMonth && (
-                <div className="absolute bottom-5 right-6 text-[10px] font-black text-slate-100 group-hover:text-slate-200 transition-all uppercase tracking-widest opacity-0 group-hover:opacity-100">
+                <div className="absolute bottom-1 right-2 lg:bottom-5 lg:right-6 text-[8px] lg:text-[10px] font-black text-slate-100 group-hover:text-slate-200 transition-all uppercase tracking-widest opacity-0 group-hover:opacity-100 invisible md:visible">
                   {`${year}.${month + 1}.${day}`}
                 </div>
               )}

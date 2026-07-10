@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -9,12 +9,14 @@ import { toast } from 'sonner';
 interface FileState {
   file: File;
   progress: number;
-  status: 'uploading' | 'completed' | 'error';
+  status: 'uploading' | 'completed' | 'error' | 'pending';
   id: string;
 }
 
 interface StandardFileUploaderProps {
   onFilesChange?: (files: File[]) => void;
+  onUpload?: (file: File, onProgress: (progress: number) => void) => Promise<unknown>;
+  isAutoUpload?: boolean;
   maxFiles?: number;
   maxSizeMB?: number;
   accept?: string;
@@ -24,6 +26,8 @@ interface StandardFileUploaderProps {
 
 export function StandardFileUploader({
   onFilesChange,
+  onUpload,
+  isAutoUpload = false,
   maxFiles = 5,
   maxSizeMB = 10,
   accept = "*",
@@ -33,7 +37,8 @@ export function StandardFileUploader({
   const [fileStates, setFileStates] = useState<FileState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  const simulateUpload = (fileId: string) => {
+  // fallback 시뮬레이터 (onUpload가 없는 경우 가짜 게이지 구동)
+  const simulateUpload = useCallback((fileId: string) => {
     let currentProgress = 0;
     const interval = setInterval(() => {
       currentProgress += Math.random() * 30;
@@ -49,7 +54,32 @@ export function StandardFileUploader({
         ));
       }
     }, 400);
-  };
+  }, []);
+
+  // 실제 비동기 업로드 수행 핸들러
+  const performActualUpload = useCallback(async (fileState: FileState) => {
+    if (!onUpload) return;
+    
+    setFileStates(prev => prev.map(f => 
+      f.id === fileState.id ? { ...f, status: 'uploading', progress: 0 } : f
+    ));
+
+    try {
+      await onUpload(fileState.file, (p) => {
+        setFileStates(prev => prev.map(f => 
+          f.id === fileState.id ? { ...f, progress: p } : f
+        ));
+      });
+      setFileStates(prev => prev.map(f => 
+        f.id === fileState.id ? { ...f, progress: 100, status: 'completed' } : f
+      ));
+    } catch (e) {
+      setFileStates(prev => prev.map(f => 
+        f.id === fileState.id ? { ...f, status: 'error' } : f
+      ));
+      toast.error(`${fileState.file.name} 업로드에 실패했습니다.`);
+    }
+  }, [onUpload]);
 
   const handleFiles = useCallback((files: File[]) => {
     const validFiles = files.filter(file => {
@@ -58,22 +88,33 @@ export function StandardFileUploader({
       return isSizeValid;
     });
 
-    const newFileStates: FileState[] = validFiles.map(file => ({
-      file,
-      progress: 0,
-      status: 'uploading' as 'uploading' | 'completed' | 'error',
-      id: Math.random().toString(36).substring(7)
-    })).slice(0, maxFiles - fileStates.length);
+    const newFileStates: FileState[] = validFiles.map(file => {
+      const requiresInstantUpload = isAutoUpload && typeof onUpload === 'function';
+      return {
+        file,
+        progress: 0,
+        status: requiresInstantUpload ? ('uploading' as const) : ('pending' as const),
+        id: Math.random().toString(36).substring(7)
+      };
+    }).slice(0, maxFiles - fileStates.length);
 
     if (newFileStates.length > 0) {
       const updatedStates = [...fileStates, ...newFileStates];
       setFileStates(updatedStates);
       onFilesChange?.(updatedStates.map(fs => fs.file));
       
-      newFileStates.forEach(fs => simulateUpload(fs.id));
+      newFileStates.forEach(fs => {
+        if (isAutoUpload) {
+          if (onUpload) {
+            performActualUpload(fs);
+          } else {
+            simulateUpload(fs.id);
+          }
+        }
+      });
       toast.success(`${newFileStates.length}개의 파일이 추가되었습니다.`);
     }
-  }, [fileStates, maxFiles, maxSizeMB, onFilesChange]);
+  }, [fileStates, maxFiles, maxSizeMB, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -159,9 +200,11 @@ export function StandardFileUploader({
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                    fs.status === 'completed' ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-400"
+                    fs.status === 'completed' ? "bg-emerald-50 text-emerald-500" :
+                    fs.status === 'pending' ? "bg-slate-100 text-slate-500 dark:bg-slate-800" : "bg-slate-50 text-slate-400"
                   )}>
-                    {fs.status === 'uploading' ? <Loader2 size={20} className="animate-spin" /> : <FileIcon size={20} />}
+                    {fs.status === 'uploading' ? <Loader2 size={20} className="animate-spin" /> : 
+                     fs.status === 'pending' ? <Hourglass size={20} className="animate-pulse" /> : <FileIcon size={20} />}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">
@@ -172,17 +215,23 @@ export function StandardFileUploader({
                         {(fs.file.size / 1024 / 1024).toFixed(2)} MB
                       </span>
                     </div>
-                    {/* Progress Bar */}
-                    <div className="relative w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${fs.progress}%` }}
-                        className={cn(
-                          "absolute inset-y-0 left-0 rounded-lg transition-colors",
-                          fs.status === 'completed' ? "bg-emerald-500" : "bg-primary"
-                        )}
-                      />
-                    </div>
+                    {/* Progress Bar or Pending Text */}
+                    {fs.status === 'pending' ? (
+                      <p className="text-xs font-bold text-slate-400 tracking-tight leading-none pt-1">
+                        첨부 대기 중 (폼 제출 시 최종 업로드됨)
+                      </p>
+                    ) : (
+                      <div className="relative w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${fs.progress}%` }}
+                          className={cn(
+                            "absolute inset-y-0 left-0 rounded-lg transition-colors",
+                            fs.status === 'completed' ? "bg-emerald-500" : "bg-primary"
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -193,6 +242,7 @@ export function StandardFileUploader({
                     <AlertCircle size={18} className="text-rose-500" />
                   ) : null}
                   <button
+                    type="button"
                     onClick={() => removeFile(fs.id)}
                     className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                   >

@@ -21,14 +21,15 @@ describe('Layout Components', () => {
  vi.useFakeTimers();
  });
 
- it('ScrollToTop handles route changes', async () => {
- window.scrollTo = vi.fn();
- render(<ScrollToTop />);
+  // ScrollToTop test disabled as ScrollToTop was removed to allow default browser scroll restoration.
+  it.skip('ScrollToTop handles route changes', async () => {
+    window.scrollTo = vi.fn();
+    render(<ScrollToTop />);
 
- act(() => {
- vi.runAllTimers();
- });
+    act(() => {
+      vi.runAllTimers();
+    });
 
- expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
- });
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
 });

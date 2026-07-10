@@ -124,7 +124,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </Button>
  )}
  <Button 
- onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${currentBbsId}`)}
+ onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}
  className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs md:text-xs hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록

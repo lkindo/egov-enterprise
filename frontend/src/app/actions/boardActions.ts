@@ -121,7 +121,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       throw new Error('저장에 실패했습니다.');
     }
 
-    revalidatePath(`/admin/community/boards/selectBoardList`);
+    revalidatePath(`/admin/community/boards/select-board-list`);
     const targetId = isEdit ? pstId : (response as any);
     
     return {
@@ -147,7 +147,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
 
     const response = await client.delete(`/boards/${bbsId}/posts/${pstId}`, axiosConfig);
     
-    revalidatePath(`/admin/community/boards/selectBoardList`);
+    revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';

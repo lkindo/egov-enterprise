@@ -235,7 +235,7 @@ export function BoardMasterListClient() {
             <Trash2 size={20} />
           </Button>
           <Button 
-            onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
+            onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
             size="icon" 
             variant="ghost" 
             className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-slate-900 dark:hover:bg-white dark:hover:text-slate-900 hover:text-white transition-all shadow-sm"

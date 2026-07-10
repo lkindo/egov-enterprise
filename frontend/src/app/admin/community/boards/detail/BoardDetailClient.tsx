@@ -142,7 +142,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         >
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&pstId=${pstId}`)}
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstId=${pstId}`)}
             className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
@@ -150,7 +150,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
             className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
@@ -162,7 +162,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             if (res.success) {
               toast('지식 노드가 성공적으로 제거되었습니다.', 'success');
               queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-              router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
+              router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
             }
           }}>
             <input type="hidden" name="bbsId" value={bbsId ?? ""} />

@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status] || { label: status, color: 'bg-gray-100 text-gray-700' };
+  const config = STATUS_CONFIG[status] || { label: status, color: 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' };
 
   return (
     <span className={cn(

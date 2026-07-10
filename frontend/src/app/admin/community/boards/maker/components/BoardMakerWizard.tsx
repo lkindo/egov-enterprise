@@ -232,7 +232,7 @@ export function BoardMakerWizard() {
  upperMenuNo: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
  progrmFileNm: 'EgovBBSMaster',
- modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
+ modernRoute: `/admin/community/boards/select-board-list?bbsId=${bbsId}`,
  menuDc: `Auto-generated menu for board ${data.bbsTtl}`,
  useYn: 'N'
  } as any);
@@ -595,7 +595,7 @@ export function BoardMakerWizard() {
  <div className="space-y-2 relative z-10 text-left">
  <p className="text-primary font-bold tracking-widest text-xs uppercase text-left transition-colors">Generated Path</p>
  <h5 className="text-2xl font-bold tracking-tight flex items-center gap-3 text-left transition-colors">
- /admin/community/boards/selectBoardList?bbsId=AUTO_GEN
+ /admin/community/boards/select-board-list?bbsId=AUTO_GEN
  <ExternalLink size={20} className="text-slate-400 dark:text-slate-600" />
  </h5>
  <p className="text-slate-500 dark:text-slate-400 text-sm font-bold tracking-tight text-left transition-colors">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
