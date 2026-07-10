@@ -24,6 +24,7 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "C010", "Access Denied"),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "C011", "Unsupported Media Type"),
     INVALID_STATE(HttpStatus.BAD_REQUEST, "C012", "Invalid State Transition"),
+    CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "C013", "Concurrent Modification Conflict"),
 
     // Auth (A)
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized Access"),

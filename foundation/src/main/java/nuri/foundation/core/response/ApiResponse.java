@@ -50,4 +50,20 @@ public record ApiResponse<T>(
                 .timestamp(LocalDateTime.now())
                 .build();
     }
+
+    /**
+     * [정합성 H5] HTTP 전송 상태를 명시적으로 지정하는 에러 팩토리.
+     * envelope의 {@code status} 필드가 ResponseEntity의 실제 HTTP status와 어긋나는 것을 방지하기 위해,
+     * ErrorCode의 기본 status와 다른 상태로 응답해야 하는 핸들러는 이 팩토리로 권위 상태를 명시한다.
+     */
+    public static <T> ApiResponse<T> error(org.springframework.http.HttpStatus httpStatus, ErrorCode errorCode, String message) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .status(httpStatus.value())
+                .code(errorCode.getCode())
+                .message(message)
+                .data(null)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
 }

@@ -72,8 +72,10 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailureException(
             OptimisticLockingFailureException e) {
         log.error(">>> Concurrency Conflict", e);
+        // [정합성 H5] body.status(과거 INVALID_INPUT_VALUE=400)와 HTTP 409가 어긋나던 것을 바로잡음:
+        // CONCURRENT_MODIFICATION(409)로 생성하여 envelope status와 전송 status를 일치시킨다.
         return new ResponseEntity<>(
-                ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "데이터가 이미 수정되었습니다. 다시 시도해주세요."),
+                ApiResponse.error(ErrorCode.CONCURRENT_MODIFICATION, "데이터가 이미 수정되었습니다. 다시 시도해주세요."),
                 HttpStatus.CONFLICT);
     }
 

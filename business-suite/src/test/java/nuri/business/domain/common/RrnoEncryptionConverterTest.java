@@ -52,12 +52,14 @@ class RrnoEncryptionConverterTest {
     }
 
     @Test
-    @DisplayName("데이터베이스 컬럼으로 변환 - 암호화 예외 발생 시 원본 반환")
+    @DisplayName("데이터베이스 컬럼으로 변환 - 암호화 예외 시 평문 저장 거부(fail-closed)")
     void convertToDatabaseColumn_Exception() throws Exception {
         when(mockCryptoService.encrypt(any(byte[].class), any(String.class))).thenThrow(new RuntimeException("Encryption Error"));
 
-        String result = converter.convertToDatabaseColumn("900101-1234567");
-        assertThat(result).isEqualTo("900101-1234567");
+        // [보안 D] 암호화 실패 시 평문 PII를 저장하지 않고 예외를 전파해야 한다.
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> converter.convertToDatabaseColumn("900101-1234567"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
