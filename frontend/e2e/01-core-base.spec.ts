@@ -101,8 +101,9 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         test('User Profile and Logout', async ({ page }) => {
             // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
             // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
-            console.log('>>> Step 1: Opening User Profile Menu');
-            const profileButton = page.getByRole('button').filter({ hasText: /TEST1|USER|계정|프로필/i }).first();
+            console.log('>>> Step 1: Opening User Account Menu');
+            // 공유 헤더(header.tsx)의 계정 버튼 aria-label — 관리자 로그아웃 테스트와 동일 셀렉터로 정합.
+            const profileButton = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
             await expect(profileButton).toBeVisible({ timeout: 15000 });
             await profileButton.click();
 

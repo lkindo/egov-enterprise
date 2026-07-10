@@ -153,14 +153,16 @@ test.describe('Tier 23-E12: Deterministic empty state', () => {
         await page.goto('/admin/user/manage');
         await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible({ timeout: 20000 });
 
-        const searchInput = page.locator('input[placeholder*="검색"], input[placeholder*="identity"]').first();
+        // /admin/user/manage 는 조직 통합 허브(UserOrgHubClient)를 렌더한다. 실제 사용자 목록 검색창 placeholder는 '검색어를 입력하세요...'.
+        const searchInput = page.getByPlaceholder('검색어를 입력하세요...').first();
         await expect(searchInput).toBeVisible({ timeout: 15000 });
         await searchInput.fill('ZZZ_NONEXISTENT_USER_9x8y7z');
         await page.keyboard.press('Enter');
 
-        // 결과 없음 메시지가 결정적으로 표시되어야 한다(과거 패턴처럼 .or(데이터있음) 폴백으로 통과시키지 않음).
+        // 결과 없음 메시지가 결정적으로 표시되어야 한다(허브/목록 컴포넌트의 실제 빈-상태 텍스트).
+        // (과거: 광역 정규식이 사이드바 숨김 '하위 메뉴가 없습니다'를 잘못 매칭했음 → 실제 빈-상태 텍스트로 한정)
         await expect(
-            page.getByText(/없습니다|결과가 없|데이터.*없|no results/i).first(),
+            page.getByText(/검색 결과가 없습니다|데이터가 존재하지 않습니다/).first(),
         ).toBeVisible({ timeout: 15000 });
     });
 });
