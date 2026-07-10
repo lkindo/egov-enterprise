@@ -155,6 +155,7 @@ export function SessionExpiryWarning() {
             </div>
             <button
               onClick={() => setShowWarning(false)}
+              aria-label="세션 경고 닫기"
               className="p-1 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
             >
               <X size={18} />
@@ -163,12 +164,12 @@ export function SessionExpiryWarning() {
 
           {/* 본문 */}
           <div className="p-8 text-center">
-            <div 
-              aria-live="polite" 
+            <div
               className="inline-flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-lg mb-6"
             >
               <Clock size={16} />
-              <span className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
+              {/* 매초 낭독(verbose) 방지: 시각 카운트다운은 aria-hidden, 경고 자체는 dialog role로 1회 고지 */}
+              <span aria-hidden="true" className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
             </div>
             <h3 className="text-xl font-bold text-card-foreground mb-2">
               세션이 곧 만료됩니다
