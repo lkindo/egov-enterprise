@@ -10,20 +10,9 @@ test.describe('Tier 8: Advanced Collaboration & Intelligence', () => {
         viewport: { width: 1920, height: 1080 }
     });
 
-    test('Collaboration: Send Note to Administrative User', async ({ collabPage, page }) => {
-        console.log('\n>>> Starting Collaboration: Send Note Flow');
-        
-        await collabPage.goto();
-        
-        // 상세 쪽지 발송 (수신자: 관리자 - 기본 관리자)
-        const subject = `E2E Test Note ${Date.now()}`;
-        const content = 'This is an automated test note for collaboration matrix validation.';
-        
-        await collabPage.sendNote('관리자', subject, content);
-        
-        console.log('>>> Note sent successfully. Verifying redirection to message hub.');
-        await expect(page).toHaveURL(/\/admin\/collaboration\/mail-history/);
-    });
+    // [E2E 감사 Phase3 중복제거] 삭제됨: 'Send Note to Administrative User' — 동일 경로
+    // (/admin/collaboration/mail-send → mail-history)를 13-mail이 send/delete/multi/validation까지 소유.
+    // 08은 아래 고유 커버리지(주소록 등록, Intelligence 엑셀 내보내기)만 유지한다.
 
     test('Collaboration: Register New Identity Node (Address Book)', async ({ collabPage, page }) => {
         console.log('\n>>> Starting Collaboration: Register Identity Flow');
@@ -56,27 +45,6 @@ test.describe('Tier 8: Advanced Collaboration & Intelligence', () => {
         expect(download.suggestedFilename()).toContain('system_intelligence_stats');
     });
 
-    test('Exploratory: Tier-1 User Portal Coverage Gap Check', async ({ page }) => {
-        console.log('\n>>> Exploratory Check: User Portal (Tier-1)');
-        
-        // 사용자 포털 메인으로 이동
-        await page.goto('/');
-        
-        // 주요 네비게이션 요소 존재 확인 (GNB 등)
-        const gnb = page.locator('nav');
-        await expect(gnb.first()).toBeVisible();
-        
-        console.log('>>> Checking for common Tier-1 entry points...');
-        const links = await page.locator('a').allInnerTexts();
-        const keywords = ['소개', '게시판', '공지', '알림', '가이드'];
-        
-        const foundKeywords = keywords.filter(k => links.some(l => l.includes(k)));
-        console.log(`>>> Found Tier-1 Keywords: ${foundKeywords.join(', ')}`);
-        
-        // 사각지대 식별: 현재 테스트 코드가 미비한 영역 확인
-        // 예: 공지사항 상세 조회, 검색, 마이페이지 등
-        if (!foundKeywords.includes('공지')) {
-            console.warn('!!! POTENTIAL GAP: Notice board link not found on main page.');
-        }
-    });
+    // [E2E 감사 Phase3 중복제거] 삭제됨: 'Exploratory: Tier-1 User Portal Coverage Gap Check' —
+    // '/' 포털 스모크는 01-core-base가 소유하며, 이 테스트는 console.warn만 할 뿐 gap을 단언하지 않던 무단언 탐색이었음.
 });

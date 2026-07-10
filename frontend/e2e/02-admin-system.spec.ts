@@ -99,50 +99,9 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         });
     });
 
-    test.describe('System Configuration', () => {
-        test('Common Code Navigation and Stability', async ({ page }) => {
-            console.log('\n>>> Navigating to Common Code');
-            await page.goto('/admin/system/common-code');
-            await expect(page.locator('button:has-text("COM")').first()).toBeVisible({ timeout: 30000 });
-        });
-
-        test('Menu Hierarchy Management UI', async ({ page }) => {
-            console.log('\n>>> Navigating to Menu Management');
-            await page.goto('/admin/system/menus');
-            await expect(page.getByText(/워크스페이스/i).first()).toBeVisible({ timeout: 30000 });
-        });
-    });
-
-    test.describe('Organizational Structure', () => {
-        test('Department and Absence Management Access', async ({ page }) => {
-            console.log('\n>>> Step 1: Navigate to User/Org Hub');
-            await page.goto('/admin/user/manage');
-            await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible({ timeout: 20000 });
-
-            // Section_02: DEPTS tab
-            // After click, table shows column header "TOPOLOGY_NODE"
-            console.log('>>> Step 2: Switching to Section_02 (DEPTS tab)');
-            const deptTab = page.locator('button:has-text("부서 관리")').first();
-            await expect(deptTab).toBeVisible({ timeout: 20000 });
-            await deptTab.click({ force: true });
-            // Wait for Framer Motion animation + data load
-            await page.waitForTimeout(1000);
-            await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
-            console.log('>>> Section_02 (DEPTS): PASS');
-
-            // Section_03: ABSENCES tab
-            // NOTE: ABSENCES tab still shows the user list (same data, just filtered view)
-            // Verify tab is activated by checking its CSS class "bg-slate-900" (active state)
-            console.log('>>> Step 3: Switching to Section_03 (ABSENCES tab)');
-            const absenceTab = page.locator('button:has-text("부재 관리")').first();
-            await expect(absenceTab).toBeVisible({ timeout: 10000 });
-            await absenceTab.click({ force: true });
-            await page.waitForTimeout(1000);
-            // The active NavButton gets class "bg-slate-900"
-            await expect(absenceTab).toHaveClass(/bg-slate-900/, { timeout: 15000 });
-            console.log('>>> Section_03 (ABSENCES): PASS');
-        });
-    });
+    // [E2E 감사 Phase3 중복제거] 삭제됨: 'System Configuration'(common-code/menus 네비 스모크) 및
+    // 'Organizational Structure'(부서/부재 탭) describe — 동일 경로를 19-hierarchy-modernization가
+    // 더 구체적으로(트리 노드/ORGNZT/Explorer Domains) 소유·검증한다.
 
     test.describe('Security & Authority Management', () => {
         const suffix = Math.random().toString(36).substring(7);
@@ -169,22 +128,10 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
     });
 
     test.describe('Advanced Operations & Analytics', () => {
-        test('Collaboration Hub: Full Note Lifecycle', async ({ collabPage }) => {
-            const subject = `E2E Note ${Math.random().toString(36).substring(7)}`;
-            await collabPage.goto();
-            
-            // 1. Send Note
-            await collabPage.sendNote('webmaster', subject, 'This is an automated E2E test note payload.');
-            
-            // 2. Verify and Delete
-            await collabPage.deleteNote(subject);
-        });
-
-        test('Intelligence Dashboard: Data Visualization', async ({ statsPage }) => {
-            await statsPage.goto();
-            await statsPage.verifyChartsVisible();
-            await statsPage.refresh();
-        });
+        // [E2E 감사 Phase3 중복제거] 삭제됨:
+        //  - 'Collaboration Hub: Full Note Lifecycle' → 동일 경로(/admin/collaboration/mail-*)를 13-mail이 소유.
+        //  - 'Intelligence Dashboard: Data Visualization' → StatsPage.verifyChartsVisible 중복. 엑셀 내보내기까지
+        //    검증하는 08(Advanced Collaboration)이 stats 소유자.
 
         test('Event Operations: Full Event Lifecycle', async ({ opsDetailPage }) => {
             const eventName = `E2E Event ${Math.random().toString(36).substring(7)}`;

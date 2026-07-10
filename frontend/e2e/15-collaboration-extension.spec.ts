@@ -1,15 +1,12 @@
 import { test, expect } from './fixtures/base-test';
 import { ScrapPage } from './pages/ScrapPage';
-import { KnowledgePage } from './pages/KnowledgePage';
 
 test.describe('Tier 15: Collaboration & Knowledge Extension', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
     let scrapPage: ScrapPage;
-    let knowledgePage: KnowledgePage;
 
     test.beforeEach(async ({ page }) => {
         scrapPage = new ScrapPage(page);
-        knowledgePage = new KnowledgePage(page);
     });
 
     test('should manage scraps in collaboration hub', async ({ page }) => {
@@ -30,23 +27,6 @@ test.describe('Tier 15: Collaboration & Knowledge Extension', () => {
         }
     });
 
-    test('should manage Knowledge (FAQ/Q&A) Support entries', async ({ page }) => {
-        // Navigating to FAQ board (BBSMSTR_AAAAAAAAAAAA is standard for FAQ)
-        await knowledgePage.gotoFAQ();
-        
-        const question = `Q: E2E Question ${Date.now()}`;
-        const answer = 'A: This is an automated answer generated for system support validation.';
-        
-        // Create a new knowledge node
-        await knowledgePage.createFAQ(question, answer);
-        
-        // Navigate back to the FAQ board list explicitly to perform search
-        await page.goto('/admin/community/boards?bbsId=BBSMSTR_AAAAAAAAAAAA');
-        await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(1000);
-        
-        // Search and verify
-        await knowledgePage.searchFAQ(question);
-        await expect(page.getByText(question).first()).toBeVisible({ timeout: 15000 });
-    });
+    // [E2E 감사 Phase3 중복제거] 삭제됨: 'should manage Knowledge (FAQ/Q&A)' — KnowledgePage.gotoFAQ/createFAQ로
+    // 동일 board(BBSMSTR_AAAAAAAAAAAA)에 쓰는 FAQ 생성-검증 라운드트립을 05-public-experience가 소유(포털 노출까지 검증).
 });

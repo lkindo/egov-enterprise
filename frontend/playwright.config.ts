@@ -20,7 +20,9 @@ export default defineConfig({
     use: {
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',
         trace: 'retain-on-failure',
-        video: 'on-first-retry',
+        // [E2E 감사 C1] retries:0 환경에서 'on-first-retry'는 영상이 영구 미수집됨.
+        // GEMINI.md §8의 WebP 비디오 교차검증 의무를 복원하기 위해 실패 시 항상 보존으로 변경.
+        video: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
     projects: [
@@ -157,6 +159,13 @@ export default defineConfig({
         {
             name: 'tier-22-security',
             testMatch: /22-deep-security-guard\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            // [E2E 감사 Phase4] 인증/세션/RBAC 누락 보완 (E1~E12)
+            name: 'tier-23-security-auth',
+            testMatch: /23-security-auth-supplement\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],
         },

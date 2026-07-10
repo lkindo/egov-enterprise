@@ -73,11 +73,8 @@ test.describe('Tier 21: Advanced Resilience', () => {
         console.log('>>> System remained stable after rapid interaction.');
     });
 
-    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page, consoleGuard }) => {
-        // Huge payload might cause some console warnings from TipTap or React
-        consoleGuard.addIgnorePattern(/value/i);
-        consoleGuard.addIgnorePattern(/controlled/i);
-
+    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page }) => {
+        // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.
         await page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
         const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR
@@ -99,14 +96,10 @@ test.describe('Tier 21: Advanced Resilience', () => {
         await expect(resultAlert.first()).toBeVisible({ timeout: 30000 });
         
         const alertText = await resultAlert.first().innerText();
-        const alertHtml = await resultAlert.first().innerHTML();
         console.log(`>>> Submission Result Text: '${alertText}'`);
-        console.log(`>>> Submission Result HTML: '${alertHtml}'`);
-        
-        if (alertText.includes('성공')) {
-            console.log('>>> Huge payload handled successfully by backend.');
-        } else {
-            console.log('>>> Validation correctly caught the boundary condition.');
-        }
+        // [E2E 감사 B] both-branches console.log 제거 — 결과가 '성공 저장' 또는 '명시적 검증/길이 제한 메시지'
+        // 중 하나여야 한다. 아무 alert나 통과시키지 않고 경계값 처리 계약을 단언한다.
+        expect(alertText, `경계값 제출은 성공 또는 검증 메시지를 반환해야 함 (실제: '${alertText}')`)
+            .toMatch(/성공|저장|완료|글자|초과|제한|최대|길이|실패|유효/);
     });
 });

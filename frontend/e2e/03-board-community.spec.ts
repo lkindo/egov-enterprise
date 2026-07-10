@@ -207,11 +207,11 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
     });
 
     test.describe('Community Supplementary Services Smoke Check', () => {
+        // [E2E 감사 Phase0] 동일 URL(/admin/collaboration) 3중 중복 스모크(Community Hub/Smart Scrap/
+        // Corporate Addressbook)를 1개로 축약. 실제 협업 거동은 08(collab)·13(mail)이 검증한다.
+        // 'Online Polls'(/admin/survey/manage)는 05-public-experience의 설문 생명주기가 소유하므로 제외.
         const services = [
-            { name: 'Community Hub', url: '/admin/collaboration' },
-            { name: 'Online Polls', url: '/admin/survey/manage' },
-            { name: 'Smart Scrap', url: '/admin/collaboration' },
-            { name: 'Corporate Addressbook', url: '/admin/collaboration' },
+            { name: 'Collaboration Hub', url: '/admin/collaboration' },
             { name: 'Electronic Approvals', url: '/admin/sanctn/workflow' }
         ];
 

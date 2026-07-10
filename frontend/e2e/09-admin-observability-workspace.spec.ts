@@ -1,5 +1,4 @@
-import { test } from '@playwright/test';
-import { ObservabilityPage } from './pages/ObservabilityPage';
+import { test, expect } from './fixtures/base-test';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { SearchPage } from './pages/SearchPage';
 import path from 'path';
@@ -14,21 +13,8 @@ test.describe('Tier 9: Admin Observability & Workspace Intelligence', () => {
         // Authenticate as admin (session from auth.setup.ts)
     });
 
-    test('Observability: Monitor System Health & Topology', async ({ page }) => {
-        const observability = new ObservabilityPage(page);
-        
-        console.log('\n>>> Navigating to Observability Dashboard');
-        await observability.navigate();
-        
-        console.log('>>> Verifying system control header');
-        await observability.verifyHeader();
-        
-        console.log('>>> Checking real-time metrics');
-        await observability.verifyMetrics();
-        
-        console.log('>>> Verifying service topology container');
-        await observability.verifyTopology();
-    });
+    // [E2E 감사 Phase3 중복제거] 삭제됨: 'Observability: Monitor System Health & Topology' —
+    // ObservabilityPage.verifyHeader/Metrics/Topology 동일 검증을 16-system-observability가 소유. 09는 워크스페이스/검색만 유지.
 
     test('Workspace: Manage MyPage Content Settings', async ({ page }) => {
         const workspace = new WorkspacePage(page);
@@ -55,11 +41,13 @@ test.describe('Tier 9: Admin Observability & Workspace Intelligence', () => {
         // Since it's a fresh environment, we might not have many results, 
         // but "관리자" (webmaster) should be in the '임직원' (Users) section if indexed.
         // If not found, we check if the results container is visible.
+        // [E2E 감사 B] 성공 분기 무단언 제거 — 결과가 있으면 결과 노드를, 없으면 빈 상태를 각각 실단언한다.
         const resultsCount = await page.locator('h3').count();
         if (resultsCount > 0) {
-            console.log('>>> Search results found.');
+            await expect(page.locator('h3').first()).toBeVisible();
+            console.log('>>> Search results found and rendered.');
         } else {
-            console.log('>>> No search results for "관리자", checking empty state.');
+            console.log('>>> No search results for "관리자", verifying empty state.');
             await search.verifyNoResults();
         }
     });

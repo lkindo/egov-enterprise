@@ -60,11 +60,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             const menuTrigger = page.locator('nav a[href*="/admin/"]').first();
             await expect(menuTrigger).toBeVisible();
             
-            console.log('>>> Step 3: Breadcrumb Integrity');
-            const breadcrumb = page.locator('ol[aria-label="Breadcrumb"], .breadcrumb');
-            if (await breadcrumb.isVisible()) {
-                await expect(breadcrumb).toContainText('Admin');
-            }
+            // [E2E 감사 B] 조건부 breadcrumb 단언 제거 — /admin 루트에서 breadcrumb는 선택적이라
+            // if(isVisible) 가드가 항상 스킵되던 false-green 스텝이었음. 위 사이드바/네비 단언으로 레이아웃 무결성 검증.
         });
 
         test('Logout Redirection and Session Cleanup', async ({ page }) => {
@@ -102,11 +99,20 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         });
         
         test('User Profile and Logout', async ({ page }) => {
-            console.log('>>> Step 1: Checking User Profile Access');
-            const profileButton = page.getByRole('button').filter({ hasText: /TEST1|USER/i }).first();
-            if (await profileButton.isVisible()) {
-                await expect(profileButton).toBeVisible();
-            }
+            // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
+            // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
+            console.log('>>> Step 1: Opening User Profile Menu');
+            const profileButton = page.getByRole('button').filter({ hasText: /TEST1|USER|계정|프로필/i }).first();
+            await expect(profileButton).toBeVisible({ timeout: 15000 });
+            await profileButton.click();
+
+            console.log('>>> Step 2: Logout Action');
+            const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i }).first();
+            await expect(logoutButton).toBeVisible({ timeout: 10000 });
+            await logoutButton.click();
+
+            console.log('>>> Step 3: Redirect to Login');
+            await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
         });
     });
 });

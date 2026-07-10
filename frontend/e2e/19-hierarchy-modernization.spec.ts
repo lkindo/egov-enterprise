@@ -38,24 +38,23 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         // Setup: Admin creates or updates a menu to use_yn = 'N' via API
         // For E2E simulation, we check if the LNB tree API filters inactive menus
         const response = await request.get('/api/v1/user/system/menus/hierarchy');
-        if (response.ok()) {
-            const hierarchy = await response.json();
-            // Verify that no menu with useYn === 'N' is returned
-            const checkNoInactiveMenus = (nodes: any[]) => {
-                for (const node of nodes) {
-                    expect(node.useYn).not.toBe('N');
-                    if (node.children && node.children.length > 0) {
-                        checkNoInactiveMenus(node.children);
-                    }
+        // [E2E 감사 B] 이중 가드(if ok / if data) 제거 — 200 응답 + 비어있지 않은 트리를 요구한 뒤 재귀 검증한다.
+        // (과거: 엔드포인트 실패나 빈 배열도 조용히 통과해 필터링을 한 번도 검증하지 못했음)
+        expect(response.ok(), `menus/hierarchy 엔드포인트 응답 실패: ${response.status()}`).toBeTruthy();
+        const hierarchy = await response.json();
+        const rootNodes = hierarchy?.data ?? [];
+        expect(Array.isArray(rootNodes) && rootNodes.length > 0, 'LNB 계층 트리가 비어 있어 useYn 필터링을 검증할 수 없음').toBeTruthy();
+
+        const checkNoInactiveMenus = (nodes: any[]) => {
+            for (const node of nodes) {
+                expect(node.useYn).not.toBe('N');
+                if (node.children && node.children.length > 0) {
+                    checkNoInactiveMenus(node.children);
                 }
-            };
-            if (hierarchy && hierarchy.data) {
-                checkNoInactiveMenus(hierarchy.data);
-                console.log('>>> useYn Filtering verified via API: PASS');
             }
-        } else {
-             console.log('>>> Skipping API check as endpoint might differ, checking UI...');
-        }
+        };
+        checkNoInactiveMenus(rootNodes);
+        console.log('>>> useYn Filtering verified via API: PASS');
     });
 
     test('Common Code Explorer Interface', async ({ page }) => {
@@ -97,11 +96,14 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         
         // Switch to DEPTS tab
         await page.locator('button:has-text("부서 관리")').click();
-        
-        // The SAVE_CHANGES button should NOT be visible initially
+
+        // [E2E 감사 B] 부서 트리가 실제로 로드됐는지(positive) 먼저 단언 — 그래야 'Save 버튼 부재'가 의미를 가짐.
+        // (과거: not.toBeVisible만 있어 기능이 아예 렌더되지 않는 페이지도 vacuously 통과)
+        // TODO(Phase4+): 실제 D&D 재정렬을 수행하고 Save 버튼이 '나타나는지' + 저장 영속을 positive 검증.
+        await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
         const saveBtn = page.locator('button:has-text("Save Structure")');
         await expect(saveBtn).not.toBeVisible();
-        
+
         console.log('>>> Initial Save Button State: PASS');
     });
 });

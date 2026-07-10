@@ -111,22 +111,26 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         await notificationPage.closeNotificationDrawer();
     });
 
-    test('Notification: Hub Search and Filter Verification', async ({ page }) => {
-        // Go to full notification hub if it exists (usually /admin/system/notifications or similar)
+    test('Notification: Hub Search and Filter Verification', async ({ request, page }) => {
+        // [E2E 감사 B] isVisible 가드 + count>=0(수학적 항상참) 제거 —
+        // 고유 태그 알림을 seed한 뒤 검색해 실제로 필터링되어 노출되는지 단언한다.
+        const uniqueTag = `HubSearch_${Date.now()}`;
+        const seedRes = await request.post('http://localhost:8080/api/v1/notifications', {
+            headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+            data: { notiTtlNm: uniqueTag, notiCn: 'Hub search filter validation payload.', readYn: 'N', rcvrId: 'webmaster' }
+        });
+        expect(seedRes.ok(), `알림 seed 실패: ${seedRes.status()}`).toBeTruthy();
+
         console.log('>>> Navigating to Notification Hub');
         await page.goto('/admin/notifications');
         await page.waitForLoadState('networkidle');
 
-        // Search for a known notification or use search input
         const searchInput = page.locator('input[placeholder*="검색"], input[aria-label*="Search"]').first();
-        if (await searchInput.isVisible()) {
-            await searchInput.fill('integrity'); // From previous test
-            await page.keyboard.press('Enter');
-            await page.waitForTimeout(1000);
-            
-            // Check results
-            const results = page.locator('tr, div.item').filter({ hasText: 'integrity' });
-            expect(await results.count()).toBeGreaterThanOrEqual(0);
-        }
+        await expect(searchInput).toBeVisible({ timeout: 15000 });
+        await searchInput.fill(uniqueTag);
+        await page.keyboard.press('Enter');
+
+        // 검색 결과에 seed한 항목이 반드시 나타나야 한다.
+        await expect(page.getByText(uniqueTag).first()).toBeVisible({ timeout: 15000 });
     });
 });

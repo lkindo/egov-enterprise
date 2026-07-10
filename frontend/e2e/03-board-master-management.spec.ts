@@ -1,19 +1,17 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/base-test';
 import { BoardMasterPage } from './pages/BoardMasterPage';
-import { setupGlobalErrorDetection, ConsoleErrorGuard } from './fixtures/error-detector';
 
 test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
     // Inject Admin Session
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     let boardMasterPage: BoardMasterPage;
-    let errorDetector: ConsoleErrorGuard;
 
     test.beforeEach(async ({ page }) => {
         test.setTimeout(300000); // 5 minutes
         boardMasterPage = new BoardMasterPage(page);
-        errorDetector = await setupGlobalErrorDetection(page);
-        
+        // [E2E 감사 C5] 수동 ConsoleErrorGuard 이중 설치 제거 — base-test의 auto consoleGuard가 전역 적용됨.
+
         // Handle ANY dialog early
         page.on('dialog', async dialog => {
             console.log(`>>> Dialog detected: [${dialog.message()}] - Auto-accepting.`);
@@ -68,8 +66,6 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         // Soft delete sets use_yn='N' (rendered as "대기" in Korean UI) rather than hard deleting the row
         const row = page.locator('tr').filter({ hasText: updatedName }).first();
         await expect(row).toContainText('대기', { timeout: 15000 });
-
-        await errorDetector.verify();
     });
 
     test('Validation Edge Case: Creation Failure with Empty Name', async ({ page }) => {
@@ -88,6 +84,8 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
             // Expect validation message or toast (Zod message: 게시판 명칭은 최소 2글자 이상이어야 합니다)
             await expect(page.locator('.text-red-500').filter({ hasText: '최소 2글자' }).first()).toBeVisible({ timeout: 15000 });
         } else {
+            // [E2E 감사 B] else 무단언 제거 — 빈 이름일 때 다음 버튼이 실제로 비활성인지 단언한다.
+            await expect(nextBtn).toBeDisabled();
             console.log('>>> Next button correctly disabled for empty name');
         }
     });

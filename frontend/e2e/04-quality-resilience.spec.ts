@@ -52,15 +52,13 @@ test.describe('Tier 4: Quality & Resilience', () => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
             await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=1108`); // Existing post
             
+            // [E2E 감사 B] isVisible 가드 제거 — 추천 버튼이 없으면 실패시킨다(과거: 가드로 무단언 통과).
             const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();
-            if (await likeBtn.isVisible()) {
-                const initialCount = await likeBtn.innerText();
-                await likeBtn.click();
-                // UI should update immediately (Optimistic)
-                const updatedCount = await likeBtn.innerText();
-                console.log(`>>> Like count changed: ${initialCount} -> ${updatedCount}`);
-                expect(updatedCount).not.toBe(initialCount);
-            }
+            await expect(likeBtn).toBeVisible({ timeout: 15000 });
+            const initialCount = await likeBtn.innerText();
+            await likeBtn.click();
+            // 낙관적 UI: 즉시 카운트가 변해야 한다.
+            await expect(likeBtn).not.toHaveText(initialCount, { timeout: 10000 });
         });
 
         test('Resilience: Auto-save Draft Restoration', async ({ page }) => {
@@ -112,8 +110,9 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     page.locator('.tabular-nums'), // Mask dynamic numbers
                     page.locator('.custom-scrollbar') // Mask dynamic scrollbar contents (Audit History)
                 ],
-                maxDiffPixelRatio: 0.3,
-                maxDiffPixels: 50000
+                // [E2E 감사 C6] 30%(0.3) 허용치는 사실상 VRT를 무력화했음 → 1%로 강화.
+                // 동적 영역은 위 mask로만 처리한다. (서버 기동 후 baseline 재캡처가 필요할 수 있음)
+                maxDiffPixelRatio: 0.01
             });
         });
     });
@@ -125,18 +124,12 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.goto('/admin/system/audit');
             console.log('>>> Verifying recent system activities');
             
+            // [E2E 감사 B] both-branches-pass 제거 — 로그인 등 활동으로 감사 로그가 반드시 존재하므로
+            // 타임스탬프를 하드 단언한다(과거: empty-state도 성공으로 인정해 빈/깨진 감사 페이지가 통과했음).
             const auditTimestamp = page.locator('span:text-matches("\\d{4}-\\d{2}-\\d{2}")').first();
-            const noResults = page.getByText(/검색 결과가 없습니다|No results/i);
-            
-            // Wait for either the data or the empty state message
-            await expect(auditTimestamp.or(noResults)).toBeVisible({ timeout: 20000 });
-            
-            if (await auditTimestamp.isVisible()) {
-                await expect(auditTimestamp).toContainText(/\d{4}-\d{2}-\d{2}/);
-                console.log('>>> Audit log entry verified.');
-            } else {
-                console.log('>>> No audit logs found in DB, but empty state is correctly handled.');
-            }
+            await expect(auditTimestamp).toBeVisible({ timeout: 20000 });
+            await expect(auditTimestamp).toContainText(/\d{4}-\d{2}-\d{2}/);
+            console.log('>>> Audit log entry verified.');
         });
     });
 });

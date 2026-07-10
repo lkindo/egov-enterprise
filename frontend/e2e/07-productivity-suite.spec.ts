@@ -18,36 +18,9 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
         await test.step('Admin: Verify Form UI Load', async () => {
             await prodPage.verifyApprovalStateTransition();
         });
-
-        await test.step('Admin: Simulate Approval State Transition (Draft -> Approved)', async () => {
-            console.log('>>> Simulating Approval Transition (Network Mock)');
-            
-            // Mocking the approval action
-            await adminPage.route('**/api/v1/approval/action', async route => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ 
-                        success: true, 
-                        currentState: 'APPROVED',
-                        message: '결재가 최종 승인되었습니다.'
-                    })
-                });
-            });
-            
-            // Execute the mocked action using page.evaluate (using browser context for auth headers if needed)
-            const result = await adminPage.evaluate(async () => {
-                const res = await fetch('/api/v1/approval/action', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'APPROVE', documentId: 'DOC-1234' })
-                });
-                return await res.json();
-            });
-
-            expect(result.success).toBe(true);
-            expect(result.currentState).toBe('APPROVED');
-        });
+        // [E2E 감사 A1] 삭제됨: 'Simulate Approval State Transition' — page.route로 {currentState:'APPROVED'}를
+        // 스스로 주입한 뒤 그 stub JSON을 단언하는 자기충족 목. 실제 승인 상태전이는 Phase4 신규 테스트(11 소유)에서
+        // 목 없이 실 PUT .../confirm으로 검증한다.
     });
 
     test('Organization Chart & Address Book (Permission & Navigation)', async ({ adminPage }) => {
@@ -60,34 +33,8 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
         await test.step('Admin: Verify Org Chart & User Tree', async () => {
             await prodPage.verifyOrgChartNavigation();
         });
-
-        await test.step('Admin: Simulate Organization Sync (Department Move)', async () => {
-            console.log('>>> Simulating User Department Move');
-            
-            await adminPage.route('**/api/v1/organization/move', async route => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ 
-                        success: true, 
-                        inheritedRoles: ['ROLE_USER', 'ROLE_HR_DEPT'],
-                        message: '부서 이동 및 권한 상속이 완료되었습니다.'
-                    })
-                });
-            });
-
-            const result = await adminPage.evaluate(async () => {
-                const res = await fetch('/api/v1/organization/move', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: 'user-001', targetDept: 'DEPT-HR' })
-                });
-                return await res.json();
-            });
-
-            expect(result.success).toBe(true);
-            expect(result.inheritedRoles).toContain('ROLE_HR_DEPT');
-        });
+        // [E2E 감사 A1] 삭제됨: 'Simulate Organization Sync' — page.route로 inheritedRoles를 스스로 주입한 뒤
+        // 그 stub을 단언하는 자기충족 목. 실제 부서 이동·권한 상속은 백엔드 통합 테스트에서 검증한다.
     });
 
     test('Calendar Management (Schedule Sync & Overlap Check)', async ({ adminPage }) => {
@@ -100,33 +47,8 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
         await test.step('Admin: Verify Calendar Component Render', async () => {
             await prodPage.verifyCalendarSynchronization();
         });
-
-        await test.step('Admin: Simulate Schedule Overlap Exception', async () => {
-            console.log('>>> Simulating Calendar Conflict Error');
-            
-            // Mock schedule overlap
-            await adminPage.route('**/api/v1/calendar/schedule', async route => {
-                await route.fulfill({
-                    status: 409,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ 
-                        success: false, 
-                        message: '해당 시간에 이미 다른 일정이 존재합니다 (중복).'
-                    })
-                });
-            });
-
-            const status = await adminPage.evaluate(async () => {
-                const res = await fetch('/api/v1/calendar/schedule', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: 'Important Meeting', start: '10:00', end: '11:00' })
-                }).catch(() => null);
-                return res ? res.status : null;
-            });
-
-            expect(status).toBe(409);
-        });
+        // [E2E 감사 A1] 삭제됨: 'Simulate Schedule Overlap Exception' — page.route로 409를 스스로 주입한 뒤
+        // 그 409를 단언하는 자기충족 목. 실제 일정 중복 충돌은 백엔드 통합 테스트에서 검증한다.
     });
 
     test('Smart Toolkit: Business Extensions (Dept Job & Work Report)', async ({ adminPage }) => {

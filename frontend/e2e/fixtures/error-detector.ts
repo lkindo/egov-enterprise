@@ -19,8 +19,8 @@ export class ConsoleErrorGuard {
     /Insufficient privileges/i,
     /Check your network connection/i,
     /The width\(-1\) and height\(-1\) of chart should be greater than 0/i, // Recharts fallback
-    /value/i,
-    /controlled/i,
+    // [E2E 감사 C3] /value/i, /controlled/i 제거 — 지나치게 광역이라 실제 런타임/React 경고를 은폐함.
+    // 필요한 테스트는 test.addIgnorePattern으로 정밀 지정할 것.
     /XSRF-TOKEN/i,
     /Failed to load resource/i, // Skip resource loading logs in console (handled by response listener)
     // Ignore non-fatal WebSocket closure warnings common in dev environments
@@ -56,10 +56,12 @@ export class ConsoleErrorGuard {
         text.includes('🌊 [HYDRATION MISMATCH DETECTED]');
 
       if (isHydrationMismatch) {
+        // [E2E 감사 C2] Hydration mismatch는 치명적 UI 불일치이므로 Fail-Fast로 격상한다.
+        // (과거에는 warn으로 강등되어 testing-guide의 "100% 빌드 실패" 정책과 코드가 모순되었음)
         const message = `🌊 [HYDRATION MISMATCH]: ${text}`;
-        // Hydration mismatches are non-fatal layout warnings. Change to warn to prevent blocking E2E test runs.
-        console.warn(`🚨 ${message}`);
-        return; 
+        this.errors.push(message);
+        console.error(`🚨 ${message}`);
+        return;
       }
 
       // 무시할 시스템 패턴 검사
@@ -103,13 +105,8 @@ export class ConsoleErrorGuard {
 
     // 2. 런타임 예외 리스너
     this.page.on('pageerror', (err) => {
-      // Hydration mismatch 관련 React 미니파이드 에러 (#418, #423, #425 등) 무시
-      if (err.message.includes('Minified React error #418') || 
-          err.message.includes('Minified React error #423') || 
-          err.message.includes('Minified React error #425')) {
-        console.warn(`⚠️ [SKIP_HYDRATION_ERROR]: ${err.message}`);
-        return;
-      }
+      // [E2E 감사 C2] 과거 무시하던 React 미니파이드 하이드레이션 에러(#418/#423/#425)는
+      // 프로덕션 하이드레이션 불일치의 신호이므로 더 이상 스킵하지 않고 결함으로 격상한다.
       const message = `[RUNTIME EXCEPTION]: ${err.message}\nStack: ${err.stack}`;
       this.errors.push(message);
       console.error(`🚨 ${message}`);

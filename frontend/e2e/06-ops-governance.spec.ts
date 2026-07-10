@@ -1,7 +1,5 @@
-import { test, expect } from './fixtures/base-test';
+import { test } from './fixtures/base-test';
 import { OpsGovernancePage } from './pages/OpsGovernancePage';
-import fs from 'fs';
-import path from 'path';
 
 /**
  * Tier 6: Ops Governance
@@ -20,26 +18,9 @@ test.describe('Tier 6: Ops Governance', () => {
         await test.step('Admin: Verify Policies Tab Accessibility', async () => {
             await opsPage.verifyPolicyTab();
         });
-        
-        // Simulating 2FA/OTP or IP Block response handling via network interception
-        await test.step('Admin: Simulate IP Restriction / Policy Enforcement', async () => {
-            console.log('>>> Simulating IP restriction enforcement response');
-            await adminPage.route('**/api/v1/system/policies/ip', async route => {
-                await route.fulfill({
-                    status: 403,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ message: '접근이 차단된 IP입니다.' })
-                });
-            });
-            
-            // Just verifying that Playwright routing works for compliance tests
-            // Use evaluate fetch to properly pass cookies via browser context
-            const status = await adminPage.evaluate(async () => {
-                const res = await fetch('/api/v1/system/policies/ip').catch(() => null);
-                return res ? res.status : null;
-            });
-            expect(status).toBe(403);
-        });
+        // [E2E 감사 A1] 삭제됨: 'Simulate IP Restriction' 스텝은 page.route로 403을 스스로 주입한 뒤
+        // 그 403을 그대로 단언하는 자기충족(self-fulfilling) 목이라 어떤 회귀도 잡지 못했음.
+        // 실제 IP 정책 강제는 백엔드 통합/전용 테스트에서 서버 기동 후 검증한다.
     });
 
     test('Menu ACL & Role Mapping Synchronization', async ({ adminPage }) => {
@@ -55,51 +36,8 @@ test.describe('Tier 6: Ops Governance', () => {
         });
     });
 
-    test('File Storage Integrity & Upload Validation', async ({ adminPage }) => {
-        await test.step('Admin: Prepare dummy file for upload test', async () => {
-            const testDir = path.join(__dirname, 'test-assets');
-            if (!fs.existsSync(testDir)) {
-                fs.mkdirSync(testDir);
-            }
-            const dummyFilePath = path.join(testDir, 'e2e-dummy-upload.txt');
-            fs.writeFileSync(dummyFilePath, 'This is a test file for storage integrity check.');
-            
-            console.log('>>> Created test asset for upload simulation');
-            
-            // Navigate to an upload-capable page (e.g., Notice Board Create)
-            await adminPage.goto('/admin/community/boards/master');
-            
-            // Wait for load, then we just verify the route and component stability
-            await expect(adminPage.getByText(/게시판.*관리|Board/i).first()).toBeVisible();
-            
-            // Note: If a specific file upload UI exists, we would do:
-            // await adminPage.locator('input[type="file"]').setInputFiles(dummyFilePath);
-            // await expect(adminPage.getByText('e2e-dummy-upload.txt')).toBeVisible();
-        });
-        
-        await test.step('Admin: Simulate Storage Full Exception', async () => {
-            console.log('>>> Simulating Storage Full Error Response');
-            await adminPage.route('**/api/v1/system/storage/upload', async route => {
-                await route.fulfill({
-                    status: 507,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ message: '스토리지 용량이 초과되었습니다.' })
-                });
-            });
-            
-            const status = await adminPage.evaluate(async () => {
-                const res = await fetch('/api/v1/system/storage/upload', { method: 'POST' }).catch(() => null);
-                return res ? res.status : null;
-            });
-            expect(status).toBe(507);
-        });
-    });
-
-    test.afterAll(async () => {
-        const testDir = path.join(__dirname, 'test-assets');
-        if (fs.existsSync(testDir)) {
-            console.log('>>> Cleaning up E2E local test assets...');
-            fs.rmSync(testDir, { recursive: true, force: true });
-        }
-    });
+    // [E2E 감사 A1] 삭제됨: 'File Storage Integrity & Upload Validation'.
+    // 실제 업로드(setInputFiles)는 주석 처리돼 있었고, 'Storage Full'은 page.route로 507을 스스로 주입한 뒤
+    // 그 507을 단언하는 자기충족 목이었음 → 앱을 전혀 검증하지 않음. 실제 업로드/용량 초과 처리는
+    // 전용 통합 테스트(서버 기동)에서 실 엔드포인트로 검증한다.
 });

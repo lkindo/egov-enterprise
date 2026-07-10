@@ -43,11 +43,7 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
         await expect(page.getByRole('heading', { name: '시스템' })).toBeVisible();
     });
 
-    test('should trigger workflow deployment process', async ({ page }) => {
-        await workflowPage.deployWorkflow();
-        
-        // Since it's a mock action in WorkflowHubClient, it might not have a complex flow,
-        // but we verify the button is interactive.
-        console.log('[E2E] Workflow deployment triggered successfully');
-    });
+    // [E2E 감사 A1] 삭제됨: 'should trigger workflow deployment process' — deployWorkflow()가 배포 버튼의
+    // enabled 여부만 확인하고 클릭 후 결과(토스트/상태전이/네트워크)를 전혀 단언하지 않던 무단언 테스트.
+    // 실제 배포 성공 신호는 서버 기동 후 상태 배지/토스트로 재작성 검증 예정.
 });

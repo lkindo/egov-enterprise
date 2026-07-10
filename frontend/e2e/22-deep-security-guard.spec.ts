@@ -56,37 +56,51 @@ test.describe('Tier 22: Deep Security Guard', () => {
 
         test('XSS Sanitization: Complex Payloads in Board Comments', async ({ page }) => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
-            const pstId = '1108'; // Existing article
+            const pstId = '1108'; // Existing article (TODO: 전용 게시글을 seed하여 hardcoded-id 의존 제거)
+
+            // [E2E 감사 A2] XSS payload가 실행되면 alert() → dialog 이벤트가 발생한다.
+            // dialog가 한 번이라도 뜨면 즉시 실패 처리한다(과거에는 무단언 console.log만 있어 취약해도 그린이었음).
+            let xssDialogFired = false;
+            page.on('dialog', async (dialog) => {
+                xssDialogFired = true;
+                console.error(`🚨 [XSS EXECUTED] Unexpected script dialog: ${dialog.message()}`);
+                await dialog.dismiss();
+            });
+
             await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
-            
-            // Complex XSS Payloads
+
+            // 실제 댓글 입력 필드는 <Textarea name="ansCn"> (과거 셀렉터 'commentCn'는 매칭 실패 →
+            // if(isVisible) 가드가 항상 false가 되어 테스트가 조용히 통과하던 근본 원인이었음)
+            const commentInput = page.locator('textarea[name="ansCn"]').first();
+            await expect(commentInput).toBeVisible({ timeout: 15000 }); // 없으면 실패(무단언 통과 차단)
+
             const payloads = [
                 "<img src=x onerror=alert('XSS')>",
                 "<svg/onload=alert('XSS')>",
-                "javascript:alert('XSS')",
-                "<details open ontoggle=alert('XSS')>"
+                "<details open ontoggle=alert('XSS')>",
             ];
 
-            const commentInput = page.locator('textarea[name="commentCn"], .comment-input').first();
-            if (await commentInput.isVisible()) {
-                for (const payload of payloads) {
-                    console.log(`>>> Testing Payload: ${payload}`);
-                    await commentInput.fill(payload);
-                    await page.locator('button:has-text("등록"), button:has-text("Comment"), button:has-text("Commit Response")').click();
-                    
-                    // Wait for it to appear in the list
-                    await page.waitForTimeout(1000);
-                    
-                    // Check if alert appeared (Playwright fails if unhandled dialog appears)
-                    // If the test continues, it means the alert didn't fire.
-                    
-                    // Verify the payload is rendered as text, not as HTML elements
-                    const renderedComment = page.locator('text=' + payload).first();
-                    // If it's sanitized, it should exist as text content
-                    // If it was executed, the tags might be stripped or changed
-                    console.log(`>>> Payload ${payload} was not executed (No alert).`);
-                }
+            for (const payload of payloads) {
+                console.log(`>>> Testing Payload: ${payload}`);
+                await commentInput.fill(payload);
+                await page.getByRole('button', { name: /Commit Response|등록/i }).click();
+
+                // 페이로드가 '텍스트'로 이스케이프 렌더링되어야 한다(React {value}는 자동 이스케이프).
+                await expect(
+                    page.locator('p.whitespace-pre-wrap').filter({ hasText: payload }).first()
+                ).toBeVisible({ timeout: 10000 });
+
+                // 주입된 '라이브' DOM 노드가 실제로 생성되지 않아야 한다.
+                await expect(page.locator('img[onerror], svg[onload], details[ontoggle]')).toHaveCount(0);
+
+                await commentInput.fill('');
             }
+
+            // 저장(stored) 경로 재검증: 새로고침 후에도 스크립트가 실행되지 않아야 함.
+            await page.reload();
+            await expect(page.locator('p.whitespace-pre-wrap').first()).toBeVisible({ timeout: 10000 });
+
+            expect(xssDialogFired, 'XSS payload가 스크립트 dialog를 발생시킴 — 새니타이제이션 실패').toBe(false);
         });
     });
 
@@ -94,8 +108,9 @@ test.describe('Tier 22: Deep Security Guard', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
         test('Handling Malformed UUID/IDs in URLs', async ({ page, consoleGuard }) => {
-            consoleGuard.addIgnorePattern(/not found|404|invalid|error/i);
-            consoleGuard.addIgnorePattern(/HTTP 404/i);
+            // [E2E 감사] 오염된 ID로 인한 '예상된' 백엔드 4xx만 해당 요청 URL 한정으로 좁게 화이트리스트.
+            // 광역 /not found|404|invalid|error/i 무시는 제거 — React 런타임 크래시는 반드시 실패해야 하므로.
+            consoleGuard.addIgnorePattern(/INVALID_ID|pstId=999999|etc\/passwd|menuId=--/i);
 
             const malformedPaths = [
                 '/admin/community/boards/detail?bbsId=INVALID_ID&pstId=999999',
@@ -106,15 +121,11 @@ test.describe('Tier 22: Deep Security Guard', () => {
             for (const path of malformedPaths) {
                 console.log(`>>> Checking malformed path: ${path}`);
                 await page.goto(path);
-                
-                // Should show "Not Found" or "Invalid Request" or "Empty State" or a Toast
-                // Crucially, it should NOT show a React Runtime Error (White Screen)
-                const errorState = page.locator('text=없습니다, text=not found, text=오류, text=invalid, .error-container').first();
-                // Avoid matching __next-route-announcer__ by checking for text content
-                const errorToast = page.getByRole('alert').filter({ hasText: /./ }).first();
-                
-                await expect(errorState.or(errorToast).or(page.locator('body').first())).toBeVisible();
-                console.log(`>>> Malformed path ${path} handled gracefully.`);
+
+                // 핵심 계약: 화이트 스크린(React 런타임 크래시)이 아니어야 한다 → 관리자 셸이 생존해야 함.
+                // (auto consoleGuard가 pageerror/console.error/hydration을 이미 실패로 잡으므로 이중 방어)
+                await expect(page.locator('aside, nav, header').first()).toBeVisible({ timeout: 15000 });
+                console.log(`>>> Malformed path ${path} handled gracefully (shell survived).`);
             }
         });
     });

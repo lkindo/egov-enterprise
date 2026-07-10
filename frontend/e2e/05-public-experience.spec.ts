@@ -74,12 +74,10 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
                 await userPage.reload();
                 await userPage.waitForTimeout(2000);
             }
-            
-            if (await popupTitleLoc.isHidden()) {
-                console.warn('>>> Warning: Popup not visible on dashboard. This may be due to popup creation failing silently.');
-            } else {
-                await expect(popupTitleLoc).toBeVisible();
-            }
+
+            // [E2E 감사 B] else-warn 통과 제거 — 관리자가 만든 팝업/배너가 사용자에게 실제로 보여야 한다(무조건 단언).
+            // 보이지 않으면 생성이 조용히 실패했거나 노출 로직이 깨진 것이므로 실패 처리한다.
+            await expect(popupTitleLoc.first()).toBeVisible({ timeout: 10000 });
 
             const bannerTitleLoc = userPage.getByText(bannerTitle).first();
             for (let i = 0; i < 3; i++) {
@@ -89,11 +87,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
                 await userPage.waitForTimeout(2000);
             }
 
-            if (await bannerTitleLoc.isHidden()) {
-                console.warn('>>> Warning: Banner not visible on dashboard.');
-            } else {
-                await expect(bannerTitleLoc).toBeVisible();
-            }
+            await expect(bannerTitleLoc).toBeVisible({ timeout: 10000 });
         });
     });
 
@@ -188,15 +182,16 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             // Wait for view to load
             await userPage.waitForTimeout(1000);
             
-            // Check for already participated message or disabled state
-            const message = userPage.getByText(/이미 참여|already participated/i).first();
-            const submitBtn = userPage.getByRole('button', { name: /투표|제출|Vote/i });
-            
-            // One of these should be true: message is visible OR button is disabled/hidden
-            const isBlocked = await message.isVisible() || await submitBtn.isDisabled() || !(await submitBtn.isVisible());
-            console.log(`>>> Duplicate vote check: message visible=${await message.isVisible()}, btn disabled=${await submitBtn.isDisabled()}, btn visible=${await submitBtn.isVisible()}`);
-            
-            expect(isBlocked).toBeTruthy();
+            // [E2E 감사 B] '!submitBtn.isVisible()' 분기 제거 — 깨진/빈 참여 화면(버튼 미렌더)도 통과시키던
+            // 항상-참 disjunct였음. 이미-참여 메시지 또는 명시적 disabled 상태만 유효한 차단 증거로 인정한다.
+            const message = userPage.getByText(/이미 참여|already participated|참여.*완료/i).first();
+            const submitBtn = userPage.getByRole('button', { name: /투표|제출|Vote/i }).first();
+
+            const messageVisible = await message.isVisible().catch(() => false);
+            const btnDisabled = await submitBtn.isDisabled().catch(() => false);
+            console.log(`>>> Duplicate vote check: message=${messageVisible}, disabled=${btnDisabled}`);
+
+            expect(messageVisible || btnDisabled, '2차 투표가 차단(이미 참여 메시지 또는 제출 버튼 비활성)되어야 함').toBeTruthy();
             console.log(`>>> Successfully verified duplicate vote protection`);
         });
     });
