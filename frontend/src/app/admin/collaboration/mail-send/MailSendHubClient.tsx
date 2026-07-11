@@ -112,7 +112,7 @@ export default function MailSendHubClient() {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Enterprise Mail System</span>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none transition-colors">
+          <h1 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none transition-colors">
             Compose <span className="text-primary">Mail</span>
           </h1>
         </div>
@@ -121,9 +121,9 @@ export default function MailSendHubClient() {
       <form onSubmit={handleSend} className="space-y-10 px-2">
         
         {/* 2. Recipient Selection */}
-        <div className="hub-card-premium p-10 bg-white border-2 border-slate-100 shadow-2xl relative overflow-hidden group rounded-lg">
+        <div className="hub-card-premium p-10 bg-white border-2 border-border shadow-2xl relative overflow-hidden group rounded-lg">
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-            <User size={140} className="rotate-12 text-slate-900" />
+            <User size={140} className="rotate-12 text-foreground" />
           </div>
           <div className="relative z-10 space-y-8">
             <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ export default function MailSendHubClient() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                   <Search size={20} />
                 </div>
-                <span className="text-xs font-bold tracking-tight text-slate-400">Target_Recipient_Node</span>
+                <span className="text-xs font-bold tracking-tight text-muted-foreground">Target_Recipient_Node</span>
               </div>
               {selectedRecipients.length > 0 && (
                 <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight animate-in zoom-in duration-300">Target Locked</Badge>
@@ -175,7 +175,7 @@ export default function MailSendHubClient() {
                   <Input
                     data-testid="mail-recipient-input"
                     placeholder="성명 또는 ID로 수신자를 검색하십시오..."
-                    className="h-11 text-xl font-bold tracking-tight bg-slate-50 border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-slate-300"
+                    className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-slate-300"
                     value={recipientSearch}
                     onChange={(e) => handleSearchUsers(e.target.value)}
                   />
@@ -185,10 +185,10 @@ export default function MailSendHubClient() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-lg shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-slate-50"
+                        className="absolute z-50 w-full mt-2 bg-white border-2 border-border rounded-lg shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-slate-50"
                       >
                         {isSearching ? (
-                          <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-3">
+                          <div className="p-8 text-center text-muted-foreground flex items-center justify-center gap-3">
                             <Loader2 className="w-5 h-5 animate-spin text-primary" />
                             <span className="text-xs font-bold tracking-tight text-xs">Searching Records...</span>
                           </div>
@@ -213,14 +213,14 @@ export default function MailSendHubClient() {
                               className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors group text-left"
                             >
                               <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
+                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-bold text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
                                   {(user.nm || user.userNm || user.adbkNm || user.ncrdNm)?.charAt(0)}
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                  <span className="font-bold text-foreground group-hover:text-primary transition-colors">
                                     {user.nm || user.userNm || user.adbkNm || user.ncrdNm}
                                   </span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-muted-foreground">
                                     {user.email || user.emlAddr || user.emplyrId || user.userId || user.adbkId || user.ncrdId}
                                   </span>
                                 </div>
@@ -229,7 +229,7 @@ export default function MailSendHubClient() {
                             </button>
                           ))
                         ) : (
-                          <div className="p-8 text-center text-slate-400">
+                          <div className="p-8 text-center text-muted-foreground">
                             <span className="text-xs font-bold tracking-tight">No Matches Found</span>
                           </div>
                         )}
@@ -243,22 +243,22 @@ export default function MailSendHubClient() {
         </div>
 
         {/* 3. Subject */}
-        <div className="hub-card-premium p-10 bg-slate-50 border-none shadow-2xl relative overflow-hidden group rounded-lg">
+        <div className="hub-card-premium p-10 bg-muted border-none shadow-2xl relative overflow-hidden group rounded-lg">
           <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-            <Zap size={140} className="rotate-12 text-slate-900" />
+            <Zap size={140} className="rotate-12 text-foreground" />
           </div>
           <div className="relative z-10 space-y-6">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                 <Mail size={20} />
               </div>
-              <span className="text-xs font-bold tracking-tight text-slate-400">Core_Subject_Header</span>
+              <span className="text-xs font-bold tracking-tight text-muted-foreground">Core_Subject_Header</span>
             </div>
             <Input
               data-testid="mail-subject-input"
               value={form.sj}
               onChange={(e) => setForm({ ...form, sj: e.target.value })}
-              className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight"
+              className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
               placeholder="제목을 입력하십시오..."
               required
             />
@@ -271,7 +271,7 @@ export default function MailSendHubClient() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Layers size={18} className="text-primary" />
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight transition-colors">Mail Payload</h3>
+              <h3 className="text-sm font-bold text-foreground tracking-tight transition-colors">Mail Payload</h3>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -282,25 +282,25 @@ export default function MailSendHubClient() {
             data-testid="mail-content-textarea"
             value={form.emailCn}
             onChange={(e) => setForm({ ...form, emailCn: e.target.value })}
-            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-white border-2 border-slate-100 rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-slate-200"
+            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-white border-2 border-border rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-slate-200"
             placeholder="전달할 상세 내용을 기술하십시오..."
             required
           />
         </div>
 
         {/* 5. Bottom Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-border">
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">Security_Level</span>
+              <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">Security_Level</span>
               <span className="text-xs font-bold text-emerald-500 mt-1 flex items-center gap-1.5">
                 <ShieldCheck size={12} /> Encrypted
               </span>
             </div>
-            <div className="w-[1px] h-8 bg-slate-100" />
+            <div className="w-[1px] h-8 bg-muted" />
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">Dispatch_Clock</span>
-              <span className="text-xs font-bold text-slate-800 mt-1 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">Dispatch_Clock</span>
+              <span className="text-xs font-bold text-foreground mt-1 flex items-center gap-1.5">
                 <Clock size={12} /> {currentTime || '--:--:--'}
               </span>
             </div>
@@ -311,7 +311,7 @@ export default function MailSendHubClient() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-slate-50 transition-all bg-white"
+              className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-muted transition-all bg-white"
             >
               Abort
             </Button>
@@ -334,7 +334,7 @@ export default function MailSendHubClient() {
       </form>
 
       <div className="text-center">
-        <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-lg border border-slate-100">
+        <div className="inline-flex items-center gap-3 px-6 py-2 bg-muted rounded-lg border border-border">
           <Sparkles size={14} className="text-primary/40" />
           <span className="text-xs font-bold text-slate-300 tracking-tight">Enterprise Neural Link - V4.5.1</span>
         </div>

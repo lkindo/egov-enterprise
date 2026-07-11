@@ -58,7 +58,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
             </div>
             <div>
               <h3 className="text-base font-bold text-foreground tracking-tighter leading-none uppercase">검색 조건 설정</h3>
-              <p className="text-xs font-bold text-slate-700 mt-1.5 uppercase tracking-widest">고급 필터링 시스템</p>
+              <p className="text-xs font-bold text-foreground mt-1.5 uppercase tracking-widest">고급 필터링 시스템</p>
             </div>
           </div>
           <Button
@@ -77,7 +77,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2 group/field">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-primary transition-colors">
+                <label className="text-xs font-bold text-foreground uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-primary transition-colors">
                   {field.label.toUpperCase()}
                 </label>
 
@@ -148,7 +148,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                   />
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                     <Input
                       placeholder={field.placeholder?.toUpperCase()}
                       value={values[field.name] || ''}

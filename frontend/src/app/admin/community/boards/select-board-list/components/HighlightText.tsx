@@ -8,7 +8,7 @@ export const HighlightText = ({ text, highlight }: { text: string | undefined; h
     <>
       {parts.map((part, i) => 
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <mark key={i} className="bg-yellow-200 text-slate-900 rounded-sm px-0.5">{part}</mark>
+          <mark key={i} className="bg-yellow-200 text-foreground rounded-sm px-0.5">{part}</mark>
         ) : (
           part
         )

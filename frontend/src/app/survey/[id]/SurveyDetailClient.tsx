@@ -18,8 +18,8 @@ import { Loader2, ArrowLeft, BarChart3 } from 'lucide-react';
 const SurveyDetailSkeleton = () => (
   <div className="space-y-6 animate-pulse">
     {Array.from({ length: 3 }).map((_, idx) => (
-      <Card key={idx} className="shadow-sm overflow-hidden border border-slate-100">
-        <div className="bg-slate-50/50 border-b p-6 flex items-center justify-between">
+      <Card key={idx} className="shadow-sm overflow-hidden border border-border">
+        <div className="bg-muted/50 border-b p-6 flex items-center justify-between">
           <div className="flex items-center gap-3 w-2/3">
             <div className="bg-slate-200 w-6 h-6 rounded-lg" />
             <div className="h-5 bg-slate-200 rounded-lg w-3/4" />
@@ -29,9 +29,9 @@ const SurveyDetailSkeleton = () => (
         <div className="p-6 space-y-4">
           <div className="flex justify-between w-1/3">
             <div className="h-4 bg-slate-200 rounded w-24" />
-            <div className="h-4 bg-slate-100 rounded w-12" />
+            <div className="h-4 bg-muted rounded w-12" />
           </div>
-          <div className="w-full bg-slate-100 rounded-lg h-2.5" />
+          <div className="w-full bg-muted rounded-lg h-2.5" />
         </div>
       </Card>
     ))}

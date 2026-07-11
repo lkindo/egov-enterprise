@@ -53,7 +53,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       >
         본문 바로가기
       </a>
-      <Suspense fallback={<div className="h-11 border-b border-slate-100 bg-white/80" />}>
+      <Suspense fallback={<div className="h-11 border-b border-border bg-white/80" />}>
         <Header menusPromise={menusPromise} />
       </Suspense>
       <div className="flex flex-1">
@@ -68,7 +68,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         >
           <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
-              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-slate-500 font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
+              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-muted-foreground font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
                 {children}
               </Suspense>
             </PageTransition>

@@ -139,7 +139,7 @@ const BBSDetailClient = () => {
                 {pathname?.includes('insert-board-article') ? '새로운 통찰을' : '내용을 수정하여'} <br />
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
-              <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
+              <p className="text-muted-foreground font-medium text-lg max-w-lg leading-relaxed">
                 {tmpltId === 'TMPLT_QNA' 
                   ? '궁금한 점을 상세히 적어주시면 정확한 답변을 드릴 수 있습니다.'
                   : '새로운 아이디어나 소식을 공유하여 커뮤니티의 가치를 높여주세요.'}
@@ -287,7 +287,7 @@ const BBSDetailClient = () => {
               </div>
               <div className="space-y-3 relative z-10 text-center md:text-left">
                 <p className="font-bold text-2xl text-white tracking-tight ">보안 준수 사항</p>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
+                <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-[450px]">
                   작성하신 정보는 프로젝트 자산으로 등록됩니다. <br />민감한 개인정보나 기밀 정보가 포함되지 않도록 주의해 주세요.
                 </p>
               </div>

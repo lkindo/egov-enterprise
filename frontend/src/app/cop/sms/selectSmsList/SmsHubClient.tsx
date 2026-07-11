@@ -84,7 +84,7 @@ export default function SmsHubClient({
     {
       header: 'ID',
       accessor: (item) => (
-        <span className="text-xs font-bold text-slate-400 tracking-tighter">
+        <span className="text-xs font-bold text-muted-foreground tracking-tighter">
           #{item.smsId?.substring(0, 8).toUpperCase()}
         </span>
       )
@@ -96,7 +96,7 @@ export default function SmsHubClient({
           <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
             <Phone size={16} />
           </div>
-          <span className="text-sm font-bold text-slate-900 tracking-tighter">
+          <span className="text-sm font-bold text-foreground tracking-tighter">
             {item.rcptnTelno}
           </span>
         </div>
@@ -105,7 +105,7 @@ export default function SmsHubClient({
     {
       header: 'MESSAGE_CONTENT',
       accessor: (item) => (
-        <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md group-hover:text-slate-900 transition-colors">
+        <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md group-hover:text-foreground transition-colors">
           {item.sndngCn}
         </p>
       )
@@ -165,7 +165,7 @@ export default function SmsHubClient({
                                 <DialogTitle className="text-3xl font-bold tracking-tighter flex items-center gap-4 text-white">
                                     <MessageSquare className="text-primary" /> Send_Message
                                 </DialogTitle>
-                                <DialogDescription className="text-slate-400 text-xs font-bold mt-2">
+                                <DialogDescription className="text-muted-foreground text-xs font-bold mt-2">
                                     새로운 문자 메시지를 발송하기 위한 파라미터를 입력하십시오.
                                 </DialogDescription>
                             </DialogHeader>
@@ -174,37 +174,37 @@ export default function SmsHubClient({
                     <div className="p-10 space-y-10">
                         <div className="space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-xs font-bold text-slate-400 tracking-tight">_ Recipient_Phone_Number</Label>
+                                <Label className="text-xs font-bold text-muted-foreground tracking-tight">_ Recipient_Phone_Number</Label>
                                 <div className="relative group">
                                     <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
                                     <Input
                                         placeholder="010-0000-0000"
-                                        className="pl-16 h-11 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200"
+                                        className="pl-16 h-11 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200"
                                         value={newSms.rcptnTelno}
                                         onChange={(e) => setNewSms({ ...newSms, rcptnTelno: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <Label className="text-xs font-bold text-slate-400 tracking-tight">_ Message_Content_Payload</Label>
+                                <Label className="text-xs font-bold text-muted-foreground tracking-tight">_ Message_Content_Payload</Label>
                                 <div className="relative group">
                                     <Textarea
                                         placeholder="전달할 메시지 내용을 입력하세요..."
-                                        className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed"
+                                        className="min-h-[200px] p-8 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed"
                                         value={newSms.sndngCn}
                                         onChange={(e) => setNewSms({ ...newSms, sndngCn: e.target.value })}
                                     />
-                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-xs font-bold text-slate-400 tracking-tight">
+                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-xs font-bold text-muted-foreground tracking-tight">
                                         _ {newSms.sndngCn.length} / 80 BYTES
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-4 pt-4 border-t border-slate-100">
+                        <div className="flex gap-4 pt-4 border-t border-border">
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setIsDialogOpen(false)}
-                                className="h-11 px-10 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-slate-50"
+                                className="h-11 px-10 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-muted"
                             >
                                 ABORT_OPERATION
                             </Button>
@@ -231,13 +231,13 @@ export default function SmsHubClient({
         <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Left Metrics */}
           <div className="col-span-12 lg:col-span-3 space-y-8">
-            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-8 space-y-8 border-2 border-slate-100/50 shadow-2xl relative overflow-hidden group">
+            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-8 space-y-8 border-2 border-border/50 shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                 <Zap size={120} className="text-primary" />
               </div>
               <div className="relative z-10 space-y-2">
                 <span className="text-xs font-bold text-primary tracking-tight">_ Traffic_Analysis</span>
-                <h4 className="text-3xl font-bold tracking-tighter text-slate-900">_ Channel<br />Throughput</h4>
+                <h4 className="text-3xl font-bold tracking-tighter text-foreground">_ Channel<br />Throughput</h4>
               </div>
               <div className="space-y-6 relative z-10">
                 <MetricItem label="Total Packets" value={data?.total || 0} />
@@ -267,11 +267,11 @@ export default function SmsHubClient({
               icon={Clock}
             >
               <div className="space-y-8">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-[var(--gap-hub-widget)] px-2 pt-2 border-b border-slate-100 pb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-[var(--gap-hub-widget)] px-2 pt-2 border-b border-border pb-8">
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-11 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500"
+                      className="pl-16 h-11 bg-muted/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                       placeholder="Search packets..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
@@ -284,7 +284,7 @@ export default function SmsHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => refetch()}
-                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all group shadow-sm"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-muted border border-border transition-all group shadow-sm"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
@@ -336,8 +336,8 @@ export default function SmsHubClient({
 function MetricItem({ label, value }: { label: string, value: string | number }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-xs font-bold text-slate-400 tracking-tight">_ {label}</span>
-      <span className="text-xl font-bold text-slate-900 tabular-nums">{value}</span>
+      <span className="text-xs font-bold text-muted-foreground tracking-tight">_ {label}</span>
+      <span className="text-xl font-bold text-foreground tabular-nums">{value}</span>
     </div>
   );
 }

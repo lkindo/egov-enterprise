@@ -28,8 +28,8 @@ const NationalDistributionMap = dynamic(() => import('@/app/components/ui/nation
   ssr: false,
   loading: () => (
     <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-lg space-y-4">
-      <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
-      <p className="text-xs font-bold tracking-[0.4em] text-slate-600 uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
+      <div className="w-12 h-12 border-4 border-border border-t-indigo-500 rounded-full animate-spin" />
+      <p className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
     </div>
   )
 });
@@ -71,7 +71,7 @@ export default function AdminStatsClient({
           </div>
           <div>
             <span className="font-bold tracking-tighter text-foreground block text-lg uppercase leading-none">{item.menuNm}</span>
-            <span className="text-xs font-bold text-slate-600 tracking-[0.3em] mt-2 uppercase">NODE_TYPE: CORE_MODULE</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase">NODE_TYPE: CORE_MODULE</span>
           </div>
         </div>
       )
@@ -89,7 +89,7 @@ export default function AdminStatsClient({
       header: '영향력 매트릭스',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-6 min-w-[240px]">
-          <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
+          <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
             <div
               className="h-full bg-gradient-to-r from-primary via-indigo-500 to-violet-500 transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
               style={{ width: `${item?.percentage || 0}%` }}
@@ -160,7 +160,7 @@ export default function AdminStatsClient({
             description="시스템 전반에 걸친 데이터 스트림의 흐름 및 진화 양상을 분석합니다"
             icon={Activity}
           >
-            <div className="p-4 bg-slate-50/50 rounded-lg border border-border/30 overflow-hidden group">
+            <div className="p-4 bg-muted/50 rounded-lg border border-border/30 overflow-hidden group">
               <StandardChartWrapper
                 title="NETWORK TRAFFIC EVOLUTION"
                 type="area"
@@ -206,7 +206,7 @@ export default function AdminStatsClient({
             description="사용자의 의도가 가장 밀집된 핵심 상호작용 지점 분석입니다"
             icon={Target}
           >
-            <div className="p-8 bg-slate-50 rounded-lg border border-border/30 shadow-inner">
+            <div className="p-8 bg-muted rounded-lg border border-border/30 shadow-inner">
               <StandardChartWrapper
                 title="HIGH-INTERACTION SERVICES"
                 type="bar"
@@ -268,7 +268,7 @@ export default function AdminStatsClient({
             </p>
           </div>
           <div className="shrink-0">
-            <Button className="h-24 px-16 bg-white text-slate-900 rounded-lg font-bold text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
+            <Button className="h-24 px-16 bg-white text-foreground rounded-lg font-bold text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
               Execute Global Report
               <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
             </Button>
@@ -281,7 +281,7 @@ export default function AdminStatsClient({
 
 function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
   const colorMap: any = {
-    slate: "bg-white text-slate-900 border-border/50 shadow-md",
+    slate: "bg-white text-foreground border-border/50 shadow-md",
     primary: "bg-white text-primary border-primary/10 shadow-md",
     indigo: "bg-white text-indigo-600 border-indigo-100 shadow-md",
     rose: "bg-rose-50 text-rose-600 border-rose-100 shadow-md"
@@ -316,7 +316,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
       </div>
       <div className="relative z-10">
         <h3 className="text-4xl font-bold tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h3>
-        <p className="text-xs font-bold text-slate-600 tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
+        <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
           <span className="w-6 h-0.5 bg-current opacity-100" />
           {title}
         </p>

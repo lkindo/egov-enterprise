@@ -28,8 +28,8 @@ export default function LsmClient({
  <Calendar size={18} />
  </div>
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.scheduleSe}</span>
- <span className="font-bold text-slate-900">{item.scheduleNm}</span>
+ <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{item.scheduleSe}</span>
+ <span className="font-bold text-foreground">{item.scheduleNm}</span>
  </div>
  </div>
  )
@@ -38,7 +38,7 @@ export default function LsmClient({
  header: '대상 간부',
  accessor: (item) => (
  <div className="flex items-center gap-2">
- <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
+ <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-xs font-bold">
  {item.leaderNm?.charAt(0)}
  </div>
  <span className="font-semibold">{item.leaderNm || 'Unknown'}</span>
@@ -49,7 +49,7 @@ export default function LsmClient({
  header: '일정 장소',
  accessor: (item) => (
  <div className="flex items-center gap-2">
- <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm font-sans">
+ <span className="text-xs font-semibold bg-muted text-foreground px-3 py-1.5 rounded-lg border border-border shadow-sm font-sans">
  {item.schdlPlcNm || '장소 미지정'}
  </span>
  </div>
@@ -58,7 +58,7 @@ export default function LsmClient({
  {
  header: '기간',
  accessor: (item) => (
- <div className="flex flex-col text-xs font-mono text-slate-500">
+ <div className="flex flex-col text-xs font-mono text-muted-foreground">
  <span>{item.schdlBgngYmd}</span>
  <span className="opacity-40">~ {item.schdlEndYmd}</span>
  </div>
@@ -99,14 +99,14 @@ export default function LsmClient({
  <HubSectionCard title="간부 상태 모니터링" description="주요 리더의 현재 업무 가용성 및 위치 상태입니다." icon={Shield}>
  <div className="space-y-4">
  {initialStatuses.map(status => (
- <div key={status.leaderId} className="p-4 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
+ <div key={status.leaderId} className="p-4 bg-muted rounded-lg flex items-center justify-between border border-border group hover:bg-white hover:shadow-xl transition-all">
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400">
+ <div className="w-12 h-12 rounded-lg bg-white shadow-sm flex items-center justify-center text-muted-foreground">
  <Star size={20} />
  </div>
  <div>
- <h5 className="font-bold text-slate-900 leading-tight">{status.leaderNm}</h5>
- <p className="text-xs text-slate-400 font-bold uppercase">{status.positionNm} | {status.ognzNm}</p>
+ <h5 className="font-bold text-foreground leading-tight">{status.leaderNm}</h5>
+ <p className="text-xs text-muted-foreground font-bold uppercase">{status.positionNm} | {status.ognzNm}</p>
  </div>
  </div>
  <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold uppercase tracking-tighter">
@@ -114,7 +114,7 @@ export default function LsmClient({
  </div>
  </div>
  ))}
- {initialStatuses.length === 0 && <p className="text-center py-10 text-slate-400 font-bold uppercase ">No Active Leaders Detected</p>}
+ {initialStatuses.length === 0 && <p className="text-center py-10 text-muted-foreground font-bold uppercase ">No Active Leaders Detected</p>}
  </div>
  </HubSectionCard>
  </div>

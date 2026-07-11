@@ -99,7 +99,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-slate-400">
+        <span className="font-mono text-xs font-bold text-muted-foreground">
           {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
         </span>
       ),
@@ -109,13 +109,13 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
       header: '포상 명칭',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
             {item.rwardNm}
           </span>
           <div className="flex items-center gap-2 opacity-60">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.rwardCode}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.rwardCode}</span>
             <span className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">•</span>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.rwardLevel || 'STANDARD'}</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{item.rwardLevel || 'STANDARD'}</span>
           </div>
         </div>
       )
@@ -123,12 +123,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     {
       header: '수상자 ID',
       accessor: 'rwardwnrId',
-      className: 'w-32 font-mono text-xs font-bold text-slate-400 tracking-tighter'
+      className: 'w-32 font-mono text-xs font-bold text-muted-foreground tracking-tighter'
     },
     {
       header: '포상일자',
       accessor: (item) => (
-        <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
+        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
           {item.rwardDe}
         </span>
       ),
@@ -139,7 +139,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
       accessor: (item) => (
         <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.confmAt === 'Y'
           ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-          : 'bg-slate-100 text-slate-400 border border-slate-200'
+          : 'bg-muted text-muted-foreground border border-border'
         }`}>
           {item.confmAt === 'Y' ? '동기화승인' : '대기중'}
         </div>
@@ -175,7 +175,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             <Button
               variant="outline"
               onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-rewards'] })}
-              className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm active:scale-95"
+              className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm active:scale-95"
             >
               <RefreshCcw size={20} />
             </Button>
@@ -203,12 +203,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
               <Input
                 placeholder="포상 명칭 또는 대상자 식별자로 분석..."
-                className="h-11 pl-16 rounded-xl border-none bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
               />
@@ -259,9 +259,9 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               name="rwardNm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">포상 명칭</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="모범 사원상" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -272,9 +272,9 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               name="rwardwnrId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">수상자 ID</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">수상자 ID</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="USR_000000000001" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="USR_000000000001" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -285,9 +285,9 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               name="rwardCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">포상 코드</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 코드</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="R01" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="R01" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -298,9 +298,9 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               name="rwardDe"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">포상 일자 (8자리)</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 일자 (8자리)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="20260606" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="20260606" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -311,12 +311,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               name="pblenCn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">공적 내용</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">공적 내용</FormLabel>
                   <FormControl>
                     <textarea 
                       {...field} 
                       placeholder="사내 인프라 아키텍처 개선 및 현대화 프로젝트 공헌" 
-                      className="w-full min-h-[120px] p-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
+                      className="w-full min-h-[120px] p-3 rounded-lg border bg-muted border-border focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />
                   </FormControl>
                   <FormMessage />

@@ -118,8 +118,8 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <MapPin size={18} />
  </div>
  <div className="flex flex-col gap-0.5">
- <span className="font-black text-slate-900 tracking-tighter text-xs uppercase">{item.admdstCd}</span>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ADMIN_CODE</span>
+ <span className="font-black text-foreground tracking-tighter text-xs uppercase">{item.admdstCd}</span>
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ADMIN_CODE</span>
  </div>
  </div>
  ),
@@ -130,7 +130,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  accessor: (item: any) => (
  <div className={cn(
  "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
- item.admdstSeCd === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-500 border-slate-200'
+ item.admdstSeCd === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-muted text-muted-foreground border-border'
  )}>
  {item.admdstSeCd === '1' ? '법정동' : '행정동'}
  </div>
@@ -141,10 +141,10 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  header: '행정구역명', 
  accessor: (item: any) => (
  <div className="flex flex-col gap-0.5 py-4">
- <span className="font-black text-slate-900 tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
+ <span className="font-black text-foreground tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
  <div className="flex items-center gap-1.5 mt-1">
  <Compass size={10} className="text-primary opacity-40" />
- <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase leading-none">Namespace</span>
+ <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase leading-none">Namespace</span>
  </div>
  </div>
  ),
@@ -153,7 +153,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  { 
  header: '상위 코드', 
  accessor: (item: any) => (
- <div className="font-black text-slate-400 tabular-nums tracking-widest text-[10px] uppercase">
+ <div className="font-black text-muted-foreground tabular-nums tracking-widest text-[10px] uppercase">
  {item.upAdmdstCd || 'ROOT'}
  </div>
  ), 
@@ -181,7 +181,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <Button
  variant="ghost"
  onClick={() => loadData()}
- className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
+ className="h-10 w-12 rounded-xl bg-white border border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
  >
  <RefreshCcw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -205,7 +205,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="grid grid-cols-12 gap-8">
  {/* Navigation Sidebar */}
  <div className="col-span-12 lg:col-span-4 h-full">
- <div className="rounded-2xl bg-white/40 backdrop-blur-md text-slate-900 p-10 shadow-xl relative overflow-hidden group h-full border border-white/60 ring-1 ring-black/5 min-h-[500px]">
+ <div className="rounded-2xl bg-white/40 backdrop-blur-md text-foreground p-10 shadow-xl relative overflow-hidden group h-full border border-white/60 ring-1 ring-black/5 min-h-[500px]">
  <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Milestone size={240} className="text-primary" />
  </div>
@@ -214,21 +214,21 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="w-16 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-2xl">
  <Monitor size={28} className="text-primary" />
  </div>
- <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-slate-900">공간 인텔리전스<br />허브</h4>
+ <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-foreground">공간 인텔리전스<br />허브</h4>
  </div>
  
- <p className="text-xs font-bold text-slate-500 leading-relaxed border-l-4 border-primary pl-6">
+ <p className="text-xs font-bold text-muted-foreground leading-relaxed border-l-4 border-primary pl-6">
  행정구역코드 체계(KAS)는 전국 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
  </p>
 
- <div className="space-y-5 pt-10 border-t border-slate-100/50">
+ <div className="space-y-5 pt-10 border-t border-border/50">
  <div className="flex items-center justify-between group/stat">
- <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase group-hover/stat:text-primary transition-colors">데이터 수집 엔진</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase group-hover/stat:text-primary transition-colors">데이터 수집 엔진</span>
  <span className="text-sm font-black text-emerald-500 uppercase tracking-widest">Normal</span>
  </div>
  <div className="flex items-center justify-between group/stat">
- <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
- <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Daily 00:00</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
+ <span className="text-sm font-black text-foreground uppercase tracking-widest">Daily 00:00</span>
  </div>
  </div>
  </div>
@@ -246,7 +246,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  placeholder="행정구역명을 입력하세요..."
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-10 pl-14 pr-6 w-full bg-slate-50/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ className="h-10 pl-14 pr-6 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
  />
  </div>
  <Button type="submit" size="lg" className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 group active:scale-95">
@@ -315,9 +315,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
          name="admdstCd"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
+             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 1111051500" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+               <Input {...field} placeholder="예: 1111051500" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -328,9 +328,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
          name="admdstSeCd"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">구분</FormLabel>
+             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">구분</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-white text-sm outline-none">
                  <option value="1">법정동</option>
                  <option value="2">행정동</option>
                </select>
@@ -344,9 +344,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
          name="admdstZoneNm"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행정 구역 명칭</FormLabel>
+             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 명칭</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+               <Input {...field} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -357,9 +357,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
          name="upAdmdstCd"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
+             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 1111000000" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+               <Input {...field} placeholder="예: 1111000000" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -370,9 +370,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
          name="useYn"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">사용 여부</FormLabel>
+             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">사용 여부</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white text-sm outline-none">
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-white text-sm outline-none">
                  <option value="Y">활성 (사용함)</option>
                  <option value="N">중단 (사용안함)</option>
                </select>

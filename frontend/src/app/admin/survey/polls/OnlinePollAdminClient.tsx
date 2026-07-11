@@ -133,7 +133,7 @@ export default function OnlinePollAdminClient({
  const totalVotes = item.pollArticles?.reduce((sum, i) => sum + (i.pollIemCo || 0), 0) || 0;
  return (
  <div className="flex items-center gap-6 min-w-[200px]">
- <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
+ <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
  <div 
  className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-lg transition-all duration-1000 shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]" 
  style={{ width: `${Math.min(100, (totalVotes / 100) * 100)}%` }} 
@@ -172,7 +172,7 @@ export default function OnlinePollAdminClient({
  "flex items-center gap-2 px-4 py-1.5 rounded-lg border w-fit shadow-sm transition-all",
  variant === 'live' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
  variant === 'scheduled' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
- variant === 'closed' && "bg-slate-100 text-slate-400 border-border/50"
+ variant === 'closed' && "bg-muted text-muted-foreground border-border/50"
  )}>
  {variant === 'live' && <Zap size={14} className="animate-pulse" />}
  {variant === 'scheduled' && <Clock size={14} />}
@@ -285,7 +285,7 @@ export default function OnlinePollAdminClient({
  <Vote size={32} />
  </div>
  <div className="space-y-2">
- <DialogTitle className="text-4xl font-bold text-slate-900 tracking-tighter leading-none uppercase">프로토콜 구성</DialogTitle>
+ <DialogTitle className="text-4xl font-bold text-foreground tracking-tighter leading-none uppercase">프로토콜 구성</DialogTitle>
  <DialogDescription className="text-xs font-bold tracking-[0.4em] uppercase opacity-40">
  New Feedback Pipeline Architecture
  </DialogDescription>
@@ -294,7 +294,7 @@ export default function OnlinePollAdminClient({
  
  <div className="space-y-10 py-10 relative z-10">
  <section className="space-y-5">
- <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+ <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
  <div className="w-1.5 h-1.5 bg-primary rounded-full" />
  Poll Identity (Naming)
  </label>
@@ -302,32 +302,32 @@ export default function OnlinePollAdminClient({
  placeholder="설문 명..."
  value={newPoll.pollNm}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollNm: e.target.value }))}
- className="h-11 px-8 rounded-lg border-none bg-slate-50 text-xl font-bold focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+ className="h-11 px-8 rounded-lg border-none bg-muted text-xl font-bold focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
  />
  </section>
  
  <section className="grid grid-cols-2 gap-8">
  <div className="space-y-4">
- <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">시작일시</label>
+ <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">시작일시</label>
  <div className="relative group">
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
  value={newPoll.pollBgngYmd}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: e.target.value }))}
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+ className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </div>
  </div>
  <div className="space-y-4">
- <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">종료일시</label>
+ <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">종료일시</label>
  <div className="relative group">
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
  value={newPoll.pollEndYmd}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: e.target.value }))}
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+ className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </div>
  </div>
@@ -335,7 +335,7 @@ export default function OnlinePollAdminClient({
 
  <section className="space-y-6">
  <div className="flex items-center justify-between px-2">
- <label className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase flex items-center gap-3">
+ <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase flex items-center gap-3">
  <div className="w-1.5 h-1.5 bg-primary rounded-full" />
  Analytic Options (Items)
  </label>
@@ -368,7 +368,7 @@ export default function OnlinePollAdminClient({
  items[index].pollArtclNm = e.target.value;
  setNewPoll(prev => ({ ...prev, pollArticles: items }));
  }}
- className="h-11 px-6 rounded-lg border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+ className="h-11 px-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
  />
  </div>
  {index > 1 && (
@@ -392,7 +392,7 @@ export default function OnlinePollAdminClient({
  <Button
  variant="outline"
  onClick={() => setIsAddOpen(false)}
- className="h-11 px-12 rounded-lg border-2 border-border font-bold text-xs tracking-widest uppercase hover:bg-slate-50"
+ className="h-11 px-12 rounded-lg border-2 border-border font-bold text-xs tracking-widest uppercase hover:bg-muted"
  >
  Terminate
  </Button>
@@ -415,7 +415,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
  return (
  <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white border-border/50 shadow-md", bg)}>
  <div className="flex justify-between items-start mb-10">
- <div className={cn("w-14 h-11 rounded-lg bg-slate-50 dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
+ <div className={cn("w-14 h-11 rounded-lg bg-muted dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
  {icon}
  </div>
  <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-xs font-bold tracking-widest shadow-sm" />

@@ -74,7 +74,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
               <Clock size={14} />
             </div>
-            <span className="text-xs font-black text-slate-600 tracking-tight">{item.creatDt || item.occcrrncDe || '-'}</span>
+            <span className="text-xs font-black text-muted-foreground tracking-tight">{item.creatDt || item.occcrrncDe || '-'}</span>
           </div>
         ),
         className: 'w-48 py-4'
@@ -88,10 +88,10 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           header: '요청자',
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-xs text-slate-600">
+              <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center bg-white shadow-sm font-black text-xs text-muted-foreground">
                 {item.loginNm?.substring(0, 1)}
               </div>
-              <span className="text-xs font-black text-slate-700 tracking-tight">{item.loginNm} ({item.loginId})</span>
+              <span className="text-xs font-black text-foreground tracking-tight">{item.loginNm} ({item.loginId})</span>
             </div>
           ),
           className: 'py-4'
@@ -99,7 +99,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         {
           header: '접속 IP',
           accessor: (item: any) => (
-            <div className="font-mono text-[10px] font-black text-slate-500 bg-slate-100/50 px-2.5 py-1 rounded-lg border border-slate-200/50 w-fit">{item.loginIp}</div>
+            <div className="font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">{item.loginIp}</div>
           ),
           className: 'py-4'
         },
@@ -119,15 +119,15 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         header: '요청자',
         className: 'w-32 py-4',
         accessor: (item: any) => (
-          <span className="text-xs font-black text-slate-700 tracking-tight">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
+          <span className="text-xs font-black text-foreground tracking-tight">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
         )
       },
       {
         header: '수행 내역',
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
-            <span className="text-sm font-black text-slate-900 tracking-tighter uppercase">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
-            <span className="text-[10px] font-bold text-slate-400 truncate tracking-tight">{item.methodNm || item.trgetMenuNm || '-'}</span>
+            <span className="text-sm font-black text-foreground tracking-tighter uppercase">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
+            <span className="text-[10px] font-bold text-muted-foreground truncate tracking-tight">{item.methodNm || item.trgetMenuNm || '-'}</span>
           </div>
         ),
         className: 'py-4'
@@ -135,7 +135,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       {
         header: '접속 정보',
         accessor: (item: any) => (
-          <div className="flex items-center gap-2 font-mono text-[10px] font-black text-slate-500 bg-slate-100/50 px-2.5 py-1 rounded-lg border border-slate-200/50 w-fit">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">
             <Globe size={11} className="opacity-40" />
             {item.rqesterIp || '127.0.0.1'}
           </div>
@@ -159,7 +159,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         icon={History}
         actions={
           <div className="flex gap-3">
-            <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-slate-200 bg-white font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-slate-900 hover:text-white transition-all">
+            <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-white font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-slate-900 hover:text-white transition-all">
               <SearchCode size={18} /> 상세 검색
             </Button>
           </div>
@@ -184,7 +184,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                   "w-full group p-6 rounded-xl border border-transparent transition-all flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
                     ? "bg-slate-900 text-white shadow-2xl scale-[1.03] z-10"
-                    : "hover:bg-white/50 text-slate-600 hover:text-slate-900"
+                    : "hover:bg-white/50 text-muted-foreground hover:text-foreground"
                 )}
               >
                 <div className={cn(
@@ -195,7 +195,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-sm font-black tracking-tighter uppercase leading-tight">{cat.label}</span>
-                  <span className="text-[10px] font-bold text-slate-400 tracking-tight opacity-100 truncate max-w-[120px] uppercase">{cat.description}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground tracking-tight opacity-100 truncate max-w-[120px] uppercase">{cat.description}</span>
                 </div>
               </button>
             ))}
@@ -243,21 +243,21 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         maxWidth="2xl"
       >
         <div className="p-8 space-y-8 font-sans text-left">
-          <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-xl border border-slate-100 shadow-inner">
+          <div className="flex items-center justify-between p-6 bg-muted/50 rounded-xl border border-border shadow-inner">
             <div className="flex items-center gap-4">
               <div className="w-12 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
                 <Terminal size={22} />
               </div>
               <div className="text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">ID</p>
-                <p className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase">{selectedLog?.logId || selectedLog?.requstId || 'None'}</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">ID</p>
+                <p className="text-sm font-black text-foreground tracking-tight leading-none uppercase">{selectedLog?.logId || selectedLog?.requstId || 'None'}</p>
               </div>
             </div>
             <HubStatusBadge status="확인됨" />
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Raw Payload</h4>
+            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Raw Payload</h4>
             <div className="p-10 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-[10px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />

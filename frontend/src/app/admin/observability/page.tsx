@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 // P2: Dynamic Import for the heavy Topology visualization
 const ServiceTopology = dynamic(() => import('./components/ServiceTopology'), {
   ssr: false,
-  loading: () => <div className="w-full h-[450px] bg-slate-900/40 rounded-[2.5rem] animate-pulse flex items-center justify-center text-slate-500 font-bold uppercase tracking-widest">맵 초기화 중...</div>
+  loading: () => <div className="w-full h-[450px] bg-slate-900/40 rounded-[2.5rem] animate-pulse flex items-center justify-center text-muted-foreground font-bold uppercase tracking-widest">맵 초기화 중...</div>
 });
 
 export default function ObservabilityPage() {
@@ -68,7 +68,7 @@ export default function ObservabilityPage() {
         icon={Zap} 
         actions={
           <div className="flex gap-4">
-            <Button onClick={fetchMetrics} variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm">
+            <Button onClick={fetchMetrics} variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                 <RefreshCcw size={18} /> 실시간 동기화
             </Button>
             <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
@@ -98,7 +98,7 @@ export default function ObservabilityPage() {
 
       {/* Decorative Branding */}
       <div className="text-center pt-8">
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 opacity-40">
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">
           eGov Enterprise Observability Engine v5.0.0
         </p>
       </div>

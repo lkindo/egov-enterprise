@@ -20,12 +20,12 @@ export default function GlobalError({
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-black tracking-tighter text-rose-500">치명적인 시스템 에러</h2>
-            <p className="text-sm text-slate-400 font-bold leading-relaxed">
+            <p className="text-sm text-muted-foreground font-bold leading-relaxed">
               애플리케이션 전역 레이어에서 예상치 못한 치명적인 오류가 검출되었습니다.
             </p>
           </div>
-          <div className="bg-slate-950 p-4 rounded-lg text-left text-xs font-mono text-slate-500 overflow-x-auto border border-slate-800">
-            <p className="font-bold text-slate-400">Error: {error.message || 'Unknown global failure'}</p>
+          <div className="bg-slate-950 p-4 rounded-lg text-left text-xs font-mono text-muted-foreground overflow-x-auto border border-slate-800">
+            <p className="font-bold text-muted-foreground">Error: {error.message || 'Unknown global failure'}</p>
             {error.digest && <p className="opacity-50 mt-1">Digest: {error.digest}</p>}
           </div>
           <Button

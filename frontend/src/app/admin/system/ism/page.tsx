@@ -37,11 +37,11 @@ export default async function InformalSanctionPage() {
 function IsmLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
-      <div className="h-11 w-1/3 bg-slate-100 rounded-lg" />
+      <div className="h-11 w-1/3 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-lg" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-muted rounded-lg" />)}
       </div>
-      <div className="h-[600px] bg-slate-50 rounded-lg" />
+      <div className="h-[600px] bg-muted rounded-lg" />
     </div>
   );
 }

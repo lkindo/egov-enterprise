@@ -102,13 +102,13 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl">
+      <div className="flex items-center gap-4 p-4 bg-muted border border-border rounded-xl">
         <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
           {isEdit ? <Pencil size={18} /> : <Plus size={18} />}
         </div>
         <div className="text-left">
-          <h4 className="text-sm font-bold text-slate-900 leading-none">{isEdit ? '프로그램 로직 수정' : '신규 프로그램 에셋 등록'}</h4>
-          <p className="text-xs font-bold text-slate-400 mt-1.5">인프라스트럭처의 핵심 프로그램 기능을 {isEdit ? '수정' : '정의'}합니다</p>
+          <h4 className="text-sm font-bold text-foreground leading-none">{isEdit ? '프로그램 로직 수정' : '신규 프로그램 에셋 등록'}</h4>
+          <p className="text-xs font-bold text-muted-foreground mt-1.5">인프라스트럭처의 핵심 프로그램 기능을 {isEdit ? '수정' : '정의'}합니다</p>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
             name="prgrmFileNm"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
                   <FileCode size={12} className="text-primary" /> 프로그램 파일명
                 </FormLabel>
                 <FormControl>
@@ -127,7 +127,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     placeholder="프로그램파일명" 
                     {...field} 
                     readOnly={isEdit} 
-                    className="h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                    className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -141,14 +141,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
               name="prgrmKornNm"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
                     <Type size={12} className="text-primary" /> 프로그램 설명
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="프로그램명" 
                       {...field} 
-                      className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -160,14 +160,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
               name="url"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
                     <LinkIcon size={12} className="text-primary" /> 접근 엔드포인트
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="URL" 
                       {...field} 
-                      className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -181,14 +181,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
             name="prgrmStrgPath"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
                   <FolderOpen size={12} className="text-primary" /> 물리 저장소 위치
                 </FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="저장경로" 
                     {...field} 
-                    className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -201,14 +201,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
             name="prgrmExpln"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel className="text-xs font-bold text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                <FormLabel className="text-xs font-bold text-muted-foreground tracking-tight ml-2 flex items-center gap-2">
                   <Settings2 size={12} className="text-primary" /> 비즈니스 로직 설명
                 </FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="프로그램이 제공할 기능의 기술적 명세.." 
                     {...field} 
-                    className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -216,12 +216,12 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
             )}
           />
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-11 px-10 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm tracking-tight hover:bg-slate-900 hover:text-white transition-all flex-1"
+              className="h-11 px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-slate-900 hover:text-white transition-all flex-1"
             >
               취소
             </Button>

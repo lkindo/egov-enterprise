@@ -66,7 +66,7 @@ function LoginContent() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat">
+        <div className="min-h-screen flex items-center justify-center bg-muted dark:bg-gray-900 bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat">
             {/* Background Overlay from previous design style */}
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
 
@@ -106,7 +106,7 @@ function LoginContent() {
                                     <h3 className="text-xl font-bold text-white">
                                         {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
                                     </h3>
-                                    <p className="text-slate-400 text-sm">
+                                    <p className="text-muted-foreground text-sm">
                                         {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
                                     </p>
                                 </div>
@@ -123,10 +123,10 @@ function LoginContent() {
                         >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
-                        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                        <CardTitle className="text-2xl font-bold tracking-tight text-foreground dark:text-white">
                             엔터프라이즈
                         </CardTitle>
-                        <CardDescription className="text-slate-600 font-bold text-xs tracking-tight">
+                        <CardDescription className="text-muted-foreground font-bold text-xs tracking-tight">
                             글로벌 통합 관리 콘솔
                         </CardDescription>
                     </CardHeader>
@@ -139,7 +139,7 @@ function LoginContent() {
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="id" className="text-xs font-bold text-slate-400 tracking-tight ml-1">아이디</Label>
+                                <Label htmlFor="id" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">아이디</Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -148,7 +148,7 @@ function LoginContent() {
                                         placeholder="아이디를 입력하세요..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
+                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
@@ -160,7 +160,7 @@ function LoginContent() {
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="password" className="text-xs font-bold text-slate-400 tracking-tight ml-1">비밀번호</Label>
+                                <Label htmlFor="password" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">비밀번호</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -170,7 +170,7 @@ function LoginContent() {
                                         placeholder="비밀번호를 입력하세요"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
+                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-white transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -178,7 +178,7 @@ function LoginContent() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-300 hover:text-slate-900 rounded-lg"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-300 hover:text-foreground rounded-lg"
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
@@ -192,8 +192,8 @@ function LoginContent() {
                                 className="flex items-center justify-between px-1"
                             >
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-500 tracking-normal uppercase font-mono cursor-pointer select-none">
+                                    <Checkbox id="remember" className="rounded-md border-border" />
+                                    <Label htmlFor="remember" className="text-xs font-bold text-muted-foreground tracking-normal uppercase font-mono cursor-pointer select-none">
                                         로그인 상태 유지
                                     </Label>
                                 </div>
@@ -231,7 +231,7 @@ function LoginContent() {
                         </CardFooter>
                     </form>
                 </Card>
-                <p className="mt-8 text-center text-xs font-bold text-slate-700 tracking-tight">
+                <p className="mt-8 text-center text-xs font-bold text-foreground tracking-tight">
                     &copy; 2026 관리 통합 시스템. 보안 노드 01.
                 </p>
             </motion.div>
@@ -241,7 +241,7 @@ function LoginContent() {
 
 export default function LoginClient() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">로딩 중...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-muted">로딩 중...</div>}>
             <LoginContent />
         </Suspense>
     );

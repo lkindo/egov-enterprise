@@ -121,7 +121,7 @@ export default function CommunityBoardsDetailClient() {
                                     type="checkbox"
                                     checked={formData.noticeAt === 'Y'}
                                     onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
-                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                 />
                                 <span className="text-sm font-medium group-hover:text-primary transition-colors">중요 공지로 등록</span>
                             </label>
@@ -130,7 +130,7 @@ export default function CommunityBoardsDetailClient() {
                                     type="checkbox"
                                     checked={formData.secretAt === 'Y'}
                                     onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
-                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                 />
                                 <span className="text-sm font-medium group-hover:text-primary transition-colors">비밀글로 설정</span>
                             </label>

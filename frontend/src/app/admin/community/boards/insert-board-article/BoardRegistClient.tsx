@@ -156,7 +156,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="w-16 h-16 rounded-2xl border-2 border-slate-200 group hover:bg-slate-900 transition-all duration-500 shadow-xl"
+            className="w-16 h-16 rounded-2xl border-2 border-border group hover:bg-slate-900 transition-all duration-500 shadow-xl"
             aria-label="뒤로 가기"
           >
             <ArrowLeft className="group-hover:text-white transition-all w-8 h-8" />
@@ -174,7 +174,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none"
+            className="text-5xl font-black text-foreground dark:text-white tracking-tighter leading-none"
           >
             {pstId ? '게시글 수정' : '새 게시글 작성'}
           </motion.h1>
@@ -191,7 +191,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             className="p-12 bg-white/70 backdrop-blur-3xl rounded-[2.5rem] border border-white shadow-2xl relative overflow-hidden group ring-1 ring-black/5"
           >
             <div className="absolute top-0 right-0 p-16 opacity-[0.02] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-              <Layers size={180} className="rotate-12 text-slate-900" />
+              <Layers size={180} className="rotate-12 text-foreground" />
             </div>
             <div className="relative z-10 space-y-8">
               <div className="flex items-center gap-5">
@@ -209,7 +209,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                       <Input
                         {...field}
                         data-testid="article-title-input"
-                        className="h-16 bg-transparent border-none text-slate-900 text-4xl font-black placeholder:text-slate-100 focus-visible:ring-0 p-0 tracking-tighter"
+                        className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-slate-100 focus-visible:ring-0 p-0 tracking-tighter"
                         placeholder="INJECT SUBJECT LINE..."
                         autoFocus
                         aria-label="게시글 제목"
@@ -248,7 +248,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-slate-100 bg-white shadow-2xl shadow-slate-200/50" data-testid="rich-text-editor">
+                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-white shadow-2xl shadow-slate-200/50" data-testid="rich-text-editor">
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
@@ -267,14 +267,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-10 pt-12 border-t-2 border-slate-100"
+            className="flex flex-col sm:flex-row items-center justify-between gap-10 pt-12 border-t-2 border-border"
           >
             <div className="flex items-center gap-10">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">게시판 유형</span>
-                <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
+                <span className="text-sm font-black text-foreground uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
               </div>
-              <div className="w-[2px] h-10 bg-slate-100" />
+              <div className="w-[2px] h-10 bg-muted" />
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">보안 등급</span>
                 <span className="text-sm font-black text-emerald-500 uppercase tracking-tight flex items-center gap-2">
@@ -288,7 +288,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
-                className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-slate-200 font-black tracking-widest text-[10px] uppercase hover:bg-slate-50 transition-all active:scale-95"
+                className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-border font-black tracking-widest text-[10px] uppercase hover:bg-muted transition-all active:scale-95"
                 aria-label="취소"
               >
                 취소
@@ -322,7 +322,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         transition={{ delay: 0.5 }}
         className="text-center pt-8"
       >
-        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/50">
+        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-border shadow-xl shadow-slate-100/50">
           <Monitor size={16} className="text-slate-200" />
           <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">Enterprise Command Node - Unit Ver 3.0.0</span>
         </div>

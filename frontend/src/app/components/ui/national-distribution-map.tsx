@@ -28,16 +28,16 @@ export function NationalDistributionMap({ className }: { className?: string }) {
             <MapPin size={18} className="text-primary" />
             전국 업무 활성 지표
           </h3>
-          <p className="text-xs font-bold text-slate-600">실시간 지리적 접속 및 업무 분포 (분석 엔진 기반)</p>
+          <p className="text-xs font-bold text-muted-foreground">실시간 지리적 접속 및 업무 분포 (분석 엔진 기반)</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-blue-600" />
-            <span className="text-xs font-bold text-slate-700">높음</span>
+            <span className="text-xs font-bold text-foreground">높음</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-xs font-bold text-slate-700">보통</span>
+            <span className="text-xs font-bold text-foreground">보통</span>
           </div>
         </div>
       </div>
@@ -87,12 +87,12 @@ export function NationalDistributionMap({ className }: { className?: string }) {
 
       <div className="absolute bottom-4 right-4 left-4 p-4 rounded-lg bg-muted/30 backdrop-blur-sm border border-white/10 flex items-center justify-between">
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-slate-600 tracking-tight">분석 핵심 지점</span>
+          <span className="text-xs font-bold text-muted-foreground tracking-tight">분석 핵심 지점</span>
           <span className="text-xs font-bold text-foreground ">서울 본사 / 영남 허브</span>
         </div>
         <div className="h-8 w-px bg-slate-200 mx-2" />
         <div className="flex flex-col items-end">
-          <span className="text-xs font-bold text-slate-600 tracking-tight">전체 분포도</span>
+          <span className="text-xs font-bold text-muted-foreground tracking-tight">전체 분포도</span>
           <span className="text-xs font-bold text-blue-600 ">98.4% COVERAGE</span>
         </div>
       </div>

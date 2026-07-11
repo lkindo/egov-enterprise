@@ -94,7 +94,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
     { value: 100 - value }
   ];
 
-  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-lg animate-pulse", className)} />;
+  if (!mounted) return <div className={cn("h-[240px] w-full bg-muted/50 rounded-lg animate-pulse", className)} />;
 
   return (
     <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-lg shadow-sm overflow-hidden group", className)}>
@@ -149,7 +149,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="h-11 w-full bg-slate-50 border border-slate-100 rounded-lg animate-pulse" />;
+  if (!mounted) return <div className="h-11 w-full bg-muted border border-border rounded-lg animate-pulse" />;
 
   return (
     <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-lg">

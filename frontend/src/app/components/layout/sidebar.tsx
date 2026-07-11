@@ -92,7 +92,7 @@ export function Sidebar({
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-bold tracking-tighter leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-xs text-slate-600 font-semibold tracking-tight">포털 5.0</span>
+                <span className="text-xs text-muted-foreground font-semibold tracking-tight">포털 5.0</span>
               </div>
             </Link>
             <Button
@@ -110,7 +110,7 @@ export function Sidebar({
             {/* Mobile View */}
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
-                <div className="text-xs font-bold text-slate-600 tracking-tight">
+                <div className="text-xs font-bold text-muted-foreground tracking-tight">
                   서비스 모듈
                 </div>
               </div>
@@ -129,7 +129,7 @@ export function Sidebar({
             {/* Desktop View */}
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-600 tracking-tight">
+                <div className="text-xs font-bold text-muted-foreground tracking-tight">
                   전체 메뉴
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
@@ -170,7 +170,7 @@ export function Sidebar({
                 <Sparkles size={14} className="text-primary" />
                 <span className="text-xs font-bold text-primary tracking-tight">_ 허브_노드_v5.0</span>
               </div>
-              <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase font-mono">
+              <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase font-mono">
                 고급 기업용 핵심 엔진
                 <br />
                 빌드 버전: 1.0.2_STABLE

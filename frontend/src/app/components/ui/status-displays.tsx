@@ -32,7 +32,7 @@ export function ErrorStateDisplay({
             </p>
           </div>
         ) : null}
-        <p className="text-xs text-slate-700 dark:text-slate-400 font-medium tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">
+        <p className="text-xs text-foreground dark:text-muted-foreground font-medium tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">
           일시적인 오류로 데이터를 불러오지 못했습니다. <br />네트워크 상태를 확인한 뒤 다시 시도해 주세요.
         </p>
       </div>
@@ -72,7 +72,7 @@ export function EmptyStateDisplay({
       </div>
       <div className="space-y-2">
         <p className="text-xl font-bold text-foreground tracking-tighter uppercase">{message}</p>
-        <p className="text-xs text-slate-700 dark:text-slate-400 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
+        <p className="text-xs text-foreground dark:text-muted-foreground font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
           시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
       </div>

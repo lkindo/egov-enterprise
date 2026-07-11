@@ -35,7 +35,7 @@ export default async function AdministCodePage() {
       />
       
       <Suspense fallback={
-        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-slate-50/50 rounded-lg border-2 border-dashed border-slate-200 animate-pulse">
+        <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-muted/50 rounded-lg border-2 border-dashed border-border animate-pulse">
             <div className="w-20 h-11 rounded-lg bg-slate-200/50 flex items-center justify-center">
                 <Milestone size={40} className="text-slate-300" />
             </div>

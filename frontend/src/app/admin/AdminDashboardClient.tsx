@@ -203,7 +203,7 @@ export default function AdminDashboardClient() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">활동 인텔리전스</h2>
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
               </div>
             </div>
           </div>
@@ -218,7 +218,7 @@ export default function AdminDashboardClient() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-foreground tracking-tight">권한 그룹 통계</h2>
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-1">사용자 권한 그룹 분포</p>
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest mt-1">사용자 권한 그룹 분포</p>
               </div>
             </div>
           </div>
@@ -238,12 +238,12 @@ export default function AdminDashboardClient() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-foreground">컴퓨팅 노드 헬스체크</h2>
-                  <p className="text-xs font-medium text-slate-700 mt-0.5">실시간 리소스 소비 모니터링</p>
+                  <p className="text-xs font-medium text-foreground mt-0.5">실시간 리소스 소비 모니터링</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-xs font-bold text-slate-600 uppercase">평균 부하</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase">평균 부하</p>
                   <p className="text-lg font-bold tabular-nums">18.4%</p>
                 </div>
                 <div className="w-px h-8 bg-border/50" />
@@ -298,7 +298,7 @@ export default function AdminDashboardClient() {
               <div className="flex items-end justify-between">
                 <div className="space-y-1">
                   <p className="text-3xl font-bold tracking-tighter uppercase">12 ms</p>
-                  <p className="text-xs font-bold text-slate-600 uppercase">응답 속도 (서울 허브)</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase">응답 속도 (서울 허브)</p>
                 </div>
                 <div className="w-24 h-1 font-bold bg-emerald-500 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
               </div>
@@ -323,13 +323,13 @@ export default function AdminDashboardClient() {
             </div>
 
             <div className="mt-8 pt-8 border-t border-border/50">
-              <div className="flex items-center gap-4 p-5 rounded-lg bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
-                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
+              <div className="flex items-center gap-4 p-5 rounded-lg bg-muted border border-dashed border-border group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
+                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shadow-sm">
                   <AlertCircle size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900 group-hover:text-white uppercase tracking-tight">무결성 검사</p>
-                  <p className="text-xs font-bold text-slate-600">최근 검사: 2시간 전</p>
+                  <p className="text-xs font-bold text-foreground group-hover:text-white uppercase tracking-tight">무결성 검사</p>
+                  <p className="text-xs font-bold text-muted-foreground">최근 검사: 2시간 전</p>
                 </div>
               </div>
             </div>
@@ -355,7 +355,7 @@ export default function AdminDashboardClient() {
           </div>
           <h3 className="text-xs font-bold tracking-[0.4em] uppercase opacity-80 mb-4">자원 할당</h3>
           <p className="text-2xl font-bold tracking-tighter mb-6 ">자원 프로비저닝</p>
-          <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
+          <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase">
             컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
             현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.
           </p>
@@ -387,14 +387,14 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
               <div className={cn("p-3.5 rounded-lg border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
                 {icon}
               </div>
-              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">{trend}</span>
+              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg border border-border">
+                <span className="text-xs font-bold text-foreground uppercase tracking-widest">{trend}</span>
                 <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs font-bold text-slate-700 tracking-[0.4em] uppercase font-mono flex items-center gap-2">
+              <p className="text-xs font-bold text-foreground tracking-[0.4em] uppercase font-mono flex items-center gap-2">
                 {title}
                 <span className="e2e-label">
                   {title === 'ID 레지스트리' ? 'IDENTITY_RESOURCES' : 
@@ -403,8 +403,8 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
                    title === '업무 인텔리전스' ? 'BUSINESS_INTELLIGENCE' : ''}
                 </span>
               </p>
-              <h3 className="text-4xl font-bold text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
-              <p className="text-xs font-bold text-slate-700 leading-tight uppercase">
+              <h3 className="text-4xl font-bold text-foreground tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
+              <p className="text-xs font-bold text-foreground leading-tight uppercase">
                 {description}
               </p>
             </div>

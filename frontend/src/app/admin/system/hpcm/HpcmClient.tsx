@@ -83,7 +83,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             <BookOpen size={18} />
           </div>
           <div className="flex flex-col gap-1 text-left">
-            <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-xs font-bold tracking-tight border border-slate-200 w-fit">
+            <span className="px-3 py-1 bg-muted text-foreground rounded-lg text-xs font-bold tracking-tight border border-border w-fit">
               {item.hlpSeCd || item.hpcmSe || 'SYSTEM'}
             </span>
             <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hlpDfn || item.hpcmNm}</span>
@@ -103,7 +103,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
     {
       header: '요약 설명',
       accessor: (item) => (
-        <p className="text-sm text-slate-500 font-medium line-clamp-1 max-w-md">
+        <p className="text-sm text-muted-foreground font-medium line-clamp-1 max-w-md">
           {item.hlpExpln || item.hpcmDc || '설명이 존재하지 않는 아카이브입니다.'}
         </p>
       )
@@ -175,9 +175,9 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
               name="hlpSeCd"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">분류 구분</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">분류 구분</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="예: 게시판, 로그인, 회원가입" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="예: 게시판, 로그인, 회원가입" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -188,9 +188,9 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
               name="hlpDfn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">도움말 명칭</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">도움말 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="게시판 물리삭제 기능 가이드" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                    <Input {...field} placeholder="게시판 물리삭제 기능 가이드" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -201,12 +201,12 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
               name="hlpExpln"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">도움말 상세 설명</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">도움말 상세 설명</FormLabel>
                   <FormControl>
                     <textarea 
                       {...field} 
                       placeholder="게시판 영구 말소와 물리삭제 시 준수해야 하는 검증 프로토콜 설명입니다." 
-                      className="w-full min-h-[150px] p-3 rounded-lg border bg-slate-50 border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
+                      className="w-full min-h-[150px] p-3 rounded-lg border bg-muted border-border focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />
                   </FormControl>
                   <FormMessage />

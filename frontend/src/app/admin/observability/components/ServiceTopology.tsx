@@ -20,7 +20,7 @@ interface NodeProps {
 }
 
 const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodeProps) => {
-  const statusColor = status === 'active' ? 'text-emerald-400' : status === 'warning' ? 'text-amber-400' : 'text-slate-400';
+  const statusColor = status === 'active' ? 'text-emerald-400' : status === 'warning' ? 'text-amber-400' : 'text-muted-foreground';
   const glowColor = status === 'active' ? 'rgba(52, 211, 153, 0.4)' : status === 'warning' ? 'rgba(251, 191, 36, 0.4)' : 'rgba(148, 163, 184, 0.2)';
 
   return (
@@ -151,11 +151,11 @@ export default function ServiceTopology() {
       <div className="absolute bottom-6 left-8 flex gap-6">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Health: 100%</span>
+          <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Health: 100%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
+          <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
         </div>
       </div>
 

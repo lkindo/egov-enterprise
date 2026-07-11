@@ -62,12 +62,12 @@ const InsertScrapClient = () => {
                 <Bookmark className="w-8 h-8 text-white fill-white/20" />
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-3xl font-bold tracking-tighter text-slate-900 ">
+                <CardTitle className="text-3xl font-bold tracking-tighter text-foreground ">
                   New Scrap Archive
                 </CardTitle>
                 <div className="flex items-center gap-3">
                   <div className="h-1 w-12 bg-indigo-600 rounded-lg" />
-                  <p className="text-sm font-bold text-slate-400 tracking-tight">새로운 지식 조각을 아카이빙합니다</p>
+                  <p className="text-sm font-bold text-muted-foreground tracking-tight">새로운 지식 조각을 아카이빙합니다</p>
                 </div>
               </div>
             </div>
@@ -77,11 +77,11 @@ const InsertScrapClient = () => {
             <div className="grid gap-8">
               {/* Scrap Name */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapNm" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
+                <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
                   Scrap Name
                 </Label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 transition-colors group-focus-within:text-indigo-600">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-indigo-600">
                     <FileText size={16} />
                   </div>
                   <Input
@@ -89,18 +89,18 @@ const InsertScrapClient = () => {
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
                     onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
                   />
                 </div>
               </div>
 
               {/* Scrap URL */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapUrl" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
+                <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
                   Reference URL
                 </Label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 transition-colors group-focus-within:text-indigo-600">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-indigo-600">
                     <Globe size={16} />
                   </div>
                   <Input
@@ -108,14 +108,14 @@ const InsertScrapClient = () => {
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
                     onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
                   />
                 </div>
               </div>
 
               {/* Scrap Description */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapExpln" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
+                <Label htmlFor="scrapExpln" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-indigo-600 transition-colors">
                   Knowledge Description
                 </Label>
                 <Textarea
@@ -123,27 +123,27 @@ const InsertScrapClient = () => {
                   placeholder="이 지식에 대한 상세한 기록을 남겨주세요..."
                   value={formData.scrapExpln}
                   onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
-                  className="min-h-[180px] p-6 rounded-lg border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-medium leading-relaxed resize-none shadow-inner"
+                  className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 rounded-lg flex items-start gap-4 border border-slate-100">
+            <div className="p-6 bg-muted rounded-lg flex items-start gap-4 border border-border">
               <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg shrink-0">
                 <Info size={16} />
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              <p className="text-xs text-muted-foreground leading-relaxed font-medium">
                 스크랩된 정보는 전사적으로 공유되며, 나중에 <span className="text-indigo-600 font-bold">마이페이지 &gt; 스크랩 관리</span> 섹션에서 언제든지 다시 확인하고 분류할 수 있습니다.
               </p>
             </div>
           </CardContent>
 
-          <CardFooter className="p-10 border-t bg-slate-50/50 flex flex-col md:flex-row gap-4">
+          <CardFooter className="p-10 border-t bg-muted/50 flex flex-col md:flex-row gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="w-full md:w-auto h-11 px-10 rounded-lg border-2 font-bold text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 group"
+              className="w-full md:w-auto h-11 px-10 rounded-lg border-2 font-bold text-muted-foreground hover:bg-muted transition-all flex items-center gap-2 group"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 취소 및 돌아가기
             </Button>

@@ -66,7 +66,7 @@ const DeptJobListClient = () => {
     switch (priority) {
       case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-md border border-rose-200">높음</span>;
       case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md border border-amber-200">중간</span>;
-      default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-md border border-slate-200">낮음</span>;
+      default: return <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-bold rounded-md border border-border">낮음</span>;
     }
   };
 
@@ -101,14 +101,14 @@ const DeptJobListClient = () => {
 
           <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="w-[80px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">번호</TableHead>
-                  <TableHead className="w-[120px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">중요도</TableHead>
-                  <TableHead className="font-bold text-slate-900 text-xs py-6 tracking-[0.2em] px-4">업무 개요 (Task Name)</TableHead>
-                  <TableHead className="w-[150px] font-bold text-slate-400 text-xs py-6 text-center tracking-[0.2em]">담당자</TableHead>
-                  <TableHead className="w-[150px] font-bold text-slate-400 text-xs py-6 text-center tracking-[0.2em]">등록일</TableHead>
-                  <TableHead className="w-[100px] text-center font-bold text-slate-400 text-xs py-6 tracking-[0.2em]">관리</TableHead>
+                  <TableHead className="w-[80px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">번호</TableHead>
+                  <TableHead className="w-[120px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">중요도</TableHead>
+                  <TableHead className="font-bold text-foreground text-xs py-6 tracking-[0.2em] px-4">업무 개요 (Task Name)</TableHead>
+                  <TableHead className="w-[150px] font-bold text-muted-foreground text-xs py-6 text-center tracking-[0.2em]">담당자</TableHead>
+                  <TableHead className="w-[150px] font-bold text-muted-foreground text-xs py-6 text-center tracking-[0.2em]">등록일</TableHead>
+                  <TableHead className="w-[100px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">관리</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -125,14 +125,14 @@ const DeptJobListClient = () => {
                   ))
                 ) : list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-30">
+                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold tracking-tight opacity-30">
                       등록된 업무가 없습니다.
                     </TableCell>
                   </TableRow>
                 ) : (
                   list.map((item, idx) => (
-                    <TableRow key={item.deptTaskId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
-                      <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
+                    <TableRow key={item.deptTaskId} className="hover:bg-muted/50 transition-all border-b last:border-0 group">
+                      <TableCell className="text-center font-mono text-sm text-muted-foreground py-6">
                         {totalCount - ((pageNo - 1) * 10) - idx}
                       </TableCell>
                       <TableCell className="text-center py-6">
@@ -141,18 +141,18 @@ const DeptJobListClient = () => {
                       <TableCell className="px-4 py-6">
                         <Link href={`/smart-toolkit/dept-job/selectDeptJobDetail/${item.deptTaskId}`} className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-primary opacity-20 group-hover:opacity-100 transition-opacity" />
-                          <span className="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">
+                          <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                             {item.deptTaskNm}
                           </span>
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-100 rounded-lg text-slate-700 font-bold text-sm shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-border rounded-lg text-foreground font-bold text-sm shadow-sm">
                           <User className="w-3.5 h-3.5 opacity-40" /> {item.picNm || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-6">
-                        <div className="flex items-center justify-center gap-2 text-slate-400 font-bold text-sm">
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground font-bold text-sm">
                           <Calendar className="w-4 h-4 opacity-30" /> {item.crtDt?.substring(0, 10)}
                         </div>
                       </TableCell>
@@ -180,21 +180,21 @@ const DeptJobListClient = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                 disabled={pageNo === 1}
-                className="px-12 h-11 rounded-lg font-bold text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-xs"
+                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-white transition-all tracking-tight text-xs"
               >
                 이전
               </Button>
-              <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-lg shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
+              <div className="bg-muted text-foreground border-2 border-white px-10 py-3 rounded-lg shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
                 <span className="text-xl font-bold">{pageNo}</span>
                 <div className="h-4 w-px bg-slate-200" />
-                <span className="text-sm font-bold text-slate-400">{totalPages}</span>
+                <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
               </div>
               <Button
                 variant="ghost"
                 size="lg"
                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                 disabled={pageNo === totalPages}
-                className="px-12 h-11 rounded-lg font-bold text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-xs"
+                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-white transition-all tracking-tight text-xs"
               >
                 다음
               </Button>

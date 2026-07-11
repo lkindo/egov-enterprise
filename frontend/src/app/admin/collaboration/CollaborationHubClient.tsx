@@ -74,7 +74,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  const messageColumns: Column<any>[] = [
  {
  header: '번호',
- accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
  className: 'w-20 text-center'
  },
  {
@@ -83,28 +83,28 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  <div className="flex flex-col gap-1 py-1">
  <div className="flex items-center gap-2">
  {item.openYn === 'N' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.noteSj}</span>
+ <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.noteSj}</span>
  </div>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.noteId}</span>
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.noteId}</span>
  </div>
  )
  },
  {
  header: '발신자',
- accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.trnsmiterNm || item.dsptchUserId}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.trnsmiterNm || item.dsptchUserId}</span>,
  className: 'w-32'
  },
  {
  header: '발신일시',
- accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 16)}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{item.crtDt?.substring(0, 16)}</span>,
  className: 'w-48'
  },
  {
  header: '관리',
  accessor: () => (
  <div className="flex justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <MoreVertical size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <MoreVertical size={16} className="text-muted-foreground" />
  </Button>
  </div>
  ),
@@ -115,24 +115,24 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  const addressColumns: Column<any>[] = [
  {
  header: '번호',
- accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
  className: 'w-20 text-center'
  },
  {
  header: '성명',
- accessor: (item) => <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.adbkNm}</span>
+ accessor: (item) => <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.adbkNm}</span>
  },
  {
  header: '이메일',
- accessor: (item) => <span className="text-xs font-bold text-slate-500 tracking-tight">{item.email || '-'}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.email || '-'}</span>,
  className: 'w-64'
  },
  {
  header: '관리',
  accessor: () => (
  <div className="flex justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <MoreVertical size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <MoreVertical size={16} className="text-muted-foreground" />
  </Button>
  </div>
  ),
@@ -143,24 +143,24 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  const scrapColumns: Column<any>[] = [
  {
  header: '번호',
- accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+ accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
  className: 'w-20 text-center'
  },
  {
  header: '스크랩 제목',
- accessor: (item) => <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.scrapNm}</span>
+ accessor: (item) => <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.scrapNm}</span>
  },
  {
  header: '등록일자',
- accessor: (item) => <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{item.crtDt?.substring(0, 10)}</span>,
+ accessor: (item) => <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{item.crtDt?.substring(0, 10)}</span>,
  className: 'w-48'
  },
  {
  header: '관리',
  accessor: () => (
  <div className="flex justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <MoreVertical size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <MoreVertical size={16} className="text-muted-foreground" />
  </Button>
  </div>
  ),
@@ -198,11 +198,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  icon={Share2} 
  actions={
  <div className="flex gap-4 items-center">
- <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+ <div className="flex bg-muted p-1 rounded-xl border border-border/50">
  <Button
  variant="ghost"
  size="sm"
- className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'MESSAGES' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'MESSAGES' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
  onClick={() => { setActiveTab('MESSAGES'); setSearchKeyword(''); }}
  >
  MESSAGES
@@ -210,7 +210,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  <Button
  variant="ghost"
  size="sm"
- className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'ADDRESS_BOOK' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'ADDRESS_BOOK' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
  onClick={() => { setActiveTab('ADDRESS_BOOK'); setSearchKeyword(''); }}
  >
  CONTACTS
@@ -218,7 +218,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  <Button
  variant="ghost"
  size="sm"
- className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'SCRAPS' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+ className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'SCRAPS' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
  onClick={() => { setActiveTab('SCRAPS'); setSearchKeyword(''); }}
  >
  SCRAPS
@@ -243,17 +243,17 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <div className="relative group max-w-xl w-full">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input 
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
- className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="검색어를 입력하십시오.." 
  />
  </div>
- <Button variant="outline" onClick={() => queryClient.invalidateQueries()} className="h-11 px-6 rounded-xl border-2 border-slate-100 text-slate-400 hover:text-primary transition-all">
+ <Button variant="outline" onClick={() => queryClient.invalidateQueries()} className="h-11 px-6 rounded-xl border-2 border-border text-muted-foreground hover:text-primary transition-all">
  <RefreshCcw size={20} />
  </Button>
  </div>

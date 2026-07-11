@@ -134,7 +134,7 @@ export default function SecurityRoleClient() {
         <div className="flex flex-col gap-0.5">
           <span className="font-bold text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.roleNm}</span>
           <div className="flex items-center gap-2">
-            <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-widest">{item.roleTypeCd}</span>
+            <span className="bg-muted text-muted-foreground text-xs font-bold px-2 py-0.5 rounded uppercase tracking-widest">{item.roleTypeCd}</span>
             <span className="text-xs font-bold text-muted-foreground/40 truncate block max-w-[200px] leading-none">{item.rolePatrn}</span>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function SecurityRoleClient() {
     {
       header: 'RANK',
       accessor: (item: RoleManage) => (
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 font-mono tracking-tighter">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
           <ListOrdered size={12} className="opacity-40" />
           {item.roleSort || '0'}
         </div>
@@ -180,7 +180,7 @@ export default function SecurityRoleClient() {
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -207,13 +207,13 @@ export default function SecurityRoleClient() {
  icon={SearchCode}
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
  <div className="flex items-center gap-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="롤코드 또는 롤명으로 검색"
- className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
+ className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
  />
@@ -301,7 +301,7 @@ export default function SecurityRoleClient() {
       id="roleTypeCd"
       value={formData.roleTypeCd || ''}
       onChange={(e) => setFormData(prev => ({ ...prev, roleTypeCd: e.target.value }))}
-      className="w-full h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
+      className="w-full h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
     >
       <option value="url">URL_RESOURCE</option>
       <option value="method">METHOD_INVOCATION</option>
@@ -330,7 +330,7 @@ export default function SecurityRoleClient() {
         id="roleExpln"
         value={formData.roleExpln || ''}
         onChange={(e) => setFormData(prev => ({ ...prev, roleExpln: e.target.value }))}
-        className="min-h-[140px] pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+        className="min-h-[140px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
         placeholder="상세 명세 입력..."
       />
     </div>
@@ -340,7 +340,7 @@ export default function SecurityRoleClient() {
   <button
     type="button"
     onClick={() => setIsDialogOpen(false)}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>

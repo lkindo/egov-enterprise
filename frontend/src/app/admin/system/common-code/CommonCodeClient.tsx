@@ -138,8 +138,8 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  className={cn(
  "w-full flex items-center justify-between p-3 rounded-lg transition-all relative overflow-hidden",
  isCluster 
- ? "bg-slate-50/50 hover:bg-slate-100/50 border border-transparent" 
- : "hover:bg-slate-50 border border-transparent",
+ ? "bg-muted/50 hover:bg-muted/50 border border-transparent" 
+ : "hover:bg-muted border border-transparent",
  isSelected && isCluster && "bg-slate-900 text-white shadow-xl border-slate-800",
  isSelected && !isCluster && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
  isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
@@ -149,21 +149,21 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
  isCluster 
- ? (isSelected ? "bg-primary/20 text-primary" : "bg-white text-slate-400 border border-slate-100 shadow-sm")
- : (isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500 group-hover:text-primary")
+ ? (isSelected ? "bg-primary/20 text-primary" : "bg-white text-muted-foreground border border-border shadow-sm")
+ : (isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground group-hover:text-primary")
  )}>
  {isCluster ? <Layers size={14} /> : <Tag size={14} />}
  </div>
  <div className="flex flex-col truncate items-start">
  <span className={cn(
  "text-xs font-bold truncate leading-tight uppercase tracking-tight",
- isSelected ? "text-white" : "text-slate-900"
+ isSelected ? "text-white" : "text-foreground"
  )}>
  {node.name}
  </span>
  <span className={cn(
  "text-xs font-mono font-bold tracking-tighter opacity-60",
- isSelected ? "text-white" : "text-slate-500"
+ isSelected ? "text-white" : "text-muted-foreground"
  )}>
  {node.id}
  </span>
@@ -461,15 +461,15 @@ export default function CommonCodeClient({
  const columns: Column<CmmnDetailCode>[] = [
  {
  header: '코드',
- accessor: (item: CmmnDetailCode) => <span className="font-black text-slate-700 tracking-tight text-xs">{item.dtlCd}</span>,
+ accessor: (item: CmmnDetailCode) => <span className="font-black text-foreground tracking-tight text-xs">{item.dtlCd}</span>,
  className: 'w-24 py-4'
  },
  {
  header: '코드 명칭',
  accessor: (item: CmmnDetailCode) => (
  <div className="flex flex-col gap-0.5">
- <span className="font-black text-slate-900 tracking-tighter text-sm">{item.dtlCdNm}</span>
- <span className="text-[10px] font-bold text-slate-400 line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || 'No description available'}</span>
+ <span className="font-black text-foreground tracking-tighter text-sm">{item.dtlCdNm}</span>
+ <span className="text-[10px] font-bold text-muted-foreground line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || 'No description available'}</span>
  </div>
  ),
  className: 'py-4'
@@ -488,10 +488,10 @@ export default function CommonCodeClient({
  type="button"
  variant="ghost"
  size="icon"
- className="h-8 w-8 hover:bg-slate-100 rounded-lg transition-colors"
+ className="h-8 w-8 hover:bg-muted rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
- <Settings size={14} className="text-slate-400" />
+ <Settings size={14} className="text-muted-foreground" />
  </Button>
  <Button
  type="button"
@@ -515,13 +515,13 @@ export default function CommonCodeClient({
  {/* --- Left Sidebar: Code Tree --- */}
  <aside className="w-full lg:w-[380px] flex flex-col gap-6">
  <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden flex flex-col h-full ring-1 ring-black/5">
- <div className="p-6 border-b border-slate-100/50 bg-slate-50/30 space-y-4">
+ <div className="p-6 border-b border-border/50 bg-muted/30 space-y-4">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2.5">
  <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
  <Database size={16} />
  </div>
- <h3 className="text-[10px] font-black tracking-widest text-slate-900 uppercase">
+ <h3 className="text-[10px] font-black tracking-widest text-foreground uppercase">
  Explorer
  </h3>
  </div>
@@ -534,7 +534,7 @@ export default function CommonCodeClient({
  <Save size={12} /> Save
  </button>
  )}
- <span className="px-2.5 py-1 rounded-lg bg-white/60 text-slate-500 text-[10px] font-black tracking-widest border border-white/80 uppercase shadow-sm">
+ <span className="px-2.5 py-1 rounded-lg bg-white/60 text-muted-foreground text-[10px] font-black tracking-widest border border-white/80 uppercase shadow-sm">
  {clCodes.length} Domains
  </span>
  </div>
@@ -553,10 +553,10 @@ export default function CommonCodeClient({
  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[600px]">
  {visibleNodes.length === 0 ? (
  <div className="py-20 text-center space-y-4">
- <div className="w-16 h-10 rounded-xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+ <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-slate-200 border border-border shadow-inner">
  <SearchSlash size={32} />
  </div>
- <p className="text-[10px] font-black tracking-widest uppercase text-slate-400">No results found</p>
+ <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">No results found</p>
  </div>
  ) : (
  <DndContext
@@ -617,14 +617,14 @@ export default function CommonCodeClient({
  </div>
  <div className="space-y-1.5">
  <div className="flex items-center gap-3">
- <h2 className="text-xl font-black tracking-tighter text-slate-900 uppercase">
+ <h2 className="text-xl font-black tracking-tighter text-foreground uppercase">
  {selectedGroup.cdIdNm}
  </h2>
- <div className="px-2.5 py-1 rounded-lg bg-white/60 border border-white/80 text-[10px] font-black text-slate-400 tracking-widest shadow-sm">
+ <div className="px-2.5 py-1 rounded-lg bg-white/60 border border-white/80 text-[10px] font-black text-muted-foreground tracking-widest shadow-sm">
  {selectedGroup.cdId}
  </div>
  </div>
- <p className="text-xs font-bold text-slate-500 ">
+ <p className="text-xs font-bold text-muted-foreground ">
  {selectedGroup.cdIdExpln || '정의된 명세가 없습니다.'}
  </p>
  </div>
@@ -640,21 +640,21 @@ export default function CommonCodeClient({
  "bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5 transition-all",
  detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
  )}>
- <div className="p-6 border-b border-slate-100/50 flex items-center justify-between bg-slate-50/30">
+ <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/30">
  <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-primary shadow-sm">
+ <div className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center text-primary shadow-sm">
  {detailsLoading ? <RefreshCcw size={16} className="animate-spin" /> : <Layers size={16} />}
  </div>
  <div className="text-left">
- <h3 className="text-xs font-black tracking-widest text-slate-900 uppercase leading-none mb-1.5">구성 명세</h3>
- <p className="text-[10px] font-bold text-slate-400 leading-none uppercase">
+ <h3 className="text-xs font-black tracking-widest text-foreground uppercase leading-none mb-1.5">구성 명세</h3>
+ <p className="text-[10px] font-bold text-muted-foreground leading-none uppercase">
  {detailsLoading ? 'Syncing...' : `Total ${selectedGroup.details?.length || 0} Units`}
  </p>
  </div>
  </div>
  <div>
  <div className="flex flex-col items-end pr-4 text-right">
- <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Integrity</span>
+ <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">Integrity</span>
  <div className="flex items-center gap-1">
  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
  <span className="text-[10px] font-black text-emerald-500 tracking-widest">99.9%</span>
@@ -675,7 +675,7 @@ export default function CommonCodeClient({
  </div>
  ) : (
  <div className="h-full flex flex-col items-center justify-center p-12 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 min-h-[500px]">
- <div className="w-24 h-20 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-200 mb-8 shadow-xl group hover:rotate-6 transition-transform">
+ <div className="w-24 h-20 rounded-2xl bg-white border border-border flex items-center justify-center text-slate-200 mb-8 shadow-xl group hover:rotate-6 transition-transform">
  <Database size={40} className="opacity-20 group-hover:opacity-100 transition-opacity" />
  </div>
  <h3 className="text-xl font-black tracking-widest text-slate-200 uppercase mb-4">No Selection</h3>
@@ -684,12 +684,12 @@ export default function CommonCodeClient({
  </p>
  <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
  <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Domains</span>
- <span className="text-2xl font-black text-slate-900 ">{initialClusters.length}</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">Domains</span>
+ <span className="text-2xl font-black text-foreground ">{initialClusters.length}</span>
  </div>
  <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Groups</span>
- <span className="text-2xl font-black text-slate-900 ">{groups.length}</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">Groups</span>
+ <span className="text-2xl font-black text-foreground ">{groups.length}</span>
  </div>
  </div>
  </div>
@@ -705,7 +705,7 @@ export default function CommonCodeClient({
  maxWidth="3xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
+ <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2 border-border shadow-sm">취소</Button>
  <Button
  onClick={form.handleSubmit(onSubmit)}
  disabled={form.formState.isSubmitting}
@@ -721,10 +721,10 @@ export default function CommonCodeClient({
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
  <div className="space-y-8">
  <div className="space-y-1.5 p-0.5">
- <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  상위 그룹 식별자
  </label>
- <div className="h-11 flex items-center px-6 rounded-lg bg-slate-100 border-none font-mono text-xs font-bold shadow-inner text-slate-600">
+ <div className="h-11 flex items-center px-6 rounded-lg bg-muted border-none font-mono text-xs font-bold shadow-inner text-muted-foreground">
  {selectedGroup?.cdId}
  </div>
  </div>
@@ -734,7 +734,7 @@ export default function CommonCodeClient({
  name="dtlCd"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  코드 식별자 (Unique ID) <span className="text-rose-500 font-bold text-xs">*</span>
  </FormLabel>
  <FormControl>
@@ -742,7 +742,7 @@ export default function CommonCodeClient({
  {...field}
  readOnly={!!editingDetail}
  maxLength={12}
- className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-white transition-all text-left"
  placeholder="Unique code indicator (최대 12자)"
  />
  </FormControl>
@@ -756,14 +756,14 @@ export default function CommonCodeClient({
  name="dtlCdNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  표기 레이블 (Label) <span className="text-rose-500 font-bold text-xs">*</span>
  </FormLabel>
  <FormControl>
  <Input
  {...field}
  maxLength={100}
- className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-white transition-all text-left"
  placeholder="레이블 명칭 입력 (최대 100자)"
  />
  </FormControl>
@@ -779,7 +779,7 @@ export default function CommonCodeClient({
  name="useYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  활성 상태 프로토콜
  </FormLabel>
  <Select
@@ -788,7 +788,7 @@ export default function CommonCodeClient({
  value={field.value}
  >
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-slate-50 font-bold text-xs tracking-widest uppercase shadow-inner">
+ <SelectTrigger className="h-11 rounded-lg border-none bg-muted font-bold text-xs tracking-widest uppercase shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
@@ -811,14 +811,14 @@ export default function CommonCodeClient({
  name="dtlCdExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  메타데이터 컨텍스트 설명
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
  maxLength={4000}
- className="w-full min-h-[160px] p-6 rounded-lg border-none bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
+ className="w-full min-h-[160px] p-6 rounded-lg border-none bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
  placeholder="코드 사용처 및 시스템 제약 조건 설명... (최대 4000자)"
  />
  </FormControl>

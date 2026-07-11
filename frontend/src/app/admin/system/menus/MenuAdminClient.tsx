@@ -143,7 +143,7 @@ const SortableMenuNode = ({
             {/* 계층 연결 라인 */}
             {!isOverlay && depth > 0 && (
                 <div 
-                    className="absolute top-0 bottom-0 border-l-2 border-slate-300" 
+                    className="absolute top-0 bottom-0 border-l-2 border-border" 
                     style={{ left: `-${24}px`, height: '100%' }}
                 >
                     <div className="absolute top-6 left-0 w-4 h-0.5 bg-slate-300" />
@@ -155,8 +155,8 @@ const SortableMenuNode = ({
                 depth === 0 
                   ? "bg-slate-900 border-slate-800 shadow-xl min-h-[5rem]" 
                   : depth === 1 
-                    ? "bg-white border-slate-200 shadow-sm" 
-                    : "bg-slate-50 border-transparent",
+                    ? "bg-white border-border shadow-sm" 
+                    : "bg-muted border-transparent",
                 "hover:border-primary/40 backdrop-blur-xl mb-2",
                 depth !== 0 && "bg-white/60",
                 isOverlay && "border-primary bg-white shadow-3xl ring-8 ring-primary/5 scale-[1.02]",
@@ -167,8 +167,8 @@ const SortableMenuNode = ({
                         {...attributes} 
                         {...listeners} 
                         className={cn(
-                          "p-2 hover:bg-slate-100 rounded-lg cursor-grab active:cursor-grabbing transition-colors",
-                          depth === 0 ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-primary"
+                          "p-2 hover:bg-muted rounded-lg cursor-grab active:cursor-grabbing transition-colors",
+                          depth === 0 ? "text-muted-foreground hover:text-white" : "text-muted-foreground hover:text-primary"
                         )}
                     >
                         <GripVertical size={20} />
@@ -180,8 +180,8 @@ const SortableMenuNode = ({
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggle(item.menuNo); }}
                                     className={cn(
-                                      "p-2 hover:bg-slate-100 rounded-lg transition-colors mr-2",
-                                      depth === 0 ? "text-slate-400 hover:text-white" : "text-muted-foreground"
+                                      "p-2 hover:bg-muted rounded-lg transition-colors mr-2",
+                                      depth === 0 ? "text-muted-foreground hover:text-white" : "text-muted-foreground"
                                     )}
                                 >
                                     <ChevronRight size={22} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
@@ -190,7 +190,7 @@ const SortableMenuNode = ({
                             {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
                             <div className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                                depth === 0 ? "bg-white text-slate-900" : depth === 1 ? "bg-slate-900 text-white" : "bg-white text-slate-400 border border-slate-200 shadow-sm"
+                                depth === 0 ? "bg-white text-foreground" : depth === 1 ? "bg-slate-900 text-white" : "bg-white text-muted-foreground border border-border shadow-sm"
                             )}>
                                 {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
                             </div>
@@ -198,21 +198,21 @@ const SortableMenuNode = ({
                         <div className="flex flex-col">
                             <span className={cn(
                               "font-black tracking-tight transition-colors", 
-                              depth === 0 ? "text-white text-base" : depth === 1 ? "text-slate-900 text-sm" : "text-slate-600 text-xs"
+                              depth === 0 ? "text-white text-base" : depth === 1 ? "text-foreground text-sm" : "text-muted-foreground text-xs"
                             )}>
                                 {item.menuNm}
                             </span>
                             <div className="flex items-center gap-3 mt-1">
                                 <span className={cn(
                                   "text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest",
-                                   depth === 0 ? "bg-white/10 text-white/40" : "bg-slate-100 text-slate-400 opacity-100"
+                                   depth === 0 ? "bg-white/10 text-white/40" : "bg-muted text-muted-foreground opacity-100"
                                 )}>
                                     ID: {item.menuNo}
                                 </span>
                                 {item.prgrmFileNm && (
                                     <span className={cn(
                                       "text-[10px] flex items-center gap-1 font-black uppercase tracking-widest",
-                                       depth === 0 ? "text-slate-400" : "text-primary opacity-100"
+                                       depth === 0 ? "text-muted-foreground" : "text-primary opacity-100"
                                     )}>
                                         <LinkIcon size={10} /> {item.prgrmFileNm}
                                     </span>
@@ -233,7 +233,7 @@ const SortableMenuNode = ({
                                 onClick={() => onCreate(item.menuNo)}
                                 className={cn(
                                   "h-9 w-9 rounded-lg",
-                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-50 hover:bg-primary hover:text-white"
+                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-muted hover:bg-primary hover:text-white"
                                 )}
                             >
                                 <Plus size={14} />
@@ -244,7 +244,7 @@ const SortableMenuNode = ({
                             onClick={() => onEdit(item)}
                             className={cn(
                               "h-9 w-9 rounded-lg",
-                              depth === 0 ? "bg-slate-800 text-slate-400 hover:bg-white hover:text-slate-900" : "bg-slate-50 hover:bg-slate-900 hover:text-white"
+                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-white hover:text-foreground" : "bg-muted hover:bg-slate-900 hover:text-white"
                             )}
                         >
                             <Settings size={14} />
@@ -562,7 +562,7 @@ export default function MenuAdminClient({
               control={form.control} name="menuNm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">메뉴 명칭 *</FormLabel>
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">메뉴 명칭 *</FormLabel>
                   <FormControl><Input {...field} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
@@ -570,8 +570,8 @@ export default function MenuAdminClient({
             />
             <div className="grid grid-cols-2 gap-6">
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">상위 노드</FormLabel>
-                  <div className="h-11 rounded-lg border-2 border-slate-100 flex items-center px-5 text-xs font-bold bg-slate-50/50 text-slate-400">
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">상위 노드</FormLabel>
+                  <div className="h-11 rounded-lg border-2 border-border flex items-center px-5 text-xs font-bold bg-muted/50 text-muted-foreground">
                     {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT' : `NODE_${form.getValues('upperMenuId')}`}
                   </div>
                 </FormItem>
@@ -579,7 +579,7 @@ export default function MenuAdminClient({
                   control={form.control} name="menuOrdr"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold text-slate-700 ml-1">정렬 순서 *</FormLabel>
+                      <FormLabel className="text-xs font-bold text-foreground ml-1">정렬 순서 *</FormLabel>
                       <FormControl><Input {...field} type="number" onChange={e => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold px-5" /></FormControl>
                       <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                     </FormItem>
@@ -589,8 +589,8 @@ export default function MenuAdminClient({
             <ShadcnFormField
               control={form.control} name="useYn"
               render={({ field }) => (
-                <FormItem className="flex flex-col gap-2 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">상태 설정 (사용 여부)</FormLabel>
+                <FormItem className="flex flex-col gap-2 p-4 bg-muted/50 rounded-xl border border-border">
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">상태 설정 (사용 여부)</FormLabel>
                   <FormControl>
                     <div className="flex gap-4 items-center">
                       <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
@@ -599,7 +599,7 @@ export default function MenuAdminClient({
                                onChange={() => field.onChange('Y')} />
                         활성화 (Y)
                       </label>
-                      <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-500">
+                      <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-muted-foreground">
                         <input type="radio" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
                                checked={field.value === 'N'} 
                                onChange={() => field.onChange('N')} />
@@ -607,7 +607,7 @@ export default function MenuAdminClient({
                       </label>
                     </div>
                   </FormControl>
-                  <p className="text-[10px] text-slate-400 font-medium ml-1">비활성화 시 일반 사용자 화면의 메뉴 트리에서 노출되지 않습니다.</p>
+                  <p className="text-[10px] text-muted-foreground font-medium ml-1">비활성화 시 일반 사용자 화면의 메뉴 트리에서 노출되지 않습니다.</p>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}

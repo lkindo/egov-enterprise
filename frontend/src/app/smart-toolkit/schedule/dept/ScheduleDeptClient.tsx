@@ -122,7 +122,7 @@ export default function ScheduleDeptClient() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div className="flex items-center space-x-2 bg-muted p-4 rounded-lg border border-border">
                 <Input
                     placeholder="일정명 또는 내용으로 검색하세요"
                     className="max-w-sm rounded-lg"
@@ -134,7 +134,7 @@ export default function ScheduleDeptClient() {
 
             <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white">
                 <Table>
-                    <TableHeader className="bg-slate-50/50">
+                    <TableHeader className="bg-muted/50">
                         <TableRow>
                             <TableHead className="w-[80px] text-center font-bold">번호</TableHead>
                             <TableHead className="font-bold">일정명</TableHead>
@@ -145,18 +145,18 @@ export default function ScheduleDeptClient() {
                     </TableHeader>
                     <TableBody>
                         {schedules.length === 0 ? (
-                                <TableCell colSpan={5} className="h-32 text-center text-slate-400 font-bold tracking-tight opacity-40">
+                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold tracking-tight opacity-40">
                                     등록된 부서 일정이 존재하지 않습니다.
                                 </TableCell>
                         ) : (
                             schedules.map((schedule, index) => (
-                                <TableRow key={schedule.schdlId} className="hover:bg-slate-50/50 transition-colors">
-                                    <TableCell className="text-center font-mono text-slate-400">{index + 1}</TableCell>
-                                    <TableCell className="font-bold text-slate-800">{schedule.schdlNm}</TableCell>
+                                <TableRow key={schedule.schdlId} className="hover:bg-muted/50 transition-colors">
+                                    <TableCell className="text-center font-mono text-muted-foreground">{index + 1}</TableCell>
+                                    <TableCell className="font-bold text-foreground">{schedule.schdlNm}</TableCell>
                                     <TableCell className="text-sm font-medium">
                                         {schedule.schdlBgngYmd} ~ {schedule.schdlEndYmd}
                                     </TableCell>
-                                    <TableCell className="text-sm text-slate-500 font-medium">{schedule.schdlPlcNm}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground font-medium">{schedule.schdlPlcNm}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} className="rounded-lg hover:bg-primary/10">
@@ -181,7 +181,7 @@ export default function ScheduleDeptClient() {
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="schdlNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">일정명</Label>
+                            <Label htmlFor="schdlNm" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">일정명</Label>
                             <Input
                                 id="schdlNm"
                                 className="rounded-lg h-12"
@@ -190,7 +190,7 @@ export default function ScheduleDeptClient() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdlCn" className="text-xs font-bold text-slate-400 uppercase tracking-widest">내용</Label>
+                            <Label htmlFor="schdlCn" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">내용</Label>
                             <Textarea
                                 id="schdlCn"
                                 className="rounded-lg min-h-[100px]"
@@ -199,7 +199,7 @@ export default function ScheduleDeptClient() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="schdlPlcNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">장소</Label>
+                            <Label htmlFor="schdlPlcNm" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">장소</Label>
                             <Input
                                 id="schdlPlcNm"
                                 className="rounded-lg h-12"

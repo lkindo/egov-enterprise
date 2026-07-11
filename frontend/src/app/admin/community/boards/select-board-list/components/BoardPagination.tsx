@@ -18,21 +18,21 @@ export const BoardPagination = ({ currentPage, totalPages, onPageChange }: Board
         variant="outline"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-slate-50"
+        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-muted"
         aria-label="이전 페이지"
       >
         이전
       </Button>
-      <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-lg shadow-xl border border-slate-200 dark:border-slate-800">
-        <span className="text-lg font-bold text-slate-900 dark:text-white" aria-label={`현재 ${currentPage}페이지`}>{currentPage}</span>
+      <div className="flex items-center gap-4 bg-muted dark:bg-slate-900 px-8 py-3 rounded-lg shadow-xl border border-border dark:border-slate-800">
+        <span className="text-lg font-bold text-foreground dark:text-white" aria-label={`현재 ${currentPage}페이지`}>{currentPage}</span>
         <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
-        <span className="text-sm font-bold text-slate-400 dark:text-white/50" aria-label={`총 ${totalPages}페이지`}>{totalPages}</span>
+        <span className="text-sm font-bold text-muted-foreground dark:text-white/50" aria-label={`총 ${totalPages}페이지`}>{totalPages}</span>
       </div>
       <Button
         variant="outline"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-slate-50"
+        className="h-12 px-8 font-bold rounded-lg border-2 hover:bg-muted"
         aria-label="다음 페이지"
       >
         다음

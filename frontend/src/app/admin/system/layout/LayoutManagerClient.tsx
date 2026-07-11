@@ -81,19 +81,19 @@ export default function LayoutManagerClient() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between border-b pb-8 border-slate-200"
+        className="flex items-center justify-between border-b pb-8 border-border"
       >
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Badge className="bg-primary/10 text-primary border-none font-bold px-4 py-1 rounded-lg uppercase tracking-tighter">System Design Engine</Badge>
             <span className="text-slate-300">|</span>
-            <span className="text-sm font-bold text-slate-400">v2.0 Beta</span>
+            <span className="text-sm font-bold text-muted-foreground">v2.0 Beta</span>
           </div>
-          <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-4 text-slate-900">
+          <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-4 text-foreground">
             <Settings2 className="w-10 h-10 text-primary" />
             시스템 테마 및 디자인 토큰 제어
           </h1>
-          <p className="mt-3 text-slate-500 font-bold text-lg">플랫폼의 시각적 일관성을 유지하기 위해 전역 에지(Edge) 곡률 및 브랜드 컬러 토큰을 정의합니다.</p>
+          <p className="mt-3 text-muted-foreground font-bold text-lg">플랫폼의 시각적 일관성을 유지하기 위해 전역 에지(Edge) 곡률 및 브랜드 컬러 토큰을 정의합니다.</p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -111,7 +111,7 @@ export default function LayoutManagerClient() {
         <div className="col-span-12 lg:col-span-4 space-y-10">
           
           <section className="space-y-6">
-            <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+            <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Palette size={20} className="text-primary" />
               곡률 시스템 (Radius Scale)
             </h3>
@@ -119,7 +119,7 @@ export default function LayoutManagerClient() {
               <CardContent className="space-y-8 pt-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-2">
-                    <Label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Base Factor</Label>
+                    <Label className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Base Factor</Label>
                     <span className="text-4xl font-bold text-primary tabular-nums">{themeConfig.borderRadius}<span className="text-lg">rem</span></span>
                   </div>
                   <div className="px-2">
@@ -135,12 +135,12 @@ export default function LayoutManagerClient() {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-2">Section Scale</p>
+                    <div className="p-6 bg-muted rounded-lg border border-border">
+                      <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Section Scale</p>
                       <p className="text-2xl font-bold">{(parseFloat(themeConfig.borderRadius) * 3.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
                     </div>
-                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-2">Item Scale</p>
+                    <div className="p-6 bg-muted rounded-lg border border-border">
+                      <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Item Scale</p>
                       <p className="text-2xl font-bold">{(parseFloat(themeConfig.borderRadius) * 1.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
                     </div>
                   </div>
@@ -150,7 +150,7 @@ export default function LayoutManagerClient() {
           </section>
 
           <section className="space-y-6">
-            <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+            <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Brush size={20} className="text-primary" />
               브랜드 아이덴티티 (Color)
             </h3>
@@ -178,9 +178,9 @@ export default function LayoutManagerClient() {
                       setThemeConfig(newConfig);
                       applyDesignTokens(newConfig);
                     }}
-                    className="h-11 w-24 cursor-pointer p-2 rounded-lg border-none shadow-inner bg-slate-50"
+                    className="h-11 w-24 cursor-pointer p-2 rounded-lg border-none shadow-inner bg-muted"
                   />
-                  <div className="flex-1 h-11 bg-slate-50 rounded-lg flex items-center px-6 font-bold text-lg text-slate-700 justify-center tracking-widest border border-slate-100">
+                  <div className="flex-1 h-11 bg-muted rounded-lg flex items-center px-6 font-bold text-lg text-foreground justify-center tracking-widest border border-border">
                     {themeConfig.primaryColor.toUpperCase()}
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export default function LayoutManagerClient() {
 
         {/* 우측: 시각적 시뮬레이터 */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="h-full min-h-[700px] bg-slate-100/40 rounded-lg border-4 border-dashed border-slate-200 flex flex-col items-center justify-center p-12 relative overflow-hidden group">
+          <div className="h-full min-h-[700px] bg-muted/40 rounded-lg border-4 border-dashed border-border flex flex-col items-center justify-center p-12 relative overflow-hidden group">
             <div className="absolute top-10 left-12 flex items-center gap-4">
               <Badge variant="outline" className="bg-white/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-lg flex gap-3 shadow-lg">
                 <Monitor size={16} className="text-primary" /> 
@@ -236,8 +236,8 @@ export default function LayoutManagerClient() {
                   <h3 className="text-5xl font-bold tracking-tighter" style={{ color: themeConfig.primaryColor }}>
                     UX 토큰 미리보기
                   </h3>
-                  <p className="text-slate-500 font-bold text-xl leading-relaxed">
-                    선택하신 <span className="text-slate-900">곡률과 테마 컬러</span>가 <br/>
+                  <p className="text-muted-foreground font-bold text-xl leading-relaxed">
+                    선택하신 <span className="text-foreground">곡률과 테마 컬러</span>가 <br/>
                     실제 플랫폼 컴포넌트로 구현된 모습입니다.
                   </p>
                 </div>
@@ -246,7 +246,7 @@ export default function LayoutManagerClient() {
                   {[1, 2].map(i => (
                     <div 
                       key={i} 
-                      className="h-11 bg-slate-50 flex items-center justify-center font-bold text-slate-400 border border-slate-100 text-lg" 
+                      className="h-11 bg-muted flex items-center justify-center font-bold text-muted-foreground border border-border text-lg" 
                       style={{ borderRadius: 'var(--radius-hub-item)' }}
                     >
                       COMPONENT {i}
@@ -268,7 +268,7 @@ export default function LayoutManagerClient() {
             </AnimatePresence>
 
             {/* 메타 정보 */}
-            <div className="mt-16 flex items-center gap-3 text-slate-400 font-bold">
+            <div className="mt-16 flex items-center gap-3 text-muted-foreground font-bold">
               <Info size={18} />
               <span>현재 시각화된 섹션 곡률 수치: {((parseFloat(themeConfig.borderRadius) || 0) * 3.5).toFixed(1)} rem</span>
             </div>

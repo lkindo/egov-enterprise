@@ -50,7 +50,7 @@ export default function WorkflowClient() {
                 icon={GitBranch}
                 actions={
                     <div className="flex gap-4">
-                        <Button variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm">
+                        <Button variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
                         </Button>
                         <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
@@ -78,11 +78,11 @@ export default function WorkflowClient() {
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">Active_Process:</span>
-                                    <span className="text-sm font-bold text-slate-900">연차/휴가 결재 v1.2</span>
+                                    <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Active_Process:</span>
+                                    <span className="text-sm font-bold text-foreground">연차/휴가 결재 v1.2</span>
                                 </div>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                                    <RefreshCcw size={14} className="text-slate-400" />
+                                    <RefreshCcw size={14} className="text-muted-foreground" />
                                 </Button>
                             </div>
                             <WorkflowCanvas
@@ -106,39 +106,39 @@ export default function WorkflowClient() {
                                 <div className="space-y-4">
                                     <div className={cn(
                                         "w-14 h-11 rounded-xl flex items-center justify-center shadow-lg",
-                                        selectedNode.status === 'current' ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+                                        selectedNode.status === 'current' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                                     )}>
                                         {selectedNode.status === 'completed' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
                                     </div>
                                     <div>
-                                        <h4 className="text-xl font-bold tracking-tighter text-slate-900">{selectedNode.label}</h4>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {selectedNode.id} / TYPE: {selectedNode.type}</p>
+                                        <h4 className="text-xl font-bold tracking-tighter text-foreground">{selectedNode.label}</h4>
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">ID: {selectedNode.id} / TYPE: {selectedNode.type}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Assignee_Node</span>
-                                        <div className="flex items-center gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Assignee_Node</span>
+                                        <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                                                 {selectedNode.assignee?.charAt(0) || 'U'}
                                             </div>
-                                            <span className="text-sm font-bold text-slate-700">{selectedNode.assignee || 'UNASSIGNED'}</span>
+                                            <span className="text-sm font-bold text-foreground">{selectedNode.assignee || 'UNASSIGNED'}</span>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit_Log</span>
-                                        <div className="space-y-4 border-l-2 border-slate-100 ml-2 pl-6 pt-2">
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Audit_Log</span>
+                                        <div className="space-y-4 border-l-2 border-border ml-2 pl-6 pt-2">
                                             <div className="relative">
                                                 <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-emerald-500 border-4 border-white shadow-sm" />
-                                                <p className="text-xs font-bold text-slate-900">Protocol Received</p>
-                                                <p className="text-[10px] text-slate-400 font-bold tabular-nums">2026.05.10 14:20:01</p>
+                                                <p className="text-xs font-bold text-foreground">Protocol Received</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold tabular-nums">2026.05.10 14:20:01</p>
                                             </div>
                                             <div className="relative opacity-50">
                                                 <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-slate-200 border-4 border-white shadow-sm" />
-                                                <p className="text-xs font-bold text-slate-400">Queue Synchronizing</p>
-                                                <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Waiting...</p>
+                                                <p className="text-xs font-bold text-muted-foreground">Queue Synchronizing</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Waiting...</p>
                                             </div>
                                         </div>
                                     </div>

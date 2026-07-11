@@ -62,15 +62,15 @@ export default function UserManageClient() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
               <Users size={18} />
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">사용자 관리</h1>
+            <h1 className="text-2xl font-black tracking-tight text-foreground dark:text-white">사용자 관리</h1>
           </div>
-          <p className="text-slate-500 font-bold text-sm tracking-tight pl-1">
+          <p className="text-muted-foreground font-bold text-sm tracking-tight pl-1">
             조직의 계정 권한 및 사용자 인벤토리를 관리합니다.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200/50">
+          <div className="flex bg-muted dark:bg-slate-800 p-1 rounded-lg border border-border/50">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -115,10 +115,10 @@ export default function UserManageClient() {
 
  <div className="space-y-4">
  <div className="relative group/input">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-primary transition-colors" size={18} />
+ <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/input:text-primary transition-colors" size={18} />
  <Input 
  placeholder="아이덴티티 검색..." 
- className="bg-white/5 border-white/10 h-11 pl-12 rounded-lg text-lg font-bold placeholder:text-slate-500 focus:ring-primary focus:border-primary transition-all"
+ className="bg-white/5 border-white/10 h-11 pl-12 rounded-lg text-lg font-bold placeholder:text-muted-foreground focus:ring-primary focus:border-primary transition-all"
  value={searchParams.searchKeyword}
  onChange={(e) => setSearchParams((prev: UserSearchParams) => ({ ...prev, searchKeyword: e.target.value }))}
  />
@@ -126,14 +126,14 @@ export default function UserManageClient() {
  
  <div className="grid grid-cols-2 gap-3">
  <div className="p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
- <p className="text-xs font-bold text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">FILTER_BY</p>
+ <p className="text-xs font-bold text-muted-foreground mb-2 group-hover/opt:text-primary tracking-widest">FILTER_BY</p>
  <div className="flex items-center justify-between font-bold text-xs">
  <span>상태</span>
  <ChevronRight size={12} className="opacity-40" />
  </div>
  </div>
  <div className="p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
- <p className="text-xs font-bold text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">SORT_BY</p>
+ <p className="text-xs font-bold text-muted-foreground mb-2 group-hover/opt:text-primary tracking-widest">SORT_BY</p>
  <div className="flex items-center justify-between font-bold text-xs">
  <span>최근 활동</span>
  <ChevronRight size={12} className="opacity-40" />
@@ -160,18 +160,18 @@ export default function UserManageClient() {
 
  {/* 📊 Inventory & Data Grid (Bento Right) */}
  <div className="col-span-12 lg:col-span-8">
- <div className="hub-bento-card p-0 bg-white dark:bg-slate-900 shadow-xl border-slate-200/50 h-full flex flex-col">
- <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+ <div className="hub-bento-card p-0 bg-white dark:bg-slate-900 shadow-xl border-border/50 h-full flex flex-col">
+ <div className="px-8 py-6 border-b border-border dark:border-slate-800 flex items-center justify-between bg-muted/50 dark:bg-slate-800/30">
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
  <Database size={16} />
  </div>
- <h3 className="text-sm font-bold tracking-tighter uppercase text-slate-600 dark:text-slate-300">사용자 인벤토리</h3>
+ <h3 className="text-sm font-bold tracking-tighter uppercase text-muted-foreground dark:text-slate-300">사용자 인벤토리</h3>
  </div>
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-lg">
  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
- <span className="text-xs font-bold text-slate-600 dark:text-slate-400">전체 {data?.total || 0}</span>
+ <span className="text-xs font-bold text-muted-foreground dark:text-muted-foreground">전체 {data?.total || 0}</span>
  </div>
  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
  <MoreHorizontal size={14} />
@@ -182,12 +182,12 @@ export default function UserManageClient() {
  <div className="flex-1 overflow-hidden">
  <Table className="relative">
  <TableHeader>
- <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
- <TableHead className="w-[80px] py-6 text-xs font-bold text-slate-400 uppercase text-center">Protocol</TableHead>
- <TableHead className="py-6 text-xs font-bold text-slate-400 uppercase">Core Identity</TableHead>
- <TableHead className="py-6 text-xs font-bold text-slate-400 uppercase">Clearance</TableHead>
- <TableHead className="py-6 text-xs font-bold text-slate-400 uppercase">State</TableHead>
- <TableHead className="py-6 text-xs font-bold text-slate-400 uppercase text-right">관리</TableHead>
+ <TableRow className="hover:bg-transparent border-border dark:border-slate-800">
+ <TableHead className="w-[80px] py-6 text-xs font-bold text-muted-foreground uppercase text-center">Protocol</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Core Identity</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Clearance</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">State</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase text-right">관리</TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -195,34 +195,34 @@ export default function UserManageClient() {
  [...Array(5)].map((_, i) => (
  <TableRow key={`skeleton-${i}`} className="animate-pulse">
  <TableCell colSpan={5} className="py-10">
- <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-lg w-full" />
+ <div className="h-4 bg-muted dark:bg-slate-800 rounded-lg w-full" />
  </TableCell>
  </TableRow>
  ))
  ) : users.length > 0 ? (
  users.map((user: UserManage, idx: number) => (
- <TableRow key={user.esntlId} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-slate-50 dark:border-slate-800">
- <TableCell className="text-center font-mono text-xs font-bold text-slate-400 group-hover:text-primary transition-colors">
+ <TableRow key={user.esntlId} className="group hover:bg-muted dark:hover:bg-slate-800/50 transition-colors border-slate-50 dark:border-slate-800">
+ <TableCell className="text-center font-mono text-xs font-bold text-muted-foreground group-hover:text-primary transition-colors">
  #{idx + 1 + ((searchParams.pageIndex || 1) - 1) * (searchParams.size || 10)}
  </TableCell>
  <TableCell className="py-5">
  <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner">
+ <div className="w-10 h-10 rounded-lg bg-muted dark:bg-slate-800 flex items-center justify-center text-muted-foreground group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner">
  <UserCheck size={18} />
  </div>
  <div className="flex flex-col">
- <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight leading-none mb-1">{user.userNm}</span>
- <span className="text-xs font-bold text-slate-400 leading-none">{user.userId} • {user.emlAddr}</span>
+ <span className="font-bold text-foreground dark:text-white text-base tracking-tight leading-none mb-1">{user.userNm}</span>
+ <span className="text-xs font-bold text-muted-foreground leading-none">{user.userId} • {user.emlAddr}</span>
  </div>
  </div>
  </TableCell>
  <TableCell>
  <div className="flex flex-col gap-1">
  <div className="flex items-center gap-2">
- <Shield size={10} className="text-slate-400" />
- <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-tighter">Level_04</span>
+ <Shield size={10} className="text-muted-foreground" />
+ <span className="text-xs font-bold text-muted-foreground dark:text-slate-300 uppercase tracking-tighter">Level_04</span>
  </div>
- <span className="text-xs font-bold text-slate-400 ">Global Admin Access</span>
+ <span className="text-xs font-bold text-muted-foreground ">Global Admin Access</span>
  </div>
  </TableCell>
  <TableCell>
@@ -232,10 +232,10 @@ export default function UserManageClient() {
  </TableCell>
  <TableCell className="text-right">
  <div className="flex items-center justify-end gap-2">
- <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-slate-900 hover:text-white transition-all">
  <Edit2 size={16} />
  </Button>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
  <Trash2 size={16} />
  </Button>
  </div>
@@ -256,8 +256,8 @@ export default function UserManageClient() {
  </Table>
  </div>
  
- <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
- <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">Encryption Standard: AES-256-GCM</p>
+ <div className="px-8 py-6 border-t border-border dark:border-slate-800 flex items-center justify-between bg-muted/50 dark:bg-slate-800/30">
+ <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Encryption Standard: AES-256-GCM</p>
  <div className="flex items-center gap-2">
  {[1, 2, 3].map(p => (
  <Button key={p} variant="outline" className={cn("w-8 h-8 p-0 rounded-lg font-bold text-xs", p === 1 && "bg-slate-900 text-white border-none shadow-lg")}>
@@ -281,7 +281,7 @@ export default function UserManageClient() {
  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
  </div>
  <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Dormant Streams</h4>
- <p className="text-xs font-bold text-slate-500 leading-relaxed">
+ <p className="text-xs font-bold text-muted-foreground leading-relaxed">
  최근 90일간 활동이 없는 12개의 아이덴티티가 발견되었습니다. 보안 프로토콜에 따른 정리가 권장됩니다.
  </p>
  </div>
@@ -295,7 +295,7 @@ export default function UserManageClient() {
  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
  </div>
  <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Security Lockdowns</h4>
- <p className="text-xs font-bold text-slate-500 leading-relaxed">
+ <p className="text-xs font-bold text-muted-foreground leading-relaxed">
  비정상적 접근 시도로 인해 일시 격리된 3개의 계정이 존재합니다. 관리자 검토가 필요합니다.
  </p>
  </div>
@@ -309,7 +309,7 @@ export default function UserManageClient() {
  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
  </div>
  <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Audit Trailing</h4>
- <p className="text-xs font-bold text-slate-500 leading-relaxed">
+ <p className="text-xs font-bold text-muted-foreground leading-relaxed">
  전체 시스템 무결성 검사가 완료되었습니다. 모든 아이덴티티 변경 사항이 중앙 감사 로그에 기록되었습니다.
  </p>
  </div>

@@ -32,7 +32,7 @@ export function HubHeader({
     <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between px-6 gap-8 mb-12 animate-in fade-in slide-in-from-top-8 duration-700", className)}>
       <div className="flex items-center gap-6">
         <div className="hub-icon-box shadow-xl shadow-primary/20 hover:scale-110 transition-transform">
-          <div className="text-white dark:text-slate-900">
+          <div className="text-white dark:text-foreground">
             {renderIcon()}
           </div>
         </div>

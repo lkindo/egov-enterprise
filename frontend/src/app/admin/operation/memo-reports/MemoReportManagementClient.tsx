@@ -49,7 +49,7 @@ export default function MemoReportManagementClient() {
  {
  header: '번호',
  accessor: (_, index) => (
- <span className="font-mono text-xs font-bold text-slate-400">
+ <span className="font-mono text-xs font-bold text-muted-foreground">
  {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
  </span>
  ),
@@ -61,11 +61,11 @@ export default function MemoReportManagementClient() {
  <div className="flex flex-col gap-1 py-1">
   <div className="flex items-center gap-2">
   {!report.rptrInqDt && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-  <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+  <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
   {report.rptTtl}
   </span>
   </div>
-  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
   {report.memoRptYmd}
   </span>
  </div>
@@ -74,14 +74,14 @@ export default function MemoReportManagementClient() {
  {
  header: '작성자',
  accessor: (report) => (
- <span className="text-xs font-bold text-slate-600 tracking-tight">{report.wrterNm}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{report.wrterNm}</span>
  ),
  className: 'w-32'
  },
  {
  header: '수신자',
  accessor: (report) => (
- <span className="text-xs font-bold text-slate-500 tracking-tight">{report.rptrNm}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{report.rptrNm}</span>
  ),
  className: 'w-32'
  },
@@ -90,7 +90,7 @@ export default function MemoReportManagementClient() {
  accessor: (report) => (
  <div className={cn(
  "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all",
- report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-slate-100 text-slate-400 border border-slate-200"
+ report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground border border-border"
  )}>
  {report.rptrInqDt ? '수신확인' : '미열람'}
  </div>
@@ -101,8 +101,8 @@ export default function MemoReportManagementClient() {
  header: '관리',
  accessor: () => (
  <div className="flex items-center justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <MoreVertical size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <MoreVertical size={16} className="text-muted-foreground" />
  </Button>
  </div>
  ),
@@ -124,7 +124,7 @@ export default function MemoReportManagementClient() {
  icon={Mail} 
  actions={
  <div className="flex gap-4">
- <div className="flex bg-slate-100 p-1 rounded-xl border-2 border-slate-100">
+ <div className="flex bg-muted p-1 rounded-xl border-2 border-border">
  <Button 
  variant="ghost" 
  size="sm" 
@@ -171,13 +171,13 @@ export default function MemoReportManagementClient() {
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <div className="relative group max-w-xl w-full">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
- className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="보고 제목 또는 작성자 검색.." 
  />
  </div>

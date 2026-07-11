@@ -355,12 +355,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     ];
 
     return (
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans text-slate-800">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans text-foreground">
         {/* --- Section 1: 8대 독점 네이티브 엔진 리스트 (2열 배치) --- */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">8대 네이티브 오케스트레이션 엔진</h4>
-            <div className="h-px bg-slate-100 flex-1" />
+            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">8대 네이티브 오케스트레이션 엔진</h4>
+            <div className="h-px bg-muted flex-1" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {skills.map((skill, index) => (
@@ -368,22 +368,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 key={skill.id} 
                 onClick={() => setSelectedItemId(skill.id)}
                 className={cn(
-                  "p-5 rounded-lg bg-slate-50 border-2 transition-all flex flex-col justify-between group text-left outline-none cursor-pointer",
+                  "p-5 rounded-lg bg-muted border-2 transition-all flex flex-col justify-between group text-left outline-none cursor-pointer",
                   selectedItemId === skill.id 
                     ? "border-primary bg-primary/5 shadow-md scale-[1.01]" 
-                    : "border-slate-100 hover:border-primary/20 hover:bg-slate-100/50"
+                    : "border-border hover:border-primary/20 hover:bg-muted/50"
                 )}
               >
                 <div className="space-y-2 w-full">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] font-black uppercase tracking-wider font-mono text-slate-400">ENG_0{index + 1}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider font-mono text-muted-foreground">ENG_0{index + 1}</span>
                     <div className="flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       {skill.status}
                     </div>
                   </div>
-                  <h5 className={cn("text-xs font-black tracking-tight leading-none", selectedItemId === skill.id ? "text-primary" : "text-slate-800 group-hover:text-primary")}>{skill.name}</h5>
-                  <p className="text-[10px] font-bold text-slate-500 leading-tight">{skill.desc}</p>
+                  <h5 className={cn("text-xs font-black tracking-tight leading-none", selectedItemId === skill.id ? "text-primary" : "text-foreground group-hover:text-primary")}>{skill.name}</h5>
+                  <p className="text-[10px] font-bold text-muted-foreground leading-tight">{skill.desc}</p>
                 </div>
               </button>
             ))}
@@ -391,15 +391,15 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </div>
 
         {/* --- Section 2: JPA 성능 가드레일 계측 패널 (가로 전체 활용) --- */}
-        <div className="rounded-xl border-2 border-slate-100 bg-white p-6 shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="rounded-xl border-2 border-border bg-white p-6 shadow-xl space-y-6">
+          <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <Zap size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900 leading-none">JPA Performance Guardrail Telemetry</h4>
-                <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-tight">실시간 테스트-타임 SQL 쿼리 가드레일 계측 보드</p>
+                <h4 className="text-sm font-bold text-foreground leading-none">JPA Performance Guardrail Telemetry</h4>
+                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">실시간 테스트-타임 SQL 쿼리 가드레일 계측 보드</p>
               </div>
             </div>
             <div className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-black flex items-center gap-1.5 shadow-sm">
@@ -418,16 +418,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   "w-full p-4 rounded-lg border text-left flex items-center justify-between transition-all group outline-none cursor-pointer",
                   selectedItemId === log.id 
                     ? "border-primary bg-primary/5 shadow-md scale-[1.01]" 
-                    : "bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200"
+                    : "bg-muted border-border hover:bg-muted hover:border-border"
                 )}
               >
                 <div className="space-y-1 min-w-0 pr-4">
-                  <h5 className={cn("text-xs font-bold truncate leading-snug", selectedItemId === log.id ? "text-primary" : "text-slate-800")}>{log.testName}</h5>
-                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">측정 시간: {log.time}</p>
+                  <h5 className={cn("text-xs font-bold truncate leading-snug", selectedItemId === log.id ? "text-primary" : "text-foreground")}>{log.testName}</h5>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">측정 시간: {log.time}</p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
-                    <div className="text-xs font-bold text-slate-900">{log.queries} / {log.max} SQL</div>
+                    <div className="text-xs font-bold text-foreground">{log.queries} / {log.max} SQL</div>
                     <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1 relative">
                       <div 
                         className="h-full bg-emerald-500" 
@@ -475,7 +475,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="flex gap-4 p-2">
             <button 
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-11 px-8 rounded-lg border-2 border-slate-200 bg-white text-slate-800 font-bold text-xs tracking-tight gap-3 hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
+                className="h-11 px-8 rounded-lg border-2 border-border bg-white text-foreground font-bold text-xs tracking-tight gap-3 hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform shrink-0" />
               <span>리포트 스냅샷</span>
@@ -490,13 +490,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       <div className="grid grid-cols-12 gap-12 px-2 min-h-[900px]">
         {/* --- Navigation Side Panel --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8 h-fit lg:sticky lg:top-8">
-          <div className="rounded-lg p-4 bg-white/40 backdrop-blur-xl border-2 border-slate-100 shadow-xl space-y-3">
+          <div className="rounded-lg p-4 bg-white/40 backdrop-blur-xl border-2 border-border shadow-xl space-y-3">
             <NavButton icon={<ShieldAlert size={22} />} label="보안 감사 매트릭스" active={activeTab === 'SECURITY'} onClick={() => { setActiveTab('SECURITY'); setSelectedItemId(null); }} />
             <NavButton icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
             <NavButton icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
             <NavButton icon={<MonitorCheck size={22} />} label="인프라 가동성 정보" active={activeTab === 'OBSERVABILITY'} onClick={() => { setActiveTab('OBSERVABILITY'); setSelectedItemId(null); }} />
             <NavButton icon={<Share2 size={22} />} label="인프라 토폴로지 맵" active={activeTab === 'TOPOLOGY'} onClick={() => { setActiveTab('TOPOLOGY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Zap size={22} className={activeTab === 'HARNESS' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} />} label="에이전트 하네스 아틀라스" active={activeTab === 'HARNESS'} onClick={() => { setActiveTab('HARNESS'); setSelectedItemId(null); }} />
+            <NavButton icon={<Zap size={22} className={activeTab === 'HARNESS' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'} />} label="에이전트 하네스 아틀라스" active={activeTab === 'HARNESS'} onClick={() => { setActiveTab('HARNESS'); setSelectedItemId(null); }} />
             <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
           </div>
 
@@ -516,10 +516,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
         {/* --- Central Intelligence Stream --- */}
         <div className="col-span-12 lg:col-span-5 flex flex-col gap-8 h-full">
-          <div className="rounded-lg bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
+          <div className="rounded-lg bg-white border-2 border-border shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border pb-8 relative z-10">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-slate-600 tracking-tight">데이터 스트림</h3>
+                <h3 className="text-xs font-bold text-muted-foreground tracking-tight">데이터 스트림</h3>
                 <p className="text-2xl font-bold tracking-tighter text-foreground">인베스티게이션</p>
               </div>
               <Button 
@@ -527,7 +527,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 size="icon" 
                 aria-label="데이터 스트림 새로고침"
                 onClick={() => queryClient.invalidateQueries()} 
-                className="h-11 w-14 rounded-lg bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-inner group"
+                className="h-11 w-14 rounded-lg bg-muted hover:bg-primary hover:text-white transition-all shadow-inner group"
               >
                 <RefreshCcw size={20} className="group-active:rotate-180 transition-transform duration-500" />
               </Button>
@@ -537,7 +537,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div className="relative group/search relative z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
-                  className="pl-16 h-11 bg-slate-50 border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-600" 
+                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground" 
                   placeholder="로그 객체 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -574,7 +574,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               </AnimatePresence>
             </div>
             
-            <div className="absolute left-0 bottom-0 w-64 h-64 bg-slate-50 rounded-lg blur-3xl -ml-32 -mb-32 pointer-events-none opacity-50" />
+            <div className="absolute left-0 bottom-0 w-64 h-64 bg-muted rounded-lg blur-3xl -ml-32 -mb-32 pointer-events-none opacity-50" />
           </div>
         </div>
 
@@ -595,10 +595,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 className="h-full"
               >
                 <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
-                  <div className="border-b border-slate-100 pb-12 relative z-10">
+                  <div className="border-b border-border pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
-                        <h3 className="text-xs font-bold text-slate-600 tracking-tight">
+                        <h3 className="text-xs font-bold text-muted-foreground tracking-tight">
                           {selectedItem && (selectedItem as any).type === 'SKILL' ? '아틀라스 엔진 명세' : selectedItem && (selectedItem as any).type === 'TEST' ? 'JPA SQL 실시간 계측' : '인스턴스 메타데이터'}
                         </h3>
                     </div>
@@ -614,24 +614,24 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                     ) : selectedItem && (selectedItem as any).type === 'TEST' ? (
                       <TestDetailView test={selectedItem as any} />
                     ) : selectedItem ? (
-                      <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-lg shadow-inner relative overflow-hidden group">
-                        <pre className="text-xs whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-bold relative z-10">
+                      <div className="p-8 bg-muted border-2 border-border rounded-lg shadow-inner relative overflow-hidden group">
+                        <pre className="text-xs whitespace-pre-wrap break-all text-foreground leading-relaxed font-bold relative z-10">
                           {JSON.stringify(selectedItem, null, 2)}
                         </pre>
                       </div>
                     ) : (
-                      <div className="p-12 border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-lg flex flex-col items-center justify-center text-center space-y-4">
-                        <AlertCircle className="text-slate-400 w-8 h-8 animate-pulse" />
-                        <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                      <div className="p-12 border-2 border-dashed border-border bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center space-y-4">
+                        <AlertCircle className="text-muted-foreground w-8 h-8 animate-pulse" />
+                        <p className="text-xs font-bold text-muted-foreground leading-relaxed">
                           선택된 인스턴스의 상세 메타데이터를<br />로드할 수 없습니다. (만료 또는 미존재)
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-12 mt-auto border-t border-slate-100 space-y-8 relative z-10">
+                  <div className="pt-12 mt-auto border-t border-border space-y-8 relative z-10">
                     <div className="flex items-center justify-between px-6">
-                       <span className="text-xs font-bold text-slate-600 tracking-tight">결정 매트릭스</span>
+                       <span className="text-xs font-bold text-muted-foreground tracking-tight">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
                     <Button className="w-full h-11 bg-slate-900 text-white rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group overflow-hidden">
@@ -646,12 +646,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             ) : activeTab === 'HARNESS' ? (
               <HarnessDashboardOverview selectedItemId={selectedItemId} setSelectedItemId={setSelectedItemId} />
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-lg border-4 border-dashed border-slate-100 bg-slate-50/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
-                <div className="w-24 h-24 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-lg border-4 border-dashed border-border bg-muted/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
+                <div className="w-24 h-24 rounded-lg bg-white border-2 border-border flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
                     <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
                 <h3 className="text-4xl font-bold text-foreground tracking-tighter mb-4">인텔리전스 대기 중</h3>
-                <p className="text-xs font-bold text-slate-600 tracking-tight leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
+                <p className="text-xs font-bold text-muted-foreground tracking-tight leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
               </div>
             )}
           </AnimatePresence>
@@ -666,22 +666,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       >
          <div className="p-10 space-y-10 font-sans">
             <div className="space-y-4">
-               <h4 className="text-xs font-bold text-slate-400 tracking-tight px-2">_ SELECT_REPORT_PROTOCOL</h4>
+               <h4 className="text-xs font-bold text-muted-foreground tracking-tight px-2">_ SELECT_REPORT_PROTOCOL</h4>
                <div className="grid grid-cols-1 gap-4">
                   <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 가동 및 보안 지표 통합 요약 (PDF)" />
                   <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
                </div>
             </div>
 
-            <div className="p-8 bg-slate-50 rounded-lg border-2 border-slate-100 space-y-4">
+            <div className="p-8 bg-muted rounded-lg border-2 border-border space-y-4">
                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800">_ Reconciliation Range</span>
+                  <span className="text-xs font-bold text-foreground">_ Reconciliation Range</span>
                   <span className="text-xs font-bold text-primary px-3 py-1 bg-primary/10 rounded-lg">LAST_24_HOURS</span>
                </div>
                <div className="h-2 bg-slate-200 rounded-lg overflow-hidden">
                   <div className="h-full bg-primary w-2/3 animate-pulse" />
                </div>
-               <p className="text-xs text-slate-400 font-medium">데이터 수집 및 통합성 검증이 백그라운드에서 실행됩니다</p>
+               <p className="text-xs text-muted-foreground font-medium">데이터 수집 및 통합성 검증이 백그라운드에서 실행됩니다</p>
             </div>
 
             <div className="flex gap-4">
@@ -697,13 +697,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
 function ReportOption({ icon, title, description }: any) {
   return (
-    <div className="flex items-center gap-5 p-6 rounded-lg border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
-       <div className="w-12 h-12 rounded-lg bg-white shadow-md flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+    <div className="flex items-center gap-5 p-6 rounded-lg border-2 border-border hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
+       <div className="w-12 h-12 rounded-lg bg-white shadow-md flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
           {icon}
        </div>
        <div>
-          <h5 className="text-sm font-bold text-slate-900 tracking-tight">{title}</h5>
-          <p className="text-xs font-bold text-slate-400">{description}</p>
+          <h5 className="text-sm font-bold text-foreground tracking-tight">{title}</h5>
+          <p className="text-xs font-bold text-muted-foreground">{description}</p>
        </div>
        <ChevronRight size={16} className="ml-auto text-slate-100 group-hover:text-primary/30 transition-colors" />
     </div>
@@ -718,7 +718,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
         "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-6",
         active 
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10 shadow-slate-200" 
-          : "bg-transparent border-transparent hover:bg-white hover:border-slate-100 text-slate-400 hover:text-slate-900"
+          : "bg-transparent border-transparent hover:bg-white hover:border-border text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
@@ -750,13 +750,13 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
 function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
   return (
     <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-10 space-y-10 flex flex-col relative overflow-hidden text-left font-sans">
-      <div className="border-b border-slate-100 pb-6 relative z-10">
+      <div className="border-b border-border pb-6 relative z-10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-400/40 animate-pulse" />
-          <h3 className="text-xs font-bold text-slate-600 tracking-tight">Harness Governance SSOT</h3>
+          <h3 className="text-xs font-bold text-muted-foreground tracking-tight">Harness Governance SSOT</h3>
         </div>
-        <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-3">아틀라스 통합 관제</h2>
-        <p className="text-xs font-bold text-slate-400 tracking-tight">AI 오케스트레이션 & 3대 기술 헌법 실시간 지표 요약</p>
+        <h2 className="text-3xl font-black text-foreground tracking-tighter leading-none mb-3">아틀라스 통합 관제</h2>
+        <p className="text-xs font-bold text-muted-foreground tracking-tight">AI 오케스트레이션 & 3대 기술 헌법 실시간 지표 요약</p>
       </div>
 
       <div className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar relative z-10">
@@ -767,15 +767,15 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
           </div>
           <div className="space-y-0.5">
             <span className="text-[9px] font-black tracking-widest text-primary uppercase">ORCHESTRATION SCORE</span>
-            <div className="text-3xl font-black text-white font-mono leading-none">99.8<span className="text-sm font-bold text-slate-400">%</span></div>
+            <div className="text-3xl font-black text-white font-mono leading-none">99.8<span className="text-sm font-bold text-muted-foreground">%</span></div>
           </div>
           <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
             <div>
-              <span className="text-[9px] font-black text-slate-400 block uppercase">N+1 GUARDRAIL</span>
+              <span className="text-[9px] font-black text-muted-foreground block uppercase">N+1 GUARDRAIL</span>
               <span className="text-[10px] font-black text-emerald-400 leading-none">ACTIVE PROTECTION</span>
             </div>
             <div>
-              <span className="text-[9px] font-black text-slate-400 block uppercase">MUTATION TIER</span>
+              <span className="text-[9px] font-black text-muted-foreground block uppercase">MUTATION TIER</span>
               <span className="text-[10px] font-black text-primary leading-none">TIER 1 SECURE</span>
             </div>
           </div>
@@ -783,31 +783,31 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
 
         {/* 3대 기술 헌법 수호 패널 */}
         <div className="space-y-4">
-          <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">3대 기술 헌법 무결성</h4>
+          <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">3대 기술 헌법 무결성</h4>
           <div className="space-y-3">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-1 relative overflow-hidden">
+            <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-black uppercase tracking-wider text-rose-500">DATABASE</span>
                 <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
               </div>
-              <h5 className="text-xs font-bold text-slate-900">DB 표준화 헌법 (10조)</h5>
-              <p className="text-[10px] text-slate-500 leading-tight">물리 테이블 tb_ 접두사, CHAR(1) 플래그, 메타 데이터 명세 보증</p>
+              <h5 className="text-xs font-bold text-foreground">DB 표준화 헌법 (10조)</h5>
+              <p className="text-[10px] text-muted-foreground leading-tight">물리 테이블 tb_ 접두사, CHAR(1) 플래그, 메타 데이터 명세 보증</p>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-1 relative overflow-hidden">
+            <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-black uppercase tracking-wider text-primary">BACKEND</span>
                 <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
               </div>
-              <h5 className="text-xs font-bold text-slate-900">백엔드 API 헌법 (18조)</h5>
-              <p className="text-[10px] text-slate-500 leading-tight">엔티티 노출 금지, UnifiedResponse 보증, JWT 2차 보안 아키텍처</p>
+              <h5 className="text-xs font-bold text-foreground">백엔드 API 헌법 (18조)</h5>
+              <p className="text-[10px] text-muted-foreground leading-tight">엔티티 노출 금지, UnifiedResponse 보증, JWT 2차 보안 아키텍처</p>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-1 relative overflow-hidden">
+            <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">FRONTEND</span>
                 <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
               </div>
-              <h5 className="text-xs font-bold text-slate-900">프론트엔드 UX 헌법 (15조)</h5>
-              <p className="text-[10px] text-slate-500 leading-tight">Server Component 우선, HSL 디자인 토큰, 프리미엄 글래스모피즘 에스테틱</p>
+              <h5 className="text-xs font-bold text-foreground">프론트엔드 UX 헌법 (15조)</h5>
+              <p className="text-[10px] text-muted-foreground leading-tight">Server Component 우선, HSL 디자인 토큰, 프리미엄 글래스모피즘 에스테틱</p>
             </div>
           </div>
         </div>
@@ -815,37 +815,37 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
         {/* Ralph Loop 2.0 Trace 패널 */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Ralph Loop 2.0 Trace</h4>
+            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">Ralph Loop 2.0 Trace</h4>
             <span className="text-[9px] font-black text-emerald-600">100% PERFECT</span>
           </div>
-          <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-4">
-            <div className="relative pl-5 border-l-2 border-slate-200 space-y-4 py-1">
+          <div className="p-6 rounded-lg bg-muted border border-border space-y-4">
+            <div className="relative pl-5 border-l-2 border-border space-y-4 py-1">
               <div className="relative">
                 <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-slate-900 shadow-sm" />
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">STEP 1. Stop & Diagnose</span>
-                <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">에러 시 즉각 중단 및 오판 진단(False Assumption) 도출</p>
+                <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">STEP 1. Stop & Diagnose</span>
+                <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">에러 시 즉각 중단 및 오판 진단(False Assumption) 도출</p>
               </div>
               <div className="relative">
                 <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-primary shadow-sm animate-pulse" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-primary">STEP 2. Evidence Probe</span>
-                <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">E2E DOM 상태, DB Bridge를 통한 물리 근본 원인 획득</p>
+                <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">E2E DOM 상태, DB Bridge를 통한 물리 근본 원인 획득</p>
               </div>
               <div className="relative">
                 <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-emerald-500 shadow-sm" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">STEP 3. Reflection & Healing</span>
-                <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">성찰 리포트 발행 및 콤팩트 픽스 및 무결성 재통과</p>
+                <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">성찰 리포트 발행 및 콤팩트 픽스 및 무결성 재통과</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Guides */}
-        <div className="p-5 bg-indigo-50/50 border border-indigo-100/50 rounded-lg text-slate-600 text-[10px] leading-relaxed space-y-2">
-          <h5 className="font-bold text-slate-800 flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
-          <p className="text-slate-500 font-medium leading-relaxed">
+        <div className="p-5 bg-indigo-50/50 border border-indigo-100/50 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
+          <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
+          <p className="text-muted-foreground font-medium leading-relaxed">
             좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 8대 스킬 엔진 카드나 실시간 JPA 쿼리 성능 계측 로그 항목을 클릭하십시오.
           </p>
-          <p className="text-slate-500 font-medium leading-relaxed">
+          <p className="text-muted-foreground font-medium leading-relaxed">
             선택 시 즉각 상세 아키텍처 정보와 데이터베이스 호출 스택 및 토폴로지가 시각화됩니다.
           </p>
         </div>
@@ -927,10 +927,10 @@ function SkillDetailView({ skill }: { skill: any }) {
   return (
     <div className="space-y-8 text-left font-sans animate-in fade-in duration-500">
       {/* Target Skill Header */}
-      <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+      <div className="p-6 rounded-lg bg-muted border border-border flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">{skill.id}</span>
-          <h4 className="text-lg font-black text-slate-900 tracking-tight mt-1">{skill.name}</h4>
+          <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase font-mono">{skill.id}</span>
+          <h4 className="text-lg font-black text-foreground tracking-tight mt-1">{skill.name}</h4>
         </div>
         <div className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 animate-pulse">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -940,8 +940,8 @@ function SkillDetailView({ skill }: { skill: any }) {
 
       {/* Basic Metrics */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="p-5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-          <span className="text-[9px] font-black text-slate-400 block uppercase">SYSTEM IMPACT</span>
+        <div className="p-5 rounded-lg bg-muted border border-border space-y-1">
+          <span className="text-[9px] font-black text-muted-foreground block uppercase">SYSTEM IMPACT</span>
           <span className={cn("text-xs font-black", currentMeta.impact === "HIGH" ? "text-rose-500" : "text-amber-500")}>
             {currentMeta.impact} SEVERITY
           </span>
@@ -949,10 +949,10 @@ function SkillDetailView({ skill }: { skill: any }) {
             <div className={cn("h-full", currentMeta.impact === "HIGH" ? "bg-rose-500 w-full" : "bg-amber-500 w-2/3")} />
           </div>
         </div>
-        <div className="p-5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-          <span className="text-[9px] font-black text-slate-400 block uppercase font-sans">PERFORMANCE METRICS</span>
-          <span className="text-xs font-bold text-slate-900 tracking-tight leading-normal block">{currentMeta.metrics.split('|')[0]}</span>
-          <span className="text-[9px] text-slate-500 block leading-none">{currentMeta.metrics.split('|')[1] || ""}</span>
+        <div className="p-5 rounded-lg bg-muted border border-border space-y-1">
+          <span className="text-[9px] font-black text-muted-foreground block uppercase font-sans">PERFORMANCE METRICS</span>
+          <span className="text-xs font-bold text-foreground tracking-tight leading-normal block">{currentMeta.metrics.split('|')[0]}</span>
+          <span className="text-[9px] text-muted-foreground block leading-none">{currentMeta.metrics.split('|')[1] || ""}</span>
         </div>
       </div>
 
@@ -969,14 +969,14 @@ function SkillDetailView({ skill }: { skill: any }) {
 
       {/* Flow Steps */}
       <div className="space-y-4">
-        <h5 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">오케스트레이션 파이프라인 (Execution Flow)</h5>
-        <div className="relative pl-6 border-l-2 border-slate-100 space-y-4 py-2">
+        <h5 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">오케스트레이션 파이프라인 (Execution Flow)</h5>
+        <div className="relative pl-6 border-l-2 border-border space-y-4 py-2">
           {currentMeta.flow.map((step, idx) => (
             <div key={idx} className="relative">
               <div className="absolute -left-[30px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-slate-900 shadow-sm flex items-center justify-center text-[7px] font-black text-white font-mono">
                 {idx + 1}
               </div>
-              <p className="text-xs font-bold text-slate-800 leading-tight">{step}</p>
+              <p className="text-xs font-bold text-foreground leading-tight">{step}</p>
             </div>
           ))}
         </div>
@@ -1027,17 +1027,17 @@ function TestDetailView({ test }: { test: any }) {
   return (
     <div className="space-y-8 text-left font-sans animate-in fade-in duration-500">
       {/* Test Log Header */}
-      <div className="p-6 rounded-lg bg-slate-50 border border-slate-100">
-        <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">{test.id}</span>
-        <h4 className="text-sm font-black text-slate-900 tracking-tight mt-1 leading-snug break-all">{test.testName}</h4>
-        <p className="text-[10px] font-bold text-slate-500 uppercase mt-2">측정 타임: {test.time}</p>
+      <div className="p-6 rounded-lg bg-muted border border-border">
+        <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase font-mono">{test.id}</span>
+        <h4 className="text-sm font-black text-foreground tracking-tight mt-1 leading-snug break-all">{test.testName}</h4>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">측정 타임: {test.time}</p>
       </div>
 
       {/* SQL Budget Slider */}
-      <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-4">
+      <div className="p-6 rounded-lg bg-muted border border-border space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">JPA SQL CALLS BUDGET</span>
-          <span className="text-xs font-black text-slate-900 font-mono">{test.queries} / {test.max} SQL</span>
+          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">JPA SQL CALLS BUDGET</span>
+          <span className="text-xs font-black text-foreground font-mono">{test.queries} / {test.max} SQL</span>
         </div>
         <div className="w-full h-3 bg-slate-200 rounded-lg overflow-hidden relative">
           <div 
@@ -1045,7 +1045,7 @@ function TestDetailView({ test }: { test: any }) {
             style={{ width: `${fillPercentage}%` }}
           />
         </div>
-        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+        <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
           <span>SAFE LIMIT: {test.max}</span>
           <span className="text-emerald-600 font-black">{Math.round(100 - fillPercentage)}% UNDER BUDGET</span>
         </div>
@@ -1057,32 +1057,32 @@ function TestDetailView({ test }: { test: any }) {
           <CheckCircle2 size={14} className="text-emerald-600 animate-bounce" />
           <span>가드레일 통합 검증 통과: {test.status}</span>
         </div>
-        <p className="text-xs font-bold text-slate-700 leading-normal">
+        <p className="text-xs font-bold text-foreground leading-normal">
           {currentStack.summary}
         </p>
       </div>
 
       {/* SQL Stacks */}
       <div className="space-y-4">
-        <h5 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">실시간 DB 호출 스택 (Database Call Stack)</h5>
+        <h5 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">실시간 DB 호출 스택 (Database Call Stack)</h5>
         <div className="space-y-3">
           {currentStack.stacks.map((stack, idx) => (
-            <div key={idx} className="p-5 rounded-lg border-2 border-slate-100 bg-slate-50/30 flex flex-col gap-3 relative overflow-hidden group hover:border-primary/20 transition-all">
+            <div key={idx} className="p-5 rounded-lg border-2 border-border bg-muted/30 flex flex-col gap-3 relative overflow-hidden group hover:border-primary/20 transition-all">
               <div className="flex items-center justify-between">
                 <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black tracking-widest rounded uppercase font-mono">
                   {stack.type}
                 </span>
-                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[9px] font-black tracking-widest rounded font-mono uppercase">
+                <span className="px-2 py-0.5 bg-slate-200 text-foreground text-[9px] font-black tracking-widest rounded font-mono uppercase">
                   {stack.table}
                 </span>
               </div>
-              <pre className="text-xs font-bold font-mono text-slate-800 whitespace-pre-wrap break-all leading-normal">
+              <pre className="text-xs font-bold font-mono text-foreground whitespace-pre-wrap break-all leading-normal">
                 {stack.sql}
               </pre>
             </div>
           ))}
           {currentStack.stacks.length === 0 && (
-            <p className="text-xs text-slate-400 font-medium text-center py-6">수집된 데이터베이스 질의 로그가 없습니다.</p>
+            <p className="text-xs text-muted-foreground font-medium text-center py-6">수집된 데이터베이스 질의 로그가 없습니다.</p>
           )}
         </div>
       </div>

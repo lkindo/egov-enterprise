@@ -255,7 +255,7 @@ function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
     USER: <Users size={14} className="text-blue-500" />,
     POST: <Activity size={14} className="text-green-500" />,
     COMMENT: <TrendingUp size={14} className="text-purple-500" />,
-    SYSTEM: <Bell size={14} className="text-gray-500" />,
+    SYSTEM: <Bell size={14} className="text-muted-foreground" />,
     ALERT: <AlertCircle size={14} className="text-red-500" />
   };
 

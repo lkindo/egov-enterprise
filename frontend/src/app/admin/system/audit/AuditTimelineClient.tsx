@@ -79,7 +79,7 @@ export function AuditTimelineClient() {
             <Button 
                 variant="outline" 
                 size="lg" 
-                className="h-11 px-8 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+                className="h-11 px-8 rounded-lg border-2 font-bold text-xs tracking-widest uppercase gap-3 hover:bg-muted transition-all shadow-sm group"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 추출
             </Button>
@@ -104,26 +104,26 @@ export function AuditTimelineClient() {
       <div className="grid grid-cols-12 gap-12 px-2 h-full">
         {/* --- Main Timeline Filter & List --- */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-10">
-           <div className="rounded-lg bg-white border-2 border-slate-100 shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
+           <div className="rounded-lg bg-white border-2 border-border shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase">행동 분석</h3>
-                    <p className="text-2xl font-bold tracking-tighter text-slate-900 uppercase leading-none">_ 감사 로드맵 매트릭스</p>
+                    <h3 className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase">행동 분석</h3>
+                    <p className="text-2xl font-bold tracking-tighter text-foreground uppercase leading-none">_ 감사 로드맵 매트릭스</p>
                  </div>
                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-lg hover:bg-slate-50 transition-all">
-                       <Calendar size={14} className="text-slate-600 group-hover:text-primary" />
-                       <span className="text-xs font-bold tracking-widest text-slate-600 uppercase">전체 기간</span>
+                    <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-lg hover:bg-muted transition-all">
+                       <Calendar size={14} className="text-muted-foreground group-hover:text-primary" />
+                       <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">전체 기간</span>
                     </div>
-                    <div className="h-6 w-px bg-slate-100" />
-                    <Filter size={18} className="text-slate-300 hover:text-slate-900 cursor-pointer transition-colors" />
+                    <div className="h-6 w-px bg-muted" />
+                    <Filter size={18} className="text-slate-300 hover:text-foreground cursor-pointer transition-colors" />
                  </div>
               </div>
 
               <div className="relative group z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-primary transition-colors" size={20} />
                 <Input 
-                  className="pl-16 h-11 bg-slate-50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
+                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
                   placeholder="행위, 시스템명 또는 행동 상세 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -132,7 +132,7 @@ export function AuditTimelineClient() {
 
               <div className="space-y-2 relative z-10 pt-4 overflow-y-auto max-h-[800px] pr-4 custom-scrollbar">
                 {isLoading ? (
-                   [1,2,3,4,5].map(i => <div key={i} className="h-40 bg-slate-50 rounded-lg animate-pulse mb-8" />)
+                   [1,2,3,4,5].map(i => <div key={i} className="h-40 bg-muted rounded-lg animate-pulse mb-8" />)
                 ) : logs.length > 0 ? (
                    logs.map((log, idx) => (
                       <TimelineItem 
@@ -146,8 +146,8 @@ export function AuditTimelineClient() {
                 ) : (
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
                       <Search size={100} className="text-slate-300 mb-6" />
-                      <h3 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase">_ 검색 결과가 없습니다</h3>
-                      <p className="text-xs font-bold text-slate-600 tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
+                      <h3 className="text-2xl font-bold text-foreground tracking-tighter uppercase">_ 검색 결과가 없습니다</h3>
+                      <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
                    </div>
                 )}
               </div>
@@ -197,7 +197,7 @@ export function AuditTimelineClient() {
                        </div>
 
                        <div className="pt-12 mt-auto border-t border-white/5 space-y-8 relative z-10">
-                          <Button className="w-full h-11 bg-white text-slate-900 rounded-lg font-bold tracking-[0.4em] text-xs shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
+                          <Button className="w-full h-11 bg-white text-foreground rounded-lg font-bold tracking-[0.4em] text-xs shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
                              감사 보고 증명서 발급
                              <ArrowRight size={20} className="ml-4 group-hover:translate-x-2 transition-transform" />
                           </Button>
@@ -208,14 +208,14 @@ export function AuditTimelineClient() {
                     </div>
                  </motion.div>
               ) : (
-                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-lg border-4 border-dashed border-slate-100 bg-slate-50/50 group hover:border-primary/20 hover:bg-white transition-all duration-1000 group">
-                    <div className="w-32 h-32 rounded-lg bg-white border-2 border-slate-100 flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
+                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-lg border-4 border-dashed border-border bg-muted/50 group hover:border-primary/20 hover:bg-white transition-all duration-1000 group">
+                    <div className="w-32 h-32 rounded-lg bg-white border-2 border-border flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
                         <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
-                    <h3 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase leading-tight mb-4">
+                    <h3 className="text-4xl font-bold text-foreground tracking-tighter uppercase leading-tight mb-4">
                        데이터 인스턴스 <br /> 미선택
                     </h3>
-                    <p className="text-xs font-bold text-slate-600 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
+                    <p className="text-xs font-bold text-muted-foreground tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
                        분석할 타임라인 항목을 캡처하십시오
                     </p>
                  </div>

@@ -45,7 +45,7 @@ export default function NotFound() {
                     </Link>
                 </div>
 
-                <div className="pt-6 text-xs text-slate-500 font-bold tracking-tight">
+                <div className="pt-6 text-xs text-muted-foreground font-bold tracking-tight">
                     Electronic Government Modernization Project
                 </div>
             </div>

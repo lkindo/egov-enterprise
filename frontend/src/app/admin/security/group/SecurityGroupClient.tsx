@@ -151,7 +151,7 @@ export default function SecurityGroupClient() {
  {
  header: 'PROVISION_DATE',
  accessor: (item: GroupManage) => (
- <div className="flex items-center gap-2 text-xs font-bold text-slate-400 font-mono tracking-tighter">
+ <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
  <Calendar size={12} className="opacity-40" />
  {item.groupCrtYmd || 'N/A'}
  </div>
@@ -163,7 +163,7 @@ export default function SecurityGroupClient() {
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-100 transition-all font-bold shadow-sm group">
+ <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold shadow-sm group">
  <Settings size={16} className="group-hover:rotate-45 transition-transform" />
  </Button>
  <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
@@ -191,7 +191,7 @@ export default function SecurityGroupClient() {
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -218,13 +218,13 @@ export default function SecurityGroupClient() {
  icon={Network}
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
  <div className="flex items-center gap-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="그룹ID 또는 그룹명으로 검색"
- className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner"
+ className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
  />
@@ -300,7 +300,7 @@ export default function SecurityGroupClient() {
  id="groupDc"
  value={formData.groupDc || ''}
  onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
- className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+ className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
  placeholder="상세 명세 입력..."
  />
  </div>
@@ -310,7 +310,7 @@ export default function SecurityGroupClient() {
   <button
     type="button"
     onClick={() => setIsDialogOpen(false)}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>

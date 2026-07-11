@@ -118,7 +118,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Button 
  onClick={() => router.push('/admin/community/boards/master')}
  variant="outline"
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-slate-200 bg-white text-slate-900 font-bold tracking-tight text-xs md:text-xs hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-border bg-white text-foreground font-bold tracking-tight text-xs md:text-xs hover:bg-muted hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> Master Console
  </Button>
@@ -132,7 +132,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div className="h-10 md:h-11 w-[1px] md:w-[2px] bg-border/40 mx-1 md:mx-2 hidden sm:block" />
  <div className="hidden sm:flex flex-col items-end">
  <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">외부 접근 전용</span>
- <span className="text-xs font-bold text-slate-800 tracking-tight mt-1 underline decoration-primary/30 decoration-2">관리자 루트</span>
+ <span className="text-xs font-bold text-foreground tracking-tight mt-1 underline decoration-primary/30 decoration-2">관리자 루트</span>
  </div>
  </div>
  </motion.div>
@@ -170,7 +170,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Input 
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-11 md:h-24 bg-white/5 border-2 border-white/5 rounded-lg md:rounded-lg px-16 md:px-24 text-white text-lg md:text-3xl font-bold placeholder:text-white/10 focus:bg-white focus:text-slate-900 transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
+ className="h-11 md:h-24 bg-white/5 border-2 border-white/5 rounded-lg md:rounded-lg px-16 md:px-24 text-white text-lg md:text-3xl font-bold placeholder:text-white/10 focus:bg-white focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
  placeholder="지식 인텔리전스 검색..."
  />
  </div>
@@ -235,13 +235,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <motion.div 
  initial={{ opacity: 0, scale: 0.95 }}
  animate={{ opacity: 1, scale: 1 }}
- className="flex flex-col items-center justify-center p-24 space-y-8 bg-slate-50 border-2 border-dashed rounded-lg border-primary/20"
+ className="flex flex-col items-center justify-center p-24 space-y-8 bg-muted border-2 border-dashed rounded-lg border-primary/20"
  >
  <div className="w-24 h-24 rounded-lg bg-white shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10 animate-bounce">
  <ShieldAlert size={48} />
  </div>
  <div className="text-center space-y-4 max-w-sm">
- <h3 className="text-2xl font-bold text-slate-900 tracking-tighter leading-none">액세스 매트릭스 거부</h3>
+ <h3 className="text-2xl font-bold text-foreground tracking-tighter leading-none">액세스 매트릭스 거부</h3>
  <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed tracking-tighter">귀하의 현재 노드 권한으로는 Wiki 및 FAQ 데이터셋에 접근할 수 없습니다. 시스템 관리자에게 상위 보안 티어 승인을 요청하십시오.</p>
  </div>
  <Button 
@@ -272,18 +272,18 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-lg md:rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
  >
  <div className="flex gap-4 md:gap-6 items-start">
- <div className="w-12 h-12 md:w-16 md:h-11 rounded-lg md:rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
+ <div className="w-12 h-12 md:w-16 md:h-11 rounded-lg md:rounded-lg bg-muted flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
  <span className="text-xs md:text-xs font-bold text-muted-foreground/40 leading-none">영향력</span>
- <span className="text-sm md:text-xl font-bold text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqCnt || 0) / 10) + 85)}</span>
+ <span className="text-sm md:text-xl font-bold text-foreground leading-none mt-1">{Math.min(99, Math.floor((item.inqCnt || 0) / 10) + 85)}</span>
  </div>
  <div className="space-y-1 md:space-y-2 min-w-0">
  <div className="flex items-center gap-2 md:gap-3">
  <span className="text-xs md:text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">핵심 단위</span>
  <span className="text-xs md:text-xs font-bold text-muted-foreground/40 tracking-tight md:tracking-tight">{item.frstRegisterPnttmStr}</span>
  </div>
- <h4 className="text-lg md:text-2xl font-bold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
+ <h4 className="text-lg md:text-2xl font-bold text-foreground tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
  <div className="flex items-center gap-3 md:gap-4 opacity-40">
- <div className="flex items-center gap-1 md:gap-1.5"><User size={10} className="text-primary md:size-[12px]" /><span className="text-xs md:text-xs font-bold text-slate-900 truncate max-w-[60px] md:max-w-none">{item.userNm}</span></div>
+ <div className="flex items-center gap-1 md:gap-1.5"><User size={10} className="text-primary md:size-[12px]" /><span className="text-xs md:text-xs font-bold text-foreground truncate max-w-[60px] md:max-w-none">{item.userNm}</span></div>
  <div className="flex items-center gap-1 md:gap-1.5"><Eye size={10} className="md:size-[12px]" /><span className="text-xs md:text-xs font-bold">{(item.inqCnt || 0).toLocaleString()} Views</span></div>
  </div>
  </div>
@@ -308,10 +308,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <HubSectionCard title="Trending Radar" description="인게이지먼트가 높은 데이터 지식" icon={TrendingUp}>
  <div className="space-y-4">
  {hotItems.map((item: any, idx: number) => (
- <button type="button" key={item.pstId} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)} className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-slate-50 transition-all cursor-pointer group text-left">
+ <button type="button" key={item.pstId} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)} className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-muted transition-all cursor-pointer group text-left">
  <span className="text-3xl font-bold text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8">{idx + 1}</span>
  <div className="flex-1 min-w-0">
- <p className="text-sm font-bold text-slate-800 tracking-tight truncate leading-none">{item.pstTtl}</p>
+ <p className="text-sm font-bold text-foreground tracking-tight truncate leading-none">{item.pstTtl}</p>
  <div className="flex items-center gap-2 mt-2">
  <TrendingUp size={10} className="text-rose-500" />
  <span className="text-xs font-bold text-rose-500">영향 수치 높음</span>
@@ -351,10 +351,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Sparkles size={32} />
  </div>
  <div>
- <h4 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">인텔리전스 엔진</h4>
+ <h4 className="text-xl font-bold text-foreground tracking-tighter leading-none">인텔리전스 엔진</h4>
  <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">활성 데이터 매트릭스 스캔 중</p>
  </div>
- <div className="w-full h-1 bg-slate-100 rounded-lg overflow-hidden">
+ <div className="w-full h-1 bg-muted rounded-lg overflow-hidden">
  <motion.div initial={{ width: 0 }} animate={{ width: '84%' }} transition={{ duration: 2 }} className="h-full bg-primary" />
  </div>
  </div>
@@ -398,12 +398,12 @@ function StatsCard({ label, value, desc, trend }: { label: string, value: string
  <TrendingUp size={14} className="text-primary opacity-30 group-hover:opacity-100 transition-opacity" />
  </div>
  <div className="space-y-1">
- <h4 className="text-4xl font-bold tracking-tighter text-slate-900 tabular-nums group-hover:text-primary transition-colors">{value}</h4>
+ <h4 className="text-4xl font-bold tracking-tighter text-foreground tabular-nums group-hover:text-primary transition-colors">{value}</h4>
  <p className="text-xs font-bold text-muted-foreground/40 tracking-tight">{desc}</p>
  </div>
  <div className="pt-4 border-t border-border/40 flex items-center justify-between">
  <span className="text-xs font-bold text-rose-500">{trend}</span>
- <div className="h-1 w-12 bg-slate-100 rounded-lg overflow-hidden">
+ <div className="h-1 w-12 bg-muted rounded-lg overflow-hidden">
  <div className="h-full bg-primary w-2/3" />
  </div>
  </div>
@@ -429,7 +429,7 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  return (
  <span className={cn(
  "text-xs font-bold mt-1 ",
- isPublished ? "text-primary" : "text-slate-400"
+ isPublished ? "text-primary" : "text-muted-foreground"
  )}>
  {isPublished ? 'Published' : 'Draft'}
  </span>
@@ -467,7 +467,7 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
  </div>
  <div className="space-y-1">
  <div className="flex items-center justify-between">
- <h3 className="font-bold text-2xl tracking-tighter text-slate-900 leading-none">{title}</h3>
+ <h3 className="font-bold text-2xl tracking-tighter text-foreground leading-none">{title}</h3>
  <span className="text-xs font-bold opacity-30 group-hover:opacity-100 transition-opacity">{count} UNTS</span>
  </div>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
@@ -482,11 +482,11 @@ function HubSectionCard({ title, description, icon: Icon, children, className }:
  <div className={cn("hub-card-premium p-10 space-y-8", className)}>
  <div className="flex items-center justify-between border-b border-border/40 pb-6">
  <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-primary shadow-inner border border-border/50">
+ <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary shadow-inner border border-border/50">
  <Icon size={20} />
  </div>
  <div className="space-y-0.5">
- <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{title}</h3>
+ <h3 className="text-xl font-bold text-foreground tracking-tighter leading-none">{title}</h3>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{description}</p>
  </div>
  </div>

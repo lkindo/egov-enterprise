@@ -90,7 +90,7 @@ export default function SurveyHubClient() {
 
         {/* --- Sidebar Controller --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8">
-          <div className="hub-table-container p-6 bg-slate-50 shadow-inner">
+          <div className="hub-table-container p-6 bg-muted shadow-inner">
             <NavButton icon={<Layout size={20} />} label="전체 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
             <div className="h-4" />
             <NavButton icon={<BookOpen size={20} />} label="템플릿" active={activeTab === 'TEMPLATES'} onClick={() => setActiveTab('TEMPLATES')} />
@@ -159,9 +159,9 @@ export default function SurveyHubClient() {
                             <span className="text-xs font-bold text-emerald-500 tracking-tight">활성</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-lg border border-border/50">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                            <span className="text-xs font-bold text-slate-400 tracking-tight">{survey.status}</span>
+                            <span className="text-xs font-bold text-muted-foreground tracking-tight">{survey.status}</span>
                           </div>
                         )}
                         <span className="text-xs font-bold text-muted-foreground/30 tracking-tight opacity-60">ID: #{survey.id}</span>
@@ -251,7 +251,7 @@ export default function SurveyHubClient() {
                 </HubSectionCard>
               </motion.div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-slate-50 dark:bg-muted/5 rounded-lg border-4 border-dashed border-border/20">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-muted dark:bg-muted/5 rounded-lg border-4 border-dashed border-border/20">
                 <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center text-muted-foreground/20 shadow-inner mb-10 border border-border/10">
                   <PieChart size={48} />
                 </div>
@@ -280,12 +280,12 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
         "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-6",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
-          : "bg-white border-transparent hover:border-primary/20 text-slate-500 hover:text-slate-900"
+          : "bg-white border-transparent hover:border-primary/20 text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-md",
-        active ? "bg-white/10 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
+        active ? "bg-white/10 text-white" : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
       )}>
         {icon}
       </div>

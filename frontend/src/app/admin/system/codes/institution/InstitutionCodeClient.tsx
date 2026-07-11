@@ -99,8 +99,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  <Building2 size={18} />
  </div>
  <div>
- <span className="font-black tracking-tighter text-slate-900 block text-xs uppercase leading-none">{item.instCd}</span>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-60">INST_CODE</span>
+ <span className="font-black tracking-tighter text-foreground block text-xs uppercase leading-none">{item.instCd}</span>
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-60">INST_CODE</span>
  </div>
  </div>
  ),
@@ -109,14 +109,14 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  { 
  header: '기관 명칭', 
  accessor: (item: InstitutionCode) => (
- <span className="font-black text-slate-900 text-sm tracking-tight">{item.allInstNm}</span>
+ <span className="font-black text-foreground text-sm tracking-tight">{item.allInstNm}</span>
  ),
  className: 'py-4'
  },
  { 
  header: '최하위 기관', 
  accessor: (item: InstitutionCode) => (
- <div className="px-3 py-1 bg-slate-100/50 border border-slate-200/50 rounded-lg w-fit shadow-sm">
+ <div className="px-3 py-1 bg-muted/50 border border-border/50 rounded-lg w-fit shadow-sm">
  <span className="text-[10px] font-black text-primary tracking-widest uppercase">{item.lwtrkInstNm}</span>
  </div>
  ),
@@ -125,7 +125,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  { 
  header: '연락처', 
  accessor: (item: InstitutionCode) => (
- <div className="flex items-center gap-1.5 font-black text-[10px] text-slate-400 tracking-widest tabular-nums uppercase">
+ <div className="flex items-center gap-1.5 font-black text-[10px] text-muted-foreground tracking-widest tabular-nums uppercase">
  <Network size={12} className="opacity-30" />
  {item.telno || 'None'}
  </div>
@@ -139,7 +139,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit shadow-sm",
  item.ablYn === '0' 
  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
- : "bg-slate-100 text-slate-400 border-border/50"
+ : "bg-muted text-muted-foreground border-border/50"
  )}>
  <div className={cn("w-1.5 h-1.5 rounded-full", item.ablYn === '0' ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
  <span className="text-[10px] font-black tracking-widest uppercase">{item.ablYn === '0' ? '사용 중' : '폐지'}</span>
@@ -153,7 +153,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  { 
  header: '발생 일자', 
  accessor: (item: InstitutionCodeRecptn) => (
- <div className="flex items-center gap-2 font-black text-[10px] text-slate-400 tracking-widest uppercase">
+ <div className="flex items-center gap-2 font-black text-[10px] text-muted-foreground tracking-widest uppercase">
  <History size={14} className="text-primary opacity-40" />
  {item.ocrnYmd}
  </div>
@@ -164,15 +164,15 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  header: '식별 코드', 
  accessor: (item: InstitutionCodeRecptn) => (
  <div className="flex items-center gap-4">
- <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shadow-inner">
+ <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shadow-inner">
  <Database size={16} />
  </div>
- <span className="font-black tracking-tighter text-slate-900 uppercase text-xs">{item.instCd}</span>
+ <span className="font-black tracking-tighter text-foreground uppercase text-xs">{item.instCd}</span>
  </div>
  ),
  className: 'w-40 py-4' 
  },
- { header: '기관 명칭', accessor: (item) => <span className="font-black text-sm text-slate-900">{item.allInstNm}</span>, className: 'py-4' },
+ { header: '기관 명칭', accessor: (item) => <span className="font-black text-sm text-foreground">{item.allInstNm}</span>, className: 'py-4' },
  { 
  header: '변경 구분', 
  accessor: (item: InstitutionCodeRecptn) => {
@@ -225,17 +225,17 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  return (
  <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
  
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-100/50 pb-8">
+ <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-border/50 pb-8">
  <div className="space-y-1">
- <h4 className="text-2xl font-black tracking-tighter text-slate-900 uppercase leading-none">{activeTab === 'list' ? '기관 인벤토리' : '수신 파이프라인'}</h4>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase mt-2">{activeTab === 'list' ? '활성 노드 리스트' : '실시간 데이터 수집'}</p>
+ <h4 className="text-2xl font-black tracking-tighter text-foreground uppercase leading-none">{activeTab === 'list' ? '기관 인벤토리' : '수신 파이프라인'}</h4>
+ <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase mt-2">{activeTab === 'list' ? '활성 노드 리스트' : '실시간 데이터 수집'}</p>
  </div>
  <div className="flex bg-white/40 backdrop-blur-md p-1.5 rounded-xl border border-white/60 shadow-xl ring-1 ring-black/5">
  <button 
  onClick={() => setActiveTab('list')}
  className={cn(
  "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'list' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400 hover:bg-white/50 hover:text-slate-600"
+ activeTab === 'list' ? "bg-slate-900 text-white shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
  )}>
  <Server size={14} /> Inventory
  </button>
@@ -243,7 +243,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  onClick={() => setActiveTab('reception')}
  className={cn(
  "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'reception' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400 hover:bg-white/50 hover:text-slate-600"
+ activeTab === 'reception' ? "bg-slate-900 text-white shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
  )}>
  <History size={14} /> Pipeline
  </button>
@@ -276,11 +276,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  activeTab === 'list' ? loadListData(searchWrd, 1) : loadReceptionData(searchWrd, 1);
  }
  }}
- className="h-10 pl-14 pr-8 w-full bg-slate-50/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ className="h-10 pl-14 pr-8 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
  />
  </div>
  </div>
- <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-slate-200 bg-white font-black text-xs tracking-widest uppercase gap-2 hover:bg-slate-900 hover:text-white transition-all shadow-sm group">
+ <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-white font-black text-xs tracking-widest uppercase gap-2 hover:bg-slate-900 hover:text-white transition-all shadow-sm group">
  <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> Export
  </Button>
  </div>

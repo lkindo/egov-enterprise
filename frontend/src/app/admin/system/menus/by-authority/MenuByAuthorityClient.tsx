@@ -121,23 +121,23 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  >
  <div
  className={cn(
- "flex items-center gap-4 py-4 px-6 hover:bg-slate-100 cursor-pointer rounded-lg transition-all group relative overflow-hidden active:scale-[0.99]",
- isExpanded && hasChildren ? "bg-slate-100/50" : ""
+ "flex items-center gap-4 py-4 px-6 hover:bg-muted cursor-pointer rounded-lg transition-all group relative overflow-hidden active:scale-[0.99]",
+ isExpanded && hasChildren ? "bg-muted/50" : ""
  )}
  style={{ paddingLeft: `${depth * 32 + 24}px` }}
  onClick={() => hasChildren && toggleExpand(menu.menuNo)}
  >
- <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 group-hover:border-primary/30 transition-colors">
+ <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white shadow-sm border border-border group-hover:border-primary/30 transition-colors">
  {hasChildren ? (
- <ChevronRight className={cn("h-4 w-4 transition-transform text-slate-400 group-hover:text-primary", isExpanded ? 'rotate-90' : '')} />
+ <ChevronRight className={cn("h-4 w-4 transition-transform text-muted-foreground group-hover:text-primary", isExpanded ? 'rotate-90' : '')} />
  ) : (
  <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-primary/40 transition-colors" />
  )}
  </div>
 
  <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border border-slate-100 transition-all",
- hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white"
+ "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border border-border transition-all",
+ hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-muted text-muted-foreground group-hover:bg-slate-900 group-hover:text-white"
  )}>
  {hasChildren ? <Folder size={18} /> : <File size={16} />}
  </div>
@@ -150,8 +150,8 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || 'NODE_ENDPOINT'}</span>
  </div>
  
- <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-slate-100 shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
- <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">ID_{menu.menuNo}</span>
+ <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+ <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">ID_{menu.menuNo}</span>
  </div>
  </div>
  {hasChildren && isExpanded && (
@@ -182,7 +182,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <Button
  variant="ghost"
  onClick={() => {}}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -207,7 +207,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <div className="space-y-4 pt-4">
  <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 (Access Role)</label>
  <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
- <SelectTrigger className="h-11 px-8 rounded-lg bg-slate-50/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
+ <SelectTrigger className="h-11 px-8 rounded-lg bg-muted/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
  <div className="flex items-center gap-4">
  <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
  <SelectValue placeholder="역할을 선택하십시오..." />
@@ -252,11 +252,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  icon={Network}
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-8">
  <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">기능 노드 트리 (Functional Node Tree)</span>
  <div className="flex items-center gap-4">
  {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
- <Button variant="ghost" size="sm" className="h-12 rounded-lg px-6 text-xs font-bold tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
+ <Button variant="ghost" size="sm" className="h-12 rounded-lg px-6 text-xs font-bold tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-muted border border-border transition-all uppercase group shadow-sm">
  <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 검색
  </Button>
  </div>
@@ -270,7 +270,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  animate={{ opacity: 1 }} 
  className="absolute inset-0 flex flex-col items-center justify-center p-24 text-center select-none group"
  >
- <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
+ <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
  <Milestone size={48} className="opacity-20" />
  </div>
  <h3 className="text-2xl font-bold text-slate-300 tracking-tighter uppercase mb-2">권한 미선택</h3>
@@ -292,7 +292,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  className="absolute inset-0 flex flex-col items-center justify-center gap-8 py-24"
  >
  <ShieldAlert size={64} className="text-rose-500/20" />
- <h4 className="text-lg font-bold tracking-tighter text-slate-400 uppercase">할당된 메뉴 없음</h4>
+ <h4 className="text-lg font-bold tracking-tighter text-muted-foreground uppercase">할당된 메뉴 없음</h4>
  </motion.div>
  ) : (
  <motion.div 
@@ -300,7 +300,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  animate={{ opacity: 1, y: 0 }}
  className="space-y-4"
  >
- <div className="p-4 rounded-lg bg-slate-50/30 border-2 border-slate-100">
+ <div className="p-4 rounded-lg bg-muted/30 border-2 border-border">
  {renderMenuTree(menuTree)}
  </div>
  </motion.div>

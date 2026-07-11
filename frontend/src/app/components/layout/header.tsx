@@ -68,7 +68,7 @@ export function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b border-slate-100 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 relative overflow-hidden">
+    <header className="sticky top-0 z-[100] w-full border-b border-border bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       <React.Suspense fallback={null}>
         <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
@@ -92,12 +92,12 @@ export function Header({
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-xs text-slate-600 font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-xs text-muted-foreground font-semibold tracking-tight">전자정부 포털</span>
           </div>
         </Link>
 
         <div className="flex-1 flex justify-center">
-          <nav className="hidden xl:flex items-center gap-1 bg-slate-50/50 p-1.5 rounded-[var(--radius-hub-item)] border border-slate-100" aria-label="주메뉴 네비게이션">
+          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1.5 rounded-[var(--radius-hub-item)] border border-border" aria-label="주메뉴 네비게이션">
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
@@ -118,7 +118,7 @@ export function Header({
                     "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                     isActive
                       ? "bg-slate-900 text-white shadow-xl"
-                      : "text-slate-500 hover:text-slate-900 hover:bg-white"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white"
                   )}
                 >
                   <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
@@ -174,15 +174,15 @@ export function Header({
               user ? (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 h-11 hover:bg-slate-50 rounded-[var(--radius-hub-item)] border border-transparent hover:border-slate-100 transition-all" aria-label="사용자 계정 메뉴">
+                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 h-11 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label="사용자 계정 메뉴">
                       <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                         <User size={16} />
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-xs text-slate-600 font-semibold mt-0.5 tracking-tight">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                        <span className="text-xs text-muted-foreground font-semibold mt-0.5 tracking-tight">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
                       </div>
-                      <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
+                      <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-56 p-2 mt-1" align="end">

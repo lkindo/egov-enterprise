@@ -125,7 +125,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <Layers size={18} />
  </div>
  <div className="flex flex-col gap-1 text-left">
- <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-xs font-bold tracking-tight border border-slate-200 w-fit">
+ <span className="px-3 py-1 bg-muted text-foreground rounded-lg text-xs font-bold tracking-tight border border-border w-fit">
  {(item?.jobSe || item?.jobSeCode) || 'STATIC_NODE'}
  </span>
  <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item?.sancltNm || 'Untitled Sequence'}</span>
@@ -137,7 +137,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  header: '결재 아이덴티티',
  accessor: (item: InfrmlSanctn) => (
  <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-inner group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+ <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shadow-inner group-hover:bg-primary/5 group-hover:text-primary transition-colors">
  <Fingerprint size={16} />
  </div>
  <div className="flex flex-col text-left">
@@ -211,7 +211,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <Button
  variant="ghost"
  onClick={() => router.refresh()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <Activity size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -241,7 +241,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <h4 className="text-3xl font-bold tracking-tighter leading-tight uppercase">불변<br />의결 저장</h4>
  </div>
  
- <p className="text-sm text-slate-400 font-bold leading-relaxed border-l-4 border-primary pl-8">
+ <p className="text-sm text-muted-foreground font-bold leading-relaxed border-l-4 border-primary pl-8">
  모든 약식 결재 아키텍처는 데이터 무결성 검증을 거치며 결정 근거는 분산 저장되어 영구적으로 기록되어 감사가 가능합니다.
  </p>
 
@@ -313,7 +313,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <h4 className="text-3xl font-bold text-white tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
  <div className="flex items-center gap-6 pt-4 border-t border-white/5">
  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-lg border border-white/5">
- <User size={14} className="text-slate-400" />
+ <User size={14} className="text-muted-foreground" />
  <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
  </div>
  <div className="flex items-center gap-3">
@@ -329,14 +329,14 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  name="rjctRsnCn"
  render={({ field }) => (
  <FormItem className="space-y-4">
- <FormLabel className="text-xs font-bold tracking-[0.4em] text-slate-400 uppercase flex items-center gap-3">
+ <FormLabel className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase flex items-center gap-3">
  <SearchCode size={14} className="text-primary" /> 결재/반려 의사결정 로그 (Decision Opinion) <span className="text-rose-500 animate-pulse">*</span>
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
  placeholder="결재 또는 반려 사유를 입력하세요..."
- className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
+ className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />

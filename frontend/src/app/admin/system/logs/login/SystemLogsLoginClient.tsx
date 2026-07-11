@@ -45,7 +45,7 @@ const SystemLogsLoginClient = () => {
         {
             header: '발생시점',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
                     {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
                 </div>
@@ -56,8 +56,8 @@ const SystemLogsLoginClient = () => {
             header: '요청자',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-lg w-fit shadow-sm">
-                    <span className="text-xs font-bold text-slate-700">{item.loginNm}</span>
-                    <span className="text-xs text-slate-400 font-bold opacity-50">({item.loginId})</span>
+                    <span className="text-xs font-bold text-foreground">{item.loginNm}</span>
+                    <span className="text-xs text-muted-foreground font-bold opacity-50">({item.loginId})</span>
                 </div>
             ),
             className: 'w-48'
@@ -77,7 +77,7 @@ const SystemLogsLoginClient = () => {
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tighter ${
-                        item.loginMthd === 'LOGIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                        item.loginMthd === 'LOGIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-muted text-muted-foreground border-border'
                     }`}>
                         {item.loginMthd}
                     </span>

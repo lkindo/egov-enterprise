@@ -80,7 +80,7 @@ export default function MailHistoryHubClient() {
  {
  header: '번호',
  accessor: (_, index) => (
- <span className="font-mono text-xs font-bold text-slate-400">
+ <span className="font-mono text-xs font-bold text-muted-foreground">
  {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
  </span>
  ),
@@ -90,10 +90,10 @@ export default function MailHistoryHubClient() {
  header: '메일 제목',
  accessor: (mail) => (
  <div className="flex flex-col gap-1 py-1">
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
  {mail.sj}
  </span>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
  ID: {mail.mssageId}
  </span>
  </div>
@@ -102,14 +102,14 @@ export default function MailHistoryHubClient() {
  {
  header: '수신자',
  accessor: (mail) => (
- <span className="text-xs font-bold text-slate-600 tracking-tight">{mail.recptnPerson}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{mail.recptnPerson}</span>
  ),
  className: 'w-40'
  },
  {
  header: '발송 일시',
  accessor: (mail) => (
- <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">
+ <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
  {mail.crtDt}
  </span>
  ),
@@ -140,8 +140,8 @@ export default function MailHistoryHubClient() {
  >
    <Trash2 size={16} />
  </Button>
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <MoreVertical size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <MoreVertical size={16} className="text-muted-foreground" />
  </Button>
  </div>
  ),
@@ -168,7 +168,7 @@ export default function MailHistoryHubClient() {
   <Button
   variant="outline"
   onClick={() => queryClient.invalidateQueries()}
-  className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+  className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
   >
   <RefreshCcw size={20} />
   </Button>
@@ -200,7 +200,7 @@ export default function MailHistoryHubClient() {
       <div className="space-y-8">
       <form 
         onSubmit={(e) => { e.preventDefault(); setDebouncedKeyword(searchKeyword); }}
-        className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8"
+        className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8"
       >
         <div className="relative group max-w-xl w-full">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
@@ -208,14 +208,14 @@ export default function MailHistoryHubClient() {
             aria-label="메일 검색"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+            className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
             placeholder="메일 제목 또는 수신자 검색.." 
           />
         </div>
         <Button 
           type="submit"
           variant="outline"
-          className="ml-4 h-11 rounded-xl border-slate-200 text-slate-600 hover:text-primary font-bold px-6"
+          className="ml-4 h-11 rounded-xl border-border text-muted-foreground hover:text-primary font-bold px-6"
         >
           검색
         </Button>
@@ -300,7 +300,7 @@ export default function MailHistoryHubClient() {
                 <div className="flex gap-4 pt-6">
                   <Button 
                     variant="outline" 
-                    className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition-all"
+                    className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white hover:text-foreground font-bold text-xs uppercase tracking-widest transition-all"
                   >
                     <ExternalLink size={16} className="mr-2" /> View Full
                   </Button>
@@ -321,14 +321,14 @@ export default function MailHistoryHubClient() {
             key="detail-empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="h-full flex flex-col items-center justify-center p-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center space-y-6"
+            className="h-full flex flex-col items-center justify-center p-20 bg-muted rounded-2xl border-2 border-dashed border-border text-center space-y-6"
           >
             <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center text-slate-300">
               <Mail size={40} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select Dispatch Node</h3>
-              <p className="text-sm text-slate-500 font-medium max-w-[280px]">
+              <h3 className="text-xl font-bold text-foreground tracking-tight">Select Dispatch Node</h3>
+              <p className="text-sm text-muted-foreground font-medium max-w-[280px]">
                 상세 정보를 확인하거나 관리할 메일 이력 항목을 왼쪽 리스트에서 선택하십시오.
               </p>
             </div>

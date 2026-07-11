@@ -149,7 +149,7 @@ const MobileCard = memo(function MobileCard({
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
         {columns.slice(1).map((column: any, idx: number) => (
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
               {typeof column.accessor === 'function' ? (column.accessor as any)(item, index) : item?.[column.accessor]}
             </div>
@@ -253,7 +253,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   <Button
                     key={`bulk-action-${idx}`}
                     size="sm"
-                    className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group whitespace-nowrap"
+                    className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-foreground transition-all border border-white/5 hover:border-white shadow-xl group whitespace-nowrap"
                     onClick={() => action.onClick(selectedItems)}
                   >
                     {action.icon && <span className="group-hover:scale-110 transition-transform shrink-0">{action.icon}</span>}
@@ -289,7 +289,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             stickyHeader && "table-sticky-header"
           )}>
             <thead className="relative z-20">
-              <tr className="bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl border-b-2 border-border/80">
+              <tr className="bg-muted/80 dark:bg-slate-900/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
                   <th className="px-6 py-5 w-16 text-center" scope="col">
                     <Checkbox
@@ -301,7 +301,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-bold text-slate-900 dark:text-slate-100 text-xs uppercase tracking-[0.25em] whitespace-nowrap",
+                    "px-6 py-5 font-bold text-foreground dark:text-slate-100 text-xs uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
                   )} scope="col">
                     <div className="flex items-center gap-2">
@@ -412,8 +412,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 
           <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-lg">
             <span className="text-sm font-bold">{pagination.currentPage}</span>
-            <span className="text-xs font-bold text-slate-900 uppercase">of</span>
-            <span className="text-sm font-bold text-slate-900">{pagination.totalPages}</span>
+            <span className="text-xs font-bold text-foreground uppercase">of</span>
+            <span className="text-sm font-bold text-foreground">{pagination.totalPages}</span>
           </div>
 
           <Button

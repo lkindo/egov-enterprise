@@ -68,7 +68,7 @@ export default function CommunityDetailHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Share2 size={22} />
                   </Button>
                 </TooltipTrigger>
@@ -100,11 +100,11 @@ export default function CommunityDetailHubClient({
               <div className="space-y-[var(--gap-hub-section)] py-6">
                 <div className="space-y-6">
                    <h3 className="text-xs font-bold text-primary tracking-tight">_ Introduction_cn</h3>
-                   <div className="p-10 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
+                   <div className="p-10 bg-muted border-2 border-border rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
                         <BookOpen size={120} />
                       </div>
-                      <p className="text-2xl font-bold tracking-tighter text-slate-900 leading-relaxed relative z-10">
+                      <p className="text-2xl font-bold tracking-tighter text-foreground leading-relaxed relative z-10">
                         "{community.cmntyIntroCn || '등록된 소개 정보가 정의되지 않았습니다.'}"
                       </p>
                    </div>
@@ -124,11 +124,11 @@ export default function CommunityDetailHubClient({
               description="커뮤니티 내에서 공유된 최신 지식 자산 목록입니다"
               icon={MessageSquare}
             >
-              <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-slate-200 rounded-[var(--radius-hub-section)] bg-slate-50/30">
-                <div className="w-20 h-11 bg-white border-2 border-slate-100 rounded-[var(--radius-hub-item)] flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
+              <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
+                <div className="w-20 h-11 bg-white border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
-                <h4 className="text-xl font-bold text-slate-400 tracking-tighter">_ No_Posts_Detected</h4>
+                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ No_Posts_Detected</h4>
                 <p className="text-xs font-bold text-slate-300 tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
               </div>
             </HubSectionCard>
@@ -148,34 +148,34 @@ export default function CommunityDetailHubClient({
                   <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
                   <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
                 </div>
-                <Button className="w-full h-11 bg-white text-slate-900 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
+                <Button className="w-full h-11 bg-white text-foreground rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
                   ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
             </div>
 
-            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-slate-100 shadow-2xl relative overflow-hidden group">
-               <div className="flex items-center justify-between border-b border-slate-200/50 pb-6">
-                  <h4 className="text-sm font-bold text-slate-900 tracking-tighter">_ Member_Pulse</h4>
+            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-border shadow-2xl relative overflow-hidden group">
+               <div className="flex items-center justify-between border-b border-border/50 pb-6">
+                  <h4 className="text-sm font-bold text-foreground tracking-tighter">_ Member_Pulse</h4>
                   <span className="text-xs font-bold text-primary tracking-tight">Live</span>
                </div>
                <div className="space-y-6">
                   {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className="flex items-center justify-between group/user">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs group-hover/user:bg-slate-900 group-hover/user:text-white transition-all">
+                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs group-hover/user:bg-slate-900 group-hover/user:text-white transition-all">
                           ID
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-800 tracking-tight">_ Active_Entity_{i}</p>
-                          <p className="text-xs text-slate-400 font-bold tracking-tight">Connected</p>
+                          <p className="text-xs font-bold text-foreground tracking-tight">_ Active_Entity_{i}</p>
+                          <p className="text-xs text-muted-foreground font-bold tracking-tight">Connected</p>
                         </div>
                       </div>
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     </div>
                   ))}
                </div>
-               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-slate-400 tracking-tight hover:text-primary transition-colors">
+               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-muted-foreground tracking-tight hover:text-primary transition-colors">
                   VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
                </Button>
             </div>
@@ -188,14 +188,14 @@ export default function CommunityDetailHubClient({
 
 function DetailBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <div className="p-8 rounded-[var(--radius-hub-widget)] bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-2xl hover:scale-[1.03] group relative overflow-hidden">
+    <div className="p-8 rounded-[var(--radius-hub-widget)] bg-muted border border-border transition-all hover:bg-white hover:shadow-2xl hover:scale-[1.03] group relative overflow-hidden">
       <div className="absolute top-0 right-0 p-6 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
         {icon}
       </div>
-      <h5 className="text-xs font-bold text-slate-400 tracking-tight flex items-center gap-3 mb-4 relative z-10">
+      <h5 className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-3 mb-4 relative z-10">
         {icon} {label}
       </h5>
-      <p className="text-xl font-bold tracking-tighter text-slate-900 truncate relative z-10">
+      <p className="text-xl font-bold tracking-tighter text-foreground truncate relative z-10">
         {value}
       </p>
     </div>

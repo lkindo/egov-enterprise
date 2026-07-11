@@ -243,7 +243,7 @@ export default function UnifiedDashboardClient({
                    <span className="opacity-80">CPU 사용률</span>
                    <span className="text-primary">24%</span>
                  </div>
-                 <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-lg overflow-hidden">
+                 <div className="h-1.5 w-full bg-muted dark:bg-white/5 rounded-lg overflow-hidden">
                    <motion.div 
                      initial={{ width: 0 }}
                      animate={{ width: '24%' }}
@@ -256,7 +256,7 @@ export default function UnifiedDashboardClient({
                    <span className="opacity-80">메모리</span>
                    <span className="text-emerald-500">42%</span>
                  </div>
-                 <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-lg overflow-hidden">
+                 <div className="h-1.5 w-full bg-muted dark:bg-white/5 rounded-lg overflow-hidden">
                    <motion.div 
                      initial={{ width: 0 }}
                      animate={{ width: '42%' }}

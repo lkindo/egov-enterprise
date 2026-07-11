@@ -93,7 +93,7 @@ export default function AddressBookInsertHubClient() {
  <div className="flex items-center gap-3">
  <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Organizational Network</span>
  </div>
- <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none transition-colors">
+ <h1 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none transition-colors">
  Identity <span className="text-primary">Registration</span>
  </h1>
  </div>
@@ -102,21 +102,21 @@ export default function AddressBookInsertHubClient() {
  <form onSubmit={handleSubmit} className="space-y-10 px-2">
  
  {/* 2. Core Identity Info */}
- <div className="hub-card-premium p-10 bg-white border-2 border-slate-100 shadow-2xl relative overflow-hidden group rounded-lg">
+ <div className="hub-card-premium p-10 bg-white border-2 border-border shadow-2xl relative overflow-hidden group rounded-lg">
  <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none group-focus-within:opacity-10 transition-opacity">
- <User size={140} className="rotate-12 text-slate-900" />
+ <User size={140} className="rotate-12 text-foreground" />
  </div>
  <div className="relative z-10 space-y-8">
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
  <Zap size={20} />
  </div>
- <span className="text-xs font-bold tracking-tight text-slate-400">Primary_Identity_Label</span>
+ <span className="text-xs font-bold tracking-tight text-muted-foreground">Primary_Identity_Label</span>
  </div>
     <Input
       value={form.adbkNm}
       onChange={(e) => setForm({ ...form, adbkNm: e.target.value })}
-      className="h-11 bg-transparent border-none text-slate-900 text-3xl font-bold placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight"
+      className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
       placeholder="성명을 입력하십시오..."
       aria-label="주소록 명칭"
       data-testid="identity-name-input"
@@ -130,31 +130,31 @@ export default function AddressBookInsertHubClient() {
 
  {/* 3. Communication Matrix */}
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
- <div className="hub-card-premium p-8 bg-slate-50 border-none shadow-xl rounded-lg space-y-6">
+ <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">
  <Phone className="text-primary" size={18} />
- <span className="text-xs font-bold text-slate-400 tracking-tight">Comm_Link_Protocol</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">Comm_Link_Protocol</span>
  </div>
     <Input
       value={form.telNo}
       onChange={(e) => setForm({ ...form, telNo: e.target.value })}
-      className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+      className="h-11 bg-white border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
       placeholder="010-0000-0000"
       aria-label="전화번호"
       data-testid="identity-tel-input"
       maxLength={15}
     />
  </div>
- <div className="hub-card-premium p-8 bg-slate-50 border-none shadow-xl rounded-lg space-y-6">
+ <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">
  <Mail className="text-primary" size={18} />
- <span className="text-xs font-bold text-slate-400 tracking-tight">Electronic_Mail_Node</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">Electronic_Mail_Node</span>
  </div>
     <Input
       type="email"
       value={form.email}
       onChange={(e) => setForm({ ...form, email: e.target.value })}
-      className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+      className="h-11 bg-white border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
       placeholder="example@egov.com"
       aria-label="이메일"
       data-testid="identity-email-input"
@@ -164,31 +164,31 @@ export default function AddressBookInsertHubClient() {
  </div>
 
  {/* 4. Location Mapping */}
- <div className="hub-card-premium p-8 bg-slate-50 border-none shadow-xl rounded-lg space-y-6">
+ <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">
  <Globe className="text-primary" size={18} />
- <span className="text-xs font-bold text-slate-400 tracking-tight">Geospatial_Node_Address</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">Geospatial_Node_Address</span>
  </div>
  <Input
  value={form.adres}
  onChange={(e) => setForm({ ...form, adres: e.target.value })}
- className="h-11 bg-white border-2 border-slate-100 rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+ className="h-11 bg-white border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
  placeholder="상세 위치 정보를 입력하십시오..."
  />
  </div>
 
  {/* 5. Bottom Actions */}
- <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-100">
+ <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-border">
  <div className="flex items-center gap-8">
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">Access_Level</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">Access_Level</span>
  <span className="text-xs font-bold text-emerald-500 mt-1 flex items-center gap-1.5">
  <ShieldCheck size={12} /> Certified Identity
  </span>
  </div>
- <div className="w-[1px] h-8 bg-slate-100" />
+ <div className="w-[1px] h-8 bg-muted" />
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-400 tracking-tight leading-none">System_Status</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">System_Status</span>
  <span className="text-xs font-bold text-primary mt-1 flex items-center gap-1.5">
  <CheckCircle2 size={12} /> Online
  </span>
@@ -201,7 +201,7 @@ export default function AddressBookInsertHubClient() {
  variant="outline"
  data-testid="abort-identity-button"
  onClick={() => router.back()}
- className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-slate-50 transition-all bg-white"
+ className="h-11 flex-1 sm:flex-none px-10 rounded-lg border-2 font-bold tracking-tight text-xs hover:bg-muted transition-all bg-white"
  >
  Abort
  </Button>
@@ -225,7 +225,7 @@ export default function AddressBookInsertHubClient() {
 
  {/* 6. Footer Insight */}
  <div className="text-center">
- <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-lg border border-slate-100">
+ <div className="inline-flex items-center gap-3 px-6 py-2 bg-muted rounded-lg border border-border">
  <Sparkles size={14} className="text-primary/40" />
  <span className="text-xs font-bold text-slate-300 tracking-tight">Network Identity Indexer - V2.1.0</span>
  </div>

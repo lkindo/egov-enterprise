@@ -76,7 +76,7 @@ export const InsightBanner: React.FC = () => {
  case 'CRITICAL': return "from-rose-500/10 to-transparent border-rose-200 text-rose-700";
  case 'WARNING': return "from-amber-500/10 to-transparent border-amber-200 text-amber-800";
  case 'INFO': return "from-primary/10 to-transparent border-primary/20 text-primary";
- default: return "from-slate-500/10 to-transparent border-slate-200 text-slate-700";
+ default: return "from-slate-500/10 to-transparent border-border text-foreground";
  }
  };
 
@@ -132,7 +132,7 @@ export const InsightBanner: React.FC = () => {
  transition={{ duration: 0.6, ease: "circOut" }}
  className="space-y-4"
  >
- <p className="text-2xl font-bold tracking-tighter text-slate-900 leading-tight line-clamp-2 text-left">
+ <p className="text-2xl font-bold tracking-tighter text-foreground leading-tight line-clamp-2 text-left">
  {activeInsight.message}
  </p>
  
@@ -164,7 +164,7 @@ export const InsightBanner: React.FC = () => {
  />
  ))}
  </div>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border/60 text-muted-foreground hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
  <Maximize2 size={16} />
  </Button>
  </div>

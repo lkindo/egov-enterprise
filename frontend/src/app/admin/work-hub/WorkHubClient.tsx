@@ -64,29 +64,29 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const jobColumns: Column<any>[] = [
     {
       header: '번호',
-      accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
       className: 'w-20 text-center'
     },
     {
       header: '업무함 명칭',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.deptTaskBoxNm}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.deptTaskBoxId}</span>
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskBoxNm}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.deptTaskBoxId}</span>
         </div>
       )
     },
     {
       header: '부서',
-      accessor: (item) => <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{item.deptId || '글로벌'}</span>,
+      accessor: (item) => <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">{item.deptId || '글로벌'}</span>,
       className: 'w-32'
     },
     {
       header: '관리',
       accessor: () => (
         <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-100">
-            <MoreVertical size={16} className="text-slate-400" />
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+            <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
       ),
@@ -97,29 +97,29 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const reportColumns: Column<any>[] = [
     {
       header: '번호',
-      accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
       className: 'w-20 text-center'
     },
     {
       header: '보고서 제목',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.rptTtl}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">작성일: {item.rptYmd}</span>
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.rptTtl}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">작성일: {item.rptYmd}</span>
         </div>
       )
     },
     {
       header: '작성자',
-      accessor: (item) => <span className="text-xs font-bold text-slate-600 tracking-tight">{item.userId}</span>,
+      accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.userId}</span>,
       className: 'w-32'
     },
     {
       header: '관리',
       accessor: () => (
         <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-100">
-            <MoreVertical size={16} className="text-slate-400" />
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+            <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
       ),
@@ -141,11 +141,11 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         icon={Briefcase}
         actions={
           <div className="flex gap-4">
-             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+             <div className="flex bg-muted p-1 rounded-xl border border-border/50">
                <Button
                  variant="ghost"
                  size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('job')}
                >
                  워크플로우
@@ -153,7 +153,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                <Button
                  variant="ghost"
                  size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('report')}
                >
                  자산
@@ -180,13 +180,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <div className="relative group max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
               <Input
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                 placeholder="검색어를 입력하십시오..."
               />
             </div>

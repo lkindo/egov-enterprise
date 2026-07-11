@@ -130,7 +130,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
       "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-bold tracking-tight rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
       isActive
         ? "bg-slate-900 text-white shadow-xl"
-        : "text-slate-500 hover:bg-slate-900 hover:text-white",
+        : "text-muted-foreground hover:bg-slate-900 hover:text-white",
       isRestricted && "opacity-40 cursor-not-allowed grayscale",
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
@@ -143,7 +143,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
             size={18}
             className={cn(
               "transition-transform duration-200 group-hover:scale-110",
-              isActive ? "text-primary" : "text-slate-600"
+              isActive ? "text-primary" : "text-muted-foreground"
             )}
           />
         )}
