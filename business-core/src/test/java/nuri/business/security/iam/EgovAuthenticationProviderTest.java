@@ -122,14 +122,20 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("인증 성공 - webmaster 특수 처리")
-    void authenticate_success_webmaster() {
+    @DisplayName("인증 성공 - DB 권한(ROLE_ADMIN) 기반 역할 부여")
+    void authenticate_success_dbAuthorityAdmin() {
+        // webmaster '특수 처리'(하드코딩 자동 ADMIN)는 보안 하드닝으로 제거됨.
+        // 현행 모델: 역할은 DB 권한 매핑(tb_user_authrt_map, esntlId 기준)에서 결정된다.
         // Given
         testUser.changeUserId("webmaster");
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
         lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(testUser));
         lenient().when(egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");
-        lenient().when(userAuthorityRepository.findById(anyString())).thenReturn(Optional.empty());
+        UserAuthority adminAuthority = UserAuthority.builder()
+                .scrtyDcsnTrgtId("USR_0000000000001")
+                .authrtId("ROLE_ADMIN")
+                .build();
+        lenient().when(userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(adminAuthority));
 
         // When
         Authentication result = authenticationProvider.authenticate(auth);
