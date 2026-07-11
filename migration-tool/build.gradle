@@ -1,0 +1,22 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+// 레거시 → 표준 스키마 데이터 이관 CLI 도구 (독립 실행, foundation 미의존 = lean).
+// 파생 프로젝트가 이관 시에만 선택 포함한다. 설계: docs/02-architecture/legacy-migration-tool-design.md
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-jdbc'
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    runtimeOnly libs.postgresql
+
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.testcontainers:postgresql:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testRuntimeOnly libs.postgresql
+}
+
+bootJar {
+    enabled = true
+    mainClass = 'nuri.migration.MigrationToolApplication'
+}
+jar { enabled = false }
