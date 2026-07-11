@@ -7,7 +7,11 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -30,6 +34,10 @@ public class EgovTestDataConfig {
     private final UserAuthorityRepository userAuthorityRepository;
     private final BoardMasterRepository boardMasterRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PlatformTransactionManager transactionManager;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @PostConstruct
     @Transactional
@@ -60,7 +68,10 @@ public class EgovTestDataConfig {
                     .atchPsbltyFileQty(3)
                     .build();
             board.registerOption("Y", "Y");
-            boardMasterRepository.save(board);
+            // 할당된 ID(BBSMSTR_*) 엔티티는 Spring Data save() 가 merge 를 유발해 @MapsId @OneToOne
+            // 자식(BoardMasterOption)을 UPDATE 시도 → 빈 DB 에서 실패. 신규 엔티티는 persist 로 INSERT.
+            // (@PostConstruct 는 프록시 적용 전이라 @Transactional 이 무효 → 명시적 트랜잭션으로 감쌈)
+            new TransactionTemplate(transactionManager).executeWithoutResult(status -> entityManager.persist(board));
         });
     }
 

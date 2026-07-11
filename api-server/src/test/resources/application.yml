@@ -15,4 +15,4 @@ jwt:
 # [Phase2 회귀 수정] test 리소스 application.yml 이 main 을 shadow 하므로 main 의 security.whitelist 가
 # 테스트 컨텍스트에서 미해결된다. @Value 는 YAML 시퀀스를 못 읽으므로 CSV 문자열로 정의한다(main 과 동일).
 security:
-  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup"
+  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup,/api/v1/users/check-id,/actuator/health"

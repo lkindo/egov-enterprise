@@ -151,6 +151,4 @@ security:
   # [Phase2 수정] @Value("${security.whitelist}") List<String> 는 YAML 시퀀스를 바인딩하지 못한다
   # (Spring 이 인덱스 프로퍼티 security.whitelist[0]... 로 저장 → 비인덱스 placeholder 미해결).
   # 정상 동작하는 cors.allowed-origins 와 동일하게 CSV 문자열로 정의한다.
-  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup"
-    - "/api/v1/users/check-id"
-    - "/actuator/health"
+  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup,/api/v1/users/check-id,/actuator/health"
