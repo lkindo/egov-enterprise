@@ -69,7 +69,8 @@ jobs:
             api:
               - 'api-server/**'
               - 'foundation/**'
-              - 'business-suite/**'
+              - 'business-core/**'
+              - 'business-app/**'
         continue-on-error: true
 
       - name: Upload OpenAPI Spec (if changed)
@@ -101,7 +102,6 @@ jobs:
         with:
           name: quality-reports
           path: |
-            **/build/reports/checkstyle
             **/build/reports/dependency-check
 
       - name: Upload JaCoCo Report
@@ -313,7 +313,7 @@ jobs:
             pit-history-
 
       - name: Incremental Mutation Test (refactored scope)
-        run: ./gradlew :business-suite:pitest
+        run: ./gradlew :business-core:pitest :business-app:pitest
         env:
           PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.domain.board.*,nuri.business.service.file.*,nuri.business.service.board.*"
           PIT_TARGET_TESTS: "nuri.business.*"
