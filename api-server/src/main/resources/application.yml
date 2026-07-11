@@ -74,7 +74,8 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 2.0
+    # 무이력 비어있지-않은 DB 는 2.1 로 baseline → V2_0/V2_1 스킵(중복 적재 방지). 빈 DB 는 무영향(전량 적용).
+    baseline-version: 2.1
     locations: classpath:db/migration
 
 
