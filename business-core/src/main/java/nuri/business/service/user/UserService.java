@@ -141,7 +141,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 required(userNm, "사용자 이름 은 null 일 수 없습니다");
 
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
 
@@ -199,7 +199,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 // [보안] 본인 또는 관리자만 수정 가능
                 String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                if (!currentUserId.equals(userId) && !nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!currentUserId.equals(userId) && !nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
 
@@ -255,7 +255,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
 
@@ -328,7 +328,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
                 userRepository.deleteAllByIdInBatch(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
@@ -350,7 +350,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
 
@@ -368,7 +368,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
                 List<User> users = userRepository.findAllById(required(userIds));
@@ -384,7 +384,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
                 List<User> users = userRepository.findAllById(required(userIds));
@@ -400,7 +400,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
                 List<User> users = userRepository.findAllById(required(userIds));

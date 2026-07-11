@@ -123,7 +123,7 @@ public class MenuService {
                 .filter(m -> {
                     boolean isAuthorized = authorityMap.getOrDefault(m.getMenuSn(), new ArrayList<>()).stream()
                             .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
-                    boolean isAdmin = roles.contains("ROLE_ADMIN");
+                    boolean isAdmin = roles.contains(nuri.business.security.AuthorityConstants.AUTHORITY_ADMIN);
                     return (isAuthorized || isAdmin) && m.getMenuSn() <= 9999999 && "Y".equals(m.getUseYn());
                 })
                 .collect(Collectors.toList());

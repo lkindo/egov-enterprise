@@ -90,8 +90,8 @@ public class ApiSecurityConfig {
                                                                 .map(AntPathRequestMatcher::antMatcher)
                                                                 .toArray(AntPathRequestMatcher[]::new))
                                                 .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
@@ -164,7 +164,7 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui.html")
                                                 };
                                                 if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
-                                                        auth.requestMatchers(docs).hasAnyRole("ADMIN", "SYSTEM");
+                                                        auth.requestMatchers(docs).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
                                                 } else {
                                                         auth.requestMatchers(docs).permitAll();
                                                 }

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,11 +24,14 @@ import java.time.LocalDateTime;
 /**
  * 테스트용 데이터 초기화 설정
  * - 운영(prod) 환경을 제외한 개발/테스트 환경에서만 동작
+ * - [Opt-In] 기본값은 비활성화이며, {@code egov.seed-demo-data=true} 를 명시적으로 설정한 경우에만 동작한다.
+ *   (프레임워크 클린 부팅 시 데모/E2E 픽스처를 자동 생성하지 않도록 함)
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 @Profile("!prod & !test")
+@ConditionalOnProperty(name = "egov.seed-demo-data", havingValue = "true", matchIfMissing = false)
 public class EgovTestDataConfig {
 
     private final UserRepository userRepository;

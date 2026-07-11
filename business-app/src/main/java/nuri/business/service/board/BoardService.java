@@ -333,7 +333,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
                 String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole("ADMIN");
+                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN);
 
                 if (!isAdmin && !currentUserId.equals(board.getUserId())) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -393,7 +393,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 // [보안] 권한 확인 (작성자 본인 또는 관리자)
                 String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole("ADMIN");
+                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN);
 
                 if (!isAdmin && !currentUserId.equals(board.getUserId())) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);

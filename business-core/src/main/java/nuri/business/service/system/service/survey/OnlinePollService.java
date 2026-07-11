@@ -67,7 +67,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
         
@@ -113,7 +113,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
@@ -152,7 +152,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePoll(String pollId) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole("ADMIN")) {
+        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 

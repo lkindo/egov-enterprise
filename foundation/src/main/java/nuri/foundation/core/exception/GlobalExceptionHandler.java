@@ -6,6 +6,9 @@ import nuri.foundation.core.exception.ErrorCode;
 
 import nuri.foundation.core.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,25 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final MessageSource messageSource;
+
+    /**
+     * 프레임워크(Spring) 기본 생성 경로 — MessageSource(EgovMessageConfig 정의)를 주입받아
+     * ErrorCode.code 키로 Accept-Language 기반 로케일 메시지를 해석한다.
+     */
+    @Autowired
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
+    /**
+     * MessageSource 없이 인스턴스화하기 위한 폴백 생성자(주로 MockMvc standalone 단위 테스트).
+     * 이 경로에서는 i18n 해석을 건너뛰고 ErrorCode 기본 메시지(영문)/기본 문자열로 폴백한다.
+     */
+    public GlobalExceptionHandler() {
+        this.messageSource = null;
+    }
+
     /**
      * 비즈니스 로직 예외 처리
      */
@@ -32,7 +54,7 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn(">>> BusinessException: {} - {}", e.getErrorCode().getCode(), e.getMessage());
         ErrorCode errorCode = e.getErrorCode();
-        return new ResponseEntity<>(ApiResponse.error(errorCode, e.getMessage()), errorCode.getStatus());
+        return new ResponseEntity<>(ApiResponse.error(errorCode, resolveMessage(errorCode, e.getMessage())), errorCode.getStatus());
     }
 
     /**
@@ -54,7 +76,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     protected ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
         log.warn(">>> Access Denied: {}", e.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.ACCESS_DENIED), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.ACCESS_DENIED, resolve(CommonErrorCode.ACCESS_DENIED)), HttpStatus.FORBIDDEN);
     }
 
     /**
@@ -63,7 +85,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     protected ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException e) {
         log.warn(">>> Authentication Failed: {}", e.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, e.getMessage()), HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, resolveMessage(CommonErrorCode.UNAUTHORIZED, e.getMessage())), HttpStatus.UNAUTHORIZED);
     }
 
     /**
@@ -76,7 +98,8 @@ public class GlobalExceptionHandler {
         // [정합성 H5] body.status(과거 INVALID_INPUT_VALUE=400)와 HTTP 409가 어긋나던 것을 바로잡음:
         // CONCURRENT_MODIFICATION(409)로 생성하여 envelope status와 전송 status를 일치시킨다.
         return new ResponseEntity<>(
-                ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION, "데이터가 이미 수정되었습니다. 다시 시도해주세요."),
+                ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION,
+                        resolve("handler.optimistic_lock", null, "데이터가 이미 수정되었습니다. 다시 시도해주세요.")),
                 HttpStatus.CONFLICT);
     }
 
@@ -86,7 +109,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     protected ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn(">>> Illegal Argument: {}", e.getMessage());
-        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, e.getMessage()));
+        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, resolveMessage(CommonErrorCode.INVALID_INPUT_VALUE, e.getMessage())));
     }
 
     /**
@@ -96,11 +119,13 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
             org.springframework.http.converter.HttpMessageNotReadableException e) {
         log.warn(">>> JSON Deserialization Failed: {}", e.getMessage());
-        String detailMessage = "잘못된 데이터 형식이거나 정의되지 않은 필드가 포함되어 있습니다.";
+        String detailMessage = resolve("handler.message_not_readable", null,
+                "잘못된 데이터 형식이거나 정의되지 않은 필드가 포함되어 있습니다.");
         if (e.getCause() instanceof com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) {
-            com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException cause = 
+            com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException cause =
                 (com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) e.getCause();
-            detailMessage = String.format("정의되지 않은 필드 '%s'가 포함되어 있습니다.", cause.getPropertyName());
+            detailMessage = resolve("handler.unrecognized_field", new Object[]{cause.getPropertyName()},
+                    String.format("정의되지 않은 필드 '%s'가 포함되어 있습니다.", cause.getPropertyName()));
         }
         return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, detailMessage));
     }
@@ -111,7 +136,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
     protected ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(
             org.springframework.web.HttpRequestMethodNotSupportedException e) {
-        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.METHOD_NOT_ALLOWED, resolve(CommonErrorCode.METHOD_NOT_ALLOWED)), HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     /**
@@ -120,7 +145,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
     protected ResponseEntity<ApiResponse<Void>> handleHttpMediaTypeNotSupportedException(
             org.springframework.web.HttpMediaTypeNotSupportedException e) {
-        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE, resolve(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE)), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
     /**
@@ -132,7 +157,37 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error(">>> Internal Server Error: {} - ExceptionType: {}", e.getMessage(), e.getClass().getName(), e);
         return new ResponseEntity<>(
-                ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다. 지속될 경우 관리자에게 문의해 주세요."),
+                ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        resolve("handler.internal_error", null, "서버 내부 오류가 발생했습니다. 지속될 경우 관리자에게 문의해 주세요.")),
                 HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * ErrorCode.code 를 메시지 키로 사용하여 현재 로케일(Accept-Language)에 맞는 메시지를 해석한다.
+     * 키가 없으면 ErrorCode.getMessage() (영문 기본값)로 폴백한다.
+     */
+    private String resolve(ErrorCode errorCode) {
+        return resolve(errorCode.getCode(), null, errorCode.getMessage());
+    }
+
+    /**
+     * 임의의 메시지 키를 현재 로케일로 해석한다. 미등록 시(또는 MessageSource 미주입 시) defaultMessage 로 폴백한다.
+     */
+    private String resolve(String code, Object[] args, String defaultMessage) {
+        if (messageSource == null) {
+            return defaultMessage;
+        }
+        return messageSource.getMessage(code, args, defaultMessage, LocaleContextHolder.getLocale());
+    }
+
+    /**
+     * 호출부에서 커스텀 메시지를 직접 지정한 경우(ErrorCode 기본 메시지와 다름)에는 그 메시지를 그대로 존중하고,
+     * 그 외(기본 메시지이거나 null)에는 ErrorCode.code 키로 로케일별 메시지를 해석한다.
+     */
+    private String resolveMessage(ErrorCode errorCode, String rawMessage) {
+        if (rawMessage != null && !rawMessage.equals(errorCode.getMessage())) {
+            return rawMessage;
+        }
+        return resolve(errorCode);
     }
 }
