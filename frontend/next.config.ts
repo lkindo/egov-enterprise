@@ -58,11 +58,8 @@ const nextConfig = {
         destination: '/admin/community/boards/insert-board-article',
         permanent: true,
       },
-      {
-        source: '/admin/community/boards/selectBoardArticle/:id*',
-        destination: '/admin/community/boards/select-board-article/:id*',
-        permanent: true,
-      },
+      // (nav-07) selectBoardArticle/:id* → select-board-article/:id* redirect 제거:
+      // 목적지 라우트(select-board-article/[id])가 死라우트로 삭제됨(레거시 source도 inbound 0건).
       // 통합 허브(탭)로 이관된 기능의 orphan 독립 라우트 → 메뉴가 선언한 정식 목적지로 정합
       // (메뉴 modern_route = /admin/survey/hub?tab=*, /admin/system/monitoring/hub?tab=* 기준)
       { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage', permanent: false },
