@@ -252,7 +252,7 @@ cp frontend/.env.example frontend/.env.local
 - ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
 - ✅ **JaCoCo 커버리지 목표** - 60% 이상 (클래스별 50%)
 
-자세한 내용은 [CHANGELOG](./CHANGELOG.md) 를 확인하세요.
+자세한 변경 이력은 git 커밋 히스토리 및 위 **구현 현황(Phase)** 표를 참조하세요.
 
 ---
 
