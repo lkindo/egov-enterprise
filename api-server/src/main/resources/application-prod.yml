@@ -60,6 +60,11 @@ Globals:
   File:
     algorithmKey: ${ALGORITHM_KEY}
 
+# [보안] JWT refresh 쿠키를 운영에서 Secure(HTTPS 전용)로 강제 (base 기본값 false 오버라이드)
+jwt:
+  cookie:
+    secure: true
+
 # Swagger/OpenAPI 보안 설정 (운영 환경 비활성화)
 springdoc:
   api-docs:
