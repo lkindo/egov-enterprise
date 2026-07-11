@@ -24,11 +24,6 @@ spring:
       mode: never
 
   datasource:
-    # Supabase connection (Commented)
-    # url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # jdbc-url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # username: postgres.kmtcbkxvrbnfijvbdsrx
-    # password: s5isI0KE48Bd9kD1
     
     # Oracle Cloud connection (Use environment variables, default to local localhost)
     url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}

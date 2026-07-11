@@ -12,13 +12,14 @@ spring:
       on-profile: dev
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
-    jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
-    username: ${DB_USERNAME:postgres.kmtcbkxvrbnfijvbdsrx}
-    password: ${DB_PASSWORD:s5isI0KE48Bd9kD1}
+    # 접속 정보는 환경변수로 외부화(기본값은 로컬 테스트 편의용 — Supabase 실호스트/계정 제거)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    username: ${DB_USERNAME:postgres}
+    password: ${SUPABASE_DB_PASSWORD:}  # 유출됨 — 로테이션 필요 (실제 값 제거됨)
     driver-class-name: org.postgresql.Driver
     hikari:
-      jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
 
   jpa:
     open-in-view: false
