@@ -63,6 +63,22 @@ const nextConfig = {
         destination: '/admin/community/boards/select-board-article/:id*',
         permanent: true,
       },
+      // 통합 허브(탭)로 이관된 기능의 orphan 독립 라우트 → 메뉴가 선언한 정식 목적지로 정합
+      // (메뉴 modern_route = /admin/survey/hub?tab=*, /admin/system/monitoring/hub?tab=* 기준)
+      { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage', permanent: false },
+      { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions', permanent: false },
+      { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats', permanent: false },
+      { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=items', permanent: false },
+      { source: '/admin/survey/respondents', destination: '/admin/survey/hub?tab=respondents', permanent: false },
+      { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates', permanent: false },
+      { source: '/admin/observability', destination: '/admin/system/monitoring/hub?tab=observability', permanent: false },
+      { source: '/admin/security/audit', destination: '/admin/system/monitoring/hub?tab=security', permanent: false },
+      { source: '/admin/system/audit', destination: '/admin/system/monitoring/hub?tab=system', permanent: false },
+      { source: '/admin/security/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      { source: '/admin/user/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      // 경로 중복(정식 메뉴 타겟으로 통합)
+      { source: '/admin/sanctn/workflow', destination: '/admin/workflow', permanent: false },
+      { source: '/cop/sms/selectSmsList', destination: '/admin/uss/ion/sms', permanent: false },
     ];
   },
   async rewrites() {
