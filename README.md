@@ -12,6 +12,7 @@
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
 - **Backend**: Spring Boot 3.4 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
 - **Visual Analytics**: 데이터 시각화 라이브러리를 통한 실시간 통계 대시보드 제공.
+- **재사용 베이스 프레임워크**: 이 저장소는 완성된 제품이자, **신규 SI 구축·레거시 재개발의 베이스 프레임워크**로 재사용(복제 → 프로젝트 고유 기능 삭제 → 신규 구축·레거시 이관)하도록 설계됐다. 시작은 [온보딩 런북](./docs/03-guides/getting-started.md)을 참조한다.
 
 ---
 
@@ -29,25 +30,30 @@
 ### Backend
 - **Core**: Spring Boot 3.4.x, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
-- **Architecture**: 2-Tier Modular Monolith (Foundation & Business-Suite)
+- **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`) + 레거시 이관 도구 `migration-tool`. 단방향 의존·도메인 격리(ArchUnit)
+- **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
+- **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 6.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
 - **Build**: Gradle 9.4.1 (Version Catalog)
 
 ---
 
-## 📂 프로젝트 구조 (Project Structure - 2-Tier Architecture)
+## 📂 프로젝트 구조 (Project Structure — 멀티 모듈)
 
-본 프로젝트는 핵심 기반 기능과 비즈니스 로직을 분리하여 유지보수성을 극대화한 **2계층 모듈 구조**를 채택하고 있습니다.
+본 프로젝트는 **재사용 가능한 코어(foundation·admin)와 프로젝트 고유 도메인을 물리적으로 분리**한 멀티 모듈 구조를 채택한다. *(2026-07 재사용 프레임워크화 리팩토링으로 기존 `business-suite` 모놀리스를 `business-core`/`business-app`으로 분할.)*
 
 ```bash
 egov-enterprise/
-├── api-server/             # Spring Boot 진입점 (War 배포 모듈, Presentation Layer)
-├── business-suite/         # 업무 도구 통합 모듈 (Business Layer: Workspace, Operation, Knowledge 등)
-├── foundation/             # 시스템 기반 통합 모듈 (Infrastructure Layer: Security, IAM, Common, System Admin 등)
-├── frontend/               # Next.js 15 프런트엔드 애플리케이션
-└── egov-libs/              # 전자정부 프레임워크 레거시 라이브러리 (Binary 참조용)
+├── foundation/        # 최하위 코어: 공통 응답(ApiResponse·PageResponse)·ErrorCode·BaseEntity·보안 백본(JWT/IAM)·auto-config
+├── business-core/     # 재사용 admin 코어 도메인: user·auth·menu·code·organization·system·survey + 공용 테스트 하네스
+├── business-app/      # 프로젝트 고유 도메인: board·informalsanction·schedule·notification·operation 등 (business-core 확장)
+├── api-server/        # 진입점(Presentation Layer): Controller·API DTO. business-app/core 서비스 호출 (bootJar 실행 모듈)
+├── migration-tool/    # 레거시→표준 스키마 데이터 이관 ETL CLI (독립 실행, foundation 미의존, 이관 시에만 선택 포함)
+└── frontend/          # Next.js 16 (App Router) 프런트엔드
 ```
+- **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). 형제 도메인 간 결합은 `DomainIsolationTest`(ArchUnit)로 차단 → 프로젝트 고유 도메인의 안전한 삭제 지원.
+- **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터 + `BaseCrudController/Service` 상속으로 생성.
 
 ---
 
@@ -62,9 +68,10 @@ egov-enterprise/
 | **Phase 3: 운영 지원** | 일정 관리, 부서 업무, 온라인 설문, 약관 관리, 보고서 | ✅ 완료 (100%) |
 | **Phase 4: 통합/통계** | 실시간 사용자/화면 통계, 디지털 자산 관리, 모니터링 | ✅ 완료 (100%) |
 | **Phase 5: 구조 리팩토링** | 관리자 기능 통합(System Admin), 메뉴 계층 구조 전면 재편 | ✅ 완료 (100%) |
-| **Phase 6: 아키텍처 혁신** | **2-Tier (Foundation-Business) 모듈 통합 리팩토링** | ✅ 완료 (100%) |
+| **Phase 6: 아키텍처 혁신** | 2-Tier (Foundation-Business) 모듈 통합 리팩토링 *(→ Phase 9에서 재사용성 위해 core/app 재분할)* | ✅ 완료 (100%) |
 | **Phase 7: 최적화** | 빌드 자동화, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
 | **Phase 8: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | ✅ 완료 (100%) |
+| **Phase 9: 재사용 프레임워크화** | 모듈 재분할(`business-core`/`business-app`)·foundation 승격·Flyway `V2_0` 베이스라인·MapStruct 표준·레거시 이관도구(`migration-tool`)·i18n·설계 결정 | ✅ 완료 (2026-07) |
 
 ### 핵심 모듈 상술 (Key Migrated Modules)
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
@@ -157,7 +164,7 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 
 1. **상호 서비스 주입 금지**: 모듈 간 의존성은 인터페이스(Service Interface)를 통해서만 이루어지며, 직접적인 Repository 접근을 금지합니다.
 2. **이벤트 기반 동기화**: 게시글 등록(`PostCreatedEvent`) 등의 비즈니스 사례 발생 시, 이벤트를 발행하여 타 모듈(통계, 알림 등)과의 결합성을 최소화합니다.
-3. **독립적 빌드 구성**: 라이브러리 성격의 모듈은 `bootJar`를 생성하지 않으며 오직 진입점 모듈(`api-server`)만 실행 파일을 생성합니다.
+3. **독립적 빌드 구성**: 라이브러리 성격의 모듈(`foundation`·`business-core`·`business-app`)은 `bootJar`를 생성하지 않으며, 실행 파일은 진입점 모듈(`api-server`)과 이관 CLI(`migration-tool`)만 생성합니다.
 
 ---
 
@@ -182,10 +189,11 @@ cp api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config
 cp frontend/.env.example frontend/.env.local
 ```
 
-#### 3. 데이터베이스 마이그레이션
+#### 3. 데이터베이스 (Flyway 표준 베이스라인)
 ```bash
-# 스키마 자동 생성 (application.yml 설정)
-# spring.jpa.hibernate.ddl-auto=update
+# 빈 Postgres 에 표준 스키마+시드가 Flyway 로 자동 구성된다 (ddl-auto=validate).
+#   V2_0__baseline(101 테이블) → V2_1(메타표준 시드) → V2_2(admin 시드) → R__seed_framework
+# 별도 수동 DDL 불필요 — :api-server:bootRun 시 Flyway 가 migrate 후 Hibernate validate.
 ```
 
 ---
@@ -204,10 +212,13 @@ cp frontend/.env.example frontend/.env.local
 | [JPA 성능 가드레일](./docs/02-architecture/jpa-performance-guardrail.md) | N+1·페치 전략 |
 | [Zero-Downtime 마이그레이션](./docs/02-architecture/zero-downtime-migration.md) | Expand-and-Contract 패턴 |
 | [Pitest 뮤테이션 테스트](./docs/02-architecture/pitest-mutation-testing.md) | 테스트 방어력 검증 |
+| [레거시 이관 도구 설계](./docs/02-architecture/legacy-migration-tool-design.md) | 레거시→표준 스키마 ETL(mapping.yml DSL·4단계 파이프라인) |
+| [프레임워크 재사용성 진단](./docs/02-architecture/framework-reusability-assessment.md) | 베이스 프레임워크 재사용 준비도·로드맵 |
 
 ### 📗 개발 지침 (`docs/03-guides/`)
 | 문서 | 설명 |
 |------|------|
+| [온보딩 런북 (Getting Started)](./docs/03-guides/getting-started.md) | 복제→리브랜딩→부트스트랩→커스터마이징 실무 절차 |
 | [오케스트레이션 프로토콜](./docs/03-guides/orchestration-protocol.md) | 태스크 등급·파이프라인 SSOT |
 | [테스트 종합 가이드](./docs/03-guides/testing-guide.md) | 단위/통합/E2E 전략 SSOT |
 | [E2E 운영 Runbook](./docs/03-guides/e2e-test-guide.md) | Playwright 환경·CI 최적화 |
@@ -280,4 +291,4 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-*Last Updated: 2026-03-26 (Upgraded to Gradle 9.4.1 & Stabilized 2-Tier Architecture)*
+*Last Updated: 2026-07-12 (재사용 프레임워크화 리팩토링 — business-core/business-app 모듈 재분할·foundation 승격·Flyway V2_0 베이스라인·MapStruct 매핑 표준·migration-tool 이관도구·i18n. 상세: [getting-started](./docs/03-guides/getting-started.md))*
