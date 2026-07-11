@@ -211,3 +211,7 @@ module-knowledge/
 
 # Database Dumps
 database/dumps/
+
+# 개인키/시크릿 — 리포지토리 커밋 금지 (2026-07-11 보안)
+*.key
+*.pem
