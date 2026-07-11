@@ -25,9 +25,14 @@ hibernate-dialects = "6.4.0.Final"
 h2 = "2.3.232"
 caffeine = "3.1.8"
 testcontainers = "1.20.4"
+mapstruct = "1.6.3"
+lombok-mapstruct-binding = "0.2.0"
 
 
 [libraries]
+mapstruct = { group = "org.mapstruct", name = "mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", version.ref = "mapstruct" }
+lombok-mapstruct-binding = { group = "org.projectlombok", name = "lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }
 egovframe-rte-bat-core = { group = "org.egovframe.rte", name = "egovframe-rte-bat-core", version.ref = "egovframe" }
 egovframe-rte-fdl-access = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-access", version.ref = "egovframe" }
 egovframe-rte-fdl-crypto = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-crypto", version.ref = "egovframe" }
