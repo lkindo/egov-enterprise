@@ -1,0 +1,6 @@
+[
+  { "table_name": "tb_user_info", "column_name": "user_id" },
+  { "table_name": "tb_user_info", "column_name": "user_nm" },
+  { "table_name": "tb_user_info", "column_name": "user_stts_cd" },
+  { "table_name": "tb_user_info", "column_name": "frst_rgtr_id" }
+]

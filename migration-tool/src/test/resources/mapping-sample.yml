@@ -1,0 +1,18 @@
+source:
+  url: jdbc:h2:mem:src
+  username: sa
+  password: ""
+  driver: org.h2.Driver
+tables:
+  - source: LEGACY_USER
+    target: tb_user_info
+    columns:
+      - { source: USER_ID, target: user_id }
+      - { source: USER_NM, target: user_nm, transform: trim }
+      - { source: STAT, target: user_stts_cd, codemap: user_status }
+      - { target: frst_rgtr_id, const: "MIGRATION" }
+codemaps:
+  user_status:
+    "1": "A"
+    "0": "D"
+    default: "P"
