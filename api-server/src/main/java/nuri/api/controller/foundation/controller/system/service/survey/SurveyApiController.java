@@ -2,7 +2,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovSurveyService;
 import nuri.business.service.system.service.survey.dto.SurveyInfoDto;
 import nuri.business.service.system.service.survey.dto.SurveyTemplateDto;

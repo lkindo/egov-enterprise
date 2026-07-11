@@ -3,7 +3,7 @@ package nuri.api.controller.business.board;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

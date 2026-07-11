@@ -2,7 +2,7 @@ package nuri.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.user.EgovUserService;
 import nuri.business.service.user.dto.*;
 import nuri.business.test.BaseControllerTest;

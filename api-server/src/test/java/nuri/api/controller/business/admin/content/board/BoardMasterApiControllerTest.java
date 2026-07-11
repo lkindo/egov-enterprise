@@ -2,7 +2,7 @@ package nuri.api.controller.business.admin.content.board;
 
 import nuri.business.service.board.EgovBoardMasterService;
 import nuri.business.service.board.dto.BoardMasterDto;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

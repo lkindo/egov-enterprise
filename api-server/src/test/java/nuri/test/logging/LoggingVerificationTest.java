@@ -1,9 +1,10 @@
 package nuri.test.logging;
+import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.api.controller.UserApiController;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
@@ -39,7 +40,7 @@ public class LoggingVerificationTest {
     @Test
     @DisplayName("예외 발생 시 에러 응답 반환")
     void exception_occurs_returnsErrorResponse() throws Exception {
-        doThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID))
+        doThrow(new BusinessException(UserErrorCode.DUPLICATE_USER_ID))
                 .when(userService).signup(any(UserSignupRequest.class));
 
         String requestBody = """

@@ -2,5 +2,6 @@ rootProject.name = 'egov-enterprise'
 
 // Project Modules
 include 'foundation'
-include 'business-suite'
+include 'business-core'
+include 'business-app'
 include 'api-server'

@@ -2,7 +2,7 @@ package nuri.api.controller.business.admin.content.popup;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.content.popup.PopupService;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import io.swagger.v3.oas.annotations.Operation;

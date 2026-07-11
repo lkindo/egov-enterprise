@@ -1,7 +1,7 @@
 package nuri.api.controller.business.board;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;

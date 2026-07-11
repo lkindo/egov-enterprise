@@ -2,7 +2,7 @@ package nuri.api.controller.business.note;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.note.NoteService;
 import nuri.business.service.note.dto.NoteDto;
 import io.swagger.v3.oas.annotations.Operation;

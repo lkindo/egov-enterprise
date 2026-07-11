@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.log;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.log.LogManageService;
 import nuri.business.service.log.dto.SysLogDto;

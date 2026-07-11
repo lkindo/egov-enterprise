@@ -2,7 +2,7 @@ package nuri.api.controller.business.help;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.help.EgovHelpService;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.OnlineManualDto;

@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system.service.isg;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.isg.EgovInternetSvcGuidanceService;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
 import com.fasterxml.jackson.databind.ObjectMapper;

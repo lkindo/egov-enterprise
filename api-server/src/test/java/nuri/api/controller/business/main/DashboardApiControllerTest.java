@@ -2,7 +2,7 @@ package nuri.api.controller.business.main;
 
 import nuri.business.service.board.EgovBoardService;
 import nuri.business.service.informalsanction.InformalSanctionService;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

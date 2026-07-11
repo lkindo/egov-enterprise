@@ -2,7 +2,7 @@ package nuri.api.controller.business.image;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.image.EgovMainImageService;
 import nuri.business.service.image.dto.MainImageDto;
 import io.swagger.v3.oas.annotations.Operation;

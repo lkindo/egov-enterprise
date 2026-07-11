@@ -49,12 +49,7 @@ public final class IdGenerationUtil {
         return generateId(Constants.User.MBER_PREFIX, Constants.User.ESNTL_ID_UUID_LENGTH);
     }
 
-    /**
-     * 비정형 결재용 고유 ID를 생성합니다.
-     */
-    public static String generateInformalSanctionId() {
-        return generateId(Constants.User.INFRML_PREFIX, Constants.User.ESNTL_ID_UUID_LENGTH);
-    }
+
     /**
      * SMS 발송용 고유 ID를 생성합니다.
      */

@@ -1,8 +1,8 @@
 package nuri.api.config;
 
 import nuri.business.security.iam.EgovAuthenticationProvider;
-import nuri.business.security.jwt.JwtAuthenticationFilter;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtAuthenticationFilter;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,6 +58,9 @@ public class ApiSecurityConfig {
         @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
         private List<String> allowedOrigins;
 
+        @org.springframework.beans.factory.annotation.Value("${security.whitelist}")
+        private List<String> whitelist;
+
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
@@ -83,14 +86,9 @@ public class ApiSecurityConfig {
                                 .formLogin(AbstractHttpConfigurer::disable)
                                 .logout(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/menus/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/signup"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"),
-                                                                AntPathRequestMatcher.antMatcher("/actuator/health"))
+                                                .requestMatchers(whitelist.stream()
+                                                                .map(AntPathRequestMatcher::antMatcher)
+                                                                .toArray(AntPathRequestMatcher[]::new))
                                                 .permitAll()
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")

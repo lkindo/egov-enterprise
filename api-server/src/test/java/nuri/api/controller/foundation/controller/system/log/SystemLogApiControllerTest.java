@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.log.LogManageService;
 import nuri.business.service.log.dto.SysLogDto;
 import org.junit.jupiter.api.BeforeEach;

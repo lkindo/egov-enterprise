@@ -2,7 +2,7 @@ package nuri.api.controller.business.community;
 
 import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -176,8 +176,8 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
             return;
         }
-        nuri.business.security.service.CustomUserDetails userDetails =
-                org.mockito.Mockito.mock(nuri.business.security.service.CustomUserDetails.class);
+        nuri.foundation.security.service.CustomUserDetails userDetails =
+                org.mockito.Mockito.mock(nuri.foundation.security.service.CustomUserDetails.class);
         given(userDetails.getEsntlId()).willReturn(userId);
         org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(

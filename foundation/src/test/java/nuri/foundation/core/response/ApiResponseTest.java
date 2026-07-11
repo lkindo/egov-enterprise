@@ -1,4 +1,5 @@
 package nuri.foundation.core.response;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +31,7 @@ class ApiResponseTest {
     @DisplayName("에러 응답 생성 테스트")
     void testErrorResponse() {
         // Given
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
 
         // When
         ApiResponse<Void> response = ApiResponse.error(errorCode);

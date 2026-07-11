@@ -2,7 +2,7 @@ package nuri.api.controller.business.notification;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.notification.NotificationService;
 import nuri.business.service.notification.dto.NotificationDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import nuri.business.security.annotation.LoginUser;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

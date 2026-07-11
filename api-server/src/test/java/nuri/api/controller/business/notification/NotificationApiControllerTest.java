@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;

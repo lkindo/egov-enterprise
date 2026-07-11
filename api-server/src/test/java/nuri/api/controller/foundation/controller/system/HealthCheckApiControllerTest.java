@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

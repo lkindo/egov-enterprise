@@ -1,7 +1,7 @@
 package nuri.api.config;
 
 import nuri.business.security.iam.EgovAuthenticationProvider;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

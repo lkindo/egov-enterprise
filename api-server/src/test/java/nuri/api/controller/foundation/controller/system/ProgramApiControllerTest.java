@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.program.ProgramService;
 import nuri.business.service.program.dto.ProgramDto;
 import com.fasterxml.jackson.databind.ObjectMapper;

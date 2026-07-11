@@ -1,7 +1,7 @@
 package nuri.config;
 
-import nuri.business.security.jwt.JwtAuthenticationFilter;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtAuthenticationFilter;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;

@@ -2,7 +2,7 @@ package nuri.api.controller.business.memoreport;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.memoreport.EgovMemoReportService;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import io.swagger.v3.oas.annotations.Operation;

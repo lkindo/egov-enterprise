@@ -1,4 +1,5 @@
 package nuri.api.controller.foundation.controller.menu;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.menu.MenuService;
@@ -60,7 +61,7 @@ public class MenuUserApiController {
             result.put("menus", menus);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -77,7 +78,7 @@ public class MenuUserApiController {
             result.put("programs", programs);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

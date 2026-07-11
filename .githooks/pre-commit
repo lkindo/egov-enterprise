@@ -4,6 +4,16 @@
 # 참고: 드리프트는 '경고'만 한다(BLOCK 아님) — api-docs.json 자체가 stale일 수 있어 오탐을 피한다.
 [ -n "$SKIP_HOOKS" ] && exit 0
 
+# [보안] 시크릿 스캔 — gitleaks 설치 시에만 동작(미설치 환경 무해). 스테이징된 변경에 한정.
+# 탐지 시 커밋 BLOCK. 오탐이면 .gitleaksignore 등록 또는 우회: git commit --no-verify
+if command -v gitleaks >/dev/null 2>&1; then
+  if ! gitleaks protect --staged --no-banner >/dev/null 2>&1; then
+    echo "⛔ [pre-commit] gitleaks가 스테이징 변경에서 잠재적 시크릿을 탐지했습니다. 커밋 중단."
+    echo "   확인: gitleaks protect --staged --verbose"
+    exit 1
+  fi
+fi
+
 STAGED=$(git diff --cached --name-only)
 if echo "$STAGED" | grep -qE '(api-docs\.json|Dto\.java|Controller\.java|src/types/generated-)'; then
   if command -v pnpm >/dev/null 2>&1; then

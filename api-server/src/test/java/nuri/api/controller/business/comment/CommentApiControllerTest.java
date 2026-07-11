@@ -2,7 +2,7 @@ package nuri.api.controller.business.comment;
 
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

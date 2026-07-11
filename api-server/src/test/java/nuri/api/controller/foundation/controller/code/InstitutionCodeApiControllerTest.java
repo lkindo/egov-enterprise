@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.code;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.code.InstitutionCodeService;
 import nuri.business.service.code.dto.InstitutionCodeDto;
 import nuri.business.service.code.dto.InstitutionCodeRecptnDto;

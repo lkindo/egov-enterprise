@@ -2,7 +2,7 @@ package nuri.api.controller.business.calendar;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.calendar.RestdeService;
 import nuri.business.service.calendar.dto.RestdeDto;
 import io.swagger.v3.oas.annotations.Operation;

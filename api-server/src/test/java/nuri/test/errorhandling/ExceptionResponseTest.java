@@ -1,9 +1,10 @@
 package nuri.test.errorhandling;
+import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.api.controller.UserApiController;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class ExceptionResponseTest {
     @DisplayName("비즈니스 예외 발생 - 적절한 에러 응답 반환")
     void businessException_occurs_returnsProperErrorResponse() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID));
+                .thenThrow(new BusinessException(UserErrorCode.DUPLICATE_USER_ID));
 
         String requestBody = """
                 {
@@ -68,7 +69,7 @@ class ExceptionResponseTest {
     @DisplayName("404 에러 발생 테스트")
     void userNotFound_occurs_returns404Error() throws Exception {
         when(userService.getUserById("nonexistentUser"))
-                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .thenThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         mockMvc.perform(get("/api/v1/admin/system/users/nonexistentUser")
                 .contentType(MediaType.APPLICATION_JSON))

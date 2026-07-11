@@ -2,7 +2,7 @@ package nuri.api.controller.business.lsm;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.schedule.EgovLeaderScheduleService;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import nuri.business.service.schedule.dto.LeaderStatusDto;

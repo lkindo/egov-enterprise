@@ -2,7 +2,7 @@ package nuri.api.controller.business.file;
 
 import nuri.business.service.file.FileService;
 import nuri.business.service.file.dto.FileDto;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

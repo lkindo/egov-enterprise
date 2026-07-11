@@ -17,7 +17,7 @@ import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;

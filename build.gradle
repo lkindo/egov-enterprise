@@ -75,6 +75,18 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
     apply plugin: 'info.solidsoft.pitest'
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+        repositories {
+            mavenLocal()
+        }
+    }
 
     java {
         toolchain {

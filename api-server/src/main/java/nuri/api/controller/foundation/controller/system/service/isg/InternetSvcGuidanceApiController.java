@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.isg;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.isg.EgovInternetSvcGuidanceService;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.code;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.code.AdministCodeService;
 import nuri.business.service.code.dto.AdministCodeDto;
 import com.fasterxml.jackson.databind.ObjectMapper;

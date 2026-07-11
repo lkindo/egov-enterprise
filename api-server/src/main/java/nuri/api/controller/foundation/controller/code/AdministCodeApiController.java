@@ -2,9 +2,9 @@ package nuri.api.controller.foundation.controller.code;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.code.AdministCodeService;
 import nuri.business.service.code.dto.AdministCodeDto;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,6 +1,6 @@
 package nuri.api.controller.foundation.controller.system.login;
 
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.login.LoginPolicyManageService;
 import nuri.business.service.login.dto.LoginPolicyDto;
 import com.fasterxml.jackson.databind.ObjectMapper;

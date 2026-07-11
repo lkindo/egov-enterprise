@@ -2,7 +2,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.consult.EgovCnsltService;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;
 import io.swagger.v3.oas.annotations.Operation;

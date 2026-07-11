@@ -2,7 +2,7 @@ package nuri.api.controller.business.poll;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;

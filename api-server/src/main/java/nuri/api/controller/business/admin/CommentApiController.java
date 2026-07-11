@@ -3,7 +3,7 @@ package nuri.api.controller.business.admin;
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

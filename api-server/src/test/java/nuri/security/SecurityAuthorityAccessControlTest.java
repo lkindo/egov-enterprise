@@ -1,8 +1,8 @@
 package nuri.security;
 
-import nuri.business.security.jwt.JwtTokenProvider;
-import nuri.business.security.iam.CustomUserDetailsService;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.iam.CustomUserDetailsService;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

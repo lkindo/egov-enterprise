@@ -1,9 +1,10 @@
 package nuri.test.resilience;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.api.controller.UserApiController;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserSignupRequest;
@@ -132,7 +133,7 @@ public class FaultRecoveryFunctionTest {
         when(userService.getPagedUserList(any(), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Service unavailable"))
                 .thenThrow(new RuntimeException("Service still unavailable"))
-                .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR))
+                .thenThrow(new BusinessException(CommonErrorCode.INTERNAL_ERROR))
                 .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("circuitBreakerUser").userNm("User").esntlId("USR001").build())));
 

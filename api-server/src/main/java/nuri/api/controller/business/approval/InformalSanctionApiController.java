@@ -2,9 +2,9 @@ package nuri.api.controller.business.approval;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import io.swagger.v3.oas.annotations.Operation;

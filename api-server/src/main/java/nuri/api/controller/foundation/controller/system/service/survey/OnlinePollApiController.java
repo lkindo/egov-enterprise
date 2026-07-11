@@ -1,8 +1,9 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,7 +51,7 @@ public class OnlinePollApiController {
             @PathVariable String pollId,
             @RequestParam(name = "pollIemId") String pollArtclId) {
         String userId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
-                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.ErrorCode.UNAUTHORIZED));
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
         onlinePollService.vote(pollId, pollArtclId, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -2,7 +2,7 @@ package nuri.api.controller.business.workspace;
 
 import nuri.business.service.workspace.MyPageService;
 import nuri.business.service.workspace.dto.MyPageContentDto;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

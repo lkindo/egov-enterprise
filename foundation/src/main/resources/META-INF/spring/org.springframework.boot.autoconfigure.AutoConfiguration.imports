@@ -1,0 +1,7 @@
+# Spring Boot Auto-Configurations for Foundation Module
+# 라이브러리(foundation)를 컴포넌트 스캔 없이 재사용하는 파생 프로젝트도 코어 인프라 빈을 자동 등록받도록 노출.
+# (현 api-server는 nuri 패키지를 컴포넌트 스캔하므로 동일 @Configuration은 중복 없이 dedupe 된다.)
+nuri.foundation.core.config.ProjectCryptoConfig
+nuri.foundation.core.config.AsyncConfig
+nuri.foundation.core.config.CacheConfig
+nuri.foundation.core.config.EgovMessageConfig

@@ -4,7 +4,7 @@ import nuri.business.service.code.CommonCodeService;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.domain.common.BaseSearchDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
