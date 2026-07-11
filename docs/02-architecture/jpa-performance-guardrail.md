@@ -49,10 +49,10 @@ sequenceDiagram
 
 ## 2. 모듈 및 구현 소스 코드 (Core Classes)
 
-개발 경험(DX)을 해치지 않기 위해 모든 테스트용 가드레일 클래스는 production artifact(`src/main/java`)에 포함시키지 않고, **`business-suite` 모듈의 `src/testFixtures/java`에 전적으로 격리**하여 설계했습니다. 이로 인해 `business-suite` 자체 테스트에서는 바로 활용할 수 있으며, 타 모듈(`api-server`)에서 재사용하려면 해당 모듈에 `testFixtures` 의존성(예: `testImplementation(testFixtures(project(":business-suite")))`)을 선언해야 합니다.
+개발 경험(DX)을 해치지 않기 위해 모든 테스트용 가드레일 클래스는 production artifact(`src/main/java`)에 포함시키지 않고, **재사용 코어인 `business-core` 모듈의 `src/testFixtures/java`(패키지 `nuri.business.core.harness`)에 격리**하여 설계했습니다. 이로 인해 `business-core` 자체 테스트에서는 바로 활용할 수 있으며, 상위 모듈(`business-app`·`api-server`)은 `testFixtures` 의존성(예: `testImplementation(testFixtures(project(":business-core")))`)을 선언해 재사용합니다.
 
 ### 2.1 `QueryCountInspector.java` (ThreadLocal Counter)
-* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountInspector.java`
+* **경로**: `business-core/src/testFixtures/java/nuri/business/core/harness/QueryCountInspector.java`
 * **역할**: 현재 실행 중인 테스트 스레드에 로컬 쿼리 카운터를 할당 및 관리합니다.
 ```java
 package nuri.business.core.harness;
@@ -104,7 +104,7 @@ public class QueryCountInspector {
 ```
 
 ### 2.2 `HibernateQueryCounterInspector.java` (Hibernate Interceptor)
-* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/HibernateQueryCounterInspector.java`
+* **경로**: `business-core/src/testFixtures/java/nuri/business/core/harness/HibernateQueryCounterInspector.java`
 * **역할**: 하이버네이트의 `StatementInspector`를 구현하여, SQL 질의가 들어오는 즉시 카운터를 1 올립니다.
 ```java
 package nuri.business.core.harness;
@@ -123,7 +123,7 @@ public class HibernateQueryCounterInspector implements StatementInspector {
 ```
 
 ### 2.3 `HibernateHarnessConfig.java` (JPA Customizer)
-* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/HibernateHarnessConfig.java`
+* **경로**: `business-core/src/testFixtures/java/nuri/business/core/harness/HibernateHarnessConfig.java`
 * **역할**: Spring Boot JPA Auto-Configuration 시점에 위의 Inspector를 Hibernate Session Factory에 동적으로 영구 주입합니다.
 ```java
 package nuri.business.core.harness;
@@ -142,7 +142,7 @@ public class HibernateHarnessConfig {
 ```
 
 ### 2.4 `QueryCountGuard.java` (Meta-Annotation)
-* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountGuard.java`
+* **경로**: `business-core/src/testFixtures/java/nuri/business/core/harness/QueryCountGuard.java`
 * **역할**: 테스트 또는 클래스 단위로 적용 가능한 세이프가드 선언용 커스텀 메타 애노테이션입니다.
 ```java
 package nuri.business.core.harness;
@@ -162,7 +162,7 @@ public @interface QueryCountGuard {
 ```
 
 ### 2.5 `QueryCountGuardExtension.java` (JUnit 5 Lifecycle Engine)
-* **경로**: `business-suite/src/testFixtures/java/nuri/business/core/harness/QueryCountGuardExtension.java`
+* **경로**: `business-core/src/testFixtures/java/nuri/business/core/harness/QueryCountGuardExtension.java`
 * **역할**: JUnit 테스트가 돌기 전에 카운터를 기동하고, 완료 후에 카운트가 `max`를 상회하면 `AssertionError`를 출력시킵니다.
 ```java
 package nuri.business.core.harness;
@@ -233,9 +233,9 @@ public class QueryCountGuardExtension implements BeforeEachCallback, AfterEachCa
 
 ## 3. 실증적 검증 테스트 (`QueryCountGuardrailIntegrationTest.java`)
 
-하네스 가드레일이 하이버네이트 쿼리를 정확히 감지 및 통제하는지 실증하기 위해 `business-suite` 모듈에 통합 테스트를 작성하고 실행했습니다.
+하네스 가드레일이 하이버네이트 쿼리를 정확히 감지 및 통제하는지 실증하기 위해, `AddressBookService`(business-app 도메인)를 사용하는 통합 테스트를 `business-app` 모듈에 작성하고 실행했습니다.
 
-* **경로**: `business-suite/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java`
+* **경로**: `business-app/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java`
 ```java
 package nuri.business.harness;
 

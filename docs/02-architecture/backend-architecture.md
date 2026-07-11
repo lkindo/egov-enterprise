@@ -6,47 +6,53 @@
 
 ## 1. 멀티 모듈 아키텍처 & 단방향 의존성 흐름
 
-eGov Enterprise 백엔드는 **Gradle 9.4.1** 기반의 고유한 3계층 멀티 모듈 구조로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다.
+eGov Enterprise 백엔드는 **Gradle 9.4.1** 기반의 계층형 멀티 모듈 구조(`foundation` ← `business-core` ← `business-app` ← `api-server`)로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다. 레거시 이관 CLI인 `migration-tool`은 이 계층에 의존하지 않는 독립 모듈로 분리되어 있다.
 
 ```mermaid
 graph TD
     api["📦 api-server<br>(Web Controller & REST API Layer)"]
-    biz["📦 business-suite<br>(Core Domain & Business Service Layer)"]
-    fnd["📦 foundation<br>(Common Infrastructure, Security & Database Utilities)"]
+    app["📦 business-app<br>(Project Domain Service Layer)"]
+    core["📦 business-core<br>(Reusable Admin Core Domain & Service)"]
+    fnd["📦 foundation<br>(Common Contracts, Security Backbone & Utilities)"]
+    mig["📦 migration-tool<br>(Legacy → 표준 스키마 이관 ETL CLI · foundation 미의존 독립)"]
 
-    api --> biz
-    biz --> fnd
-    api -.->|🚫 역참조 금지| fnd
+    api --> app
+    app --> core
+    core --> fnd
 
     style api fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#f8fafc
-    style biz fill:#334155,stroke:#1e293b,stroke-width:2px,color:#f8fafc
+    style app fill:#293548,stroke:#1e293b,stroke-width:2px,color:#f8fafc
+    style core fill:#334155,stroke:#1e293b,stroke-width:2px,color:#f8fafc
     style fnd fill:#475569,stroke:#334155,stroke-width:2px,color:#f8fafc
+    style mig fill:#334155,stroke:#1e293b,stroke-width:2px,color:#f8fafc,stroke-dasharray: 4 3
 ```
 
 ### 1.1 모듈별 격리 경계 및 책임 명세
 
 | 모듈명 | 패키지 루트 | 핵심 책임 (Responsibility) | 허용 의존 모듈 |
 |:---|:---|:---|:---|
-| **api-server** | `nuri.server` | REST Controller, OpenAPI 명세 생성, 요청 검증, 예외 핸들링 | `business-suite` |
-| **business-suite** | `nuri.suite` | Domain Service, 엔티티 비즈니스 로직, DTO 변환 및 매핑, 데이터 엑세스(Repository) | `foundation` |
-| **foundation** | `nuri.foundation` | 공통 유틸리티(Security, ID 발급), 글로벌 공통 Entity(`BaseEntity`), 캐시/로깅 설정 | 없음 (독립 모듈) |
+| **api-server** | `nuri.api` | REST Controller, OpenAPI 명세 생성, 요청 검증, 예외 핸들링 | `business-app`, `business-core`, `foundation` |
+| **business-app** | `nuri.business` | 프로젝트 고유 도메인 서비스(board·schedule·notification·informalsanction·memoreport·operation 등) | `business-core` |
+| **business-core** | `nuri.business` | 재사용 admin 코어 도메인(user·auth·menu·code·organization·system·survey 등), 제네릭 CRUD(`BaseCrudController`/`BaseCrudService`), 보안 유틸(`SecurityUtil`), 테스트 하네스 | `foundation` |
+| **foundation** | `nuri.foundation` | 공통 계약(`ApiResponse`·`PageResponse`·`ErrorCode`·`GlobalExceptionHandler`), 글로벌 공통 Entity(`BaseEntity`/`BaseTimeEntity`), 보안 백본(JWT/IAM/filter), `DashboardItemProvider` 포트, auto-configuration | 없음 (독립 모듈) |
+| **migration-tool** | `nuri.migration` | 레거시→표준 스키마 이관 ETL CLI(mapping.yml DSL·SourceIntrospector·EtlExecutor·MigrationVerifier) | 없음 (foundation 미의존 독립) |
 
 > [!WARNING]
 > **순환 의존성 및 역참조 철저 차단**
-> `api-server`는 `foundation` 모듈의 내부 구현체를 직접 참조해서는 안 되며, 반드시 `business-suite`가 제공하는 도메인 서비스 인터페이스를 거쳐 연동되어야 한다. 이를 위반할 시 빌드 시점에 차단된다.
+> `api-server`는 도메인 로직에 접근할 때 반드시 `business-app`/`business-core`가 제공하는 도메인 서비스 인터페이스를 거치며, 공통 계약(`ApiResponse`·`ErrorCode`·`PageResponse`)은 `foundation`에서 직접 취한다. 형제 도메인 간 직접 결합은 `DomainIsolationTest`(ArchUnit)가, 순환 의존은 빌드 시점에 각각 차단한다.
 
 ---
 
 ## 2. 영속성 데이터 레이어 격리 (Entity 가두기)
 
-백엔드 헌법 제3조에 의거하여, **JPA Entity 객체는 영속성 레이어(`business-suite` 내부)에 완전히 갇혀 있어야 하며, API 프레젠테이션 레이어로 직접 흘러가서는 안 된다.**
+백엔드 헌법 제3조에 의거하여, **JPA Entity 객체는 영속성 레이어(`business-core`/`business-app` 내부)에 완전히 갇혀 있어야 하며, API 프레젠테이션 레이어로 직접 흘러가서는 안 된다.**
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Client as Client Component
     participant Ctrl as api-server Controller
-    participant Svc as business-suite Service
+    participant Svc as business-app Service
     participant Repo as JPA Repository
     participant DB as OCI PostgreSQL
 
@@ -55,9 +61,9 @@ sequenceDiagram
     Svc->>Repo: findAll(pageable)
     Repo->>DB: SELECT * FROM tb_bbs_master...
     DB-->>Repo: Return Result
-    Note over Svc,Repo: [JPA Entity 범위]<br>nuri.suite.domain.BoardEntity
+    Note over Svc,Repo: [JPA Entity 범위]<br>nuri.business.domain.board.Board
     Repo-->>Svc: Return Entity List
-    Note over Svc: [DTO 변환 집행]<br>BoardEntity ➔ BoardResponseDto
+    Note over Svc: [DTO 변환 집행 · MapStruct]<br>Board ➔ BoardResponseDto
     Svc-->>Ctrl: Return DTO List (BoardResponseDto)
     Ctrl-->>Client: Return REST Response (JSON)
 ```
@@ -65,12 +71,12 @@ sequenceDiagram
 ### 2.1 레이어 간 격리 규칙
 
 1. **JPA Entity 은닉**: 
-   - `nuri.suite.domain.*` 패키지에 위치한 모든 JPA Entity 클래스는 Controller의 메서드 파라미터나 반환 타입으로 절대 사용할 수 없다.
+   - `nuri.business.domain.*` 패키지에 위치한 모든 JPA Entity 클래스는 Controller의 메서드 파라미터나 반환 타입으로 절대 사용할 수 없다.
    - 프론트엔드로 나가는 모든 데이터와 컨트롤러로 들어오는 모든 요청은 전용 DTO(`BoardRequestDto`, `BoardResponseDto`) 클래스로 100% 매핑하여 처리한다.
    - DTO는 불변성과 가독성을 위해 Java **Record** 클래스 사용을 권장한다. [백엔드 헌법 제12조]
 2. **DTO 매퍼(Mapper) 적용**:
    - Entity ➔ DTO 변환은 서비스 레이어의 종결 시점(Service Method return 직전)에 수행한다.
-   - 복잡한 매핑 연산 시 가독성을 높이기 위해 `MapStruct` 라이브러리 사용을 적극 권장하며, 수동 매핑 시 static `from()` 메서드를 정의한다.
+   - 엔티티↔DTO 매핑 표준은 **`MapStruct`**(`@Mapper(componentModel = "spring")`)이며, 매퍼 대부분이 컴파일타임 `@Mapper`로 생성된다. 복잡하거나 외부 호출을 수반하는 일부 DTO에 한해 수동 static `from()` 메서드를 점진적으로 보존한다.
 3. **도메인 캡슐화 원칙**:
    - 비즈니스 규칙과 상태 전이 로직은 Entity 내부 메서드에 캡슐화하여 도메인 모델의 자율성을 보장한다. Service는 트랜잭션 경계 관리와 흐름 제어에 집중한다. [백엔드 헌법 제5조]
 4. **N+1 쿼리 방어**:
@@ -87,7 +93,7 @@ sequenceDiagram
 - 이는 JPA의 영속성 컨텍스트 플러시(Flush) 모드를 `MANUAL`로 작동시켜 불필요한 더티 체킹(Dirty Checking) 부하를 방지하고 OCI DB 복제(Replica) 노드로 조회를 분산시킬 수 있는 기반이 된다.
 
 ```java
-package nuri.suite.service;
+package nuri.business.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -140,16 +146,16 @@ public class BoardService {
 백엔드 헌법 제8조에 의거하여, API 컨트롤러 호출 시 **Spring Security Filter Chain**에 의해 검증된 JWT 토큰은 `ThreadLocal` 기반의 SecurityContextHolder에 적재되며, 모든 비즈니스 인가는 이를 기반으로 재검증된다.
 - **Java 21 Virtual Threads 연계**: 비동기 루프나 가상 스레드(`Virtual Threads`) 풀을 자율 기동할 경우 기본 `ThreadLocal`은 컨텍스트가 상속되지 않는다. 비동기 스레드로 SecurityContext를 전파해야 할 시 반드시 Spring Security가 지원하는 `DelegatingSecurityContextExecutorService` 등의 래퍼를 활용해 위임(Context Propagation) 처리해야 한다.
 
-📦 **패키지 경로**: `nuri.foundation.security.util.SecurityUtil`
+📦 **패키지 경로**: `nuri.business.security.util.SecurityUtil` (business-core)
 
 ### 5.1 SecurityUtil을 통한 보안 검증 사용 예시
 
 컨트롤러에서 인가를 넘겨받더라도, 비즈니스 레이어의 안전을 보호하기 위해 서비스 메서드 내부에서 아래와 같이 **이중 권한 재검증(Defence in Depth)**을 상시 기동해야 한다.
 
 ```java
-package nuri.suite.service;
+package nuri.business.service;
 
-import nuri.foundation.security.util.SecurityUtil;
+import nuri.business.security.util.SecurityUtil;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -190,5 +196,5 @@ public class DocumentService {
 - 일시적 네트워크 장애로 인한 실패는 `@Retryable`을 활용해 방어하며, 장애가 지속될 경우 `Resilience4j` 등의 서킷 브레이커를 통해 외부 호출을 즉시 차단(Fail-Fast)하여 시스템을 보호한다.
 
 ---
-*Last Updated: 2026-05-19 (Backend Layered Architecture & Security Context Hardening Reference Added)*
+*Last Updated: 2026-07-12 (모듈 재편 현행화: business-suite → business-core/business-app 분할, migration-tool 신설, MapStruct 매핑 표준화, foundation 공통계약·BaseEntity 승격. 이전: 2026-05-19)*
 *Governed by: Backend API Governance Constitution (18 Articles)*

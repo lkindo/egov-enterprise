@@ -37,10 +37,10 @@ egov:
 ### 분석 스크립트 실행
 
 ```bash
-# PostgreSQL 연결 (OCI PostgreSQL 17 — application.yml 활성 데이터소스)
-# 로컬: psql -h localhost -p 5432 -U egov -d egovdb
+# PostgreSQL 연결 (기본 활성 데이터소스: 로컬 PostgreSQL 17 — application.yml 기본값, 빈 DB 부팅 가능)
+# (원격/E2E) OCI PostgreSQL 17: psql -h 129.154.54.178 -p 5432 -U egov -d egovdb  (application-e2e.yml)
 # (레거시/선택) 원격 Supabase pooler: psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
-psql -h 129.154.54.178 -p 5432 -U egov -d egovdb
+psql -h localhost -p 5432 -U egov -d egovdb
 
 # 분석 스크립트 실행
 \i config/db/performance-analysis.sql
@@ -299,4 +299,4 @@ Prometheus 엔드포인트: `http://localhost:8080/actuator/prometheus`
 
 ---
 
-*Last Updated: 2026-05-01 (Updated via Antigravity — DB connection info synchronized)*
+*Last Updated: 2026-07-12 (Updated via Claude Code — 활성 데이터소스 현행화: 로컬 PostgreSQL 기본값·빈 DB 부팅 가능, OCI 호스트는 E2E 참조로 격하)*

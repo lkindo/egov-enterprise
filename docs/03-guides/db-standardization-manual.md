@@ -1,6 +1,6 @@
 # Database Standardization & Governance Manual
 
-본 매뉴얼은 **eGov Enterprise v5** 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 이행하기 위한 공식 실무 가이드라인이다. 본 문서는 **DB 표준화 헌법 (10조)**의 기본 정신을 현업 테이블 설계 및 마이그레이션에 투영하는 **실무 가이드**다. (표준의 유일 진실원천(SSOT)은 DB 메타 테이블 `meta_standard_words`/`meta_standard_terms`/`meta_standard_domains`이며(DB 헌법 제2조), 규범 원본은 [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)이다. 91개 OCI PostgreSQL 테이블에 이 표준을 일관 적용한다.)
+본 매뉴얼은 **eGov Enterprise v5** 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 이행하기 위한 공식 실무 가이드라인이다. 본 문서는 **DB 표준화 헌법 (10조)**의 기본 정신을 현업 테이블 설계 및 마이그레이션에 투영하는 **실무 가이드**다. (표준의 유일 진실원천(SSOT)은 DB 메타 테이블 `meta_standard_words`/`meta_standard_terms`/`meta_standard_domains`이며(DB 헌법 제2조), 규범 원본은 [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)이다. 101개 OCI PostgreSQL 테이블에 이 표준을 일관 적용한다.)
 
 ---
 

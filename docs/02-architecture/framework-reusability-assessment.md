@@ -5,6 +5,13 @@
 > **분석 방법**: 10개 아키텍처 차원을 병렬 심층 감사(파일 실측 기반) + 완결성 비평(cross-cutting) + 최상위 파급 주장 3건 메인 오퍼레이터 직접 재검증.
 > **작성일**: 2026-07-11 · **작성**: Claude Code (dual-operator) · **등급**: L2 (다중 모듈·아키텍처 분석)
 
+> **⏱ 현행화 노트 (2026-07-12)**: 본 문서는 **2026-07-11 리팩터 착수 전 스냅샷**이다. §6 로드맵(Phase 1~3)은 이후 실행되어 아래 구조 변경이 **완료**되었으므로, §0~§5·§7 본문의 "현재 한계" 서술(특히 `business-suite` 모놀리스·빈 DB 부팅 불가·foundation 껍데기)은 **진단 시점(before) 기준**으로 읽는다.
+> - **모듈 분할**: `business-suite` 모놀리스 → **`business-core`**(재사용 admin 코어) + **`business-app`**(프로젝트 도메인) 분할, **`migration-tool`**(레거시 이관 ETL CLI, foundation 미의존) 신설. 현 모듈 = `foundation`·`business-core`·`business-app`·`api-server`·`migration-tool`.
+> - **foundation 승격**: `GlobalExceptionHandler`·`BaseEntity`/`BaseTimeEntity`·`PageResponse`·`ApiResponse`·보안 백본(JWT/IAM/filter)·`ErrorCode`(인터페이스+도메인별 enum)·`DashboardItemProvider` 포트·auto-configuration 이관.
+> - **DB 베이스라인**: 레거시 V1.x 제거 → `V2_0__baseline`(101 테이블)+`V2_1`(메타표준 시드)+`V2_2`(admin 시드)+`R__seed_framework`/`R__seed_demo` → **빈 Postgres 부팅 가능**(Docker 실증, baseline-version 2.1).
+> - **생산성·거버넌스**: MapStruct 매핑 표준화(`@Mapper` componentModel="spring"), 제네릭 CRUD(`BaseCrudController`/`BaseCrudService`), `DomainIsolationTest`(ArchUnit 도메인 격리), next-intl i18n, 동일출처 프록시·브랜딩 토큰화, 시크릿 외부화·prod fail-fast.
+> 레거시 이관 도구 상세 설계는 [legacy-migration-tool-design.md](./legacy-migration-tool-design.md) 참조.
+
 ---
 
 ## 0. 한 문단 결론 (Executive Verdict)
