@@ -4,11 +4,14 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
 import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.business.service.usermanagement.dto.DeptManageMapper;
+import nuri.business.service.usermanagement.dto.DeptManageMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,6 +32,10 @@ class DeptManageServiceTest {
 
     @Mock
     private DeptManageRepository deptManageRepository;
+
+    // 실제 MapStruct 생성 구현(DeptManageMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
+    @Spy
+    private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();
 
     @InjectMocks
     private DeptManageServiceImpl deptManageService;

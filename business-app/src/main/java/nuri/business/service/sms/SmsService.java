@@ -9,6 +9,8 @@ import nuri.business.domain.sms.SmsRecptnRepository;
 import nuri.business.domain.sms.SmsRepository;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.sms.dto.SmsMapper;
+import nuri.business.service.sms.dto.SmsRecptnMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,6 +33,8 @@ public class SmsService implements EgovSmsService {
     private final SmsRepository smsRepository;
     private final SmsRecptnRepository smsRecptnRepository;
     private final SmsAsyncProcessor smsAsyncProcessor;
+    private final SmsMapper smsMapper;
+    private final SmsRecptnMapper smsRecptnMapper;
 
     @Override
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
@@ -41,14 +45,14 @@ public class SmsService implements EgovSmsService {
     @Override
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching SMS with condition: {}, keyword: {}", searchCondition, searchKeyword);
-        return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(SmsDto::from);
+        return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
     }
 
     @Override
     public SmsDto getSms(String smsId) {
         log.debug("Fetching SMS details for ID: {}", smsId);
         return smsRepository.findById(Objects.requireNonNull(smsId))
-                .map(SmsDto::from)
+                .map(smsMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -90,7 +94,7 @@ public class SmsService implements EgovSmsService {
     @Override
     public List<SmsRecptnDto> getSmsRecipients(String smsId) {
         return smsRecptnRepository.findByIdSmsId(smsId).stream()
-                .map(SmsRecptnDto::from)
+                .map(smsRecptnMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

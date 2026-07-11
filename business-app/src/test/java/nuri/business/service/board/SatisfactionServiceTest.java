@@ -3,11 +3,14 @@ package nuri.business.service.board;
 import nuri.business.domain.board.Satisfaction;
 import nuri.business.domain.board.SatisfactionRepository;
 import nuri.business.service.board.dto.SatisfactionDto;
+import nuri.business.service.board.dto.SatisfactionMapper;
+import nuri.business.service.board.dto.SatisfactionMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
@@ -23,6 +26,10 @@ class SatisfactionServiceTest {
 
     @Mock
     private SatisfactionRepository satisfactionRepository;
+
+    // 실제 MapStruct 생성 구현을 @InjectMocks 생성자에 주입 (매핑 동작 실검증)
+    @Spy
+    private SatisfactionMapper satisfactionMapper = new SatisfactionMapperImpl();
 
     @InjectMocks
     private SatisfactionService satisfactionService;

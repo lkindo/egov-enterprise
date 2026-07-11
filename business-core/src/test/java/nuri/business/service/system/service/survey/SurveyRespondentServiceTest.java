@@ -31,6 +31,9 @@ import static org.mockito.Mockito.times;
 @DisplayName("SurveyRespondentService 단위 테스트")
 class SurveyRespondentServiceTest {
 
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.SurveyRespondentMapper surveyRespondentMapper = new nuri.business.service.system.service.survey.dto.SurveyRespondentMapperImpl();
+
     @InjectMocks
     private SurveyRespondentService surveyRespondentService;
 

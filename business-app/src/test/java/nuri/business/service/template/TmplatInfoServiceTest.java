@@ -4,12 +4,15 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
+import nuri.business.service.template.dto.TemplateMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +29,10 @@ class TmplatInfoServiceTest {
 
     @Mock
     private TemplateRepository templateRepository;
+
+    // 실제 MapStruct 매퍼 구현체를 주입해 기존 매핑 검증 의미를 보존한다.
+    @Spy
+    private TemplateMapper templateMapper = Mappers.getMapper(TemplateMapper.class);
 
     @InjectMocks
     private TmplatInfoService tmplatInfoService;
@@ -68,8 +75,7 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 등록")
     void insertTmplatInfo() {
         // given
-        Template tmplat = Template.builder().tmpltNm("New Template").build();
-        TemplateDto tmplatDto = TemplateDto.from(tmplat);
+        TemplateDto tmplatDto = TemplateDto.builder().tmpltNm("New Template").build();
 
         // when
         tmplatInfoService.insertTmplatInfo(tmplatDto);

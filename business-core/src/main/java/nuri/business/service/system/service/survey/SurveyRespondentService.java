@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.survey.SurveyRespondent;
 import nuri.business.domain.system.service.survey.SurveyRespondentRepository;
 import nuri.business.service.system.service.survey.dto.SurveyRespondentDto;
+import nuri.business.service.system.service.survey.dto.SurveyRespondentMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,17 +20,18 @@ import java.util.Objects;
 public class SurveyRespondentService implements EgovSurveyRespondentService {
 
     private final SurveyRespondentRepository surveyRespondentRepository;
+    private final SurveyRespondentMapper surveyRespondentMapper;
 
     @Override
     public Page<SurveyRespondentDto> getSurveyRespondentList(String srvyId, String keyword, Pageable pageable) {
         return surveyRespondentRepository.findByRspdntNmContaining(keyword == null ? "" : keyword, pageable)
-                .map(SurveyRespondentDto::from);
+                .map(surveyRespondentMapper::toDto);
     }
 
     @Override
     public SurveyRespondentDto getSurveyRespondent(String respondentId) {
         return surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
-                .map(SurveyRespondentDto::from)
+                .map(surveyRespondentMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

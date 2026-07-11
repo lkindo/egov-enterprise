@@ -1,6 +1,8 @@
 package nuri.business.service.system.user.impl;
 
 import nuri.business.domain.user.dto.UserAbsenceDto;
+import nuri.business.domain.user.dto.UserAbsenceMapper;
+import nuri.business.domain.user.dto.UserAbsenceMapperImpl;
 import nuri.business.domain.user.entity.UserAbsence;
 import nuri.business.domain.user.repository.UserAbsenceRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -27,6 +30,10 @@ class UserAbsenceServiceImplTest {
 
     @Mock
     private UserAbsenceRepository userAbsenceRepository;
+
+    // MapStruct 컴파일타임 생성 구현체를 실제로 주입 (수기 from() 대체 매퍼)
+    @Spy
+    private UserAbsenceMapper userAbsenceMapper = new UserAbsenceMapperImpl();
 
     @Test
     @DisplayName("부재 목록 조회 성공")

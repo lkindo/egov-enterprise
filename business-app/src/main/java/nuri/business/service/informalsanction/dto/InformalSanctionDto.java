@@ -2,7 +2,6 @@ package nuri.business.service.informalsanction.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.informalsanction.InformalSanction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -68,22 +67,5 @@ public class InformalSanctionDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static InformalSanctionDto from(InformalSanction entity) {
-        if (entity == null)
-            return null;
-        return InformalSanctionDto.builder()
-                .ifmlAtrzId(entity.getIfmlAtrzId())
-                .taskSeCd(entity.getTaskSeCd())
-                .aplcntId(entity.getAplcntId())
-                .reqYmd(entity.getReqYmd())
-                .aprvrId(entity.getAprvrId())
-                .aprvYn(entity.getAprvYn())
-                .atrzDt(entity.getAtrzDt())
-                .rjctRsnCn(entity.getRjctRsnCn())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }
 

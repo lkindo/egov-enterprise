@@ -6,11 +6,14 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.consult.CnsltManage;
 import nuri.business.domain.system.service.consult.CnsltManageRepository;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;
+import nuri.business.service.system.service.consult.dto.CnsltManageMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,6 +40,10 @@ class CnsltServiceTest {
 
     @Mock
     private CnsltManageRepository cnsltManageRepository;
+
+    // 실제 생성된 MapStruct 매퍼를 spy 로 주입해 기존 from() 과 동일한 매핑 동작을 유지한다.
+    @Spy
+    private CnsltManageMapper cnsltManageMapper = Mappers.getMapper(CnsltManageMapper.class);
 
     @Test
     @DisplayName("상담 목록 조회 - 키워드 없음")

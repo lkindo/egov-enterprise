@@ -7,6 +7,7 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeRepository;
 import nuri.business.service.code.dto.CommonCodeDto;
+import nuri.business.service.code.dto.CommonCodeMapper;
 import nuri.business.service.code.dto.CommonCodeSaveRequest;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -36,15 +37,18 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         private final CommonCodeRepository commonCodeRepository;
         private final CommonCodeCategoryRepository commonCodeCategoryRepository;
         private final CommonCodeGroupRepository commonCodeGroupRepository;
+        private final CommonCodeMapper commonCodeMapper;
 
         public CommonCodeService(CommonCodeRepository commonCodeRepository,
                         CommonCodeCategoryRepository commonCodeCategoryRepository,
-                        CommonCodeGroupRepository commonCodeGroupRepository) {
+                        CommonCodeGroupRepository commonCodeGroupRepository,
+                        CommonCodeMapper commonCodeMapper) {
                 this.commonCodeRepository = required(commonCodeRepository, "CommonCodeRepository 는 null 일 수 없습니다");
                 this.commonCodeCategoryRepository = required(commonCodeCategoryRepository,
                                 "CommonCodeCategoryRepository 는 null 일 수 없습니다");
                 this.commonCodeGroupRepository = required(commonCodeGroupRepository,
                                 "CommonCodeGroupRepository 는 null 일 수 없습니다");
+                this.commonCodeMapper = required(commonCodeMapper, "CommonCodeMapper 는 null 일 수 없습니다");
         }
 
         @Override
@@ -54,7 +58,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 return commonCodeRepository
                                 .findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
                                 .stream()
-                                .map(CommonCodeDto::from)
+                                .map(commonCodeMapper::toDto)
                                 .collect(Collectors.toList());
         }
 
@@ -82,7 +86,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .useYn(request.useYn())
                                 .build();
 
-                return CommonCodeDto.from(commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다")));
+                return commonCodeMapper.toDto(commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다")));
         }
         // --- 공통분류코드 (CmmnClCode) ---
 

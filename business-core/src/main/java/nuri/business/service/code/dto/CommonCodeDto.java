@@ -2,7 +2,6 @@ package nuri.business.service.code.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.code.CommonCode;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "공통코드 DTO")
@@ -16,13 +15,5 @@ public record CommonCodeDto(
         @Size(max = 4000) @Schema(description = "코드설명") String dtlCdExpln,
 
         @NotBlank @Size(max = 1) @Schema(description = "사용여부") String useYn) {
-    public static CommonCodeDto from(CommonCode entity) {
-        return new CommonCodeDto(
-                entity.getCdId(),
-                entity.getDtlCd(),
-                entity.getDtlCdNm(),
-                entity.getDtlCdExpln(),
-                entity.getUseYn());
-    }
 }
 

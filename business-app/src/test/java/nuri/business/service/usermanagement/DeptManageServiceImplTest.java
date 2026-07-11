@@ -3,11 +3,14 @@ package nuri.business.service.usermanagement;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
 import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.business.service.usermanagement.dto.DeptManageMapper;
+import nuri.business.service.usermanagement.dto.DeptManageMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +36,10 @@ class DeptManageServiceImplTest {
 
     @Mock
     private DeptManageRepository deptManageRepository;
+
+    // MapStruct 생성 구현체를 실제로 주입해 엔티티→DTO 매핑을 검증 (수기 from() 대체)
+    @Spy
+    private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();
 
     @Test
     @DisplayName("부서 목록 조회")

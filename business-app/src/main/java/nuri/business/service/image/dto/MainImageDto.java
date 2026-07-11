@@ -1,7 +1,6 @@
 package nuri.business.service.image.dto;
 
 import jakarta.validation.constraints.*;
-import nuri.business.domain.image.MainImage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,18 +46,4 @@ public class MainImageDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static MainImageDto from(MainImage entity) {
-        if (entity == null) return null;
-        return MainImageDto.builder()
-                .imgId(entity.getImgId())
-                .imgNm(entity.getImgNm())
-                .mainImgFilePath(entity.getMainImgFilePath())
-                .imgFileNm(entity.getImgFileNm())
-                .mainImgExpln(entity.getMainImgExpln())
-                .rfltYn(entity.getRfltYn())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

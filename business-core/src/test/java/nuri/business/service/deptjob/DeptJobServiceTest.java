@@ -8,6 +8,8 @@ import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.organization.OrganizationManage;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.business.service.deptjob.dto.DeptJobMapper;
+import nuri.business.service.deptjob.dto.DeptJobMapperImpl;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -44,6 +47,10 @@ class DeptJobServiceTest {
 
     @Mock
     private OrganizationManageRepository organizationManageRepository;
+
+    // 실제 MapStruct 생성 구현(DeptJobMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
+    @Spy
+    private DeptJobMapper deptJobMapper = new DeptJobMapperImpl();
 
     @InjectMocks
     private DeptJobService deptJobService;

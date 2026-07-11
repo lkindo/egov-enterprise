@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
+import nuri.business.service.template.dto.TemplateMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,31 +23,34 @@ import java.util.stream.Collectors;
 public class TemplateService implements EgovTemplateService {
 
     private final TemplateRepository templateRepository;
+    private final TemplateMapper templateMapper;
 
     public TemplateService(
-            @org.springframework.beans.factory.annotation.Qualifier("commonTemplateRepository") TemplateRepository templateRepository) {
+            @org.springframework.beans.factory.annotation.Qualifier("commonTemplateRepository") TemplateRepository templateRepository,
+            TemplateMapper templateMapper) {
         this.templateRepository = templateRepository;
+        this.templateMapper = templateMapper;
     }
 
     @Override
     public Page<TemplateDto> getTemplateList(String keyword, Pageable pageable) {
         Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
-            return templateRepository.findAll(pageable).map(TemplateDto::from);
+            return templateRepository.findAll(pageable).map(templateMapper::toDto);
         }
-        return templateRepository.findByTmpltNmContaining(keyword, pageable).map(TemplateDto::from);
+        return templateRepository.findByTmpltNmContaining(keyword, pageable).map(templateMapper::toDto);
     }
 
     @Override
     public Page<TemplateDto> getTemplatesByType(String tmpltSeCd, Pageable pageable) {
-        return templateRepository.findByTmpltSeCd(tmpltSeCd, pageable).map(TemplateDto::from);
+        return templateRepository.findByTmpltSeCd(tmpltSeCd, pageable).map(templateMapper::toDto);
     }
 
     @Override
     public TemplateDto getTemplate(String tmpltId) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        return TemplateDto.from(template);
+        return templateMapper.toDto(template);
     }
 
     @Override
@@ -87,14 +91,14 @@ public class TemplateService implements EgovTemplateService {
     @Override
     public List<TemplateDto> getActiveTemplates() {
         return templateRepository.findByUseYn("Y").stream()
-                .map(TemplateDto::from)
+                .map(templateMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TemplateDto> getActiveTemplatesByType(String tmpltSeCd) {
         return templateRepository.findByTmpltSeCdAndUseYn(tmpltSeCd, "Y").stream()
-                .map(TemplateDto::from)
+                .map(templateMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

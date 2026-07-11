@@ -2,7 +2,6 @@ package nuri.business.service.system.content.banner.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.content.banner.Banner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -50,20 +49,4 @@ public class BannerDto {
     private String frstRgtrId;
     @Schema(description = "생성 일시")
     private LocalDateTime crtDt;
-
-    public static BannerDto from(Banner entity) {
-        if (entity == null) return null;
-        return BannerDto.builder()
-                .bnrId(entity.getBnrId())
-                .bnrNm(entity.getBnrNm())
-                .linkUrl(entity.getLinkUrl())
-                .bnrImgNm(entity.getBnrImgNm())
-                .bnrExpln(entity.getBnrExpln())
-                .sortOrdr(entity.getSortOrdr())
-                .rfltYn(entity.getRfltYn())
-                .atchFileId(entity.getAtchFileId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

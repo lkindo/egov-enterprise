@@ -34,6 +34,9 @@ import static org.mockito.Mockito.mockStatic;
 @DisplayName("OnlinePollService 단위 테스트")
 class OnlinePollServiceTest {
 
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.OnlinePollArticleMapper onlinePollArticleMapper = new nuri.business.service.system.service.survey.dto.OnlinePollArticleMapperImpl();
+
     @InjectMocks
     private OnlinePollService onlinePollService;
 

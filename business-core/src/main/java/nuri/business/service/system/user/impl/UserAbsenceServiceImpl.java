@@ -1,6 +1,7 @@
 package nuri.business.service.system.user.impl;
 
 import nuri.business.domain.user.dto.UserAbsenceDto;
+import nuri.business.domain.user.dto.UserAbsenceMapper;
 import nuri.business.domain.user.entity.UserAbsence;
 import nuri.business.domain.user.repository.UserAbsenceRepository;
 import nuri.business.service.system.user.UserAbsenceService;
@@ -14,15 +15,17 @@ import java.util.List;
 public class UserAbsenceServiceImpl implements UserAbsenceService {
 
     private final UserAbsenceRepository userAbsenceRepository;
+    private final UserAbsenceMapper userAbsenceMapper;
 
-    public UserAbsenceServiceImpl(UserAbsenceRepository userAbsenceRepository) {
+    public UserAbsenceServiceImpl(UserAbsenceRepository userAbsenceRepository, UserAbsenceMapper userAbsenceMapper) {
         this.userAbsenceRepository = userAbsenceRepository;
+        this.userAbsenceMapper = userAbsenceMapper;
     }
 
     @Override
     public List<UserAbsenceDto> getAbsences() {
         return userAbsenceRepository.findAll().stream()
-                .map(UserAbsenceDto::from)
+                .map(userAbsenceMapper::toDto)
                 .toList();
     }
 
@@ -30,7 +33,7 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     public UserAbsenceDto getAbsence(String userId) {
         UserAbsence absence = userAbsenceRepository.findById(userId)
                 .orElse(UserAbsence.builder().userId(userId).userAbsnYn("N").build());
-        return UserAbsenceDto.from(absence);
+        return userAbsenceMapper.toDto(absence);
     }
 
     @Override

@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
 import nuri.business.service.system.content.banner.dto.BannerDto;
+import nuri.business.service.system.content.banner.dto.BannerMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,20 +22,21 @@ import java.util.stream.Collectors;
 public class BannerService implements EgovBannerService {
 
     private final BannerRepository bannerRepository;
+    private final BannerMapper bannerMapper;
 
     @Override
     public Page<BannerDto> getBannerList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(BannerDto::from);
+            return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(bannerMapper::toDto);
         }
         return bannerRepository.findByBnrNmContaining(keyword, Objects.requireNonNull(pageable))
-                .map(BannerDto::from);
+                .map(bannerMapper::toDto);
     }
 
     @Override
     public BannerDto getBanner(String bannerId) {
         return bannerRepository.findById(Objects.requireNonNull(bannerId))
-                .map(BannerDto::from)
+                .map(bannerMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -73,7 +75,7 @@ public class BannerService implements EgovBannerService {
     @Override
     public List<BannerDto> getReflectedBanners() {
         return bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y").stream()
-                .map(BannerDto::from)
+                .map(bannerMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

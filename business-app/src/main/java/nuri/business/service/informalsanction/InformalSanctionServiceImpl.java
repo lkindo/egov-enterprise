@@ -9,6 +9,7 @@ import nuri.business.domain.informalsanction.SanctionStatus;
 import nuri.business.service.code.EgovCommonCodeService;
 import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
+import nuri.business.service.informalsanction.dto.InformalSanctionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     private final InformalSanctionRepository informalSanctionRepository;
     private final EgovCommonCodeService commonCodeService;
     private final ApplicationEventPublisher eventPublisher;
+    private final InformalSanctionMapper informalSanctionMapper;
 
     @Override
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
@@ -153,6 +155,6 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     }
 
     private InformalSanctionDto convertToDto(InformalSanction entity) {
-        return InformalSanctionDto.from(entity);
+        return informalSanctionMapper.toDto(entity);
     }
 }

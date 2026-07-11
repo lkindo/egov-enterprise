@@ -1,7 +1,6 @@
 package nuri.business.service.help.dto;
 
 import jakarta.validation.constraints.*;
-import nuri.business.domain.help.OnlineManual;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,16 +47,5 @@ public class OnlineManualDto {
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
 
-    public static OnlineManualDto from(OnlineManual entity) {
-        if (entity == null) return null;
-        return OnlineManualDto.builder()
-                .onlnMnlId(entity.getOnlnMnlId())
-                .onlnMnlNm(entity.getOnlnMnlNm())
-                .onlnMnlSeCd(entity.getOnlnMnlSeCd())
-                .onlnMnlDfn(entity.getOnlnMnlDfn())
-                .onlnMnlExpln(entity.getOnlnMnlExpln())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 매핑은 OnlineManualMapper(MapStruct) 로 이관 (프레임워크 표준). 수기 from() 폐지.
 }

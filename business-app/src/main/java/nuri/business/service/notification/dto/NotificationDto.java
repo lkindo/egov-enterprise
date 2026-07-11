@@ -1,7 +1,6 @@
 package nuri.business.service.notification.dto;
 
 import jakarta.validation.constraints.*;
-import nuri.business.domain.notification.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -50,17 +49,4 @@ public class NotificationDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static NotificationDto from(Notification entity) {
-        return NotificationDto.builder()
-                .notiSn(entity.getNotiSn())
-                .notiTtlNm(entity.getNotiTtlNm())
-                .notiCn(entity.getNotiCn())
-                .rcvrId(entity.getRcvrId())
-                .readYn(entity.getReadYn())
-                .linkUrl(entity.getLinkUrl())
-                .notiDt(entity.getNotiDt())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

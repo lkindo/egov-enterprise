@@ -3,6 +3,7 @@ package nuri.business.service.faq;
 import nuri.business.domain.faq.Faq;
 import nuri.business.domain.faq.FaqRepository;
 import nuri.business.service.faq.dto.FaqDto;
+import nuri.business.service.faq.dto.FaqMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class FaqServiceTest {
     @Mock
     private FaqRepository faqRepository;
 
+    @Mock
+    private FaqMapper faqMapper;
+
     @InjectMocks
     private FaqService faqService;
 
@@ -43,6 +47,7 @@ class FaqServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Faq entity = Faq.builder().faqId("FAQ1").qstnTtl("Question 1").build();
         given(faqRepository.searchFaqs(anyString(), any())).willReturn(new PageImpl<>(List.of(entity)));
+        given(faqMapper.toDto(any(Faq.class))).willReturn(FaqDto.builder().faqId("FAQ1").build());
 
         // when
         Page<FaqDto> result = faqService.getFaqList("test", pageable);
@@ -58,6 +63,7 @@ class FaqServiceTest {
         String faqId = "FAQ1";
         Faq entity = Faq.builder().faqId(faqId).qstnTtl("Question 1").build();
         given(faqRepository.findById(faqId)).willReturn(Optional.of(entity));
+        given(faqMapper.toDto(entity)).willReturn(FaqDto.builder().faqId(faqId).build());
 
         // when
         FaqDto result = faqService.getFaq(faqId);

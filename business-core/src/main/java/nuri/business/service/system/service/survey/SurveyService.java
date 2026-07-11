@@ -8,6 +8,10 @@ import nuri.business.service.system.service.survey.dto.SurveyInfoDto;
 import nuri.business.service.system.service.survey.dto.SurveyTemplateDto;
 import nuri.business.service.system.service.survey.dto.SurveyArticleDto;
 import nuri.business.service.system.service.survey.dto.SurveyQuestionDto;
+import nuri.business.service.system.service.survey.dto.SurveyInfoMapper;
+import nuri.business.service.system.service.survey.dto.SurveyTemplateMapper;
+import nuri.business.service.system.service.survey.dto.SurveyArticleMapper;
+import nuri.business.service.system.service.survey.dto.SurveyQuestionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,21 +30,25 @@ public class SurveyService implements EgovSurveyService {
     private final SurveyInfoRepository infoRepository;
     private final SurveyQuestionRepository qesitmRepository;
     private final SurveyArticleRepository iemRepository;
+    private final SurveyTemplateMapper surveyTemplateMapper;
+    private final SurveyInfoMapper surveyInfoMapper;
+    private final SurveyQuestionMapper surveyQuestionMapper;
+    private final SurveyArticleMapper surveyArticleMapper;
 
     // 설문 템플릿
     @Override
     public Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(SurveyTemplateDto::from);
+            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(surveyTemplateMapper::toDto);
         }
         return tmplatRepository.findBySrvyTmpltTypeCdContaining(keyword, Objects.requireNonNull(pageable))
-                .map(SurveyTemplateDto::from);
+                .map(surveyTemplateMapper::toDto);
     }
 
     @Override
     public SurveyTemplateDto getTmplat(String tmplatId) {
         return tmplatRepository.findById(Objects.requireNonNull(tmplatId))
-                .map(SurveyTemplateDto::from)
+                .map(surveyTemplateMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -74,16 +82,16 @@ public class SurveyService implements EgovSurveyService {
     @Override
     public Page<SurveyInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return infoRepository.findAll(Objects.requireNonNull(pageable)).map(SurveyInfoDto::from);
+            return infoRepository.findAll(Objects.requireNonNull(pageable)).map(surveyInfoMapper::toDto);
         }
         return infoRepository.findBySrvyTtlContaining(keyword, Objects.requireNonNull(pageable))
-                .map(SurveyInfoDto::from);
+                .map(surveyInfoMapper::toDto);
     }
 
     @Override
     public SurveyInfoDto getSurvey(String qustnrId) {
         return infoRepository.findById(Objects.requireNonNull(qustnrId))
-                .map(SurveyInfoDto::from)
+                .map(surveyInfoMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -125,7 +133,7 @@ public class SurveyService implements EgovSurveyService {
     public List<SurveyQuestionDto> getQuestionList(String qustnrId) {
         return qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId)).stream()
                 .map(q -> {
-                    SurveyQuestionDto dto = SurveyQuestionDto.from(q);
+                    SurveyQuestionDto dto = surveyQuestionMapper.toDto(q);
                     dto.setItems(getItemList(q.getSrvyQstnId()));
                     return dto;
                 })
@@ -135,7 +143,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     public SurveyQuestionDto getQuestion(String qesitmId) {
         return qesitmRepository.findById(Objects.requireNonNull(qesitmId))
-                .map(SurveyQuestionDto::from)
+                .map(surveyQuestionMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -172,7 +180,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     public List<SurveyArticleDto> getItemList(String qesitmId) {
         return iemRepository.findBySrvyQstnIdOrderByArtclSnAsc(Objects.requireNonNull(qesitmId)).stream()
-                .map(SurveyArticleDto::from)
+                .map(surveyArticleMapper::toDto)
                 .collect(Collectors.toList());
     }
 

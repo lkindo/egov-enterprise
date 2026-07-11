@@ -2,7 +2,6 @@ package nuri.business.service.system.service.consult.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.service.consult.CnsltManage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -96,32 +95,4 @@ public class CnsltManageDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static CnsltManageDto from(CnsltManage entity) {
-        if (entity == null)
-            return null;
-        return CnsltManageDto.builder()
-                .dscsnId(entity.getDscsnId())
-                .dscsnTtl(entity.getDscsnTtl())
-                .dscsnCn(entity.getDscsnCn())
-                .rlsYn(entity.getRlsYn())
-                .wrtPswd(entity.getWrtPswd())
-                .wrterNm(entity.getWrterNm())
-                .areaNo(entity.getAreaNo())
-                .mdTelno(entity.getMdTelno())
-                .endTelno(entity.getEndTelno())
-                .mblFrstTelno(entity.getMblFrstTelno())
-                .mblMdTelno(entity.getMblMdTelno())
-                .mblEndTelno(entity.getMblEndTelno())
-                .emlAddr(entity.getEmlAddr())
-                .emlAnsYn(entity.getEmlAnsYn())
-                .inqCnt(entity.getInqCnt())
-                .qnaProcSttsCd(entity.getQnaProcSttsCd())
-                .atchFileId(entity.getAtchFileId())
-                .procCn(entity.getProcCn())
-                .mngYmd(entity.getMngYmd())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

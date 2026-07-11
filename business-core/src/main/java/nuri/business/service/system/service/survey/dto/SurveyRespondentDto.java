@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.service.survey.SurveyRespondent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,24 +71,4 @@ public class SurveyRespondentDto {
 
     @Schema(description = "최종 수정 일시")
     private LocalDateTime mdfcnDt;
-
-    public static SurveyRespondentDto from(SurveyRespondent entity) {
-        if (entity == null) return null;
-        return SurveyRespondentDto.builder()
-                .srvyRspdntId(entity.getSrvyRspdntId())
-                .srvyId(entity.getSrvyId())
-                .srvyTmpltId(entity.getSrvyTmpltId())
-                .gndrCd(entity.getGndrCd())
-                .crTypeCd(entity.getCrTypeCd())
-                .rspdntNm(entity.getRspdntNm())
-                .brdt(entity.getBrdt())
-                .rgnTelno(entity.getRgnTelno())
-                .midTelno(entity.getMidTelno())
-                .endTelno(entity.getEndTelno())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .build();
-    }
 }

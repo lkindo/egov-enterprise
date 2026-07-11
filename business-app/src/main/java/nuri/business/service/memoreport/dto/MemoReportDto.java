@@ -2,7 +2,6 @@ package nuri.business.service.memoreport.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.memoreport.MemoReport;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,20 +57,5 @@ public class MemoReportDto {
     @Schema(description = "생성일시")
     private LocalDateTime crtDt;
 
-    public static MemoReportDto from(MemoReport entity) {
-        if (entity == null) return null;
-        return MemoReportDto.builder()
-                .rptId(entity.getRptId())
-                .rptTtl(entity.getRptTtl())
-                .memoRptYmd(entity.getMemoRptYmd()) 
-                .userId(entity.getUserId())
-                .rptrId(entity.getRptrId())
-                .rptCn(entity.getRptCn())
-                .atchFileId(entity.getAtchFileId())
-                .drctnMttr(entity.getDrctnMttr())
-                .drctnMttrRegDt(entity.getDrctnMttrRegDt())
-                .rptrInqDt(entity.getRptrInqDt())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }

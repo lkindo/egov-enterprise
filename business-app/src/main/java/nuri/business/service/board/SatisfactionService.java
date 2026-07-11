@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.board.Satisfaction;
 import nuri.business.domain.board.SatisfactionRepository;
 import nuri.business.service.board.dto.SatisfactionDto;
+import nuri.business.service.board.dto.SatisfactionMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class SatisfactionService extends BaseAbstractService {
 
     private final SatisfactionRepository satisfactionRepository;
+    private final SatisfactionMapper satisfactionMapper;
 
     @Transactional
     public void createSatisfaction(String userId, SatisfactionDto dto) {
@@ -74,7 +76,7 @@ public class SatisfactionService extends BaseAbstractService {
     public List<SatisfactionDto> getSatisfactionList(String bbsId, String pstId) {
         List<Satisfaction> list = satisfactionRepository.findByPstIdAndBbsIdAndUseYn(pstId, bbsId, "Y");
         return list.stream()
-                .map(SatisfactionDto::from)
+                .map(satisfactionMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -84,7 +86,7 @@ public class SatisfactionService extends BaseAbstractService {
 
     public SatisfactionDto getSatisfaction(Long satisfactionId) {
         return satisfactionRepository.findById(satisfactionId)
-                .map(SatisfactionDto::from)
+                .map(satisfactionMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

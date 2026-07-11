@@ -13,6 +13,7 @@ import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.service.board.dto.BoardDto;
+import nuri.business.service.board.dto.BoardMapper;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
@@ -50,6 +51,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
         private final BoardViewCountService viewCountService;
+        private final BoardMapper boardMapper;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
@@ -57,7 +59,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         EgovFileService fileService,
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
-                        BoardViewCountService viewCountService) {
+                        BoardViewCountService viewCountService,
+                        BoardMapper boardMapper) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
@@ -65,6 +68,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 this.eventPublisher = required(eventPublisher, "eventPublisher 는 null 일 수 없습니다");
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
+                this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
         }
 
 
@@ -118,7 +122,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 condition.validateDates();
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
-                                .map(BoardDto::from);
+                                .map(boardMapper::toDto);
 
         }
 
@@ -320,7 +324,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 // Redis 기반 쓰기 지연 처리
                 viewCountService.increaseViewCount(pstId);
 
-                return BoardDto.from(detail);
+                return boardMapper.toDto(detail);
         }
 
         @Override

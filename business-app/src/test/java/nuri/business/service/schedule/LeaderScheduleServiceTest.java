@@ -4,6 +4,8 @@ import nuri.business.domain.schedule.LeaderSchedule;
 import nuri.business.domain.schedule.LeaderScheduleRepository;
 import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
+import nuri.business.service.schedule.dto.LeaderStatusDto;
+import nuri.business.service.schedule.dto.LeaderStatusMapper;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +37,9 @@ class LeaderScheduleServiceTest {
 
     @Mock
     private EgovIdGnrService egovLeaderSchdlIdGnrService;
+
+    @Mock
+    private LeaderStatusMapper leaderStatusMapper;
 
     @InjectMocks
     private LeaderScheduleService leaderScheduleService;
@@ -137,6 +142,8 @@ class LeaderScheduleServiceTest {
                 .leaderSttsCd("1")
                 .build();
         given(leaderStatusRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(leaderStatusMapper.toDto(any())).willReturn(
+                LeaderStatusDto.builder().leaderId("leader1").leaderSttsCd("1").build());
 
         // when
         Page<nuri.business.service.schedule.dto.LeaderStatusDto> result = leaderScheduleService.getLeaderStatusList(null, pageable);
@@ -157,6 +164,8 @@ class LeaderScheduleServiceTest {
                 .leaderSttsCd("1")
                 .build();
         given(leaderStatusRepository.findByLeaderIdContaining("leader", pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(leaderStatusMapper.toDto(any())).willReturn(
+                LeaderStatusDto.builder().leaderId("leader1").leaderSttsCd("1").build());
 
         // when
         Page<nuri.business.service.schedule.dto.LeaderStatusDto> result = leaderScheduleService.getLeaderStatusList("leader", pageable);

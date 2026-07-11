@@ -29,6 +29,9 @@ import static org.mockito.Mockito.times;
 @DisplayName("EventInfoService 단위 테스트")
 class EventInfoServiceTest {
 
+    @org.mockito.Spy
+    nuri.business.service.operation.dto.EventInfoMapper eventInfoMapper = new nuri.business.service.operation.dto.EventInfoMapperImpl();
+
     @InjectMocks
     private EventInfoService eventInfoService;
 

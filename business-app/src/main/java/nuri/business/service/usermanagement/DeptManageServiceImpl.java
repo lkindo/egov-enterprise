@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
 import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.business.service.usermanagement.dto.DeptManageMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,16 +20,17 @@ import java.util.Objects;
 public class DeptManageServiceImpl implements EgovDeptManageService {
 
     private final DeptManageRepository deptManageRepository;
+    private final DeptManageMapper deptManageMapper;
 
     @Override
     public Page<DeptManageDto> getDeptManageList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
-        return deptManageRepository.searchDeptManages(keyword, pageable).map(DeptManageDto::from);
+        return deptManageRepository.searchDeptManages(keyword, pageable).map(deptManageMapper::toDto);
     }
 
     @Override
     public DeptManageDto getDeptManage(String ognzId) {
         return deptManageRepository.findById(Objects.requireNonNull(ognzId))
-                .map(DeptManageDto::from)
+                .map(deptManageMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

@@ -7,6 +7,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.program.dto.ProgramDto;
+import nuri.business.service.program.dto.ProgramMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class ProgramService {
 
     private final ProgramRepository programRepository;
+    private final ProgramMapper programMapper;
 
     /**
      * 프로그램 목록 조회
@@ -43,7 +45,7 @@ public class ProgramService {
         }
 
         return page.getContent().stream()
-                .map(this::toDto)
+                .map(programMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -65,13 +67,13 @@ public class ProgramService {
         if (searchVO.getSearchKeyword() == null)
             throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND);
         return programRepository.findById(searchVO.getSearchKeyword())
-                .map(this::toDto)
+                .map(programMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
     }
 
     public ProgramDto selectProgrmById(String prgrmFileNm) {
         return programRepository.findById(Objects.requireNonNull(prgrmFileNm))
-                .map(this::toDto)
+                .map(programMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
     }
 
@@ -121,15 +123,5 @@ public class ProgramService {
             return;
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
         programRepository.deleteAllByIdInBatch(Objects.requireNonNull(delProgrmFileNm));
-    }
-
-    private ProgramDto toDto(Program entity) {
-        return ProgramDto.builder()
-                .prgrmFileNm(entity.getPrgrmFileNm())
-                .prgrmStrgPath(entity.getPrgrmStrgPath())
-                .prgrmKornNm(entity.getPrgrmKornNm())
-                .url(entity.getUrl())
-                .prgrmExpln(entity.getPrgrmExpln())
-                .build();
     }
 }

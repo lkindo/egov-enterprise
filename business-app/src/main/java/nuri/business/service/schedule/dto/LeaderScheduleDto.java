@@ -64,21 +64,5 @@ public class LeaderScheduleDto {
     @Size(max = 20)
     private String schdlPicId;
 
-    public static LeaderScheduleDto from(nuri.business.domain.schedule.LeaderSchedule entity) {
-        if (entity == null) return null;
-        return LeaderScheduleDto.builder()
-                .schdlId(entity.getSchdlId())
-                .leaderId(entity.getLeaderId())
-                .schdlNm(entity.getSchdlNm())
-                .schdlCn(entity.getSchdlCn())
-                .reptSeCd(entity.getReptSeCd())
-                .schdlImprtCd(entity.getSchdlImprtCd())
-                .schdlBgngYmd(entity.getSchdlBgngYmd())
-                .schdlEndYmd(entity.getSchdlEndYmd())
-                .schdlPicId(entity.getSchdlPicId())
-                .schdlSeCd(entity.getSchdlSeCd())
-                .schdlPlcNm(entity.getSchdlPlcNm())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 변환은 프레임워크 표준 MapStruct 매퍼 {@link LeaderScheduleMapper} 로 이관되었다.
 }

@@ -23,18 +23,7 @@ public class TemplateDto {
     private String frstRgtrId;
     private LocalDateTime crtDt;
 
-    public static TemplateDto from(Template entity) {
-        if (entity == null) return null;
-        return TemplateDto.builder()
-                .tmpltId(entity.getTmpltId())
-                .tmpltNm(entity.getTmpltNm())
-                .tmpltPath(entity.getTmpltPath())
-                .tmpltSeCd(entity.getTmpltSeCd())
-                .useYn(entity.getUseYn())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 매핑은 TemplateMapper (MapStruct, 프레임워크 표준) 로 이관됨.
 
     public Template toEntity() {
         return Template.builder()

@@ -32,6 +32,18 @@ import static org.mockito.Mockito.*;
 @DisplayName("SurveyService 단위 테스트 (Full Coverage)")
 class SurveyServiceTest {
 
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.SurveyTemplateMapper surveyTemplateMapper = new nuri.business.service.system.service.survey.dto.SurveyTemplateMapperImpl();
+
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.SurveyInfoMapper surveyInfoMapper = new nuri.business.service.system.service.survey.dto.SurveyInfoMapperImpl();
+
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.SurveyQuestionMapper surveyQuestionMapper = new nuri.business.service.system.service.survey.dto.SurveyQuestionMapperImpl();
+
+    @org.mockito.Spy
+    nuri.business.service.system.service.survey.dto.SurveyArticleMapper surveyArticleMapper = new nuri.business.service.system.service.survey.dto.SurveyArticleMapperImpl();
+
     @InjectMocks
     private SurveyService surveyService;
 

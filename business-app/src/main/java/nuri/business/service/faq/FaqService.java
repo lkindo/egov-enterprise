@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.faq.Faq;
 import nuri.business.domain.faq.FaqRepository;
 import nuri.business.service.faq.dto.FaqDto;
+import nuri.business.service.faq.dto.FaqMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
@@ -22,15 +23,16 @@ import java.util.Objects;
 public class FaqService extends BaseAbstractService {
 
     private final FaqRepository faqRepository;
+    private final FaqMapper faqMapper;
 
     public Page<FaqDto> getFaqList(String searchWrd, @NonNull Pageable pageable) {
         return faqRepository.searchFaqs(searchWrd, Objects.requireNonNull(pageable))
-                .map(FaqDto::from);
+                .map(faqMapper::toDto);
     }
 
     public FaqDto getFaq(@NonNull String faqId) {
         return faqRepository.findById(faqId)
-                .map(FaqDto::from)
+                .map(faqMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

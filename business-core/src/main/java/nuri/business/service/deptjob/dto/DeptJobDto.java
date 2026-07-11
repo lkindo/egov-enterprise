@@ -2,7 +2,6 @@ package nuri.business.service.deptjob.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.deptjob.DeptJob;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -29,22 +28,4 @@ public class DeptJobDto {
     private LocalDateTime crtDt;
     private String lastMdfrId;
     private LocalDateTime mdfcnDt;
-
-    public static DeptJobDto from(DeptJob entity) {
-        if (entity == null) return null;
-        return DeptJobDto.builder()
-                .deptTaskId(entity.getDeptTaskId())
-                .deptTaskBoxId(entity.getDeptTaskBoxId())
-                .deptTaskBoxNm(entity.getDeptJobBox() != null ? entity.getDeptJobBox().getDeptTaskBoxNm() : null)
-                .deptTaskNm(entity.getDeptTaskNm())
-                .deptTaskCn(entity.getDeptTaskCn())
-                .picId(entity.getPicId())
-                .prrtyRnk(entity.getPrrtyRnk())
-                .atchFileId(entity.getAtchFileId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .build();
-    }
 }

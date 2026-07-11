@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
+import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class ScheduleService extends BaseAbstractService implements EgovScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final ScheduleMapper scheduleMapper;
 
     @Override
     public Page<ScheduleDto> getScheduleList(String userId, @NonNull Pageable pageable) {
@@ -129,6 +131,6 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     }
 
     private ScheduleDto convertToDto(Schedule entity) {
-        return ScheduleDto.from(entity);
+        return scheduleMapper.toDto(entity);
     }
 }

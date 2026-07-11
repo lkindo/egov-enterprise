@@ -45,6 +45,9 @@ class InformalSanctionServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @org.mockito.Spy
+    nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
+
     @InjectMocks
     private InformalSanctionServiceImpl informalSanctionService;
 

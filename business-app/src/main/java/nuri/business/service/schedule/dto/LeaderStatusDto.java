@@ -2,7 +2,6 @@ package nuri.business.service.schedule.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.schedule.LeaderStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,12 +36,5 @@ public class LeaderStatusDto {
     @Schema(description = "등록일시")
     private LocalDateTime crtDt;
 
-    public static LeaderStatusDto from(LeaderStatus entity) {
-        if (entity == null) return null;
-        return LeaderStatusDto.builder()
-                .leaderId(entity.getLeaderId())
-                .leaderSttsCd(entity.getLeaderSttsCd())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 변환은 프레임워크 표준 MapStruct 매퍼 {@link LeaderStatusMapper} 로 이관되었다.
 }

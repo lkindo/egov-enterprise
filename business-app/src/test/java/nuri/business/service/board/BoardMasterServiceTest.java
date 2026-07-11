@@ -3,13 +3,18 @@ package nuri.business.service.board;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.board.*;
 import nuri.business.service.board.dto.BlogDto;
+import nuri.business.service.board.dto.BlogMapper;
+import nuri.business.service.board.dto.BlogMapperImpl;
 import nuri.business.service.board.dto.BoardMasterDto;
+import nuri.business.service.board.dto.BoardMasterMapper;
+import nuri.business.service.board.dto.BoardMasterMapperImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -50,6 +55,13 @@ class BoardMasterServiceTest {
 
     @Mock
     private EgovIdGnrService egovBBSMstrIdGnrService;
+
+    // 실제 MapStruct 생성 구현을 @InjectMocks 생성자에 주입 (매핑 동작 실검증)
+    @Spy
+    private BoardMasterMapper boardMasterMapper = new BoardMasterMapperImpl();
+
+    @Spy
+    private BlogMapper blogMapper = new BlogMapperImpl();
 
     @Test
     @DisplayName("게시판 마스터 단건 조회 - 성공")

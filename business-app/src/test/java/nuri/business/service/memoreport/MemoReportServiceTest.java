@@ -34,6 +34,9 @@ class MemoReportServiceTest {
     @Mock
     private EgovIdGnrService egovMemoReportIdGnrService;
 
+    @org.mockito.Spy
+    nuri.business.service.memoreport.dto.MemoReportMapper memoReportMapper = new nuri.business.service.memoreport.dto.MemoReportMapperImpl();
+
     @InjectMocks
     private MemoReportService memoReportService;
 

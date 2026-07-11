@@ -11,7 +11,9 @@ import nuri.business.domain.board.BlogUser;
 import nuri.business.domain.board.BlogRepository;
 import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
+import nuri.business.service.board.dto.BoardMasterMapper;
 import nuri.business.service.board.dto.BlogDto;
+import nuri.business.service.board.dto.BlogMapper;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
@@ -36,6 +38,8 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     private final BoardMasterRepository boardMasterRepository;
     private final EgovIdGnrService egovBBSMstrIdGnrService;
     private final BoardRepository boardRepository;
+    private final BoardMasterMapper boardMasterMapper;
+    private final BlogMapper blogMapper;
 
     public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
@@ -52,7 +56,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     public BoardMasterDto getBoardMaster(@NonNull String bbsId) {
         return boardMasterRepository.findById(bbsId)
-                .map(BoardMasterDto::from)
+                .map(boardMasterMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -204,12 +208,12 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     private final BlogUserRepository blogUserRepository;
 
     public Page<BlogDto> getBlogList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
-        return blogRepository.findAll(pageable).map(BlogDto::from);
+        return blogRepository.findAll(pageable).map(blogMapper::toDto);
     }
 
     public BlogDto getBlog(@NonNull String blogId) {
         return blogRepository.findById(blogId)
-                .map(BlogDto::from)
+                .map(blogMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -243,7 +247,7 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
 
     public List<BlogDto> getBlogListPortlet() {
         return blogRepository.findAll(PageRequest.of(0, 10)).getContent().stream()
-                .map(BlogDto::from)
+                .map(blogMapper::toDto)
                 .collect(Collectors.toList());
     }
 

@@ -2,7 +2,6 @@ package nuri.business.service.scrap.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.scrap.Scrap;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,19 +38,5 @@ public class ScrapDto {
     private String frstRgtrId;
     private LocalDateTime crtDt;
 
-    public static ScrapDto from(Scrap entity) {
-        if (entity == null) return null;
-        return ScrapDto.builder()
-                .scrapId(entity.getScrapId())
-                .bbsId(entity.getBbsId())
-                .pstId(entity.getPstId())
-                .scrapNm(entity.getScrapNm())
-                .scrapUrl(entity.getScrapUrl())
-                .scrapExpln(entity.getScrapExpln())
-                .useYn(entity.getUseYn())
-                .userId(entity.getFrstRgtrId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 매핑은 ScrapMapper (MapStruct, 프레임워크 표준) 로 이관됨.
 }

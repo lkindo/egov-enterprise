@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.service.memoreport.dto.MemoReportDto;
+import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
@@ -24,29 +25,30 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
 
     private final MemoReportRepository memoReportRepository;
     private final EgovIdGnrService egovMemoReportIdGnrService;
+    private final MemoReportMapper memoReportMapper;
 
     @Override
     public Page<MemoReportDto> getMemoReportList(String keyword, @NonNull Pageable pageable) {
         return memoReportRepository.searchMemoReports(null, keyword, Objects.requireNonNull(pageable))
-                .map(MemoReportDto::from);
+                .map(memoReportMapper::toDto);
     }
 
     @Override
     public Page<MemoReportDto> getMyReportList(String writerId, @NonNull Pageable pageable) {
         return memoReportRepository.findByUserId(writerId, Objects.requireNonNull(pageable))
-                .map(MemoReportDto::from);
+                .map(memoReportMapper::toDto);
     }
 
     @Override
     public Page<MemoReportDto> getReceivedReportList(String rptUserId, @NonNull Pageable pageable) {
         return memoReportRepository.findByRptrId(rptUserId, Objects.requireNonNull(pageable))
-                .map(MemoReportDto::from);
+                .map(memoReportMapper::toDto);
     }
 
     @Override
     public MemoReportDto getMemoReport(@NonNull String rptId) {
         return memoReportRepository.findById(rptId)
-                .map(MemoReportDto::from)
+                .map(memoReportMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

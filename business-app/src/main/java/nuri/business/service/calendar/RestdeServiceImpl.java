@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.calendar.Restde;
 import nuri.business.domain.calendar.RestdeRepository;
 import nuri.business.service.calendar.dto.RestdeDto;
+import nuri.business.service.calendar.dto.RestdeMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -22,17 +23,18 @@ import java.util.Objects;
 public class RestdeServiceImpl implements RestdeService {
 
     private final RestdeRepository restdeRepository;
+    private final RestdeMapper restdeMapper;
 
     @Override
     public Page<RestdeDto> getRestdeList(String searchCondition, String searchKeyword, Pageable pageable) {
         return restdeRepository.searchRestde(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
-                .map(RestdeDto::from);
+                .map(restdeMapper::toDto);
     }
 
     @Override
     public RestdeDto getRestde(Integer hldySn) {
         return restdeRepository.findById(Objects.requireNonNull(hldySn))
-                .map(RestdeDto::from)
+                .map(restdeMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

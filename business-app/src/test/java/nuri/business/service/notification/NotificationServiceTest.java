@@ -30,6 +30,9 @@ class NotificationServiceTest {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @org.mockito.Spy
+    nuri.business.service.notification.dto.NotificationMapper notificationMapper = new nuri.business.service.notification.dto.NotificationMapperImpl();
+
     @InjectMocks
     private NotificationService notificationService;
 

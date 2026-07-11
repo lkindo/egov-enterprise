@@ -1,7 +1,6 @@
 package nuri.business.service.usermanagement.dto;
 
 import jakarta.validation.constraints.*;
-import nuri.business.domain.user.entity.DeptManage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,16 +34,4 @@ public class DeptManageDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static DeptManageDto from(DeptManage entity) {
-        if (entity == null)
-            return null;
-        return DeptManageDto.builder()
-                .ognzId(entity.getOgnzId())
-                .ognzNm(entity.getOgnzNm())
-                .ognzExpln(entity.getOgnzExpln())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

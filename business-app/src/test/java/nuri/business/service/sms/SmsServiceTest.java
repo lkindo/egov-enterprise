@@ -9,10 +9,14 @@ import nuri.business.domain.sms.SmsRecptnRepository;
 import nuri.business.domain.sms.SmsRepository;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.sms.dto.SmsMapper;
+import nuri.business.service.sms.dto.SmsMapperImpl;
+import nuri.business.service.sms.dto.SmsRecptnMapper;
+import nuri.business.service.sms.dto.SmsRecptnMapperImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -42,8 +46,17 @@ class SmsServiceTest {
     @Mock
     private SmsAsyncProcessor smsAsyncProcessor;
 
-    @InjectMocks
+    // 실제 MapStruct 생성 구현체를 주입해 필드 변환 커버리지를 그대로 유지한다 (mock 대체 아님).
+    private final SmsMapper smsMapper = new SmsMapperImpl();
+    private final SmsRecptnMapper smsRecptnMapper = new SmsRecptnMapperImpl();
+
     private SmsService smsService;
+
+    @BeforeEach
+    void setUp() {
+        smsService = new SmsService(smsRepository, smsRecptnRepository, smsAsyncProcessor,
+                smsMapper, smsRecptnMapper);
+    }
 
     @Test
     @DisplayName("SMS 목록 조회 테스트")
@@ -157,12 +170,12 @@ class SmsServiceTest {
     @Test
     @DisplayName("SmsDto - null 엔티티 변환")
     void smsDto_FromNull() {
-        assertThat(SmsDto.from(null)).isNull();
+        assertThat(smsMapper.toDto(null)).isNull();
     }
 
     @Test
     @DisplayName("SmsRecptnDto - null 엔티티 변환")
     void smsRecptnDto_FromNull() {
-        assertThat(SmsRecptnDto.from(null)).isNull();
+        assertThat(smsRecptnMapper.toDto(null)).isNull();
     }
 }

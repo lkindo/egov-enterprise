@@ -4,9 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import java.time.LocalDateTime;
-import nuri.business.domain.board.Board;
-import nuri.business.domain.board.BoardSearchResult;
-import nuri.business.domain.board.BoardDetailResult;
 
 /**
  * 게시글 정보 DTO (v5 standardized - Record 버전)
@@ -112,92 +109,4 @@ public record BoardDto(
     @Schema(description = "답글 단계")
     Integer ansLv
 ) {
-    public static BoardDto from(Board entity) {
-        if (entity == null) return null;
-        return BoardDto.builder()
-                .pstId(entity.getPstId())
-                .bbsId(entity.getBbsId())
-                .ansSn(entity.getAnsSn())
-                .pstTtl(entity.getPstTtl())
-                .pstCn(entity.getPstCn())
-                .upPstId(entity.getUpPstId())
-                .sortOrdr(entity.getSortOrdr())
-                .ttlBoldYn(entity.getTtlBoldYn())
-                .inqCnt(entity.getInqCnt())
-                .useYn(entity.getUseYn())
-                .pstBgngYmd(entity.getPstBgngYmd())
-                .pstEndYmd(entity.getPstEndYmd())
-                .userId(entity.getUserId())
-                .userNm(entity.getUserNm())
-                .pswd(entity.getPswd())
-                .atchFileId(entity.getAtchFileId())
-                .scrtYn(entity.getScrtYn())
-                .blogId(entity.getBlogId())
-                .evntDt(entity.getEvntDt())
-                .qnaSttsCd(entity.getQnaSttsCd())
-                .qnaCatCd(entity.getQnaCatCd())
-                .likeCnt(entity.getLikeCnt())
-                .commentCnt(entity.getCmntCnt())
-                .fileCnt(entity.getFileCnt())
-                .crtDt(entity.getCrtDt())
-                .ansLv(entity.getAnsLv())
-                .build();
-    }
-
-    public static BoardDto from(BoardSearchResult result) {
-        if (result == null) return null;
-        return BoardDto.builder()
-                .pstId(result.getPstId())
-                .bbsId(result.getBbsId())
-                .ansSn(result.getAnsSn())
-                .pstTtl(result.getPstTtl())
-                .upPstId(result.getUpPstId())
-                .ttlBoldYn(result.getTtlBoldYn())
-                .inqCnt(result.getInqCnt())
-                .useYn(result.getUseYn())
-                .pstBgngYmd(result.getPstBgngYmd())
-                .pstEndYmd(result.getPstEndYmd())
-                .userId(result.getFrstRgtrId())
-                .userNm(result.getUserNm())
-                .atchFileId(result.getAtchFileId())
-                .scrtYn(result.getScrtYn())
-                .evntDt(result.getEvntDt())
-                .qnaSttsCd(result.getQnaSttsCd())
-                .qnaCatCd(result.getQnaCatCd())
-                .likeCnt(result.getLikeCnt())
-                .commentCnt(result.getCommentCnt())
-                .crtDt(result.getCrtDt())
-                .ansLv(result.getAnsLv())
-                .build();
-    }
-
-    public static BoardDto from(BoardDetailResult detail) {
-        if (detail == null) return null;
-        return BoardDto.builder()
-                .pstId(detail.getPstId())
-                .bbsId(detail.getBbsId())
-                .ansSn(detail.getAnsSn())
-                .pstTtl(detail.getPstTtl())
-                .pstCn(detail.getPstCn())
-                .upPstId(detail.getUpPstId())
-                .sortOrdr(detail.getSortOrdr())
-                .ttlBoldYn(detail.getTtlBoldYn())
-                .inqCnt(detail.getInqCnt())
-                .useYn(detail.getUseYn())
-                .pstBgngYmd(detail.getPstBgngYmd())
-                .pstEndYmd(detail.getPstEndYmd())
-                .userId(detail.getUserId())
-                .userNm(detail.getUserNm())
-                .pswd(detail.getPswd())
-                .atchFileId(detail.getAtchFileId())
-                .scrtYn(detail.getScrtYn())
-                .evntDt(detail.getEvntDt())
-                .qnaSttsCd(detail.getQnaSttsCd())
-                .qnaCatCd(detail.getQnaCatCd())
-                .likeCnt(detail.getLikeCnt())
-                .commentCnt(detail.getCommentCnt())
-                .crtDt(detail.getCrtDt())
-                .ansLv(detail.getAnsLv())
-                .build();
-    }
 }

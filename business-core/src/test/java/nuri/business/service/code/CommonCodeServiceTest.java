@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -34,6 +35,10 @@ class CommonCodeServiceTest {
 
     @Mock
     private CommonCodeGroupRepository commonCodeGroupRepository;
+
+    // 실제 MapStruct 생성 구현체를 @InjectMocks 생성자에 공급(from() 대체 매퍼 검증).
+    @Spy
+    private CommonCodeMapper commonCodeMapper = new CommonCodeMapperImpl();
 
     @InjectMocks
     private CommonCodeService commonCodeService;

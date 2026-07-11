@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.notification.Notification;
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.notification.dto.NotificationDto;
+import nuri.business.service.notification.dto.NotificationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,19 +26,20 @@ public class NotificationService implements EgovNotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationMapper notificationMapper;
 
     @Override
     public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
         log.debug("Fetching notification list with keyword: {}", keyword);
         return notificationRepository.searchNotifications(keyword, pageable)
-                .map(NotificationDto::from);
+                .map(notificationMapper::toDto);
     }
 
     @Override
     public NotificationDto getNotification(String notiSn) {
         log.debug("Fetching notification details for ID: {}", notiSn);
         return notificationRepository.findById(Objects.requireNonNull(notiSn))
-                .map(NotificationDto::from)
+                .map(notificationMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -57,7 +59,7 @@ public class NotificationService implements EgovNotificationService {
         notificationRepository.save(entity);
 
         // Notify via WebSocket
-        NotificationDto responseDto = NotificationDto.from(entity);
+        NotificationDto responseDto = notificationMapper.toDto(entity);
         try {
             messagingTemplate.convertAndSend("/topic/public", responseDto);
             if (userId != null) {
@@ -90,7 +92,7 @@ public class NotificationService implements EgovNotificationService {
     public Page<NotificationDto> getActiveNotifications(Pageable pageable) {
         log.debug("Fetching active notifications with pagination");
         return notificationRepository.findAll(pageable)
-                .map(NotificationDto::from);
+                .map(notificationMapper::toDto);
     }
 
     @Override
@@ -98,7 +100,7 @@ public class NotificationService implements EgovNotificationService {
         // [경고] 대량 데이터 조회 - 배치 작업 등 특수한 경우에만 사용
         log.warn("Fetching ALL notifications without pagination - use with caution");
         return notificationRepository.findAll().stream()
-                .map(NotificationDto::from)
+                .map(notificationMapper::toDto)
                 .collect(Collectors.toList());
     }
 

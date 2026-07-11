@@ -2,7 +2,6 @@ package nuri.business.service.schedule.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.schedule.Schedule;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -60,27 +59,5 @@ public class ScheduleDto {
     @Size(max = 12)
     private String schdlImprtCd;
 
-    public static ScheduleDto from(Schedule entity) {
-        if (entity == null) return null;
-        return ScheduleDto.builder()
-                .schdlId(entity.getSchdlId())
-                .schdlSeCd(entity.getSchdlSeCd())
-                .schdlNm(entity.getSchdlNm())
-                .schdlCn(entity.getSchdlCn())
-                .reptSeCd(entity.getReptSeCd())
-                .schdlBgngYmd(entity.getSchdlBgngYmd())
-                .schdlEndYmd(entity.getSchdlEndYmd())
-                .schdlIpAddr(entity.getSchdlIpAddr())
-                .schdlPicId(entity.getSchdlPicId())
-                .atchFileId(entity.getAtchFileId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .schdlDeptId(entity.getSchdlDeptId())
-                .schdlKndCd(entity.getSchdlKndCd())
-                .schdlPlcNm(entity.getSchdlPlcNm())
-                .schdlImprtCd(entity.getSchdlImprtCd())
-                .build();
-    }
+    // 엔티티→DTO 변환은 프레임워크 표준 MapStruct 매퍼 {@link ScheduleMapper} 로 이관되었다.
 }

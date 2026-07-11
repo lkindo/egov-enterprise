@@ -38,6 +38,9 @@ import static org.mockito.Mockito.*;
 @DisplayName("InformalSanctionServiceImpl 단위 테스트")
 class InformalSanctionServiceImplTest {
 
+    @org.mockito.Spy
+    nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
+
     @InjectMocks
     private InformalSanctionServiceImpl informalSanctionService;
 

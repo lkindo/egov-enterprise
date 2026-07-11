@@ -2,7 +2,6 @@ package nuri.business.service.board.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.board.Blog;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -59,24 +58,5 @@ public class BlogDto {
     @Schema(description = "블로그 여부")
     @Size(max = 1)
     private String blogYn;
-
-    public static BlogDto from(Blog entity) {
-        if (entity == null)
-            return null;
-        return BlogDto.builder()
-                .blogId(entity.getBlogId())
-                .bbsId(entity.getBbsId())
-                .blogTtl(entity.getBlogTtl())
-                .blogIntroCn(entity.getBlogIntroCn())
-                .regSeCd(entity.getRegSeCd())
-                .tmpltId(entity.getTmpltId())
-                .useYn(entity.getUseYn())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .blogYn(entity.getBlogYn())
-                .build();
-    }
 }
 

@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import nuri.business.domain.board.*;
 import nuri.business.service.board.dto.BoardDto;
+import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
@@ -71,7 +72,8 @@ class BoardServiceTest {
                 fileService,
                 eventPublisher,
                 meterRegistry,
-                viewCountService);
+                viewCountService,
+                new BoardMapperImpl());
     }
 
     @org.junit.jupiter.api.AfterEach

@@ -4,6 +4,8 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.program.dto.ProgramDto;
+import nuri.business.service.program.dto.ProgramMapper;
+import nuri.business.service.program.dto.ProgramMapperImpl;
 import nuri.business.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -30,6 +33,10 @@ class ProgramServiceTest {
 
     @Mock
     private ProgramRepository programRepository;
+
+    // 실제 MapStruct 생성 구현체를 @InjectMocks 생성자에 공급(엔티티→DTO 실매핑 검증).
+    @Spy
+    private ProgramMapper programMapper = new ProgramMapperImpl();
 
     @InjectMocks
     private ProgramService programService;

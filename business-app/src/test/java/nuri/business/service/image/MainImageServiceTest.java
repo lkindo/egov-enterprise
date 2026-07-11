@@ -24,6 +24,9 @@ class MainImageServiceTest {
     @Mock
     private MainImageRepository mainImageRepository;
 
+    @org.mockito.Spy
+    nuri.business.service.image.dto.MainImageMapper mainImageMapper = new nuri.business.service.image.dto.MainImageMapperImpl();
+
     @InjectMocks
     private MainImageService mainImageService;
 

@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.service.survey.SurveyInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,20 +55,4 @@ public class SurveyInfoDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
-
-    public static SurveyInfoDto from(SurveyInfo entity) {
-        if (entity == null) return null;
-        return SurveyInfoDto.builder()
-                .srvyId(entity.getSrvyId())
-                .srvyTtl(entity.getSrvyTtl())
-                .srvyPrps(entity.getSrvyPrps())
-                .srvyWrtGdCn(entity.getSrvyWrtGdCn())
-                .srvyBgngYmd(entity.getSrvyBgngYmd())
-                .srvyEndYmd(entity.getSrvyEndYmd())
-                .srvyTrgt(entity.getSrvyTrgt())
-                .srvyTmpltId(entity.getSrvyTmpltId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }

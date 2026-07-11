@@ -3,7 +3,6 @@ package nuri.business.service.sms.dto;
 import jakarta.validation.constraints.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import nuri.business.domain.sms.Sms;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,18 +49,4 @@ public class SmsDto {
 
     @Schema(description = "검색어")
     private String searchWrd;
-
-    public static SmsDto from(Sms entity) {
-        if (entity == null)
-            return null;
-        return SmsDto.builder()
-                .smsId(entity.getSmsId())
-                .sndngTelno(entity.getSndngTelno())
-                .sndngCn(entity.getSndngCn())
-                .recptnCnt(0)
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .recipients(new java.util.ArrayList<>())
-                .build();
-    }
 }

@@ -4,10 +4,11 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
 import nuri.business.service.system.content.banner.dto.BannerDto;
+import nuri.business.service.system.content.banner.dto.BannerMapperImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -29,11 +30,16 @@ import static org.mockito.Mockito.times;
 @DisplayName("BannerService 단위 테스트")
 class BannerServiceTest {
 
-    @InjectMocks
     private BannerService bannerService;
 
     @Mock
     private BannerRepository bannerRepository;
+
+    @BeforeEach
+    void setUp() {
+        // MapStruct 가 생성한 실제 매퍼 구현체를 주입하여 실 매핑 동작을 검증한다.
+        bannerService = new BannerService(bannerRepository, new BannerMapperImpl());
+    }
 
     @Test
     @DisplayName("배너 목록 조회 - 키워드 없음")

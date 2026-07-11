@@ -2,7 +2,6 @@ package nuri.business.service.board.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.board.BoardMaster;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -56,31 +55,4 @@ public class BoardMasterDto {
     // Additional fields for completeness
     private String authFlag;
     private String tmplatCours;
-
-    public static BoardMasterDto from(BoardMaster entity) {
-        if (entity == null)
-            return null;
-        return BoardMasterDto.builder()
-                .bbsId(entity.getBbsId())
-                .bbsTtl(entity.getBbsTtl())
-                .bbsExpln(entity.getBbsExpln())
-                .bbsTypeCd(entity.getBbsTypeCd())
-                .bbsAtrbCd(entity.getBbsAtrbCd())
-                .ansPsbltyYn(entity.getAnsPsbltyYn())
-                .fileAtchPsbltyYn(entity.getFileAtchPsbltyYn())
-                .atchPsbltyFileQty(entity.getAtchPsbltyFileQty())
-                .atchPsbltyFileSz(entity.getAtchPsbltyFileSz())
-                .tmpltId(entity.getTmpltId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .useYn(entity.getUseYn())
-                .cmntyId(entity.getCmntyId())
-                .blogId(entity.getBlogId())
-                .blogYn(entity.getBlogYn())
-                .ansYn(entity.getAnsYn())
-                .stsfdgYn(entity.getStsfdgYn())
-                .build();
-    }
 }

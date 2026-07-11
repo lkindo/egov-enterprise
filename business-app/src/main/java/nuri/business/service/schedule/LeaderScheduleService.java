@@ -6,6 +6,7 @@ import nuri.business.domain.schedule.LeaderScheduleRepository;
 import nuri.business.domain.schedule.LeaderStatus;
 import nuri.business.domain.schedule.LeaderStatusRepository;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
+import nuri.business.service.schedule.dto.LeaderStatusMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
@@ -27,6 +28,7 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
     private final LeaderScheduleRepository leaderScheduleRepository;
     private final LeaderStatusRepository leaderStatusRepository;
     private final EgovIdGnrService egovLeaderSchdlIdGnrService;
+    private final LeaderStatusMapper leaderStatusMapper;
 
     @Override
     public Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, @NonNull Pageable pageable) {
@@ -98,16 +100,16 @@ public class LeaderScheduleService extends BaseAbstractService implements EgovLe
     public Page<nuri.business.service.schedule.dto.LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable) {
         if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
             return leaderStatusRepository.findByLeaderIdContaining(searchKeyword, pageable)
-                    .map(nuri.business.service.schedule.dto.LeaderStatusDto::from);
+                    .map(leaderStatusMapper::toDto);
         }
         return leaderStatusRepository.findAll(pageable)
-                .map(nuri.business.service.schedule.dto.LeaderStatusDto::from);
+                .map(leaderStatusMapper::toDto);
     }
 
     @Override
     public nuri.business.service.schedule.dto.LeaderStatusDto getLeaderStatus(String leaderId) {
         return leaderStatusRepository.findById(leaderId)
-                .map(nuri.business.service.schedule.dto.LeaderStatusDto::from)
+                .map(leaderStatusMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

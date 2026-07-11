@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.operation.EventInfo;
 import nuri.business.repository.operation.EventInfoRepository;
 import nuri.business.service.operation.dto.EventInfoDto;
+import nuri.business.service.operation.dto.EventInfoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,20 +22,21 @@ import java.util.Objects;
 public class EventInfoService {
  
     private final EventInfoRepository eventInfoRepository;
- 
+    private final EventInfoMapper eventInfoMapper;
+
     public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
         log.debug("Fetching event list with search: {}", searchWrd);
         if (searchWrd == null || searchWrd.trim().isEmpty()) {
-            return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(EventInfoDto::from);
+            return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(eventInfoMapper::toDto);
         }
-        return eventInfoRepository.findBySearchWrd(searchWrd, pageable).map(EventInfoDto::from);
+        return eventInfoRepository.findBySearchWrd(searchWrd, pageable).map(eventInfoMapper::toDto);
     }
  
     public EventInfoDto getEvent(String eventId) {
         log.debug("Fetching event details for ID: {}", eventId);
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        return EventInfoDto.from(eventInfo);
+        return eventInfoMapper.toDto(eventInfo);
     }
  
     @Transactional

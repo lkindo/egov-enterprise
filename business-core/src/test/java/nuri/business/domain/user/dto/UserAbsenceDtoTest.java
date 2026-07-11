@@ -6,8 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("UserAbsenceDto 테스트")
+@DisplayName("UserAbsenceDto 매퍼 테스트")
 class UserAbsenceDtoTest {
+
+    // 수기 from() 대체: MapStruct 컴파일타임 생성 구현체
+    private final UserAbsenceMapper mapper = new UserAbsenceMapperImpl();
 
     @Test
     @DisplayName("엔티티에서 DTO로 변환")
@@ -19,7 +22,7 @@ class UserAbsenceDtoTest {
                 .build();
 
         // when
-        UserAbsenceDto dto = UserAbsenceDto.from(entity);
+        UserAbsenceDto dto = mapper.toDto(entity);
 
         // then
         assertThat(dto).isNotNull();
@@ -30,6 +33,6 @@ class UserAbsenceDtoTest {
     @Test
     @DisplayName("Null 변환 테스트")
     void nullTests() {
-        assertThat(UserAbsenceDto.from(null)).isNull();
+        assertThat(mapper.toDto(null)).isNull();
     }
 }

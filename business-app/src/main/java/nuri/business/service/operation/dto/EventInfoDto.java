@@ -3,7 +3,6 @@ package nuri.business.service.operation.dto;
 import jakarta.validation.constraints.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import nuri.business.domain.operation.EventInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -81,24 +80,5 @@ public class EventInfoDto {
     private LocalDateTime mdfcnDt;
 
 
-    public static EventInfoDto from(EventInfo entity) {
-        return EventInfoDto.builder()
-                .evntId(entity.getEvntId())
-                .bizYr(entity.getBizYr())
-                .bizCd(entity.getBizCd())
-                .evntCn(entity.getEvntCn())
-                .evntBgngYmd(entity.getEvntBgngYmd())
-                .evntEndYmd(entity.getEvntEndYmd())
-                .evntUseCnt(entity.getEvntUseCnt())
-                .picNm(entity.getPicNm())
-                .prepMttr(entity.getPrepMttr())
-                .evntTypeCd(entity.getEvntTypeCd())
-                .evntAprvYn(entity.getEvntAprvYn())
-                .evntAprvYmd(entity.getEvntAprvYmd())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .build();
-    }
+    // 수기 from(EventInfo) 은 EventInfoMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }

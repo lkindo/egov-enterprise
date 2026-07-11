@@ -31,6 +31,12 @@ class HelpServiceTest {
     @Mock
     private OnlineManualRepository onlineManualRepository;
 
+    @org.mockito.Spy
+    nuri.business.service.help.dto.HpcmMapper hpcmMapper = new nuri.business.service.help.dto.HpcmMapperImpl();
+
+    @org.mockito.Spy
+    nuri.business.service.help.dto.OnlineManualMapper onlineManualMapper = new nuri.business.service.help.dto.OnlineManualMapperImpl();
+
     @InjectMocks
     private HelpService helpService;
 

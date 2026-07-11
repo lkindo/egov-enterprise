@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.consult.CnsltManage;
 import nuri.business.domain.system.service.consult.CnsltManageRepository;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;
+import nuri.business.service.system.service.consult.dto.CnsltManageMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,14 +20,15 @@ import java.util.Objects;
 public class CnsltService implements EgovCnsltService {
 
     private final CnsltManageRepository cnsltManageRepository;
+    private final CnsltManageMapper cnsltManageMapper;
 
     @Override
     public Page<CnsltManageDto> getCnsltList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return cnsltManageRepository.findAll(Objects.requireNonNull(pageable)).map(CnsltManageDto::from);
+            return cnsltManageRepository.findAll(Objects.requireNonNull(pageable)).map(cnsltManageMapper::toDto);
         }
         return cnsltManageRepository.findByDscsnTtlContaining(keyword, Objects.requireNonNull(pageable))
-                .map(CnsltManageDto::from);
+                .map(cnsltManageMapper::toDto);
     }
 
     @Override
@@ -35,7 +37,7 @@ public class CnsltService implements EgovCnsltService {
         CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(cnsltId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.incrementInqireCo();
-        return CnsltManageDto.from(entity);
+        return cnsltManageMapper.toDto(entity);
     }
 
     @Override

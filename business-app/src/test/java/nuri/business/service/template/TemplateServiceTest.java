@@ -4,11 +4,14 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
+import nuri.business.service.template.dto.TemplateMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +36,10 @@ class TemplateServiceTest {
 
     @Mock
     private TemplateRepository templateRepository;
+
+    // 실제 MapStruct 매퍼 구현체를 주입해 기존 매핑 검증 의미를 보존한다.
+    @Spy
+    private TemplateMapper templateMapper = Mappers.getMapper(TemplateMapper.class);
 
     @Test
     @DisplayName("템플릿 목록 조회 - 키워드 없음")

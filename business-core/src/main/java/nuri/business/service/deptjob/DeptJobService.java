@@ -14,6 +14,7 @@ import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
 
@@ -32,16 +33,19 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
     private final DeptJobBoxRepository deptJobBoxRepository;
     private final UserRepository userRepository;
     private final OrganizationManageRepository organizationManageRepository;
+    private final DeptJobMapper deptJobMapper;
 
     public DeptJobService(DeptJobRepository deptJobRepository,
             DeptJobBoxRepository deptJobBoxRepository,
             UserRepository userRepository,
-            OrganizationManageRepository organizationManageRepository) {
+            OrganizationManageRepository organizationManageRepository,
+            DeptJobMapper deptJobMapper) {
         this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
         this.deptJobBoxRepository = required(deptJobBoxRepository, "DeptJobBoxRepository 는 null 일 수 없습니다");
         this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
         this.organizationManageRepository = required(organizationManageRepository,
                 "OrganizationManageRepository 는 null 일 수 없습니다");
+        this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
     }
 
     @Override
@@ -119,7 +123,7 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
     }
 
     private DeptJobDto toDto(DeptJob entity) {
-        DeptJobDto dto = DeptJobDto.from(entity);
+        DeptJobDto dto = deptJobMapper.toDto(entity);
 
         deptJobBoxRepository.findById(required(entity.getDeptTaskBoxId(), "entity.getDeptTaskBoxId() 는 null 일 수 없습니다"))
                 .ifPresent(box -> {

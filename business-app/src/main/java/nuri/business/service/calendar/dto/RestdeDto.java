@@ -3,7 +3,6 @@ package nuri.business.service.calendar.dto;
 import jakarta.validation.constraints.*;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import nuri.business.domain.calendar.Restde;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,18 +36,5 @@ public class RestdeDto {
     @Schema(description = "휴일 구분 코드", example = "01")
     @Size(max = 12)
     private String hldySeCd;
-
-    public static RestdeDto from(Restde entity) {
-        if (entity == null) {
-            return null;
-        }
-        return RestdeDto.builder()
-                .hldySn(entity.getHldySn())
-                .hldyYmd(entity.getHldyYmd())
-                .hldyNm(entity.getHldyNm())
-                .hldyExpln(entity.getHldyExpln())
-                .hldySeCd(entity.getHldySeCd())
-                .build();
-    }
 }
 

@@ -11,6 +11,7 @@ import nuri.business.domain.system.service.survey.OnlinePollArticleRepository;
 import nuri.business.domain.system.service.survey.OnlinePollResultRepository;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
+import nuri.business.service.system.service.survey.dto.OnlinePollArticleMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     private final OnlinePollManageRepository pollManageRepository;
     private final OnlinePollArticleRepository pollItemRepository;
     private final OnlinePollResultRepository pollResultRepository;
+    private final OnlinePollArticleMapper onlinePollArticleMapper;
 
     @Override
     public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
@@ -163,7 +165,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     public List<OnlinePollArticleDto> getPollItemList(String pollId) {
         return pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
                 .map(item -> {
-                    OnlinePollArticleDto dto = OnlinePollArticleDto.from(item);
+                    OnlinePollArticleDto dto = onlinePollArticleMapper.toDto(item);
                     dto.setPollIemCo(pollResultRepository.countByPollArtclId(item.getPollArtclId()));
                     return dto;
                 })

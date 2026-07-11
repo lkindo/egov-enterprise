@@ -1,7 +1,6 @@
 package nuri.business.service.help.dto;
 
 import jakarta.validation.constraints.*;
-import nuri.business.domain.help.Hpcm;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,15 +41,5 @@ public class HpcmDto {
     @Schema(description = "Description")
     private LocalDateTime crtDt;
 
-    public static HpcmDto from(Hpcm entity) {
-        if (entity == null) return null;
-        return HpcmDto.builder()
-                .hlpId(entity.getHlpId())
-                .hlpSeCd(entity.getHlpSeCd())
-                .hlpDfn(entity.getHlpDfn())
-                .hlpExpln(entity.getHlpExpln())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // 엔티티→DTO 매핑은 HpcmMapper(MapStruct) 로 이관 (프레임워크 표준). 수기 from() 폐지.
 }

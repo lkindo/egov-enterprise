@@ -2,7 +2,6 @@ package nuri.business.service.faq.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.faq.Faq;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,20 +50,5 @@ public class FaqDto {
 
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
-
-    public static FaqDto from(Faq entity) {
-        if (entity == null) return null;
-        return FaqDto.builder()
-                .faqId(entity.getFaqId())
-                .qstnTtl(entity.getQstnTtl())
-                .qstnCn(entity.getQstnCn())
-                .ansCn(entity.getAnsCn())
-                .inqCnt(entity.getInqCnt())
-                .atchFileId(entity.getAtchFileId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .lastMdfrId(entity.getLastMdfrId())
-                .mdfcnDt(entity.getMdfcnDt())
-                .build();
-    }
+    // 엔티티↔DTO 매핑은 FaqMapper(MapStruct) 로 이관 (프레임워크 표준)
 }

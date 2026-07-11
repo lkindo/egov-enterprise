@@ -3,6 +3,7 @@ package nuri.business.service.schedule;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
+import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +30,9 @@ class ScheduleServiceTest {
     @Mock
     private ScheduleRepository scheduleRepository;
 
+    @Mock
+    private ScheduleMapper scheduleMapper;
+
     @InjectMocks
     private ScheduleService scheduleService;
 
@@ -44,6 +48,8 @@ class ScheduleServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Schedule entity = Schedule.builder().schdlId("S1").schdlNm("Test Schedule").build();
         given(scheduleRepository.searchSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
+        given(scheduleMapper.toDto(any())).willReturn(
+                ScheduleDto.builder().schdlId("S1").schdlNm("Test Schedule").build());
 
         // when
         Page<ScheduleDto> result = scheduleService.getScheduleList(null, pageable);
@@ -60,6 +66,8 @@ class ScheduleServiceTest {
         String schdulId = "S1";
         Schedule entity = Schedule.builder().schdlId(schdulId).schdlNm("Test Schedule").build();
         given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
+        given(scheduleMapper.toDto(any())).willReturn(
+                ScheduleDto.builder().schdlId(schdulId).schdlNm("Test Schedule").build());
 
         // when
         ScheduleDto result = scheduleService.getSchedule(schdulId);

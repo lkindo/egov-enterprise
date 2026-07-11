@@ -6,6 +6,7 @@ import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.image.MainImage;
 import nuri.business.domain.image.MainImageRepository;
 import nuri.business.service.image.dto.MainImageDto;
+import nuri.business.service.image.dto.MainImageMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,21 +22,22 @@ import java.util.stream.Collectors;
 public class MainImageService implements EgovMainImageService {
 
     private final MainImageRepository mainImageRepository;
+    private final MainImageMapper mainImageMapper;
 
     @Override
     public Page<MainImageDto> getMainImageList(String searchKeyword, Pageable pageable) {
         if (searchKeyword == null || searchKeyword.isEmpty()) {
             return mainImageRepository.findAll(Objects.requireNonNull(pageable))
-                    .map(MainImageDto::from);
+                    .map(mainImageMapper::toDto);
         }
         return mainImageRepository.findByImgNmContaining(searchKeyword, Objects.requireNonNull(pageable))
-                .map(MainImageDto::from);
+                .map(mainImageMapper::toDto);
     }
 
     @Override
     public MainImageDto getMainImage(String imageId) {
         return mainImageRepository.findById(Objects.requireNonNull(imageId))
-                .map(MainImageDto::from)
+                .map(mainImageMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -71,7 +73,7 @@ public class MainImageService implements EgovMainImageService {
     @Override
     public List<MainImageDto> getReflectedMainImages() {
         return mainImageRepository.findByRfltYn("Y").stream()
-                .map(MainImageDto::from)
+                .map(mainImageMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

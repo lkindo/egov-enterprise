@@ -5,7 +5,9 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.help.*;
 import nuri.business.service.help.dto.HpcmDto;
+import nuri.business.service.help.dto.HpcmMapper;
 import nuri.business.service.help.dto.OnlineManualDto;
+import nuri.business.service.help.dto.OnlineManualMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,19 +25,21 @@ public class HelpService implements EgovHelpService {
 
     private final HpcmRepository hpcmRepository;
     private final OnlineManualRepository onlineManualRepository;
+    private final HpcmMapper hpcmMapper;
+    private final OnlineManualMapper onlineManualMapper;
 
     // HPCM (Help)
     @Override
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
         return hpcmRepository
                 .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
-                .map(HpcmDto::from);
+                .map(hpcmMapper::toDto);
     }
 
     @Override
     public HpcmDto getHpcm(String hlpId) {
         return hpcmRepository.findById(Objects.requireNonNull(hlpId))
-                .map(HpcmDto::from)
+                .map(hpcmMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -72,13 +76,13 @@ public class HelpService implements EgovHelpService {
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
         return onlineManualRepository
                 .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
-                .map(OnlineManualDto::from);
+                .map(onlineManualMapper::toDto);
     }
 
     @Override
     public OnlineManualDto getOnlineManual(String onlnMnlId) {
         return onlineManualRepository.findById(Objects.requireNonNull(onlnMnlId))
-                .map(OnlineManualDto::from)
+                .map(onlineManualMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

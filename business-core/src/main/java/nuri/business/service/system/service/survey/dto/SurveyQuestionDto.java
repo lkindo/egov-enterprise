@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.service.survey.SurveyQuestion;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,19 +53,4 @@ public class SurveyQuestionDto {
 
     @Schema(description = "설문 항목 목록")
     private List<SurveyArticleDto> items;
-
-    public static SurveyQuestionDto from(SurveyQuestion entity) {
-        if (entity == null) return null;
-        return SurveyQuestionDto.builder()
-                .srvyQstnId(entity.getSrvyQstnId())
-                .srvyId(entity.getSrvyId())
-                .qstnSn(entity.getQstnSn())
-                .qstnTypeCd(entity.getQstnTypeCd())
-                .qstnCn(entity.getQstnCn())
-                .maxChcCnt(entity.getMaxChcCnt())
-                .srvyTmpltId(entity.getSrvyTmpltId())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
 }
