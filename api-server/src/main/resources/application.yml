@@ -75,7 +75,10 @@ spring:
 
 
 jwt:
-  secret: ${JWT_SECRET:}
+  # [보안 C1] JWT 서명 키 — algorithmKey와 동일 관례: base는 dev-safe 기본값(dev/local/e2e 프로파일과 동일 값),
+  # 운영은 application-prod.yml에서 무기본값(${JWT_SECRET})으로 재선언해 미설정 시 기동 실패(fail-fast)시킨다.
+  # (빈 기본값 ${JWT_SECRET:}는 base=default 프로파일 부팅[npm run dev]까지 JwtTokenProvider.init에서 죽이므로 지양)
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
 
 logging:
   level:

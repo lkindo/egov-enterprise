@@ -62,6 +62,8 @@ Globals:
 
 # [보안] JWT refresh 쿠키를 운영에서 Secure(HTTPS 전용)로 강제 (base 기본값 false 오버라이드)
 jwt:
+  # [보안 C1] 운영은 JWT_SECRET 무기본값 강제 → 미설정 시 기동 실패(fail-fast). base의 dev-safe 기본값을 운영에서 원천 차단(algorithmKey와 동일 패턴).
+  secret: ${JWT_SECRET}
   cookie:
     secure: true
 
