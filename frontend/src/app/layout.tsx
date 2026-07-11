@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
+import { NextIntlClientProvider } from 'next-intl';
 import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
@@ -116,6 +117,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
+        <NextIntlClientProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -129,6 +131,7 @@ export default function RootLayout({
             </ProvidersWithAuth>
           </Suspense>
         </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
