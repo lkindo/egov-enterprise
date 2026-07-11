@@ -403,7 +403,8 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
                    title === '업무 인텔리전스' ? 'BUSINESS_INTELLIGENCE' : ''}
                 </span>
               </p>
-              <h3 className="text-4xl font-bold text-foreground tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
+              {/* a11y(heading-order): stat 값은 문서 섹션 제목이 아니므로 heading(h3) 대신 p로 — h1→h3 레벨 스킵 위반 제거 */}
+              <p className="text-4xl font-bold text-foreground tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>
               <p className="text-xs font-bold text-foreground leading-tight uppercase">
                 {description}
               </p>
