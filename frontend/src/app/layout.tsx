@@ -117,21 +117,29 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
-        <NextIntlClientProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
-            <ProvidersWithAuth>
-              {children}
-            </ProvidersWithAuth>
-          </Suspense>
-        </ThemeProvider>
-        </NextIntlClientProvider>
+        {/*
+          i18n(next-intl) 프로바이더는 Suspense 경계 안에 둔다.
+          cacheComponents(PPR) 하에서 propless <NextIntlClientProvider> 는 서버측에서
+          request.ts(NEXT_LOCALE 쿠키 기반 로케일 결정)를 await 하므로, 상위 Suspense 없이는
+          'Uncached data outside <Suspense>' 로 next build 가 실패한다. (perf-02 패턴과 동일)
+        */}
+        <Suspense fallback={null}>
+          <NextIntlClientProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+              enableColorScheme
+            >
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
+                <ProvidersWithAuth>
+                  {children}
+                </ProvidersWithAuth>
+              </Suspense>
+            </ThemeProvider>
+          </NextIntlClientProvider>
+        </Suspense>
       </body>
     </html>
   );

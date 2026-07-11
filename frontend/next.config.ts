@@ -41,8 +41,9 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
+            // [csp-01] 브라우저가 동일 출처(same-origin) 프록시로 통신 → connect-src를 'self' + 스킴 전용 WS(dev HMR·SockJS /ws)로 축소
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 ws://localhost:8080 ws://127.0.0.1:8080 wss://localhost:8080 wss://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
           },
         ],
       },

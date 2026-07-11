@@ -24,6 +24,28 @@ interface StandardFileUploaderProps {
   className?: string;
 }
 
+// accept 속성(확장자/MIME)에 따른 파일 허용 여부 검사 (드래그&드롭은 브라우저 accept 필터를 우회하므로 수동 검증 필요)
+function isFileTypeAccepted(file: File, accept: string): boolean {
+  const normalized = (accept ?? '').trim();
+  if (!normalized || normalized === '*' || normalized === '*/*') return true;
+
+  const tokens = normalized.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const fileName = file.name.toLowerCase();
+  const fileType = (file.type || '').toLowerCase();
+
+  return tokens.some(token => {
+    if (token === '*' || token === '*/*') return true;
+    // 확장자 매칭 (예: .pdf)
+    if (token.startsWith('.')) return fileName.endsWith(token);
+    // MIME 그룹 매칭 (예: image/*)
+    if (token.endsWith('/*')) return fileType.startsWith(token.slice(0, token.length - 1));
+    // 정확한 MIME 매칭 (예: application/pdf)
+    return fileType === token;
+  });
+}
+
 export function StandardFileUploader({
   onFilesChange,
   onUpload,
@@ -83,10 +105,25 @@ export function StandardFileUploader({
 
   const handleFiles = useCallback((files: File[]) => {
     const validFiles = files.filter(file => {
+      // 형식 검증: 드래그&드롭 파일은 input의 accept 필터를 우회하므로 여기서 직접 차단한다.
+      const isTypeValid = isFileTypeAccepted(file, accept);
+      if (!isTypeValid) {
+        toast.error(`${file.name} 형식은 첨부할 수 없습니다.`);
+        return false;
+      }
       const isSizeValid = file.size <= maxSizeMB * 1024 * 1024;
-      if (!isSizeValid) toast.error(`${file.name} 크기가 ${maxSizeMB}MB를 초과합니다.`);
-      return isSizeValid;
+      if (!isSizeValid) {
+        toast.error(`${file.name} 크기가 ${maxSizeMB}MB를 초과합니다.`);
+        return false;
+      }
+      return true;
     });
+
+    // 개수 초과: 남은 슬롯을 넘기면 조용히 버리지 않고 사용자에게 알린 뒤 슬롯만큼만 추가한다.
+    const remainingSlots = maxFiles - fileStates.length;
+    if (validFiles.length > remainingSlots) {
+      toast.error(`최대 ${maxFiles}개까지 첨부할 수 있습니다.`);
+    }
 
     const newFileStates: FileState[] = validFiles.map(file => {
       const requiresInstantUpload = isAutoUpload && typeof onUpload === 'function';
@@ -96,7 +133,7 @@ export function StandardFileUploader({
         status: requiresInstantUpload ? ('uploading' as const) : ('pending' as const),
         id: Math.random().toString(36).substring(7)
       };
-    }).slice(0, maxFiles - fileStates.length);
+    }).slice(0, Math.max(0, remainingSlots));
 
     if (newFileStates.length > 0) {
       const updatedStates = [...fileStates, ...newFileStates];
@@ -114,7 +151,7 @@ export function StandardFileUploader({
       });
       toast.success(`${newFileStates.length}개의 파일이 추가되었습니다.`);
     }
-  }, [fileStates, maxFiles, maxSizeMB, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload]);
+  }, [fileStates, maxFiles, maxSizeMB, accept, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

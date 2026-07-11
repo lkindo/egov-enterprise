@@ -11,10 +11,12 @@ export interface ApiResponse<T = unknown> {
 }
 
 const getBaseURL = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/`;
+  // 브라우저: 동일 출처(same-origin) 상대 경로 → next.config rewrites('/api/v1/:path*')가 백엔드로 프록시
+  if (typeof window !== 'undefined') {
+    return '/api/v1';
   }
-  return 'http://127.0.0.1:8080/api/v1/';
+  // SSR/서버 컴포넌트: 내부 절대 출처로 백엔드를 직접 호출 (프록시 홉 우회)
+  return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1';
 };
 
 const axiosInstance = axios.create({
