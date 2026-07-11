@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { TEST_CREDENTIALS } from './test-credentials';
-import { injectAxe, checkA11y } from '@axe-core/playwright';
+import AxeBuilder from '@axe-core/playwright';
 
 /**
  * [Tier 1] Core Base: Authentication & Dashboard Hub
@@ -31,15 +31,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
 
     test('Accessibility Audit for Login Page', async ({ page }) => {
         await page.goto('/login?e2e=true');
-        await injectAxe(page);
-        await checkA11y(page, undefined, {
-            axeOptions: {
-                rules: {
-                    'color-contrast': { enabled: false }, // CI 환경 테마 가변성 방어
-                }
-            },
-            detailedReport: true,
-        });
+        const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
+        expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
     });
 
     test.describe('Dashboard Integrity (Session Preserved)', () => {
@@ -66,15 +59,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         });
 
         test('Accessibility Audit for Admin Dashboard', async ({ page }) => {
-            await injectAxe(page);
-            await checkA11y(page, undefined, {
-                axeOptions: {
-                    rules: {
-                        'color-contrast': { enabled: false }, // CI 환경 테마 가변성 방어
-                    }
-                },
-                detailedReport: true,
-            });
+            const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
+            expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
         });
 
         test('Global Layout & Navigation Mapping', async ({ page }) => {
