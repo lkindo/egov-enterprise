@@ -136,6 +136,10 @@ public class MenuService {
         Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
 
+        // Pass 1: 모든 노드의 DTO를 먼저 만들어 dtoMap을 완성한다.
+        // findAllWithAuthorities는 ORDER BY upMenuSn ASC (Postgres 기본 NULLS LAST)라 루트(upMenuSn=null)가 맨 뒤에 온다.
+        // 단일 패스로 조립하면 자식이 부모보다 먼저 처리돼 dtoMap.containsKey(부모)=false로 자식이 유실된다(→ getSubMenus=0, 사이드바 파손).
+        // 2-pass로 조립 순서에 비의존하게 만든다.
         for (Menu menu : filteredMenus) {
             String url = calculateUrl(menu, programMap);
 
@@ -155,7 +159,11 @@ public class MenuService {
                     .build();
 
             dtoMap.put(dto.getId(), dto);
+        }
 
+        // Pass 2: 부모-자식 부착 / 루트 수집 (dtoMap이 완성된 뒤이므로 순서 무관)
+        // dtoMap은 LinkedHashMap(=filteredMenus 삽입순 = upMenuSn,menuOrdr ASC)이라 형제 정렬은 그대로 보존된다.
+        for (MenuDto dto : dtoMap.values()) {
             Long upperNo = dto.getUpMenuSn();
 
             if (rootMenuNo == null) {

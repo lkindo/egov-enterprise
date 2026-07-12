@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "사용자 알림 DTO")
 public class NotificationDto {
 
-    @NotBlank
+    // 서버 생성 PK — create 시 미전송(서버가 생성), update는 PathVariable 사용. @NotBlank는 create를 400으로 막으므로 제거.
     @Size(max = 20)
     @Schema(description = "알림 일련번호")
     private String notiSn;

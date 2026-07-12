@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Schema(description = "온라인 메뉴얼 DTO")
 public class OnlineManualDto {
 
-    @NotBlank
+    // 서버 생성 PK('MNL_'+UUID) — create 시 미전송, update는 PathVariable {mnlId} 사용. @NotBlank는 create를 400으로 막으므로 제거.
     @Size(max = 20)
     @Schema(description = "온라인 메뉴얼 ID")
     private String onlnMnlId;

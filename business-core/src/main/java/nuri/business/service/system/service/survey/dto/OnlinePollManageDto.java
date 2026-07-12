@@ -22,7 +22,7 @@ public class OnlinePollManageDto {
 
     @Schema(description = "설문 ID")
     @Size(max = 20)
-    @NotBlank
+    // 서버 생성 PK — create 시 미전송(서버가 생성), update는 PathVariable 사용. @NotBlank는 create를 400으로 막으므로 제거.
     private String pollId;
 
     @Schema(description = "설문 제목")
