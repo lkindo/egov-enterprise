@@ -19,6 +19,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { Input } from '@/components/ui/input';
+import { useNotifications } from '@/lib/hooks/use-notifications';
 
 interface Notification {
   id: string;
@@ -30,40 +31,30 @@ interface Notification {
   status: 'new' | 'read' | 'archived';
 }
 
-const SAMPLE_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    title: 'Security Protocol Alpha Activated',
-    content: 'Multiple failed login attempts detected from IP: 192.168.1.104. Automated firewall rules applied.',
-    time: '2026-05-10 14:22',
-    type: 'security',
-    priority: 'critical',
-    status: 'new'
-  },
-  {
-    id: '2',
-    title: 'System Intelligence Optimized',
-    content: 'AI-driven database indexing complete. Query performance improved by 24.5%.',
-    time: '2026-05-10 13:45',
-    type: 'system',
-    priority: 'medium',
-    status: 'new'
-  },
-  {
-    id: '3',
-    title: 'New Collaborative Message',
-    content: 'Admin_User_01 sent a new strategy document for the upcoming Q3 infrastructure review.',
-    time: '2026-05-10 12:00',
-    type: 'message',
-    priority: 'low',
-    status: 'read'
-  }
-];
-
 export function SmartNotificationHub() {
   const [activeTab, setActiveTab] = useState<'all' | 'critical' | 'unread'>('all');
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
+  // (과거엔 SAMPLE_NOTIFICATIONS 하드코딩이라 새로 생성한 알림이 검색/목록에 절대 안 나타났음.)
+  const { notifications: rawNotifications } = useNotifications();
+  const notifications = useMemo<Notification[]>(
+    () =>
+      (rawNotifications || []).map((n) => ({
+        id: n.notiSn,
+        title: n.notiTtlNm,
+        content: n.notiCn,
+        time: n.notiDt,
+        type:
+          n.type === 'SECURITY' ? 'security'
+          : n.type === 'SYSTEM' ? 'system'
+          : n.type === 'INFO' ? 'alert'
+          : 'message',
+        priority: n.type === 'SECURITY' ? 'critical' : n.type === 'SYSTEM' ? 'medium' : 'low',
+        status: n.readYn === 'Y' ? 'read' : 'new',
+      })),
+    [rawNotifications],
+  );
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter(n => {
