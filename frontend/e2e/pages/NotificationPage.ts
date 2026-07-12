@@ -7,12 +7,15 @@ export class NotificationPage {
         const bellButton = this.page.locator('#e2e-bell-button');
         await bellButton.click();
         
-        // Wait for drawer to appear and finish animation
-        const drawer = this.page.locator('[class*="z-\\[9999\\]"]').last();
+        // Wait for drawer to appear and finish animation.
+        // AppNotificationDrawer는 Radix DialogPrimitive(role="dialog", Title '알림 센터', z-[1000])로 렌더된다.
+        // (과거 하드코딩 '[class*=z-[9999]]'는 실제 z-[1000]과 불일치해 항상 타임아웃했음.)
+        const drawer = this.page.getByRole('dialog', { name: /알림.*센터/i });
         await expect(drawer).toBeVisible({ timeout: 15000 });
         
-        // Wait for the header to be visible which indicates the drawer content is rendering
-        await expect(drawer.locator('h2')).toContainText(/알림.*센터/i, { timeout: 10000 });
+        // Wait for the header to be visible which indicates the drawer content is rendering.
+        // 드로어엔 h2가 2개(Radix sr-only Title + 시각 헤더)라 strict-mode 회피 위해 first() 사용.
+        await expect(drawer.locator('h2').first()).toContainText(/알림.*센터/i, { timeout: 10000 });
         
         // Wait for at least one notification item or the "No active alerts" message
         await drawer.locator('div.group, span:has-text("알림이 없습니다")').first().waitFor({ state: 'visible', timeout: 15000 });
