@@ -1,5 +1,9 @@
 'use client';
 
+// [데모 스캐폴드] /admin/workflow 'Process Studio'는 정적 목업이다(하드코딩 노드/지표, 백엔드 미연동 — fetch/service 0건).
+// 실제 전자결재(승인/반려) 기능은 별도 경로에 백엔드 연동되어 동작한다:
+//   FE /approvals(ApprovalHubClient)·/admin/system/ism(IsmClient) ↔ BE /api/v1/approvals·/api/v1/admin/system/ism ↔ InformalSanction(tb_ifml_atrz_info).
+// 신규 SI에서 워크플로우 엔진이 필요하면 대응 백엔드(컨트롤러/서비스/테이블)를 신설해 이 화면에 배선할 것.
 import React, { useState } from 'react';
 import { GitBranch,
     History,

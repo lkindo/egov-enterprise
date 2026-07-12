@@ -1,5 +1,9 @@
 'use client';
 
+// [데모 스캐폴드] '전자결재 워크플로우 허브'(FORMS/WORKFLOW/MONITOR 탭)는 정적 목업이다(하드코딩 양식/엔진상태, 백엔드 미연동).
+// 실제 전자결재 기능은 /approvals·/admin/system/ism(InformalSanction 백엔드)에 별도 구현되어 동작 중.
+// 결재양식 CRUD·엔진·배포를 실동작시키려면 대응 백엔드를 신설해 배선할 것.
+// (진입점 /admin/sanctn/workflow는 메뉴 SSOT 정합상 /admin/workflow로 리다이렉트됨 — 이 컴포넌트는 /admin/sanctn/forms에서 렌더)
 import React, { useState } from 'react';
 ;
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
