@@ -58,16 +58,17 @@ export class OperationalExtensionPage {
     // SMS Service
     async gotoSms() {
         console.log('>>> Navigating to SMS Service');
+        // /cop/sms/selectSmsList -> (next.config redirect) -> /admin/uss/ion/sms (SmsAdminClient)
         await this.page.goto('/cop/sms/selectSmsList');
-        await expect(this.page.getByText('커뮤니케이션 매트릭스')).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '메시지 오케스트레이션' })).toBeVisible();
     }
 
     async sendSms(phone: string, content: string) {
         console.log(`>>> Sending SMS to ${phone}`);
-        await this.page.getByRole('button', { name: '신규 문자 발송' }).click();
+        await this.page.getByRole('button', { name: '새 메시지 구성' }).click();
         await this.page.getByPlaceholder('010-0000-0000').fill(phone);
-        await this.page.getByPlaceholder('전달할 메시지 내용을 입력하세요...').fill(content);
-        await this.page.getByRole('button', { name: 'EXECUTE_TRANSMISSION' }).click();
-        await expect(this.page.getByText('SMS가 성공적으로 전송되었습니다.')).toBeVisible();
+        await this.page.getByPlaceholder('메시지 내용을 입력하세요...').fill(content);
+        await this.page.getByRole('button', { name: 'Execute Send' }).click();
+        await expect(this.page.getByText('문자 메시지를 발송했습니다.')).toBeVisible();
     }
 }

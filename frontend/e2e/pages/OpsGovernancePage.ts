@@ -2,37 +2,31 @@ import { Page, Locator, expect } from '@playwright/test';
 
 export class OpsGovernancePage {
     readonly page: Page;
-    readonly tabPolicies: Locator;
-    readonly tabUsers: Locator;
     readonly roleSelectTrigger: Locator;
     readonly roleSelectContent: Locator;
 
     constructor(page: Page) {
         this.page = page;
-        // Navigation items in UserOrgHub
-        this.tabPolicies = page.locator('button').filter({ hasText: '조직 정책' });
-        this.tabUsers = page.locator('button').filter({ hasText: '사용자' });
-        
+
         // Menu by Authority selectors
         this.roleSelectTrigger = page.locator('button[role="combobox"]').filter({ hasText: '보안 역할' }).or(page.locator('button[role="combobox"]'));
         this.roleSelectContent = page.locator('[role="listbox"]');
     }
 
     async gotoLoginPolicy() {
-        console.log(`>>> Navigating to Login Policy Hub`);
+        console.log(`>>> Navigating to Login Policy (redirects to Monitoring Hub)`);
+        // next.config.ts redirects /admin/user/login-policy → /admin/system/monitoring/hub?tab=policy
+        // (MonitoringHubClient, where tab=policy maps to the LOGIN / '인증 접속 히스토리' view)
         await this.page.goto('/admin/user/login-policy');
-        // Updated for Bento Grid UI
-        await expect(this.page.getByText('조직 및 사용자 관리')).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '시스템 인텔리전스 거버넌스' })).toBeVisible();
     }
 
     async verifyPolicyTab() {
-        console.log(`>>> Accessing POLICIES tab`);
-        await this.tabPolicies.click();
-        
-        // Wait for the UI state to update
-        await this.page.waitForTimeout(1000);
-        // It might show Idle_Probe_State if nothing is selected, which is expected for now
-        await expect(this.page.getByText(/Idle_Probe_State|조직 정책|Access Matrix/i).first()).toBeVisible();
+        console.log(`>>> Verifying policy tab content in Monitoring Hub`);
+        // tab=policy resolves to the LOGIN nav ('인증 접속 히스토리') inside the monitoring hub
+        await expect(this.page.getByText('인증 접속 히스토리')).toBeVisible();
+        // The central investigation data stream panel confirms the hub rendered
+        await expect(this.page.getByText('인베스티게이션')).toBeVisible();
     }
 
     async gotoMenuByAuthority() {

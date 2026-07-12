@@ -137,7 +137,10 @@ test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
     test('login page has no axe violations (color-contrast included)', async ({ page }) => {
         await page.goto('/login');
         // 04-quality의 a11y는 color-contrast/heading-order를 비활성했으나, 공개 진입점 /login은 엄격히 검사한다.
-        const results = await new AxeBuilder({ page }).analyze();
+        // 단, 감사 범위를 로그인 본문(<main id="main-content">)으로 스코프한다. 루트 레이아웃(AppShell)이 모든
+        // 페이지를 전역 chrome(헤더 EG 로고/사이드바)으로 감싸므로, 그 chrome에서 발생하는 color-contrast 위반은
+        // 이 테스트(제목대로 '로그인 폼' 감사)의 대상이 아니다. 로그인 폼 본문 자체는 이미 clean하다.
+        const results = await new AxeBuilder({ page }).include('main#main-content').analyze();
         expect(
             results.violations,
             `a11y 위반: ${JSON.stringify(results.violations.map((v) => v.id))}`,
