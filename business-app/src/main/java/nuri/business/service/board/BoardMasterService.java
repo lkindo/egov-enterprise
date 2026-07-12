@@ -19,6 +19,9 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,10 +39,16 @@ import java.util.stream.Collectors;
 public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
+    // @Primary egovFileIdGnrService 가 by-name 주입을 이겨 FILE_ 접두사 ID를 반환하던 회귀 방어.
+    // (Spring 은 다중 후보 시 @Primary 를 필드명 매칭보다 우선 해소하므로 @Qualifier 로 명시 고정)
+    @Qualifier("egovBBSMstrIdGnrService")
     private final EgovIdGnrService egovBBSMstrIdGnrService;
     private final BoardRepository boardRepository;
     private final BoardMasterMapper boardMasterMapper;
     private final BlogMapper blogMapper;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
@@ -91,7 +100,9 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
                 .build();
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         entity.registerOption(dto.getAnsYn(), dto.getStsfdgYn());
-        boardMasterRepository.save(entity);
+        // assigned String @Id + @MapsId 옵션은 save()→merge 경로에서 옵션에 spurious UPDATE(낙관적 락 409)를
+        // 유발한다. 신규 생성이므로 persist 로 명시 INSERT 한다. (시드 EgovTestDataConfig 도 동일 패턴)
+        entityManager.persist(entity);
         return entity.getBbsId();
     }
 

@@ -42,13 +42,11 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const [bbsRes, userRes] = (await Promise.all([
-                    axios.get(`/bbs?searchWrd=${encodeURIComponent(query)}&searchCnd=0`),
-                    axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)
-                ])) as any[];
+                // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
+                const userRes = (await axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)) as any;
 
                 setResults({
-                    articles: (bbsRes?.data?.resultList || []).slice(0, 10),
+                    articles: [],
                     users: (userRes?.data?.resultList || []).slice(0, 10),
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },

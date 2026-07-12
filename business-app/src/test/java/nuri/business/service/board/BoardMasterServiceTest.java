@@ -9,9 +9,11 @@ import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
 import nuri.business.service.board.dto.BoardMasterMapperImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -56,12 +58,23 @@ class BoardMasterServiceTest {
     @Mock
     private EgovIdGnrService egovBBSMstrIdGnrService;
 
+    // createBoardMaster 는 save() 대신 EntityManager.persist() 로 신규 INSERT 한다(@MapsId 옵션 낙관적 락 회피)
+    @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
     // 실제 MapStruct 생성 구현을 @InjectMocks 생성자에 주입 (매핑 동작 실검증)
     @Spy
     private BoardMasterMapper boardMasterMapper = new BoardMasterMapperImpl();
 
     @Spy
     private BlogMapper blogMapper = new BlogMapperImpl();
+
+    @BeforeEach
+    void injectEntityManager() {
+        // @InjectMocks 는 생성자 주입을 사용하므로 @PersistenceContext 필드주입 대상인 entityManager 는
+        // 자동 주입되지 않는다. createBoardMaster 의 persist() 경로를 위해 명시적으로 주입한다.
+        ReflectionTestUtils.setField(boardMasterService, "entityManager", entityManager);
+    }
 
     @Test
     @DisplayName("게시판 마스터 단건 조회 - 성공")
@@ -121,7 +134,7 @@ class BoardMasterServiceTest {
             String bbsId = boardMasterService.createBoardMaster("user1", dto);
 
             assertThat(bbsId).isEqualTo("BBS_01");
-            verify(boardMasterRepository).save(any(BoardMaster.class));
+            verify(entityManager).persist(any(BoardMaster.class));
         }
     }
 
@@ -228,7 +241,7 @@ class BoardMasterServiceTest {
 
             boardMasterService.createBoardMaster("user1", dto);
 
-            verify(boardMasterRepository).save(argThat(bm -> 
+            verify(entityManager).persist(argThat((BoardMaster bm) ->
                 "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
@@ -307,7 +320,7 @@ class BoardMasterServiceTest {
         BoardMasterDto dto = new BoardMasterDto();
         dto.setBbsId("CUSTOM_BBS_ID");
         boardMasterService.createBoardMaster("user01", dto);
-        verify(boardMasterRepository).save(any(BoardMaster.class));
+        verify(entityManager).persist(any(BoardMaster.class));
     }
 
     @Test

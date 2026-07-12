@@ -64,7 +64,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // --- Step 5: Verify Toast ---
             // Toast renders as role="alert" with aria-live="assertive"
             console.log('>>> Step 5: Waiting for success alert');
-            const successAlert = page.getByRole('alert').filter({ hasText: '성공' });
+            const successAlert = page.locator('[data-sonner-toast][data-type="success"]').filter({ hasText: '성공' });
             await expect(successAlert.first()).toBeVisible({ timeout: 20000 });
             console.log('>>> Step 5 Result: Registration SUCCESS');
 
@@ -93,7 +93,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await confirmBtn.click();
 
             // Deletion success toast (text: '아이덴티티가 성공적으로 말소되었습니다.')
-            const deleteSuccessAlert = page.getByRole('alert').filter({ hasText: '말소' });
+            const deleteSuccessAlert = page.locator('[data-sonner-toast][data-type="success"]').filter({ hasText: '말소' });
             await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
             console.log('>>> User Lifecycle Completed Successfully');
         });

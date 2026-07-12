@@ -159,7 +159,9 @@ export function BoardMakerWizard() {
  atchPsbltyFileQty: 3,
  atchPsbltyFileSz: 5242880, // 5MB
  bbsTypeCd: 'BBST01',
+ bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
+ useYn: 'Y',
  cmntyId: '',
  permissions: {
  'ROLE_ADMIN': ['list', 'read', 'write', 'comment'],

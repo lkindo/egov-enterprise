@@ -66,12 +66,13 @@ export class CollabPage {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
         await this.switchTab('CONTACTS');
         
-        await this.page.getByRole('button', { name: /신규 연락처/i }).click();
+        await this.page.getByRole('button', { name: /신규 연락처/i }).first().click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
-        const nameInput = this.page.getByTestId('identity-name-input');
-        const emailInput = this.page.getByTestId('identity-email-input');
-        const telInput = this.page.getByTestId('identity-tel-input');
+        // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어
+        const nameInput = this.page.getByTestId('identity-name-input').first();
+        const emailInput = this.page.getByTestId('identity-email-input').first();
+        const telInput = this.page.getByTestId('identity-tel-input').first();
         await expect(nameInput).toBeVisible();
         await this.page.waitForTimeout(1000);
         

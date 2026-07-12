@@ -34,8 +34,8 @@ export class ObservabilityPage {
         } catch (e) {
             console.log('>>> Topology loader not detected or already hidden.');
         }
-        // 토폴로지 탭 활성/콘텐츠 확인 (탭 라벨 자체는 항상 존재하므로 canvas/svg 노드 존재로 검증)
-        await this.page.waitForSelector('svg, canvas', { state: 'visible', timeout: 15000 });
+        // 토폴로지 탭의 실제 노드 라벨로 검증 (svg/canvas 존재만으론 lucide 아이콘에 의해 항상 참 → 무의미)
+        await expect(this.page.getByText('PostgreSQL Primary')).toBeVisible({ timeout: 15000 });
     }
 
     async refresh() {

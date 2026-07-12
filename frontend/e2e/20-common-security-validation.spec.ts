@@ -3,7 +3,10 @@ import { test, expect } from './fixtures/base-test';
 test.describe('Tier 20: Common Security & UI Validation', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    test('Session Integrity: Handling Token Clearance', async ({ page, context }) => {
+    test('Session Integrity: Handling Token Clearance', async ({ page, context, consoleGuard }) => {
+        // 이 테스트는 토큰을 의도적으로 비워 세션 만료를 시뮬레이션한다 → 그로 인한 401(알림 폴링/토큰 재발급 실패)은
+        // '정상적인 만료 처리'의 일부이므로 콘솔 가드에서 무시한다(검증 대상은 로그인 리다이렉트).
+        consoleGuard.addIgnorePattern(/notifications|auth\/reissue/i);
         console.log('>>> Step 1: Navigating to a protected admin page');
         await page.goto('/admin/community/boards/master');
         await expect(page).toHaveURL(/.*master/);
