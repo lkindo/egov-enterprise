@@ -28,8 +28,8 @@ class BoardUserService extends UserService {
   }
 
   async likePost(bbsId: string, pstId: number): Promise<number> {
-    const response = await this.patch<{ data: number }>(`/${bbsId}/posts/${pstId}/like`);
-    return response.data;
+    // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
+    return this.patch<number>(`/${bbsId}/posts/${pstId}/like`);
   }
 }
 

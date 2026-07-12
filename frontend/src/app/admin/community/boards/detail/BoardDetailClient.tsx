@@ -8,7 +8,7 @@ import {
   Download,
   Calendar, Eye, User,
   FileText, Share2, Quote,
-  Package, Plus
+  Package, Plus, ThumbsUp
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
 import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import CommentSection from '@/components/features/comment/CommentSection';
@@ -62,6 +63,23 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
+  const [likeDelta, setLikeDelta] = useState(0);
+  const [liking, setLiking] = useState(false);
+  const handleLike = async () => {
+    if (liking || !bbsId || !pstId) return;
+    setLiking(true);
+    setLikeDelta((d) => d + 1);
+    try {
+      await boardUserService.likePost(bbsId, Number(pstId));
+    } catch {
+      setLikeDelta((d) => d - 1);
+      toast('추천 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLiking(false);
+    }
+  };
 
   if (!mounted) {
     return (
@@ -155,6 +173,15 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             aria-label="게시글 답글 작성"
           >
             <Plus size={20} className="text-primary" /> Fork Thread
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleLike}
+            disabled={liking}
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            aria-label="게시글 추천"
+          >
+            <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
           </Button>
           <form action={async (formData) => {
             if(!confirm('정말로 이 지식 노드를 삭제하시겠습니까?')) return;
