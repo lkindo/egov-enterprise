@@ -43,8 +43,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
             setLoading(true);
             try {
                 const [bbsRes, userRes] = (await Promise.all([
-                    axios.get(`/bbs?searchWrd=${query}&searchCnd=0`),
-                    axios.get(`/admin/users?searchKeyword=${query}&searchCondition=1`)
+                    axios.get(`/bbs?searchWrd=${encodeURIComponent(query)}&searchCnd=0`),
+                    axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)
                 ])) as any[];
 
                 setResults({

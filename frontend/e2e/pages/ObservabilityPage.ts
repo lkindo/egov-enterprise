@@ -3,57 +3,51 @@ import { Page, expect } from '@playwright/test';
 export class ObservabilityPage {
     constructor(private page: Page) {}
 
+    // 라우트 통합: /admin/observability → /admin/system/monitoring/hub?tab=observability (next.config redirect).
+    // POM을 모니터링 허브(MonitoringHubClient) 구조에 맞게 정합.
     async navigate() {
-        await this.page.goto('/admin/observability');
+        await this.page.goto('/admin/system/monitoring/hub?tab=observability');
         await this.verifyHeader();
     }
 
     async verifyHeader() {
-        const header = this.page.getByRole('heading', { name: '시스템 통합 관제' }).first();
-        await header.waitFor({ state: 'visible' });
+        // 허브 PageHeader title (MonitoringHubClient.tsx:465)
+        const header = this.page.getByText('시스템 인텔리전스 거버넌스').first();
+        await header.waitFor({ state: 'visible', timeout: 30000 });
         await expect(header).toBeVisible();
     }
 
     async verifyMetrics() {
-        // Wait for ANY of the core metrics to appear (case-insensitive)
-        await this.page.waitForSelector('text=/글로벌 트래픽|시스템 지연시간|에러 발생률/i', { state: 'visible', timeout: 15000 });
-        const cards = this.page.locator('div').filter({ hasText: /글로벌 트래픽|시스템 지연시간|에러 발생률/i });
+        // 허브 observability 탭의 게이지 지표 (CPU_LOAD/MEMORY_ALLOC/NETWORK_TRAFFIC)
+        await this.page.waitForSelector('text=/CPU_LOAD|MEMORY_ALLOC|NETWORK_TRAFFIC/i', { state: 'visible', timeout: 15000 });
+        const cards = this.page.locator('div').filter({ hasText: /CPU_LOAD|MEMORY_ALLOC|NETWORK_TRAFFIC/i });
         await expect(cards.first()).toBeVisible();
     }
 
     async verifyTopology() {
-        // The component is dynamic with ssr: false
-        // We wait for the loading indicator to disappear if it shows up
-        const loading = this.page.getByText('Initializing Map...');
+        // 허브의 토폴로지는 별도 탭(인프라 토폴로지 맵, tab=topology)
+        await this.page.getByRole('button', { name: /인프라 토폴로지 맵/i }).first().click();
+        const loading = this.page.getByText('Initializing Topology Stream...');
         try {
-            // Use a short wait first to see if it even appears, then wait for it to hide
             await loading.waitFor({ state: 'visible', timeout: 2000 });
             await loading.waitFor({ state: 'hidden', timeout: 30000 });
         } catch (e) {
-            // If it never appeared within 2s, it's likely already loaded
-            console.log('>>> Loading indicator not detected or already hidden.');
+            console.log('>>> Topology loader not detected or already hidden.');
         }
-
-        // Verify topology content
-        const topology = this.page.locator('div').filter({ hasText: /System Map/i }).first();
-        await expect(topology).toBeVisible({ timeout: 15000 });
-        
-        // Also verify at least one node is present (using a more flexible regex)
-        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway|App Nodes|Primary DB|System Latency|Error Rate/i).first();
-        await expect(node).toBeVisible({ timeout: 15000 });
+        // 토폴로지 탭 활성/콘텐츠 확인 (탭 라벨 자체는 항상 존재하므로 canvas/svg 노드 존재로 검증)
+        await this.page.waitForSelector('svg, canvas', { state: 'visible', timeout: 15000 });
     }
 
     async refresh() {
-        console.log('[E2E] Clicking Live Sync button...');
-        const syncBtn = this.page.getByRole('button', { name: /실시간 동기화/i });
+        console.log('[E2E] Clicking data-stream refresh button...');
+        const syncBtn = this.page.getByRole('button', { name: /데이터 스트림 새로고침/i });
         await syncBtn.click();
         await this.page.waitForTimeout(1000);
     }
 
     async exportData() {
-        console.log('[E2E] Clicking Data Export button...');
-        const exportBtn = this.page.getByRole('button', { name: /데이터 익스포트/i });
+        console.log('[E2E] Clicking report snapshot button...');
+        const exportBtn = this.page.getByRole('button', { name: /리포트 스냅샷/i });
         await exportBtn.click();
-        // Since it's a mock action in the UI, we just verify clickability
     }
 }

@@ -16,7 +16,8 @@ export class CollabPage {
     async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS') {
         console.log(`>>> [Collab] Switching to tab: ${tab}`);
         const label = tab === 'MESSAGES' ? 'MESSAGES' : tab === 'CONTACTS' ? 'CONTACTS' : tab === 'SCRAPS' ? 'SCRAPS' : 'CALENDAR';
-        await this.page.getByRole('button', { name: label }).click();
+        // 페이지 전환 중 동일 탭 버튼이 일시적으로 2개 존재(strict-mode 위반) → exact + first로 방어
+        await this.page.getByRole('button', { name: label, exact: true }).first().click();
         await this.page.waitForTimeout(1000);
     }
 
