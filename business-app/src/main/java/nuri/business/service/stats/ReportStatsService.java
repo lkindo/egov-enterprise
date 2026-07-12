@@ -24,6 +24,8 @@ public class ReportStatsService {
     private final DtaUseStatsRepository dtaUseStatsRepository;
     private final nuri.business.domain.log.UserLogRepository userLogRepository;
     private final nuri.business.domain.log.LoginLogRepository loginLogRepository;
+    private final nuri.business.domain.user.repository.UserRepository userRepository;
+    private final nuri.business.domain.board.BoardRepository boardRepository;
 
     @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
     private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
@@ -48,6 +50,25 @@ public class ReportStatsService {
         String to = toDate.replace("-", "");
         // TB_LOGIN_LOG에서 날짜별로 집계
         return loginLogRepository.countLoginsByDate(from, to);
+    }
+
+    /**
+     * 통계 요약(총 사용자/총 게시글/오늘 접속) — 대시보드 상단 요약 카드용.
+     * 프런트 StatsAdminService.getSummary()가 호출하는 GET /api/v1/admin/system/statistics/summary 백엔드.
+     */
+    public nuri.business.service.stats.dto.SummaryStatsDto getSummary() {
+        long totalUsers = userRepository.count();
+        long totalPosts = boardRepository.count();
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        long todayConnects = loginLogRepository.countLoginsByDate(today, today).stream()
+                .filter(row -> row.length > 1 && row[1] != null)
+                .mapToLong(row -> ((Number) row[1]).longValue())
+                .sum();
+        return nuri.business.service.stats.dto.SummaryStatsDto.builder()
+                .totalUsers(totalUsers)
+                .totalPosts(totalPosts)
+                .todayConnects(todayConnects)
+                .build();
     }
 
     // ========== 보고서 통계 ==========

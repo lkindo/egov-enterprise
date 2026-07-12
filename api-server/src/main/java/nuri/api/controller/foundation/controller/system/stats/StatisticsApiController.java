@@ -79,6 +79,12 @@ public class StatisticsApiController {
         return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
     }
 
+    @Operation(summary = "요약 통계 조회")
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<nuri.business.service.stats.dto.SummaryStatsDto>> getSummary() {
+        return ResponseEntity.ok(ApiResponse.success(reportStatsService.getSummary()));
+    }
+
 
     private List<StatsDto> convertToStatsDto(List<Object[]> stats) {
         return stats.stream()
