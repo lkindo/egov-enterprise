@@ -215,7 +215,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
                 <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
-                <span className="text-xs font-bold opacity-20">{log.occcrrncDe}</span>
+                <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
             <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
