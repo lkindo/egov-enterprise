@@ -16,7 +16,8 @@ import {
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
-import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
+import { StatsDto } from '@/services/foundation/system/StatsAdminService';
+import { statsUserService } from '@/services/business/user/StatsService';
 import { motion } from 'framer-motion';
 import { useMessage } from '@/hooks/useMessage';
 
@@ -74,7 +75,7 @@ export default function UnifiedDashboardClient({
   // 접속 통계 데이터 조회 (최근 7일)
   const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
-    queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
+    queryFn: () => statsUserService.getConnectStats(),
     enabled: !!user && isMounted
   });
 
