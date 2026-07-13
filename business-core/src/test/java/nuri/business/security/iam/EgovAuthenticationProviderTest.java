@@ -78,6 +78,10 @@ class EgovAuthenticationProviderTest {
         assertThat(result.getName()).isEqualTo("USR_0000000000001");
         assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_USER");
         verify(userRepository).save(any(User.class)); // Unlock and save
+        // [잠금 해제 검증] 성공 시 unlock() → lckYn='N', lckCnt=0.
+        // (뮤턴트: unlock() 라인 삭제 시 lckCnt 는 초기 null 로 남아 이 어서션이 킬)
+        assertThat(testUser.getLckYn()).isEqualTo("N");
+        assertThat(testUser.getLckCnt()).isEqualTo(0);
     }
 
     @Test
@@ -93,6 +97,9 @@ class EgovAuthenticationProviderTest {
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(BadCredentialsException.class);
         verify(userRepository).save(any(User.class)); // Lock count incremented
+        // [잠금 카운터 검증] 실패 시 incrementLockCount() → null→1.
+        // (뮤턴트: incrementLockCount() 라인 삭제 시 lckCnt 는 null 로 남아 이 어서션이 킬)
+        assertThat(testUser.getLckCnt()).isEqualTo(1);
     }
 
     @Test
