@@ -27,6 +27,12 @@ import static org.mockito.BDDMockito.given;
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
 
+    private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
+    @org.junit.jupiter.api.BeforeEach
+    void __openSecUtilMock() { __secUtilMock = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class); }
+    @org.junit.jupiter.api.AfterEach
+    void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
+
     @InjectMocks
     private CommentServiceImpl commentService;
 

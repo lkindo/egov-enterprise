@@ -7,6 +7,7 @@ import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
@@ -34,9 +35,10 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
 
     @Override
     public ScrapDto getScrap(@NonNull String scrapId) {
-        return scrapRepository.findById(scrapId)
-                .map(this::convertToDto)
+        Scrap entity = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 조회
+        return convertToDto(entity);
     }
 
     @Override
@@ -55,6 +57,7 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     public void updateScrap(String userId, ScrapDto dto) {
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(dto.getScrapId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정
         entity.update(dto.getScrapNm(), entity.getScrapUrl(), entity.getScrapExpln(), entity.getUseYn());
         entity.setLastMdfrId(userId);
     }
@@ -62,7 +65,10 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
     @Override
     @Transactional
     public void deleteScrap(@NonNull String scrapId) {
-        scrapRepository.deleteById(scrapId);
+        Scrap entity = scrapRepository.findById(scrapId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 삭제
+        scrapRepository.delete(entity);
     }
 
     private ScrapDto convertToDto(Scrap entity) {

@@ -62,9 +62,10 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
 
     @Override
     public ScheduleDto getSchedule(@NonNull String schdlId) {
-        return scheduleRepository.findById(schdlId)
-                .map(this::convertToDto)
+        Schedule entity = scheduleRepository.findById(schdlId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 조회
+        return convertToDto(entity);
     }
 
     @Override
@@ -96,6 +97,7 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
     public void updateSchedule(String id, String userId, ScheduleDto dto) {
         Schedule entity = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정
 
         entity.updateAll(
                 dto.getSchdlNm(),
@@ -118,9 +120,9 @@ public class ScheduleService extends BaseAbstractService implements EgovSchedule
         Schedule entity = scheduleRepository.findById(schdlId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        if (userId != null && !userId.equals(entity.getFrstRgtrId())) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        // [IDOR/정체성 수정] 기존 가드는 userId(컨트롤러 esntlId)와 frstRgtrId(loginId)를 비교해 항상 deny-all 이었다.
+        // SecurityUtil 이 SecurityContext 에서 loginId 를 읽어 소유자/관리자를 올바로 판정한다.
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
 
         scheduleRepository.delete(entity);
     }

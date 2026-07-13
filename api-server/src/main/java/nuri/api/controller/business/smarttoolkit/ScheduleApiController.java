@@ -104,7 +104,7 @@ public class ScheduleApiController {
     private String getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
+            return userDetails.getLoginId(); // [정체성] 일정 소유/필터/감사는 frstRgtrId(=loginId) 기준
         }
         return "anonymous";
     }

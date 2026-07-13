@@ -46,6 +46,7 @@ public class CommentServiceImpl implements CommentService {
     public void updateComment(Long commentNo, String content) {
         Comment comment = commentRepository.findById(commentNo)
                 .orElseThrow(() -> new BusinessException(BoardErrorCode.COMMENT_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
         comment.update(content);
     }
 
@@ -54,6 +55,7 @@ public class CommentServiceImpl implements CommentService {
     public void deleteComment(Long commentNo) {
         Comment comment = commentRepository.findById(commentNo)
                 .orElseThrow(() -> new BusinessException(BoardErrorCode.COMMENT_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
         comment.delete();
     }
 

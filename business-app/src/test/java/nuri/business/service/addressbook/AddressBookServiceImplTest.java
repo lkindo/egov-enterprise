@@ -29,6 +29,12 @@ import static org.mockito.Mockito.*;
 @DisplayName("AddressBookServiceImpl 단위 테스트")
 class AddressBookServiceImplTest {
 
+    private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
+    @org.junit.jupiter.api.BeforeEach
+    void __openSecUtilMock() { __secUtilMock = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class); }
+    @org.junit.jupiter.api.AfterEach
+    void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
+
     @InjectMocks
     private AddressBookServiceImpl addressBookService;
 

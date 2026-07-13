@@ -101,6 +101,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     public void updateAddressBook(String userId, AddressBookDto dto) {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정(PII)
 
         entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), dto.getUseYn());
 
@@ -148,6 +149,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     public void deleteAddressBook(String adbkId, String userId) {
         AddressBook entity = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 삭제(PII)
 
         entity.update(entity.getAdbkNm(), entity.getRlsScopeCd(), "N");
     }

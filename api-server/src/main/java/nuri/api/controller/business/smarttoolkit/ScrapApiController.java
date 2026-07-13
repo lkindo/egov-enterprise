@@ -72,9 +72,11 @@ public class ScrapApiController {
     }
 
     private String getCurrentUserId() {
+        // [정체성] 스크랩 소유/필터/감사는 frstRgtrId(=loginId) 기준이므로 loginId 를 반환한다(esntlId 아님).
+        // 과거 esntlId 반환은 getScrapList 를 항상 빈 목록으로 만들던 버그였다.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
+            return userDetails.getLoginId();
         }
         return "anonymous";
     }

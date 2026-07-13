@@ -5,6 +5,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
+import nuri.foundation.security.service.CustomUserDetails;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.security.AuthorityConstants;
 
 @Component
 public class SecurityUtil {
@@ -47,5 +51,35 @@ public class SecurityUtil {
 
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
+    }
+
+    /**
+     * 현재 인증 주체의 <b>로그인 ID</b>(CustomUserDetails.getUserId)를 반환한다.
+     * 소유권 비교는 감사 컬럼 frstRgtrId 에 저장되는 값(=loginId, {@code LoginUserAuditorAware})과
+     * 일치시켜야 하므로 esntlId 가 아닌 loginId 를 쓴다.
+     */
+    public static Optional<String> getCurrentLoginId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            return Optional.ofNullable(userDetails.getLoginId());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * 리소스 소유권(작성자) 검증. 관리자(ADMIN/SYSTEM)는 우회한다.
+     * 소유자 식별은 <b>loginId</b> 기준(frstRgtrId 저장값과 동일)이다. — IDOR 방어 표준 가드.
+     *
+     * @param ownerLoginId 리소스의 작성자 loginId (보통 {@code entity.getFrstRgtrId()})
+     * @throws BusinessException ACCESS_DENIED — 관리자가 아니고 현재 사용자가 소유자가 아닐 때
+     */
+    public static void assertOwnerOrAdmin(String ownerLoginId) {
+        if (hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+            return;
+        }
+        String current = getCurrentLoginId().orElse(null);
+        if (current == null || !current.equals(ownerLoginId)) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
     }
 }

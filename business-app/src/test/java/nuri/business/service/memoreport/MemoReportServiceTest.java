@@ -28,6 +28,12 @@ import static org.mockito.Mockito.when;
 @DisplayName("MemoReportService 단위 테스트")
 class MemoReportServiceTest {
 
+    private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
+    @org.junit.jupiter.api.BeforeEach
+    void __openSecUtilMock() { __secUtilMock = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class); }
+    @org.junit.jupiter.api.AfterEach
+    void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
+
     @Mock
     private MemoReportRepository memoReportRepository;
 
@@ -157,14 +163,16 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("메모보고 삭제")
     void deleteMemoReport() {
-        // given
+        // given — 소유권 가드용 findById(삭제 시 findById→delete 로 변경됨)
         String reprtId = "R1";
+        nuri.business.domain.memoreport.MemoReport entity = org.mockito.Mockito.mock(nuri.business.domain.memoreport.MemoReport.class);
+        org.mockito.Mockito.when(memoReportRepository.findById(reprtId)).thenReturn(java.util.Optional.of(entity));
 
         // when
         memoReportService.deleteMemoReport(reprtId);
 
         // then
-        verify(memoReportRepository).deleteById(reprtId);
+        verify(memoReportRepository).delete(entity);
     }
 
     @Test

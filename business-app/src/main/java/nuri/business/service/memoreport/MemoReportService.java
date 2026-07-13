@@ -78,6 +78,7 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
     public void updateMemoReport(String rptId, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
                 dto.getRptCn(), dto.getAtchFileId());
         entity.setLastMdfrId(userId);
@@ -86,7 +87,10 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
     @Override
     @Transactional
     public void deleteMemoReport(@NonNull String rptId) {
-        memoReportRepository.deleteById(rptId);
+        MemoReport entity = memoReportRepository.findById(rptId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
+        memoReportRepository.delete(entity);
     }
 
     @Override

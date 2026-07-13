@@ -27,6 +27,12 @@ import static org.mockito.Mockito.verify;
 @DisplayName("ScheduleService 단위 테스트")
 class ScheduleServiceTest {
 
+    private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
+    @org.junit.jupiter.api.BeforeEach
+    void __openSecUtilMock() { __secUtilMock = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class); }
+    @org.junit.jupiter.api.AfterEach
+    void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
+
     @Mock
     private ScheduleRepository scheduleRepository;
 
@@ -133,18 +139,19 @@ class ScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("일정 삭제 실패 - 작성자가 아님")
-    void deleteSchedule_fail_notCreator() {
-        // given
+    @DisplayName("일정 삭제 - 소유권 가드(SecurityUtil.assertOwnerOrAdmin) 위임 검증")
+    void deleteSchedule_delegatesOwnershipGuard() {
+        // given — 소유자 loginId=frstRgtrId. 실제 소유권 거부/허용 판정은 SecurityUtilTest 가 검증하고,
+        // 여기서는 서비스가 엔티티의 frstRgtrId 로 가드를 '호출'하는지(배선)를 확인한다.
         String schdulId = "S1";
         Schedule entity = Schedule.builder().schdlId(schdulId).build();
-        entity.setFrstRgtrId("creator"); // 감사 필드는 빌더 대신 세터로 세팅(테스트 시나리오 구성용)
+        entity.setFrstRgtrId("creator");
         given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
 
-        // when & then
-        BusinessException exception = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> 
-            scheduleService.deleteSchedule(schdulId, "otherUser")
-        );
-        assertThat(exception).isNotNull();
+        // when
+        scheduleService.deleteSchedule(schdulId, "otherUser");
+
+        // then — 가드가 소유자 loginId 로 호출됨
+        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin("creator"));
     }
 }

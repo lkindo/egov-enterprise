@@ -178,7 +178,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         }
         nuri.foundation.security.service.CustomUserDetails userDetails =
                 org.mockito.Mockito.mock(nuri.foundation.security.service.CustomUserDetails.class);
-        given(userDetails.getEsntlId()).willReturn(userId);
+        given(userDetails.getLoginId()).willReturn(userId); // 컨트롤러가 소유/필터/감사용 loginId 를 사용
         org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         userDetails, null, java.util.Collections.emptyList()

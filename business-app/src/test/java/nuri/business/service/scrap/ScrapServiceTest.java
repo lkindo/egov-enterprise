@@ -27,6 +27,14 @@ import static org.mockito.Mockito.verify;
 @DisplayName("ScrapService 테스트")
 class ScrapServiceTest {
 
+    // 소유권 가드(SecurityUtil.assertOwnerOrAdmin)를 no-op 처리 — 소유권 로직은 SecurityUtilTest 가 검증.
+    // (가드 배선은 이 mock 제거 시 ACCESS_DENIED 로 실패함으로써 증명됨)
+    private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
+    @org.junit.jupiter.api.BeforeEach
+    void __openSecUtilMock() { __secUtilMock = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class); }
+    @org.junit.jupiter.api.AfterEach
+    void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
+
     @Mock
     private ScrapRepository scrapRepository;
 
@@ -97,10 +105,14 @@ class ScrapServiceTest {
     @Test
     @DisplayName("스크랩 삭제")
     void deleteScrap_Success() {
+        // Given — 소유권 가드용 findById(삭제 시 findById→delete 로 변경됨)
+        nuri.business.domain.scrap.Scrap scrap = nuri.business.domain.scrap.Scrap.builder().scrapId("S1").build();
+        org.mockito.Mockito.when(scrapRepository.findById("S1")).thenReturn(java.util.Optional.of(scrap));
+
         // When
         scrapService.deleteScrap("S1");
 
         // Then
-        verify(scrapRepository).deleteById("S1");
+        verify(scrapRepository).delete(scrap);
     }
 }
