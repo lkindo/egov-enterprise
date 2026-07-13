@@ -1,10 +1,10 @@
-package nuri.business.service.usermanagement;
+package nuri.business.service.department;
 
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
-import nuri.business.service.usermanagement.dto.DeptManageDto;
-import nuri.business.service.usermanagement.dto.DeptManageMapper;
-import nuri.business.service.usermanagement.dto.DeptManageMapperImpl;
+import nuri.business.service.department.dto.DeptManageDto;
+import nuri.business.service.department.dto.DeptManageMapper;
+import nuri.business.service.department.dto.DeptManageMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +37,7 @@ class DeptManageServiceImplTest {
     @Mock
     private DeptManageRepository deptManageRepository;
 
-    // MapStruct 생성 구현체를 실제로 주입해 엔티티→DTO 매핑을 검증 (수기 from() 대체)
+    // 실제 MapStruct 생성 구현(DeptManageMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
     private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();
 

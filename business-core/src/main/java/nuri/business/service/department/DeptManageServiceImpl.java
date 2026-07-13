@@ -1,12 +1,12 @@
-package nuri.business.service.usermanagement;
+package nuri.business.service.department;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
-import nuri.business.service.usermanagement.dto.DeptManageDto;
-import nuri.business.service.usermanagement.dto.DeptManageMapper;
+import nuri.business.service.department.dto.DeptManageDto;
+import nuri.business.service.department.dto.DeptManageMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +17,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class DeptManageServiceImpl implements EgovDeptManageService {
+public class DeptManageServiceImpl implements DeptManageService {
 
     private final DeptManageRepository deptManageRepository;
     private final DeptManageMapper deptManageMapper;

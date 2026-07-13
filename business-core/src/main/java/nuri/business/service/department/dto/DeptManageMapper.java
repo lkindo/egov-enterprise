@@ -1,4 +1,4 @@
-package nuri.business.service.usermanagement.dto;
+package nuri.business.service.department.dto;
 
 import nuri.business.domain.user.entity.DeptManage;
 import org.mapstruct.Mapper;

@@ -1,11 +1,11 @@
-package nuri.business.service.usermanagement;
+package nuri.business.service.department;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.repository.DeptManageRepository;
-import nuri.business.service.usermanagement.dto.DeptManageDto;
-import nuri.business.service.usermanagement.dto.DeptManageMapper;
-import nuri.business.service.usermanagement.dto.DeptManageMapperImpl;
+import nuri.business.service.department.dto.DeptManageDto;
+import nuri.business.service.department.dto.DeptManageMapper;
+import nuri.business.service.department.dto.DeptManageMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

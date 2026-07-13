@@ -1,10 +1,10 @@
-package nuri.business.service.usermanagement;
+package nuri.business.service.department;
 
-import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.business.service.department.dto.DeptManageDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-public interface EgovDeptManageService {
+public interface DeptManageService {
     Page<DeptManageDto> getDeptManageList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
     DeptManageDto getDeptManage(String ognzId);
