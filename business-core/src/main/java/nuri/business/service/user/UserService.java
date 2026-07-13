@@ -282,7 +282,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
                 required(request.getUserNm(), "사용자 이름 은 null 일 수 없습니다");
 
-                if (userRepository.existsById(request.getUserId())) {
+                // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)는 항상 false(死가드)였다.
+                // 로그인 ID 중복은 unique 컬럼 user_id 로 확인해야 한다. 미수정 시 중복 loginId 가 통과→INSERT 시 500.
+                if (userRepository.findByUserId(request.getUserId()).isPresent()) {
                         throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
                 }
 

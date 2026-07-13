@@ -64,7 +64,7 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("회원가입 실패 - 중복된 사용자 ID (BusinessException 발생)")
         void signup_fail_withDuplicateUserId() {
                 // Given
-                when(userRepository.existsById("newUser")).thenReturn(true);
+                when(userRepository.findByUserId("newUser")).thenReturn(java.util.Optional.of(org.mockito.Mockito.mock(User.class)));
 
                 // When & Then
                 assertThatThrownBy(() -> userService.signup(signupRequest))
@@ -76,7 +76,7 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("회원가입 실패 - DB 저장 오류 (RuntimeException 발생)")
         void signup_fail_withDatabaseConnectionError() {
                 // Given
-                when(userRepository.existsById("newUser")).thenReturn(false);
+                when(userRepository.findByUserId("newUser")).thenReturn(java.util.Optional.empty());
                 when(passwordEncoder.encode(any(String.class))).thenReturn("encodedPassword");
                 doThrow(new RuntimeException("Database connection failed"))
                                 .when(userRepository).save(any(User.class));

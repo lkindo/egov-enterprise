@@ -141,7 +141,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 성공")
   void signup_success() {
-    when(userRepository.existsById(any())).thenReturn(false);
+    when(userRepository.findByUserId(any())).thenReturn(Optional.empty());
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -154,7 +154,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 실패 - 중복된 ID")
   void signup_fail_duplicateId() {
-    when(userRepository.existsById(any())).thenReturn(true);
+    when(userRepository.findByUserId(any())).thenReturn(Optional.of(mock(User.class)));
 
     assertThatThrownBy(() -> userService.signup(signupRequest))
         .isInstanceOf(BusinessException.class);

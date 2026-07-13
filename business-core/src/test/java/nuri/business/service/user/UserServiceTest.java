@@ -177,7 +177,7 @@ class UserServiceTest {
                 .userNm("신규유저")
                 .build();
 
-        given(userRepository.existsById("newuser")).willReturn(false);
+        given(userRepository.findByUserId("newuser")).willReturn(Optional.empty());
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
 
         userService.signup(request);
