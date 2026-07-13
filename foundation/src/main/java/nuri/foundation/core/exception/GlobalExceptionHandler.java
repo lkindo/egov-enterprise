@@ -149,6 +149,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 경로/쿼리 파라미터 타입 불일치 예외 처리 — 500 이 아닌 400(Bad Request).
+     * 예) GET /api/v1/menus/abc (menuNo=Long 기대) → TypeMismatch. 잘못된 요청이므로 400 이 정확하다.
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.INVALID_TYPE_VALUE, resolve(CommonErrorCode.INVALID_TYPE_VALUE)), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 미매핑 경로(존재하지 않는 엔드포인트/정적 리소스) 예외 처리 — 500 이 아닌 404(Not Found).
+     * Spring Boot 3.2+ DispatcherServlet 은 미매핑 요청에서 NoResourceFoundException 을 던진다.
+     */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
+            org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.RESOURCE_NOT_FOUND, resolve(CommonErrorCode.RESOURCE_NOT_FOUND)), HttpStatus.NOT_FOUND);
+    }
+
+    /**
      * 최상위 공통 예외 처리
      * 백엔드 헌법 제7조 2항 및 정보 노출(Information Disclosure) 취약점 방어를 위해
      * 내부 상세 메시지는 서버 로그(log.error)로만 남기고, 클라이언트 응답은 마스킹하여 반환.
