@@ -57,6 +57,12 @@ jobs:
       - name: Build and Test with Gradle
         run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
 
+      # [계약 드리프트 게이트] 위 build 가 -Dopenapi.export.path 로 api-docs.json 을 재생성한다.
+      # 커밋된 api-docs.json 이 실제 DTO/컨트롤러와 어긋나면(=stale) 여기서 diff 로 빌드를 실패시킨다.
+      # (예: 신설 엔드포인트가 커밋된 스펙에 누락된 채 머지되는 상황 차단)
+      - name: Verify committed api-docs.json is fresh (contract drift gate)
+        run: git diff --exit-code api-docs.json
+
       - name: Export OpenAPI Spec
         run: ./gradlew :api-server:bootRun & sleep 30 && curl -s http://localhost:8080/v3/api-docs > openapi-generated.json || true
         continue-on-error: true
@@ -137,6 +143,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: frontend
+
+      # [계약 드리프트 게이트] 커밋된 api-docs.json(백엔드 job 이 신선함을 이미 검증) 으로부터
+      # 타입/Zod 를 재생성해 커밋본과 diff. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
+      - name: Verify generated API types are in sync with spec (contract drift gate)
+        run: |
+          npm run codegen:verify
+          npm run codegen:verify:zod
         working-directory: frontend
 
       - name: Security Audit

@@ -1,5 +1,6 @@
 package nuri.business.service.user.dto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.entity.Role;
@@ -84,5 +85,28 @@ class UserDtoTest {
         UserResponse response = UserResponse.from(user);
         assertNotNull(response);
         assertEquals("user1", response.userId());
+    }
+
+    @Test
+    @DisplayName("[보안] 비밀번호 계열 필드는 JSON 응답으로 직렬화되지 않는다 (WRITE_ONLY)")
+    void testPasswordFields_NotSerializedInResponse() throws Exception {
+        // from(user, authority) 가 pswd 해시를 DTO 객체에 채우더라도(현행 거동) 응답 JSON 에는 새어나가면 안 된다.
+        UserDto dto = UserDto.builder()
+                .userId("user1").userNm("홍길동").esntlId("esntl1")
+                .pswd("$2a$10$SECRETHASHVALUE1234567890")
+                .pswdHint("첫 반려동물 이름")
+                .pswdCrans("바둑이")
+                .build();
+
+        String json = new ObjectMapper().writeValueAsString(dto);
+
+        // 키 자체가 응답에 존재하지 않아야 한다
+        assertFalse(json.contains("\"pswd\""), "응답 JSON 에 pswd 키가 노출됨: " + json);
+        assertFalse(json.contains("\"pswdHint\""), "응답 JSON 에 pswdHint 키가 노출됨");
+        assertFalse(json.contains("\"pswdCrans\""), "응답 JSON 에 pswdCrans 키가 노출됨");
+        // 비밀번호 해시 값이 절대 실려나가지 않아야 한다
+        assertFalse(json.contains("SECRETHASHVALUE"), "비밀번호 해시가 응답에 노출됨: " + json);
+        // 정상 필드는 여전히 직렬화되어야 한다(회귀 방지)
+        assertTrue(json.contains("\"userId\""), "일반 필드까지 누락되면 안 됨");
     }
 }

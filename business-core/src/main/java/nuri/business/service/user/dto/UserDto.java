@@ -1,5 +1,6 @@
 package nuri.business.service.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import org.springframework.lang.NonNull;
 import jakarta.validation.constraints.NotBlank;
@@ -28,14 +29,19 @@ public record UserDto(
 
     String esntlId,
 
+    // [보안] 비밀번호 계열 필드는 요청(write)으로만 수용하고 응답(read)에는 절대 직렬화하지 않는다.
+    // UserDto 가 request/response 겸용이라 from() 이 해시를 채우더라도 WRITE_ONLY 로 응답 노출을 원천 차단한다.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
     String pswd,
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Size(max = 300, message = "비밀번호 힌트는 최대 300 자입니다")
     String pswdHint,
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Size(max = 100, message = "비밀번호 정답은 최대 100 자입니다")
     String pswdCrans,
     
