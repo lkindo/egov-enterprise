@@ -4,6 +4,8 @@ import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.foundation.core.exception.BusinessException;
+import jakarta.persistence.EntityManager;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,12 +26,19 @@ class BoardMasterServiceLogicTest {
     @Mock
     private BoardMasterRepository boardMasterRepository;
 
+    // createBoardMaster 는 assigned-@Id 낙관적 락(409) 회피를 위해 save() 대신 entityManager.persist() 를 쓴다.
+    // 해당 @PersistenceContext 필드를 목으로 주입하지 않으면 persist 호출 시 NPE 가 난다.
+    @Mock
+    private EntityManager entityManager;
+
     @InjectMocks
     private BoardMasterService boardMasterService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        // @InjectMocks 는 생성자 주입 사용 시 @PersistenceContext 필드(비생성자)는 주입하지 않으므로 수동 주입한다.
+        ReflectionTestUtils.setField(boardMasterService, "entityManager", entityManager);
     }
 
     @Test
@@ -44,10 +53,10 @@ class BoardMasterServiceLogicTest {
                 .build();
 
         // when
-        boardMasterService.createBoardMaster(eq("user1"), newBoardMasterDto);
+        boardMasterService.createBoardMaster("user1", newBoardMasterDto);
 
-        // then
-        verify(boardMasterRepository, times(1)).save(any(BoardMaster.class));
+        // then — 신규 생성은 repository.save() 가 아니라 entityManager.persist() 로 명시 INSERT 한다
+        verify(entityManager, times(1)).persist(any(BoardMaster.class));
     }
 
 //    @Test
@@ -83,7 +92,7 @@ class BoardMasterServiceLogicTest {
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(existingBoardMaster));
 
         // when
-        boardMasterService.updateBoardMaster(eq("user1"), updateDto);
+        boardMasterService.updateBoardMaster("user1", updateDto);
 
         // then
         assertThat(existingBoardMaster.getBbsTtl()).isEqualTo("New Title");
@@ -101,7 +110,7 @@ class BoardMasterServiceLogicTest {
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> boardMasterService.updateBoardMaster(eq("user1"), boardMasterDto))
+        assertThatThrownBy(() -> boardMasterService.updateBoardMaster("user1", boardMasterDto))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -118,7 +127,7 @@ class BoardMasterServiceLogicTest {
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(existingBoardMaster));
 
         // when
-        boardMasterService.deleteBoardMaster(eq("user1"), bbsId);
+        boardMasterService.deleteBoardMaster("user1", bbsId);
 
         // then
         assertThat(existingBoardMaster.getUseYn()).isEqualTo("N");
