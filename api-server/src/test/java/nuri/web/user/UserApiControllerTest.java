@@ -73,6 +73,16 @@ class UserApiControllerTest extends BaseControllerTest {
                 .build();
     }
 
+    /**
+     * 요청 본문 JSON 생성 헬퍼. UserDto 의 비밀번호는 응답 노출 차단(@JsonProperty WRITE_ONLY)으로
+     * 직렬화 시 제거되므로, 요청(write) 테스트에서는 명시적으로 다시 실어준다.
+     */
+    private String toUserRequestJson(UserDto dto) throws Exception {
+        com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
+        if (dto.pswd() != null) node.put("pswd", dto.pswd());
+        return objectMapper.writeValueAsString(node);
+    }
+
     // --- 일반 사용자 기능 테스트 ---
 
     @Test
@@ -90,10 +100,10 @@ class UserApiControllerTest extends BaseControllerTest {
     void updateMe_success() throws Exception {
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createMockUser())))
+                .content(toUserRequestJson(createMockUser())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        
+
         verify(userService).updateUser(eq(TEST_USER_ID), any(UserDto.class));
     }
 

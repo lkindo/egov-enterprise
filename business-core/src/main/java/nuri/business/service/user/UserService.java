@@ -110,10 +110,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Override
         @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
-                // [NUSERINFO 통합] userId로 먼저 찾고, 없으면 PK(esntlId)로 찾음
+                // 로그인 ID 또는 PK(esntlId) 중 어느 핸들로도 조회 허용.
+                // (User @Id == esntlId 이므로 findById 와 findByEsntlId 는 동일 쿼리 → 후자 중복 분기 제거)
                 User user = userRepository.findByUserId(id)
                                 .or(() -> userRepository.findById(id))
-                                .or(() -> userRepository.findByEsntlId(id))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
                 String authorCode = userAuthorityRepository

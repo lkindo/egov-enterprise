@@ -428,7 +428,6 @@ class UserServiceTest {
     void getUserByIdNotFoundTest() {
         given(userRepository.findByUserId("unknown")).willReturn(Optional.empty());
         given(userRepository.findById("unknown")).willReturn(Optional.empty());
-        given(userRepository.findByEsntlId("unknown")).willReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> userService.getUserById("unknown"));
     }

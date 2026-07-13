@@ -43,24 +43,28 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));
         
-        String userId = authentication.getName();
+        // [정체성 경계] 인증 principal 의 이름(getName()==CustomUserDetails.getUsername()) 은 esntlId 이고,
+        // 사용자가 입력한 로그인 ID 는 request.getUserId() 다. 둘은 서로 다른 식별자이므로 명시적으로 분리한다.
+        String esntlId = authentication.getName();   // User @Id · JWT subject · RefreshToken key
+        String loginId = request.getUserId();        // TB_LOGIN_POLICY @Id
 
-        // 2. OTP 검증 (정책에 활성화된 경우)
-        loginPolicyRepository.findById(userId).ifPresent(policy -> {
+        // 2. OTP 검증 (정책에 활성화된 경우) — LoginPolicy 는 로그인 ID(TB_LOGIN_POLICY.@Id=userId) 로 키잉된다.
+        //    [버그 수정] 과거에는 esntlId 로 findById 하여 정책이 항상 empty → otpUseYn='Y' 여도 OTP 가 전원 무력화됐다.
+        loginPolicyRepository.findById(loginId).ifPresent(policy -> {
             if ("Y".equals(policy.getOtpUseYn())) {
                 if (request.getOtpCode() == null) {
-                    log.warn(">>> [Login] OTP Required for userId: {}", userId);
+                    log.warn(">>> [Login] OTP Required for loginId: {}", loginId);
                     throw new BusinessException("OTP 번호가 필요합니다.", CommonErrorCode.AUTH_ERROR);
                 }
-                
-                nuri.business.domain.user.entity.User user = userRepository.findById(userId)
+
+                nuri.business.domain.user.entity.User user = userRepository.findById(esntlId)
                         .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-                
+
                 if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
-                    log.warn(">>> [Login] Invalid OTP for userId: {}", userId);
+                    log.warn(">>> [Login] Invalid OTP for loginId: {}", loginId);
                     throw new BusinessException("OTP 번호가 일치하지 않습니다.", CommonErrorCode.AUTH_ERROR);
                 }
-                log.info(">>> [Login] OTP Verification Success for userId: {}", userId);
+                log.info(">>> [Login] OTP Verification Success for loginId: {}", loginId);
             }
         });
 
@@ -70,17 +74,17 @@ public class AuthServiceImpl implements AuthService {
                 .orElse("ROLE_USER");
         
         String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        String accessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
-        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
-        
-        // Refresh Token 저장/갱신
-        nuri.business.domain.auth.RefreshToken rt = refreshTokenRepository.findById(userId)
+        String accessToken = jwtTokenProvider.createAccessToken(esntlId, finalRole);
+        String refreshToken = jwtTokenProvider.createRefreshToken(esntlId);
+
+        // Refresh Token 저장/갱신 (esntlId 로 키잉 — 기존 거동 유지)
+        nuri.business.domain.auth.RefreshToken rt = refreshTokenRepository.findById(esntlId)
                 .map(token -> {
                     token.updateToken(refreshToken, java.time.Instant.now().plus(java.time.Duration.ofDays(7)));
                     return token;
                 })
                 .orElseGet(() -> nuri.business.domain.auth.RefreshToken.builder()
-                        .userId(userId)
+                        .userId(esntlId)
                         .rfshTkn(refreshToken)
                         .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
                         .build());

@@ -108,7 +108,6 @@ class UserServiceCrudTest {
   @DisplayName("사용자 상세 조회 실패 - 존재하지 않는 ID")
   void getUserById_fail_withNonExistentId() {
     when(userRepository.findById(any())).thenReturn(Optional.empty());
-    when(userRepository.findByEsntlId(any())).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> userService.getUserById("nonexistent"))
         .isInstanceOf(BusinessException.class);

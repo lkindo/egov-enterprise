@@ -90,9 +90,8 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 조회 실패 - 존재하지 않는 사용자 ID (BusinessException 발생)")
         void getUserById_fail_withNonExistentUserId() {
-                // Given
+                // Given (User @Id==esntlId 이므로 findById 로 esntlId 조회까지 커버 — findByEsntlId 중복 stub 제거)
                 when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
-                when(userRepository.findByEsntlId("nonexistent")).thenReturn(Optional.empty());
 
                 // When & Then
                 assertThatThrownBy(() -> userService.getUserById("nonexistent"))

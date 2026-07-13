@@ -265,6 +265,52 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("[정체성/보안] OTP 정책은 로그인 ID 로 조회한다 — esntlId≠loginId 여도 OTP 강제")
+    void testLoginOtp_PolicyLookedUpByLoginId_NotEsntlId() {
+        // Given: 로그인 ID 와 esntlId 를 서로 다르게 설정한다(기존 테스트는 둘을 같은 값으로 두어 버그를 은폐했다).
+        String loginId = "loginuser";
+        String esntlId = "USR_ESNTL_0001";
+        LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").build(); // otpCode 없음
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn(esntlId); // 인증 principal 이름 = esntlId
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
+
+        nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
+        when(policy.getOtpUseYn()).thenReturn("Y");
+        // 정책은 로그인 ID 로만 키잉된다. (과거 버그 코드는 esntlId 로 조회해 여기서 못 찾고 OTP 를 skip 했다)
+        when(loginPolicyRepository.findById(loginId)).thenReturn(java.util.Optional.of(policy));
+
+        // When & Then: OTP 코드가 없으므로 반드시 OTP 요구 예외가 발생해야 한다(버그 시엔 통과되어 토큰 발급됨).
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
+        assertTrue(ex.getMessage().contains("OTP"), "OTP 정책이 무시되어 로그인이 통과됨(정체성 조회 버그)");
+    }
+
+    @Test
+    @DisplayName("[정체성/보안] OTP 검증 시 사용자(otpSecret)는 esntlId 로 조회한다")
+    void testLoginOtp_UserLookedUpByEsntlId() {
+        // Given
+        String loginId = "loginuser";
+        String esntlId = "USR_ESNTL_0001";
+        LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").otpCode(123456).build();
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn(esntlId);
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
+
+        nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
+        when(policy.getOtpUseYn()).thenReturn("Y");
+        when(loginPolicyRepository.findById(loginId)).thenReturn(java.util.Optional.of(policy));
+
+        User user = mock(User.class);
+        when(user.getOtpSecret()).thenReturn("SECRET");
+        when(userRepository.findById(esntlId)).thenReturn(java.util.Optional.of(user)); // User 는 esntlId 로 조회
+        when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
+
+        // When & Then
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
+        assertTrue(ex.getMessage().contains("일치하지 않습니다"));
+    }
+
+    @Test
     @DisplayName("토큰 재발급 - 만료된 토큰 실패")
     void testReissueExpired() {
         // Given
