@@ -1,5 +1,6 @@
 package nuri.business.service.board.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
@@ -65,7 +66,9 @@ public record BoardDto(
     @Size(max = 100)
     String userNm,
 
-    @Schema(description = "비밀번호")
+    // [보안] 게시글 비밀번호는 요청(write)으로만 수용, 응답(read)에 직렬화 금지.
+    @Schema(description = "비밀번호", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Size(max = 200)
     String pswd,
 
