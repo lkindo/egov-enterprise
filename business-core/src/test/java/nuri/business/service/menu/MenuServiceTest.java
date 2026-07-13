@@ -46,6 +46,9 @@ class MenuServiceTest {
     @Mock
     private MenuAuthorityRepository menuAuthorityRepository;
 
+    @Mock
+    private nuri.business.service.program.dto.ProgramMapper programMapper;
+
     @InjectMocks
     private MenuService menuService;
 

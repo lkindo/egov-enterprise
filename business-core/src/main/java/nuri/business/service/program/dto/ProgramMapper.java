@@ -11,8 +11,8 @@ import org.mapstruct.ReportingPolicy;
  * componentModel="spring" 으로 {@code ProgramMapperImpl} 이 @Component 로 생성되어 주입 가능하다.
  * 엔티티와 DTO 의 필드명이 동일하므로 별도 @Mapping 은 불필요하다.
  *
- * <p>⚠ {@code ProgramDto.from()} 은 타 도메인(menu) 의 {@code MenuService.getAllPrograms()} 에서
- * 여전히 참조하므로 본 매퍼 도입 후에도 존치한다(도메인 경계 밖 파일 미변경 원칙).
+ * <p>유일 잔존 호출자였던 {@code MenuService.getAllPrograms()} 도 {@code programMapper::toDto} 로
+ * 전환되어 수기 {@code ProgramDto.from()} 은 제거됨(단일 매핑 컨벤션 통일).
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProgramMapper {

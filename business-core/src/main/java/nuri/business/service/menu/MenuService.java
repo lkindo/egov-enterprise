@@ -51,6 +51,7 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
+    private final nuri.business.service.program.dto.ProgramMapper programMapper;
 
     @PostConstruct
     @Transactional
@@ -234,7 +235,7 @@ public class MenuService {
 
     public List<ProgramDto> getAllPrograms() {
         return programRepository.findAll().stream()
-                .map(ProgramDto::from)
+                .map(programMapper::toDto)
                 .collect(Collectors.toList());
     }
 

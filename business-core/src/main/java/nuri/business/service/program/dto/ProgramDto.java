@@ -34,14 +34,6 @@ public class ProgramDto {
     @Size(max = 4000)
     private String prgrmExpln;
 
-    public static ProgramDto from(nuri.business.domain.program.Program entity) {
-        if (entity == null) return null;
-        return ProgramDto.builder()
-                .prgrmFileNm(entity.getPrgrmFileNm())
-                .prgrmStrgPath(entity.getPrgrmStrgPath())
-                .prgrmKornNm(entity.getPrgrmKornNm())
-                .url(entity.getUrl())
-                .prgrmExpln(entity.getPrgrmExpln())
-                .build();
-    }
+    // 수기 from() 은 ProgramMapper(componentModel=spring)로 완전 대체되어 제거됨.
+    // 유일 호출자였던 MenuService.getAllPrograms() 도 programMapper::toDto 로 전환.
 }
