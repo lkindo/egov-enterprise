@@ -2,6 +2,7 @@ package nuri.business.service.system.service.consult.dto;
 
 import jakarta.validation.constraints.*;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,7 +33,8 @@ public class CnsltManageDto {
     @Size(max = 1)
     private String rlsYn;
 
-    @Schema(description = "작성 비밀번호")
+    @Schema(description = "작성 비밀번호", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Size(max = 200)
     private String wrtPswd;
 
