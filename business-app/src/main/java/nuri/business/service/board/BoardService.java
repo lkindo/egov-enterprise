@@ -284,8 +284,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .pswd(request.pswd())
                                 .build();
                 
-                // ID 생성
-                board.changePstId(String.valueOf(System.currentTimeMillis()));
+                // ID 생성 — createPost 와 동일하게 DB 시퀀스 사용(System.currentTimeMillis()는 동시 답글 시 ms 충돌로 PK 중복 위험).
+                board.changePstId(String.valueOf(boardRepository.getNextPstId()));
 
                 String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
