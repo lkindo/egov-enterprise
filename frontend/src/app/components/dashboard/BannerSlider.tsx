@@ -80,7 +80,8 @@ export function BannerSlider() {
         <p className="text-sm md:text-base text-slate-200 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
           {currentBanner.bnrExpln}
         </p>
-        {currentBanner.linkUrl && (
+        {/* linkUrl 은 관리자 자유입력값 — javascript:/data: 스킴 저장형 XSS 방지를 위해 http(s)만 앵커 렌더 */}
+        {currentBanner.linkUrl && /^https?:\/\//i.test(currentBanner.linkUrl) && (
           <a
             href={currentBanner.linkUrl}
             target="_blank"
