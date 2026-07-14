@@ -63,7 +63,10 @@ class WorkReportServiceTest {
 
         when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));
 
-        workReportService.updateWorkReport(dto);
+        // 소유권 가드(정적)는 단위 테스트에서 no-op 처리(SecurityContext 부재).
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            workReportService.updateWorkReport(dto);
+        }
 
         assertEquals("수정보고", report.getRptTtl());
     }
@@ -71,9 +74,17 @@ class WorkReportServiceTest {
     @Test
     @DisplayName("업무보고 삭제 테스트")
     void deleteWorkReportTest() {
-        workReportService.deleteWorkReport("REPO_001");
+        WorkReport report = WorkReport.builder()
+                .rptId("REPO_001")
+                .rptTtl("주간보고")
+                .build();
+        when(workReportRepository.findById("REPO_001")).thenReturn(Optional.of(report));
 
-        verify(workReportRepository, times(1)).deleteById("REPO_001");
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            workReportService.deleteWorkReport("REPO_001");
+        }
+
+        verify(workReportRepository, times(1)).delete(report);
     }
 
     @Test

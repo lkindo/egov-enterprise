@@ -42,13 +42,23 @@ public class WorkReportService extends BaseAbstractService implements EgovWorkRe
         WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getRptId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
+        // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+
         entity.update(dto.getRptTtl(), dto.getRptCn(), dto.getAtchFileId(), dto.getRptSeCd());
-        entity.setLastMdfrId(dto.getUserId());
+        // lastMdfrId 는 @LastModifiedBy 감사자가 loginId 로 기록한다.
+        // 클라이언트 DTO 값(dto.getUserId())으로 세팅하면 감사자 위조가 되므로 수동 설정하지 않는다.
     }
 
     @Transactional
     public void deleteWorkReport(@NonNull String rptId) {
-        workReportRepository.deleteById(rptId);
+        WorkReport entity = workReportRepository.findById(rptId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+
+        // 소유권 검증(IDOR 방어): 작성자 본인 또는 관리자만 삭제 가능.
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+
+        workReportRepository.delete(entity);
     }
 
     public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {

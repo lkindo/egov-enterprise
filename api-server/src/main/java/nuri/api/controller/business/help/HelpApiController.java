@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +46,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "도움말 등록", description = "새로운 도움말을 등록합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping("/hpcm")
     public ResponseEntity<ApiResponse<String>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
         String id = helpService.createHpcm("ADMIN", dto);
@@ -52,6 +54,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "도움말 수정", description = "도움말 정보를 수정합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/hpcm/{hpcmId}")
     public ResponseEntity<ApiResponse<Void>> updateHpcm(
             @PathVariable String hpcmId,
@@ -61,6 +64,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "도움말 삭제", description = "도움말 정보를 삭제합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/hpcm/{hpcmId}")
     public ResponseEntity<ApiResponse<Void>> deleteHpcm(@PathVariable String hpcmId) {
         helpService.deleteHpcm(hpcmId);
@@ -86,6 +90,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "온라인 매뉴얼 등록", description = "새로운 온라인 매뉴얼을 등록합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping("/manuals")
     public ResponseEntity<ApiResponse<String>> createManual(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -96,6 +101,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "온라인 매뉴얼 수정", description = "온라인 매뉴얼 정보를 수정합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/manuals/{mnlId}")
     public ResponseEntity<ApiResponse<Void>> updateManual(
             @PathVariable String mnlId,
@@ -105,6 +111,7 @@ public class HelpApiController {
     }
 
     @Operation(summary = "온라인 매뉴얼 삭제", description = "온라인 매뉴얼 정보를 삭제합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/manuals/{mnlId}")
     public ResponseEntity<ApiResponse<Void>> deleteManual(@PathVariable String mnlId) {
         helpService.deleteOnlineManual(mnlId);
