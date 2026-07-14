@@ -50,9 +50,10 @@ public class OnlinePollApiController {
     public ResponseEntity<ApiResponse<Void>> vote(
             @PathVariable String pollId,
             @RequestParam(name = "pollIemId") String pollArtclId) {
-        String userId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
+        // 투표자 식별은 loginId(감사 컬럼 frst_rgtr_id·이중투표 유니크 제약과 동일 식별자)로 한다.
+        String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
                 .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
-        onlinePollService.vote(pollId, pollArtclId, userId);
+        onlinePollService.vote(pollId, pollArtclId, loginId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

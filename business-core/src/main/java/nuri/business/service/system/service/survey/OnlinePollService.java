@@ -14,6 +14,7 @@ import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -229,6 +230,10 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException("이미 종료된 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
+        // 빠른 경로(fast-path): 이미 참여한 사용자면 굳이 INSERT 를 시도하지 않는다.
+        // ⚠ 이 검사만으로는 동시 요청 경합(TOCTOU)을 막을 수 없다. 권위 있는 방어는 아래 유니크 제약(V2_4)이다.
+        // 식별자 정합: userId 는 컨트롤러가 loginId(getCurrentLoginId)를 전달한다 — 감사자가 frst_rgtr_id 에
+        // 기록하는 값(=loginId)과 동일해야 이 검사와 제약이 같은 대상을 가리킨다.
         if (pollResultRepository.countByPollIdAndFrstRegisterId(pollId, userId) > 0) {
             throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
@@ -240,12 +245,35 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollId(pollId)
                 .pollArtclId(pollArtclId)
                 .build();
-        
+
         String currentUserId = userId;
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
         result.setFrstRgtrId(currentUserId);
-        
-        pollResultRepository.save(Objects.requireNonNull(result));
+
+        // saveAndFlush 로 즉시 flush 하여 유니크 제약 위반을 이 트랜잭션 내부에서 잡는다.
+        // (save 는 flush 를 커밋 시점까지 지연시켜 예외가 메서드 밖 커밋 단계에서 터진다 → catch 불가.)
+        // 경합으로 pre-check 를 통과한 두 번째 INSERT 는 여기서 제약 위반 → 멱등하게 "이미 참여" 로 변환한다.
+        // ⚠ 이중투표 유니크 제약 위반만 "이미 참여" 로 변환한다. value-too-long 등 다른 무결성 오류는
+        //    그대로 전파하여 "이미 참여" 로 오분류·은폐하지 않는다.
+        try {
+            pollResultRepository.saveAndFlush(Objects.requireNonNull(result));
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateVoteViolation(e)) {
+                throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            throw e;
+        }
+    }
+
+    /** 예외 원인 체인에서 이중투표 유니크 제약({@code uk_tb_onln_poll_rslt_poll_voter}) 위반인지 식별한다. */
+    private boolean isDuplicateVoteViolation(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            String msg = t.getMessage();
+            if (msg != null && msg.contains("uk_tb_onln_poll_rslt_poll_voter")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void validatePollDates(String beginDe, String endDe) {

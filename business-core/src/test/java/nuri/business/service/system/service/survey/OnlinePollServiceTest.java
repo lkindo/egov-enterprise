@@ -7,9 +7,11 @@ import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -278,11 +280,16 @@ class OnlinePollServiceTest {
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
 
         onlinePollService.vote("P1", "I1", "user1");
-        verify(pollResultRepository, times(1)).save(any(OnlinePollResult.class));
+
+        // 저장 엔티티의 poll_id/poll_artcl_id 가 입력과 정확히 일치(필드 스왑 뮤턴트 킬).
+        ArgumentCaptor<OnlinePollResult> captor = ArgumentCaptor.forClass(OnlinePollResult.class);
+        verify(pollResultRepository, times(1)).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getPollId()).isEqualTo("P1");
+        assertThat(captor.getValue().getPollArtclId()).isEqualTo("I1");
     }
 
     @Test
-    @DisplayName("설문 투표 - 성공 (긴 유저 ID)")
+    @DisplayName("설문 투표 - 성공 (긴 유저 ID → frst_rgtr_id 20자 절단)")
     void vote_Success_LongUserId() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
@@ -295,7 +302,12 @@ class OnlinePollServiceTest {
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "VeryLongUserIdExceeding20Chars")).willReturn(0L);
 
         onlinePollService.vote("P1", "I1", "VeryLongUserIdExceeding20Chars");
-        verify(pollResultRepository, times(1)).save(any(OnlinePollResult.class));
+
+        // frst_rgtr_id 컬럼 길이(20) 초과분은 절단되어야 한다(절단 로직·경계 20 뮤턴트 킬).
+        ArgumentCaptor<OnlinePollResult> captor = ArgumentCaptor.forClass(OnlinePollResult.class);
+        verify(pollResultRepository, times(1)).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getFrstRgtrId()).hasSize(20);
+        assertThat(captor.getValue().getFrstRgtrId()).isEqualTo("VeryLongUserIdExceed");
     }
 
     @Test
@@ -347,7 +359,52 @@ class OnlinePollServiceTest {
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(1L);
 
-        assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
+        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("이미 참여");
+    }
+
+    @Test
+    @DisplayName("설문 투표 - 실패 (경합: pre-check 통과 후 유니크 제약 위반 → 이미 참여)")
+    void vote_Fail_ConcurrentDuplicate_ConstraintViolation() {
+        // 동시 요청 경합(TOCTOU): pre-check 는 0(통과)이지만 saveAndFlush 에서 (poll_id, frst_rgtr_id)
+        // 유니크 제약(V2_4)이 두 번째 INSERT 를 거부한다. 서비스는 이를 멱등하게 "이미 참여"로 변환해야 한다.
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollId("P1")
+                .pollDsuseYn("N")
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
+                .build();
+        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
+                .willThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint \"uk_tb_onln_poll_rslt_poll_voter\""));
+
+        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("이미 참여");
+    }
+
+    @Test
+    @DisplayName("설문 투표 - 무결성 오류지만 이중투표 제약이 아니면 '이미 참여'로 오분류하지 않고 그대로 전파")
+    void vote_NonDuplicateIntegrityError_Propagates() {
+        // 이중투표 유니크 제약(uk_tb_onln_poll_rslt_poll_voter) 이외의 무결성 오류(예: value too long)는
+        // "이미 참여" 로 은폐되면 안 된다 → 원 예외가 그대로 전파되어야 한다(catch 한정 뮤턴트 킬).
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollId("P1")
+                .pollDsuseYn("N")
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
+                .build();
+        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
+                .willThrow(new DataIntegrityViolationException("ERROR: value too long for type character varying(20)"));
+
+        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
@@ -430,16 +487,13 @@ class OnlinePollServiceTest {
                 .build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         
-        // user 파라미터가 null일 때 NullPointerException 이 발생하는 분기
+        // user 파라미터가 null일 때 NullPointerException 이 발생하는 분기 (saveAndFlush 이전에 터짐)
         assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", null))
                 .isInstanceOf(NullPointerException.class);
-        
-        // userId가 빈 문자열일 때는 예외가 발생하거나 save됨
-        try {
-            onlinePollService.vote("P1", "I1", "");
-        } catch(Exception e) {
-            // caught
-        }
+
+        // userId가 빈 문자열이면 예외 없이 저장이 시도된다 — 거동을 pin(무어서션 swallow 제거).
+        onlinePollService.vote("P1", "I1", "");
+        verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
     
     @Test
@@ -551,7 +605,7 @@ class OnlinePollServiceTest {
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
 
         onlinePollService.vote("P1", "I1", "user1");
-        verify(pollResultRepository, times(1)).save(any(OnlinePollResult.class));
+        verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
 
     @Test
@@ -567,7 +621,7 @@ class OnlinePollServiceTest {
         given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
 
         onlinePollService.vote("P1", "I1", "user1");
-        verify(pollResultRepository, times(1)).save(any(OnlinePollResult.class));
+        verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
 
     @Test
