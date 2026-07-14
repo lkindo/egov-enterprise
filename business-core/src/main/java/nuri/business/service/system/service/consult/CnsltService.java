@@ -43,7 +43,7 @@ public class CnsltService implements EgovCnsltService {
     @Override
     @Transactional
     public void insertCnslt(CnsltManageDto dto) {
-        String id = "CNSLT_" + System.currentTimeMillis();
+        String id = "CNSLT_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
         cnsltManageRepository.save(Objects.requireNonNull(CnsltManage.builder()
                 .dscsnId(id)
                 .dscsnTtl(dto.getDscsnTtl())

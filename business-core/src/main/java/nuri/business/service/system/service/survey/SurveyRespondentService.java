@@ -38,7 +38,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     @Override
     @Transactional
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
-        String id = "SRES_" + System.currentTimeMillis();
+        String id = "SRES_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
         SurveyRespondent entity = SurveyRespondent.builder()
                 .srvyRspdntId(id)
                 .srvyId(dto.getSrvyId())

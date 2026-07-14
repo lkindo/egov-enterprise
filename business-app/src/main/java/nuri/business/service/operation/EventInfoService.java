@@ -42,7 +42,7 @@ public class EventInfoService {
     @Transactional
     public String createEvent(String userId, EventInfoDto dto) {
         log.info("Creating new event by user: {}", userId);
-        String eventId = "EVT_" + System.currentTimeMillis();
+        String eventId = "EVT_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
  
         EventInfo eventInfo = EventInfo.builder()
                 .evntId(eventId)

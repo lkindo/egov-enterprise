@@ -47,7 +47,7 @@ public class NotificationService implements EgovNotificationService {
     @Transactional
     public String createNotification(String userId, NotificationDto dto) {
         log.info("Creating notification for user: {}", userId);
-        String id = "NTFC_" + System.currentTimeMillis();
+        String id = "NTFC_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
         Notification entity = Notification.builder()
                 .notiSn(id)
                 .notiTtlNm(dto.getNotiTtlNm())

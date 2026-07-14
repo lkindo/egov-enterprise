@@ -46,7 +46,7 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createHpcm(String userId, HpcmDto dto) {
-        String id = "HPCM_" + System.currentTimeMillis();
+        String id = "HPCM_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
         Hpcm entity = Hpcm.builder()
                 .hlpId(id)
                 .hlpSeCd(dto.getHlpSeCd())
