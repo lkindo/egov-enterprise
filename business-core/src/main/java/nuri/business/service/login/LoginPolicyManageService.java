@@ -115,7 +115,7 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
             }
             if (policy.getBgngTm() != null && !policy.getBgngTm().isEmpty() && policy.getEndTm() != null && !policy.getEndTm().isEmpty()) {
                 try {
-                    java.time.LocalTime now = java.time.LocalTime.now();
+                    java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
                     String bgng = policy.getBgngTm();
                     String end = policy.getEndTm();
                     if (!bgng.contains(":") && bgng.length() >= 4) {
@@ -127,7 +127,11 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
                     
                     java.time.LocalTime startTime = java.time.LocalTime.parse(bgng, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
                     java.time.LocalTime endTime = java.time.LocalTime.parse(end, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-                    if (now.isBefore(startTime) || now.isAfter(endTime)) {
+                    // 자정 넘는 허용 창(start > end, 예: 22:00~06:00) 처리: 그 경우 [start,24:00) ∪ [00:00,end] 를 허용.
+                    boolean withinWindow = startTime.isBefore(endTime)
+                            ? (!now.isBefore(startTime) && !now.isAfter(endTime))
+                            : (!now.isBefore(startTime) || !now.isAfter(endTime));
+                    if (!withinWindow) {
                         throw new BusinessException("제한된 접속 시간입니다.", CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED);
                     }
                 } catch (BusinessException ex) {

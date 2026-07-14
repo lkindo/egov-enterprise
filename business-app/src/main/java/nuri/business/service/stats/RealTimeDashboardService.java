@@ -75,7 +75,8 @@ public class RealTimeDashboardService {
      * 활성 사용자 수 감소
      */
     public void decrementActiveUsers() {
-        activeUsers.decrementAndGet();
+        // 0 하한 강제 — 짝 없는 disconnect/재기동 후 disconnect 로 카운터가 음수가 되어 대시보드에 음수 활성자 수가 방송되던 것 방지.
+        activeUsers.updateAndGet(v -> Math.max(0, v - 1));
     }
 
     /**
