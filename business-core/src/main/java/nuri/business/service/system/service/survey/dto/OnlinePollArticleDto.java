@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey.dto;
 
 import jakarta.validation.constraints.*;
 
-import nuri.business.domain.system.service.survey.OnlinePollArticle;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,14 +40,6 @@ public class OnlinePollArticleDto {
     @Schema(description = "생성 일시")
     private LocalDateTime crtDt;
 
-    public static OnlinePollArticleDto from(OnlinePollArticle entity) {
-        if (entity == null) return null;
-        return OnlinePollArticleDto.builder()
-                .pollArtclId(entity.getPollArtclId())
-                .pollId(entity.getPollManage() != null ? entity.getPollManage().getPollId() : null)
-                .pollArtclNm(entity.getPollArtclNm())
-                .frstRgtrId(entity.getFrstRgtrId())
-                .crtDt(entity.getCrtDt())
-                .build();
-    }
+    // entity→DTO 매핑은 프레임워크 표준 OnlinePollArticleMapper.toDto() 로 단일화한다.
+    // (수기 from() 은 Mapper 와 이중매핑되어 드리프트 위험이 있어 제거함 — ProgramDto.from 제거 선례와 동일.)
 }

@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -70,9 +69,9 @@ public class OnlinePollManageDto {
                 .pollAtmcDsuseYn(entity.getPollAtmcDsuseYn())
                 .frstRgtrId(entity.getFrstRgtrId())
                 .crtDt(entity.getCrtDt())
-                .pollArticles(entity.getPollArticles() != null ? 
-                        entity.getPollArticles().stream().map(OnlinePollArticleDto::from).collect(Collectors.toList()) : 
-                        Collections.emptyList())
+                // 항목(pollArticles)은 서비스 레이어에서 OnlinePollArticleMapper 로 채운다.
+                // (수기 OnlinePollArticleDto.from() 제거 — entity→DTO 매핑을 Mapper 로 단일화해 드리프트 방지)
+                .pollArticles(Collections.emptyList())
                 .build();
     }
 }

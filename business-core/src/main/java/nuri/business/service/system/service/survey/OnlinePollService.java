@@ -49,7 +49,17 @@ public class OnlinePollService implements EgovOnlinePollService {
             entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
         }
 
-        Page<OnlinePollManageDto> dtoPage = entities.map(OnlinePollManageDto::from);
+        // from() 은 스칼라 필드만 채우고, 항목(pollArticles)은 OnlinePollArticleMapper 로 매핑한다
+        // (수기 OnlinePollArticleDto.from() 제거 — 매핑 단일화).
+        Page<OnlinePollManageDto> dtoPage = entities.map(entity -> {
+            OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
+            if (entity.getPollArticles() != null) {
+                dto.setPollArticles(entity.getPollArticles().stream()
+                        .map(onlinePollArticleMapper::toDto)
+                        .collect(Collectors.toList()));
+            }
+            return dto;
+        });
         // 페이지 내 모든 항목의 투표수를 단일 배치 쿼리로 채운다(항목마다 count 하던 N+1 제거).
         List<OnlinePollArticleDto> allItems = dtoPage.getContent().stream()
                 .map(OnlinePollManageDto::getPollArticles)
