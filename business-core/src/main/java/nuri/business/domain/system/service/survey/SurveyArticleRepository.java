@@ -7,4 +7,7 @@ import java.util.List;
 @Repository
 public interface SurveyArticleRepository extends JpaRepository<SurveyArticle, String> {
     List<SurveyArticle> findBySrvyQstnIdOrderByArtclSnAsc(String srvyQstnId);
+
+    /** 여러 문항의 항목을 한 번에 조회 — 문항별 getItemList N+1 제거용. */
+    List<SurveyArticle> findBySrvyQstnIdInOrderBySrvyQstnIdAscArtclSnAsc(java.util.Collection<String> srvyQstnIds);
 }

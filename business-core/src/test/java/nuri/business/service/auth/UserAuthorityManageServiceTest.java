@@ -63,7 +63,7 @@ class UserAuthorityManageServiceTest {
                 .authrtId("ROLE_ADMIN")
                 .build();
         
-        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
+        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
 
         userAuthorityManageService.saveUserAuthorities(List.of(dto));
 
@@ -79,7 +79,8 @@ class UserAuthorityManageServiceTest {
                 .build();
         
         UserAuthority existing = mock(UserAuthority.class);
-        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.of(existing));
+        given(existing.getScrtyDcsnTrgtId()).willReturn("USER1");
+        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(existing));
 
         userAuthorityManageService.saveUserAuthorities(List.of(dto));
 
@@ -108,7 +109,7 @@ class UserAuthorityManageServiceTest {
         User user = mock(User.class);
         given(user.getEsntlId()).willReturn("USER1");
         given(userRepository.findByOgnzId("DEPT1")).willReturn(List.of(user));
-        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
+        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
 
         userAuthorityManageService.saveDeptAuthorities(request);
 
@@ -124,7 +125,7 @@ class UserAuthorityManageServiceTest {
         request.setAllMembers(false);
         request.setUserIds(List.of("USER1"));
         
-        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
+        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
 
         userAuthorityManageService.saveDeptAuthorities(request);
 
@@ -182,7 +183,8 @@ class UserAuthorityManageServiceTest {
         request.setUserIds(List.of("USER1"));
         
         UserAuthority existing = mock(UserAuthority.class);
-        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.of(existing));
+        given(existing.getScrtyDcsnTrgtId()).willReturn("USER1");
+        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(existing));
 
         userAuthorityManageService.saveDeptAuthorities(request);
 

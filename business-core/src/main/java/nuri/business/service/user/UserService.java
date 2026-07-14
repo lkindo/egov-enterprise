@@ -408,20 +408,29 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 List<User> users = userRepository.findAllById(required(userIds));
                 String authorCode = "ROLE_" + role.name();
 
+                // 사용자별 findById 하던 N+1 을 findAllById 배치 조회로 제거.
+                List<String> esntlIds = users.stream().map(User::getEsntlId).collect(java.util.stream.Collectors.toList());
+                java.util.Map<String, UserAuthority> existingByTarget = userAuthorityRepository.findAllById(esntlIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a));
+                List<UserAuthority> newAuthorities = new java.util.ArrayList<>();
+
                 users.forEach(user -> {
                         user.changeRole(role);
-
-                        userAuthorityRepository.findById(user.getEsntlId())
-                                .ifPresentOrElse(
-                                        auth -> auth.update(authorCode, auth.getMbrTypeCd()),
-                                        () -> userAuthorityRepository.save(UserAuthority.builder()
-                                                .scrtyDcsnTrgtId(user.getEsntlId())
-                                                .authrtId(authorCode)
-                                                .mbrTypeCd("USR")
-                                                .build())
-                                );
+                        UserAuthority existing = existingByTarget.get(user.getEsntlId());
+                        if (existing != null) {
+                                existing.update(authorCode, existing.getMbrTypeCd());
+                        } else {
+                                newAuthorities.add(UserAuthority.builder()
+                                        .scrtyDcsnTrgtId(user.getEsntlId())
+                                        .authrtId(authorCode)
+                                        .mbrTypeCd("USR")
+                                        .build());
+                        }
                 });
 
+                if (!newAuthorities.isEmpty()) {
+                        userAuthorityRepository.saveAll(newAuthorities);
+                }
                 userRepository.saveAll(users);
         }
 }

@@ -300,8 +300,9 @@ class UserServiceTest {
             given(user.getEsntlId()).willReturn("ESNTL1");
             given(userRepository.findAllById(anyList())).willReturn(List.of(user));
             UserAuthority auth = mock(UserAuthority.class);
-            given(userAuthorityRepository.findById("ESNTL1")).willReturn(Optional.of(auth));
-            
+            given(auth.getScrtyDcsnTrgtId()).willReturn("ESNTL1");
+            given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(auth));
+
             userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
             verify(user).changeRole(nuri.business.domain.user.entity.Role.ADMIN);
             verify(auth).update(eq("ROLE_ADMIN"), any());
@@ -317,11 +318,11 @@ class UserServiceTest {
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("ESNTL1");
             given(userRepository.findAllById(anyList())).willReturn(List.of(user));
-            given(userAuthorityRepository.findById("ESNTL1")).willReturn(Optional.empty());
-            
+            given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
+
             userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
             verify(user).changeRole(nuri.business.domain.user.entity.Role.ADMIN);
-            verify(userAuthorityRepository).save(any(UserAuthority.class));
+            verify(userAuthorityRepository).saveAll(anyList());
             verify(userRepository).saveAll(anyList());
         }
     }

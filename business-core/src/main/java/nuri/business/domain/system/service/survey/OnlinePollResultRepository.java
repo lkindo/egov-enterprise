@@ -11,6 +11,10 @@ import java.util.List;
 public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResult, String> {
     long countByPollArtclId(String pollArtclId);
 
+    /** 항목별 투표수 배치 집계 — N+1(항목마다 countByPollArtclId) 제거용. 반환: [pollArtclId, count]. */
+    @Query("SELECT r.pollArtclId, COUNT(r) FROM OnlinePollResult r WHERE r.pollArtclId IN :artclIds GROUP BY r.pollArtclId")
+    List<Object[]> countByPollArtclIdIn(@Param("artclIds") java.util.Collection<String> artclIds);
+
     @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollId = :pollId AND r.frstRgtrId = :frstRgtrId")
     long countByPollIdAndFrstRegisterId(@Param("pollId") String pollId, @Param("frstRgtrId") String frstRegisterId);
 

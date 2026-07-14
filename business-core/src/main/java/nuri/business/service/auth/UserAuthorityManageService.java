@@ -64,10 +64,19 @@ public class UserAuthorityManageService {
             return;
         }
 
-        List<UserAuthority> entities = userAuthorities.stream()
+        List<UserAuthorityDto> valid = userAuthorities.stream()
                 .filter(dto -> dto.getScrtyDcsnTrgtId() != null && dto.getAuthrtId() != null)
+                .collect(Collectors.toList());
+        // 항목별 findById N+1 을 findAllById 배치 조회로 제거.
+        List<String> ids = valid.stream().map(UserAuthorityDto::getScrtyDcsnTrgtId).collect(Collectors.toList());
+        java.util.Map<String, UserAuthority> existingMap = ids.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : userAuthorityRepository.findAllById(ids).stream()
+                        .collect(Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a, (a, b) -> a));
+
+        List<UserAuthority> entities = valid.stream()
                 .map(dto -> {
-                    UserAuthority existing = userAuthorityRepository.findById(dto.getScrtyDcsnTrgtId()).orElse(null);
+                    UserAuthority existing = existingMap.get(dto.getScrtyDcsnTrgtId());
                     if (existing != null) {
                         existing.update(dto.getAuthrtId(), dto.getMbrTypeCd());
                         return existing;
@@ -118,9 +127,13 @@ public class UserAuthorityManageService {
             return;
         }
 
+        // 사용자별 findById N+1 을 findAllById 배치 조회로 제거.
+        java.util.Map<String, UserAuthority> existingMap = userAuthorityRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a, (a, b) -> a));
+
         List<UserAuthority> entities = userIds.stream()
                 .map(userId -> {
-                    UserAuthority existing = userAuthorityRepository.findById(userId).orElse(null);
+                    UserAuthority existing = existingMap.get(userId);
                     if (existing != null) {
                         existing.update(request.getAuthrtId(), null); // mberTyCode는 기존 유지 또는 null
                         return existing;

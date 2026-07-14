@@ -285,7 +285,7 @@ class SurveyServiceTest {
         given(qesitmRepository.findBySrvyIdOrderByQstnSnAsc("S1")).willReturn(List.of(question));
 
         SurveyArticle item = SurveyArticle.builder().srvyArtclId("I1").srvyQstnId("Q1").artclSn(1L).build();
-        given(iemRepository.findBySrvyQstnIdOrderByArtclSnAsc("Q1")).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnIdInOrderBySrvyQstnIdAscArtclSnAsc(anyList())).willReturn(List.of(item));
 
         List<SurveyQuestionDto> result = surveyService.getQuestionList("S1");
 

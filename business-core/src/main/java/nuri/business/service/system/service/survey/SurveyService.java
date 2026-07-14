@@ -131,10 +131,18 @@ public class SurveyService implements EgovSurveyService {
     // 설문 문항
     @Override
     public List<SurveyQuestionDto> getQuestionList(String qustnrId) {
-        return qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId)).stream()
+        List<SurveyQuestion> questions = qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId));
+        List<String> qstnIds = questions.stream().map(SurveyQuestion::getSrvyQstnId).collect(Collectors.toList());
+        // 문항마다 getItemList 하던 N+1 을, 전 문항 항목을 단일 IN 조회 후 문항ID 로 그룹핑하는 방식으로 제거.
+        java.util.Map<String, List<SurveyArticleDto>> itemsByQstn = qstnIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : iemRepository.findBySrvyQstnIdInOrderBySrvyQstnIdAscArtclSnAsc(qstnIds).stream()
+                        .collect(Collectors.groupingBy(SurveyArticle::getSrvyQstnId,
+                                Collectors.mapping(surveyArticleMapper::toDto, Collectors.toList())));
+        return questions.stream()
                 .map(q -> {
                     SurveyQuestionDto dto = surveyQuestionMapper.toDto(q);
-                    dto.setItems(getItemList(q.getSrvyQstnId()));
+                    dto.setItems(itemsByQstn.getOrDefault(q.getSrvyQstnId(), java.util.Collections.emptyList()));
                     return dto;
                 })
                 .collect(Collectors.toList());

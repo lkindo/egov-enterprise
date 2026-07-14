@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
@@ -47,15 +49,34 @@ public class OnlinePollService implements EgovOnlinePollService {
             entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
         }
 
-        return entities.map(entity -> {
-            OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
-            if (dto.getPollArticles() != null) {
-                dto.getPollArticles().forEach(itemDto -> {
-                    itemDto.setPollIemCo(pollResultRepository.countByPollArtclId(itemDto.getPollArtclId()));
-                });
-            }
-            return dto;
-        });
+        Page<OnlinePollManageDto> dtoPage = entities.map(OnlinePollManageDto::from);
+        // 페이지 내 모든 항목의 투표수를 단일 배치 쿼리로 채운다(항목마다 count 하던 N+1 제거).
+        List<OnlinePollArticleDto> allItems = dtoPage.getContent().stream()
+                .map(OnlinePollManageDto::getPollArticles)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        applyItemVoteCounts(allItems);
+        return dtoPage;
+    }
+
+    /** 항목별 투표수(pollIemCo)를 단일 배치 집계로 채운다 — countByPollArtclId N+1 제거. */
+    private void applyItemVoteCounts(List<OnlinePollArticleDto> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        List<String> artclIds = items.stream()
+                .map(OnlinePollArticleDto::getPollArtclId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (artclIds.isEmpty()) {
+            return;
+        }
+        Map<String, Long> countByArtcl = new HashMap<>();
+        for (Object[] row : pollResultRepository.countByPollArtclIdIn(artclIds)) {
+            countByArtcl.put((String) row[0], (Long) row[1]);
+        }
+        items.forEach(item -> item.setPollIemCo(countByArtcl.getOrDefault(item.getPollArtclId(), 0L)));
     }
 
     @Override
@@ -164,13 +185,11 @@ public class OnlinePollService implements EgovOnlinePollService {
 
     @Override
     public List<OnlinePollArticleDto> getPollItemList(String pollId) {
-        return pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
-                .map(item -> {
-                    OnlinePollArticleDto dto = onlinePollArticleMapper.toDto(item);
-                    dto.setPollIemCo(pollResultRepository.countByPollArtclId(item.getPollArtclId()));
-                    return dto;
-                })
+        List<OnlinePollArticleDto> items = pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
+                .map(onlinePollArticleMapper::toDto)
                 .collect(Collectors.toList());
+        applyItemVoteCounts(items);
+        return items;
     }
 
     @Override
