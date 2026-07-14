@@ -283,7 +283,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         menuAuthorityRepository.deleteByIdAuthrtCd(Objects.requireNonNull(authorCode));
 
@@ -310,7 +310,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
         if (vo.getPrgrmFileNm() != null && !programRepository.existsById(vo.getPrgrmFileNm())) {
             nuri.business.domain.program.Program p = nuri.business.domain.program.Program
@@ -343,7 +343,7 @@ public class MenuService {
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
@@ -354,13 +354,13 @@ public class MenuService {
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
         menuRepository.deleteById(Objects.requireNonNull(vo.getMenuNo()));
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
