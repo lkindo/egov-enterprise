@@ -148,10 +148,12 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
             throw new BusinessException("잘못된 결재 상태 코드입니다: " + aprvYn, CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // 이벤트 발행
-        eventPublisher.publishEvent(new nuri.business.service.informalsanction.event.SanctionStatusChangedEvent(
-                ifmlAtrzId, entity.getAplcntId(), entity.getAprvrId(), 
-                SanctionStatus.fromCode(aprvYn), rjctRsnCn));
+        // 이벤트 발행 — 커밋 후 발행하여 알림 리스너(@Async)가 롤백 시 허위 알림을 보내지 않도록 한다.
+        final nuri.business.service.informalsanction.event.SanctionStatusChangedEvent statusChangedEvent =
+                new nuri.business.service.informalsanction.event.SanctionStatusChangedEvent(
+                        ifmlAtrzId, entity.getAplcntId(), entity.getAprvrId(),
+                        SanctionStatus.fromCode(aprvYn), rjctRsnCn);
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(statusChangedEvent));
     }
 
     private InformalSanctionDto convertToDto(InformalSanction entity) {

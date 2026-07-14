@@ -68,8 +68,14 @@ public class MailService implements EgovMailService {
 
         sentMailRepository.save(Objects.requireNonNull(sentMail));
 
-        // 비동기로 실제 발송 처리 요청
-        mailAsyncProcessor.processSending(mssageId, dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
+        // 부모 트랜잭션 커밋 후 비동기 발송을 기동한다. 커밋 전 기동하면 processSending 의 REQUIRES_NEW
+        // 새 트랜잭션이 미커밋 SentMail 을 못 봐(READ_COMMITTED) 상태 갱신이 스킵되어 'P' 로 영구 고착되던 문제 방지.
+        final String subject = dto.getSj();
+        final String emailCn = dto.getEmailCn();
+        final String dsptchPerson = dto.getDsptchPerson();
+        final String recptnPerson = dto.getRecptnPerson();
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(
+                () -> mailAsyncProcessor.processSending(mssageId, subject, emailCn, dsptchPerson, recptnPerson));
 
         log.info("Mail request registered successfully for ID: {}", mssageId);
         return mssageId;

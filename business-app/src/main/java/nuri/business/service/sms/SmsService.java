@@ -81,10 +81,12 @@ public class SmsService implements EgovSmsService {
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
             }
             
-            // 비동기로 실제 발송 처리 요청
-            // 주의: 현재 트랜잭션이 커밋된 후에 가동되도록 보장하거나, 
-            // 별도 컴포넌트에서 REQUIRES_NEW로 조회하도록 설계됨
-            smsAsyncProcessor.processSending(smsId, dto.getSndngTelno(), dto.getSndngCn());
+            // 부모 트랜잭션 커밋 후 비동기 발송을 기동한다. 커밋 전 기동하면 processSending 의 REQUIRES_NEW
+            // 새 트랜잭션이 미커밋 수신자(READ_COMMITTED)를 못 봐 발송 루프가 no-op → SMS 영구 미발송되던 문제 방지.
+            final String senderTel = dto.getSndngTelno();
+            final String content = dto.getSndngCn();
+            nuri.foundation.core.util.TransactionUtils.runAfterCommit(
+                    () -> smsAsyncProcessor.processSending(smsId, senderTel, content));
         }
 
         log.info("SMS request registered successfully for ID: {}", smsId);
