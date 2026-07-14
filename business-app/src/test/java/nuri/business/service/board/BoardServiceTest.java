@@ -179,7 +179,7 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
@@ -204,7 +204,7 @@ class BoardServiceTest {
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
@@ -339,7 +339,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
@@ -361,7 +361,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
@@ -383,7 +383,7 @@ class BoardServiceTest {
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, "customId", "customNm", null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -407,7 +407,7 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
         given(boardRepository.getNextPstId()).willReturn(1L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -430,7 +430,7 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
 
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxAnsSn(any(), any())).willReturn(0L);
@@ -457,7 +457,7 @@ class BoardServiceTest {
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -622,7 +622,7 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         
         // create
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.getNextPstId()).willReturn(1L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
         

@@ -151,7 +151,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 try {
                         BoardMaster master = boardMasterRepository
-                                        .findById(request.bbsId())
+                                        .findByIdWithPessimisticLock(request.bbsId())
                                         .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
@@ -235,7 +235,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         @Transactional
         public String replyPost(@NonNull String userId, @NonNull String parentId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository
-                                .findById(request.bbsId())
+                                .findByIdWithPessimisticLock(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
 
                 Board parent = boardRepository
