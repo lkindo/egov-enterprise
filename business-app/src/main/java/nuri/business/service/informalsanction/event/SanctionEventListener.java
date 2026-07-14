@@ -1,9 +1,10 @@
 package nuri.business.service.informalsanction.event;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 결재 이벤트 리스너
@@ -25,8 +26,9 @@ public class SanctionEventListener {
         this.mailService = mailService;
     }
 
+    // 발행 트랜잭션 커밋 후에만 알림 발송(롤백 시 허위 알림 방지). @Async 로 별도 스레드 처리 유지.
     @Async("logExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleStatusChanged(SanctionStatusChangedEvent event) {
         log.info(">>> [Event] Sanction Status Changed: ID={}, Applicant={}, NewStatus={}, Reason={}",
                 event.getInformalSanctionId(), event.getApplicantId(), event.getNewStatus(), event.getReason());

@@ -5,10 +5,11 @@ import nuri.business.domain.comment.CommentRepository;
 import nuri.business.service.board.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 게시판 관련 이벤트 리스너
@@ -21,8 +22,9 @@ public class BoardEventListener {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
 
+    // 발행 트랜잭션 커밋 후 실행 — 커밋 전 실행되면 새 트랜잭션에서 미커밋 Board 행이 안 보여 동기화가 no-op 이 된다.
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional
     public void handlePostCreated(PostCreatedEvent event) {
         log.info(">>> handlePostCreated: bbsId={}, pstId={}, userId={}", 
