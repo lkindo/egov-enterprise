@@ -145,4 +145,15 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
     }
+
+    @Test
+    @DisplayName("DataIntegrityViolationException 처리 테스트 (409 Conflict, 중복 자원)")
+    void testHandleDataIntegrityViolation() {
+        org.springframework.dao.DataIntegrityViolationException ex =
+                new org.springframework.dao.DataIntegrityViolationException("duplicate key value violates unique constraint \"uk_x\"");
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(ex);
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertFalse(response.getBody().success());
+        assertEquals("C008", response.getBody().code());
+    }
 }

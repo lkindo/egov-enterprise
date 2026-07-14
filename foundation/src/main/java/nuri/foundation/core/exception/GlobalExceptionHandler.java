@@ -104,6 +104,27 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 데이터 무결성 위반(주로 유니크 제약) 예외 처리 — 500 이 아닌 409(Conflict).
+     * check-then-act(중복 검사 후 insert) 패턴은 동시 요청 경합 시 pre-check 를 함께 통과해
+     * 두 번째 커밋/flush 에서 유니크 제약 위반이 발생한다. 데이터는 제약으로 보호되지만, 미처리 시
+     * 500 으로 응답되어 계약이 어긋난다. 이를 409(DUPLICATE_RESOURCE)로 정정한다.
+     * (NOT NULL/FK 등 서버측 위반도 여기로 오지만, 원인은 log 로 남겨 모니터링 가시성을 유지한다.)
+     * ※ 특정 제약을 도메인 의미로 변환해야 하는 경로(예: 투표 이중참여)는 서비스에서 BusinessException 으로
+     *    선(先)변환하므로 이 핸들러에 도달하지 않는다.
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        log.warn(">>> Data Integrity Violation: {}", cause != null ? cause.getMessage() : e.getMessage());
+        return new ResponseEntity<>(
+                ApiResponse.error(CommonErrorCode.DUPLICATE_RESOURCE,
+                        resolve("handler.data_integrity", null,
+                                "요청이 기존 데이터 제약과 충돌합니다. 이미 존재하거나 사용 중인 값일 수 있습니다.")),
+                HttpStatus.CONFLICT);
+    }
+
+    /**
      * 부적절한 인자 전달 예외 처리
      */
     @ExceptionHandler(IllegalArgumentException.class)
