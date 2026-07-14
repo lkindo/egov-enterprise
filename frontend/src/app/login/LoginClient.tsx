@@ -32,7 +32,10 @@ function LoginContent() {
     }, [user, loading, router]);
 
     const searchParams = useSearchParams();
-    const redirectUrl = searchParams.get('redirect') || '/admin/work-hub';
+    // 오픈 리다이렉트 방지: 동일 출처 상대경로("/..."로 시작, 단 "//"·"/\\" 프로토콜상대/백슬래시 우회 차단)만 허용.
+    // 절대 URL(https://evil.com)·프로토콜상대 URL(//evil.com)은 기본 경로로 폴백한다.
+    const rawRedirect = searchParams.get('redirect') || '/admin/work-hub';
+    const redirectUrl = /^\/(?![/\\])/.test(rawRedirect) ? rawRedirect : '/admin/work-hub';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
