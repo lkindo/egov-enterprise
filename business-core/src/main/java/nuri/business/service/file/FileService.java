@@ -57,6 +57,13 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     @Override
     @Transactional
     public String uploadFiles(List<MultipartFile> files) throws IOException {
+        // 선(先) 검증 패스: 하나라도 거부되면 어떤 파일도 디스크에 쓰지 않는다(부분 실패 시 고아 파일 방지).
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                validateFileExtension(file.getOriginalFilename());
+            }
+        }
+
         String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
         FileMaster master = new FileMaster(atchFileId);
         master = fileMasterRepository.save(master);
@@ -66,10 +73,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
             if (file.isEmpty())
                 continue;
 
-            // [Security] 파일 확장자 검증
-            String originalFilename = file.getOriginalFilename();
-            validateFileExtension(originalFilename);
-
+            // 확장자 검증은 위 선-검증 패스에서 완료됨.
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);
 
@@ -177,15 +181,19 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                 .max()
                 .orElse(0);
 
+        // 선(先) 검증 패스: 하나라도 거부되면 어떤 파일도 디스크에 쓰지 않는다(부분 실패 시 고아 파일 방지).
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                validateFileExtension(file.getOriginalFilename());
+            }
+        }
+
         int fileSn = maxSn + 1;
         for (MultipartFile file : files) {
             if (file.isEmpty())
                 continue;
 
-            // [Security] 파일 확장자 검증
-            String originalFilename = file.getOriginalFilename();
-            validateFileExtension(originalFilename);
-
+            // 확장자 검증은 위 선-검증 패스에서 완료됨.
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);
 
