@@ -376,14 +376,16 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("요청에 작성자 정보가 명시된 경우 해당 정보로 게시글 생성")
-    void createPost_CustomNtcr() {
-        // given
+    @DisplayName("요청 본문의 작성자 정보(userId/userNm)는 무시되고 인증 주체로 저장 — 저자 위조 방지")
+    void createPost_IgnoresClientProvidedAuthor() {
+        // given — 클라이언트가 저자 위조를 시도(customId/customNm)해도 무시되어야 한다.
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, "customId", "customNm", null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        UserDto author = UserDto.builder().userId(userId).userNm("실제작성자").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById(userId)).willReturn(author);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
         given(boardRepository.getNextPstId()).willReturn(1L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -391,8 +393,8 @@ class BoardServiceTest {
         // when
         boardService.createPost(userId, request);
 
-        // then
-        verify(boardRepository).save(argThat(b -> "customId".equals(b.getUserId()) && "customNm".equals(b.getUserNm())));
+        // then — request 의 customId/customNm 은 무시되고 인증 userId + 조회한 저자명으로 저장
+        verify(boardRepository).save(argThat(b -> "user1".equals(b.getUserId()) && "실제작성자".equals(b.getUserNm())));
     }
 
     @Test

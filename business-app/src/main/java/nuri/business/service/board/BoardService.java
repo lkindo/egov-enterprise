@@ -170,8 +170,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
-                        String userIdToSet = request.userId() != null ? request.userId() : userId;
-                        String userNmToSet = request.userNm() != null ? request.userNm() : (author != null ? author.userNm() : "익명");
+                        // 저자 식별은 인증 주체로 고정 — request.userId()/userNm() 로 저자 위조를 막는다(replyPost 와 동일).
+                        String userIdToSet = userId;
+                        String userNmToSet = author != null ? author.userNm() : "익명";
 
                         // DB 시퀀스를 사용하여 유니크한 ID 생성
                         String pstIdToSet = String.valueOf(boardRepository.getNextPstId());
@@ -204,7 +205,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .getPstId();
 
                         // 이벤트 발행 (통계 동기화 등)
-                        eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
+                        nuri.foundation.core.util.TransactionUtils.runAfterCommit(
+                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId)));
 
                         return pstId;
                 } finally {
@@ -291,7 +293,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
                                 .getPstId();
 
-                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId));
+                nuri.foundation.core.util.TransactionUtils.runAfterCommit(
+                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId)));
 
                 return pstId;
         }
@@ -352,10 +355,10 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
                 }
 
-                board.update(request.pstTtl(), request.pstCn(), 
-                                request.userId() != null ? request.userId() : board.getUserId(), 
-                                request.userNm() != null ? request.userNm() : board.getUserNm(),
-                                request.pswd() != null ? request.pswd() : board.getPswd(), 
+                board.update(request.pstTtl(), request.pstCn(),
+                                board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
+                                board.getUserNm(),
+                                request.pswd() != null ? request.pswd() : board.getPswd(),
                                 request.pstBgngYmd(), request.pstEndYmd(),
                                 request.atchFileId(), eventDate,
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
