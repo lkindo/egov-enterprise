@@ -55,6 +55,7 @@ public class OnlinePollManageDto {
     private LocalDateTime crtDt;
 
     @Schema(description = "설문 항목 목록")
+    @jakarta.validation.Valid  // 중첩 원소(@NotBlank pollArtclNm)를 컨트롤러 @Valid 로 캐스케이드 검증 → null 항목명 NPE(500) 대신 400
     private List<OnlinePollArticleDto> pollArticles;
 
     public static OnlinePollManageDto from(OnlinePollManage entity) {

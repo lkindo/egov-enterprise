@@ -359,6 +359,7 @@ public class MenuService {
         menuRepository.deleteById(Objects.requireNonNull(vo.getMenuNo()));
     }
 
+    @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
