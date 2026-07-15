@@ -146,7 +146,7 @@ class UserServiceTest {
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
         
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             userService.updateUser("user1", UserDto.builder().build());
@@ -161,7 +161,7 @@ class UserServiceTest {
         given(userRepository.findById("user2")).willReturn(Optional.of(user));
         
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.updateUser("user2", UserDto.builder().build()));

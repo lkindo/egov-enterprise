@@ -62,7 +62,7 @@ class UserServiceAdditionalTest {
     void updateUser_success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("ADMIN"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
             String userId = "testUser";
             User user = createBaseUser(userId)
@@ -91,7 +91,7 @@ class UserServiceAdditionalTest {
     void updateUser_fail_userNotFound() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("ADMIN"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
             String userId = "nonexistent";
             UserDto updateDto = createBaseUserDto(userId).build();

@@ -125,7 +125,7 @@ class OnlinePollServiceTest {
     void insertPoll() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollArticleDto itemDto = OnlinePollArticleDto.builder()
                     .pollArtclNm("A".repeat(150)) // Exceed 100 chars
@@ -178,7 +178,7 @@ class OnlinePollServiceTest {
     void updatePoll_Success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollManage entity = OnlinePollManage.builder()
                     .pollId("P1")
@@ -412,7 +412,7 @@ class OnlinePollServiceTest {
     void insertPoll_EmptyStringsFallback() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             // 비정상적이거나 빈 값을 넣었을 때 분기를 탄다
             OnlinePollArticleDto emptyItem = OnlinePollArticleDto.builder().pollArtclNm("").build();
@@ -440,7 +440,7 @@ class OnlinePollServiceTest {
     void updatePoll_MergeArticles() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             OnlinePollArticle oldItem1 = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old1").build();
             OnlinePollArticle oldItem2 = OnlinePollArticle.builder().pollArtclId("I2").pollArtclNm("Old2").build();
@@ -500,7 +500,7 @@ class OnlinePollServiceTest {
     @DisplayName("insertPollItem - pollManage를 찾지 못할 때 예외")
     void insertPollItem_Fail_NotFound() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
             
             given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
             OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollId("P99").pollArtclNm("A").build();
@@ -513,7 +513,7 @@ class OnlinePollServiceTest {
     @DisplayName("updatePollItem - 내용이 빈 문자열일 때")
     void updatePollItem_EmptyContent() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("user"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
             given(pollItemRepository.findById("I1")).willReturn(Optional.of(entity));
@@ -531,7 +531,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 항목 수정 - 성공")
     void updatePollItem_Success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
             given(pollItemRepository.findById("I1")).willReturn(Optional.of(entity));

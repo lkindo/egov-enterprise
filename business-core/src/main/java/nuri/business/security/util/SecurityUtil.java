@@ -14,9 +14,23 @@ import nuri.business.security.AuthorityConstants;
 public class SecurityUtil {
 
     /**
-     * 현재 인증 주체의 <b>esntlId</b> 를 반환한다.
+     * 현재 인증 주체의 <b>esntlId</b>(시스템 내부 PK)를 반환한다.
      * (principal 이 {@link UserDetails} 이면 {@code getUsername()} == esntlId 규약을 따른다.)
-     * 감사 컬럼(frst_rgtr_id/last_mdfr_id) 등 시스템 전반의 사용자 식별은 esntlId 로 일원화한다.
+     *
+     * <p><b>⚠ 감사 컬럼과의 비교에는 이 메서드를 쓰지 않는다.</b> 감사 컬럼
+     * ({@code frstRgtrId}/{@code lastMdfrId})에 저장되는 값은 <b>loginId</b>이므로
+     * ({@link nuri.business.security.audit.LoginUserAuditorAware} 참조)
+     * {@link #getCurrentLoginId()} 로 비교해야 한다.</p>
+     *
+     * <p><b>소유권(IDOR) 비교의 축은 도메인마다 다르다.</b> 소유자 필드가 감사 컬럼을
+     * 쓰는 표준 도메인은 {@link #assertOwnerOrAdmin(String)}(loginId 기준)로,
+     * 소유자 필드를 <b>esntlId 로 저장</b>하는 도메인({@code InformalSanction.aplcntId},
+     * {@code Board.userId} 등)은 이 메서드({@code getCurrentEsntlId()})로 비교해야 축이 일치한다.
+     * 상세 규약: {@code docs/03-guides/identity-model-guide.md} §2.</p>
+     *
+     * @return esntlId (User 엔티티 PK). 인증 정보 부재 시 {@code Optional.empty()}.
+     * @see #getCurrentLoginId()
+     * @see #assertOwnerOrAdmin(String)
      */
     public static Optional<String> getCurrentEsntlId() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

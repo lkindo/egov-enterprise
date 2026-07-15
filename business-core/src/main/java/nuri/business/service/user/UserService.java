@@ -197,7 +197,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
                 // [보안] 본인 또는 관리자만 수정 가능
-                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
+                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
                 if (!currentUserId.equals(userId) && !nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);

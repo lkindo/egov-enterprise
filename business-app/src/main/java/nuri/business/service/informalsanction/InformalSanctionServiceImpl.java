@@ -90,7 +90,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -112,7 +112,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAplcntId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -133,7 +133,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (결재자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
         if (!currentUserId.equals(entity.getAprvrId())) {
             throw new BusinessException("접근 권한이 없습니다.", CommonErrorCode.ACCESS_DENIED);

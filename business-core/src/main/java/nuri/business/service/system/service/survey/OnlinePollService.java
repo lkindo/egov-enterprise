@@ -123,7 +123,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollArticles(new ArrayList<>())
                 .build();
 
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
         pollManage.setFrstRgtrId(currentUserId);
 
@@ -163,7 +163,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 dto.getPollKndCd() != null && dto.getPollKndCd().length() > 12 ? dto.getPollKndCd().substring(0, 12) : dto.getPollKndCd(), 
                 dto.getPollDsuseYn(), dto.getPollAtmcDsuseYn());
         
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
         entity.setLastMdfrId(currentUserId);
 
@@ -216,7 +216,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollArtclNm(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm())
                 .build();
         
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
         item.setFrstRgtrId(currentUserId);
         
@@ -230,7 +230,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm());
         
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentUserId().orElse("SYSTEM");
+        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
         entity.setLastMdfrId(currentUserId);
     }
@@ -261,8 +261,9 @@ public class OnlinePollService implements EgovOnlinePollService {
 
         // 빠른 경로(fast-path): 이미 참여한 사용자면 굳이 INSERT 를 시도하지 않는다.
         // ⚠ 이 검사만으로는 동시 요청 경합(TOCTOU)을 막을 수 없다. 권위 있는 방어는 아래 유니크 제약(V2_4)이다.
-        // 식별자 정합: userId 는 컨트롤러가 loginId(getCurrentLoginId)를 전달한다 — 감사자가 frst_rgtr_id 에
-        // 기록하는 값(=loginId)과 동일해야 이 검사와 제약이 같은 대상을 가리킨다.
+        // 식별자 정합: userId 는 컨트롤러가 loginId(SecurityUtil.getCurrentLoginId())를 전달한다.
+        // LoginUserAuditorAware 가 감사 컬럼(frstRgtrId)에 기록하는 값도 loginId 이므로,
+        // 이 중복 검사와 DB 유니크 제약(V2_4)이 동일한 식별자를 기준으로 동작한다.
         if (pollResultRepository.countByPollIdAndFrstRegisterId(pollId, userId) > 0) {
             throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }

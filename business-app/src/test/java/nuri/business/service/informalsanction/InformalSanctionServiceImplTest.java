@@ -136,7 +136,7 @@ class InformalSanctionServiceImplTest {
                 .build();
                 
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of("APPLICANT_01"));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
         informalSanctionService.updateInformalSanction(dto);
 
@@ -156,7 +156,7 @@ class InformalSanctionServiceImplTest {
                 .build();
                 
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of("APPLICANT_01"));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
         assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
                 .isInstanceOf(BusinessException.class)
@@ -174,7 +174,7 @@ class InformalSanctionServiceImplTest {
                 .build();
                 
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of("APPLICANT_01"));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
         informalSanctionService.deleteInformalSanction("SANC_01");
 
@@ -191,7 +191,7 @@ class InformalSanctionServiceImplTest {
                 .build();
                 
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of("OTHER_USER"));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("OTHER_USER"));
 
         assertThatThrownBy(() -> informalSanctionService.deleteInformalSanction("SANC_01"))
                 .isInstanceOf(BusinessException.class)
@@ -211,7 +211,7 @@ class InformalSanctionServiceImplTest {
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.APPROVED.getCode(), null);
 
@@ -231,7 +231,7 @@ class InformalSanctionServiceImplTest {
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.REJECTED.getCode(), "Reject Reason");
 
@@ -251,7 +251,7 @@ class InformalSanctionServiceImplTest {
                 .build();
         
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         assertThatThrownBy(() -> informalSanctionService.confirmInformalSanction("SANC_01", "UNKNOWN", null))
                 .isInstanceOf(BusinessException.class)

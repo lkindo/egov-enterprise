@@ -19,7 +19,12 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "tb_bbs_item")
+@Table(name = "tb_bbs_item", uniqueConstraints = {
+    @UniqueConstraint(
+        name = "uk_tb_bbs_item_thread_pos",
+        columnNames = {"bbs_id", "sort_ordr", "ans_sn"}
+    )
+})
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;

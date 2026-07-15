@@ -132,7 +132,7 @@ class InformalSanctionServiceTest {
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
         given(informalSanctionRepository.findById("IS1")).willReturn(Optional.of(sanction));
-        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         // When
         informalSanctionService.confirmInformalSanction("IS1", SanctionStatus.APPROVED.getCode(), "Reason");
