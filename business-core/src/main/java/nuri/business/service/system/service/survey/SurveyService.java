@@ -54,7 +54,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertTmplat(SurveyTemplateDto dto) {
-        String id = "QUSTMP_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QUSTMP_", 13);
         tmplatRepository.save(Objects.requireNonNull(SurveyTemplate.builder()
                 .srvyTmpltId(id)
                 .srvyTmpltTypeCd(dto.getSrvyTmpltTypeCd())
@@ -98,7 +98,7 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void insertSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
-        String id = "QESTNR_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QESTNR_", 13);
         infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
                 .srvyId(id)
                 .srvyTtl(dto.getSrvyTtl())
@@ -157,7 +157,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertQuestion(SurveyQuestionDto dto) {
-        String id = "QESITM_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QESITM_", 13);
         qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
                 .srvyQstnId(id)
                 .srvyId(dto.getSrvyId())
@@ -194,7 +194,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertItem(SurveyArticleDto dto) {
-        String id = "IEM_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("IEM_", 13);
         iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
                 .srvyArtclId(id)
                 .srvyQstnId(dto.getSrvyQstnId())

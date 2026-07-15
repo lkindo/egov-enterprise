@@ -109,7 +109,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         validatePollDates(beginDe, endDe);
         
         // Use UUID to guarantee uniqueness in parallel worker environment
-        String pollId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+        String pollId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
         
         OnlinePollManage pollManage = OnlinePollManage.builder()
                 .pollId(pollId)
@@ -128,7 +128,7 @@ public class OnlinePollService implements EgovOnlinePollService {
 
         if (dto.getPollArticles() != null) {
             for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
-                String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+                String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
                 
                 OnlinePollArticle item = OnlinePollArticle.builder()
                         .pollArtclId(iemId)
@@ -169,7 +169,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         if (dto.getPollArticles() != null) {
             entity.getPollArticles().clear();
             for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
-                String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+                String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
 
                 OnlinePollArticle item = OnlinePollArticle.builder()
                         .pollArtclId(iemId)
@@ -207,7 +207,7 @@ public class OnlinePollService implements EgovOnlinePollService {
         OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         
-        String iemId = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+        String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
 
         OnlinePollArticle item = OnlinePollArticle.builder()
                 .pollArtclId(iemId)
@@ -267,7 +267,7 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
-        String resId = "PR" + UUID.randomUUID().toString().replace("-", "").substring(0, 18);
+        String resId = nuri.foundation.core.util.IdGenerationUtil.generateId("PR", 18);
 
         OnlinePollResult result = OnlinePollResult.builder()
                 .pollRsltId(resId)

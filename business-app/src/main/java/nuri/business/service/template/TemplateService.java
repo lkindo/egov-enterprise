@@ -55,7 +55,7 @@ public class TemplateService implements EgovTemplateService {
     @Override
     @Transactional
     public String createTemplate(String userId, TemplateDto dto) {
-        String tmpltId = "TMPL_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String tmpltId = nuri.foundation.core.util.IdGenerationUtil.generateId("TMPL_", 13);
 
         Template template = Template.builder()
                 .tmpltId(tmpltId)

@@ -72,7 +72,7 @@ public class GroupManageService {
         // Generate ID if not provided
         String groupId = dto.getGroupId();
         if (groupId == null || groupId.isEmpty()) {
-            groupId = "GROUP_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+            groupId = nuri.foundation.core.util.IdGenerationUtil.generateId("GROUP_", 10);
         }
 
         GroupManage entity = GroupManage.builder()

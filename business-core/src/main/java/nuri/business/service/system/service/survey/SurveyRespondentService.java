@@ -37,7 +37,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     @Override
     @Transactional
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
-        String id = "SRES_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("SRES_", 13);
         SurveyRespondent entity = SurveyRespondent.builder()
                 .srvyRspdntId(id)
                 .srvyId(dto.getSrvyId())

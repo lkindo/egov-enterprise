@@ -41,7 +41,7 @@ public class EventInfoService {
     @Transactional
     public String createEvent(String userId, EventInfoDto dto) {
         log.info("Creating new event by user: {}", userId);
-        String eventId = "EVT_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String eventId = nuri.foundation.core.util.IdGenerationUtil.generateId("EVT_", 13);
  
         EventInfo eventInfo = EventInfo.builder()
                 .evntId(eventId)

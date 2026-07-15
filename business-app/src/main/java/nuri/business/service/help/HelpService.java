@@ -45,7 +45,7 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createHpcm(String userId, HpcmDto dto) {
-        String id = "HPCM_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("HPCM_", 13);
         Hpcm entity = Hpcm.builder()
                 .hlpId(id)
                 .hlpSeCd(dto.getHlpSeCd())
@@ -92,7 +92,7 @@ public class HelpService implements EgovHelpService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         
-        String id = "MNL_" + java.util.UUID.randomUUID().toString().substring(0, 8);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("MNL_", 8);
         OnlineManual entity = OnlineManual.builder()
                 .onlnMnlId(id)
                 .onlnMnlNm(dto.getOnlnMnlNm() != null ? dto.getOnlnMnlNm() : "Untitled")

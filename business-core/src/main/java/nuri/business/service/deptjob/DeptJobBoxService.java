@@ -42,7 +42,7 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     @Override
     @Transactional
     public String createDeptJobBox(String userId, DeptJobBoxDto dto) {
-        String id = "DEPTJOB_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("DEPTJOB_", 13);
         DeptJobBox entity = DeptJobBox.builder()
                 .deptTaskBoxId(id)
                 .deptTaskBoxNm(dto.getDeptTaskBoxNm())

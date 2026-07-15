@@ -46,7 +46,7 @@ public class NotificationService implements EgovNotificationService {
     @Transactional
     public String createNotification(String userId, NotificationDto dto) {
         log.info("Creating notification for user: {}", userId);
-        String id = "NTFC_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("NTFC_", 13);
         Notification entity = Notification.builder()
                 .notiSn(id)
                 .notiTtlNm(dto.getNotiTtlNm())

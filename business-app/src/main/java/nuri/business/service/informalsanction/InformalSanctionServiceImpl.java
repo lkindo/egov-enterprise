@@ -67,7 +67,7 @@ public class InformalSanctionServiceImpl implements InformalSanctionService {
     public void registerInformalSanction(InformalSanctionDto dto) {
         String ifmlAtrzId = dto.getIfmlAtrzId();
         if (ifmlAtrzId == null || ifmlAtrzId.isEmpty()) {
-            ifmlAtrzId = "INFRML_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13).toUpperCase();
+            ifmlAtrzId = nuri.foundation.core.util.IdGenerationUtil.generateId("INFRML_", 13);
         }
 
         InformalSanction entity = InformalSanction.builder()

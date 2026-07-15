@@ -61,7 +61,7 @@ public class RoleManageService {
     public void insertRole(RoleManageDto dto) {
         String roleId = dto.getRoleId();
         if (roleId == null || roleId.isEmpty()) {
-            roleId = "ROLE_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            roleId = nuri.foundation.core.util.IdGenerationUtil.generateId("ROLE_", 8);
         }
 
         RoleInfo entity = RoleInfo.builder()

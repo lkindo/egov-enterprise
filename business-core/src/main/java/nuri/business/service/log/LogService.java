@@ -36,7 +36,7 @@ public class LogService extends BaseAbstractService implements EgovLogService {
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
 
         LoginLog log = LoginLog.builder()
-                .logId("LGN_" + UUID.randomUUID().toString().substring(0, 16))
+                .logId(nuri.foundation.core.util.IdGenerationUtil.generateId("LGN_", 16))
                 .userId(userId)
                 .lgnIpAddr(ip)
                 .cntnMthdCd(mthd)

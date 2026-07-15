@@ -42,7 +42,7 @@ public class BannerService implements EgovBannerService {
     @Override
     @Transactional
     public void insertBanner(BannerDto dto) {
-        String id = "BANNER_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("BANNER_", 13);
         Banner entity = Banner.builder()
                 .bnrId(id)
                 .bnrNm(dto.getBnrNm())

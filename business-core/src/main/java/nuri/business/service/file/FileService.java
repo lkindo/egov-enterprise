@@ -63,7 +63,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
             }
         }
 
-        String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
+        String atchFileId = nuri.foundation.core.util.IdGenerationUtil.generateId("FILE_", 12);
         FileMaster master = new FileMaster(atchFileId);
         master = fileMasterRepository.save(master);
 
