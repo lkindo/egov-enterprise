@@ -343,8 +343,6 @@ export const BoardSaveRequestSchema = z.object({
   qnaCatCd: z.string().min(0).max(12).optional(),
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().min(0).max(60).optional(),
   pswd: z.string().min(0).max(200).optional(),
 });
 export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;

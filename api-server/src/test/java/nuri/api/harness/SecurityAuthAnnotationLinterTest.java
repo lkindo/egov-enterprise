@@ -79,8 +79,6 @@ class SecurityAuthAnnotationLinterTest {
                 continue;
             }
 
-            // [MIGRATION EXCEPTION] business-suite와 foundation에서 병합된 컨트롤러들은 
-            // ApiSecurityConfig의 글로벌 필터링 정책을 우선 따르므로 강제 Linter 대상에서 제외합니다.
             String packageName = controllerClass.getPackageName();
             if (packageName.startsWith("nuri.api.controller.business") || packageName.startsWith("nuri.api.controller.foundation")) {
                 continue;

@@ -112,7 +112,7 @@ class BoardServiceTest {
         given(boardRepository.findById("1")).willReturn(Optional.of(board));
         
         BoardSaveRequest updateDto = new BoardSaveRequest(
-            "BBS1", "update", "content", null, null, null, null, null, null, null, null, null, null, null
+            "BBS1", "update", "content", null, null, null, null, null, null, null, null, null
         );
 
         boardService.updatePost("BBS1", "1", updateDto);
@@ -130,7 +130,7 @@ class BoardServiceTest {
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById("1")).willReturn(Optional.of(board));
 
-        BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null);
         assertThrows(BusinessException.class, () -> boardService.updatePost("BBS1", "1", req));
     }
 
@@ -174,7 +174,7 @@ class BoardServiceTest {
     void createPost() {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
@@ -198,7 +198,7 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         String parentId = "1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
@@ -244,7 +244,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         String pstId = "1";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null);
         Board board = Board.builder().pstId(pstId).pstTtl("Old").userId(userId).build();
 
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
@@ -335,7 +335,7 @@ class BoardServiceTest {
     void createPost_UserNotFound() {
         // given
         String userId = "unknown";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
@@ -357,7 +357,7 @@ class BoardServiceTest {
     void createPost_UserError() {
         // given
         String userId = "errorUser";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
@@ -375,11 +375,11 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("요청 본문의 작성자 정보(userId/userNm)는 무시되고 인증 주체로 저장 — 저자 위조 방지")
-    void createPost_IgnoresClientProvidedAuthor() {
-        // given — 클라이언트가 저자 위조를 시도(customId/customNm)해도 무시되어야 한다.
+    @DisplayName("작성자는 인증 주체(userId)+조회한 저자명으로 저장 — 요청 DTO에 저자 필드 없음(타입수준 위조 차단)")
+    void createPost_AuthorFromAuthenticatedPrincipal() {
+        // given — 요청 DTO(BoardSaveRequest)에서 userId/userNm 필드를 제거해 클라이언트가 저자를 지정할 방법 자체가 없다.
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, "customId", "customNm", null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto author = UserDto.builder().userId(userId).userNm("실제작성자").build();
 
@@ -392,7 +392,7 @@ class BoardServiceTest {
         // when
         boardService.createPost(userId, request);
 
-        // then — request 의 customId/customNm 은 무시되고 인증 userId + 조회한 저자명으로 저장
+        // then — 저자는 인증 userId + 조회한 저자명으로 저장된다
         verify(boardRepository).save(argThat(b -> "user1".equals(b.getUserId()) && "실제작성자".equals(b.getUserNm())));
     }
 
@@ -401,7 +401,7 @@ class BoardServiceTest {
     void createPostWithFiles() throws IOException {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -427,7 +427,7 @@ class BoardServiceTest {
         // given
         String userId = "unknown";
         String parentId = "1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
 
@@ -450,7 +450,7 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         String parentId = "1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -478,7 +478,7 @@ class BoardServiceTest {
         String pstId = "1";
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
@@ -498,7 +498,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         String pstId = "1";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null);
         Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
@@ -517,7 +517,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         String pstId = "1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
-                null, null, null, null);
+                null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -543,7 +543,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         String pstId = "1";
         String atchFileId = "OLD_ATCH_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -595,7 +595,7 @@ class BoardServiceTest {
         given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstId, request))
                 .isInstanceOf(BusinessException.class)
@@ -619,7 +619,7 @@ class BoardServiceTest {
     @DisplayName("파일 업로드 메서드에서 files가 null 이거나 비어있을 때")
     void fileUploadMethods_EmptyFiles() throws IOException {
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, "OLD_ATCH", null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, "OLD_ATCH", null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         
         // create

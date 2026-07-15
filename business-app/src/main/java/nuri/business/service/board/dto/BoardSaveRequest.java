@@ -30,10 +30,6 @@ public record BoardSaveRequest(
 
                 @Schema(description = "사용 여부 (Y/N)") @Pattern(regexp = "^[YN]$") String useYn,
 
-                @Schema(description = "작성자 ID") @Size(max = 20) String userId,
-
-                @Schema(description = "작성자 명") @Size(max = 60) String userNm,
-
                 @Schema(description = "게시글 비밀번호") @Size(max = 200) String pswd) {
 }
 

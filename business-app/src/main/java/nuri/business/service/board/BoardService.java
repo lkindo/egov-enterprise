@@ -227,7 +227,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.scrtYn(), request.useYn(), request.pswd());
 
                 return createPost(userId, newRequest);
         }
@@ -312,7 +312,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.scrtYn(), request.useYn(), request.pswd());
 
                 return replyPost(userId, parentId, newRequest);
         }
@@ -383,7 +383,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
-                                request.scrtYn(), request.useYn(), request.userId(), request.userNm(), request.pswd());
+                                request.scrtYn(), request.useYn(), request.pswd());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstId, "pstId 는 null 일 수 없습니다"),
                                 newRequest);

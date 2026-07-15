@@ -55,7 +55,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .builder()
                 .ocrnYmd(occrrncDe)
                 .instCd(dto.getInstCd())
-                .jobSn(System.currentTimeMillis()) // Simplified Sn
+                .jobSn(java.util.concurrent.ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)) // Safe positive non-colliding Sn
                 .build();
 
         InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder()

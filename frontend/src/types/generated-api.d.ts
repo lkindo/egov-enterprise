@@ -4645,10 +4645,6 @@ export interface components {
             scrtYn?: string;
             /** @description 사용 여부 (Y/N) */
             useYn?: string;
-            /** @description 작성자 ID */
-            userId?: string;
-            /** @description 작성자 명 */
-            userNm?: string;
             /** @description 게시글 비밀번호 */
             pswd?: string;
         };
