@@ -46,14 +46,12 @@ export function SessionExpiryWarning() {
 
   const handleExtendSession = useCallback(async () => {
     try {
-      // client.ts의 reissue 로직을 직접 트리거
+      // client.ts의 reissue 로직을 직접 트리거.
+      // reissue 라우트가 새 accessToken 을 서버에서 HttpOnly 쿠키로 재설정하므로 클라이언트는 별도 저장이 불필요하다.
+      // ⚠ 토큰을 localStorage/JS-읽기 쿠키에 다시 쓰면 HttpOnly 전환(로드맵 #9)이 무력화되고
+      //    XSS 토큰 탈취 표면이 재생성되므로 절대 저장하지 않는다.
       const { default: client } = await import('@/lib/api/client');
-      const res: any = await (client as any).post('/auth/reissue', {});
-      
-      if (res?.accessToken) {
-        localStorage.setItem('accessToken', res.accessToken);
-        document.cookie = `accessToken=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      }
+      await (client as any).post('/auth/reissue', {});
     } catch {
       // reissue 실패 시에도 조용히 처리 (사용자가 작업을 계속할 수 있도록)
     }
