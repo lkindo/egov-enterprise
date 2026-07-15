@@ -25,24 +25,9 @@ export function AuthProvider({
 
   const checkAuth = useCallback(async () => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('accessToken');
-
-    // 토큰이 없으면 인증 확인 건너뜀
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      // 쿠키도 명시적으로 제거하여 싱크 맞춤
-      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      return;
-    }
-
-    // [중요] localStorage 에는 토큰이 있으나 쿠키가 없는 경우 동기화하여 미들웨어 통과 지원
-    const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('accessToken='));
-    if (!hasCookie && token) {
-      document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax`;
-    }
 
     try {
+      // HttpOnly 쿠키 기반이므로 로컬스토리지 토큰 유무에 상관없이 로그인 세션 여부를 직접 호출해 체크
       const userData = await authService.getCurrentUser();
       if (userData) {
         setUser(userData);
@@ -50,14 +35,8 @@ export function AuthProvider({
         setUser(null);
       }
     } catch (error) {
-      // E2E 환경에서 토큰 만료는 빈번하므로 로그 수준 낮춤
-      if (process.env.NEXT_PUBLIC_APP_ENV !== 'e2e') {
-        console.warn('[AuthContext] 인증 유효성 검사 실패:', error);
-      }
+      // 401 등 세션 만료 시 처리
       setUser(null);
-      localStorage.removeItem('accessToken');
-      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     } finally {
       setLoading(false);
     }
@@ -70,27 +49,13 @@ export function AuthProvider({
         userId: credentials.id,
         password: credentials.password,
       };
-      const data = await authService.login(loginData);
+      
+      // Next.js Route Handler 로그인 호출 (토큰은 쿠키로 설정됨)
+      await authService.login(loginData);
 
-      if (data && data.accessToken) {
-        // 1. localStorage 저장 (우선)
-        localStorage.setItem('accessToken', data.accessToken);
-
-        // 2. 쿠키 저장 (middleware 및 SSR용)
-        document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-        if (data.role) {
-          document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
-        }
-
-        // 3. 전역 상태 업데이트 (즉시 반영)
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
-
-        // 4. 디버깅 로그 확인
-        // Removed to ensure zero-tolerance clean console interface
-      } else {
-        throw new Error('인증 정보가 올바르지 않습니다.');
-      }
+      // 전역 상태 업데이트
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.';
       console.error('Login process error:', message);
@@ -100,16 +65,12 @@ export function AuthProvider({
 
   const logout = useCallback(async () => {
     try {
+      // Next.js Route Handler 로그아웃 호출 (쿠키 만료 처리 포함)
       await authService.logout();
     } catch (error) {
       console.error('Logout API call failed', error);
     } finally {
       setUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
     }
   }, []);
 

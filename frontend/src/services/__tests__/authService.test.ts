@@ -28,7 +28,7 @@ describe('authService', () => {
  const loginData = { id: 'testuser', password: 'password' };
  const result = await authService.login(loginData);
 
- expect(api.post).toHaveBeenCalledWith('auth/login', loginData);
+ expect(api.post).toHaveBeenCalledWith('/api/auth/login', loginData);
  expect(result).toEqual(mockResponse);
  });
 
@@ -37,7 +37,7 @@ describe('authService', () => {
 
  await authService.logout();
 
- expect(api.post).toHaveBeenCalledWith('auth/logout');
+ expect(api.post).toHaveBeenCalledWith('/api/auth/logout');
  });
 
  it('reissue should call api.post', async () => {
@@ -46,7 +46,7 @@ describe('authService', () => {
 
  const result = await authService.reissue();
 
- expect(api.post).toHaveBeenCalledWith('auth/reissue');
+ expect(api.post).toHaveBeenCalledWith('/api/auth/reissue');
  expect(result).toEqual(mockResponse);
  });
 

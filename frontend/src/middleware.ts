@@ -37,6 +37,24 @@ function getRoleFromToken(token: string): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
  
+  // 1. 백엔드 API 요청 Proxy Header Injection
+  // 브라우저 클라이언트에서 withCredentials 로 동봉한 accessToken HttpOnly 쿠키를 읽어 
+  // 백엔드 시큐리티가 읽을 수 있도록 Authorization: Bearer <token> 헤더를 강제 주입하여 리라이팅 우회 처리합니다.
+  if (pathname.startsWith('/api/v1')) {
+    const accessToken = request.cookies.get('accessToken')?.value;
+    if (accessToken) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+    return NextResponse.next();
+  }
+
+  // 2. 로그인 페이지, Next.js 자체 API Route(/api/auth/* 등), 정적 리소스 등은 라우트 보호 생략
   if (pathname.startsWith('/login') || pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/governance_harness_atlas.html') {
     return NextResponse.next();
   }
@@ -48,14 +66,14 @@ export function middleware(request: NextRequest) {
   // Always log in E2E environment for debugging
   console.log(`[Middleware Check] Path: ${pathname} | hasToken: ${hasToken} | userRole: ${userRole}`);
  
-  // 1. 로그인여부 확인 (유효 토큰이 없거나 만료된 경우 포함)
+  // 3. 로그인여부 확인 (유효 토큰이 없거나 만료된 경우 포함)
   if (!hasToken || !userRole) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
  
-  // 2. 관리자/사용자경로 관리(/admin 경로 보호)
+  // 4. 관리자/사용자경로 관리(/admin 경로 보호)
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole.toUpperCase();
     const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
@@ -80,6 +98,6 @@ export function middleware(request: NextRequest) {
  
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

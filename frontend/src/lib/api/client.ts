@@ -36,10 +36,9 @@ axiosInstance.interceptors.request.use(
   async (config) => {
     let token = null;
     
-    if (typeof window !== 'undefined') {
-      token = localStorage.getItem('accessToken');
-    } else {
+    if (typeof window === 'undefined') {
       // SSR 환경: next/headers의 cookies()를 사용하여 토큰 추출 (Next.js 15 대응)
+      // 서버 컴포넌트에서는 브라우저와 달리 쿠키가 자동으로 백엔드 API 서버로 전달되지 않으므로 헤더에 Bearer 토큰을 직접 동봉해 준다.
       try {
         const { cookies } = await import('next/headers');
         const cookieStore = await cookies();
@@ -50,10 +49,9 @@ axiosInstance.interceptors.request.use(
       }
     }
     
-    if (token === 'null' || token === 'undefined') {
-      token = null;
-      if (typeof window !== 'undefined') localStorage.removeItem('accessToken');
-    }
+    // 브라우저 클라이언트 환경(typeof window !== 'undefined')에서는 
+    // 브라우저의 withCredentials: true 속성에 의해 accessToken HttpOnly 쿠키가 자동으로 Next.js Middleware로 전달되며,
+    // Next.js Middleware 가 이 쿠키를 낚아채 백엔드로 Authorization: Bearer <token> 헤더를 주입해 전송하므로 클라이언트 단에서는 헤더 주입이 면제됩니다.
 
     if (token && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -92,8 +90,8 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (typeof window !== 'undefined' &&
         (window.location.pathname.includes('/login') ||
-        originalRequest.url?.includes('/auth/login') ||
-        originalRequest.url?.includes('/auth/reissue'))) {
+        originalRequest.url?.includes('/api/auth/login') ||
+        originalRequest.url?.includes('/api/auth/reissue'))) {
         return Promise.reject(error);
       }
 
@@ -102,9 +100,7 @@ axiosInstance.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
         .then((token) => {
-          if (originalRequest.headers) {
-            originalRequest.headers['Authorization'] = `Bearer ${token}`;
-          }
+          // 재갱신된 토큰은 HttpOnly 쿠키로 알아서 브라우저가 전송하므로, Authorization 헤더를 굳이 수동 첨부할 필요가 없습니다.
           return axiosInstance(originalRequest);
         })
         .catch((err) => Promise.reject(err));
@@ -118,8 +114,9 @@ axiosInstance.interceptors.response.use(
       isRetrying = true;
 
       try {
+        // Next.js Route Handler의 토큰 재발행 API 호출 (/api/auth/reissue)
         const res = await axiosInstance.post<ApiResponse<{ accessToken: string }>>(
-          '/auth/reissue',
+          '/api/auth/reissue',
           {},
           { 
             _retry: true, 
@@ -132,15 +129,10 @@ axiosInstance.interceptors.response.use(
 
         if (!accessToken) throw new Error('Token reissue failed: Empty token');
 
-        localStorage.setItem('accessToken', accessToken);
-        document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; SameSite=Lax`;
-
+        // 새 accessToken은 Route Handler에 의해 HttpOnly 쿠키로 알아서 설정되어 있음.
         processQueue(null, accessToken);
         isRetrying = false;
         
-        if (originalRequest.headers) {
-          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-        }
         return axiosInstance(originalRequest);
       } catch (reissueError: unknown) {
         let finalReissueError: Error;
@@ -154,9 +146,7 @@ axiosInstance.interceptors.response.use(
         isRetrying = false;
 
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('role');
-          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          // 세션 만료 시 로그인 화면으로 포워딩
           window.location.href = `/login?expired=true&redirect=${encodeURIComponent(window.location.pathname)}`;
         }
 
