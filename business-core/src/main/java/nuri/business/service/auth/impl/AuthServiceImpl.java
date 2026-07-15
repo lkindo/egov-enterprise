@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;

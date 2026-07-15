@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 @DisplayName("SecurityUtil 테스트")
+@SuppressWarnings("deprecation")
 class SecurityUtilTest {
 
     @BeforeEach

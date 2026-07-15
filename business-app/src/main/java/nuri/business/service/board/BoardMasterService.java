@@ -16,7 +16,6 @@ import nuri.business.service.board.dto.BlogDto;
 import nuri.business.service.board.dto.BlogMapper;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.beans.factory.annotation.Qualifier;

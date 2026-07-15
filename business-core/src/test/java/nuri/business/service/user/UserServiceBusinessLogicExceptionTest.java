@@ -2,7 +2,6 @@ package nuri.business.service.user;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.domain.user.entity.User;

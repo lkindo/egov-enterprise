@@ -1,5 +1,4 @@
 package nuri.business.domain.calendar;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;

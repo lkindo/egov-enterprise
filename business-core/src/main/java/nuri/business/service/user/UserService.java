@@ -4,7 +4,6 @@ import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.constants.Constants;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
@@ -118,7 +117,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
                 String authorCode = userAuthorityRepository
                                 .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
-                                .map(UserAuthority::getAuthrtId)
+                                .map(auth -> auth.getAuthrtId())
                                 .orElse(null);
 
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
@@ -409,9 +408,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 String authorCode = "ROLE_" + role.name();
 
                 // 사용자별 findById 하던 N+1 을 findAllById 배치 조회로 제거.
-                List<String> esntlIds = users.stream().map(User::getEsntlId).collect(java.util.stream.Collectors.toList());
+                List<String> esntlIds = users.stream().map(u -> u.getEsntlId()).collect(java.util.stream.Collectors.toList());
                 java.util.Map<String, UserAuthority> existingByTarget = userAuthorityRepository.findAllById(esntlIds).stream()
-                        .collect(java.util.stream.Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a));
+                        .collect(java.util.stream.Collectors.toMap(a -> a.getScrtyDcsnTrgtId(), a -> a));
                 List<UserAuthority> newAuthorities = new java.util.ArrayList<>();
 
                 users.forEach(user -> {

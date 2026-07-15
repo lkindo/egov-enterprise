@@ -1,5 +1,4 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;

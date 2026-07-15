@@ -6,7 +6,6 @@ import nuri.business.domain.faq.FaqRepository;
 import nuri.business.service.faq.dto.FaqDto;
 import nuri.business.service.faq.dto.FaqMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -64,6 +63,6 @@ public class FaqService extends BaseAbstractService {
 
     @Transactional
     public void increaseInqCnt(@NonNull String faqId) {
-        faqRepository.findById(faqId).ifPresent(Faq::increaseInqCnt);
+        faqRepository.findById(faqId).ifPresent(faq -> faq.increaseInqCnt());
     }
 }

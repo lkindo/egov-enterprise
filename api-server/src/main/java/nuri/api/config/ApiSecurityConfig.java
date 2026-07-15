@@ -17,7 +17,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -81,10 +80,10 @@ public class ApiSecurityConfig {
                                                 AntPathRequestMatcher.antMatcher("/api/v1/**"),
                                                 AntPathRequestMatcher.antMatcher("/actuator/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .httpBasic(AbstractHttpConfigurer::disable)
-                                .formLogin(AbstractHttpConfigurer::disable)
-                                .logout(AbstractHttpConfigurer::disable)
+                                .csrf(csrf -> csrf.disable())
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .formLogin(formLogin -> formLogin.disable())
+                                .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(whitelist.stream()
                                                                 .map(AntPathRequestMatcher::antMatcher)
@@ -136,9 +135,9 @@ public class ApiSecurityConfig {
                                                 .ignoringRequestMatchers(
                                                 AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
                                                 AntPathRequestMatcher.antMatcher("/ws/**")))
-                                .httpBasic(AbstractHttpConfigurer::disable)
-                                .formLogin(AbstractHttpConfigurer::disable)
-                                .logout(AbstractHttpConfigurer::disable)
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .formLogin(formLogin -> formLogin.disable())
+                                .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(
                                                                 AntPathRequestMatcher.antMatcher("/css/**"),

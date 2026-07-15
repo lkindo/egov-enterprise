@@ -1,5 +1,4 @@
 package nuri.foundation.core.exception;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

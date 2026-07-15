@@ -12,7 +12,6 @@ import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
 import nuri.business.service.file.EgovFileService;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.service.user.EgovUserService;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;

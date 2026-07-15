@@ -5,7 +5,6 @@ import nuri.business.domain.calendar.Restde;
 import nuri.business.domain.calendar.RestdeRepository;
 import nuri.business.service.calendar.dto.RestdeDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

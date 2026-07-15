@@ -1,5 +1,4 @@
 package nuri.api.controller.foundation.controller.menu;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.menu.MenuService;

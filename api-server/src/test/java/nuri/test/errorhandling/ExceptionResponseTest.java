@@ -3,7 +3,6 @@ import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.api.controller.UserApiController;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserSignupRequest;

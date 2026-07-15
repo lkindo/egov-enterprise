@@ -67,7 +67,7 @@ class ValidationUtilsTest {
     @Test
     @DisplayName("required(T value, Function<T, R> mapper) - null인 경우 예외 발생")
     void required_mapper_null() {
-        assertThatThrownBy(() -> ValidationUtils.required(null, Object::toString))
+        assertThatThrownBy(() -> ValidationUtils.required(null, obj -> obj.toString()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("값은 null 일 수 없습니다");
     }

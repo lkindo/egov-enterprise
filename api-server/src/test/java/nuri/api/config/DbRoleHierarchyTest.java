@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -31,14 +29,14 @@ class DbRoleHierarchyTest {
 
     private Set<String> reachable(DbRoleHierarchy h, String role) {
         return h.getReachableGrantedAuthorities(AuthorityUtils.createAuthorityList(role))
-                .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+                .stream().map(auth -> auth.getAuthority()).collect(Collectors.toSet());
     }
 
     @Test
     @DisplayName("DB 엣지 로드 시 상위 권한이 하위 권한을 상속한다 (SYSTEM→ADMIN→USER)")
     void expandsHierarchyFromDb() {
         doReturn(List.of("ROLE_SYSTEM > ROLE_ADMIN", "ROLE_ADMIN > ROLE_USER"))
-                .when(jdbcTemplate).query(anyString(), any(RowMapper.class));
+                .when(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any());
         DbRoleHierarchy h = new DbRoleHierarchy(jdbcTemplate);
 
         h.reload();
@@ -52,7 +50,7 @@ class DbRoleHierarchyTest {
     @Test
     @DisplayName("테이블이 비어있으면 no-op — 상속 확장 없이 현행 인가 유지")
     void emptyTableIsNoop() {
-        doReturn(List.of()).when(jdbcTemplate).query(anyString(), any(RowMapper.class));
+        doReturn(List.of()).when(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any());
         DbRoleHierarchy h = new DbRoleHierarchy(jdbcTemplate);
 
         h.reload();
@@ -64,7 +62,7 @@ class DbRoleHierarchyTest {
     @DisplayName("DB 로드 실패(테이블 부재 등)여도 예외 없이 no-op 폴백")
     void dbFailureFallsBackToNoop() {
         doThrow(new org.springframework.dao.DataAccessResourceFailureException("table not found"))
-                .when(jdbcTemplate).query(anyString(), any(RowMapper.class));
+                .when(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any());
         DbRoleHierarchy h = new DbRoleHierarchy(jdbcTemplate);
 
         assertThatCode(h::reload).doesNotThrowAnyException();

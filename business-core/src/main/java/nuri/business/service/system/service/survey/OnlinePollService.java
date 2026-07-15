@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.survey.OnlinePollManage;
 import nuri.business.domain.system.service.survey.OnlinePollArticle;
 import nuri.business.domain.system.service.survey.OnlinePollResult;
@@ -62,9 +61,9 @@ public class OnlinePollService implements EgovOnlinePollService {
         });
         // 페이지 내 모든 항목의 투표수를 단일 배치 쿼리로 채운다(항목마다 count 하던 N+1 제거).
         List<OnlinePollArticleDto> allItems = dtoPage.getContent().stream()
-                .map(OnlinePollManageDto::getPollArticles)
+                .map(dto -> dto.getPollArticles())
                 .filter(Objects::nonNull)
-                .flatMap(List::stream)
+                .flatMap(list -> list.stream())
                 .collect(Collectors.toList());
         applyItemVoteCounts(allItems);
         return dtoPage;
@@ -76,7 +75,7 @@ public class OnlinePollService implements EgovOnlinePollService {
             return;
         }
         List<String> artclIds = items.stream()
-                .map(OnlinePollArticleDto::getPollArtclId)
+                .map(item -> item.getPollArtclId())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         if (artclIds.isEmpty()) {

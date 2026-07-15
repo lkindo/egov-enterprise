@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.program.dto.ProgramDto;

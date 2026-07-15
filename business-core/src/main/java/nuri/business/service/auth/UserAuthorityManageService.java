@@ -5,7 +5,6 @@ import nuri.business.domain.auth.DeptAuthorProjection;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.business.service.auth.dto.UserAuthorityDto;
@@ -68,11 +67,11 @@ public class UserAuthorityManageService {
                 .filter(dto -> dto.getScrtyDcsnTrgtId() != null && dto.getAuthrtId() != null)
                 .collect(Collectors.toList());
         // 항목별 findById N+1 을 findAllById 배치 조회로 제거.
-        List<String> ids = valid.stream().map(UserAuthorityDto::getScrtyDcsnTrgtId).collect(Collectors.toList());
+        List<String> ids = valid.stream().map(dto -> dto.getScrtyDcsnTrgtId()).collect(Collectors.toList());
         java.util.Map<String, UserAuthority> existingMap = ids.isEmpty()
                 ? java.util.Collections.emptyMap()
                 : userAuthorityRepository.findAllById(ids).stream()
-                        .collect(Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a, (a, b) -> a));
+                        .collect(Collectors.toMap(a -> a.getScrtyDcsnTrgtId(), a -> a, (a, b) -> a));
 
         List<UserAuthority> entities = valid.stream()
                 .map(dto -> {
@@ -117,7 +116,7 @@ public class UserAuthorityManageService {
         if (request.isAllMembers()) {
             // 부서 내 모든 사용자 조회
             userIds = userRepository.findByOgnzId(request.getDeptId()).stream()
-                    .map(User::getEsntlId)
+                    .map(user -> user.getEsntlId())
                     .collect(Collectors.toList());
         } else {
             userIds = request.getUserIds();
@@ -129,7 +128,7 @@ public class UserAuthorityManageService {
 
         // 사용자별 findById N+1 을 findAllById 배치 조회로 제거.
         java.util.Map<String, UserAuthority> existingMap = userAuthorityRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(UserAuthority::getScrtyDcsnTrgtId, a -> a, (a, b) -> a));
+                .collect(Collectors.toMap(a -> a.getScrtyDcsnTrgtId(), a -> a, (a, b) -> a));
 
         List<UserAuthority> entities = userIds.stream()
                 .map(userId -> {

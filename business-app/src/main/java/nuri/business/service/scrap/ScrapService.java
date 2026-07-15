@@ -5,7 +5,6 @@ import nuri.business.domain.scrap.Scrap;
 import nuri.business.domain.scrap.ScrapRepository;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;

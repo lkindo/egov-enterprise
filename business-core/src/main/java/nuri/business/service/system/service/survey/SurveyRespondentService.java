@@ -2,7 +2,6 @@ package nuri.business.service.system.service.survey;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.survey.SurveyRespondent;
 import nuri.business.domain.system.service.survey.SurveyRespondentRepository;
 import nuri.business.service.system.service.survey.dto.SurveyRespondentDto;

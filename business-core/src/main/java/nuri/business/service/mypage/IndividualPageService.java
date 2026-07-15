@@ -2,7 +2,6 @@ package nuri.business.service.mypage;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.mypage.IndividualPage;
 import nuri.business.domain.mypage.IndividualPageRepository;
 import nuri.business.service.mypage.dto.IndividualPageDto;

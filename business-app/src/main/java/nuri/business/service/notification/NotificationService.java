@@ -2,7 +2,6 @@ package nuri.business.service.notification;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.notification.Notification;
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.notification.dto.NotificationDto;
@@ -113,6 +112,6 @@ public class NotificationService implements EgovNotificationService {
     @Transactional
     public void markAsRead(String notiSn) {
         log.info("Marking notification ID: {} as read", notiSn);
-        notificationRepository.findById(notiSn).ifPresent(Notification::markAsRead);
+        notificationRepository.findById(notiSn).ifPresent(noti -> noti.markAsRead());
     }
 }

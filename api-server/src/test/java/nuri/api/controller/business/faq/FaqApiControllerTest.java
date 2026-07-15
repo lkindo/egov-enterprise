@@ -2,7 +2,6 @@ package nuri.api.controller.business.faq;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.service.faq.FaqService;
 import nuri.business.service.faq.dto.FaqDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;

@@ -3,7 +3,6 @@ package nuri.business.security.iam;
 import lombok.RequiredArgsConstructor;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.foundation.security.iam.UserAuthPort;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -34,7 +33,7 @@ public class JpaUserAuthAdapter implements UserAuthPort {
         }
 
         String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
-                .map(UserAuthority::getAuthrtId)
+                .map(auth -> auth.getAuthrtId())
                 .map(code -> code.startsWith("ROLE_") ? code : "ROLE_" + code)
                 .orElse("ROLE_USER");
 

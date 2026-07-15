@@ -2,7 +2,6 @@ package nuri.business.service.informalsanction;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
 import nuri.business.domain.informalsanction.SanctionStatus;

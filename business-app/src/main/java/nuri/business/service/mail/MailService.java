@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import java.util.Objects;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
 import nuri.business.service.mail.dto.SentMailDto;

@@ -1,5 +1,4 @@
 package nuri.web.auth;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.api.controller.foundation.auth.AuthApiController;
 import nuri.foundation.core.exception.GlobalExceptionHandler;

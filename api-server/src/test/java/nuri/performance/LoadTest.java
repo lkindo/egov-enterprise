@@ -103,7 +103,7 @@ class LoadTest {
 
     long successfulRequests = futures.stream()
         .map(f -> { try { return f.get(1, TimeUnit.SECONDS); } catch (Exception e) { return false; } })
-        .filter(Boolean::booleanValue)
+        .filter(b -> b)
         .count();
 
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));

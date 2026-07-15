@@ -4,7 +4,6 @@ import nuri.business.domain.user.exception.UserErrorCode;
 import nuri.business.domain.board.exception.BoardErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardDetailResult;

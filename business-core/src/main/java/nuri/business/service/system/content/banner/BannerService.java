@@ -2,7 +2,6 @@ package nuri.business.service.system.content.banner;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
 import nuri.business.service.system.content.banner.dto.BannerDto;

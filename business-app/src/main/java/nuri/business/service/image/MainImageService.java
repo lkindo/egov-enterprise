@@ -2,7 +2,6 @@ package nuri.business.service.image;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.image.MainImage;
 import nuri.business.domain.image.MainImageRepository;
 import nuri.business.service.image.dto.MainImageDto;

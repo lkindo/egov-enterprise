@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.security.jwt.JwtTokenProvider;

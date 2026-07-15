@@ -2,7 +2,6 @@ package nuri.business.service.help;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.help.*;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.HpcmMapper;

@@ -2,7 +2,6 @@ package nuri.business.service.deptjob;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 

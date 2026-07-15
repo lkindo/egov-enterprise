@@ -5,7 +5,6 @@ import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

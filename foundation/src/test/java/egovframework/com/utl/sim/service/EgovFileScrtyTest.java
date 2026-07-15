@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("EgovFileScrty 테스트")
+@SuppressWarnings("deprecation")
 class EgovFileScrtyTest {
 
     @TempDir
@@ -37,7 +38,6 @@ class EgovFileScrtyTest {
 
     @Test
     @DisplayName("비밀번호 암호화 테스트 (SHA-256)")
-    @SuppressWarnings("deprecation")
     void testEncryptPassword() throws Exception {
         String password = "testPassword";
         String encrypted = EgovFileScrty.encryptPassword(password);
@@ -105,7 +105,6 @@ class EgovFileScrtyTest {
 
     @Test
     @DisplayName("null 입력 처리 테스트")
-    @SuppressWarnings("deprecation")
     void testNullInputs() throws Exception {
         assertThat(EgovFileScrty.encodeBinary(null)).isEqualTo("");
         assertThat(EgovFileScrty.encryptPassword(null)).isEqualTo("");

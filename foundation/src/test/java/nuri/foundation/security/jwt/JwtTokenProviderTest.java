@@ -1,6 +1,5 @@
 package nuri.foundation.security.jwt;
 
-import nuri.foundation.security.jwt.JwtTokenProvider;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;

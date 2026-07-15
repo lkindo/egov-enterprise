@@ -2,7 +2,6 @@ package nuri.business.service.file;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.storage.FileStorageService;
 import nuri.business.domain.file.FileDetail;
@@ -177,7 +176,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
-                .mapToInt(FileDetail::getAtchFileSeq)
+                .mapToInt(detail -> detail.getAtchFileSeq())
                 .max()
                 .orElse(0);
 

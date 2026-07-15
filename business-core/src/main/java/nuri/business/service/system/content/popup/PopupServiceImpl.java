@@ -2,7 +2,6 @@ package nuri.business.service.system.content.popup;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
 import nuri.business.service.system.content.popup.dto.PopupDto;
@@ -101,7 +100,7 @@ public class PopupServiceImpl implements PopupService {
     @Override
     public List<String> getPopupWhiteList() {
         return popupRepository.findAll().stream()
-                .map(Popup::getFileUrl)
+                .map(p -> p.getFileUrl())
                 .collect(Collectors.toList());
     }
 }

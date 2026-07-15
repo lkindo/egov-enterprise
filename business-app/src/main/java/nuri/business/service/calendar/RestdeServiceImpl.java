@@ -6,7 +6,6 @@ import nuri.business.domain.calendar.RestdeRepository;
 import nuri.business.service.calendar.dto.RestdeDto;
 import nuri.business.service.calendar.dto.RestdeMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -9,7 +9,6 @@ import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

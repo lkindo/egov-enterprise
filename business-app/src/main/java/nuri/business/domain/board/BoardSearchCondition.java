@@ -1,5 +1,4 @@
 package nuri.business.domain.board;
-import nuri.foundation.core.exception.CommonErrorCode;
 
 import lombok.Data;
 import org.springframework.lang.NonNull;

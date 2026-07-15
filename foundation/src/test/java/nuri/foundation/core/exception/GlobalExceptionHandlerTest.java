@@ -1,9 +1,6 @@
 package nuri.foundation.core.exception;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.OptimisticLockingFailureException;

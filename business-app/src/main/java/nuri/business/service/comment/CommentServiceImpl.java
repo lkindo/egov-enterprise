@@ -5,7 +5,6 @@ import nuri.business.domain.comment.Comment;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

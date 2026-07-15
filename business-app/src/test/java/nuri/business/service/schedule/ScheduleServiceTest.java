@@ -4,7 +4,6 @@ import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
-import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

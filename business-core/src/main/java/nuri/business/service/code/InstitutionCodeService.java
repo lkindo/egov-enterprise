@@ -2,7 +2,6 @@ package nuri.business.service.code;
 import nuri.business.domain.code.exception.CodeErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.code.InstitutionCode;
 import nuri.business.domain.code.InstitutionCodeRecptnLog;

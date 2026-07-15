@@ -2,7 +2,6 @@ package nuri.business.service.operation;
 import nuri.foundation.core.exception.CommonErrorCode;
  
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.operation.EventInfo;
 import nuri.business.repository.operation.EventInfoRepository;
 import nuri.business.service.operation.dto.EventInfoDto;

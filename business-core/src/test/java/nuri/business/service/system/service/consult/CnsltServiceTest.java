@@ -2,7 +2,6 @@ package nuri.business.service.system.service.consult;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.system.service.consult.CnsltManage;
 import nuri.business.domain.system.service.consult.CnsltManageRepository;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;

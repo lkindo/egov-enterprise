@@ -30,6 +30,7 @@ public class CommonCodeCategory extends BaseEntity {
     private String useYn;
 
     // 기존 커스텀 생성자 (new 사용처 없음 → private 로 보존). 감사 필드는 명시적으로 채운다.
+    @SuppressWarnings("unused")
     private CommonCodeCategory(String clsfCd, String clsfCdNm, String clsfCdExpln, String useYn, String frstRegisterId) {
         this.clsfCd = clsfCd;
         this.clsfCdNm = clsfCdNm;
