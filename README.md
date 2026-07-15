@@ -92,8 +92,16 @@ egov-enterprise/
 
 ---
 
-### 로컬 개발 통합 실행 (한 번에 실행)
-루트 디렉토리에서 아래 명령으로 백엔드와 프론트엔드를 동시에 실행할 수 있습니다.
+### 로컬 개발 환경 초기화 (최초 1회 필수)
+프로젝트 복제(clone) 후, 로컬 개발을 시작하기 전에 환경변수 설정, 로컬 Docker DB 실행, 그리고 의존성 패키지 설치를 한 번에 완료하기 위해 아래 명령을 실행합니다.
+```bash
+make bootstrap
+# 또는 (Windows PowerShell)
+powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
+```
+
+### 로컬 개발 통합 실행
+아래 통합 실행 명령을 호출하면 로컬 DB 구동 상태를 자동으로 확인하고, 백엔드와 프론트엔드를 동시에 실행합니다.
 ```bash
 npm run dev
 # 또는 (Windows PowerShell)
@@ -176,25 +184,27 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 - **Java**: 21 (LTS)
 - **Node.js**: 20+
 - **Package Manager**: pnpm (`npm install -g pnpm`)
-- **Database**: PostgreSQL 14+
+- **Database**: Docker 또는 PostgreSQL 14+
 
-#### 2. 설정 파일
+#### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
+최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다.
+
+> ⚠ **로그인 가능한 관리자 계정은 아직 시드되지 않습니다.** V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조만 시드하며 `tb_user_info` 사용자 행은 넣지 않습니다(계정 시드 마이그레이션은 별도 승인·검증 필요 항목으로 보류). 최초 로그인 계정은 회원가입 API 또는 수동 INSERT 로 생성하십시오.
+
+아래 원클릭 부트스트랩 명령을 실행하면 이 모든 설정 파일 복사 및 환경 구축이 자동 수행됩니다.
 ```bash
-# 백엔드 설정 (필수)
-cp api-server/src/main/resources/application-dev.yml api-server/src/main/resources/application-local.yml
-cp api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties.sample \
-   api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties
-
-# 프론트엔드 설정
-cp frontend/.env.example frontend/.env.local
+# 원클릭 부트스트랩 (환경 복사 -> Docker DB 기동 -> 의존성 패키지 pnpm 설치)
+make bootstrap
 ```
 
-#### 3. 데이터베이스 (Flyway 표준 베이스라인)
-```bash
-# 빈 Postgres 에 표준 스키마+시드가 Flyway 로 자동 구성된다 (ddl-auto=validate).
-#   V2_0__baseline(101 테이블) → V2_1(메타표준 시드) → V2_2(admin 시드) → R__seed_framework
-# 별도 수동 DDL 불필요 — :api-server:bootRun 시 Flyway 가 migrate 후 Hibernate validate.
-```
+수동 구성을 원하는 경우 다음 단계를 거칩니다:
+1. 백엔드/프론트엔드 환경 설정 파일 복사
+   - `api-server/src/main/resources/application-dev.yml` -> `application-local.yml`
+   - `api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties.sample` -> `egov-crypto-config.properties`
+   - `frontend/.env.example` -> `frontend/.env.local`
+2. 로컬 Docker PostgreSQL 17 구동 (`docker compose up -d db`)
+3. 의존성 패키지 설치 (`npm install` 및 `cd frontend && pnpm install`)
+4. `:api-server:bootRun` 실행 시 자동으로 Flyway 마이그레이션 및 JPA 검증이 수행됩니다.
 
 ---
 

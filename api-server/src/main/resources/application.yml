@@ -28,8 +28,8 @@ spring:
     # Oracle Cloud connection (Use environment variables, default to local localhost)
     url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
     jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
+    username: ${DB_USERNAME:egov}
+    password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
     hikari:
       jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}

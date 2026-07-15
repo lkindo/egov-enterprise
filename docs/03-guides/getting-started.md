@@ -45,25 +45,35 @@ git clone <this-repo> my-platform && cd my-platform
 ---
 
 ## 3. 환경 부트스트랩 (시크릿 · DB)
+ 
+### 3.1 원클릭 부트스트랩
+이 저장소는 환경변수 복제, 로컬 DB 구동, 패키지 설치를 한 번에 끝내주는 원클릭 부트스트랩을 지원합니다.
+```bash
+make bootstrap
+# 또는 (Windows PowerShell)
+powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
+```
 
-### 3.1 필수 시크릿 (미설정 시 운영 기동 실패 = fail-fast)
-
+### 3.2 필수 시크릿 (미설정 시 운영 기동 실패 = fail-fast)
+ 
 | 환경변수 | 용도 | 비고 |
 |---|---|---|
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL 접속 | 운영은 기본값 없음(강제 주입) |
 | `JWT_SECRET` | JWT 서명키 | 고엔트로피 값 필수 |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
 | `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
-
-> 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하나, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
-
-### 3.2 로컬 DB 기동
-
+ 
+> 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
+ 
+### 3.3 로컬 DB 기동 (수동 설정 시)
+ 
 ```bash
 docker compose up -d db     # postgres:17 (docker-compose.yml)
 ```
-
-> ⚠ **현재 빈 DB 자동 스키마 구성은 미지원** — §6.1 참조. 로컬 개발은 기존 스키마 덤프 복원 또는 공유 DB를 가리켜 시작한다.
+ 
+> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면, 백엔드 서버 기동 시 `V2_0` baseline을 시작으로 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)가 자동으로 마이그레이션 및 로드됩니다. 별도의 수동 복원이나 SQL 실행이 필요하지 않습니다.
+>
+> ⚠ **단, 로그인 가능한 관리자 *계정*은 시드되지 않습니다.** V2_2 는 `ROLE_ADMIN` 권한/메뉴 구조만 넣고 `tb_user_info` 행은 생성하지 않습니다(계정 시드는 별도 승인·런타임 검증이 필요한 보류 항목). 최초 계정은 회원가입 플로우 또는 수동 INSERT 로 만드십시오.
 
 ---
 
