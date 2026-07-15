@@ -1,5 +1,4 @@
 package nuri.foundation.core.exception;
-import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.core.response.ApiResponse;
@@ -34,11 +33,11 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("BusinessException 처리 테스트")
     void testHandleBusinessException() {
-        BusinessException ex = new BusinessException(UserErrorCode.USER_NOT_FOUND);
+        BusinessException ex = new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         ResponseEntity<ApiResponse<Void>> response = handler.handleBusinessException(ex);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertFalse(response.getBody().success());
-        assertEquals("U001", response.getBody().code());
+        assertEquals("C007", response.getBody().code());
     }
 
     @Test
