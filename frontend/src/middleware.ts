@@ -38,9 +38,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
  
   // 1. 백엔드 API 요청 Proxy Header Injection
-  // 브라우저 클라이언트에서 withCredentials 로 동봉한 accessToken HttpOnly 쿠키를 읽어 
+  // 브라우저 클라이언트에서 withCredentials 로 동봉한 accessToken HttpOnly 쿠키를 읽어
   // 백엔드 시큐리티가 읽을 수 있도록 Authorization: Bearer <token> 헤더를 강제 주입하여 리라이팅 우회 처리합니다.
-  if (pathname.startsWith('/api/v1')) {
+  // (/actuator 도 동일 주입 — HttpOnly 전환으로 클라이언트가 토큰을 헤더에 직접 못 붙이므로 모니터링 호출 인증 보장)
+  if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator')) {
     const accessToken = request.cookies.get('accessToken')?.value;
     if (accessToken) {
       const requestHeaders = new Headers(request.headers);

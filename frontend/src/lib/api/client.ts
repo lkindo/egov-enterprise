@@ -99,7 +99,7 @@ axiosInstance.interceptors.response.use(
         return new Promise<string | null>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-        .then((token) => {
+        .then(() => {
           // 재갱신된 토큰은 HttpOnly 쿠키로 알아서 브라우저가 전송하므로, Authorization 헤더를 굳이 수동 첨부할 필요가 없습니다.
           return axiosInstance(originalRequest);
         })
@@ -115,24 +115,23 @@ axiosInstance.interceptors.response.use(
 
       try {
         // Next.js Route Handler의 토큰 재발행 API 호출 (/api/auth/reissue)
-        const res = await axiosInstance.post<ApiResponse<{ accessToken: string }>>(
+        // 응답 바디에는 토큰이 없다 — 새 accessToken 은 Route Handler 가 HttpOnly 쿠키로 재설정한다.
+        // 인터셉터는 200/success 를 "재발급 성공" 신호로만 사용하고, 원요청을 재시도하면 브라우저가
+        // 새 HttpOnly 쿠키를 전송 → 미들웨어가 Bearer 를 주입한다.
+        const res = await axiosInstance.post<ApiResponse<unknown>>(
           '/api/auth/reissue',
           {},
-          { 
-            _retry: true, 
-            headers: { 'Authorization': '' } 
+          {
+            _retry: true,
+            headers: { 'Authorization': '' }
           } as AxiosRequestConfig & { _retry: boolean }
         );
 
-        const responseData = res.data;
-        const accessToken = responseData?.data?.accessToken;
+        if (!res.data?.success) throw new Error('Token reissue failed');
 
-        if (!accessToken) throw new Error('Token reissue failed: Empty token');
-
-        // 새 accessToken은 Route Handler에 의해 HttpOnly 쿠키로 알아서 설정되어 있음.
-        processQueue(null, accessToken);
+        processQueue(null, 'reissued');
         isRetrying = false;
-        
+
         return axiosInstance(originalRequest);
       } catch (reissueError: unknown) {
         let finalReissueError: Error;

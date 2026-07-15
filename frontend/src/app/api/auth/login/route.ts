@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { getJwtExpiryMs } from '@/lib/auth/jwt';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
@@ -33,6 +34,19 @@ export async function POST(request: NextRequest) {
         path: '/',
         maxAge: 86400, // 24 hours
       });
+
+      // 비민감 만료힌트(session_exp): 토큰이 아닌 만료시각(ms)만 — 클라이언트 세션만료 경고용.
+      // HttpOnly 아님(JS 가 읽어야 하므로)이나 타임스탬프뿐이라 탈취 표면이 아니다.
+      const expMs = getJwtExpiryMs(accessToken);
+      if (expMs) {
+        nextResponse.cookies.set('session_exp', String(expMs), {
+          httpOnly: false,
+          secure: isProd,
+          sameSite: 'strict',
+          path: '/',
+          maxAge: 86400,
+        });
+      }
 
       // 백엔드가 준 Set-Cookie 헤더(예: refreshToken 등)가 있으면 전달 포워딩
       const setCookieHeader = response.headers['set-cookie'];

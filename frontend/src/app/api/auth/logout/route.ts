@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
       expires: new Date(0),
     });
 
+    // 비민감 만료힌트 쿠키도 함께 제거
+    nextResponse.cookies.set('session_exp', '', {
+      httpOnly: false,
+      path: '/',
+      expires: new Date(0),
+    });
+
     // 백엔드가 돌려준 Set-Cookie 헤더(예: refreshToken 삭제 쿠키 등)가 있으면 포워딩
     const setCookieHeader = response.headers['set-cookie'];
     if (setCookieHeader) {
@@ -52,6 +59,13 @@ export async function POST(request: NextRequest) {
     
     nextResponse.cookies.set('accessToken', '', {
       httpOnly: true,
+      path: '/',
+      expires: new Date(0),
+    });
+
+    // 비민감 만료힌트 쿠키도 함께 제거
+    nextResponse.cookies.set('session_exp', '', {
+      httpOnly: false,
       path: '/',
       expires: new Date(0),
     });

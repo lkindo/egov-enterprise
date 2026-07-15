@@ -33,15 +33,12 @@ export function SessionExpiryWarning() {
 
   const getTokenExpiry = useCallback((): number | null => {
     if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem('accessToken');
-    if (!token) return null;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null; // ms 변환
-    } catch {
-      return null;
-    }
+    // accessToken 은 HttpOnly 라 JS 로 읽을 수 없다. 로그인/재발급 라우트가 심는
+    // 비민감 만료힌트 쿠키(session_exp = exp ms)에서 만료시각만 읽는다.
+    const m = document.cookie.match(/(?:^|;\s*)session_exp=([^;]+)/);
+    if (!m) return null;
+    const ms = parseInt(decodeURIComponent(m[1]), 10);
+    return Number.isFinite(ms) ? ms : null;
   }, []);
 
   const handleExtendSession = useCallback(async () => {
