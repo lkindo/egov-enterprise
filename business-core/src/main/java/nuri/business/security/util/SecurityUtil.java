@@ -1,18 +1,22 @@
 package nuri.business.security.util;
-
+ 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
+import java.util.Collection;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.config.ApplicationContextProvider;
 import nuri.business.security.AuthorityConstants;
-
+ 
 @Component
 public class SecurityUtil {
-
+ 
     /**
      * 현재 인증 주체의 <b>esntlId</b>(시스템 내부 PK)를 반환한다.
      * (principal 이 {@link UserDetails} 이면 {@code getUsername()} == esntlId 규약을 따른다.)
@@ -34,21 +38,21 @@ public class SecurityUtil {
      */
     public static Optional<String> getCurrentEsntlId() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
+ 
         if (authentication == null) {
             return Optional.empty();
         }
-
+ 
         String esntlId = null;
         if (authentication.getPrincipal() instanceof UserDetails springSecurityUser) {
             esntlId = springSecurityUser.getUsername();
         } else if (authentication.getPrincipal() instanceof String principalString) {
             esntlId = principalString;
         }
-
+ 
         return Optional.ofNullable(esntlId);
     }
-
+ 
     /**
      * @deprecated 이름과 달리 <b>로그인 ID 가 아니라 esntlId</b> 를 반환한다(정체성 footgun).
      * 의미가 명확한 {@link #getCurrentEsntlId()} 를 사용하라. 하위호환을 위해 위임만 유지한다.
@@ -57,14 +61,31 @@ public class SecurityUtil {
     public static Optional<String> getCurrentUserId() {
         return getCurrentEsntlId();
     }
-
+ 
     public static boolean hasRole(String role) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null)
+        if (authentication == null) {
             return false;
-
-        return authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
+        }
+ 
+        String targetAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+ 
+        RoleHierarchy roleHierarchy = null;
+        try {
+            roleHierarchy = ApplicationContextProvider.getBean(RoleHierarchy.class);
+        } catch (Exception e) {
+            // ApplicationContext가 구성되지 않은 환경(테스트 등)에서의 fail-safe 폴백
+        }
+ 
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        if (roleHierarchy != null) {
+            Collection<? extends GrantedAuthority> reachable = roleHierarchy.getReachableGrantedAuthorities(authorities);
+            return reachable.stream()
+                    .anyMatch(authority -> authority.getAuthority().equals(targetAuthority));
+        }
+ 
+        return authorities.stream()
+                .anyMatch(authority -> authority.getAuthority().equals(targetAuthority));
     }
 
     /**
