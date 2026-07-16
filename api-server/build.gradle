@@ -63,4 +63,8 @@ jar {
 
 test {
     useJUnitPlatform()
+    // [P4] 마이그레이션 린터(ZeroDowntime·SchemaNaming)가 src 경로의 SQL 을 직접 읽으므로,
+    // Gradle 증분 빌드가 SQL 단독 변경을 감지하도록 테스트 입력에 명시 등록한다.
+    // (미등록 시 마이그레이션 파일만 바뀐 커밋에서 테스트가 UP-TO-DATE 스킵 → 린터 게이트 무력화)
+    inputs.dir('src/main/resources/db/migration').withPropertyName('flywayMigrations')
 }

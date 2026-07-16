@@ -77,7 +77,7 @@
 | ~~**P1**~~ | ~~FK 배치 확장~~ — ✅ **대부분 완료(2026-07-17, V2_13·V2_14)**: FK 25→58(+33, 전건 VALIDATED)·인덱스 37 보강·타입 정렬 2건·부모 삭제 플로우 앱 결속 10종(설문 연쇄·권한/그룹/메뉴 가드·키 혼용 정정 포함). **잔여**: fk_role_prgrm_map_* 명명 정정(사용자 보류 — 라이브 RENAME+V2_11 치환 원자 시행 필요), DEFER 2건(leader_schdl — 관계 불성립/부모 사경화). 상세: [.gemini/tasks/20260717-fk-batch-expansion-p1.md](../../.gemini/tasks/20260717-fk-batch-expansion-p1.md) | HIGH | 완료(보류 1) |
 | **P2** | 사용자 참조 키 esntl_id 단일화 규약 확정(진행 중 RBAC unification 태스크 연계) → 로그 테이블 백필 | HIGH(구조) | 제품 결정 |
 | **P3** | SSOT 정비: terms에 domain 매핑 복원(재시드), words UNIQUE+중복 정리, CHAR 도메인 38건 varchar 정정, 개념당 대표 약어 지정 | HIGH(거버넌스) | 마이그레이션+시드 |
-| **P4** | 물리 스키마 명명 린터 하네스 신설(information_schema 기반, 예외 대장 화이트리스트 연동, gradlew check 편입) + check-db-standard.js 삭제 + ZeroDowntime 린터 룰 보강 | HIGH(집행) | 하네스 |
+| ~~**P4**~~ | ~~집행 하네스~~ — ✅ **완료(2026-07-17)**: SchemaNamingLinterTest 신설(명명·char금지·감사컬럼 델타 정적검사) + ZeroDowntime 린터 결함 3종 수정. **🚨 뮤테이션 검증에서 기존 게이트가 workingDir 결함으로 처음부터 silent-skip(false-green)이었음을 실증** — 경로 이중해석+미발견 즉시실패+빌드입력 등록으로 정정, 위반 주입→검출→그린 3단계 증명. 잔여: 죽은 스캐너 2파일 삭제(사용자 승인 대기), 헌법 제7조3항 명세-구현 정합(헌법 개정 사안). 상세: [.gemini/tasks/20260717-db-standard-enforcement-harness.md](../../.gemini/tasks/20260717-db-standard-enforcement-harness.md) | HIGH(집행) | 완료 |
 | **P5** | 타입 정렬 스윕(cross-type 3 → varchar(30) 클러스터 → cd/ymd 이상치), 고아 테이블 10개 처분 결정, 死엔티티 정리, 예외 대장 3건 추기, dev/local ddl-auto=validate 복원 | MEDIUM | 마이그레이션+코드 |
 
 ## 5. 판정 요약

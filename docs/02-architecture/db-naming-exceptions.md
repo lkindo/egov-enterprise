@@ -20,6 +20,8 @@ eGovFrame·Hibernate 가 **이름을 하드코딩으로 소유**하는 인프라
 | `ecopseq` | eGovFrame ID Generation Service | PK 채번 시퀀스 테이블 | `EgovIdGnrService` 가 테이블/컬럼명을 SQL 에 하드코딩 |
 | `ids` | eGovFrame ID Generation Service | 채번 상태 테이블 | 동일(채번 엔진 결속) |
 | `revinfo` | Hibernate Envers | 감사 리비전 메타 | Envers 리비전 엔티티 매핑에 고정 |
+| `revinfo_seq` | Hibernate Envers | 리비전 채번 시퀀스 | Envers revision generator 자동 생성물 (2026-07-16 감사에서 대장 갭으로 확인, 추기) |
+| `flyway_schema_history` (+PK `flyway_schema_history_pk`) | Flyway | 마이그레이션 이력 장부 | Flyway 가 명칭을 소유 (2026-07-16 감사에서 대장 갭으로 확인, 추기) |
 
 ## 2. 감사 컬럼 표기 예외 (헌법 제8조)
 
@@ -49,6 +51,8 @@ DB 표준 거버넌스의 원천(SSOT). 헌법 제3조 2항·제8조 4항이 **�
 |---|---|---|---|
 | 시퀀스 `answer_no_seq`→`sq_answer_no`, `pst_id_seq`→`sq_pst_id`, `ntt_id_seq`→`sq_ntt_id` | `_seq` 접미 | `sq_` 접두 | **이행 준비 완료 (V2_8 + 코드 동기화, 배포 대기)**. 실측: 3개 모두 컬럼 DEFAULT 의존 0건. 소비처 = Comment.@SequenceGenerator·BoardRepository.nextval (동반 변경 완료), `ntt_id_seq`는 소비처 0건(제거 후보). ⚠ rename↔코드는 동일 릴리스로 조율 배포 필수 |
 | ~~마이그레이션 `V1__init`~`V1.12`~~ | ~~레거시 델타 + `V2_0` baseline 공존~~ | ~~baseline 단일화~~ | **✅ 완료(2026-07-16)** — 아래 §5 참조 |
+| 시퀀스 `seq_tb_hldy_info` | `seq_` 접두 | `sq_` 접두 | 정리 대상. `tb_hldy_info.hldy_sn` identity 귀속(deptype='i') — 리네임만으로 안전하나 코드 결속 확인 후 이행 |
+| FK `fk_role_prgrm_map_role`/`fk_role_prgrm_map_prgrm` | tb_ 접두 탈락 축약명 | `fk_tb_role_prgrm_map_tb_role_info`/`_tb_prgrm_lst` | **RENAME 보류(2026-07-17 사용자 결정)**. 재개 시 ⚠ 라이브 `RENAME CONSTRAINT` + V2_11 파일 4개 라인 치환을 **원자적으로** 시행할 것 — 편측 정정 시 동일 컬럼 이중 FK가 무에러 생성됨. SchemaNamingLinterTest 화이트리스트에 등재됨(정정 시 제거) |
 
 ---
 

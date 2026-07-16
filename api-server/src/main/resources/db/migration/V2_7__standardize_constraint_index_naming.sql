@@ -1,7 +1,6 @@
--- linter:disable-file
--- ↑ 무중단 린터 예외(선례: V1.10__fix_constraint_naming.sql 동일). 사유: ZeroDowntimeMigrationLinterTest 의
---   FORBIDDEN_RENAME 규칙(정규식 `ALTER TABLE \S+ RENAME`)은 RENAME COLUMN 을 겨냥하나 RENAME CONSTRAINT 까지
---   오매치(false positive)한다. 본 파일의 모든 DDL 은 카탈로그 메타데이터 rename(비파괴·무중단)뿐이라 안전하다.
+-- [P4 하네스 보강으로 disable-file 해제(2026-07-17)] 과거에는 FORBIDDEN_RENAME 이 RENAME CONSTRAINT 까지
+--   오매치하여 파일 전체 예외가 필요했으나, 린터에 네거티브 룩어헤드가 추가되어 본 파일은 전 규칙 정상 통과한다.
+--   (본 파일의 모든 DDL 은 카탈로그 메타데이터 rename — 비파괴·무중단)
 -- V2_7: 제약·인덱스 명명 표준 정합(DB 헌법 제6조) — 단순성(simplicity) 강화
 -- 배경: 베이스라인 잔존 비표준 명명 — PK 제약 *_pkey(ecopseq/ids/revinfo), 인덱스 idx_(tb_menu_info).
 --       헌법 제6조는 PK=pk_[테이블], 인덱스=ix_[테이블]_[컬럼] 를 규정한다. 표준 tb_ 객체(tb_menu_info)의

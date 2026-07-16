@@ -15,16 +15,16 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='answer_no_seq')
        AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='sq_answer_no') THEN
-        ALTER SEQUENCE public.answer_no_seq RENAME TO sq_answer_no;
+        ALTER SEQUENCE public.answer_no_seq RENAME TO sq_answer_no; -- linter:ignore (Comment.@SequenceGenerator 동일 릴리스 동기화 완료)
     END IF;
 
     IF EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='pst_id_seq')
        AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='sq_pst_id') THEN
-        ALTER SEQUENCE public.pst_id_seq RENAME TO sq_pst_id;
+        ALTER SEQUENCE public.pst_id_seq RENAME TO sq_pst_id; -- linter:ignore (BoardRepository.nextval 동일 릴리스 동기화 완료)
     END IF;
 
     IF EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='ntt_id_seq')
        AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='sq_ntt_id') THEN
-        ALTER SEQUENCE public.ntt_id_seq RENAME TO sq_ntt_id;
+        ALTER SEQUENCE public.ntt_id_seq RENAME TO sq_ntt_id; -- linter:ignore (소비처 0건 실측 — 제거 후보)
     END IF;
 END $$;
