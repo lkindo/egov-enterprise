@@ -63,5 +63,18 @@ DB 표준 거버넌스의 원천(SSOT). 헌법 제3조 2항·제8조 4항이 **�
 - **2026-07-16 (V2_9)**: `tb_onln_poll_rslt` FK 2건 VALIDATED 승격 — 고아행(테스트 잔재 316건) 자가치유 정리 후 검증. OCI 적용 완료(신규 FK 7건 전부 `convalidated=true`).
 - **2026-07-16 (마이그레이션 이력 단일화)**: 레거시 `V1__init`~`V1.12`(13개) 제거 → 마이그레이션 계보를 `V2_0` baseline 단일 출발점으로 정리. 근거: 테스트 `flyway.enabled=false`(H2 사용), OCI `flyway_schema_history` 2.1 baseline 시작(V1.x 이력 0건), V1.x는 V2_0에 없는 레거시 테이블(`NEMPLYRINFO`/`nuserlog` 등) 대상이라 fresh DB 부팅 시 오히려 충돌 유발 → 제거로 정상화. git history 로 복원 가능.
 
+## 6. baseline 범위 & 호스팅 컨텍스트 (드리프트 오탐 방지)
+
+라이브 OCI(`egovdb`, 129.154.54.178)는 **Supabase 호스팅 인스턴스**다. 따라서 DB에는 **앱 스키마 `public`** 외에
+Supabase 플랫폼이 소유·관리하는 시스템 스키마가 공존한다. **V2_0 baseline 은 `public` 스키마만 담으며 이것이 정상이다.**
+
+| 스키마 | 소유 | 앱 baseline 포함 |
+|---|---|:---:|
+| `public` | eGov 앱 | ✅ (V2_0 baseline = 101테이블 + V2_3의 `tb_role_hierarchy` + Flyway `flyway_schema_history`) |
+| `auth` (23) · `storage` (8) · `realtime` (3) · `supabase_migrations` | Supabase 플랫폼 | ❌ (플랫폼 관리, 앱 무관) |
+
+- **드리프트 검증(2026-07-16 db-bridge 실측)**: `public` 앱 테이블·시퀀스가 baseline과 완전 일치(누락/초과 0). `tb_role_hierarchy` 는 V2_3 가 `CREATE TABLE IF NOT EXISTS` 로 생성하는 정식 후속 객체이지 드리프트가 아니다.
+- **주의**: OCI 전체 FK/시퀀스 카운트(예: FK 38건)는 **Supabase 스키마의 객체를 포함**하므로, 앱 스키마 정합성 판단 시 반드시 `table_schema='public'` 로 한정해 비교한다. 전역 카운트로 드리프트를 판정하지 말 것.
+
 ---
-**1줄 요약**: 프레임워크 예약(`ecopseq`/`ids`/`revinfo`)·메타(`meta_*`) 객체는 리네임 불가 예외로 등재하고, 시퀀스 `_seq`·레거시 마이그레이션은 "정리 예정 부채"로 분리 추적하여 표준 감사의 오탐과 미결 부채를 구분한다.
+**1줄 요약**: 프레임워크 예약(`ecopseq`/`ids`/`revinfo`)·메타(`meta_*`) 객체는 리네임 불가 예외로 등재하고, 레거시 시퀀스·마이그레이션은 이행 완료로 정리했으며, OCI의 Supabase 플랫폼 스키마(`auth`/`storage`/`realtime`)는 앱 baseline 범위 밖으로 명시해 드리프트 오탐을 차단한다.
