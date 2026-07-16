@@ -55,4 +55,9 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     List<User> findByOgnzIdAndRole(String ognzId, Role role);
 
     List<User> findByUserNmContainingOrEmlAddrContaining(String userNm, String emlAddr);
+
+    // [V2_13 결속] 권한그룹 삭제 시 사용자 참조 해제 (fk_tb_user_info_tb_authrt_group_info NO ACTION)
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query("UPDATE User u SET u.groupId = null WHERE u.groupId IN :groupIds")
+    int clearGroupIdByGroupIdIn(@Param("groupIds") List<String> groupIds);
 }

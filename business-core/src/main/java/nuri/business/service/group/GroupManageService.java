@@ -3,6 +3,7 @@ package nuri.business.service.group;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.group.GroupManageRepository;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.group.dto.GroupManageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class GroupManageService {
 
     private final GroupManageRepository groupManageRepository;
+    private final UserRepository userRepository;
 
     /**
      * 그룹 목록 조회
@@ -99,7 +101,10 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroup(String groupId) {
-        groupManageRepository.deleteById(Objects.requireNonNull(groupId));
+        Objects.requireNonNull(groupId);
+        // [V2_13 결속] fk_tb_user_info_tb_authrt_group_info(NO ACTION) — 배정 사용자 참조 해제 후 삭제
+        userRepository.clearGroupIdByGroupIdIn(List.of(groupId));
+        groupManageRepository.deleteById(groupId);
     }
 
     /**
@@ -107,7 +112,10 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroups(String[] groupIds) {
-        groupManageRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(groupIds)));
+        List<String> ids = Arrays.asList(Objects.requireNonNull(groupIds));
+        // [V2_13 결속] 위 deleteGroup 과 동일 사유의 참조 해제
+        userRepository.clearGroupIdByGroupIdIn(ids);
+        groupManageRepository.deleteAllById(ids);
     }
 
     private GroupManageDto toDto(GroupManage entity) {

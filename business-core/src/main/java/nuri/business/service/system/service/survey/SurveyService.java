@@ -29,6 +29,8 @@ public class SurveyService implements EgovSurveyService {
     private final SurveyInfoRepository infoRepository;
     private final SurveyQuestionRepository qesitmRepository;
     private final SurveyArticleRepository iemRepository;
+    private final SurveyResultRepository rsltRepository;
+    private final SurveyRespondentRepository rspdntRepository;
     private final SurveyTemplateMapper surveyTemplateMapper;
     private final SurveyInfoMapper surveyInfoMapper;
     private final SurveyQuestionMapper surveyQuestionMapper;
@@ -124,7 +126,14 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteSurvey(String qustnrId) {
-        infoRepository.deleteById(Objects.requireNonNull(qustnrId));
+        Objects.requireNonNull(qustnrId);
+        // [V2_13 결속] 설문 참조 FK(NO ACTION) 하에서 자식→부모 순 연쇄 정리.
+        // 기존 V2_6 FK(qstn→info)로 문항 보유 설문 삭제가 409로 파손되던 기왕 부채도 함께 해소.
+        rsltRepository.deleteBySrvyId(qustnrId);
+        iemRepository.deleteBySrvyId(qustnrId);
+        qesitmRepository.deleteBySrvyId(qustnrId);
+        rspdntRepository.deleteBySrvyId(qustnrId);
+        infoRepository.deleteById(qustnrId);
     }
 
     // 설문 문항
@@ -180,7 +189,11 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteQuestion(String qesitmId) {
-        qesitmRepository.deleteById(Objects.requireNonNull(qesitmId));
+        Objects.requireNonNull(qesitmId);
+        // [V2_13 결속] 문항 삭제 시 응답·항목 선정리 (기존 fk_tb_srvy_artcl_tb_srvy_qstn 기왕 부채 해소)
+        rsltRepository.deleteBySrvyQstnId(qesitmId);
+        iemRepository.deleteBySrvyQstnId(qesitmId);
+        qesitmRepository.deleteById(qesitmId);
     }
 
     // 설문 항목
@@ -217,7 +230,10 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteItem(String iemId) {
-        iemRepository.deleteById(Objects.requireNonNull(iemId));
+        Objects.requireNonNull(iemId);
+        // [V2_13 결속] 항목 삭제 시 해당 항목 응답 선정리 (기존 fk_tb_srvy_rslt_tb_srvy_artcl 기왕 부채 해소)
+        rsltRepository.deleteBySrvyArtclId(iemId);
+        iemRepository.deleteById(iemId);
     }
 
     private void validateSurveyDates(String beginDe, String endDe) {

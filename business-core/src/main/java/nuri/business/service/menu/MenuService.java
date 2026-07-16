@@ -326,7 +326,7 @@ public class MenuService {
                 .menuSn(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
                 .prgrmFileNm(vo.getPrgrmFileNm())
-                .upMenuSn(vo.getUpMenuSn())
+                .upMenuSn(normalizeUpMenuSn(vo.getUpMenuSn()))
                 .menuOrdr(vo.getMenuOrdr())
                 .menuExpln(vo.getMenuExpln())
                 .relImgPath(vo.getRelImgPath())
@@ -346,9 +346,19 @@ public class MenuService {
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
-        menu.updateWithModernRoute(vo.getMenuNm(), vo.getPrgrmFileNm(), vo.getUpMenuSn(), vo.getMenuOrdr(),
+        menu.updateWithModernRoute(vo.getMenuNm(), vo.getPrgrmFileNm(), normalizeUpMenuSn(vo.getUpMenuSn()),
+                vo.getMenuOrdr(),
                 vo.getMenuExpln(),
                 vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute(), vo.getUseYn() != null ? vo.getUseYn() : "Y");
+    }
+
+    /**
+     * [V2_13 결속] 상위메뉴 센티널 0 → null 정규화.
+     * FE(MenuAdminClient)가 루트 메뉴를 upperMenuId=0 으로 전송하는데, menu_sn=0 행은 존재하지 않아
+     * fk_tb_menu_info_tb_menu_info_up(자기참조 FK) 하에서 그대로 기록하면 루트 생성/수정이 FK 위반으로 파손된다.
+     */
+    private static Long normalizeUpMenuSn(Long upMenuSn) {
+        return (upMenuSn != null && upMenuSn == 0L) ? null : upMenuSn;
     }
 
 
@@ -356,6 +366,11 @@ public class MenuService {
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
         Long menuNo = Objects.requireNonNull(vo.getMenuNo());
+        // [V2_13 결속] 자식 메뉴 존재 시 명시적 도메인 예외 — 무음 고아화(구버그)도, FK 409(불친절)도 아닌 사전 안내
+        if (menuRepository.countByUpMenuSn(menuNo) > 0) {
+            throw new BusinessException("하위 메뉴가 있는 메뉴는 삭제할 수 없습니다. 하위 메뉴를 먼저 삭제하세요.",
+                    CommonErrorCode.INVALID_INPUT_VALUE);
+        }
         // [V2_12 결속] fk_tb_menu_crt_dtl_tb_menu_info(NO ACTION) — 메뉴-권한 매핑을 먼저 정리해야 삭제 가능
         menuAuthorityRepository.deleteByIdMenuSn(menuNo);
         menuRepository.deleteById(menuNo);
@@ -374,6 +389,14 @@ public class MenuService {
             ids.add(Long.parseLong(menuNo));
         }
         if (!ids.isEmpty()) {
+            // [V2_13 결속] 삭제 집합 밖의 자식을 가진 메뉴가 있으면 차단 (서브트리 일괄 삭제는 허용 —
+            // fk_tb_menu_info_tb_menu_info_up 은 DEFERRABLE INITIALLY DEFERRED 라 커밋 시점에 일괄 검증됨)
+            for (Long id : ids) {
+                if (menuRepository.countByUpMenuSnAndMenuSnNotIn(id, ids) > 0) {
+                    throw new BusinessException("하위 메뉴가 있는 메뉴(" + id + ")는 삭제할 수 없습니다. 하위 메뉴를 함께 선택하거나 먼저 삭제하세요.",
+                            CommonErrorCode.INVALID_INPUT_VALUE);
+                }
+            }
             // [V2_12 결속] 메뉴-권한 매핑 선정리 (위 deleteMenuManage 와 동일 사유)
             menuAuthorityRepository.deleteByIdMenuSnIn(ids);
             menuRepository.deleteAllById(Objects.requireNonNull(ids));

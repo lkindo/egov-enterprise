@@ -179,12 +179,27 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 등록 테스트")
     void insertLoginPolicyTest() {
+        // [V2_13] 등록 전 실존 사용자 검증이 추가됨 (fk_tb_login_policy_tb_user_info 선차단)
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
-        
+
         loginPolicyManageService.insertLoginPolicy(dto);
-        
+
         verify(loginPolicyRepository).save(any(LoginPolicy.class));
+    }
+
+    @Test
+    @DisplayName("로그인 정책 등록 실패 - 존재하지 않는 사용자 (유령 loginId 차단, V2_13 결속)")
+    void insertLoginPolicyUserNotFoundTest() {
+        given(userRepository.findByUserId("ghost")).willReturn(Optional.empty());
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("ghost");
+
+        org.junit.jupiter.api.Assertions.assertThrows(nuri.foundation.core.exception.BusinessException.class,
+                () -> loginPolicyManageService.insertLoginPolicy(dto));
+        verify(loginPolicyRepository, org.mockito.Mockito.never()).save(any(LoginPolicy.class));
     }
 
     @Test

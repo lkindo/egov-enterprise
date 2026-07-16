@@ -21,4 +21,7 @@ public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResu
     List<OnlinePollResult> findByPollId(String pollId);
 
     void deleteByPollId(String pollId);
+
+    // [V2_13 결속] 항목 삭제 시 해당 항목 투표결과 선정리
+    void deleteByPollArtclId(String pollArtclId);
 }

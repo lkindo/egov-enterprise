@@ -2,6 +2,8 @@ package nuri.business.service.auth;
 
 import nuri.business.domain.auth.Authority;
 import nuri.business.domain.auth.AuthorityRepository;
+import nuri.business.domain.auth.AuthorityRoleRepository;
+import nuri.business.domain.auth.MenuAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 public class AuthorManageService {
 
     private final AuthorityRepository authorityRepository;
+    private final AuthorityRoleRepository authorityRoleRepository;
+    private final MenuAuthorityRepository menuAuthorityRepository;
 
     /**
      * 권한 목록 조회
@@ -83,7 +87,12 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthor(@NonNull String authrtCd) {
-        authorityRepository.deleteById(Objects.requireNonNull(authrtCd));
+        Objects.requireNonNull(authrtCd);
+        // [V2_13 결속] fk_tb_authrt_role_map/fk_tb_menu_crt_dtl → tb_authrt_info (NO ACTION)
+        // 매핑을 선정리해야 권한 삭제가 FK 를 통과한다 (V2_12 MenuService 패턴과 동일)
+        authorityRoleRepository.deleteByIdAuthrtCd(authrtCd);
+        menuAuthorityRepository.deleteByIdAuthrtCd(authrtCd);
+        authorityRepository.deleteById(authrtCd);
     }
 
     /**
@@ -91,7 +100,13 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthors(@NonNull String[] authrtCds) {
-        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(authrtCds))));
+        List<String> cds = Arrays.asList(Objects.requireNonNull(authrtCds));
+        // [V2_13 결속] 위 deleteAuthor 와 동일 사유의 매핑 선정리
+        for (String cd : cds) {
+            authorityRoleRepository.deleteByIdAuthrtCd(cd);
+            menuAuthorityRepository.deleteByIdAuthrtCd(cd);
+        }
+        authorityRepository.deleteAllById(Objects.requireNonNull(cds));
     }
 
     private AuthorManageDto toDto(@NonNull Authority entity) {

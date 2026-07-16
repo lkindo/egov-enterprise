@@ -31,6 +31,9 @@ class UserAbsenceServiceImplTest {
     @Mock
     private UserAbsenceRepository userAbsenceRepository;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
     // MapStruct 컴파일타임 생성 구현체를 실제로 주입 (수기 from() 대체 매퍼)
     @Spy
     private UserAbsenceMapper userAbsenceMapper = new UserAbsenceMapperImpl();
@@ -81,6 +84,7 @@ class UserAbsenceServiceImplTest {
     @DisplayName("부재 정보 수정 성공")
     void updateAbsence_Success() {
         // given
+        given(userRepository.existsById("user1")).willReturn(true); // [V2_13] 실존 사용자 검증 스텁
         UserAbsence absence = UserAbsence.builder().userId("user1").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
         UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnYn("Y").build();
@@ -90,5 +94,16 @@ class UserAbsenceServiceImplTest {
 
         // then
         verify(userAbsenceRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("부재 정보 수정 실패 - 존재하지 않는 사용자 (FK 선차단, V2_13 결속)")
+    void updateAbsence_Fail_UserNotFound() {
+        given(userRepository.existsById("ghost")).willReturn(false);
+        UserAbsenceDto dto = UserAbsenceDto.builder().userId("ghost").userAbsnYn("Y").build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> userAbsenceService.updateAbsence("ghost", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+        verify(userAbsenceRepository, org.mockito.Mockito.never()).save(any());
     }
 }

@@ -189,6 +189,9 @@ public class OnlinePollService implements EgovOnlinePollService {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
+        // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
+        // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)
+        pollResultRepository.deleteByPollId(pollId);
         pollManageRepository.deleteById(Objects.requireNonNull(pollId));
     }
 
@@ -237,7 +240,10 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePollItem(String pollArtclId) {
-        pollItemRepository.deleteById(Objects.requireNonNull(pollArtclId));
+        Objects.requireNonNull(pollArtclId);
+        // [V2_13 결속] 해당 항목 투표 결과 선정리 (fk_tb_onln_poll_rslt_tb_onln_poll_artcl NO ACTION)
+        pollResultRepository.deleteByPollArtclId(pollArtclId);
+        pollItemRepository.deleteById(pollArtclId);
     }
 
     @Override

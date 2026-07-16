@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.addressbook.AddressBookRepository;
+import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.domain.notification.NotificationRepository;
@@ -43,6 +44,7 @@ public class UserDeletionCleanupListener {
     private final CommentRepository commentRepository;
     private final AddressBookRepository addressBookRepository;
     private final NotificationRepository notificationRepository;
+    private final BlogUserRepository blogUserRepository;
 
     @EventListener
     @Transactional(propagation = Propagation.MANDATORY) // 삭제 트랜잭션 밖 발행은 프로그래밍 오류 — 조기 실패
@@ -53,10 +55,11 @@ public class UserDeletionCleanupListener {
         }
         String systemAdmin = Constants.User.SYSTEM_ADMIN_ESNTL_ID;
         int notifications = notificationRepository.deleteByRcvrIdIn(esntlIds);
+        int blogMemberships = blogUserRepository.deleteByUserIdIn(esntlIds); // [V2_13] 멤버십은 삭제(알림과 동일 정책)
         int posts = boardRepository.reassignAuthorByUserIdIn(esntlIds, systemAdmin);
         int comments = commentRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
         int addressBooks = addressBookRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
-        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림 삭제 {}건, 게시글/댓글/주소록 재귀속 {}/{}/{}건",
-                esntlIds.size(), notifications, posts, comments, addressBooks);
+        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림/블로그멤버십 삭제 {}/{}건, 게시글/댓글/주소록 재귀속 {}/{}/{}건",
+                esntlIds.size(), notifications, blogMemberships, posts, comments, addressBooks);
     }
 }

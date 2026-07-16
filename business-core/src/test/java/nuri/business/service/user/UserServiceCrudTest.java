@@ -41,6 +41,15 @@ class UserServiceCrudTest {
   private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
 
   @Mock
+  private nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository;
+
+  @Mock
+  private nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
+
+  @Mock
+  private nuri.business.domain.system.content.community.CommunityUserRepository communityUserRepository;
+
+  @Mock
   private PasswordEncoder passwordEncoder;
 
   @Mock

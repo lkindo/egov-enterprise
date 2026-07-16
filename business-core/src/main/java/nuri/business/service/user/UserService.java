@@ -8,6 +8,8 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.auth.RefreshTokenRepository;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
+import nuri.business.domain.login.LoginPolicyRepository;
+import nuri.business.domain.system.content.community.CommunityUserRepository;
 import nuri.business.domain.user.entity.Role;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -43,17 +45,28 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
         private final RefreshTokenRepository refreshTokenRepository;
+        private final LoginPolicyRepository loginPolicyRepository;
+        private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
+        private final CommunityUserRepository communityUserRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
-                        RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder,
+                        RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
+                        nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
+                        CommunityUserRepository communityUserRepository, PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
                                 "UserAuthorityRepository 는 null 일 수 없습니다");
                 this.refreshTokenRepository = required(refreshTokenRepository,
                                 "RefreshTokenRepository 는 null 일 수 없습니다");
+                this.loginPolicyRepository = required(loginPolicyRepository,
+                                "LoginPolicyRepository 는 null 일 수 없습니다");
+                this.userAbsenceRepository = required(userAbsenceRepository,
+                                "UserAbsenceRepository 는 null 일 수 없습니다");
+                this.communityUserRepository = required(communityUserRepository,
+                                "CommunityUserRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
         }
@@ -307,6 +320,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         refreshTokenRepository.deleteByUserId(user.getEsntlId());
                         refreshTokenRepository.deleteByUserId(user.getUserId());
                 }
+                // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId)·커뮤니티 멤버십 정리
+                loginPolicyRepository.deleteAllByIdInBatch(
+                                users.stream().map(User::getUserId).collect(Collectors.toList()));
+                userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
+                communityUserRepository.deleteByIdUserIdIn(esntlIds);
                 eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
                 userRepository.deleteAllInBatch(users);
         }

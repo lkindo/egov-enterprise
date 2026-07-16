@@ -105,7 +105,8 @@ public class User extends BaseEntity implements Serializable {
     private String officeTelno;
 
     // ■ 조직 및 권한
-    @Column(name = "group_id", length = 30)
+    // [V2_13] varchar(30)→20 정렬: 그룹 PK(group_id varchar(20))와 도메인 일치 (기존 값 0건 실측)
+    @Column(name = "group_id", length = 20)
     private String groupId;
 
     @Column(name = "ognz_id", length = 20)

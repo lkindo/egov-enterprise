@@ -55,6 +55,10 @@ class SurveyServiceTest {
     private SurveyQuestionRepository qesitmRepository;
     @Mock
     private SurveyArticleRepository iemRepository;
+    @Mock
+    private SurveyResultRepository rsltRepository;
+    @Mock
+    private SurveyRespondentRepository rspdntRepository;
 
     // ==========================================
     // 1. 설문 템플릿 테스트

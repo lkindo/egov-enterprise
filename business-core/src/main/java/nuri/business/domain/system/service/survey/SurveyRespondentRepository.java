@@ -18,4 +18,7 @@ public interface SurveyRespondentRepository extends JpaRepository<SurveyResponde
     @Query("SELECT s FROM SurveyRespondent s WHERE s.srvyId = :srvyId AND (s.rspdntNm LIKE %:keyword% OR s.gndrCd = :keyword)")
     Page<SurveyRespondent> searchBySrvyIdAndKeyword(@Param("srvyId") String srvyId,
             @Param("keyword") String keyword, Pageable pageable);
+
+    // [V2_13 결속] 설문 삭제 시 응답자 선정리 (fk_tb_srvy_rspdnt_tb_srvy_info NO ACTION)
+    void deleteBySrvyId(String srvyId);
 }

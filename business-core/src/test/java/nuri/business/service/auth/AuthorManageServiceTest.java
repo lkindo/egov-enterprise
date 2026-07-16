@@ -29,6 +29,12 @@ class AuthorManageServiceTest {
     @Mock
     private AuthorityRepository authorityRepository;
 
+    @Mock
+    private nuri.business.domain.auth.AuthorityRoleRepository authorityRoleRepository;
+
+    @Mock
+    private nuri.business.domain.auth.MenuAuthorityRepository menuAuthorityRepository;
+
     @InjectMocks
     private AuthorManageService authorManageService;
 

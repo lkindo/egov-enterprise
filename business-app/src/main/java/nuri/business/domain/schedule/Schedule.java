@@ -48,7 +48,8 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(length = 20)
     private String schdlPicId;
 
-    @Column(length = 30)
+    // [V2_13] varchar(30)→20 정렬: 파일 마스터 PK(atch_file_id varchar(20))와 도메인 일치 (기존 값 0건 실측)
+    @Column(length = 20)
     private String atchFileId;
 
     // Additional fields used in service

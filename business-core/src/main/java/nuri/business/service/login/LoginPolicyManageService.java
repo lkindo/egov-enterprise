@@ -54,8 +54,10 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
+        // [V2_13 결속] tb_login_policy 의 키는 loginId(userId) — esntlId 를 돌려주던 키 혼용 결함 정정.
+        // (esntlId 반환 시 클라이언트가 그 값으로 재기록하여 FK 위반/정책 무력화를 유발)
         LoginPolicyDto dto = LoginPolicyDto.builder()
-                .userId(user.getEsntlId())
+                .userId(user.getUserId())
                 .userNm(user.getUserNm())
                 .regYn("N")
                 .build();
@@ -76,6 +78,9 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
     @Override
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
+        // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
+        userRepository.findByUserId(dto.getUserId())
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         LoginPolicy entity = LoginPolicy.builder()
                 .userId(dto.getUserId())
                 .ipAddr(dto.getIpAddr())

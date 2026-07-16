@@ -28,6 +28,9 @@ class GroupManageServiceTest {
     @Mock
     private GroupManageRepository groupManageRepository;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
     @InjectMocks
     private GroupManageService groupManageService;
 
