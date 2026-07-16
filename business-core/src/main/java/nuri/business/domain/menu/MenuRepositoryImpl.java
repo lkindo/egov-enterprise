@@ -54,7 +54,9 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
                                 .from(menuAuthority)
                                 .join(menu).on(menuAuthority.id.menuSn.eq(menu.menuSn))
                                 .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
-                                .where(menu.upMenuSn.eq(0L)
+                                // [V2_16] 루트 판정 센티널 정정: up_menu_sn=0 행은 0건(실측)이고 P1 정규화가
+                                // 0→null 로 강제하므로 eq(0L)은 영구 빈 결과였다 — isNull 이 실제 루트 조건
+                                .where(menu.upMenuSn.isNull()
                                                 .and(menu.useYn.eq("Y"))
                                                 .and(menuAuthority.id.authrtCd.eq(
                                                                 queryFactory.select(userAuthority.authrtId)

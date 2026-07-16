@@ -31,12 +31,27 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
                 .srvcNm(dto.getSrvcNm())
                 .mthdNm(dto.getMethodNm())
                 .prcsSeCd(dto.getPrcsSeCd())
-                .prcsTm(dto.getPrcsTm())
+                .prcsTm(parsePrcsTm(dto.getPrcsTm()))
                 .dmndUserId(dto.getDmndUserId())
                 .dmndUserIpAddr(dto.getRqesterIp())
                 .ocrnYmd(dto.getOcrnYmd())
                 .build();
         sysLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+    }
+
+    /**
+     * [V2_16] DTO(API 계약: String 유지) ↔ 엔티티(bigint 통일) 경계 변환.
+     * 처리 소요시간(ms) — 비숫자 입력은 로그 유틸 특성상 무음 null 처리(로깅 실패가 본 요청을 파손하지 않도록).
+     */
+    private static Long parsePrcsTm(String prcsTm) {
+        if (prcsTm == null || prcsTm.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(prcsTm.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -71,7 +86,7 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
                 .srvcNm(entity.getSrvcNm())
                 .methodNm(entity.getMthdNm())
                 .prcsSeCd(entity.getPrcsSeCd())
-                .prcsTm(entity.getPrcsTm())
+                .prcsTm(entity.getPrcsTm() != null ? String.valueOf(entity.getPrcsTm()) : null)
                 .dmndUserId(entity.getDmndUserId())
                 .rqesterIp(entity.getDmndUserIpAddr())
                 .ocrnYmd(entity.getOcrnYmd())

@@ -34,8 +34,8 @@ public class SysLog extends BaseEntity {
     @Column(length = 12)
     private String prcsSeCd;
 
-    @Column(length = 14)
-    private String prcsTm;
+    // [V2_16] varchar(14)→bigint 타입 통일: 의미는 tb_web_log.prcs_tm 과 동일한 '처리 소요시간(ms)' 실측 확정
+    private Long prcsTm;
 
     @Column(length = 20)
     private String dmndUserId;
@@ -55,7 +55,7 @@ public class SysLog extends BaseEntity {
     @Column(length = 12)
     private String errSeCd;
 
-    private SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
+    private SysLog(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, Long prcsTm,
             String dmndUserId, String dmndUserIpAddr, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
         this.dmndId = dmndId;
         this.srvcNm = srvcNm;
@@ -71,7 +71,7 @@ public class SysLog extends BaseEntity {
     }
 
     @Builder
-    public static SysLog create(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, String prcsTm,
+    public static SysLog create(String dmndId, String srvcNm, String mthdNm, String prcsSeCd, Long prcsTm,
             String dmndUserId, String dmndUserIpAddr, String ocrnYmd, String rspnsCd, String errCd, String errSeCd) {
         return new SysLog(dmndId, srvcNm, mthdNm, prcsSeCd, prcsTm, dmndUserId, dmndUserIpAddr, ocrnYmd, rspnsCd, errCd, errSeCd);
     }

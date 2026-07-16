@@ -17,7 +17,8 @@ public class OrganizationManage extends BaseEntity {
     @Column(name = "ognz_id", length = 20)
     private String ognzId;
 
-    @Column(length = 100)
+    // [V2_16] tb_ognz_info.ognz_nm SET NOT NULL 과 함께 이중 매핑(DeptManage)·물리 3자 계약 일치
+    @Column(length = 100, nullable = false)
     private String ognzNm;
 
     @Column(length = 4000)

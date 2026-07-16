@@ -48,7 +48,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       ORDER BY d.crtDt DESC
       """)
   Page<DtaUseStats> selectDtaUseStatsDetail(@Param("bbsId") String bbsId,
-      @Param("pstId") Long pstId,
+      @Param("pstId") String pstId,
       @Param("atchFileId") String atchFileId,
       @Param("fileSn") Integer fileSn,
       Pageable pageable);
