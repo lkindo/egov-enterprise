@@ -1,13 +1,7 @@
 package nuri.business.service.mypage;
-<<<<<<<< HEAD:business-suite/src/main/java/nuri/business/service/mypage/IndividualPageService.java
 
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
-========
 import nuri.foundation.core.exception.CommonErrorCode;
-
 import nuri.foundation.core.exception.BusinessException;
->>>>>>>> 836a36bfd4aaa78fde77b65f9adb85601763ce9f:business-core/src/main/java/nuri/business/service/mypage/IndividualPageService.java
 import nuri.business.domain.mypage.IndividualPage;
 import nuri.business.domain.mypage.IndividualPageRepository;
 import nuri.business.service.mypage.dto.IndividualPageDto;
@@ -42,11 +36,7 @@ public class IndividualPageService implements EgovIndividualPageService {
     @Transactional
     public void updateIndividualPage(IndividualPageDto dto) {
         IndividualPage page = individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
-<<<<<<<< HEAD:business-suite/src/main/java/nuri/business/service/mypage/IndividualPageService.java
-                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-========
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
->>>>>>>> 836a36bfd4aaa78fde77b65f9adb85601763ce9f:business-core/src/main/java/nuri/business/service/mypage/IndividualPageService.java
         page.update(dto.getPageTtl(), dto.getPageExpln());
     }
 
@@ -65,10 +55,6 @@ public class IndividualPageService implements EgovIndividualPageService {
                         .pageExpln(p.getPageExpln())
                         .userId(p.getUserId())
                         .build())
-<<<<<<<< HEAD:business-suite/src/main/java/nuri/business/service/mypage/IndividualPageService.java
-                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-========
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
->>>>>>>> 836a36bfd4aaa78fde77b65f9adb85601763ce9f:business-core/src/main/java/nuri/business/service/mypage/IndividualPageService.java
     }
 }

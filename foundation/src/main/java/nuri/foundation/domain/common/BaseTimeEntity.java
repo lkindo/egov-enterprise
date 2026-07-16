@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:business-suite/src/main/java/nuri/business/domain/common/BaseTimeEntity.java
-package nuri.business.domain.common;
-========
 package nuri.foundation.domain.common;
->>>>>>>> 836a36bfd4aaa78fde77b65f9adb85601763ce9f:foundation/src/main/java/nuri/foundation/domain/common/BaseTimeEntity.java
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
