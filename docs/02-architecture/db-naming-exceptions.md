@@ -48,7 +48,7 @@ DB 표준 거버넌스의 원천(SSOT). 헌법 제3조 2항·제8조 4항이 **�
 | 대상 | 현재 | 표준 | 상태 / 선행 조건 |
 |---|---|---|---|
 | 시퀀스 `answer_no_seq`→`sq_answer_no`, `pst_id_seq`→`sq_pst_id`, `ntt_id_seq`→`sq_ntt_id` | `_seq` 접미 | `sq_` 접두 | **이행 준비 완료 (V2_8 + 코드 동기화, 배포 대기)**. 실측: 3개 모두 컬럼 DEFAULT 의존 0건. 소비처 = Comment.@SequenceGenerator·BoardRepository.nextval (동반 변경 완료), `ntt_id_seq`는 소비처 0건(제거 후보). ⚠ rename↔코드는 동일 릴리스로 조율 배포 필수 |
-| 마이그레이션 `V1__init`~`V1.12` | 레거시 델타 + `V2_0` baseline 공존 | baseline 단일화 | **아카이브 안전 실증됨** — 라이브 OCI `flyway_schema_history`가 `2.1` baseline에서 시작(V1.x 이력 0건, 2026-07-16 db-bridge 실측)이라 V1.x 파일 제거가 `validate`를 깨지 않는다. 다른 DB(개발용)에 V1.x 이력이 있는지만 확인 후 아카이브 |
+| ~~마이그레이션 `V1__init`~`V1.12`~~ | ~~레거시 델타 + `V2_0` baseline 공존~~ | ~~baseline 단일화~~ | **✅ 완료(2026-07-16)** — 아래 §5 참조 |
 
 ---
 
@@ -57,9 +57,11 @@ DB 표준 거버넌스의 원천(SSOT). 헌법 제3조 2항·제8조 4항이 **�
 - **2026-07-16 (V2_7)**: 표준 tb_ 객체 인덱스 `idx_tb_menu_info_del_yn`→`ix_tb_menu_info_del_yn`,
   프레임워크 예약 PK 제약 `ecopseq_pkey`/`ids_pkey`/`revinfo_pkey`→`pk_*` 표준화(메타데이터 rename).
   본 예외 대장 신설로 §1~§3 을 "명시적 예외"로 확정.
-- **2026-07-16 (V2_8, 배포 대기)**: 채번 시퀀스 `answer_no_seq`/`pst_id_seq`/`ntt_id_seq`→`sq_*` 표준화
+- **2026-07-16 (V2_8)**: 채번 시퀀스 `answer_no_seq`/`pst_id_seq`/`ntt_id_seq`→`sq_*` 표준화
   (`ALTER SEQUENCE RENAME`, 메타데이터) + 코드 문자열 동반 변경(Comment.java `sequenceName`, BoardRepository.java `nextval`).
-  db-bridge 실측으로 컬럼 DEFAULT 비의존 확인. 조율 배포로 적용 예정.
+  db-bridge 실측으로 컬럼 DEFAULT 비의존 확인. OCI 선적용·검증(값 보존·`nextval` 실동작) 완료.
+- **2026-07-16 (V2_9)**: `tb_onln_poll_rslt` FK 2건 VALIDATED 승격 — 고아행(테스트 잔재 316건) 자가치유 정리 후 검증. OCI 적용 완료(신규 FK 7건 전부 `convalidated=true`).
+- **2026-07-16 (마이그레이션 이력 단일화)**: 레거시 `V1__init`~`V1.12`(13개) 제거 → 마이그레이션 계보를 `V2_0` baseline 단일 출발점으로 정리. 근거: 테스트 `flyway.enabled=false`(H2 사용), OCI `flyway_schema_history` 2.1 baseline 시작(V1.x 이력 0건), V1.x는 V2_0에 없는 레거시 테이블(`NEMPLYRINFO`/`nuserlog` 등) 대상이라 fresh DB 부팅 시 오히려 충돌 유발 → 제거로 정상화. git history 로 복원 가능.
 
 ---
 **1줄 요약**: 프레임워크 예약(`ecopseq`/`ids`/`revinfo`)·메타(`meta_*`) 객체는 리네임 불가 예외로 등재하고, 시퀀스 `_seq`·레거시 마이그레이션은 "정리 예정 부채"로 분리 추적하여 표준 감사의 오탐과 미결 부채를 구분한다.
