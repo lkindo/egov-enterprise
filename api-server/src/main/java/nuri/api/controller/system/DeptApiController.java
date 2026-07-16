@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController("apiServerDeptApiController")
 @RequestMapping("/api/v1/admin/system/departments")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class DeptApiController {
 
     private final DeptManageService deptManageService;

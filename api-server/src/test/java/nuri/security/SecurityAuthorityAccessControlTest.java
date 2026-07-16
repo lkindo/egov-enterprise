@@ -23,19 +23,65 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - 비인가 사용자가 어드민 관리 전용 리소스(/api/v1/admin/**)에 접근 시 403 Forbidden으로 안전하게 차단되는지 증명합니다.
  * - 인증되지 않은 익명 사용자가 보안 리소스 접근 시 401 Unauthorized가 발생하는지 확인합니다.
  */
-@SpringBootTest(classes = nuri.ApiServerApplication.class)
+@SpringBootTest(
+        classes = nuri.ApiServerApplication.class,
+        properties = {
+                "spring.datasource.url=jdbc:h2:mem:security_access_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
+                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "rbac.shadow.enabled=true",
+                "rbac.db-auth.enabled=true"
+        }
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@org.springframework.test.annotation.DirtiesContext
 class SecurityAuthorityAccessControlTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        // H2 테스트 데이터베이스의 인가 매핑 기초 데이터 초기화 및 멱등 시드
+        jdbcTemplate.execute("DELETE FROM tb_role_prgrm_map");
+        jdbcTemplate.execute("DELETE FROM tb_prgrm_lst");
+        jdbcTemplate.execute("DELETE FROM tb_authrt_role_map");
+        jdbcTemplate.execute("DELETE FROM tb_authrt_info");
+        jdbcTemplate.execute("DELETE FROM tb_role_info");
+
+        // 1. 마스터 테이블 시드
+        jdbcTemplate.execute("INSERT INTO tb_authrt_info (authrt_cd, authrt_nm) VALUES ('ROLE_ADMIN', '관리자권한')");
+        jdbcTemplate.execute("INSERT INTO tb_authrt_info (authrt_cd, authrt_nm) VALUES ('ROLE_SYSTEM', '시스템권한')");
+        jdbcTemplate.execute("INSERT INTO tb_authrt_info (authrt_cd, authrt_nm) VALUES ('ROLE_USER', '사용자권한')");
+
+        jdbcTemplate.execute("INSERT INTO tb_role_info (role_id, role_nm) VALUES ('ROLE_ADMIN', '관리자역할')");
+        jdbcTemplate.execute("INSERT INTO tb_role_info (role_id, role_nm) VALUES ('ROLE_SYSTEM', '시스템역할')");
+        jdbcTemplate.execute("INSERT INTO tb_role_info (role_id, role_nm) VALUES ('ROLE_USER', '사용자역할')");
+
+        // 2. tb_authrt_role_map 매핑 시드
+        jdbcTemplate.execute("INSERT INTO tb_authrt_role_map (authrt_cd, role_cd) VALUES ('ROLE_ADMIN', 'ROLE_ADMIN')");
+        jdbcTemplate.execute("INSERT INTO tb_authrt_role_map (authrt_cd, role_cd) VALUES ('ROLE_SYSTEM', 'ROLE_SYSTEM')");
+        jdbcTemplate.execute("INSERT INTO tb_authrt_role_map (authrt_cd, role_cd) VALUES ('ROLE_USER', 'ROLE_USER')");
+
+        // 3. tb_prgrm_lst 시드 (어드민 메뉴 목록 및 설문 별칭)
+        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_MENUS', '어드민 메뉴 조회', '/api/v1/admin/menus')");
+        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_SURVEYS', '설문 별칭 조회', '/api/v1/surveys')");
+
+        // 4. tb_role_prgrm_map 시드
+        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_MENUS')");
+        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_MENUS')");
+        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_SURVEYS')");
+        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_SURVEYS')");
+    }
 
     @Test
     @DisplayName("보안 검증 - ADMIN 권한이 없는 일반 USER 사용자가 어드민 메뉴 목록 강제 접근 시 403 Forbidden 차단 보증")

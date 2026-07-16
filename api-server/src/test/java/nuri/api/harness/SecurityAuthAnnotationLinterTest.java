@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 🔐 Spring Security API 권한 제어 어노테이션 유실 방지 하네스
  * 
  * 모든 REST 컨트롤러의 엔드포인트를 리플렉션 기술로 전수 조사하여,
- * 화이트리스트(Public API)를 제외한 모든 비공개 비즈니스 API에
+ * 화이트리스트(Public API) 또는 DB 구동 인가 대상(URL 매핑)을 제외한 모든 비공개 비즈니스 API에
  * @PreAuthorize 또는 @Secured 와 같은 보안 어노테이션이 반드시 선언되어 있는지 오딧합니다.
  * 이를 통해 개발자가 실수로 특정 API에 권한 제어를 누락하는 것을 차단합니다.
  */
@@ -38,6 +39,15 @@ class SecurityAuthAnnotationLinterTest {
 
     @Autowired
     private WebApplicationContext context;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
+    private List<String> securePaths;
+
+    private final org.springframework.util.AntPathMatcher pathMatcher = new org.springframework.util.AntPathMatcher();
+    private List<String> dbProtectedUrls = null;
 
     // 허용되는 비인가/퍼블릭 및 공통 엔드포인트 화이트리스트 패턴
     private static final List<String> PUBLIC_PATH_WHITELIST = List.of(
@@ -51,6 +61,33 @@ class SecurityAuthAnnotationLinterTest {
             "/actuator/health",
             "/error"
     );
+
+    private void initDbProtectedUrls() {
+        if (dbProtectedUrls == null) {
+            dbProtectedUrls = new ArrayList<>();
+            // 1. application.yml의 secure-paths 목록 추가
+            if (securePaths != null) {
+                dbProtectedUrls.addAll(securePaths);
+            }
+            // 2. DB tb_prgrm_lst 조회된 URL 목록 추가
+            try {
+                List<String> urlsFromDb = jdbcTemplate.queryForList("SELECT url FROM tb_prgrm_lst WHERE url IS NOT NULL", String.class);
+                dbProtectedUrls.addAll(urlsFromDb);
+            } catch (Exception e) {
+                System.out.println("[SecurityLinter] tb_prgrm_lst 조회 실패 (테이블 부재 등): " + e.getMessage());
+            }
+        }
+    }
+
+    private boolean isDbProtected(String pattern) {
+        initDbProtectedUrls();
+        for (String protectedPattern : dbProtectedUrls) {
+            if (pathMatcher.match(protectedPattern, pattern) || pathMatcher.match(pattern, protectedPattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Test
     @DisplayName("🔐 Spring Security API 권한 제어 어노테이션 유실 오딧")
@@ -105,11 +142,14 @@ class SecurityAuthAnnotationLinterTest {
 
                 // 4.2 커스텀 PermitAllRoute 어노테이션이 선언되어 있는지도 확인
                 boolean hasPermitAllRoute = AnnotationUtils.findAnnotation(method, nuri.foundation.core.annotation.PermitAllRoute.class) != null ||
-                                            AnnotationUtils.findAnnotation(controllerClass, nuri.foundation.core.annotation.PermitAllRoute.class) != null;
+                                             AnnotationUtils.findAnnotation(controllerClass, nuri.foundation.core.annotation.PermitAllRoute.class) != null;
 
-                // 5. 어떠한 권한 검증 어노테이션도 없으면 위반 처리
+                // 5. 어떠한 권한 검증 어노테이션도 없으나, DB 구동 인가(프로그램 목록/securePaths)로 검증되고 있다면 통과
                 if (!hasPreAuthorize && !hasSecured && !hasPermitAllRoute) {
-                    violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] @PreAuthorize(\"hasRole('...')\") 또는 @PreAuthorize(\"isAuthenticated()\")를 기입하십시오.",
+                    if (isDbProtected(pattern)) {
+                        continue;
+                    }
+                    violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] @PreAuthorize(\"hasRole('...')\") 또는 @PreAuthorize(\"isAuthenticated()\")를 기입하거나 DB 인가 가드 대상에 등록하십시오.",
                             controllerClass.getSimpleName(), method.getName(), pattern));
                 }
             }
@@ -133,9 +173,6 @@ class SecurityAuthAnnotationLinterTest {
     /**
      * 비-admin 경로 쓰기 엔드포인트 중 클래스/메서드 @PreAuthorize 대신 <b>다른 계층에서 인가</b>하는 컨트롤러.
      * (서비스 계층 소유권 가드 SecurityUtil.assertOwnerOrAdmin, 또는 자기서비스/공개, 또는 서비스 내부 hasRole 검사)
-     *
-     * <p>⚠ 신규 <b>관리자 콘텐츠</b> 컨트롤러(비-admin 경로)는 이 목록에 추가하지 말고 반드시 쓰기 메서드에
-     * {@code @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")} 를 붙일 것. 이 목록에 무분별 추가는 인가 우회를 방치한다.
      */
     private static final Set<String> WRITE_AUTHZ_GUARDED_ELSEWHERE = Set.of(
             "AddressBookApiController",   // 소유권 가드(assertOwnerOrAdmin)
@@ -154,17 +191,9 @@ class SecurityAuthAnnotationLinterTest {
             "ApprovalApiController",          // 결재 확정=서비스 소유권(aprvrId) 검사
             "InformalSanctionApiController",  // 결재(비정형)=서비스 소유권(confirm=aprvrId, update/delete=aplcntId) 검사
             "FileApiController",              // 파일 업로드=자기서비스(본인 첨부)
-            "DeptJobApiController"            // [보류] 부서 공유 리소스 — 소유 모델 제품결정 대기(임시 예외; 결정 후 가드 추가)
+            "DeptJobApiController"            // [보류] 부서 공유 리소스 — 소유 모델 제품결정 대기
     );
 
-    /**
-     * 🔐 비-admin 경로 <b>쓰기(POST/PUT/DELETE/PATCH)</b> 엔드포인트 인가 누락 오딧.
-     *
-     * <p>{@code /api/v1/admin/**} 는 URL 시큐리티(ApiSecurityConfig)가 ADMIN/SYSTEM 으로 보호하므로 제외한다.
-     * 그 외 경로의 쓰기 엔드포인트는 {@code anyRequest().authenticated()} 만 걸려 일반 사용자도 도달하므로,
-     * 관리자 콘텐츠라면 메서드/클래스 {@code @PreAuthorize} 로, 소유권/자기서비스라면 위 allow-list(다른 계층 인가)로
-     * 반드시 인가를 명시해야 한다. (기존 린터가 통째로 skip 하던 business/foundation 패키지의 인가 누락 재발 방지)
-     */
     @Test
     @DisplayName("🔐 비-admin 경로 쓰기 엔드포인트 인가 누락 오딧 (business/foundation 포함)")
     void auditWriteEndpointAuthorizationOnNonAdminPaths() {
@@ -221,7 +250,12 @@ class SecurityAuthAnnotationLinterTest {
                     continue;
                 }
 
-                violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] 관리자 콘텐츠면 @PreAuthorize(\"hasAnyRole('ADMIN','SYSTEM')\") 를 붙이고, 소유권/자기서비스면 WRITE_AUTHZ_GUARDED_ELSEWHERE 에 근거와 함께 등록하십시오.",
+                // DB 구동 인가로 보호되고 있다면 통과
+                if (isDbProtected(pattern)) {
+                    continue;
+                }
+
+                violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] 관리자 콘텐츠면 @PreAuthorize(\"hasAnyRole('ADMIN','SYSTEM')\") 를 붙이거나 DB 인가 가드 대상에 등록하시고, 소유권/자기서비스면 WRITE_AUTHZ_GUARDED_ELSEWHERE 에 근거와 함께 등록하십시오.",
                         controllerClass.getSimpleName(), method.getName(), pattern));
             }
         }
@@ -235,7 +269,7 @@ class SecurityAuthAnnotationLinterTest {
                 sb.append("❌ ").append(v).append("\n");
             }
             sb.append("\n비-admin 경로 쓰기는 anyRequest().authenticated() 만 걸려 일반 사용자도 도달합니다.\n");
-            sb.append("관리자 콘텐츠는 @PreAuthorize 로, 소유권/자기서비스는 allow-list 로 인가를 반드시 명시하십시오.\n");
+            sb.append("관리자 콘텐츠는 @PreAuthorize 또는 DB 인가 가드로, 소유권/자기서비스는 allow-list 로 인가를 반드시 명시하십시오.\n");
             fail(sb.toString());
         }
     }

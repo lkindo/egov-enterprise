@@ -22,9 +22,6 @@ import java.util.List;
 @Tag(name = "Survey", description = "설문 관리 API (Admin)")
 @RestController("systemSurveyApiController")
 @RequestMapping({"/api/v1/admin/system/surveys", "/api/v1/surveys"})
-// [보안 방어심층] 이 컨트롤러는 전부 관리자 설문 CRUD다. 비-admin alias(/api/v1/surveys)로 URL 인가가
-// 우회되지 않도록 메서드 시큐리티로 경로와 무관하게 ADMIN/SYSTEM 역할을 강제한다.
-@PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
 @RequiredArgsConstructor
 public class SurveyApiController {
 

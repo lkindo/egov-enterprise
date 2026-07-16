@@ -36,9 +36,27 @@ import java.util.Map;
 @Slf4j
 public class ApiSecurityConfig {
         private final JwtTokenProvider jwtTokenProvider;
+        private final org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbcTemplateProvider;
 
-        public ApiSecurityConfig(JwtTokenProvider jwtTokenProvider) {
+        @org.springframework.beans.factory.annotation.Value("${rbac.shadow.enabled:false}")
+        private boolean rbacShadowEnabled;
+
+        @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.enabled:false}")
+        private boolean rbacDbAuthEnabled;
+
+        @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
+        private List<String> securePaths;
+
+        public ApiSecurityConfig(
+                JwtTokenProvider jwtTokenProvider,
+                org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbcTemplateProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
+                this.jdbcTemplateProvider = jdbcTemplateProvider;
+        }
+
+        @Bean
+        public nuri.business.security.authorization.DbUrlAuthorizationManager dbUrlAuthorizationManager() {
+                return new nuri.business.security.authorization.DbUrlAuthorizationManager(jdbcTemplateProvider.getIfAvailable(), securePaths);
         }
 
         @Bean
@@ -84,14 +102,43 @@ public class ApiSecurityConfig {
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(whitelist.stream()
+                                .authorizeHttpRequests(auth -> {
+                                                auth.requestMatchers(whitelist.stream()
                                                                 .map(AntPathRequestMatcher::antMatcher)
                                                                 .toArray(AntPathRequestMatcher[]::new))
-                                                .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
-                                                .anyRequest().authenticated())
+                                                                .permitAll();
+
+                                                if (rbacDbAuthEnabled) {
+                                                        // Phase 3: DB 인가 적용 (enforce)
+                                                        auth.requestMatchers(securePaths.stream()
+                                                                        .map(AntPathRequestMatcher::antMatcher)
+                                                                        .toArray(AntPathRequestMatcher[]::new))
+                                                                .access(dbUrlAuthorizationManager());
+                                                } else if (rbacShadowEnabled) {
+                                                        // Phase 2: 섀도우 모드 (병행 평가 및 로깅, enforce는 하드코딩)
+                                                        var adminEnforce = org.springframework.security.authorization.AuthorityAuthorizationManager.<org.springframework.security.web.access.intercept.RequestAuthorizationContext>hasAnyRole(
+                                                                nuri.business.security.AuthorityConstants.ROLE_ADMIN,
+                                                                nuri.business.security.AuthorityConstants.ROLE_SYSTEM
+                                                        );
+                                                        var shadowLogger = new nuri.business.security.authorization.ShadowAuthorizationLogger(
+                                                                adminEnforce,
+                                                                dbUrlAuthorizationManager(),
+                                                                true
+                                                        );
+                                                        auth.requestMatchers(securePaths.stream()
+                                                                        .map(AntPathRequestMatcher::antMatcher)
+                                                                        .toArray(AntPathRequestMatcher[]::new))
+                                                                .access(shadowLogger);
+                                                } else {
+                                                        // 기존 하드코딩 동작
+                                                        auth.requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**"))
+                                                                .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
+                                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**"))
+                                                                .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
+                                                }
+
+                                                auth.anyRequest().authenticated();
+                                })
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
@@ -113,9 +160,9 @@ public class ApiSecurityConfig {
                                                 .xssProtection(xss -> xss.headerValue(
                                                                 org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                                                 .httpStrictTransportSecurity(hsts -> hsts
-                                                                .maxAgeInSeconds(31536000L)
-                                                                .includeSubDomains(true)
-                                                                .preload(true))
+                                                                 .maxAgeInSeconds(31536000L)
+                                                                 .includeSubDomains(true)
+                                                                 .preload(true))
                                                 .referrerPolicy(referrer -> referrer.policy(
                                                                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authenticationProvider(egovAuthenticationProvider)

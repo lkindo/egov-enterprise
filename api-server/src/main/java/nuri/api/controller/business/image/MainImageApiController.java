@@ -42,7 +42,6 @@ public class MainImageApiController {
     }
 
     @Operation(summary = "메인 이미지 등록", description = "새로운 메인 이미지를 등록합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> insertMainImage(@Valid @RequestBody MainImageDto dto) {
         mainImageService.insertMainImage(dto);
@@ -50,7 +49,6 @@ public class MainImageApiController {
     }
 
     @Operation(summary = "메인 이미지 수정", description = "메인 이미지 정보를 수정합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/{imageId}")
     public ResponseEntity<ApiResponse<Void>> updateMainImage(
             @PathVariable String imageId,
@@ -61,7 +59,6 @@ public class MainImageApiController {
     }
 
     @Operation(summary = "메인 이미지 삭제", description = "메인 이미지 정보를 삭제합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/{imageId}")
     public ResponseEntity<ApiResponse<Void>> deleteMainImage(@PathVariable String imageId) {
         mainImageService.deleteMainImage(imageId);
