@@ -17,9 +17,12 @@
 - **db-bridge statement_timeout=3000ms**: `ctid NOT IN (GROUP BY 서브쿼리)`는 ctid 해시 불가로 O(n²) → 타임아웃. **self-join(USING) 형태**로 교체(파일에도 반영). 복합 UNIQUE 빌드(13k행)도 3.2s로 초과 — 배치 선두에 `SET statement_timeout='60s'`를 넣으면 동일 세션에 적용됨.
 - 멀티문 --raw 배치는 **암묵 단일 트랜잭션** — 중간 실패 시 전량 롤백(부분 적용 없음, 오히려 안전).
 
-## 2. P3 잔여 (보류 — 재개 조건 명시)
-- **terms→domains 정확 매핑**: 원천(행안부 공공데이터 공통표준용어) 리포·DB 부재 실측 확정. eng_name 전량=약어(원본 영문명 소실 물증). **다음 단계: 에이전트 웹 확보 시도(사용자 승인됨)** → 실패 시 사용자 제공. 확보 시 스테이징 반입→term_name 조인 백필→domain FK.
-- 규칙 기반 94.2% 그룹 백필은 임시책으로 미적용(사용자 선택은 정확 복원 경로).
+## 2. P3 잔여 → ✅ **완결 (V2_17, 커밋 b4c1a622b)**
+- **원천 웹 확보 성공**: data.go.kr 15156379 '행정안전부_공공데이터 공통표준용어_20251101' CSV(UTF-8 BOM, 13,176행 — 라이브 terms와 동일 판본 실증). 다운로드 URL은 페이지 JS에 은닉 → HTML에서 `atchFileId=FILE_000000003563657&fileDetailSn=1` 추출, `/cmm/cmm/fileDownload.do` GET(로그인 불요).
+- **100% 매칭 실측**: 라이브 13,173행 전량 (용어명+약어) 정확 매칭·무매칭 0·도메인명 domains 전량 존재.
+- **V2_17**: domain_name 컬럼 + 전량 백필(멱등 UPDATE 14청크, 생성물 — 수기편집 금지) + NOT NULL + FK VALIDATED. 검증: NULL 0·FK valid·123종 사용.
+- **재발 방지**: 원천 CSV(.agent/knowledge/db-standard-constitution/artifacts/sources/) + 생성 스크립트(.agent/scripts/generate-terms-domain-migration.js) 리포 보존 — 연간 원천 갱신 시 재생성 경로 확보.
+- eng_name(정보량 0 — 원본에도 영문 전체명 컬럼 부재 확인) 컬럼 처분은 후속 검토.
 
 ## 3. V2_16 — 고아 테이블·cross-type·잔재 정리 (라이브 적용·검증 완료)
 
