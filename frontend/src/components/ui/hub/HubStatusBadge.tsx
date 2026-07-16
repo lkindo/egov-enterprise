@@ -22,11 +22,11 @@ export function HubStatusBadge({
   const displayLabel = labels && status ? labels[status] : (label || status || 'N/A');
   
   const variantStyles = {
-    default: 'bg-white/10 dark:bg-muted text-slate-300 dark:text-muted-foreground',
-    secondary: 'bg-slate-500/20 text-slate-400',
-    success: 'bg-emerald-500/20 text-emerald-400',
-    warning: 'bg-amber-500/20 text-amber-400',
-    error: 'bg-rose-500/20 text-rose-400'
+    default: 'bg-white/10 dark:bg-muted text-slate-200 dark:text-muted-foreground',
+    secondary: 'bg-muted text-muted-foreground',
+    success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    error: 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
   };
 
   // Auto-variant based on status if not provided

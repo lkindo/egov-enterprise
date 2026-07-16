@@ -42,7 +42,7 @@ const SelectAddressBookDetailClient = () => {
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit border border-slate-100">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit border border-border">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
                     <Home className="w-4 h-4" /> 홈
                 </Link>
@@ -53,7 +53,7 @@ const SelectAddressBookDetailClient = () => {
             </div>
 
             <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
-                <CardHeader className="border-b bg-slate-50/50 pb-10 pt-10 px-12">
+                <CardHeader className="border-b bg-muted/50 pb-10 pt-10 px-12">
                     <CardTitle className="text-3xl font-bold tracking-tighter flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-lg text-primary">
                             <User className="w-8 h-8" />
@@ -67,26 +67,26 @@ const SelectAddressBookDetailClient = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                                         <span className="text-destructive">*</span> 성명
                                     </Label>
                                     <Input
                                         id="adbkNm"
                                         placeholder="성명을 입력하세요"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={formData.adbkNm}
                                         onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <Label htmlFor="telNo" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="telNo" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                                         <Phone className="w-4 h-4 opacity-40" /> 전화번호
                                     </Label>
                                     <Input
                                         id="telNo"
                                         placeholder="010-0000-0000"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all font-mono tracking-tight"
+                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-muted/50 rounded-lg transition-all font-mono tracking-tight"
                                         value={formData.telNo}
                                         onChange={(e) => setFormData({ ...formData, telNo: e.target.value })}
                                     />
@@ -95,26 +95,26 @@ const SelectAddressBookDetailClient = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-3">
-                                    <Label htmlFor="email" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="email" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                                         <Mail className="w-4 h-4 opacity-40" /> 이메일 주소
                                     </Label>
                                     <Input
                                         id="email"
                                         type="email"
                                         placeholder="example@egov.go.kr"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <Label htmlFor="adres" className="text-sm font-bold flex items-center gap-2 text-slate-500">
+                                    <Label htmlFor="adres" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                                         <MapPin className="w-4 h-4 opacity-40" /> 거주 주소
                                     </Label>
                                     <Input
                                         id="adres"
                                         placeholder="상세 주소를 입력하세요"
-                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-lg transition-all"
+                                        className="h-11 text-base border-2 border-slate-50 focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={formData.adres}
                                         onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
                                     />
@@ -128,15 +128,15 @@ const SelectAddressBookDetailClient = () => {
                             </div>
                             <div className="space-y-1">
                                 <p className="text-white font-bold text-sm">정보 보호 안내</p>
-                                <p className="text-slate-400 text-xs font-bold leading-relaxed">
+                                <p className="text-muted-foreground text-xs font-bold leading-relaxed">
                                     등록된 주소록 연락처는 부서/협업 시스템 내에서 공유 및 관리됩니다. 개인정보 보호 가이드라인을 준수하여 정확한 정보를 기입해 주세요.
                                 </p>
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-slate-50/30 rounded-b-[2.5rem] mt-10">
+                    <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-muted/30 rounded-b-[2.5rem] mt-10">
                         <Link href="/admin/collaboration/address-book/select-address-book-list">
-                            <Button type="button" variant="ghost" className="h-11 px-10 gap-2 font-bold text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-lg border border-transparent hover:border-rose-50">
+                            <Button type="button" variant="ghost" className="h-11 px-10 gap-2 font-bold text-muted-foreground hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-lg border border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
                         </Link>

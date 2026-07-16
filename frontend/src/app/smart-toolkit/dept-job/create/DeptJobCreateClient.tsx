@@ -62,29 +62,29 @@ export default function DeptJobCreateClient() {
                     <span className="text-xs font-bold tracking-widest uppercase">부서 업무 시스템</span>
                 </div>
                 <CardTitle className="text-3xl font-bold tracking-tighter">부서 업무 등록</CardTitle>
-                <p className="text-slate-400 font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
+                <p className="text-muted-foreground font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label htmlFor="deptTaskNm" className="text-sm font-bold text-slate-500 ml-1">업무명 (필수)</Label>
+              <Label htmlFor="deptTaskNm" className="text-sm font-bold text-muted-foreground ml-1">업무명 (필수)</Label>
               <Input
                 id="deptTaskNm"
                 value={formData.deptTaskNm}
                 onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
-                className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+                className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
               />
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="prrtyRnk" className="text-sm font-bold text-slate-500 ml-1">우선 순위</Label>
+              <Label htmlFor="prrtyRnk" className="text-sm font-bold text-muted-foreground ml-1">우선 순위</Label>
               <Select
                 value={formData.prrtyRnk}
                 onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, prrtyRnk: value }))}
               >
-                <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
+                <SelectTrigger className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
                   <SelectValue placeholder="순위 선택" />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -97,23 +97,23 @@ export default function DeptJobCreateClient() {
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="picNm" className="text-sm font-bold text-slate-500 ml-1">담당자 (선택)</Label>
+            <Label htmlFor="picNm" className="text-sm font-bold text-muted-foreground ml-1">담당자 (선택)</Label>
             <Input
               id="picNm"
               value={formData.picNm}
               onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, picNm: e.target.value }))}
               placeholder="담당자 성함을 입력하세요"
-              className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+              className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
             />
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="deptTaskCn" className="text-sm font-bold text-slate-500 ml-1">업무 상세 내용 (필수)</Label>
+            <Label htmlFor="deptTaskCn" className="text-sm font-bold text-muted-foreground ml-1">업무 상세 내용 (필수)</Label>
             <Textarea
               id="deptTaskCn"
               value={formData.deptTaskCn}
               onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskCn: e.target.value }))}
-              className="min-h-[250px] p-8 rounded-lg border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
+              className="min-h-[250px] p-8 rounded-lg border-2 bg-muted/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
               placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
             />
           </div>

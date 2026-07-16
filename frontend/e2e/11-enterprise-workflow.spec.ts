@@ -24,7 +24,7 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         
         // 3. Select Template (e.g., 일반 지출 결의서)
         console.log('>>> Selecting Template: 일반 지출 결의서');
-        await page.getByText('일반 지출 결의서').click();
+        await page.getByText('일반 지출 결의서').first().click();
         
         // 4. Fill Form
         console.log('>>> Filling Approval Form');

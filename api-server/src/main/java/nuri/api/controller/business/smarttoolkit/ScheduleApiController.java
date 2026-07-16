@@ -2,10 +2,10 @@ package nuri.api.controller.business.smarttoolkit;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.schedule.EgovScheduleService;
 import nuri.business.service.schedule.dto.ScheduleDto;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
@@ -104,7 +104,7 @@ public class ScheduleApiController {
     private String getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
+            return userDetails.getLoginId(); // [정체성] 일정 소유/필터/감사는 frstRgtrId(=loginId) 기준
         }
         return "anonymous";
     }

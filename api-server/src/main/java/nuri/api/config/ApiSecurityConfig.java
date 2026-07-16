@@ -1,8 +1,8 @@
 package nuri.api.config;
 
 import nuri.business.security.iam.EgovAuthenticationProvider;
-import nuri.business.security.jwt.JwtAuthenticationFilter;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtAuthenticationFilter;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +17,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -58,11 +57,14 @@ public class ApiSecurityConfig {
         @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
         private List<String> allowedOrigins;
 
+        @org.springframework.beans.factory.annotation.Value("${security.whitelist}")
+        private List<String> whitelist;
+
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(allowedOrigins);
-                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("*"));
                 configuration.setAllowCredentials(true);
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -78,22 +80,17 @@ public class ApiSecurityConfig {
                                                 AntPathRequestMatcher.antMatcher("/api/v1/**"),
                                                 AntPathRequestMatcher.antMatcher("/actuator/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .httpBasic(AbstractHttpConfigurer::disable)
-                                .formLogin(AbstractHttpConfigurer::disable)
-                                .logout(AbstractHttpConfigurer::disable)
+                                .csrf(csrf -> csrf.disable())
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .formLogin(formLogin -> formLogin.disable())
+                                .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/menus/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/signup"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"),
-                                                                AntPathRequestMatcher.antMatcher("/actuator/health"))
+                                                .requestMatchers(whitelist.stream()
+                                                                .map(AntPathRequestMatcher::antMatcher)
+                                                                .toArray(AntPathRequestMatcher[]::new))
                                                 .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
@@ -138,9 +135,9 @@ public class ApiSecurityConfig {
                                                 .ignoringRequestMatchers(
                                                 AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
                                                 AntPathRequestMatcher.antMatcher("/ws/**")))
-                                .httpBasic(AbstractHttpConfigurer::disable)
-                                .formLogin(AbstractHttpConfigurer::disable)
-                                .logout(AbstractHttpConfigurer::disable)
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .formLogin(formLogin -> formLogin.disable())
+                                .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(
                                                                 AntPathRequestMatcher.antMatcher("/css/**"),
@@ -166,7 +163,7 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui.html")
                                                 };
                                                 if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
-                                                        auth.requestMatchers(docs).hasAnyRole("ADMIN", "SYSTEM");
+                                                        auth.requestMatchers(docs).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
                                                 } else {
                                                         auth.requestMatchers(docs).permitAll();
                                                 }

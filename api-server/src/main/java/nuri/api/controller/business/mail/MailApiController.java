@@ -2,7 +2,7 @@ package nuri.api.controller.business.mail;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.mail.MailService;
 import nuri.business.service.mail.dto.SentMailDto;
 import io.swagger.v3.oas.annotations.Operation;

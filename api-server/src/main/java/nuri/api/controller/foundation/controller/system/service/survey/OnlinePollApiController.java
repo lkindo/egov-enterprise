@@ -2,7 +2,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,9 +49,10 @@ public class OnlinePollApiController {
     public ResponseEntity<ApiResponse<Void>> vote(
             @PathVariable String pollId,
             @RequestParam(name = "pollIemId") String pollArtclId) {
-        String userId = nuri.business.security.util.SecurityUtil.getCurrentUserId()
-                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.ErrorCode.UNAUTHORIZED));
-        onlinePollService.vote(pollId, pollArtclId, userId);
+        // 투표자 식별은 loginId(감사 컬럼 frst_rgtr_id·이중투표 유니크 제약과 동일 식별자)로 한다.
+        String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
+        onlinePollService.vote(pollId, pollArtclId, loginId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

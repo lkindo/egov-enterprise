@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import nuri.business.service.faq.FaqService;
 import nuri.business.service.faq.dto.FaqDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "FAQ", description = "FAQ 관리 API")
@@ -41,6 +42,7 @@ public class FaqApiController {
     }
 
     @Operation(summary = "FAQ 등록")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createFaq(@Valid @RequestBody FaqDto dto) {
         String id = faqService.createFaq("SYSTEM", dto);
@@ -48,6 +50,7 @@ public class FaqApiController {
     }
 
     @Operation(summary = "FAQ 수정")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/{faqId}")
     public ResponseEntity<ApiResponse<Void>> updateFaq(@PathVariable String faqId, @Valid @RequestBody FaqDto dto) {
         dto.setFaqId(faqId);
@@ -56,6 +59,7 @@ public class FaqApiController {
     }
 
     @Operation(summary = "FAQ 삭제")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/{faqId}")
     public ResponseEntity<ApiResponse<Void>> deleteFaq(@PathVariable String faqId) {
         faqService.deleteFaq(faqId, "SYSTEM");

@@ -95,7 +95,7 @@ export default function NotificationsClient() {
                 { title: 'AI Assistant', icon: <Sparkles className="text-indigo-500" />, desc: '맞춤형 메시지 톤앤매너 및 콘텐츠 자동 교정' },
               ].map((card, i) => (
                 <div key={i} className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl group hover:border-primary/20 transition-all cursor-pointer">
-                  <div className="w-16 h-11 rounded-lg bg-slate-50 border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="w-16 h-11 rounded-lg bg-muted border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     {card.icon}
                   </div>
                   <h4 className="text-xl font-bold tracking-tight mb-2">{card.title}</h4>

@@ -43,7 +43,7 @@ const SystemLogsTransferClient = () => {
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Box size={14} className="text-primary/40" />
-                    <code className="text-xs font-bold text-slate-700">{item.provdOrgnCode}</code>
+                    <code className="text-xs font-bold text-foreground">{item.provdOrgnCode}</code>
                 </div>
             ),
             className: 'w-36'
@@ -53,7 +53,7 @@ const SystemLogsTransferClient = () => {
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
-                    <span className="text-xs font-bold text-slate-600">{item.provdSysCode}</span>
+                    <span className="text-xs font-bold text-muted-foreground">{item.provdSysCode}</span>
                 </div>
             ),
             className: 'w-32'
@@ -85,7 +85,7 @@ const SystemLogsTransferClient = () => {
         {
             header: '등록일시',
             accessor: (item: TransferLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30" />
                     {item.creatDt ? item.creatDt.substring(0, 10) : '-'}
                 </div>

@@ -56,7 +56,7 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   부서 명칭 <span className="text-rose-500 font-bold text-xs">*</span>
                 </FormLabel>
                 <FormControl>
@@ -84,14 +84,14 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   부서 설명명세
                 </FormLabel>
                 <FormControl>
                   <textarea
                     {...field}
                     className={cn(
-                        "w-full min-h-[120px] p-6 rounded-lg border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
+                        "w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                     )}
                     placeholder="부서의 역할 및 책임 정의..."
@@ -103,11 +103,11 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
           )}
         />
 
-        <div className="flex w-full gap-4 pt-4 border-t border-slate-100">
+        <div className="flex w-full gap-4 pt-4 border-t border-border">
           <button 
             type="button" 
             onClick={onCancel} 
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>

@@ -64,7 +64,7 @@ export function FormField({
 }) {
   return (
     <div className="space-y-1.5 p-0.5">
-      <label htmlFor={htmlFor} className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+      <label htmlFor={htmlFor} className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
         {label}
         {required ? <span className="text-rose-500 font-bold text-xs" aria-hidden="true">*</span> : null}
       </label>
@@ -72,7 +72,7 @@ export function FormField({
         {children}
       </div>
       {error ? <p id={`${htmlFor}-error`} role="alert" className="text-xs font-bold text-rose-600 px-1 mt-1">{error}</p> : null}
-      {description ? <p id={`${htmlFor}-description`} className="text-xs font-bold text-slate-500 px-1 mt-1 leading-relaxed">{description}</p> : null}
+      {description ? <p id={`${htmlFor}-description`} className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">{description}</p> : null}
     </div>
   );
 }

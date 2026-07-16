@@ -42,13 +42,11 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const [bbsRes, userRes] = (await Promise.all([
-                    axios.get(`/bbs?searchWrd=${query}&searchCnd=0`),
-                    axios.get(`/admin/users?searchKeyword=${query}&searchCondition=1`)
-                ])) as any[];
+                // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
+                const userRes = (await axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)) as any;
 
                 setResults({
-                    articles: (bbsRes?.data?.resultList || []).slice(0, 10),
+                    articles: [],
                     users: (userRes?.data?.resultList || []).slice(0, 10),
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
@@ -84,7 +82,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         <h1 className="text-3xl md:text-3xl font-bold text-white tracking-tighter ">
                             통합 지식 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
                         </h1>
-                        <p className="text-slate-400 font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
+                        <p className="text-muted-foreground font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                     </div>
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
@@ -94,7 +92,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 
                     <form onSubmit={handleSearch} className="max-w-3xl mx-auto md:mx-0">
                         <div className="relative group/input">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within/input:text-primary transition-colors" />
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
                             <Input
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
@@ -130,7 +128,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-lg blur-[60px]" />
                     <div className="relative z-10 space-y-4">
                         <h4 className="text-sm font-bold tracking-tight text-primary">유용한 도움말</h4>
-                        <p className="text-sm text-slate-400 font-bold leading-relaxed">
+                        <p className="text-sm text-muted-foreground font-bold leading-relaxed">
                             단축키 <kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10 mx-1">Ctrl + K</kbd>를 누르면 어디서든 커뮤니티 센터를 열 수 있습니다.
                         </p>
                     </div>
@@ -233,7 +231,7 @@ function ResultSection({ title, count, children }: any) {
 
 function ArticleResultItem({ item, query }: any) {
     return (
-        <Link href={`/admin/community/boards/${item.pstId}?bbsId=${item.bbsId}`} className="block group">
+        <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`} className="block group">
             <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
                     <h4 className="text-xl font-bold group-hover:text-primary transition-colors line-clamp-1">

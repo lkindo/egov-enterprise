@@ -113,7 +113,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
 
   return (
     <div className="space-y-12 pt-24 relative">
-      <div className="flex items-center justify-between border-b-2 border-slate-100 pb-8 relative overflow-hidden">
+      <div className="flex items-center justify-between border-b-2 border-border pb-8 relative overflow-hidden">
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent opacity-20" />
         <div className="flex items-center gap-6 relative z-10">
           <motion.div 
@@ -123,8 +123,8 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
             <MessageSquare className="w-8 h-8 text-white" />
           </motion.div>
           <div>
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-2">Discussion Hub</h3>
-            <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">{optimisticComments.length} active threads</p>
+            <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase leading-none mb-2">Discussion Hub</h3>
+            <p className="text-[10px] font-black text-muted-foreground tracking-[0.4em] uppercase">{optimisticComments.length} active threads</p>
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="py-24 text-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50"
+              className="py-24 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/50"
             >
               <p className="text-slate-300 font-black tracking-widest uppercase text-xs">No entries found. Initiate the thread below.</p>
             </motion.div>
@@ -158,11 +158,11 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                     <div className="flex flex-col gap-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-slate-100 border-2 border-white shadow-inner flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                            <User className="w-7 h-7 text-slate-400 group-hover:text-white" />
+                          <div className="w-14 h-14 rounded-2xl bg-muted border-2 border-white shadow-inner flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                            <User className="w-7 h-7 text-muted-foreground group-hover:text-white" />
                           </div>
                           <div className="space-y-1">
-                            <h4 className="font-black text-slate-900 tracking-tight text-lg leading-none uppercase">{comment.wrterNm}</h4>
+                            <h4 className="font-black text-foreground tracking-tight text-lg leading-none uppercase">{comment.wrterNm}</h4>
                             <div className="flex items-center gap-3 text-[10px] font-black text-slate-300 tracking-widest uppercase mt-2">
                               <Clock className="w-3.5 h-3.5" />
                               {comment.crtDt ? format(new Date(comment.crtDt), 'yyyy-MM-dd HH:mm') : '-'}
@@ -173,11 +173,11 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                           {editingId === comment.ansSn ? (
                             <>
                               <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-50" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:bg-slate-100" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
                               <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
                             </>
                           )}
@@ -188,10 +188,10 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                         <Textarea
                           value={editCn}
                           onChange={(e) => setEditCn(e.target.value)}
-                          className="min-h-[120px] rounded-2xl border-slate-200 focus:ring-slate-900 border-2 text-slate-700 font-bold text-lg p-6 bg-slate-50/50"
+                          className="min-h-[120px] rounded-2xl border-border focus:ring-slate-900 border-2 text-foreground font-bold text-lg p-6 bg-muted/50"
                         />
                       ) : (
-                        <p className="text-slate-700 font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
+                        <p className="text-foreground font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
                           {comment.ansCn}
                         </p>
                       )}
@@ -219,16 +219,16 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
           <CardContent className="p-12 space-y-8">
             <div className="flex items-center gap-4 mb-2">
               <Badge className="px-5 py-2 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:bg-slate-900 shadow-xl">Initiate Response</Badge>
-              <div className="h-[2px] flex-1 bg-slate-100" />
+              <div className="h-[2px] flex-1 bg-muted" />
             </div>
             <Textarea
               name="ansCn"
               placeholder="Inject your thoughts into the collective knowledge..."
               value={ansCn}
               onChange={(e) => setAnsCn(e.target.value)}
-              className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-slate-900 tracking-tighter resize-none p-0 bg-transparent placeholder:text-slate-200 placeholder:uppercase"
+              className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-foreground tracking-tighter resize-none p-0 bg-transparent placeholder:text-slate-200 placeholder:uppercase"
             />
-            <div className="flex justify-end border-t border-slate-100 pt-8">
+            <div className="flex justify-end border-t border-border pt-8">
               <Button
                 type="submit"
                 disabled={isPending || !ansCn.trim()}

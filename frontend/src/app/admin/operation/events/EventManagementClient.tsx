@@ -96,7 +96,7 @@ export default function EventManagementClient() {
  {
  header: '번호',
  accessor: (_, index) => (
- <span className="font-mono text-xs font-bold text-slate-400">
+ <span className="font-mono text-xs font-bold text-muted-foreground">
  {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
  </span>
  ),
@@ -106,10 +106,10 @@ export default function EventManagementClient() {
  header: '행사 명칭',
  accessor: (event) => (
  <div className="flex flex-col gap-1 py-1">
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
  {event.bizCd}
  </span>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
  {event.evntBgngYmd} ~ {event.evntEndYmd}
  </span>
  </div>
@@ -119,7 +119,7 @@ export default function EventManagementClient() {
  header: '참여 정원',
  accessor: (event) => (
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-slate-600 tabular-nums">{event.evntUseCnt}</span>
+ <span className="text-xs font-bold text-muted-foreground tabular-nums">{event.evntUseCnt}</span>
  <span className="text-[10px] font-bold text-slate-300 tracking-tighter uppercase">명</span>
  </div>
  ),
@@ -129,7 +129,7 @@ export default function EventManagementClient() {
  header: '접수 기간',
  accessor: (event) => (
  <div className="flex flex-col">
- <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
+ <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
  {event.evntBgngYmd} ~ {event.evntEndYmd}
  </span>
  </div>
@@ -164,7 +164,7 @@ export default function EventManagementClient() {
  icon={Calendar} 
  actions={
  <div className="flex gap-4">
- <Button className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
+ <Button className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
  <History size={18} /> 아카이브
  </Button>
  <Button 
@@ -188,13 +188,13 @@ export default function EventManagementClient() {
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-end px-2 border-b border-slate-100/50 pb-8 mb-4">
+ <div className="flex items-center justify-end px-2 border-b border-border/50 pb-8 mb-4">
  <div className="relative group max-w-[320px] w-full">
  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
  <Input 
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 bg-slate-50/50 border-none rounded-xl pl-14 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ className="h-11 bg-muted/50 border-none rounded-xl pl-14 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="행사 검색.." 
  />
  </div>
@@ -224,7 +224,7 @@ export default function EventManagementClient() {
  <div className="relative z-10 space-y-8">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-emerald-400" />
+ <div className="w-2 h-2 rounded-full bg-emerald-400" />
  <span className="text-xs font-bold tracking-widest text-emerald-400/80 uppercase">Live Operations</span>
  </div>
  <Settings2 size={20} className="text-white/20 group-hover:text-primary transition-colors cursor-pointer" />
@@ -275,74 +275,74 @@ export default function EventManagementClient() {
  <form onSubmit={handleSubmit} className="p-8 space-y-8">
  <div className="grid grid-cols-2 gap-8">
  <div className="col-span-2 space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Event_Name</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Event_Name</Label>
  <Input 
  value={form.bizCd}
  onChange={(e) => setForm({...form, bizCd: e.target.value})}
  placeholder="행사 명칭을 입력하십시오"
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
  maxLength={30}
  />
  </div>
  <div className="col-span-2 space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Detailed_Description</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detailed_Description</Label>
  <Input 
  value={form.evntCn}
  onChange={(e) => setForm({...form, evntCn: e.target.value})}
  placeholder="상세 내용을 입력하십시오"
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
  maxLength={4000}
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Start_Date</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Start_Date</Label>
  <Input 
  type="date"
  value={form.evntBgngYmd}
  onChange={(e) => setForm({...form, evntBgngYmd: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">End_Date</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">End_Date</Label>
  <Input 
  type="date"
  value={form.evntEndYmd}
  onChange={(e) => setForm({...form, evntEndYmd: e.target.value})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Capacity (PSNCPA)</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Capacity (PSNCPA)</Label>
  <Input 
  type="number"
  value={form.evntUseCnt}
  onChange={(e) => setForm({...form, evntUseCnt: parseInt(e.target.value) || 0})}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
  min={0}
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recruitment_Start</Label>
  <Input 
  type="date"
  value={rceptBgngYmd}
  onChange={(e) => setRceptBgngYmd(e.target.value)}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  />
  </div>
  <div className="space-y-2">
- <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
+ <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recruitment_End</Label>
  <Input 
  type="date"
  value={rceptEndYmd}
  onChange={(e) => setRceptEndYmd(e.target.value)}
- className="h-11 bg-slate-50 border-none rounded-lg font-bold text-sm"
+ className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  />
  </div>
  </div>
@@ -375,12 +375,12 @@ function InsightCard({ label, value, desc, trend, type }: any) {
  colorMap[type]
  )}>
  <div className="space-y-1">
- <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+ <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{label}</span>
  <h4 className={cn("text-3xl font-bold tracking-tighter leading-none", colorMap[type])}>{value}</h4>
  </div>
  <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
  <div className="space-y-0.5">
- <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">{desc}</p>
+ <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">{desc}</p>
  <span className={cn("text-xs font-bold tracking-widest uppercase", colorMap[type])}>{trend} SIGNALS</span>
  </div>
  <Activity size={24} className="opacity-20" />

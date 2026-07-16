@@ -59,7 +59,6 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
-
 import {
     DndContext,
     closestCenter,
@@ -143,7 +142,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                 onClick={onClick}
                 className={cn(
                     "w-full flex items-center justify-between p-3 rounded-lg transition-all relative overflow-hidden",
-                    "hover:bg-slate-50 border border-transparent",
+                    "hover:bg-muted border border-transparent",
                     isSelected && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
                     isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
                 )}
@@ -158,20 +157,20 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                     <div className="flex flex-col truncate items-start">
                         <span className={cn(
                             "text-xs font-bold truncate leading-tight tracking-tight",
-                            isSelected ? "text-white" : "text-slate-900"
+                            isSelected ? "text-white" : "text-foreground"
                         )}>
                             {node.ognzNm}
                         </span>
                         <span className={cn(
                             "text-xs font-bold tracking-tighter opacity-60",
-                            isSelected ? "text-white" : "text-slate-500"
+                            isSelected ? "text-white" : "text-muted-foreground"
                         )}>
                             {node.ognzId}
                         </span>
                     </div>
                     {isSelected && (
                         <div className="ml-auto">
-                            <div className="w-1.5 h-1.5 rounded-lg bg-white animate-pulse" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                         </div>
                     )}
                 </div>
@@ -394,15 +393,15 @@ export default function UserOrgHubClient({
         <div className="flex items-center gap-4 py-1">
           <div className={cn(
             "w-12 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-md transition-transform group-hover:rotate-6",
-            selectedItemId === user?.esntlId ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+            selectedItemId === user?.esntlId ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
           )}>
             {user?.userNm?.[0]}
           </div>
           <div className="space-y-0.5">
-            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-slate-900")}>
+            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === user.esntlId ? "text-white/80" : "text-slate-400")}>{user.userId}</p>
+            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === user.esntlId ? "text-white/80" : "text-muted-foreground")}>{user.userId}</p>
           </div>
         </div>
       )
@@ -429,7 +428,7 @@ export default function UserOrgHubClient({
                 <button 
                   type="button"
                   aria-label="개인화 환경 설정" 
-                  className="h-10 w-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 flex items-center justify-center outline-none cursor-pointer"
+                  className="h-10 w-12 rounded-xl bg-white border border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 flex items-center justify-center outline-none cursor-pointer"
                 >
                   <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
                 </button>
@@ -465,7 +464,7 @@ export default function UserOrgHubClient({
       />
 
       {/* --- Horizontal Premium Tab Controls --- */}
-      <div className="flex bg-slate-100/60 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 max-w-4xl w-full mb-10 relative z-10 shadow-sm">
+      <div className="flex bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/50 max-w-4xl w-full mb-10 relative z-10 shadow-sm">
         <NavButton icon={<Users size={16} />} label="사용자" active={activeTab === 'USERS'} onClick={() => startTransition(() => { setActiveTab('USERS'); setSelectedItemId(null); })} />
         <NavButton icon={<Network size={16} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => startTransition(() => { setActiveTab('DEPTS'); setSelectedItemId(null); })} />
         <NavButton icon={<UserMinus size={16} />} label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => startTransition(() => { setActiveTab('ABSENCES'); setSelectedItemId(null); })} />
@@ -480,9 +479,9 @@ export default function UserOrgHubClient({
             icon={activeTab === 'DEPTS' ? Network : Users}
           >
             <div className="space-y-6">
-              <div className="flex items-center justify-between px-1 pt-1 border-b border-slate-100/50 pb-6">
+              <div className="flex items-center justify-between px-1 pt-1 border-b border-border/50 pb-6">
                 <div>
-                  <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">실시간 데이터 동기화</span>
+                  <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">실시간 데이터 동기화</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -490,7 +489,7 @@ export default function UserOrgHubClient({
                       type="button"
                       aria-label="서버 데이터 동기화" 
                       onClick={() => queryClient.invalidateQueries()} 
-                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-slate-100 hover:bg-slate-900 text-slate-800 hover:text-white border border-slate-200/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
+                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-muted hover:bg-slate-900 text-foreground hover:text-white border border-border/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
                     >
                       <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 동기화
                     </button>
@@ -504,7 +503,7 @@ export default function UserOrgHubClient({
               <div className="relative group/search">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                 <Input
-                  className="pl-14 h-10 bg-slate-50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+                  className="pl-14 h-10 bg-muted border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
                   placeholder="검색어를 입력하세요..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -607,10 +606,10 @@ export default function UserOrgHubClient({
                             )}
                             {flattenedDepts.length === 0 && !isDeptsLoading && (
                                 <div className="py-20 text-center space-y-4">
-                                    <div className="w-16 h-10 rounded-xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+                                    <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-slate-200 border border-border shadow-inner">
                                         <SearchSlash size={32} />
                                     </div>
-                                    <p className="text-xs font-bold tracking-tight text-slate-400 uppercase tracking-widest">No nodes found</p>
+                                    <p className="text-xs font-bold tracking-tight text-muted-foreground uppercase tracking-widest">No nodes found</p>
                                 </div>
                             )}
                         </div>
@@ -659,7 +658,7 @@ export default function UserOrgHubClient({
                     <SearchCode size={250} className="text-primary" />
                   </div>
 
-                  <div className="flex items-start justify-between border-b border-slate-100/50 pb-10 relative z-10">
+                  <div className="flex items-start justify-between border-b border-border/50 pb-10 relative z-10">
                     <div className="flex items-center gap-8">
                       <div className="w-24 h-20 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-4xl text-white shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
                         <span className="text-primary">
@@ -667,7 +666,7 @@ export default function UserOrgHubClient({
                         </span>
                       </div>
                       <div className="space-y-4 pt-1">
-                        <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none truncate max-w-[350px]">
+                        <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none truncate max-w-[350px]">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm : (selectedItem as UserManage)?.userNm}
                         </h2>
                         <div className="flex gap-3">
@@ -686,7 +685,7 @@ export default function UserOrgHubClient({
                       variant="ghost" 
                       size="icon" 
                       aria-label="정보 수정"
-                      className="h-10 w-14 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
+                      className="h-10 w-14 rounded-xl bg-muted hover:bg-slate-900 hover:text-white shadow-sm border border-border transition-all group"
                       onClick={() => {
                         setFormMode('edit');
                         if (activeTab === 'DEPTS') {
@@ -708,27 +707,27 @@ export default function UserOrgHubClient({
                       <InfoBlock icon={<MapPin size={16} />} label="근무지" value="본사" />
                     </div>
 
-                    <div className="pt-10 border-t border-slate-100/50 space-y-8">
+                    <div className="pt-10 border-t border-border/50 space-y-8">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                             <ShieldCheck size={16} />
                           </div>
                           <div>
-                            <h4 className="text-[10px] font-black text-slate-400 tracking-widest leading-none mb-1.5 uppercase">권한 프로토콜</h4>
-                            <p className="text-sm font-black text-slate-900 tracking-tighter uppercase leading-none">접근 제어 정책</p>
+                            <h4 className="text-[10px] font-black text-muted-foreground tracking-widest leading-none mb-1.5 uppercase">권한 프로토콜</h4>
+                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none">접근 제어 정책</p>
                           </div>
                         </div>
                         <button 
                           type="button"
-                          className="h-10 px-5 rounded-xl bg-slate-100 hover:bg-slate-900 text-[10px] font-black text-slate-800 hover:text-white gap-2 transition-all uppercase flex items-center justify-center outline-none cursor-pointer"
+                          className="h-10 px-5 rounded-xl bg-muted hover:bg-slate-900 text-[10px] font-black text-foreground hover:text-white gap-2 transition-all uppercase flex items-center justify-center outline-none cursor-pointer"
                         >
                           권한 설정 <ChevronRight size={14} />
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-3">
                         {['ACCESS_CMS', 'SYSTEM_ADMIN', 'ANALYTICS', 'USER_DIRECTORY', 'SECURITY_AUDIT'].map(p => (
-                          <div key={p} className="pl-4 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black text-slate-500 tracking-widest shadow-sm flex items-center gap-2.5 group/tag hover:border-primary/30 transition-all cursor-default uppercase">
+                          <div key={p} className="pl-4 pr-6 py-3 bg-muted border border-border rounded-xl text-[10px] font-black text-muted-foreground tracking-widest shadow-sm flex items-center gap-2.5 group/tag hover:border-primary/30 transition-all cursor-default uppercase">
                             <div className="w-1.5 h-1.5 rounded-full bg-primary opacity-30 group-hover:opacity-100 transition-opacity" />
                             {p}
                           </div>
@@ -737,11 +736,11 @@ export default function UserOrgHubClient({
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-10 mt-auto border-t border-slate-100/50 relative z-10">
+                  <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
                     <button 
                       type="button"
                       onClick={handleDeleteUser}
-                      className="flex-1 h-10 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase outline-none cursor-pointer flex items-center justify-center"
+                      className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase outline-none cursor-pointer flex items-center justify-center"
                     >
                       접근 차단
                     </button>
@@ -752,8 +751,8 @@ export default function UserOrgHubClient({
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full rounded-2xl border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-20 text-center select-none group">
-                <div className="w-28 h-24 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
+              <div className="h-full rounded-2xl border-4 border-dashed border-border bg-muted/50 flex flex-col items-center justify-center p-20 text-center select-none group">
+                <div className="w-28 h-24 rounded-2xl bg-white border border-border flex items-center justify-center text-slate-200 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
                   <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h3 className="text-3xl font-black text-slate-200 tracking-tighter uppercase">선택 대기 중</h3>
@@ -806,18 +805,18 @@ export default function UserOrgHubClient({
         maxWidth="sm"
       >
         <div className="space-y-8 p-4">
-          <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-            <p className="text-xs font-bold text-slate-500 tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+          <div className="p-6 bg-muted rounded-lg border border-border">
+            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
             <div className="flex flex-wrap gap-2">
               {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{u.userNm}</span>
+                <span key={u.userId} className="px-3 py-1 bg-white border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
               ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
             </div>
           </div>
           
           <div className="space-y-4">
-            <label className="text-xs font-bold text-slate-900 tracking-tight">변경할 상태 선택</label>
+            <label className="text-xs font-bold text-foreground tracking-tight">변경할 상태 선택</label>
             <div className="grid grid-cols-1 gap-3">
               {[
                 { code: 'P', label: '정상 (Active)', color: 'bg-emerald-500' },
@@ -829,12 +828,12 @@ export default function UserOrgHubClient({
                   onClick={() => setTargetStatus(s.code)}
                   className={cn(
                     "w-full flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                    targetStatus === s.code ? "border-primary bg-primary/5 shadow-lg" : "border-slate-100 hover:border-slate-200 bg-white"
+                    targetStatus === s.code ? "border-primary bg-primary/5 shadow-lg" : "border-border hover:border-border bg-white"
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-2 h-2 rounded-lg", s.color)} />
-                    <span className="text-sm font-bold tracking-tight text-slate-900">{s.label}</span>
+                    <div className={cn("w-2 h-2 rounded-full", s.color)} />
+                    <span className="text-sm font-bold tracking-tight text-foreground">{s.label}</span>
                   </div>
                   {targetStatus === s.code && <div className="w-4 h-4 rounded-lg bg-primary flex items-center justify-center text-white"><ChevronRight size={10} /></div>}
                 </button>
@@ -846,7 +845,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkStatusModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -885,19 +884,19 @@ export default function UserOrgHubClient({
         maxWidth="md"
       >
         <div className="space-y-8 p-4">
-          <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-            <p className="text-xs font-bold text-slate-500 tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+          <div className="p-6 bg-muted rounded-lg border border-border">
+            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
             <div className="flex flex-wrap gap-2">
               {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{u.userNm}</span>
+                <span key={u.userId} className="px-3 py-1 bg-white border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
               ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
             </div>
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs font-bold text-slate-900 tracking-tight">이동할 대상 부서 선택</label>
-            <div className="max-h-[400px] overflow-y-auto border-2 border-slate-100 rounded-lg p-4 custom-scrollbar bg-slate-50/30">
+            <label className="text-xs font-bold text-foreground tracking-tight">이동할 대상 부서 선택</label>
+            <div className="max-h-[400px] overflow-y-auto border-2 border-border rounded-lg p-4 custom-scrollbar bg-muted/30">
               {flattenedDepts.map((node) => (
                 <div
                   key={node.ognzId}
@@ -908,10 +907,10 @@ export default function UserOrgHubClient({
                     onClick={() => setTargetDeptId(node.ognzId || '')}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
-                      targetDeptId === node.ognzId ? "bg-primary text-white shadow-lg" : "hover:bg-white hover:shadow-sm text-slate-700"
+                      targetDeptId === node.ognzId ? "bg-primary text-white shadow-lg" : "hover:bg-white hover:shadow-sm text-foreground"
                     )}
                   >
-                    <Building2 size={14} className={targetDeptId === node.ognzId ? "text-white" : "text-slate-400"} />
+                    <Building2 size={14} className={targetDeptId === node.ognzId ? "text-white" : "text-muted-foreground"} />
                     <span className="text-xs font-bold tracking-tight">{node.ognzNm}</span>
                     <span className="text-xs opacity-50 ml-auto">ID_{node.ognzId}</span>
                   </button>
@@ -924,7 +923,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkMoveModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -967,18 +966,18 @@ export default function UserOrgHubClient({
         maxWidth="sm"
       >
         <div className="space-y-8 p-4">
-          <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-            <p className="text-xs font-bold text-slate-500 tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+          <div className="p-6 bg-muted rounded-lg border border-border">
+            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
             <div className="flex flex-wrap gap-2">
               {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{u.userNm}</span>
+                <span key={u.userId} className="px-3 py-1 bg-white border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
               ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
             </div>
           </div>
           
           <div className="space-y-4">
-            <label className="text-xs font-bold text-slate-900 tracking-tight">변경할 권한 선택</label>
+            <label className="text-xs font-bold text-foreground tracking-tight">변경할 권한 선택</label>
             <div className="grid grid-cols-1 gap-3">
               {[
                 { code: 'USER', label: '일반 사용자 (USER)', icon: <Users size={18} /> },
@@ -989,17 +988,17 @@ export default function UserOrgHubClient({
                   onClick={() => setTargetRole(r.code)}
                   className={cn(
                     "w-full flex items-center justify-between p-5 rounded-lg border-2 transition-all",
-                    targetRole === r.code ? "border-primary bg-primary/5 shadow-lg" : "border-slate-100 hover:border-slate-200 bg-white"
+                    targetRole === r.code ? "border-primary bg-primary/5 shadow-lg" : "border-border hover:border-border bg-white"
                   )}
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                      targetRole === r.code ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+                      targetRole === r.code ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                     )}>
                       {r.icon}
                     </div>
-                    <span className="text-sm font-bold tracking-tight text-slate-900">{r.label}</span>
+                    <span className="text-sm font-bold tracking-tight text-foreground">{r.label}</span>
                   </div>
                   {targetRole === r.code && <div className="w-5 h-5 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg"><ChevronRight size={12} /></div>}
                 </button>
@@ -1011,7 +1010,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkRoleModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -1055,12 +1054,12 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
         "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-300 relative overflow-hidden",
         active
           ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10 scale-[1.02] z-10"
-          : "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-white/40"
+          : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-white/40"
       )}
     >
       <span className={cn(
         "transition-colors shrink-0",
-        active ? "text-primary" : "text-slate-400"
+        active ? "text-primary" : "text-muted-foreground"
       )}>
         {icon}
       </span>
@@ -1077,14 +1076,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 
 function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <div className="space-y-4 p-8 rounded-lg bg-slate-50/50 shadow-inner border border-slate-100 transition-all hover:bg-white hover:shadow-2xl hover:scale-105 group cursor-default relative overflow-hidden">
+    <div className="space-y-4 p-8 rounded-lg bg-muted/50 shadow-inner border border-border transition-all hover:bg-white hover:shadow-2xl hover:scale-105 group cursor-default relative overflow-hidden">
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
         {icon}
       </div>
       <h5 className="text-xs font-bold text-muted-foreground/60 tracking-tight flex items-center gap-3 group-hover:text-primary transition-colors relative z-10">
         {icon} {label}
       </h5>
-      <p className="text-2xl font-bold tracking-tighter text-slate-900 truncate leading-none relative z-10 py-1">
+      <p className="text-2xl font-bold tracking-tighter text-foreground truncate leading-none relative z-10 py-1">
         {value}
       </p>
     </div>

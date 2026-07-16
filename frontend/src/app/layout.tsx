@@ -2,17 +2,26 @@ import React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
+import { NextIntlClientProvider } from 'next-intl';
 import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
+import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
 import { cookies } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
+
+const pretendard = localFont({
+  src: '../../public/fonts/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+  variable: '--font-pretendard',
+});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -45,7 +54,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       >
         본문 바로가기
       </a>
-      <Suspense fallback={<div className="h-11 border-b border-slate-100 bg-white/80" />}>
+      <Suspense fallback={<div className="h-11 border-b border-border bg-white/80" />}>
         <Header menusPromise={menusPromise} />
       </Suspense>
       <div className="flex flex-1">
@@ -60,7 +69,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         >
           <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
-              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-slate-500 font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
+              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-muted-foreground font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
                 {children}
               </Suspense>
             </PageTransition>
@@ -107,20 +116,30 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
-            <ProvidersWithAuth>
-              {children}
-            </ProvidersWithAuth>
-          </Suspense>
-        </ThemeProvider>
+      <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
+        {/*
+          i18n(next-intl) 프로바이더는 Suspense 경계 안에 둔다.
+          cacheComponents(PPR) 하에서 propless <NextIntlClientProvider> 는 서버측에서
+          request.ts(NEXT_LOCALE 쿠키 기반 로케일 결정)를 await 하므로, 상위 Suspense 없이는
+          'Uncached data outside <Suspense>' 로 next build 가 실패한다. (perf-02 패턴과 동일)
+        */}
+        <Suspense fallback={null}>
+          <NextIntlClientProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+              enableColorScheme
+            >
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
+                <ProvidersWithAuth>
+                  {children}
+                </ProvidersWithAuth>
+              </Suspense>
+            </ThemeProvider>
+          </NextIntlClientProvider>
+        </Suspense>
       </body>
     </html>
   );

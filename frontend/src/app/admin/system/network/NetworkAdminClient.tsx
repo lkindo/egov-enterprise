@@ -121,7 +121,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-200 transition-all font-bold" onClick={() => handleEdit(item)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
                         <Settings size={16} />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.ntwrkId)}>
@@ -171,7 +171,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                 placeholder="노드 명칭 또는 ID 기반 지형 검색.."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-11 pl-16 pr-8 rounded-lg bg-slate-50 border-2 border-slate-100 font-bold text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                                className="h-11 pl-16 pr-8 rounded-lg bg-muted border-2 border-border font-bold text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>
                     </div>

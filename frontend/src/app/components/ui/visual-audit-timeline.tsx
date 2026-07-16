@@ -81,7 +81,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-xs font-bold text-slate-700 tracking-tight leading-none opacity-100">실시간 데이터 무결성 모니터링</span>
+   <span className="text-xs font-bold text-foreground tracking-tight leading-none opacity-100">실시간 데이터 무결성 모니터링</span>
  </div>
  </div>
  </div>
@@ -150,7 +150,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {(log.severity || 'low').toUpperCase()}
  </span>
  </div>
- <p className="text-sm font-bold text-slate-700 tracking-tight">
+ <p className="text-sm font-bold text-foreground tracking-tight">
    <span className="text-primary font-bold">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
  </p>
  </div>
@@ -158,10 +158,10 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  <div className="flex items-center gap-6">
  <div className="text-right hidden md:block">
- <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+ <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
  <Clock size={12} /> {log.timestamp}
  </div>
- <p className="text-xs font-bold text-slate-700 font-mono mt-1 opacity-100">{log.ipAddress}</p>
+ <p className="text-xs font-bold text-foreground font-mono mt-1 opacity-100">{log.ipAddress}</p>
  </div>
  {expandedLog === log.id ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-muted-foreground/40" />}
  </div>
@@ -169,14 +169,14 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  {/* Expanded Detail: Side-by-Side Diff */}
  {expandedLog === log.id && log.changes && (
- <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-100 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
+ <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-muted dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-xs font-bold text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
    <Cpu size={12} /> AI 기반 변경 감지 엔진
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (
  <div key={cIdx} className="space-y-3 p-5 rounded-lg bg-white border border-primary/5 shadow-sm group/change">
- <label className="text-xs font-bold text-slate-700 tracking-tight">{change.field}</label>
+ <label className="text-xs font-bold text-foreground tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
  <div className="flex-1 p-3 rounded-lg bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">
  {change.before}
@@ -191,7 +191,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </div>
 
  <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
- <Button variant="ghost" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
+ <Button variant="ghost" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 text-foreground hover:bg-rose-50 hover:text-rose-700">
  분석 리포트 생성
  </Button>
   <Button variant="outline" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 border-2 hover:text-primary hover:bg-primary/5">
@@ -211,15 +211,15 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-primary/5">
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-emerald-500" />
-   <span className="text-xs font-bold text-slate-700 tracking-tight">마스터 저장소 동기화됨</span>
+ <div className="w-2 h-2 rounded-full bg-emerald-500" />
+   <span className="text-xs font-bold text-foreground tracking-tight">마스터 저장소 동기화됨</span>
  </div>
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-lg bg-blue-500 animate-pulse" />
-   <span className="text-xs font-bold text-slate-700 tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
+ <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+   <span className="text-xs font-bold text-foreground tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
  </div>
  </div>
- <p className="text-xs font-bold text-slate-700 tracking-tight opacity-100 mt-4 md:mt-0">
+ <p className="text-xs font-bold text-foreground tracking-tight opacity-100 mt-4 md:mt-0">
  Total Audit Records: {logs?.length || 0} 데이터 무결성 검증 완료
  </p>
  </div>

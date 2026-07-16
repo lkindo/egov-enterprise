@@ -44,7 +44,7 @@ const SystemLogsWebClient = () => {
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2">
                     <Link size={12} className="text-primary/40 shrink-0" />
-                    <span className="font-mono text-xs text-slate-600 truncate max-w-[240px]">{item.url}</span>
+                    <span className="font-mono text-xs text-muted-foreground truncate max-w-[240px]">{item.url}</span>
                 </div>
             )
         },
@@ -67,10 +67,10 @@ const SystemLogsWebClient = () => {
         {
             header: '응답시간',
             accessor: (item: WebLog) => (
-                <div className="flex items-center gap-1.5 font-bold text-slate-600">
+                <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
                     <span className="text-xs tabular-nums">{item.processTime}</span>
-                    <span className="text-xs text-slate-400">ms</span>
+                    <span className="text-xs text-muted-foreground">ms</span>
                 </div>
             ),
             className: 'w-28'
@@ -88,7 +88,7 @@ const SystemLogsWebClient = () => {
         {
             header: '등록일시',
             accessor: (item: WebLog) => (
-                <div className="font-mono text-xs text-slate-500 tabular-nums">
+                <div className="font-mono text-xs text-muted-foreground tabular-nums">
                     {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
                 </div>
             ),

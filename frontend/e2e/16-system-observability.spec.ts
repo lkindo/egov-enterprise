@@ -16,10 +16,10 @@ test.describe('Tier 16: System Observability & Intelligence', () => {
         
         // Verify specific metrics are visible
         const page = obsPage['page'];
-        await expect(page.getByText('글로벌 트래픽', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('시스템 지연시간', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('에러 발생률', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('노드 부하율', { exact: false }).first()).toBeVisible();
+        // 모니터링 허브 observability 탭의 실제 지표 라벨 (구 standalone 페이지 라벨은 라우트 통합으로 제거됨)
+        await expect(page.getByText('CPU_LOAD', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('MEMORY_ALLOC', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('NETWORK_TRAFFIC', { exact: false }).first()).toBeVisible();
     });
 
     test('should verify system topology visualization', async () => {
@@ -30,9 +30,9 @@ test.describe('Tier 16: System Observability & Intelligence', () => {
         await obsPage.refresh();
         await obsPage.exportData();
         
-        // Verify footer branding
+        // exportData()가 연 '리포트 스냅샷' 모달 검증 (허브 실제 UI — 구 footer 브랜딩은 라우트 통합으로 제거됨)
         const page = obsPage['page'];
-        await expect(page.getByText(/Observability Engine v5.0.0/)).toBeVisible();
+        await expect(page.getByText('Intelligence Report Generator')).toBeVisible();
     });
 
     test('should verify advanced analytics: visitor and word statistics', async ({ page }) => {

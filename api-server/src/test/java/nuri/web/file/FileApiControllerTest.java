@@ -1,7 +1,7 @@
 package nuri.web.file;
 
 import nuri.api.controller.business.file.FileApiController;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.file.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,8 +1,8 @@
 package nuri.api.controller.system;
 
 import nuri.business.test.BaseControllerTest;
-import nuri.business.service.usermanagement.EgovDeptManageService;
-import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.business.service.department.DeptManageService;
+import nuri.business.service.department.dto.DeptManageDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -21,12 +21,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class DeptApiControllerTest extends BaseControllerTest {
 
-    private EgovDeptManageService deptManageService;
+    private DeptManageService deptManageService;
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @Override
     protected Object getController() {
-        deptManageService = mock(EgovDeptManageService.class);
+        deptManageService = mock(DeptManageService.class);
         return new DeptApiController(deptManageService);
     }
 

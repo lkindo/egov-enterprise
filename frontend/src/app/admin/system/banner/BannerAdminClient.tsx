@@ -298,7 +298,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '비주얼 자산 스냅샷',
  accessor: (item: Banner) => (
- <div className="w-56 h-24 bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-100 shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
+ <div className="w-56 h-24 bg-slate-900 rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
  {item.atchFileId && (
  <Image
@@ -335,7 +335,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '우선순위',
  accessor: (item: Banner) => (
- <div className="w-12 h-12 rounded-lg bg-slate-50 border-2 border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-500">
+ <div className="w-12 h-12 rounded-lg bg-muted border-2 border-border flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-500">
  <span className="font-bold text-lg font-mono tabular-nums leading-none">{item.sortOrdr}</span>
  </div>
  ),
@@ -354,7 +354,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-200 transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} />
  </Button>
  <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId)}>
@@ -372,7 +372,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="flex flex-col gap-2 py-4">
  <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTtlNm}</span>
  <div className="flex items-center gap-4">
- <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg">
+ <div className="flex items-center gap-2 px-3 py-1 bg-muted border border-border rounded-lg">
  <Calendar size={12} className="text-primary opacity-40" />
  <span className="text-xs font-bold text-muted-foreground/60 font-mono tracking-tighter tabular-nums uppercase ">
  {item.ntceBgnde} ~ {item.ntceEndde}
@@ -387,13 +387,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  accessor: (item: Popup) => (
  <div className="flex flex-col gap-1.5">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shadow-inner border border-slate-100 text-slate-400">
+ <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shadow-inner border border-border text-muted-foreground">
  <Monitor size={14} />
  </div>
- <span className="text-xs font-bold font-mono tracking-widest text-slate-900 uppercase">{item.popupWdthSz}px x {item.popupVrtcSz}px</span>
+ <span className="text-xs font-bold font-mono tracking-widest text-foreground uppercase">{item.popupWdthSz}px x {item.popupVrtcSz}px</span>
  </div>
  <div className="flex items-center gap-2 pl-11">
- <div className="w-1 h-1 rounded-lg bg-slate-300" />
+ <div className="w-1 h-1 rounded-full bg-slate-300" />
  <span className="text-xs font-bold text-muted-foreground/40 ">Coordinates: (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
  </div>
  </div>
@@ -410,7 +410,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-lg border border-slate-200 transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} />
  </Button>
  <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId)}>
@@ -453,12 +453,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  <div className="grid grid-cols-12 gap-12">
  <div className="col-span-12 lg:col-span-3 h-full">
- <div className="rounded-lg bg-white border-2 border-slate-100 shadow-xl h-full p-4 flex flex-col gap-4">
+ <div className="rounded-lg bg-white border-2 border-border shadow-xl h-full p-4 flex flex-col gap-4">
  <button
  onClick={() => setTab('banner')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'banner' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
+ activeTab === 'banner' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
  )}
  >
  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white")}>
@@ -474,7 +474,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  onClick={() => setTab('popup')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'popup' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
+ activeTab === 'popup' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
  )}
  >
  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-indigo-500 group-hover:text-white")}>
@@ -493,7 +493,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <span className="text-xs font-bold tracking-widest uppercase text-white/40">시스템 상태</span>
  </div>
  <h5 className="text-lg font-bold tracking-tighter uppercase leading-none">프로모션 엔진</h5>
- <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase opacity-60">등록된 모든 배너 및 팝업 자산은 시스템에 즉시 반영됩니다.</p>
+ <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase opacity-60">등록된 모든 배너 및 팝업 자산은 시스템에 즉시 반영됩니다.</p>
  </div>
  </div>
  </div>
@@ -559,11 +559,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="bnrNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
  </FormControl>
- <p className="text-xs font-bold text-slate-400 px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
+ <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
@@ -573,14 +573,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="linkUrl"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">랜딩 페이지 (Target URL)</FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">랜딩 페이지 (Target URL)</FormLabel>
  <div className="relative group/link">
  <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
  <FormControl>
  <Input {...field} className="h-11 pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
  </FormControl>
  </div>
- <p className="text-xs font-bold text-slate-400 px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
+ <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
  )}
@@ -591,7 +591,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="sortOrdr"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
  </FormControl>
@@ -604,10 +604,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="rfltYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-slate-100 bg-slate-50 font-bold text-xs tracking-widest uppercase shadow-inner">
+ <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted font-bold text-xs tracking-widest uppercase shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
@@ -626,9 +626,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="bnrExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
  <FormControl>
- <textarea {...field} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
+ <textarea {...field} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -637,15 +637,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <div className="space-y-12">
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
- <div className="p-4 border-4 border-dashed border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
  <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
  <UploadCloud size={24} />
  <span className="text-xs font-bold tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
  </div>
  </div>
- <p className="text-xs font-bold text-slate-400 px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+ <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Banner)?.atchFileId && (
  <div className="p-8 rounded-lg bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
@@ -672,7 +672,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="popupTtlNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
  </FormControl>
@@ -680,13 +680,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </FormItem>
  )}
  />
- <div className="grid grid-cols-2 gap-8 p-10 bg-slate-50 border-2 border-dashed border-slate-100 rounded-lg shadow-inner">
+ <div className="grid grid-cols-2 gap-8 p-10 bg-muted border-2 border-dashed border-border rounded-lg shadow-inner">
  <ShadcnFormField
  control={popupForm.control}
  name="ntceBgnde"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input 
  {...field} 
@@ -716,7 +716,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="ntceEndde"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input 
  {...field} 
@@ -748,7 +748,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="popupWdthPstn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
  </FormControl>
@@ -761,7 +761,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="popupVrtcPstn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
  </FormControl>
@@ -776,7 +776,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="popupWdthSz"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
  </FormControl>
@@ -789,7 +789,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="popupVrtcSz"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
  <FormControl>
  <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
  </FormControl>
@@ -801,15 +801,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <div className="space-y-12">
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
- <div className="p-4 border-4 border-dashed border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
  <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
  <UploadCloud size={24} />
  <span className="text-xs font-bold tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
  </div>
  </div>
- <p className="text-xs font-bold text-slate-400 px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+ <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Popup)?.fileUrl && (
  <div className="p-8 rounded-lg bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
@@ -830,7 +830,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="ntceYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
  <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-white font-bold text-xs tracking-widest uppercase shadow-sm">
@@ -851,7 +851,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="stopvewSetupYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
  <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-white font-bold text-xs tracking-widest uppercase shadow-sm">

@@ -42,7 +42,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
     if (isSelected) return "border-slate-900 ring-4 ring-slate-100";
     if (isError) return "border-rose-100 hover:border-rose-300";
     if (isSecurity) return "border-indigo-100 hover:border-indigo-300";
-    return "border-slate-50 hover:border-slate-200";
+    return "border-slate-50 hover:border-border";
   };
 
   return (
@@ -77,7 +77,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
       <div className={cn(
         "flex-1 p-8 rounded-lg border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
         getBorderColor(),
-        isSelected ? "shadow-2xl translate-x-3 bg-slate-50/50" : "hover:shadow-lg"
+        isSelected ? "shadow-2xl translate-x-3 bg-muted/50" : "hover:shadow-lg"
       )}>
         {/* Background Hint */}
         {isSecurity && <ShieldAlert size={120} className="absolute -right-8 -bottom-8 text-indigo-50/30 rotate-12" />}
@@ -85,10 +85,10 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10 text-left">
           <div className="space-y-1 text-left">
-             <span className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase leading-none block text-left">
+             <span className="text-xs font-bold tracking-[0.3em] text-muted-foreground uppercase leading-none block text-left">
                 [TIME] {log.occrrncDe?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || 'N/A'}
              </span>
-             <h4 className="text-lg font-bold tracking-tighter text-slate-800 uppercase text-left">
+             <h4 className="text-lg font-bold tracking-tighter text-foreground uppercase text-left">
                 {log.methodNm || log.srvcNm || 'System Action'}
              </h4>
           </div>
@@ -104,7 +104,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-t border-slate-50 pt-4 relative z-10">
+        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-t border-slate-50 pt-4 relative z-10">
            <div className="flex items-center gap-3">
               <Database size={12} className="opacity-40" />
               <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.srvcNm}</span>

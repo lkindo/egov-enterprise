@@ -2,7 +2,7 @@ package nuri.api.controller.foundation.controller.system;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.AuthorManageService;
 import nuri.business.service.auth.dto.AuthorManageDto;

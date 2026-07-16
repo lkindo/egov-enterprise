@@ -172,7 +172,7 @@ export default function ManualAdminClient({
             variant="ghost" 
             size="sm" 
             onClick={() => handleOpenEdit(item)}
-            className="h-10 w-10 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+            className="h-10 w-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
           >
             <Edit2 size={16} />
           </Button>
@@ -204,7 +204,7 @@ export default function ManualAdminClient({
             <Button
               onClick={handleRefresh}
               variant="outline"
-              className="h-11 w-14 rounded-lg border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95 px-4"
+              className="h-11 w-14 rounded-lg border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95 px-4"
             >
               <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
             </Button>
@@ -222,7 +222,7 @@ export default function ManualAdminClient({
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="responsive-card p-6 md:p-12 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group rounded-lg shadow-sm"
+        className="responsive-card p-6 md:p-12 border-2 border-border bg-white/50 backdrop-blur-xl relative overflow-hidden group rounded-lg shadow-sm"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
           <div className="flex items-center gap-4 text-left">
@@ -230,19 +230,19 @@ export default function ManualAdminClient({
               <BookOpen size={24} />
             </div>
             <div className="text-left">
-              <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter text-left">지식 자산</h3>
-              <p className="text-xs font-bold text-slate-400 tracking-[0.3em] uppercase text-left">온라인 매뉴얼 관리</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-tighter text-left">지식 자산</h3>
+              <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase text-left">온라인 매뉴얼 관리</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 opacity-40 group-focus-within/search:opacity-100 transition-opacity" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40 group-focus-within/search:opacity-100 transition-opacity" size={18} />
               <Input
                 placeholder="매뉴얼 검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
-                className="h-11 pl-12 pr-6 w-full md:w-[300px] rounded-lg border-2 border-slate-100 font-bold text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+                className="h-11 pl-12 pr-6 w-full md:w-[300px] rounded-lg border-2 border-border font-bold text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
               />
             </div>
             <Button
@@ -260,7 +260,7 @@ export default function ManualAdminClient({
             data={manuals}
             loading={loading}
             emptyMessage="등록된 매뉴얼 정보가 없습니다."
-            className="border-none bg-slate-50/50 rounded-lg p-8"
+            className="border-none bg-muted/50 rounded-lg p-8"
           />
         </div>
       </motion.div>
@@ -274,10 +274,10 @@ export default function ManualAdminClient({
                   {mode === 'edit' ? <Edit2 size={28} /> : <Plus size={28} />}
                 </div>
                 <div className="text-center space-y-2">
-                  <DialogTitle className="text-3xl font-bold text-slate-900 tracking-tighter text-center uppercase">
+                  <DialogTitle className="text-3xl font-bold text-foreground tracking-tighter text-center uppercase">
                     {mode === 'edit' ? '가이드 수정' : '가이드 등록'}
                   </DialogTitle>
-                  <DialogDescription className="text-center font-bold text-slate-400 text-xs tracking-widest uppercase">
+                  <DialogDescription className="text-center font-bold text-muted-foreground text-xs tracking-widest uppercase">
                     사용자 교육을 위한 지식 자산을 {mode === 'edit' ? '수정' : '정의'}합니다
                   </DialogDescription>
                 </div>
@@ -289,12 +289,12 @@ export default function ManualAdminClient({
                   name="onlnMnlNm"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">매뉴얼 명칭</FormLabel>
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">매뉴얼 명칭</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           placeholder="매뉴얼 명을 입력하세요..."
-                          className="h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -307,12 +307,12 @@ export default function ManualAdminClient({
                   name="onlnMnlDfn"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">리소스 경로</FormLabel>
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">리소스 경로</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           placeholder="/src/docs/manuals/..."
-                          className="h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -325,12 +325,12 @@ export default function ManualAdminClient({
                   name="onlnMnlExpln"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className="text-xs font-bold text-slate-400 tracking-[0.2em] uppercase ml-2">상세 설명</FormLabel>
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">상세 설명</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
                           placeholder="매뉴얼 설명을 입력하세요..."
-                          className="min-h-[120px] p-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+                          className="min-h-[120px] p-8 rounded-lg border-2 border-border bg-muted/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -344,7 +344,7 @@ export default function ManualAdminClient({
                   type="button"
                   variant="outline"
                   onClick={() => setIsFormOpen(false)}
-                  className="h-11 px-10 rounded-lg border-2 border-slate-100 font-bold text-xs tracking-[0.2em] uppercase hover:bg-slate-50 transition-all flex-1"
+                  className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-[0.2em] uppercase hover:bg-muted transition-all flex-1"
                 >
                   취소
                 </Button>

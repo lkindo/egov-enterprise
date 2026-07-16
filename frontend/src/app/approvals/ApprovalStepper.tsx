@@ -25,7 +25,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
     <div className="w-full py-12 px-4">
       <div className="relative flex justify-between items-start max-w-5xl mx-auto">
         {/* Background Connection Line */}
-        <div className="absolute top-6 left-0 w-full h-[3px] bg-slate-100 dark:bg-slate-800 rounded-lg -z-10" />
+        <div className="absolute top-6 left-0 w-full h-[3px] bg-muted dark:bg-slate-800 rounded-lg -z-10" />
         
         {/* Active Progress Line */}
         <motion.div 
@@ -66,7 +66,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                     isCompleted ? "bg-emerald-500 border-emerald-100 dark:border-emerald-900/30 text-white" :
                     isRejected ? "bg-rose-500 border-rose-100 dark:border-rose-900/30 text-white" :
                     isCurrent ? "bg-slate-900 border-white dark:border-slate-800 text-white" :
-                    "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400"
+                    "bg-white dark:bg-slate-900 border-border dark:border-slate-800 text-muted-foreground"
                   )}
                 >
                   {isCompleted ? <Check size={20} strokeWidth={3} /> :
@@ -91,17 +91,17 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                 </p>
                 <h4 className={cn(
                   "text-sm font-bold tracking-tight",
-                  isCurrent ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"
+                  isCurrent ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-muted-foreground"
                 )}>
                   {step.label}
                 </h4>
                 <div className="flex flex-col items-center">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  <span className="text-xs font-bold text-foreground dark:text-slate-300 flex items-center gap-1">
                     <User size={10} className="opacity-50" />
                     {step.user}
                   </span>
                   {step.date && (
-                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1">
+                    <span className="text-xs font-medium text-muted-foreground dark:text-muted-foreground mt-1">
                       {step.date}
                     </span>
                   )}

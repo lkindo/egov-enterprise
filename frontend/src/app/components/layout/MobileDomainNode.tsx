@@ -52,7 +52,7 @@ export function MobileDomainNode({
           "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-xs font-bold tracking-tight",
           isActive
             ? "bg-slate-900 text-white border-slate-900 shadow-xl"
-            : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900"
+            : "bg-muted text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
         )}
       >
         <div className="flex items-center gap-3.5">

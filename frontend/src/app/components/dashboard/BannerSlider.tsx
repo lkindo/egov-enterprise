@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
+import { bannerService } from '@/services/business/user/BannerService';
 import { Banner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -15,7 +15,7 @@ export function BannerSlider() {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const data = await bannerAdminService.getReflectedBanners();
+        const data = await bannerService.getReflectedBanners();
         setBanners(data || []);
       } catch (error: unknown) {
         const err = error as { response?: { status?: number } };
@@ -80,7 +80,8 @@ export function BannerSlider() {
         <p className="text-sm md:text-base text-slate-200 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
           {currentBanner.bnrExpln}
         </p>
-        {currentBanner.linkUrl && (
+        {/* linkUrl 은 관리자 자유입력값 — javascript:/data: 스킴 저장형 XSS 방지를 위해 http(s)만 앵커 렌더 */}
+        {currentBanner.linkUrl && /^https?:\/\//i.test(currentBanner.linkUrl) && (
           <a
             href={currentBanner.linkUrl}
             target="_blank"
@@ -117,7 +118,7 @@ export function BannerSlider() {
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(
-                  "w-2 h-2 rounded-lg transition-all",
+                  "w-2 h-2 rounded-full transition-all",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"
                 )}
               />

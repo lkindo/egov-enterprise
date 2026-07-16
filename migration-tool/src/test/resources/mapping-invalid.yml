@@ -1,0 +1,11 @@
+source:
+  url: jdbc:h2:mem:src
+  username: sa
+  password: ""
+  driver: org.h2.Driver
+tables:
+  - source: LEGACY_USER
+    target: tb_user_info
+    columns:
+      - { source: USER_ID, target: user_id }
+      - { source: BOGUS, target: nonexistent_col }

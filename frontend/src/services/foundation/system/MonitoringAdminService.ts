@@ -11,24 +11,12 @@ const getActuatorBaseURL = () => {
 const actuatorInstance = axios.create({
   baseURL: getActuatorBaseURL(),
   headers: { 'Content-Type': 'application/json' },
+  // 브라우저: withCredentials 로 HttpOnly accessToken 쿠키가 동일출처 /actuator 로 전송되고
+  // Next.js 미들웨어가 이를 Authorization: Bearer 로 주입한다(클라이언트 헤더 주입 불필요).
+  // (localStorage 토큰 읽기는 HttpOnly 전환으로 항상 null 이라 제거함)
   withCredentials: true,
   timeout: 10000,
 });
-
-// Request interceptor for token (same as client.ts)
-actuatorInstance.interceptors.request.use(
-  async (config) => {
-    let token = null;
-    if (typeof window !== 'undefined') {
-      token = localStorage.getItem('accessToken');
-    }
-    if (token && token !== 'null' && !config.headers['Authorization']) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 interface HealthResponse {
   status: 'UP' | 'DOWN' | 'OUT_OF_SERVICE' | 'UNKNOWN';

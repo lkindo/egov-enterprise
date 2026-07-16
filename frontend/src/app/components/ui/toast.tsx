@@ -1,49 +1,41 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, Info, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useCallback } from 'react';
+import { toast as sonnerToast } from 'sonner';
 
 type ToastType = 'success' | 'error' | 'info' | 'loading';
 
-interface Toast {
-  id: string;
-  message: string;
-  type: ToastType;
-}
-
-interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  removeToast: (id: string) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
+export const useToast = () => {
   const toast = useCallback((message: unknown, type: ToastType = 'info') => {
-    // Failsafe: format message as string to prevent [object Event] rendering errors
+    // Failsafe: format message as string to prevent rendering errors
     const displayMessage = typeof message === 'string'
       ? message
       : ((message as { message?: string })?.message || JSON.stringify(message) || '알 수 없는 오류가 발생했습니다.');
 
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message: displayMessage, type }]);
-
-    if (type !== 'loading') {
-      setTimeout(() => removeToast(id), 4000);
+    if (type === 'success') {
+      sonnerToast.success(displayMessage);
+    } else if (type === 'error') {
+      sonnerToast.error(displayMessage);
+    } else if (type === 'loading') {
+      sonnerToast.loading(displayMessage);
+    } else {
+      sonnerToast(displayMessage);
     }
-  }, [removeToast]);
+  }, []);
 
   const success = useCallback((message: string) => toast(message, 'success'), [toast]);
   const error = useCallback((message: string) => toast(message, 'error'), [toast]);
+
+  return {
+    toast,
+    success,
+    error,
+    removeToast: () => {},
+  };
+};
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { error } = useToast();
 
   // API 오류 이벤트 리스너 등록
   useEffect(() => {
@@ -61,42 +53,5 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('api-error', handleApiError);
   }, [error]);
 
-  return (
-    <ToastContext.Provider value={{ toast, success, error, removeToast }}>
-      {children}
-      <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-lg shadow-lg border animate-in slide-in-from-right-full",
-              t.type === 'success' && "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400",
-              t.type === 'error' && "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400",
-              t.type === 'info' && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400",
-              t.type === 'loading' && "bg-white border-border text-foreground dark:bg-zinc-900"
-            )}
-            role="alert"
-            aria-live="assertive"
-          >
-            <div className="flex items-center gap-3">
-              {t.type === 'success' ? <CheckCircle size={18} /> : null}
-              {t.type === 'error' ? <AlertCircle size={18} /> : null}
-              {t.type === 'info' ? <Info size={18} /> : null}
-              {t.type === 'loading' ? <Loader2 size={18} className="animate-spin" /> : null}
-              <span className="text-sm font-medium">{t.message}</span>
-            </div>
-            <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100" aria-label="닫기">
-              <X size={16} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
+  return <>{children}</>;
 }
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) throw new Error('useToast must be used within ToastProvider');
-  return context;
-};

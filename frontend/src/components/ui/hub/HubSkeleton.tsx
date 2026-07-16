@@ -30,7 +30,7 @@ export function HubDetailSkeleton() {
           <Skeleton className="h-5 w-24 rounded-lg" />
           <Skeleton className="h-10 w-3/4" />
         </div>
-        <div className="bg-slate-50/50 rounded-lg p-10 h-32 flex items-center justify-center">
+        <div className="bg-muted/50 rounded-lg p-10 h-32 flex items-center justify-center">
             <Skeleton className="w-full h-4" />
         </div>
       </CardHeader>
@@ -49,7 +49,7 @@ export function HubDetailSkeleton() {
         </div>
         <div className="space-y-4 pt-4">
           <Skeleton className="h-3 w-20" />
-          <div className="p-10 bg-slate-50/50 rounded-lg h-48">
+          <div className="p-10 bg-muted/50 rounded-lg h-48">
             <Skeleton className="h-full w-full opacity-50" />
           </div>
         </div>

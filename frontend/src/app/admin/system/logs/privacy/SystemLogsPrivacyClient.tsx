@@ -43,8 +43,8 @@ const SystemLogsPrivacyClient = () => {
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
-                    <span className="font-bold text-slate-700">{item.trgetNm}</span>
-                    <span className="text-xs text-slate-400 font-mono">({item.trgetId})</span>
+                    <span className="font-bold text-foreground">{item.trgetNm}</span>
+                    <span className="text-xs text-muted-foreground font-mono">({item.trgetId})</span>
                 </div>
             )
         },
@@ -72,7 +72,7 @@ const SystemLogsPrivacyClient = () => {
         {
             header: '요청자ID',
             accessor: (item: PrivacyLog) => (
-                <div className="px-3 py-1 bg-white border rounded-lg w-fit shadow-sm text-xs font-bold text-slate-700">
+                <div className="px-3 py-1 bg-white border rounded-lg w-fit shadow-sm text-xs font-bold text-foreground">
                     {item.rqesterId}
                 </div>
             ),
@@ -81,7 +81,7 @@ const SystemLogsPrivacyClient = () => {
         {
             header: '등록일시',
             accessor: (item: PrivacyLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30" />
                     {item.creatDt ? item.creatDt.substring(0, 10) : '-'}
                 </div>

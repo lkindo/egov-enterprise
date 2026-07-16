@@ -41,7 +41,20 @@ interface UserManageFormProps {
 }
 
 export function UserManageForm({ initialData, mode, departments, onSubmit, onCancel }: UserManageFormProps) {
-  const form = useAppForm(userSchema, {
+  const schema = React.useMemo(() => {
+    return UserDtoSchema.partial().extend({
+      userId: z.string().min(1),
+      userNm: z.string().min(1),
+      emlAddr: z.string().optional().or(z.literal('')),
+      mblTelno: z.string().optional().or(z.literal('')),
+      ognzId: z.string().optional().or(z.literal('')),
+      pswd: mode === 'create'
+        ? z.string().min(8, { message: '비밀번호는 최소 8자 이상이어야 합니다.' })
+        : z.string().optional().or(z.literal('')),
+    });
+  }, [mode]);
+
+  const form = useAppForm(schema, {
     defaultValues: {
       userId: initialData?.userId || '',
       userNm: initialData?.userNm || '',
@@ -67,7 +80,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                     사용자 아이디 (Identity_ID) <span className="text-rose-500 font-bold text-xs">*</span>
                   </FormLabel>
                   <FormControl>
@@ -96,7 +109,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                     사용자 성함 <span className="text-rose-500 font-bold text-xs">*</span>
                   </FormLabel>
                   <FormControl>
@@ -126,14 +139,14 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                     이메일 주소
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       className={cn(
-                        "h-11 rounded-lg text-xs font-medium border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                       )}
                       placeholder="example@nuri.com"
@@ -153,14 +166,14 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                     연락처
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       className={cn(
-                        "h-11 rounded-lg text-xs font-medium border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                       )}
                       placeholder="010-0000-0000"
@@ -183,7 +196,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                     초기 비밀번호 <span className="text-rose-500 font-bold text-xs">*</span>
                   </FormLabel>
                   <FormControl>
@@ -191,7 +204,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                       {...field}
                       type="password"
                       className={cn(
-                        "h-11 rounded-lg text-xs border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "h-11 rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                       )}
                       placeholder="PASSWORD (MIN_8)"
@@ -213,14 +226,14 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   소속 부서
                 </FormLabel>
                 <FormControl>
                   <select
                     {...field}
                     className={cn(
-                        "w-full h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner transition-all",
+                        "w-full h-11 px-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none shadow-inner transition-all",
                         fieldState.error ? "border-rose-500 ring-rose-500/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
                     )}
                   >
@@ -236,11 +249,11 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           )}
         />
 
-        <div className="flex w-full gap-4 pt-4 border-t border-slate-100">
+        <div className="flex w-full gap-4 pt-4 border-t border-border">
           <button 
             type="button" 
             onClick={onCancel} 
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>

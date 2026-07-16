@@ -16,7 +16,8 @@ export class CollabPage {
     async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS') {
         console.log(`>>> [Collab] Switching to tab: ${tab}`);
         const label = tab === 'MESSAGES' ? 'MESSAGES' : tab === 'CONTACTS' ? 'CONTACTS' : tab === 'SCRAPS' ? 'SCRAPS' : 'CALENDAR';
-        await this.page.getByRole('button', { name: label }).click();
+        // 페이지 전환 중 동일 탭 버튼이 일시적으로 2개 존재(strict-mode 위반) → exact + first로 방어
+        await this.page.getByRole('button', { name: label, exact: true }).first().click();
         await this.page.waitForTimeout(1000);
     }
 
@@ -65,12 +66,13 @@ export class CollabPage {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
         await this.switchTab('CONTACTS');
         
-        await this.page.getByRole('button', { name: /신규 연락처/i }).click();
+        await this.page.getByRole('button', { name: /신규 연락처/i }).first().click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
-        const nameInput = this.page.getByTestId('identity-name-input');
-        const emailInput = this.page.getByTestId('identity-email-input');
-        const telInput = this.page.getByTestId('identity-tel-input');
+        // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어
+        const nameInput = this.page.getByTestId('identity-name-input').first();
+        const emailInput = this.page.getByTestId('identity-email-input').first();
+        const telInput = this.page.getByTestId('identity-tel-input').first();
         await expect(nameInput).toBeVisible();
         await this.page.waitForTimeout(1000);
         

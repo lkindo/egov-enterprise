@@ -22,7 +22,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 
 
 import nuri.business.support.IntegrationTest;
@@ -171,8 +171,8 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
-    long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
+    long maxResponseTime = responseTimes.stream().mapToLong(val -> val).max().orElse(0L);
 
     System.out.printf(
         "DB 커넥션 풀 모니터링 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
@@ -234,8 +234,8 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
-    long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
+    long maxResponseTime = responseTimes.stream().mapToLong(val -> val).max().orElse(0L);
 
     System.out.printf("N+1 쿼리 감지 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
         numberOfRequests, avgResponseTime, maxResponseTime);
@@ -305,7 +305,7 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
 
     System.out.printf("CPU 사용량 모니터링 - 평균 응답 시간: %d ms%n", avgResponseTime);
     assertThat(avgResponseTime).isLessThan(1000L);
@@ -375,7 +375,7 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
     assertThat(avgResponseTime).isLessThan(400L);
   }
 
@@ -405,7 +405,7 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
     assertThat(avgResponseTime).isLessThan(500L);
   }
 
@@ -447,7 +447,7 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(90, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
     assertThat(avgResponseTime).isLessThan(1500L);
   }
 
@@ -477,7 +477,7 @@ class BottleneckIdentificationTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+    long avgResponseTime = (long) responseTimes.stream().mapToLong(val -> val).average().orElse(0.0);
     assertThat(avgResponseTime).isLessThan(600L);
   }
 }

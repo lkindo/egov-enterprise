@@ -47,7 +47,6 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 
 import { AuthorForm, AuthorFormValues } from '@/components/admin/security/AuthorForm';
-
 // --- Types ---
 interface MenuNode extends Menu {
   children?: MenuNode[];
@@ -291,7 +290,7 @@ export default function SecurityHubClient({
       accessor: (auth) => (
         <div className="flex items-center justify-between w-full group/role-item py-1">
           <div className="flex flex-col gap-1">
-            <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authrtCd ? "text-white" : "text-slate-900")}>
+            <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authrtCd ? "text-white" : "text-foreground")}>
               {auth.authrtNm}
             </span>
             <span className={cn("text-xs font-bold tracking-tight ", selectedAuthorCode === auth.authrtCd ? "text-white/30" : "text-slate-300")}>
@@ -315,13 +314,13 @@ export default function SecurityHubClient({
           <div className="flex items-center gap-4 relative z-10">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-              tempUserMappings.has(user.scrtyDcsnTrgtId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+              tempUserMappings.has(user.scrtyDcsnTrgtId) ? "bg-white/20" : "bg-muted group-hover:bg-slate-900 group-hover:text-white"
             )}>
               <Fingerprint size={16} />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight">{user.userNm}</span>
-              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.scrtyDcsnTrgtId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
+              <span className={cn("text-xs font-bold tracking-tight opacity-40", tempUserMappings.has(user.scrtyDcsnTrgtId) ? "text-white" : "text-muted-foreground")}>{user.userId}</span>
             </div>
           </div>
           {tempUserMappings.has(user.scrtyDcsnTrgtId) ? (
@@ -346,21 +345,21 @@ export default function SecurityHubClient({
         <div
           className={cn(
             "group flex items-center gap-4 py-3 px-6 rounded-lg transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
-            tempMenuMappings.has(node.menuNo) ? "bg-slate-900 border-none shadow-xl text-white" : "hover:bg-slate-50 border border-transparent"
+            tempMenuMappings.has(node.menuNo) ? "bg-slate-900 border-none shadow-xl text-white" : "hover:bg-muted border border-transparent"
           )}
           style={{ marginLeft: `${depth * 24}px` }}
           onClick={() => toggleMenuMapping(node.menuNo, !tempMenuMappings.has(node.menuNo))}
         >
           <div className={cn(
             "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
-            tempMenuMappings.has(node.menuNo) ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "border-slate-200 bg-white"
+            tempMenuMappings.has(node.menuNo) ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "border-border bg-white"
           )}>
             {tempMenuMappings.has(node.menuNo) && <ShieldCheck size={12} className="text-white" />}
           </div>
 
           <div className={cn(
             "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-            node.children && node.children.length > 0 ? "text-amber-500 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white" : "text-slate-400 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+            node.children && node.children.length > 0 ? "text-amber-500 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white" : "text-muted-foreground bg-muted group-hover:bg-slate-900 group-hover:text-white"
           )}>
             {node.children && node.children.length > 0 ? <ShieldCheck size={14} /> : <File size={14} />}
           </div>
@@ -368,13 +367,13 @@ export default function SecurityHubClient({
           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
             <span className={cn(
               "text-xs font-bold tracking-tight truncate",
-              tempMenuMappings.has(node.menuNo) ? "text-white" : "text-slate-600"
+              tempMenuMappings.has(node.menuNo) ? "text-white" : "text-muted-foreground"
             )}>
               {node.menuNm}
             </span>
             <span className={cn(
               "text-xs font-bold tracking-tight opacity-40 truncate",
-              tempMenuMappings.has(node.menuNo) ? "text-white/40" : "text-slate-400"
+              tempMenuMappings.has(node.menuNo) ? "text-white/40" : "text-muted-foreground"
             )}>
               NODE_{node.menuNo}
             </span>
@@ -409,7 +408,7 @@ export default function SecurityHubClient({
         icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg mr-4 border-2 border-slate-100">
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg mr-4 border-2 border-border">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -417,7 +416,7 @@ export default function SecurityHubClient({
                     onClick={() => startTransition(() => setViewMode('TOPOLOGY'))}
                     className={cn(
                       "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
-                      viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                      viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     TOPOLOGY_VIEW
@@ -435,7 +434,7 @@ export default function SecurityHubClient({
                     onClick={() => startTransition(() => { setViewMode('MATRIX'); loadGlobalMappings(); })}
                     className={cn(
                       "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
-                      viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                      viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     MATRIX_PLANE
@@ -452,7 +451,7 @@ export default function SecurityHubClient({
                 <Button
                   variant="ghost"
                   onClick={() => queryClient.invalidateQueries()}
-                  className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                  className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
                 >
                   <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
                 </Button>
@@ -520,7 +519,7 @@ export default function SecurityHubClient({
                   <div className="relative group/search">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
-                      className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
+                      className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
                       placeholder="역할 검색(ID, 명칭)..."
                       value={roleSearchKeyword}
                       onChange={(e) => setRoleSearchKeyword(e.target.value)}
@@ -576,7 +575,7 @@ export default function SecurityHubClient({
                   <div className="relative group/search mb-8">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
-                      className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
+                      className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
                       placeholder="사용자 검색(ID, 성명)..."
                       value={userSearchKeyword}
                       onChange={(e) => setUserSearchKeyword(e.target.value)}
@@ -587,7 +586,7 @@ export default function SecurityHubClient({
                     <AnimatePresence mode="wait">
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-                          <div className="w-20 h-11 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200">
+                          <div className="w-20 h-11 rounded-lg bg-muted flex items-center justify-center text-slate-200">
                             <Users size={40} className="관리자 권한" />
                           </div>
                           <div className="space-y-2">
@@ -662,7 +661,7 @@ export default function SecurityHubClient({
                     <AnimatePresence mode="wait">
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-                          <div className="w-20 h-11 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200">
+                          <div className="w-20 h-11 rounded-lg bg-muted flex items-center justify-center text-slate-200">
                             <Layers size={40} className="opacity-20" />
                           </div>
                           <div className="space-y-2">
@@ -676,7 +675,7 @@ export default function SecurityHubClient({
                           <p className="text-xs font-bold tracking-tight text-muted-foreground/40">Mapping_Topology_Stream...</p>
                         </motion.div>
                       ) : (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-lg bg-slate-50/50">
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-lg bg-muted/50">
                           {renderMenuTreeNodes(menuTree)}
                         </motion.div>
                       )}

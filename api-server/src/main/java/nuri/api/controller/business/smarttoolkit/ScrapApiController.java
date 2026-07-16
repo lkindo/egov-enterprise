@@ -4,8 +4,8 @@ import jakarta.validation.Valid;
 import nuri.business.service.scrap.EgovScrapService;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -72,9 +72,11 @@ public class ScrapApiController {
     }
 
     private String getCurrentUserId() {
+        // [정체성] 스크랩 소유/필터/감사는 frstRgtrId(=loginId) 기준이므로 loginId 를 반환한다(esntlId 아님).
+        // 과거 esntlId 반환은 getScrapList 를 항상 빈 목록으로 만들던 버그였다.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getEsntlId();
+            return userDetails.getLoginId();
         }
         return "anonymous";
     }

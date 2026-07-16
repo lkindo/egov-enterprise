@@ -43,7 +43,7 @@ const SystemLogsSystemClient = () => {
         {
             header: '발생일자',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     {(item as any).occcrrncDe || '-'}
                 </div>
             ),
@@ -54,7 +54,7 @@ const SystemLogsSystemClient = () => {
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
-                    <span className="font-bold text-slate-700 tracking-tight text-left">{item.srvcNm}</span>
+                    <span className="font-bold text-foreground tracking-tight text-left">{item.srvcNm}</span>
                 </div>
             )
         },
@@ -62,7 +62,7 @@ const SystemLogsSystemClient = () => {
             header: '메소드명',
             accessor: (item: SysLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-xs text-slate-600">
+                    <code className="px-2 py-1 bg-muted rounded border font-mono text-xs text-muted-foreground">
                         {item.methodNm}
                     </code>
                 </div>
@@ -71,10 +71,10 @@ const SystemLogsSystemClient = () => {
         {
             header: '응답시간',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-1.5 font-bold text-slate-600">
+                <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
                     <span className="text-xs">{item.processTime}</span>
-                    <span className="text-xs text-slate-400 font-medium">ms</span>
+                    <span className="text-xs text-muted-foreground font-medium">ms</span>
                 </div>
             ),
             className: 'w-24'

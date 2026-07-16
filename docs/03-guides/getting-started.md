@@ -1,0 +1,160 @@
+# Getting Started — 프레임워크로 새 프로젝트 시작하기 (Onboarding Runbook)
+
+> 이 저장소는 **신규 SI 구축 / 기존 프로젝트 재개발의 베이스 프레임워크**다. 본 런북은 `복제 → 리브랜딩 → 부트스트랩 → 기동 → 커스터마이징`의 실무 절차와 **알려진 제약**을 정리한다.
+> 상위 설계 배경은 [framework-reusability-assessment.md](../02-architecture/framework-reusability-assessment.md) 참조.
+
+---
+
+## 0. 아키텍처 한눈에
+
+| 레이어 | 모듈 | 역할 | 재사용 정책 |
+|---|---|---|---|
+| Backend Core | `foundation` | 응답봉투·예외·감사엔티티·보안백본(JWT/IAM)·crypto·i18n·config | **필수(불변 코어)** |
+| Backend Admin | `business-core` | user·auth·code·menu·program·organization·log·system 등 관리 도메인 | **필수** |
+| Backend App | `business-app` | 프로젝트 고유/앱 도메인(informalsanction·operation·memoreport 등) | **선택(삭제·교체 대상)** |
+| Web Runtime | `api-server` | Controller·Security·Flyway·WebSocket·Batch | 필수 |
+| Frontend | `frontend` | Next.js 16 App Router | 필수(화면은 선택 삭제) |
+
+> 의존 방향: `foundation ← business-core ← business-app ← api-server` (비순환 단방향, ArchUnit 강제).
+
+---
+
+## 1. 사전 요구사항
+
+- **JDK 21**, **Node ≥ 20 + pnpm**, **Docker**(로컬 DB), **PowerShell**(Windows) 또는 bash.
+- Gradle/wrapper는 저장소에 포함(`./gradlew`).
+
+---
+
+## 2. 복제 & 리브랜딩
+
+```powershell
+# 1) 저장소 복제
+git clone <this-repo> my-platform && cd my-platform
+
+# 2) 패키지·프로젝트명 리브랜딩 (먼저 -DryRun 으로 영향 범위 확인!)
+./scripts/rename-project.ps1 -NewPackage "com.mycompany" -NewProjectName "my-platform" -DryRun
+./scripts/rename-project.ps1 -NewPackage "com.mycompany" -NewProjectName "my-platform"
+
+# 3) 리브랜딩 후 컴파일 무결성 확인
+./gradlew clean compileJava compileTestJava
+```
+
+> `rename-project.ps1`은 `nuri.*` 패키지·`group`·`rootProject.name`·로깅/메트릭 태그를 일괄 치환한다. **반드시 `-DryRun` 선확인** 후 실행하고, 완료 후 컴파일로 검증한다.
+
+---
+
+## 3. 환경 부트스트랩 (시크릿 · DB)
+ 
+### 3.1 원클릭 부트스트랩
+이 저장소는 환경변수 복제, 로컬 DB 구동, 패키지 설치를 한 번에 끝내주는 원클릭 부트스트랩을 지원합니다.
+```bash
+make bootstrap
+# 또는 (Windows PowerShell)
+powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
+```
+
+### 3.2 필수 시크릿 (미설정 시 운영 기동 실패 = fail-fast)
+ 
+| 환경변수 | 용도 | 비고 |
+|---|---|---|
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL 접속 | 운영은 기본값 없음(강제 주입) |
+| `JWT_SECRET` | JWT 서명키 | 고엔트로피 값 필수 |
+| `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
+| `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
+ 
+> 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
+ 
+### 3.3 로컬 DB 기동 (수동 설정 시)
+ 
+```bash
+docker compose up -d db     # postgres:17 (docker-compose.yml)
+```
+ 
+> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면, 백엔드 서버 기동 시 `V2_0` baseline을 시작으로 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)가 자동으로 마이그레이션 및 로드됩니다. 별도의 수동 복원이나 SQL 실행이 필요하지 않습니다.
+>
+> ⚠ **단, 로그인 가능한 관리자 *계정*은 시드되지 않습니다.** V2_2 는 `ROLE_ADMIN` 권한/메뉴 구조만 넣고 `tb_user_info` 행은 생성하지 않습니다(계정 시드는 별도 승인·런타임 검증이 필요한 보류 항목). 최초 계정은 회원가입 플로우 또는 수동 INSERT 로 만드십시오.
+
+---
+
+## 4. 기동 & 검증
+
+```bash
+# 개발 서버(백엔드+프론트 동시)
+npm run dev              # = concurrently(API bootRun + pnpm -C frontend dev)
+
+# 개별
+npm run backend          # gradlew :api-server:bootRun
+pnpm -C frontend dev
+```
+
+컴파일·타입 게이트(§0.6 HARD):
+
+```bash
+./gradlew compileJava compileTestJava     # 백엔드 컴파일 무결성
+npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --noEmit
+```
+
+---
+
+## 5. 커스터마이징
+
+### 5.1 프로젝트 고유 기능 삭제
+
+```powershell
+# 삭제 대상 도메인의 BE(도메인/서비스/리포/API)·FE(app/services/types) 경로를 일괄 제거
+./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun   # 먼저 확인
+./scripts/delete-domain.ps1 -DomainName "informalsanction"
+```
+
+> 삭제 대상 후보(business-app)와 필수 유지(business-core)의 분류는 [assessment §7 부록](../02-architecture/framework-reusability-assessment.md) 표를 기준으로 한다. 삭제 후 반드시 `clean compileJava compileTestJava`로 회귀 확인.
+> FE 라우트는 문자열 URL로만 참조되어 tsc/build가 누락을 못 잡으므로(과거 오삭제 이력), `frontend/src/config/project-modules.ts` 매니페스트도 함께 정리한다.
+
+### 5.2 신규 도메인 추가(스캐폴드)
+
+```powershell
+./scripts/generate-domain.ps1 -DomainName "product" -FieldName "title"
+```
+
+> `business-app`에 Entity(`BaseTimeEntity` 상속)·DTO·Service·Repository·API 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장. 제네릭 CRUD가 필요하면 `business-core`의 `BaseCrudController`/`BaseCrudService`를 상속한다.
+
+---
+
+## 6. ⚠ 알려진 제약 (반드시 숙지 — 프레임워크화 진행 중)
+
+프레임워크化가 **대부분 진척**됐다. 아래는 파생 프로젝트 착수 전 인지해야 할 현황과 **설계 결정(2026-07-11)**이다.
+
+### 6.1 빈 DB 부트스트랩 — 해소 (2026-07-11)
+- 레거시 `V1.x` 델타를 제거하고 **`V2_0__baseline.sql`(101 테이블) + `V2_1`(메타표준) + `V2_2`(admin 시드) + `R__seed_framework`** 로 재구성했다.
+- **Docker 빈 Postgres 17에 `V2_0→V2_1→V2_2→R__` 전체를 `ON_ERROR_STOP=1`로 클린 적용 실증**(문법·FK 정합). 빈 DB 부트스트랩 가능.
+- 남은 확인: 실 `bootRun`의 Hibernate `ddl-auto:validate` 무드리프트(92 엔티티 ↔ 101 테이블)는 라이브 기동 시 최종 확인 권장.
+
+### 6.2 RBAC 인가 — 하이브리드 (설계 결정)
+- **결정: 하이브리드 모델 유지.** 인가는 `@PreAuthorize` + `AuthorityConstants`로 중앙화된 role 리터럴 + DB(`tb_menu_crt_dtl`) 메뉴 가시성의 조합이다.
+- **완전 DB 주도 런타임 인가(경로→권한 AuthorizationManager)는 의도적 보류** — 단일 SI 규모에 과설계로 판단. 확장 지점은 열려 있다.
+
+### 6.3 멀티테넌시 — 단일 테넌트 (설계 결정)
+- **결정: 이 프레임워크는 단일 테넌트(single-tenant)를 전제한다.** 행-레벨 다기관 격리(`@TenantId` 등)는 **범위 밖**이며 결함(gap)이 아니다. 다기관 SI가 필요하면 파생 프로젝트에서 별도 도입한다.
+
+### 6.4 브랜딩 부분 토큰화
+- 브랜딩 토큰화가 대부분 반영(커밋 `7f2958179`)됐으나 일부 admin 화면에 `slate-*`/`gray-*` 잔존. 브랜드 색 완전 교체는 잔여 컴포넌트 치환 필요.
+
+### 6.5 진행 중 (프레임워크化 확장, 2026-07-11 결정)
+- **생산성 전면화**: MapStruct + 제네릭 CRUD를 **기존 도메인까지 전면 마이그레이션** 진행 중(수기 `from()`·복붙 CRUD 제거).
+- **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
+- 도입 완료: i18n `next-intl`(seam + 로케일 카탈로그 `messages/{ko,en}.json`), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화.
+
+---
+
+## 7. 품질 게이트 (완료 전 필수)
+
+| 도메인 | 명령 | 근거 |
+|---|---|---|
+| Backend 컴파일 | `./gradlew compileJava compileTestJava` | §0.6 HARD |
+| Backend 부팅 | `./gradlew :api-server:test --tests "*SecurityAuthAnnotationLinterTest"` | 컨텍스트 로드 실증 |
+| Frontend 타입 | `cd frontend && npx tsc --noEmit` | §0.6 HARD |
+| 커버리지 | `make coverage` / `npm run test:coverage` | JaCoCo |
+| 보안 | `/security-review`(수동) + gitleaks pre-commit | — |
+
+---
+*Last Updated: 2026-07-11 (Claude Code — 온보딩 런북 신설. 실측 스크립트/명령 기준, 미결 제약 명시.)*

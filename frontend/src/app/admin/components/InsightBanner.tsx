@@ -76,7 +76,7 @@ export const InsightBanner: React.FC = () => {
  case 'CRITICAL': return "from-rose-500/10 to-transparent border-rose-200 text-rose-700";
  case 'WARNING': return "from-amber-500/10 to-transparent border-amber-200 text-amber-800";
  case 'INFO': return "from-primary/10 to-transparent border-primary/20 text-primary";
- default: return "from-slate-500/10 to-transparent border-slate-200 text-slate-700";
+ default: return "from-slate-500/10 to-transparent border-border text-foreground";
  }
  };
 
@@ -109,7 +109,7 @@ export const InsightBanner: React.FC = () => {
  <div className="w-16 h-11 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
  <Sparkles size={32} className="animate-pulse" />
  </div>
- <div className="absolute -inset-4 bg-primary/20 rounded-lg blur-2xl animate-spin-slow opacity-40" />
+ <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-spin-slow opacity-40" />
  </div>
 
  {/* Message Stream */}
@@ -119,7 +119,7 @@ export const InsightBanner: React.FC = () => {
  {getIcon(activeInsight.type)}
  AI_INSIGHT_ENGINE
  </div>
- <div className="w-1.5 h-1.5 rounded-lg bg-current animate-ping" />
+ <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
  <span className="text-xs font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
  </div>
  
@@ -132,7 +132,7 @@ export const InsightBanner: React.FC = () => {
  transition={{ duration: 0.6, ease: "circOut" }}
  className="space-y-4"
  >
- <p className="text-2xl font-bold tracking-tighter text-slate-900 leading-tight line-clamp-2 text-left">
+ <p className="text-2xl font-bold tracking-tighter text-foreground leading-tight line-clamp-2 text-left">
  {activeInsight.message}
  </p>
  
@@ -158,13 +158,13 @@ export const InsightBanner: React.FC = () => {
  <div 
  key={idx} 
  className={cn(
- "w-2 h-2 rounded-lg transition-all duration-500",
+ "w-2 h-2 rounded-full transition-all duration-500",
  idx === currentIndex ? "w-6 bg-slate-900" : "bg-slate-200"
  )} 
  />
  ))}
  </div>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border/60 text-muted-foreground hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
  <Maximize2 size={16} />
  </Button>
  </div>

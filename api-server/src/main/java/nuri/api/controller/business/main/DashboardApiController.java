@@ -1,17 +1,16 @@
 package nuri.api.controller.business.main;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.service.board.EgovBoardService;
 import nuri.business.service.board.dto.BoardDto;
-import nuri.business.service.informalsanction.InformalSanctionService;
+import nuri.foundation.core.dashboard.DashboardItemProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,13 +30,13 @@ import java.util.Map;
 public class DashboardApiController {
 
     private final EgovBoardService boardService;
-    private final InformalSanctionService approvalService;
+    private final List<DashboardItemProvider> dashboardItemProviders;
 
     @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(ErrorCode.UNAUTHORIZED, "User not authenticated"));
+            return ResponseEntity.status(401).body(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, "User not authenticated"));
         }
 
         String userId = userDetails.getUsername();
@@ -62,13 +61,13 @@ public class DashboardApiController {
             result.put("notiList", List.of());
         }
 
-        // 3. 결재 대기 건수 (전자결재)
-        try {
-            long pendingApprovalCount = approvalService.getReceivedInformalSanctionList(userId, Pageable.unpaged()).getTotalElements();
-            result.put("pendingApprovalCount", pendingApprovalCount);
-        } catch (Exception e) {
-            log.error("Failed to fetch pending approval count", e);
-            result.put("pendingApprovalCount", 0L);
+        // 3. 결재 대기 건수 및 동적 추가 위젯 데이터 수집
+        for (DashboardItemProvider provider : dashboardItemProviders) {
+            try {
+                provider.provideDashboardData(userId, result);
+            } catch (Exception e) {
+                log.error("Failed to fetch dashboard data from provider: {}", provider.getClass().getSimpleName(), e);
+            }
         }
 
         return ResponseEntity.ok(ApiResponse.success(result));

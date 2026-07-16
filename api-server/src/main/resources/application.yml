@@ -24,21 +24,15 @@ spring:
       mode: never
 
   datasource:
-    # Supabase connection (Commented)
-    # url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # jdbc-url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-    # username: postgres.kmtcbkxvrbnfijvbdsrx
-    # password: s5isI0KE48Bd9kD1
     
-    # Oracle Cloud connection
-    url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
-    jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    # Oracle Cloud connection (Use environment variables, default to local localhost)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
     username: ${DB_USERNAME:egov}
     password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
     hikari:
-      # jdbc-url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0
-      jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
       maximum-pool-size: 20
       minimum-idle: 5
       idle-timeout: 300000
@@ -75,12 +69,16 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 0
+    # 무이력 비어있지-않은 DB 는 2.1 로 baseline → V2_0/V2_1 스킵(중복 적재 방지). 빈 DB 는 무영향(전량 적용).
+    baseline-version: 2.1
     locations: classpath:db/migration
 
 
 jwt:
-  secret: ${JWT_SECRET:4s3cr3tK3yF0rJWT51gn1ngMu5tB3L0ngEn0ughT0M33tTh3R3qu1r3m3nt5!}
+  # [보안 C1] JWT 서명 키 — algorithmKey와 동일 관례: base는 dev-safe 기본값(dev/local/e2e 프로파일과 동일 값),
+  # 운영은 application-prod.yml에서 무기본값(${JWT_SECRET})으로 재선언해 미설정 시 기동 실패(fail-fast)시킨다.
+  # (빈 기본값 ${JWT_SECRET:}는 base=default 프로파일 부팅[npm run dev]까지 JwtTokenProvider.init에서 죽이므로 지양)
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
 
 logging:
   level:
@@ -147,3 +145,9 @@ Globals:
 # 운영 환경은 application-prod.yml에서 재정의
 cors:
   allowed-origins: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
+
+security:
+  # [Phase2 수정] @Value("${security.whitelist}") List<String> 는 YAML 시퀀스를 바인딩하지 못한다
+  # (Spring 이 인덱스 프로퍼티 security.whitelist[0]... 로 저장 → 비인덱스 placeholder 미해결).
+  # 정상 동작하는 cors.allowed-origins 와 동일하게 CSV 문자열로 정의한다.
+  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup,/api/v1/users/check-id,/actuator/health"

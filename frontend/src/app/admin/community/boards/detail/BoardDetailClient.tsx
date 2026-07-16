@@ -8,7 +8,7 @@ import {
   Download,
   Calendar, Eye, User,
   FileText, Share2, Quote,
-  Package, Plus
+  Package, Plus, ThumbsUp
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
 import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import CommentSection from '@/components/features/comment/CommentSection';
@@ -63,10 +64,27 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     setMounted(true);
   }, []);
 
+  // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
+  const [likeDelta, setLikeDelta] = useState(0);
+  const [liking, setLiking] = useState(false);
+  const handleLike = async () => {
+    if (liking || !bbsId || !pstId) return;
+    setLiking(true);
+    setLikeDelta((d) => d + 1);
+    try {
+      await boardUserService.likePost(bbsId, Number(pstId));
+    } catch {
+      setLikeDelta((d) => d - 1);
+      toast('추천 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLiking(false);
+    }
+  };
+
   if (!mounted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-        <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-lg animate-spin" />
+        <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">Initializing Knowledge Node...</p>
       </div>
     );
@@ -91,7 +109,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-primary/5 to-transparent -z-10 blur-[100px] opacity-50" />
 
       {/* --- Action Header --- */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-2 border-slate-100 pb-16 relative">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-2 border-border pb-16 relative">
         <div className="space-y-8 relative z-10">
           <motion.div
             initial={{ x: -20, opacity: 0 }}
@@ -100,10 +118,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <Button
               variant="ghost"
               onClick={() => router.back()}
-              className="group px-0 hover:bg-transparent text-slate-400 hover:text-primary transition-colors flex items-center gap-4"
+              className="group px-0 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors flex items-center gap-4"
               aria-label="뒤로 가기"
             >
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:shadow-md transition-all">
+              <div className="p-2 bg-white rounded-xl shadow-sm border border-border group-hover:shadow-md transition-all">
                 <ArrowLeft className="group-hover:-translate-x-1 transition-transform" size={20} />
               </div>
               <span className="text-xs font-black tracking-[0.4em] uppercase">Return to Hub</span>
@@ -127,7 +145,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase max-w-4xl"
+              className="text-6xl md:text-7xl font-black text-foreground tracking-tighter leading-[0.85] uppercase max-w-4xl"
             >
               {article.pstTtl || (article as any).knoNm}
             </motion.h1>
@@ -142,19 +160,28 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         >
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&pstId=${pstId}`)}
-            className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstId=${pstId}`)}
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
             <Edit3 size={20} className="text-primary" /> Edit Node
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
-            className="h-14 px-10 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
             <Plus size={20} className="text-primary" /> Fork Thread
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleLike}
+            disabled={liking}
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            aria-label="게시글 추천"
+          >
+            <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
           </Button>
           <form action={async (formData) => {
             if(!confirm('정말로 이 지식 노드를 삭제하시겠습니까?')) return;
@@ -162,7 +189,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             if (res.success) {
               toast('지식 노드가 성공적으로 제거되었습니다.', 'success');
               queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-              router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
+              router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
             }
           }}>
             <input type="hidden" name="bbsId" value={bbsId ?? ""} />
@@ -219,19 +246,19 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <div
               className={cn(
                 "prose prose-2xl dark:prose-invert prose-slate max-w-none transition-all duration-700",
-                tmpltId === 'TMPLT_HUB' ? "prose-p:text-slate-900 font-bold" : "text-slate-800",
+                tmpltId === 'TMPLT_HUB' ? "prose-p:text-foreground font-bold" : "text-foreground",
                 "font-medium leading-[1.7] tracking-tight",
-                "prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:text-slate-900",
+                "prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:text-foreground",
                 "prose-p:my-12",
-                "prose-blockquote:border-l-[8px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-14 prose-blockquote:py-12 prose-blockquote:rounded-3xl prose-blockquote:not-italic prose-blockquote:text-slate-900 prose-blockquote:font-black",
-                "prose-code:bg-slate-100 prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-slate-900 prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
+                "prose-blockquote:border-l-[8px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-14 prose-blockquote:py-12 prose-blockquote:rounded-3xl prose-blockquote:not-italic prose-blockquote:text-foreground prose-blockquote:font-black",
+                "prose-code:bg-muted prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-slate-900 prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
               )}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || (article as any).knoCn || '') }}
             />
 
             <div className="pt-32 flex items-center justify-center opacity-10">
               <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-              <div className="px-12"><FileText size={40} className="text-slate-400" /></div>
+              <div className="px-12"><FileText size={40} className="text-muted-foreground" /></div>
               <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
             </div>
           </div>
@@ -260,7 +287,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center justify-between p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file shadow-lg">
+              <div className="flex items-center justify-between p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-foreground transition-all cursor-pointer group/file shadow-lg">
                 <div className="flex items-center gap-5">
                   <div className="p-3 bg-primary/10 rounded-xl group-hover/file:bg-primary/20 transition-colors">
                     <FileText size={24} className="text-primary" />
@@ -298,12 +325,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 function MetaItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
     <div className="flex items-center gap-6 p-2 group cursor-default">
-      <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-primary shadow-inner border border-slate-100 transition-all group-hover:rotate-12 group-hover:scale-110 group-hover:bg-primary group-hover:text-white">
+      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-primary shadow-inner border border-border transition-all group-hover:rotate-12 group-hover:scale-110 group-hover:bg-primary group-hover:text-white">
         {icon}
       </div>
       <div className="space-y-1.5">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] leading-none">{label}</p>
-        <p className="text-lg font-black text-slate-900 tracking-tighter leading-none">{value}</p>
+        <p className="text-lg font-black text-foreground tracking-tighter leading-none">{value}</p>
       </div>
     </div>
   );

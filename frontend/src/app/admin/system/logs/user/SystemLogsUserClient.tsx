@@ -32,7 +32,7 @@ const SystemLogsUserClient = () => {
         {
             header: '발생일자',
             accessor: (item: UserLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
                     {item.occrrncDe || '-'}
                 </div>
@@ -44,7 +44,7 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
-                    <span className="font-bold text-slate-700 tracking-tight text-left">{item.svcNm}</span>
+                    <span className="font-bold text-foreground tracking-tight text-left">{item.svcNm}</span>
                 </div>
             )
         },
@@ -52,7 +52,7 @@ const SystemLogsUserClient = () => {
             header: '메소드명',
             accessor: (item: UserLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-xs text-slate-600">
+                    <code className="px-2 py-1 bg-muted rounded border font-mono text-xs text-muted-foreground">
                         {item.methodNm}
                     </code>
                 </div>
@@ -62,7 +62,7 @@ const SystemLogsUserClient = () => {
             header: '요청자ID',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-lg w-fit shadow-sm">
-                    <span className="text-xs font-bold text-slate-700">{item.rqesterId}</span>
+                    <span className="text-xs font-bold text-foreground">{item.rqesterId}</span>
                 </div>
             ),
             className: 'w-40'

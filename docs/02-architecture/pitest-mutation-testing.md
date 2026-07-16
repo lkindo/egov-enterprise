@@ -104,7 +104,7 @@ $env:PIT_TARGET_TESTS="nuri.foundation.domain.code.CommonCodeTest"
 ### 4.4 STRICT_MUTATION 강제 통과 모드 기동 (Mutation Score 85% — 헌법 제16조 80% 하한 상회, CI 파이프라인)
 ```powershell
 $env:STRICT_MUTATION="true"
-./gradlew :business-suite:pitest
+./gradlew :business-core:pitest
 ```
 
 ---

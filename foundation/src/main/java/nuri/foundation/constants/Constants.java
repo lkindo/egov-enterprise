@@ -37,13 +37,12 @@ public final class Constants {
         public static final String GUEST_ROLE = "GUEST";
         public static final String USER_PREFIX = "USR_";
         public static final String MBER_PREFIX = "MBER_";
-        public static final String INFRML_PREFIX = "INFRML_";
         public static final int UUID_LENGTH = 16;
         public static final String USRCNFRM_PREFIX = "USRCNFRM_";
         public static final String SMS_PREFIX = "SMS_";
         public static final String MAIL_PREFIX = "MAIL_";
         // [H3] 절단 UUID 엔트로피 상향: 10(40bit)→13(52bit)으로 충돌 임계를 약 130만→9400만건으로 확대.
-        // 상한 13은 이 값을 쓰는 생성기 중 최장 접두사 INFRML_(7자) + varchar(20) PK 컬럼 제약(7+13=20)에서 도출.
+        // 상한 13은 이 값을 쓰는 생성기 중 최장 접두사(7자) + varchar(20) PK 컬럼 제약(7+13=20)에서 도출.
         // (근본적 무충돌은 시퀀스 기반 EgovIdGnrConfig 또는 unique 위반 재시도 필요 — 별도 개선 대상)
         public static final int ESNTL_ID_UUID_LENGTH = 13;
     }

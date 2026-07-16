@@ -2,7 +2,7 @@ package nuri.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.user.EgovUserService;
 import nuri.business.service.user.dto.*;
 import nuri.business.test.BaseControllerTest;
@@ -62,6 +62,18 @@ public class UserApiControllerTest extends BaseControllerTest {
         };
     }
 
+    /**
+     * 요청 본문 JSON 생성 헬퍼. UserDto 의 비밀번호 계열 필드는 응답 노출 차단(@JsonProperty WRITE_ONLY)으로
+     * 직렬화 시 제거되므로, 요청(write) 검증 테스트에서는 명시적으로 다시 실어준다.
+     */
+    private String toUserRequestJson(UserDto dto) throws Exception {
+        com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.valueToTree(dto);
+        if (dto.pswd() != null) node.put("pswd", dto.pswd());
+        if (dto.pswdHint() != null) node.put("pswdHint", dto.pswdHint());
+        if (dto.pswdCrans() != null) node.put("pswdCrans", dto.pswdCrans());
+        return objectMapper.writeValueAsString(node);
+    }
+
     @Test
     @DisplayName("내 프로필 조회 성공")
     void getMe() throws Exception {
@@ -90,7 +102,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(toUserRequestJson(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -177,7 +189,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(post("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(toUserRequestJson(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("newUser"));
     }
@@ -194,7 +206,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(toUserRequestJson(dto)))
                 .andExpect(status().isOk());
     }
 

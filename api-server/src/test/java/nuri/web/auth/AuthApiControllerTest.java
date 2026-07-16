@@ -1,11 +1,11 @@
 package nuri.web.auth;
 
 import nuri.api.controller.foundation.auth.AuthApiController;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,7 +68,7 @@ class AuthApiControllerTest {
         // Given
         when(authService.login(any(LoginRequest.class), anyString()))
                 .thenThrow(new nuri.foundation.core.exception.BusinessException(
-                        nuri.foundation.core.exception.ErrorCode.LOGIN_FAILED));
+                        nuri.foundation.core.exception.CommonErrorCode.LOGIN_FAILED));
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",

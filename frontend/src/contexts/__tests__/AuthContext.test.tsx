@@ -35,7 +35,7 @@ describe('AuthContext', () => {
     <AuthProvider>{children}</AuthProvider>
   );
 
-  it('로그인 성공 시 사용자 정보와 토큰을 저장해야 함', async () => {
+  it('로그인 성공 시 사용자 정보를 조회하여 세션을 설정해야 함', async () => {
     const mockUser = { id: 'test', name: 'Test User', role: 'USER' };
     const mockLoginResponse = { accessToken: 'mock-token', role: 'USER' };
 
@@ -49,14 +49,12 @@ describe('AuthContext', () => {
     });
 
     expect(authService.login).toHaveBeenCalled();
-    expect(localStorage.getItem('accessToken')).toBe('mock-token');
     await waitFor(() => {
       expect(result.current.user).toEqual(mockUser);
     });
   });
 
-  it('로그아웃 시 사용자 정보와 토큰을 제거해야 함', async () => {
-    localStorage.setItem('accessToken', 'mock-token');
+  it('로그아웃 시 사용자 세션 정보가 비워져야 함', async () => {
     (authService.logout as any).mockResolvedValue({});
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -66,12 +64,10 @@ describe('AuthContext', () => {
     });
 
     expect(authService.logout).toHaveBeenCalled();
-    expect(localStorage.getItem('accessToken')).toBeNull();
     expect(result.current.user).toBeNull();
   });
 
-  it('초기화 시 토큰이 있으면 사용자 정보를 확인해야 함', async () => {
-    localStorage.setItem('accessToken', 'mock-token');
+  it('초기화 시 사용자 정보를 조회하여 세션 유지를 확인해야 함', async () => {
     const mockUser = { id: 'test', name: 'Test User' };
     (authService.getCurrentUser as any).mockResolvedValue(mockUser);
 

@@ -14,6 +14,13 @@ if [ -f frontend/package.json ]; then
   echo "  → frontend: npx tsc --noEmit"
   ( cd frontend && npx tsc --noEmit ) \
     || { echo "❌ TypeScript 타입 컴파일 실패 (GEMINI.md §0.6)"; exit 1; }
+
+  # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합.
+  # CI(ci.yml)에도 있으나 CI 과금차단 상태라 로컬 pre-push 가 사실상 유일 관문 → 여기서도 강제.
+  # 커밋된 api-docs.json 기반(오프라인·결정적)이라 백엔드 재빌드 불요.
+  echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
+  ( cd frontend && npm run codegen:verify && npm run codegen:verify:zod ) \
+    || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
 fi
 
-echo "[pre-push] ✅ 컴파일 게이트 통과"
+echo "[pre-push] ✅ 컴파일 + 계약 게이트 통과"

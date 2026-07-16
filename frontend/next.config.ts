@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
   cacheComponents: true,
@@ -38,11 +41,45 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
+            // [csp-01] 브라우저가 동일 출처(same-origin) 프록시로 통신 → connect-src를 'self' + 스킴 전용 WS(dev HMR·SockJS /ws)로 축소
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 ws://localhost:8080 ws://127.0.0.1:8080 wss://localhost:8080 wss://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
           },
         ],
       },
+    ];
+  },
+  async redirects() {
+    // 레거시 camelCase 게시판 라우트 → kebab-case 정규 경로 (기존 북마크/딥링크 보존)
+    return [
+      {
+        source: '/admin/community/boards/selectBoardList',
+        destination: '/admin/community/boards/select-board-list',
+        permanent: true,
+      },
+      {
+        source: '/admin/community/boards/insertBoardArticle',
+        destination: '/admin/community/boards/insert-board-article',
+        permanent: true,
+      },
+      // (nav-07) selectBoardArticle/:id* → select-board-article/:id* redirect 제거:
+      // 목적지 라우트(select-board-article/[id])가 死라우트로 삭제됨(레거시 source도 inbound 0건).
+      // 통합 허브(탭)로 이관된 기능의 orphan 독립 라우트 → 메뉴가 선언한 정식 목적지로 정합
+      // (메뉴 modern_route = /admin/survey/hub?tab=*, /admin/system/monitoring/hub?tab=* 기준)
+      { source: '/admin/survey/manage', destination: '/admin/survey/hub?tab=manage', permanent: false },
+      { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions', permanent: false },
+      { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats', permanent: false },
+      { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=items', permanent: false },
+      { source: '/admin/survey/respondents', destination: '/admin/survey/hub?tab=respondents', permanent: false },
+      { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates', permanent: false },
+      { source: '/admin/observability', destination: '/admin/system/monitoring/hub?tab=observability', permanent: false },
+      { source: '/admin/security/audit', destination: '/admin/system/monitoring/hub?tab=security', permanent: false },
+      { source: '/admin/system/audit', destination: '/admin/system/monitoring/hub?tab=system', permanent: false },
+      { source: '/admin/security/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      { source: '/admin/user/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      // 경로 중복(정식 메뉴 타겟으로 통합)
+      { source: '/admin/sanctn/workflow', destination: '/admin/workflow', permanent: false },
+      { source: '/cop/sms/selectSmsList', destination: '/admin/uss/ion/sms', permanent: false },
     ];
   },
   async rewrites() {
@@ -83,4 +120,4 @@ const bundleAnalyzerConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })(nextConfig);
 
-export default bundleAnalyzerConfig;
+export default withNextIntl(bundleAnalyzerConfig);

@@ -23,51 +23,6 @@ public class EgovIdGnrConfig {
         this.dataSource = dataSource;
     }
 
-    // ========== 쪽지 관리 ID 생성 (uss.ion.nts/ntr/ntm) ==========
-    @Bean(name = "egovNoteIdGnrService")
-    public EgovIdGnrService egovNoteIdGnrService() {
-        return createIdGnrService("NOTE_ID", "NOTE_", 10);
-    }
-
-    @Bean(name = "egovNoteTrnsmitIdGnrService")
-    public EgovIdGnrService egovNoteTrnsmitIdGnrService() {
-        return createIdGnrService("NOTE_TRNSMIT_ID", "NOTETR_", 10);
-    }
-
-    @Bean(name = "egovNoteRecptnIdGnrService")
-    public EgovIdGnrService egovNoteRecptnIdGnrService() {
-        return createIdGnrService("NOTE_RECPTN_ID", "NOTERC_", 10);
-    }
-
-    // ========== 행사/이벤트 관리 ID 생성 (uss.ion.evt) ==========
-    @Bean(name = "egovEventIdGnrService")
-    public EgovIdGnrService egovEventIdGnrService() {
-        return createIdGnrService("EVENT_ID", "EVENT_", 10);
-    }
-
-    @Bean(name = "egovEventCmpgnIdGnrService")
-    public EgovIdGnrService egovEventCmpgnIdGnrService() {
-        return createIdGnrService("EVENT_CMPGN_ID", "ECC_", 10);
-    }
-
-    // ========== 포상 관리 ID 생성 (uss.ion.rwd) ==========
-    @Bean(name = "egovRwardIdGnrService")
-    public EgovIdGnrService egovRwardIdGnrService() {
-        return createIdGnrService("RWARD_ID", "RWARD_", 10);
-    }
-
-    // ========== 기념일 관리 ID 생성 (uss.ion.ans) ==========
-    @Bean(name = "egovAnnvrsryIdGnrService")
-    public EgovIdGnrService egovAnnvrsryIdGnrService() {
-        return createIdGnrService("ANNVRSRY_ID", "ANN_", 10);
-    }
-
-    // ========== 경조사 관리 ID 생성 (uss.ion.ctn) ==========
-    @Bean(name = "egovCtsnnIdGnrService")
-    public EgovIdGnrService egovCtsnnIdGnrService() {
-        return createIdGnrService("CTSNN_ID", "CTSNN_", 10);
-    }
-
     // ========== 휴일 관리 ID 생성 (sym.cal) ==========
     @Bean(name = "egovRestDeIdGnrService")
     public EgovIdGnrService egovRestDeIdGnrService() {
@@ -143,11 +98,6 @@ public class EgovIdGnrConfig {
         return createIdGnrService("CMMNTY_ID", "CMMNTY_", 13);
     }
 
-    @Bean(name = "egovLeaderSchdlIdGnrService")
-    public EgovIdGnrService egovLeaderSchdlIdGnrService() {
-        return createIdGnrService("ids", "SCHDL_", 20);
-    }
-
     @Bean(name = "egovMenuManageIdGnrService")
     public EgovIdGnrService egovMenuManageIdGnrService() {
         return createIdGnrService("MENU_ID", "MENU_", 10);
@@ -161,20 +111,5 @@ public class EgovIdGnrConfig {
     @Bean(name = "reprtStatsIdGnrService")
     public EgovIdGnrService reprtStatsIdGnrService() {
         return createIdGnrService("REPRT_STATS_ID", "REPRT_", 10);
-    }
-
-    @Bean(name = "egovScrapIdGnrService")
-    public EgovIdGnrService egovScrapIdGnrService() {
-        return createIdGnrService("ids", "SCRAP_", 14);
-    }
-
-    @Bean(name = "egovMemoReportIdGnrService")
-    public EgovIdGnrService egovMemoReportIdGnrService() {
-        return createIdGnrService("ids", "MEMO_", 15);
-    }
-
-    @Bean(name = "egovPopupManageIdGnrService")
-    public EgovIdGnrService egovPopupManageIdGnrService() {
-        return createIdGnrService("ids", "POPUP_", 14);
     }
 }

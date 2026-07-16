@@ -46,21 +46,21 @@ export default function WorkspaceMyPage() {
   const columns: Column<any>[] = [
     {
       header: '번호',
-      accessor: (_, index) => <span className="font-mono text-xs font-bold text-slate-400">{(index! + 1).toString().padStart(2, '0')}</span>,
+      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
       className: 'w-20 text-center'
     },
     {
       header: '콘텐츠 명칭',
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">{item.cntntsNm}</span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">ID: {item.cntntsId}</span>
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.cntntsNm}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.cntntsId}</span>
         </div>
       )
     },
     {
       header: '연동 URL',
-      accessor: (item) => <span className="text-xs font-bold text-slate-500 font-mono tracking-tighter truncate max-w-xs block">{item.cntcUrl}</span>
+      accessor: (item) => <span className="text-xs font-bold text-muted-foreground font-mono tracking-tighter truncate max-w-xs block">{item.cntcUrl}</span>
     },
     {
       header: '상태',
@@ -69,7 +69,7 @@ export default function WorkspaceMyPage() {
           onClick={(e) => { e.stopPropagation(); toggleStatus(item); }}
           className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.cntntsUseYn === 'Y'
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-            : 'bg-slate-100 text-slate-400 border border-slate-200'
+            : 'bg-muted text-muted-foreground border border-border'
           }`}
         >
           {item.cntntsUseYn === 'Y' ? '활성' : '중단'}
@@ -81,8 +81,8 @@ export default function WorkspaceMyPage() {
       header: '관리',
       accessor: () => (
         <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-slate-100">
-            <MoreVertical size={16} className="text-slate-400" />
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+            <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
       ),
@@ -104,7 +104,7 @@ export default function WorkspaceMyPage() {
         icon={LayoutGrid}
         actions={
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm">
+            <Button variant="outline" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
               <RefreshCcw size={20} />
             </Button>
             <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
@@ -128,13 +128,13 @@ export default function WorkspaceMyPage() {
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <div className="relative group max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
               <Input
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                 placeholder="콘텐츠 명칭으로 검색.."
               />
             </div>

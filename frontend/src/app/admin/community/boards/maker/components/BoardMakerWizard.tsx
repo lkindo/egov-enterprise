@@ -117,7 +117,7 @@ const TEMPLATES = [
 const ROLES = [
  { id: 'ROLE_ADMIN', name: '시스템 관리자', icon: Lock, color: 'text-rose-500' },
  { id: 'ROLE_USER', name: '일반 임직원', icon: UserCircle, color: 'text-blue-500' },
- { id: 'ROLE_ANONYMOUS', name: '익명 사용자', icon: UserMinus, color: 'text-slate-400' },
+ { id: 'ROLE_ANONYMOUS', name: '익명 사용자', icon: UserMinus, color: 'text-muted-foreground' },
 ];
 
 const PERMISSIONS = [
@@ -159,7 +159,9 @@ export function BoardMakerWizard() {
  atchPsbltyFileQty: 3,
  atchPsbltyFileSz: 5242880, // 5MB
  bbsTypeCd: 'BBST01',
+ bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
+ useYn: 'Y',
  cmntyId: '',
  permissions: {
  'ROLE_ADMIN': ['list', 'read', 'write', 'comment'],
@@ -232,7 +234,7 @@ export function BoardMakerWizard() {
  upperMenuNo: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
  progrmFileNm: 'EgovBBSMaster',
- modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
+ modernRoute: `/admin/community/boards/select-board-list?bbsId=${bbsId}`,
  menuDc: `Auto-generated menu for board ${data.bbsTtl}`,
  useYn: 'N'
  } as any);
@@ -259,8 +261,8 @@ export function BoardMakerWizard() {
  <Check size={64} strokeWidth={4} />
  </div>
  <div className="space-y-4">
- <h2 className="text-5xl font-bold tracking-tighter text-slate-900 dark:text-white transition-colors">MISSION COMPLETE!</h2>
- <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed max-w-md mx-auto transition-colors">
+ <h2 className="text-5xl font-bold tracking-tighter text-foreground dark:text-white transition-colors">MISSION COMPLETE!</h2>
+ <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed max-w-md mx-auto transition-colors">
  게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
  </p>
  </div>
@@ -274,7 +276,7 @@ export function BoardMakerWizard() {
  <Button
  variant="ghost"
  onClick={() => window.location.reload()}
- className="h-11 rounded-lg text-slate-400 font-bold hover:text-primary transition-colors"
+ className="h-11 rounded-lg text-muted-foreground font-bold hover:text-primary transition-colors"
  >
  다른 게시판 추가하기
  </Button>
@@ -301,16 +303,16 @@ export function BoardMakerWizard() {
  "w-14 h-11 rounded-lg flex items-center justify-center transition-all duration-500 border-4",
  isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" :
  isCompleted ? "bg-green-500 border-green-500 text-white" :
- "bg-white border-slate-200 text-slate-400"
+ "bg-white border-border text-muted-foreground"
  )}
  >
  {isCompleted ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
  </div>
  <div className="text-center">
- <p className={cn("text-xs font-bold tracking-tighter", isActive ? "text-primary" : "text-slate-400")}>
+ <p className={cn("text-xs font-bold tracking-tighter", isActive ? "text-primary" : "text-muted-foreground")}>
  STEP 0{step.id}
  </p>
- <p className={cn("text-sm font-bold truncate max-w-[100px]", isActive ? "text-slate-900 dark:text-white" : "text-slate-400")}>
+ <p className={cn("text-sm font-bold truncate max-w-[100px]", isActive ? "text-foreground dark:text-white" : "text-muted-foreground")}>
  {step.title}
  </p>
  </div>
@@ -322,12 +324,12 @@ export function BoardMakerWizard() {
  {/* Main Content Card */}
  <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50">
  <form onSubmit={handleSubmit(onSubmit, (errors) => console.log('>>> [Validation Error] ', errors))}>
- <CardHeader className="bg-slate-50 dark:bg-slate-900 p-12 text-slate-900 dark:text-white relative border-b border-slate-100 dark:border-slate-800 transition-colors">
+ <CardHeader className="bg-muted dark:bg-slate-900 p-12 text-foreground dark:text-white relative border-b border-border dark:border-slate-800 transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <h3 className="text-4xl font-bold tracking-tighter text-left">
  {STEPS[currentStep - 1].title}
  </h3>
- <p className="text-slate-500 dark:text-slate-400 font-medium text-lg tracking-tight text-left transition-colors">
+ <p className="text-muted-foreground dark:text-muted-foreground font-medium text-lg tracking-tight text-left transition-colors">
  {STEPS[currentStep - 1].description}
  </p>
  </div>
@@ -349,7 +351,7 @@ export function BoardMakerWizard() {
  {currentStep === 1 && (
  <div className="space-y-10 text-left">
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsTtl" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
+ <Label htmlFor="bbsTtl" className="text-xl font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-primary rounded-lg inline-block" />
  게시판 명칭
  </Label>
@@ -359,7 +361,7 @@ export function BoardMakerWizard() {
  placeholder="예) 사내 소식 공유 게시판"
  className={cn(
  "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-white dark:bg-slate-950",
- errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-slate-200 dark:border-slate-800"
+ errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-border dark:border-slate-800"
  )}
  {...register('bbsTtl')}
  />
@@ -367,26 +369,26 @@ export function BoardMakerWizard() {
  </div>
 
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsExpln" className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
+ <Label htmlFor="bbsExpln" className="text-xl font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-slate-200 dark:bg-slate-700 rounded-lg inline-block" />
  게시판 소개
  </Label>
  <Textarea
  id="bbsExpln"
  placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
- className="min-h-[140px] text-lg rounded-lg border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
+ className="min-h-[140px] text-lg rounded-lg border-2 border-border dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
  {...register('bbsExpln')}
  />
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all text-left">
+ <div className="flex items-center justify-between p-8 rounded-lg border-2 border-slate-50 bg-muted/30 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
- <Label className="text-lg font-bold text-slate-800 flex items-center gap-2">
+ <Label className="text-lg font-bold text-foreground flex items-center gap-2">
  댓글 사용 여부
  <Info className="w-4 h-4 text-slate-300" />
  </Label>
- <p className="text-xs text-slate-400 font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
+ <p className="text-xs text-muted-foreground font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
  </div>
  <Switch
  checked={watch('ansPsbltyYn')}
@@ -395,13 +397,13 @@ export function BoardMakerWizard() {
  />
  </div>
 
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/10 group hover:border-primary/20 transition-all text-left">
+ <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border dark:border-slate-800 bg-muted/30 dark:bg-slate-900/10 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
- <Label className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
+ <Label className="text-lg font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
  파일 첨부 여부
- <Info className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+ <Info className="w-4 h-4 text-slate-300 dark:text-muted-foreground" />
  </Label>
- <p className="text-xs text-slate-400 font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
+ <p className="text-xs text-muted-foreground font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
  </div>
  <Switch
  checked={watch('fileAtchPsbltyYn')}
@@ -417,8 +419,8 @@ export function BoardMakerWizard() {
  <div className="flex flex-col lg:flex-row gap-12 text-left">
  <div className="flex-1 space-y-8 text-left">
  <div className="space-y-2 text-left">
- <h4 className="text-xl font-bold text-slate-800 tracking-tight text-left uppercase">Layout strategy select</h4>
- <p className="text-sm text-slate-400 font-bold tracking-tight text-left">비즈니스 목적에 부합하는 최적의 UI 디자인을 선택하세요.</p>
+ <h4 className="text-xl font-bold text-foreground tracking-tight text-left uppercase">Layout strategy select</h4>
+ <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">비즈니스 목적에 부합하는 최적의 UI 디자인을 선택하세요.</p>
  </div>
  <div className="grid grid-cols-1 gap-6">
  {TEMPLATES.map((tpl) => {
@@ -434,7 +436,7 @@ export function BoardMakerWizard() {
  }}
  className={cn(
  "group relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
- isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
+ isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-muted/30 hover:border-border"
  )}
  >
  <div className={cn(
@@ -445,17 +447,17 @@ export function BoardMakerWizard() {
  </div>
 
  <div className="flex-1 space-y-1 text-left">
- <h4 className="text-xl font-bold text-slate-800 tracking-tight text-left">
+ <h4 className="text-xl font-bold text-foreground tracking-tight text-left">
  {tpl.name}
  </h4>
- <p className="text-xs text-slate-500 font-bold leading-relaxed text-left">
+ <p className="text-xs text-muted-foreground font-bold leading-relaxed text-left">
  {tpl.description}
  </p>
  </div>
 
  <div className={cn(
  "w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all",
- isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
+ isSelected ? "bg-primary border-primary text-white" : "border-border text-transparent"
  )}>
  <Check size={16} strokeWidth={4} />
  </div>
@@ -463,7 +465,7 @@ export function BoardMakerWizard() {
  );
  })}
  </div>
- <div className="p-8 bg-slate-100 dark:bg-slate-950 rounded-lg text-slate-400 dark:text-white/40 font-mono text-xs tracking-widest leading-relaxed text-left border border-slate-200 dark:border-slate-800 transition-colors">
+ <div className="p-8 bg-muted dark:bg-slate-950 rounded-lg text-muted-foreground dark:text-white/40 font-mono text-xs tracking-widest leading-relaxed text-left border border-border dark:border-slate-800 transition-colors">
  디자인 최적화 활성 <br />
  UI 렌더링 모드: 고해상도 <br />
  템플릿 ID: {selectedTemplate}
@@ -472,7 +474,7 @@ export function BoardMakerWizard() {
 
  <div className="flex-1 hidden xl:block sticky top-0">
  <div className="space-y-4 mb-4">
- <h4 className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
+ <h4 className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
  </div>
  <BoardPreview
  tmpltId={selectedTemplate || 'TMPLT_HUB'}
@@ -485,14 +487,14 @@ export function BoardMakerWizard() {
 
  {currentStep === 3 && (
  <div className="space-y-8 text-left">
- <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
+ <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-inner bg-muted/30">
  <div className="overflow-x-auto">
  <table className="w-full min-w-[800px]">
  <thead>
  <tr className="bg-slate-900/5 border-b">
- <th className="p-8 text-left font-bold text-slate-400 text-sm tracking-widest uppercase">사용자 그룹 (Roles)</th>
+ <th className="p-8 text-left font-bold text-muted-foreground text-sm tracking-widest uppercase">사용자 그룹 (Roles)</th>
  {PERMISSIONS.map(p => (
- <th key={p.id} className="p-8 text-center font-bold text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
+ <th key={p.id} className="p-8 text-center font-bold text-muted-foreground text-sm tracking-widest uppercase">{p.name}</th>
  ))}
  </tr>
  </thead>
@@ -505,12 +507,12 @@ export function BoardMakerWizard() {
  <tr key={role.id} className="group hover:bg-white transition-colors">
  <td className="p-8">
  <div className="flex items-center gap-4 text-left">
- <div className={cn("p-3 rounded-lg bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
+ <div className={cn("p-3 rounded-lg bg-white shadow-sm border border-border shadow-inner-sm", role.color)}>
  <RoleIcon size={24} />
  </div>
  <div className="text-left">
- <p className="font-bold text-slate-800 text-lg text-left">{role.name}</p>
- <p className="text-xs text-slate-400 font-bold uppercase text-left">{role.id}</p>
+ <p className="font-bold text-foreground text-lg text-left">{role.name}</p>
+ <p className="text-xs text-muted-foreground font-bold uppercase text-left">{role.id}</p>
  </div>
  </div>
  </td>
@@ -524,7 +526,7 @@ export function BoardMakerWizard() {
  onCheckedChange={() => togglePermission(role.id, perm.id)}
  className={cn(
  "w-8 h-8 rounded-lg transition-all border-2",
- isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-slate-200"
+ isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-border"
  )}
  />
  </div>
@@ -543,7 +545,7 @@ export function BoardMakerWizard() {
  <Info className="w-8 h-8 text-amber-500 shrink-0" />
  <div className="text-left">
  <p className="font-bold text-amber-900 text-lg text-left">보안 정책 안내</p>
- <p className="text-sm text-slate-600 font-bold tracking-tight text-left">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. 익명 사용자에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
+ <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. 익명 사용자에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
  </div>
  </div>
  </div>
@@ -552,12 +554,12 @@ export function BoardMakerWizard() {
  {currentStep === 4 && (
  <div className="space-y-12 text-left">
  <div className="space-y-6 text-left">
- <Label className="text-xl font-bold text-slate-800 flex items-center gap-2">
+ <Label className="text-xl font-bold text-foreground flex items-center gap-2">
  <span className="w-1.5 h-6 bg-primary rounded-lg inline-block" />
  상위 메뉴 선택
  </Label>
  <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
- <SelectTrigger className="h-11 rounded-lg border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-bold shadow-inner-sm text-left">
+ <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted/50 px-8 text-xl font-bold shadow-inner-sm text-left">
  <SelectValue placeholder="상위 메뉴를 선택하세요" className="text-left" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -570,35 +572,35 @@ export function BoardMakerWizard() {
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
  <div className="space-y-4 text-left">
- <Label className="text-xl font-bold text-slate-800 flex items-center gap-2">
+ <Label className="text-xl font-bold text-foreground flex items-center gap-2">
  메뉴 명칭
  </Label>
  <Input
  placeholder="메뉴에 표시될 이름을 입력하세요"
- className="h-11 text-lg rounded-lg border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
+ className="h-11 text-lg rounded-lg border-2 border-border bg-muted/50 px-6 font-bold shadow-inner-sm text-left"
  {...register('menuNm')}
  />
  </div>
  <div className="space-y-4 text-left">
- <Label className="text-xl font-bold text-slate-800 flex items-center gap-2 text-left">
+ <Label className="text-xl font-bold text-foreground flex items-center gap-2 text-left">
  메뉴 순서
  </Label>
  <Input
  type="number"
- className="h-11 text-lg rounded-lg border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
+ className="h-11 text-lg rounded-lg border-2 border-border bg-muted/50 px-6 font-bold shadow-inner-sm text-left"
  {...register('menuOrdr', { valueAsNumber: true })}
  />
  </div>
  </div>
 
- <div className="p-10 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-none flex items-center justify-between group overflow-hidden relative text-left transition-colors">
+ <div className="p-10 rounded-lg bg-muted dark:bg-slate-900 text-foreground dark:text-white border border-border dark:border-none flex items-center justify-between group overflow-hidden relative text-left transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <p className="text-primary font-bold tracking-widest text-xs uppercase text-left transition-colors">Generated Path</p>
  <h5 className="text-2xl font-bold tracking-tight flex items-center gap-3 text-left transition-colors">
- /admin/community/boards/selectBoardList?bbsId=AUTO_GEN
- <ExternalLink size={20} className="text-slate-400 dark:text-slate-600" />
+ /admin/community/boards/select-board-list?bbsId=AUTO_GEN
+ <ExternalLink size={20} className="text-muted-foreground dark:text-muted-foreground" />
  </h5>
- <p className="text-slate-500 dark:text-slate-400 text-sm font-bold tracking-tight text-left transition-colors">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+ <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
  </div>
  <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700">
  <Rocket size={200} />
@@ -610,14 +612,14 @@ export function BoardMakerWizard() {
  </AnimatePresence>
  </CardContent>
 
- <CardFooter className="p-10 bg-slate-50/50 border-t flex justify-between items-center text-left">
+ <CardFooter className="p-10 bg-muted/50 border-t flex justify-between items-center text-left">
  <Button
  type="button"
  variant="ghost"
  size="lg"
  onClick={prevStep}
  disabled={currentStep === 1 || isSubmitting}
- className="h-11 px-10 rounded-lg font-bold text-slate-600 hover:bg-white hover:text-slate-950 transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
+ className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-white hover:text-slate-950 transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
  >
  <ChevronLeft className="w-6 h-6" /> 이전 단계
  </Button>
@@ -647,7 +649,7 @@ export function BoardMakerWizard() {
  </form>
  </Card>
 
- <p className="text-center text-slate-400 text-xs font-bold tracking-widest uppercase">
+ <p className="text-center text-muted-foreground text-xs font-bold tracking-widest uppercase">
  "마지막 클릭이 새로운 소통의 시작입니다" - Board Master Maker v1.0
  </p>
  </div>

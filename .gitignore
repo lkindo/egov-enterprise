@@ -55,10 +55,11 @@
 **/playwright/.auth/
 **/playwright-reports/
 
-# ----- Lock Files (Committed for consistency) -----
-# package-lock.json  - Committed
-# yarn.lock          - Committed
-# pnpm-lock.yaml     - Committed (primary)
+# ----- Lock Files (pnpm is the single standard) -----
+# pnpm-lock.yaml     - Committed (primary, SSOT)
+# npm/yarn lockfiles are ignored to prevent dual-lockfile drift (2026-07-11)
+**/package-lock.json
+**/yarn.lock
 
 # ----- Office Documents (Binary) -----
 *.xlsx
@@ -211,3 +212,10 @@ module-knowledge/
 
 # Database Dumps
 database/dumps/
+
+# 개인키/시크릿 — 리포지토리 커밋 금지 (2026-07-11 보안)
+*.key
+*.pem
+
+# graphify cache
+**/graphify-out/

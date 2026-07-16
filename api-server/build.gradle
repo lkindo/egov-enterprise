@@ -6,7 +6,8 @@ plugins {
 dependencies {
     // New 2-Tier Architecture Modules
     implementation project(':foundation')
-    implementation project(':business-suite')
+    implementation project(':business-core')
+    implementation project(':business-app')
 
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation libs.springdoc.openapi
@@ -44,7 +45,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation libs.h2
-    testImplementation testFixtures(project(':business-suite'))
+    testImplementation testFixtures(project(':business-core'))
+    testImplementation testFixtures(project(':business-app'))
     testRuntimeOnly libs.h2
     // ArchUnit (architecture tests — active)
     testImplementation libs.archunit.junit5

@@ -2,9 +2,9 @@ package nuri.api.controller.system;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
-import nuri.business.service.usermanagement.EgovDeptManageService;
-import nuri.business.service.usermanagement.dto.DeptManageDto;
+import nuri.foundation.core.response.PageResponse;
+import nuri.business.service.department.DeptManageService;
+import nuri.business.service.department.dto.DeptManageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize("hasRole('ADMIN')")
 public class DeptApiController {
 
-    private final EgovDeptManageService deptManageService;
+    private final DeptManageService deptManageService;
 
     @Operation(summary = "부서 목록 조회", description = "시스템 부서 목록을 페이징하여 조회합니다.")
     @GetMapping

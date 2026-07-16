@@ -2,7 +2,7 @@ package nuri.api.controller.business.lsm;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.schedule.EgovLeaderScheduleService;
 import nuri.business.service.schedule.dto.LeaderScheduleDto;
 import nuri.business.service.schedule.dto.LeaderStatusDto;
@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "LeaderSchedule", description = "간부 일정 관리 API")
@@ -41,6 +42,7 @@ public class LeaderScheduleApiController {
     }
 
     @Operation(summary = "간부 일정 등록", description = "새로운 간부 일정을 등록합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> insertLeaderSchedule(@Valid @RequestBody LeaderScheduleDto dto) {
         String id = leaderScheduleService.createLeaderSchedule("ADMIN", dto);
@@ -48,6 +50,7 @@ public class LeaderScheduleApiController {
     }
 
     @Operation(summary = "간부 일정 수정", description = "간부 일정 정보를 수정합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/{schdlId}")
     public ResponseEntity<ApiResponse<Void>> updateLeaderSchedule(
             @PathVariable String schdlId,
@@ -57,6 +60,7 @@ public class LeaderScheduleApiController {
     }
 
     @Operation(summary = "간부 일정 삭제", description = "간부 일정 정보를 삭제합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/{schdlId}")
     public ResponseEntity<ApiResponse<Void>> deleteLeaderSchedule(@PathVariable String schdlId) {
         leaderScheduleService.deleteLeaderSchedule(schdlId);

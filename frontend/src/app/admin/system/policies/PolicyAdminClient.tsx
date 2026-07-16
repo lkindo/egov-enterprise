@@ -106,7 +106,7 @@ export default function PolicyAdminClient() {
  },
  {
  header: '정책 제목',
- accessor: (item) => <span className="font-bold text-slate-700 text-left block">{item.plcyTtl}</span>
+ accessor: (item) => <span className="font-bold text-foreground text-left block">{item.plcyTtl}</span>
  },
  {
  header: '내용 요약',
@@ -190,7 +190,7 @@ export default function PolicyAdminClient() {
  <Input 
  {...field}
  placeholder="정책 제목을 입력하세요"
- className="h-11 rounded-lg border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-bold text-lg"
+ className="h-11 rounded-lg border-2 border-border/50 focus:border-primary/50 bg-muted/50 font-bold text-lg"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
@@ -217,7 +217,7 @@ export default function PolicyAdminClient() {
  />
  </div>
 
- <DialogFooter className="p-8 bg-slate-50 border-t border-border/50 flex items-center justify-between">
+ <DialogFooter className="p-8 bg-muted border-t border-border/50 flex items-center justify-between">
  <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
  * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
  </div>

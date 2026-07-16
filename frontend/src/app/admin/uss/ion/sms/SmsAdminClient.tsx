@@ -98,14 +98,14 @@ export default function SmsAdminClient({
       header: '발송 일시',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground border border-border shadow-inner">
             <Calendar size={16} />
           </div>
           <div className="flex flex-col text-left">
             <span className="font-mono font-bold text-foreground tracking-tighter leading-none">
               {item.trnsmitPnttm ? format(new Date(item.trnsmitPnttm), 'yyyy.MM.dd') : 'N/A'}
             </span>
-            <span className="text-xs font-bold text-slate-600 mt-1 tracking-widest opacity-100">
+            <span className="text-xs font-bold text-muted-foreground mt-1 tracking-widest opacity-100">
               {item.trnsmitPnttm ? format(new Date(item.trnsmitPnttm), 'HH:mm:ss') : 'WAITING'}
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function SmsAdminClient({
     {
       header: '메시지 내용',
       accessor: (item: SmsDto) => (
-        <div className="max-w-[450px] truncate font-bold text-slate-600 tracking-tight text-left">
+        <div className="max-w-[450px] truncate font-bold text-muted-foreground tracking-tight text-left">
           "{item.sndngCn}"
         </div>
       )
@@ -180,7 +180,7 @@ export default function SmsAdminClient({
           value={totalCount.toLocaleString()} 
           icon={<History size={26} />} 
           status="안정"
-          color="text-slate-900"
+          color="text-foreground"
         />
         <SummaryBlock 
           title="DELIVERY SUCCESS" 
@@ -208,7 +208,7 @@ export default function SmsAdminClient({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div className="text-left">
             <h3 className="text-2xl font-bold tracking-tighter uppercase leading-none text-left">전송 로그</h3>
-            <p className="text-xs font-bold text-slate-600 tracking-[0.3em] uppercase mt-2 opacity-100 text-left">메시지 출력 모니터링</p>
+            <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-100 text-left">메시지 출력 모니터링</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -217,7 +217,7 @@ export default function SmsAdminClient({
                 placeholder="검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 pl-12 pr-6 w-full md:w-[320px] bg-slate-50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
+                className="h-11 pl-12 pr-6 w-full md:w-[320px] bg-muted border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
               />
             </div>
           </div>
@@ -246,8 +246,8 @@ export default function SmsAdminClient({
                   <Send size={32} />
                 </div>
                 <div className="text-center space-y-2">
-                  <DialogTitle className="text-4xl font-bold text-slate-900 tracking-tighter leading-none uppercase">메시지 작성</DialogTitle>
-                  <DialogDescription className="text-xs font-bold tracking-[0.4em] uppercase opacity-100 text-slate-600">
+                  <DialogTitle className="text-4xl font-bold text-foreground tracking-tighter leading-none uppercase">메시지 작성</DialogTitle>
+                  <DialogDescription className="text-xs font-bold tracking-[0.4em] uppercase opacity-100 text-muted-foreground">
                     Outbound Message Configuration
                   </DialogDescription>
                 </div>
@@ -259,8 +259,8 @@ export default function SmsAdminClient({
                   name="rcptnTelno"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
-                      <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Target Terminal Number
                       </FormLabel>
                       <FormControl>
@@ -269,7 +269,7 @@ export default function SmsAdminClient({
                           <Input
                             {...field}
                             placeholder="010-0000-0000"
-                            className="h-11 pl-16 pr-8 rounded-lg border-none bg-slate-50 text-xl font-bold tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
+                            className="h-11 pl-16 pr-8 rounded-lg border-none bg-muted text-xl font-bold tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
                           />
                         </div>
                       </FormControl>
@@ -283,8 +283,8 @@ export default function SmsAdminClient({
                   name="sndngCn"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
-                      <FormLabel className="text-xs font-bold text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-lg" />
+                      <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Payload Content
                       </FormLabel>
                       <FormControl>
@@ -292,7 +292,7 @@ export default function SmsAdminClient({
                           <Textarea
                             {...field}
                             placeholder="메시지 내용을 입력하세요..."
-                            className="min-h-[180px] p-8 rounded-lg border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+                            className="min-h-[180px] p-8 rounded-lg border-none bg-muted text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
                           />
                         </div>
                       </FormControl>
@@ -307,7 +307,7 @@ export default function SmsAdminClient({
                   type="button"
                   variant="outline"
                   onClick={() => setIsSendOpen(false)}
-                  className="h-11 px-10 rounded-lg border-2 border-slate-100 font-bold text-xs tracking-widest uppercase hover:bg-slate-50 transition-all hover:border-slate-200"
+                  className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-widest uppercase hover:bg-muted transition-all hover:border-border"
                 >
                   Terminate
                 </Button>
@@ -332,14 +332,14 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
   return (
     <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white text-left", bg)}>
       <div className="flex justify-between items-start mb-10">
-        <div className={cn("w-14 h-11 rounded-lg bg-slate-50 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
+        <div className={cn("w-14 h-11 rounded-lg bg-muted flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
           {icon}
         </div>
         <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-xs font-bold tracking-widest shadow-sm" />
       </div>
       <div>
         <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none tabular-nums">{value}</h3>
-        <p className="text-xs font-bold text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
+        <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
       </div>
       <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale pointer-events-none">
         {React.cloneElement(icon, { size: 180 })}

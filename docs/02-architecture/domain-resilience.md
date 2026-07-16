@@ -56,8 +56,8 @@ graph TD
 
 ## 8. 도메인 오디팅 (Audit & Traceability)
 - 모든 도메인 엔티티의 생성/수정 이력은 `BaseTimeEntity` 및 `BaseEntity`를 상속받아 자동으로 기록되어야 하며, 중요한 상태 변경은 별도의 이력 테이블(Audit Table)에 보존한다.
-- 📦 `nuri.business.domain.common.BaseTimeEntity`
-- 📦 `nuri.business.domain.common.BaseEntity`
+- 📦 `nuri.foundation.domain.common.BaseTimeEntity`
+- 📦 `nuri.foundation.domain.common.BaseEntity`
 
 ---
-*Last Updated: 2026-05-19 (Mermaid Resilience Flow, Constitution Reference & Package Paths Added)*
+*Last Updated: 2026-07-12 (BaseEntity/BaseTimeEntity foundation 승격 반영 — 패키지 경로 현행화. 이전: 2026-05-19)*

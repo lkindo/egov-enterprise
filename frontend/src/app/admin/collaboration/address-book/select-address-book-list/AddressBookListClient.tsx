@@ -69,7 +69,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {
  header: '번호',
  accessor: (_, index) => (
- <span className="font-mono text-xs font-bold text-slate-400">
+ <span className="font-mono text-xs font-bold text-muted-foreground">
  {index !== undefined ? (index + 1 + (pageNo - 1) * 10).toString().padStart(2, '0') : '-'}
  </span>
  ),
@@ -79,7 +79,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  header: '성명',
  accessor: (item) => (
  <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`} className="group/item">
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
  {item.adbkNm}
  </span>
  </Link>
@@ -88,14 +88,14 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {
  header: '연락처',
  accessor: (item) => (
- <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">{item.telNo || '-'}</span>
+ <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{item.telNo || '-'}</span>
  ),
  className: 'w-40'
  },
  {
  header: '이메일',
  accessor: (item) => (
- <span className="text-xs font-bold text-slate-400 tracking-tight">{item.email}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.email}</span>
  )
  },
  {
@@ -142,7 +142,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <Button
  variant="outline"
  onClick={() => fetchList(pageNo, searchWrd)}
- className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+ className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
  >
  <RefreshCcw size={20} />
  </Button>
@@ -169,13 +169,13 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="성명, 전화번호, 소속 등으로 검색.." 
  />
  <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>

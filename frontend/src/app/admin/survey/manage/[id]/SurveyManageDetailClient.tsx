@@ -79,30 +79,30 @@ export default function SurveyManageDetailClient() {
                             <span className="text-xs font-bold tracking-widest uppercase">Survey Editor</span>
                         </div>
                         <CardTitle className="text-3xl font-bold tracking-tighter capitalize ">설문 상세 관리</CardTitle>
-                        <p className="text-slate-400 font-medium">설문의 기본 정보와 일정을 정밀하게 조정합니다.</p>
+                        <p className="text-muted-foreground font-medium">설문의 기본 정보와 일정을 정밀하게 조정합니다.</p>
                     </div>
                 </CardHeader>
                 <CardContent className="p-10 space-y-10">
                     <div className="space-y-3">
-                        <Label htmlFor="pollNm" className="text-sm font-bold text-slate-500 ml-1">설문명 (필수)</Label>
+                        <Label htmlFor="pollNm" className="text-sm font-bold text-muted-foreground ml-1">설문명 (필수)</Label>
                         <Input
                             id="pollNm"
                             value={formData.pollNm}
                             onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
                             placeholder="설문 주제를 입력하세요"
-                            className="h-11 rounded-lg border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+                            className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3">
-                            <Label className="text-sm font-bold text-slate-500 ml-1">시작일</Label>
+                            <Label className="text-sm font-bold text-muted-foreground ml-1">시작일</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant={"outline"}
                                         className={cn(
-                                            "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-slate-50/50 px-6",
+                                            "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
                                             !beginDate && "text-muted-foreground"
                                         )}
                                     >
@@ -122,13 +122,13 @@ export default function SurveyManageDetailClient() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label className="text-sm font-bold text-slate-500 ml-1">종료일</Label>
+                            <Label className="text-sm font-bold text-muted-foreground ml-1">종료일</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant={"outline"}
                                         className={cn(
-                                            "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-slate-50/50 px-6",
+                                            "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
                                             !endDate && "text-muted-foreground"
                                         )}
                                     >
@@ -149,17 +149,17 @@ export default function SurveyManageDetailClient() {
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="text-sm font-bold text-slate-500 ml-1">설문 유형</Label>
+                        <Label className="text-sm font-bold text-muted-foreground ml-1">설문 유형</Label>
                         <Select
                             value={formData.pollKndCd}
                             onValueChange={(value) => setFormData(prev => ({ ...prev, pollKndCd: value }))}
                         >
-                            <SelectTrigger className="h-11 rounded-lg border-2 bg-slate-50/50 font-bold px-6">
+                            <SelectTrigger className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
                                 <SelectValue placeholder="유형 선택" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-none shadow-2xl">
-                                <SelectItem value="001" className="font-bold py-3 text-slate-700">📋 일반 설문</SelectItem>
-                                <SelectItem value="002" className="font-bold py-3 text-slate-700">🗳️ 투표</SelectItem>
+                                <SelectItem value="001" className="font-bold py-3 text-foreground">📋 일반 설문</SelectItem>
+                                <SelectItem value="002" className="font-bold py-3 text-foreground">🗳️ 투표</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

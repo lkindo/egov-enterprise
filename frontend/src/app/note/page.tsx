@@ -85,22 +85,22 @@ export default function NotePage() {
     },
     {
       header: '제목',
-      accessor: (item: Note) => <span className="font-bold text-slate-800 tracking-tight">{item.noteSj}</span>,
+      accessor: (item: Note) => <span className="font-bold text-foreground tracking-tight">{item.noteSj}</span>,
     },
     {
       header: tab === 'received' ? '발신자' : '수신자',
       accessor: (item: Note) => (
         <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+            <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <User size={14} />
             </div>
-            <span className="text-sm font-bold text-slate-600">{tab === 'received' ? item.dsptchUserId : item.rcverId}</span>
+            <span className="text-sm font-bold text-muted-foreground">{tab === 'received' ? item.dsptchUserId : item.rcverId}</span>
         </div>
       )
     },
     {
       header: '일시',
-      accessor: (item: Note) => <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter">{item.crtDt}</span>,
+      accessor: (item: Note) => <span className="text-xs font-bold text-muted-foreground font-mono tracking-tighter">{item.crtDt}</span>,
     },
     {
       header: '관리',
@@ -140,7 +140,7 @@ export default function NotePage() {
                     <h3 className="text-3xl font-bold tracking-tighter leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
                 </div>
           </div>
-          <div className="col-span-2 flex p-2 bg-slate-100 rounded-lg w-full items-center justify-center">
+          <div className="col-span-2 flex p-2 bg-muted rounded-lg w-full items-center justify-center">
                 <TabButton
                     active={tab === 'received'}
                     onClick={() => setTab('received')}
@@ -175,7 +175,7 @@ export default function NotePage() {
         title="새 쪽지 기안"
         footer={
           <div className="flex gap-4 w-full">
-            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-lg font-bold text-slate-400">취소</Button>
+            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-lg font-bold text-muted-foreground">취소</Button>
             <Button onClick={handleSend} className="h-11 flex-[2] bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
           </div>
         }
@@ -190,12 +190,12 @@ export default function NotePage() {
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="대상자를 식별하십시오..."
                   readOnly
-                  className="w-full h-11 pl-16 pr-6 rounded-lg bg-slate-50 border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-slate-100 transition-all font-mono"
+                  className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-muted transition-all font-mono"
                 />
               </div>
               <Button
                 onClick={() => setPickerOpen(true)}
-                className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-900 rounded-lg font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
+                className="h-11 px-8 bg-white border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
@@ -207,14 +207,14 @@ export default function NotePage() {
               value={formData.noteSj}
               onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
               placeholder="쪽지 아키텍처 제목을 입력하세요."
-              className="w-full h-11 px-8 rounded-lg bg-slate-50 border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+              className="w-full h-11 px-8 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </FormField>
           <FormField label="데이터 바디 (내용)">
             <textarea
               value={formData.noteCn}
               onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
-              className="w-full min-h-[200px] p-8 rounded-lg bg-slate-50 border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
+              className="w-full min-h-[200px] p-8 rounded-lg bg-muted border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
               placeholder="전달할 메시지 데이터를 상세히 기입하세요..."
             />
           </FormField>
@@ -235,15 +235,15 @@ export default function NotePage() {
       >
         {selectedNote && (
           <div className="space-y-10 py-6 px-4">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-10">
+            <div className="flex justify-between items-start border-b border-border pb-10">
               <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                         <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+                         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
                          <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">쪽지 상세 데이터</span>
                     </div>
-                    <h3 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{selectedNote.noteSj}</h3>
+                    <h3 className="text-3xl font-bold text-foreground tracking-tight leading-tight">{selectedNote.noteSj}</h3>
                     <div className="flex items-center gap-4 pt-2">
-                         <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                         <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg border border-border text-xs font-bold text-muted-foreground uppercase tracking-widest">
                              {tab === 'received' ? `발신: ${selectedNote.dsptchUserId}` : `수신: ${selectedNote.rcverId}`}
                          </div>
                          <div className="text-xs font-bold text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.crtDt}</div>
@@ -251,11 +251,11 @@ export default function NotePage() {
               </div>
               <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
             </div>
-            <div className="text-xl font-bold leading-[1.8] text-slate-700 bg-slate-50/50 p-12 rounded-lg border-2 border-slate-50 min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
+            <div className="text-xl font-bold leading-[1.8] text-foreground bg-muted/50 p-12 rounded-lg border-2 border-slate-50 min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
               {selectedNote.noteCn}
             </div>
             <div className="flex gap-4 justify-end pt-4">
-              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-11 px-10 rounded-lg font-bold text-slate-400">데이터 닫기</Button>
+              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-11 px-10 rounded-lg font-bold text-muted-foreground">데이터 닫기</Button>
               {tab === 'received' && (
                 <Button
                   onClick={() => {
@@ -284,7 +284,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
         "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
         active
           ? "bg-white text-slate-950 shadow-2xl shadow-slate-200 scale-[1.03] z-10"
-          : "text-slate-400 hover:text-slate-600"
+          : "text-muted-foreground hover:text-muted-foreground"
       )}
     >
       {icon}
@@ -292,7 +292,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       {count !== undefined && (
         <span className={cn(
           "ml-3 text-xs px-2.5 py-1 rounded-lg font-bold shadow-inner",
-          active ? "bg-slate-950 text-white" : "bg-slate-200 text-slate-400 text-xs"
+          active ? "bg-slate-950 text-white" : "bg-slate-200 text-muted-foreground text-xs"
         )}>
           {count}
         </span>

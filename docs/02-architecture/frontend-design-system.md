@@ -11,6 +11,8 @@
 ## 2. Color Palette & Roles (Unified)
 모든 색상은 [design_tokens.md](../../.agent/knowledge/frontend-ux-constitution/artifacts/design_tokens.md)에 정의된 CSS 변수를 통해 관리됩니다.
 
+> **테마-안전 토큰 (브랜딩 토큰화)**: 컴포넌트는 raw `slate-*`/`gray-*` 유틸리티를 직접 쓰지 않고 `globals.css`의 시맨틱 토큰(`--background`·`--card`·`--popover`·`--primary`·`--muted` 등, light/dark 자동 전환)을 소비합니다. 아래 slate 스케일 값은 이 시맨틱 토큰이 매핑되는 다크 테마 팔레트 프리미티브입니다.
+
 ### Core Colors
 *   **Vibrant Hub Blue (`--color-hub-blue`)**: `#0055FF` - 시스템 전체의 핵심 액션 및 브랜드 정체성.
 *   **Premium Background (`--color-slate-950`)**: `#020617` - 전체 배경의 기본 색상.
@@ -47,4 +49,4 @@
 *   **Level 2 (Active)**: `backdrop-blur` + `bg-slate-900/40` - 모달, 팝오버, 플로팅 요소.
 
 ---
-*Last Updated: 2026-05-14 (Aligned with Frontend UX Constitution)*
+*Last Updated: 2026-07-12 (브랜딩 토큰화 반영 — 컴포넌트는 테마-안전 시맨틱 토큰 소비, slate 스케일은 팔레트 프리미티브. 이전: 2026-05-14)*

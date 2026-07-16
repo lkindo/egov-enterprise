@@ -44,7 +44,7 @@ export default function SurveyManageClient() {
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-slate-400">
+        <span className="font-mono text-xs font-bold text-muted-foreground">
           {(index !== undefined ? index + 1 + (params.page || 0) * (params.size || 10) : 0).toString().padStart(2, '0')}
         </span>
       ),
@@ -54,10 +54,10 @@ export default function SurveyManageClient() {
       header: '설문 명칭',
       accessor: (poll) => (
         <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
             {poll.pollNm}
           </span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             ID: {poll.pollId}
           </span>
         </div>
@@ -66,7 +66,7 @@ export default function SurveyManageClient() {
     {
       header: '설문 기간',
       accessor: (poll) => (
-        <span className="text-xs font-bold text-slate-500 tabular-nums tracking-tighter">
+        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
           {poll.pollBgngYmd} ~ {poll.pollEndYmd}
         </span>
       ),
@@ -80,7 +80,7 @@ export default function SurveyManageClient() {
         return (
           <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${isActive
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-            : 'bg-slate-100 text-slate-400 border border-slate-200'
+            : 'bg-muted text-muted-foreground border border-border'
           }`}>
             {isActive ? '진행중' : '종료'}
           </div>
@@ -91,7 +91,7 @@ export default function SurveyManageClient() {
     {
       header: '등록자',
       accessor: (poll) => (
-        <span className="text-xs font-bold text-slate-600 tracking-tight">{poll.frstRgtrId}</span>
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">{poll.frstRgtrId}</span>
       ),
       className: 'w-32 text-center'
     },
@@ -123,7 +123,7 @@ export default function SurveyManageClient() {
             <Button
               variant="outline"
               onClick={() => setParams(prev => ({ ...prev }))}
-              className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+              className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
             >
               <RefreshCcw size={20} />
             </Button>
@@ -148,13 +148,13 @@ export default function SurveyManageClient() {
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
               <Input 
                 value={params.searchKeyword}
                 onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
-                className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
                 placeholder="설문 제목으로 검색.." 
               />
               <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>

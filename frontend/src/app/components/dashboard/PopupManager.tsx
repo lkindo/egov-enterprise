@@ -89,7 +89,7 @@ export function PopupManager() {
                         </div>
 
                         {/* Footer */}
-                        <div className="absolute bottom-0 left-0 right-0 h-10 bg-slate-100 flex items-center justify-between px-4 border-t">
+                        <div className="absolute bottom-0 left-0 right-0 h-10 bg-muted flex items-center justify-between px-4 border-t">
                             <button
                                 onClick={() => closePopupForDay(popup.popupId)}
                                 className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
@@ -98,7 +98,7 @@ export function PopupManager() {
                             </button>
                             <button
                                 onClick={() => closePopup(popup.popupId)}
-                                className="text-xs font-bold text-slate-700 hover:text-black"
+                                className="text-xs font-bold text-foreground hover:text-black"
                             >
                                 닫기
                             </button>

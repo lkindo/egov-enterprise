@@ -2,7 +2,7 @@ package nuri.api.controller.business.calendar;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.calendar.RestdeService;
 import nuri.business.service.calendar.dto.RestdeDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -51,6 +52,7 @@ public class RestdeApiController {
     // 사실상 dead code였다. 인증은 Security + GlobalExceptionHandler에 위임하고 수동 분기를 제거했다.
 
     @Operation(summary = "휴일 등록", description = "새로운 휴일 정보를 등록합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PostMapping
     public ResponseEntity<ApiResponse<Integer>> createRestde(@Valid @RequestBody RestdeDto dto) {
         Integer newId = restdeService.createRestde(dto);
@@ -58,6 +60,7 @@ public class RestdeApiController {
     }
 
     @Operation(summary = "휴일 수정", description = "기존 휴일 정보를 수정합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateRestde(@PathVariable Integer id, @Valid @RequestBody RestdeDto dto) {
         restdeService.updateRestde(id, dto);
@@ -65,6 +68,7 @@ public class RestdeApiController {
     }
 
     @Operation(summary = "휴일 삭제", description = "등록된 휴일 정보를 삭제합니다.")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteRestde(@PathVariable Integer id) {
         restdeService.deleteRestde(id);

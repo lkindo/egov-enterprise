@@ -4,7 +4,7 @@ import nuri.business.service.operation.EventInfoService;
 import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.RewardManageService;
 import nuri.business.service.operation.dto.EventInfoDto;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -53,15 +53,15 @@ export default async function AdminStatsPage() {
 function AdminStatsLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 p-6">
-      <div className="h-11 w-96 bg-slate-100 rounded-lg" />
+      <div className="h-11 w-96 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-slate-50 rounded-lg" />)}
+        {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-muted rounded-lg" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 h-[450px] bg-slate-50 rounded-lg" />
+        <div className="lg:col-span-2 h-[450px] bg-muted rounded-lg" />
         <div className="h-[450px] bg-slate-900/5 rounded-lg" />
       </div>
-      <div className="h-96 w-full bg-slate-100 rounded-lg" />
+      <div className="h-96 w-full bg-muted rounded-lg" />
     </div>
   );
 }

@@ -154,7 +154,7 @@ export default function LoginPolicyAdminClient() {
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Fingerprint size={12} className={item.otpUseYn === 'Y' ? 'text-emerald-500' : 'text-slate-300'} />
-          <span className={`text-xs font-bold tracking-widest ${item.otpUseYn === 'Y' ? 'text-emerald-600' : 'text-slate-400'}`}>
+          <span className={`text-xs font-bold tracking-widest ${item.otpUseYn === 'Y' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
             {item.otpUseYn === 'Y' ? 'ACTIVE' : 'DISABLED'}
           </span>
         </div>
@@ -199,11 +199,11 @@ export default function LoginPolicyAdminClient() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchData()}
-              className="h-11 pl-16 pr-8 rounded-lg bg-slate-50 border-2 border-slate-100 font-bold text-md tracking-tight shadow-inner" 
+              className="h-11 pl-16 pr-8 rounded-lg bg-muted border-2 border-border font-bold text-md tracking-tight shadow-inner" 
             />
           </div>
-          <Button onClick={fetchData} variant="outline" className="h-11 w-16 rounded-lg border-2 border-slate-100 bg-white hover:bg-slate-50 transition-all shadow-xl active:scale-95 group">
-            <RefreshCcw size={24} className="text-slate-400 group-hover:rotate-180 transition-transform duration-700" />
+          <Button onClick={fetchData} variant="outline" className="h-11 w-16 rounded-lg border-2 border-border bg-white hover:bg-muted transition-all shadow-xl active:scale-95 group">
+            <RefreshCcw size={24} className="text-muted-foreground group-hover:rotate-180 transition-transform duration-700" />
           </Button>
         </div>
 
@@ -246,7 +246,7 @@ export default function LoginPolicyAdminClient() {
                       <FormControl>
                         <div className="relative group">
                           <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
@@ -264,7 +264,7 @@ export default function LoginPolicyAdminClient() {
                       <FormControl>
                         <div className="relative group">
                           <Timer className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -281,7 +281,7 @@ export default function LoginPolicyAdminClient() {
                       <FormControl>
                         <div className="relative group">
                           <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-slate-50/50 font-bold" />
+                          <Input {...field} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -289,7 +289,7 @@ export default function LoginPolicyAdminClient() {
                   )}
                 />
 
-                <div className="col-span-2 p-6 rounded-lg bg-slate-50 border border-slate-100 space-y-6">
+                <div className="col-span-2 p-6 rounded-lg bg-muted border border-border space-y-6">
                   <FormField
                     control={form.control}
                     name="lmtYn"

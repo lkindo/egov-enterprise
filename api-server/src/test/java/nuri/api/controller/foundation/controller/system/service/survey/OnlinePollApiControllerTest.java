@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
+import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import nuri.business.support.IntegrationTest;
@@ -70,8 +71,10 @@ class OnlinePollApiControllerTest {
     }
 
     @Test
+    @WithMockCustomUser(username = "admin", esntlId = "ADMIN_ESNTL", role = "ADMIN")
     @DisplayName("온라인 설문 투표 처리")
     void vote() throws Exception {
+        // 투표는 loginId(getCurrentLoginId)로 식별하므로 CustomUserDetails 주체가 필요하다.
         mockMvc.perform(post("/api/v1/admin/system/polls/P1/vote")
                 .param("pollIemId", "I1"))
                 .andExpect(status().isOk());

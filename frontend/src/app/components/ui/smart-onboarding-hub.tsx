@@ -111,7 +111,7 @@ export function SmartOnboardingHub() {
             </div>
           </div>
           <div className="absolute bottom-10 left-10 flex items-center gap-3">
-            <div className="w-2 h-2 rounded-lg bg-primary animate-ping" />
+            <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
             <span className="text-xs font-bold text-white/50 tracking-[0.4em]">기능 스포트라이트</span>
           </div>
         </div>

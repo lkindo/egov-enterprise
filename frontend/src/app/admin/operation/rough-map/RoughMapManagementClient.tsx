@@ -32,7 +32,7 @@ export default function RoughMapManagementClient() {
  {
  header: '번호',
  accessor: (_, index) => (
- <span className="font-mono text-xs font-bold text-slate-400">
+ <span className="font-mono text-xs font-bold text-muted-foreground">
  {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
  </span>
  ),
@@ -42,10 +42,10 @@ export default function RoughMapManagementClient() {
  header: '거점 명칭',
  accessor: (map) => (
  <div className="flex flex-col gap-1 py-1">
- <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+ <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
  {map.roughMapSj}
  </span>
- <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
  ID: {map.roughMapId}
  </span>
  </div>
@@ -54,13 +54,13 @@ export default function RoughMapManagementClient() {
  {
  header: '주소',
  accessor: (map) => (
- <span className="text-xs font-bold text-slate-500 tracking-tight">{map.roughMapAddress}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{map.roughMapAddress}</span>
  )
  },
  {
  header: '좌표 (LAT/LNG)',
  accessor: (map) => (
- <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">
+ <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
  {map.lat} / {map.lng}
  </span>
  ),
@@ -70,8 +70,8 @@ export default function RoughMapManagementClient() {
  header: '관리',
  accessor: () => (
  <div className="flex items-center justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-slate-100">
- <Edit3 size={16} className="text-slate-400" />
+ <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
+ <Edit3 size={16} className="text-muted-foreground" />
  </Button>
  <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors">
  <Trash2 size={16} />
@@ -96,7 +96,7 @@ export default function RoughMapManagementClient() {
  icon={Navigation} 
  actions={
  <div className="flex gap-4">
- <Button className="h-11 px-8 rounded-xl bg-white border-2 border-slate-100 text-slate-400 font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
+ <Button className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
  <Globe size={18} /> 서비스 연동
  </Button>
  <Button className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl">
@@ -120,13 +120,13 @@ export default function RoughMapManagementClient() {
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
  >
  <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+ <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <div className="relative group max-w-xl w-full">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
- className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+ className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="거점 명칭 또는 주소 검색.." 
  />
  </div>

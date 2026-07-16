@@ -59,7 +59,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
             name="authrtCd"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   보안 역할 식별자(Role Code) <span className="text-rose-500 font-bold text-xs">*</span>
                 </FormLabel>
                 <div className="relative group/id">
@@ -86,7 +86,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
             name="authrtNm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   역할 레이블 명칭 <span className="text-rose-500 font-bold text-xs">*</span>
                 </FormLabel>
                 <div className="relative group/nm">
@@ -111,7 +111,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
           name="authrtExpln"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs font-bold text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+              <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                 보안 정책 정보 명세
               </FormLabel>
               <div className="relative group/dc">
@@ -120,7 +120,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                   <textarea
                     {...field}
                     id="authrtExpln"
-                    className="min-h-[160px] w-full pl-16 p-8 rounded-lg border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
+                    className="min-h-[160px] w-full pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                     placeholder="상세 명세 입력... (최대 200자)"
                   />
                 </FormControl>
@@ -130,11 +130,11 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
           )}
         />
 
-        <div className="flex w-full gap-6 pt-4 border-t border-slate-100">
+        <div className="flex w-full gap-6 pt-4 border-t border-border">
           <button 
             type="button" 
             onClick={onCancel} 
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-slate-200 text-slate-600 bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>

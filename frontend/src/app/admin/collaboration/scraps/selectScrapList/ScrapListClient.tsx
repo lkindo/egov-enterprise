@@ -127,7 +127,7 @@ const ScrapListClient = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-1 py-1">
-                                                    <a href={item.scrapUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 font-medium group/link">
+                                                    <a href={/^https?:\/\//i.test(item.scrapUrl || '') ? item.scrapUrl : undefined} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 font-medium group/link">
                                                         {item.scrapUrl?.length > 70 ? item.scrapUrl.substring(0, 70) + '...' : item.scrapUrl}
                                                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                                     </a>

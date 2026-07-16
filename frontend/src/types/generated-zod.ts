@@ -152,7 +152,7 @@ export type OnlinePollArticleDto = z.infer<typeof OnlinePollArticleDtoSchema>;
 // OnlinePollManageDto Schema
 // ==========================================================================
 export const OnlinePollManageDtoSchema = z.object({
-  pollId: z.string().min(0).max(20),
+  pollId: z.string().min(0).max(20).optional(),
   pollNm: z.string().min(0).max(100),
   pollBgngYmd: z.string().min(0).max(8).optional(),
   pollEndYmd: z.string().min(0).max(8).optional(),
@@ -245,7 +245,7 @@ export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 // OnlineManualDto Schema
 // ==========================================================================
 export const OnlineManualDtoSchema = z.object({
-  onlnMnlId: z.string().min(0).max(20),
+  onlnMnlId: z.string().min(0).max(20).optional(),
   onlnMnlNm: z.string().min(0).max(100),
   onlnMnlSeCd: z.string().min(0).max(12),
   onlnMnlDfn: z.string().min(0).max(1000).optional(),
@@ -343,8 +343,6 @@ export const BoardSaveRequestSchema = z.object({
   qnaCatCd: z.string().min(0).max(12).optional(),
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().min(0).max(60).optional(),
   pswd: z.string().min(0).max(200).optional(),
 });
 export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;
@@ -819,7 +817,7 @@ export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 // NotificationDto Schema
 // ==========================================================================
 export const NotificationDtoSchema = z.object({
-  notiSn: z.string().min(0).max(20),
+  notiSn: z.string().min(0).max(20).optional(),
   notiTtlNm: z.string().min(0).max(100).optional(),
   notiCn: z.string().min(0).max(4000).optional(),
   notiDt: z.string().optional(),
@@ -1239,6 +1237,48 @@ export const ApiResponseBooleanSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseBoolean = z.infer<typeof ApiResponseBooleanSchema>;
+
+// ==========================================================================
+// ApiResponseListStatsDto Schema
+// ==========================================================================
+export const ApiResponseListStatsDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => StatsDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListStatsDto = z.infer<typeof ApiResponseListStatsDtoSchema>;
+
+// ==========================================================================
+// StatsDto Schema
+// ==========================================================================
+export const StatsDtoSchema = z.object({
+  fromDate: z.string().min(0).max(20).optional(),
+  toDate: z.string().min(0).max(20).optional(),
+  statsKind: z.string().min(0).max(20).optional(),
+  detailStatsKind: z.string().optional(),
+  pdKind: z.string().optional(),
+  statsDate: z.string().optional(),
+  statsCo: z.number().optional(),
+  maxStatsCo: z.number().optional(),
+  minStatsCo: z.number().optional(),
+  creatCo: z.number().optional(),
+  inqCnt: z.number().optional(),
+  updtCo: z.number().optional(),
+  deleteCo: z.number().optional(),
+  outptCo: z.number().optional(),
+  errorCo: z.number().optional(),
+  totInqCnt: z.number().optional(),
+  avrgInqCnt: z.number().optional(),
+  mxmmInqireBbsId: z.string().optional(),
+  mxmmInqireBbsNm: z.string().optional(),
+  topNtcepersonId: z.string().optional(),
+  topNtcepersonCo: z.number().optional(),
+  maxUnit: z.number().optional(),
+});
+export type StatsDto = z.infer<typeof StatsDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseScrapDto Schema
@@ -1823,6 +1863,35 @@ export const ApiResponseHpcmDtoSchema = z.object({
 export type ApiResponseHpcmDto = z.infer<typeof ApiResponseHpcmDtoSchema>;
 
 // ==========================================================================
+// ApiResponseListFileDto Schema
+// ==========================================================================
+export const ApiResponseListFileDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
+
+// ==========================================================================
+// FileDto Schema
+// ==========================================================================
+export const FileDtoSchema = z.object({
+  atchFileId: z.string().min(0).max(30).optional(),
+  fileSn: z.number().optional(),
+  fileStreCours: z.string().optional(),
+  streFileNm: z.string().optional(),
+  orignlFileNm: z.string().optional(),
+  fileExtsn: z.string().optional(),
+  fileMg: z.number().optional(),
+  fileCn: z.string().min(0).max(4000).optional(),
+  crtDt: z.string().optional(),
+});
+export type FileDto = z.infer<typeof FileDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseFaqDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseFaqDtoSchema = z.object({
@@ -2083,6 +2152,44 @@ export const ApiResponseBoardDtoSchema = z.object({
 export type ApiResponseBoardDto = z.infer<typeof ApiResponseBoardDtoSchema>;
 
 // ==========================================================================
+// ApiResponseListBannerDto Schema
+// ==========================================================================
+export const ApiResponseListBannerDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BannerDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListBannerDto = z.infer<typeof ApiResponseListBannerDtoSchema>;
+
+// ==========================================================================
+// ApiResponseCurrentUserResponse Schema
+// ==========================================================================
+export const ApiResponseCurrentUserResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CurrentUserResponseSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseCurrentUserResponse = z.infer<typeof ApiResponseCurrentUserResponseSchema>;
+
+// ==========================================================================
+// CurrentUserResponse Schema
+// ==========================================================================
+export const CurrentUserResponseSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+  userSe: z.string().optional(),
+  email: z.string().optional(),
+});
+export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
+
+// ==========================================================================
 // ApiResponseListMyPageContentDto Schema
 // ==========================================================================
 export const ApiResponseListMyPageContentDtoSchema = z.object({
@@ -2302,46 +2409,27 @@ export const PageResponseSurveyInfoDtoSchema = z.object({
 export type PageResponseSurveyInfoDto = z.infer<typeof PageResponseSurveyInfoDtoSchema>;
 
 // ==========================================================================
-// ApiResponseListStatsDto Schema
+// ApiResponseSummaryStatsDto Schema
 // ==========================================================================
-export const ApiResponseListStatsDtoSchema = z.object({
+export const ApiResponseSummaryStatsDtoSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => StatsDtoSchema)).optional(),
+  data: z.lazy(() => SummaryStatsDtoSchema).optional(),
   timestamp: z.string().optional(),
 });
-export type ApiResponseListStatsDto = z.infer<typeof ApiResponseListStatsDtoSchema>;
+export type ApiResponseSummaryStatsDto = z.infer<typeof ApiResponseSummaryStatsDtoSchema>;
 
 // ==========================================================================
-// StatsDto Schema
+// SummaryStatsDto Schema
 // ==========================================================================
-export const StatsDtoSchema = z.object({
-  fromDate: z.string().min(0).max(20).optional(),
-  toDate: z.string().min(0).max(20).optional(),
-  statsKind: z.string().min(0).max(20).optional(),
-  detailStatsKind: z.string().optional(),
-  pdKind: z.string().optional(),
-  statsDate: z.string().optional(),
-  statsCo: z.number().optional(),
-  maxStatsCo: z.number().optional(),
-  minStatsCo: z.number().optional(),
-  creatCo: z.number().optional(),
-  inqCnt: z.number().optional(),
-  updtCo: z.number().optional(),
-  deleteCo: z.number().optional(),
-  outptCo: z.number().optional(),
-  errorCo: z.number().optional(),
-  totInqCnt: z.number().optional(),
-  avrgInqCnt: z.number().optional(),
-  mxmmInqireBbsId: z.string().optional(),
-  mxmmInqireBbsNm: z.string().optional(),
-  topNtcepersonId: z.string().optional(),
-  topNtcepersonCo: z.number().optional(),
-  maxUnit: z.number().optional(),
+export const SummaryStatsDtoSchema = z.object({
+  totalUsers: z.number().optional(),
+  totalPosts: z.number().optional(),
+  todayConnects: z.number().optional(),
 });
-export type StatsDto = z.infer<typeof StatsDtoSchema>;
+export type SummaryStatsDto = z.infer<typeof SummaryStatsDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseRoleManageDto Schema
@@ -3276,19 +3364,6 @@ export const ApiResponseBannerDtoSchema = z.object({
 export type ApiResponseBannerDto = z.infer<typeof ApiResponseBannerDtoSchema>;
 
 // ==========================================================================
-// ApiResponseListBannerDto Schema
-// ==========================================================================
-export const ApiResponseListBannerDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => BannerDtoSchema)).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponseListBannerDto = z.infer<typeof ApiResponseListBannerDtoSchema>;
-
-// ==========================================================================
 // ApiResponsePageResponseAuthorManageDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseAuthorManageDtoSchema = z.object({
@@ -3417,35 +3492,6 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
-
-// ==========================================================================
-// ApiResponseListFileDto Schema
-// ==========================================================================
-export const ApiResponseListFileDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
-
-// ==========================================================================
-// FileDto Schema
-// ==========================================================================
-export const FileDtoSchema = z.object({
-  atchFileId: z.string().min(0).max(30).optional(),
-  fileSn: z.number().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.string().optional(),
-});
-export type FileDto = z.infer<typeof FileDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseEventInfoDto Schema

@@ -82,10 +82,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <BarChart3 size={28} className="text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tighter">
+            <h2 className="text-2xl font-bold text-foreground tracking-tighter">
               Intelligence <span className="text-primary">_ Hub</span>
             </h2>
-            <p className="text-xs font-bold text-slate-600 tracking-tight mt-2">
+            <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
               거버넌스 인사이트 및 데이터 분석
             </p>
           </div>
@@ -140,10 +140,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           )}
 
           <Card className="rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
-            <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
+            <CardHeader className="bg-muted/50 border-b p-10 flex flex-row items-center justify-between">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-slate-600 tracking-tight">_ 심층 분석 뷰포트</h3>
-                <CardTitle className="text-2xl font-bold text-slate-900 tracking-tighter">
+                <h3 className="text-xs font-bold text-muted-foreground tracking-tight">_ 심층 분석 뷰포트</h3>
+                <CardTitle className="text-2xl font-bold text-foreground tracking-tighter">
                   {activeTab === 'DASHBOARD' ? '글로벌 개요' :
                     activeTab === 'USER_STATS' ? '사용자 통계 분석' :
                       activeTab === 'CONTENT_STATS' ? '콘텐츠 지표 분석' :
@@ -176,8 +176,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                           className="group p-8 rounded-xl bg-white border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center justify-between relative overflow-hidden"
                         >
                           <div className="flex items-center gap-8 relative z-10">
-                            <div className="w-16 h-12 bg-slate-50 group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">
-                              <Vote className="text-slate-400 group-hover:text-primary transition-colors" size={24} />
+                            <div className="w-16 h-12 bg-muted group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">
+                              <Vote className="text-muted-foreground group-hover:text-primary transition-colors" size={24} />
                             </div>
                             <div className="space-y-2">
                               <div className="flex items-center gap-3">
@@ -185,13 +185,13 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                                   "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
                                   (nowStr && s.qestnrEndDe > nowStr)
                                     ? "bg-emerald-500/10 text-emerald-500" 
-                                    : "bg-slate-500/10 text-slate-500"
+                                    : "bg-slate-500/10 text-muted-foreground"
                                 )}>
                                   {(nowStr && s.qestnrEndDe > nowStr) ? 'Active' : 'Archived'}
                                 </span>
-                                <span className="text-[10px] font-bold text-slate-400 font-mono">END: {s.qestnrEndDe}</span>
+                                <span className="text-[10px] font-bold text-muted-foreground font-mono">END: {s.qestnrEndDe}</span>
                               </div>
-                              <h4 className="text-lg font-bold text-slate-900 tracking-tighter group-hover:text-primary transition-colors">
+                              <h4 className="text-lg font-bold text-foreground tracking-tighter group-hover:text-primary transition-colors">
                                 {s.qestnrSj}
                               </h4>
                             </div>
@@ -281,12 +281,12 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
         "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-5 mb-2",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-xl"
-          : "bg-white border-transparent hover:border-slate-50 text-slate-600 hover:text-slate-900"
+          : "bg-white border-transparent hover:border-slate-50 text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
-        active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-600 group-hover:bg-slate-100"
+        active ? "bg-white/10 text-white" : "bg-muted text-muted-foreground group-hover:bg-muted"
       )}>
         {icon}
       </div>
@@ -301,14 +301,14 @@ function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon:
       <div className="space-y-6">
         <div className={cn(
           "w-14 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform hover:rotate-12",
-          color === 'primary' ? "bg-primary/10 text-primary" : "bg-slate-50 text-slate-600"
+          color === 'primary' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
         )}>
           {icon}
         </div>
         <div className="space-y-2">
-          <h5 className="text-xs font-bold text-slate-600 tracking-tight leading-tight">_ {label}</h5>
+          <h5 className="text-xs font-bold text-muted-foreground tracking-tight leading-tight">_ {label}</h5>
           <div className="flex items-end justify-between">
-            <span className="text-3xl font-bold tracking-tighter text-slate-900 tabular-nums">{value}</span>
+            <span className="text-3xl font-bold tracking-tighter text-foreground tabular-nums">{value}</span>
             <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg">{trend}</span>
           </div>
         </div>

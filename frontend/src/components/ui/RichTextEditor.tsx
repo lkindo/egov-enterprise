@@ -83,7 +83,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
     <div className={cn("relative group border-2 border-border/50 rounded-lg bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
       
       {/* --- Top Persistent Toolbar --- */}
-      <div className="flex items-center flex-wrap gap-2 p-4 bg-slate-50 dark:bg-muted/20 border-b border-border/50 relative z-20">
+      <div className="flex items-center flex-wrap gap-2 p-4 bg-muted dark:bg-muted/20 border-b border-border/50 relative z-20">
         <ToolbarGroup>
           <ToolbarButton onClick={() => editor.chain().focus().undo().run()} icon={<Undo size={18} />} />
           <ToolbarButton onClick={() => editor.chain().focus().redo().run()} icon={<Redo size={18} />} />
@@ -168,7 +168,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       </div>
 
       {/* --- Footer Status --- */}
-      <div className="px-8 py-4 bg-slate-50/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
+      <div className="px-8 py-4 bg-muted/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-xs font-bold tracking-widest text-muted-foreground/40 uppercase">모드: 지능형 리치 텍스트 에디터 v1.0</span>
           <span className="text-xs font-bold tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">실시간 문서 동기화 활성화</span>

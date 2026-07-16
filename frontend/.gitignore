@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# 부트스트랩(make bootstrap / bootstrap.ps1)이 .env.local 로 복제하는 템플릿은 추적한다
+# (시크릿 없음: NEXT_PUBLIC_API_URL 등 로컬 기본값만) — fresh clone 에서 복제 대상이 존재하도록.
+!.env.example
 
 # vercel
 .vercel

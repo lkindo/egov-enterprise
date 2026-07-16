@@ -2,7 +2,7 @@ package nuri.api.controller.business.calendar;
 
 import nuri.business.service.calendar.RestdeService;
 import nuri.business.service.calendar.dto.RestdeDto;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

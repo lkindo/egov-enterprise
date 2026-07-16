@@ -2,7 +2,9 @@ package nuri.api.controller.business.main;
 
 import nuri.business.service.board.EgovBoardService;
 import nuri.business.service.informalsanction.InformalSanctionService;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.business.service.informalsanction.InformalSanctionDashboardProvider;
+import org.springframework.context.annotation.Import;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DashboardApiController.class)
+@Import(InformalSanctionDashboardProvider.class) // 대시보드 위젯은 DashboardItemProvider 포트로 수집 → 슬라이스 테스트에 실 provider 로드(mock 서비스 주입)
 class DashboardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean

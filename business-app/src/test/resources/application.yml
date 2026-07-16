@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: always
+    include-exception: true
+spring:
+  main:
+    allow-circular-references: false
+    lazy-initialization: false
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    # 접속 정보는 환경변수로 외부화(기본값은 로컬 테스트 편의용 — Supabase 실호스트/계정 제거)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    username: ${DB_USERNAME:postgres}
+    password: ${SUPABASE_DB_PASSWORD:}  # 유출됨 — 로테이션 필요 (실제 값 제거됨)
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+logging:
+  level:
+    root: info
+    nuri: debug
+    egovframework: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: debug
+
+jwt:
+  # CRITICAL: JWT_SECRET environment variable MUST be set in production.
+  # Using a default secure length string for local development to prevent startup failures.
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}

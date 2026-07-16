@@ -1,66 +1,100 @@
 package nuri.api.interceptor;
 
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.core.event.AuditEvent;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.servlet.ModelAndView;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class OperationalAuditInterceptorTest {
 
-    private final OperationalAuditInterceptor interceptor = new OperationalAuditInterceptor();
+    private final ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
+    private final OperationalAuditInterceptor interceptor = new OperationalAuditInterceptor(publisher);
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
-    @DisplayName("인터셉터 preHandle - 항상 true")
-    void preHandle_returnsTrue() throws Exception {
+    @DisplayName("preHandle - 항상 true 반환")
+    void preHandle_returnsTrue() {
         assertTrue(interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), new Object()));
     }
 
     @Test
-    @DisplayName("인터셉터 postHandle - 다양한 헤더 IP 추출 및 인증 정보 로깅")
-    void postHandle_auditLogging() throws Exception {
-        // Given: X-Forwarded-For header
+    @DisplayName("afterCompletion - /api 요청은 인증 사용자(CustomUserDetails)로 AuditEvent 발행")
+    void afterCompletion_publishesForAuthenticatedUser() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/test-api");
+        request.setRequestURI("/api/v1/test");
         request.addHeader("X-Forwarded-For", "1.2.3.4");
-        
-        // Mock Authentication (CustomUserDetails)
+
         CustomUserDetails user = mock(CustomUserDetails.class);
         when(user.getUserId()).thenReturn("testUser");
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user, null, java.util.Collections.emptyList())
-        );
+                new UsernamePasswordAuthenticationToken(user, null, java.util.Collections.emptyList()));
 
-        // When & Then
-        interceptor.postHandle(request, new MockHttpServletResponse(), new Object(), new ModelAndView());
-        
-        // Given: Proxy-Client-IP header
-        request = new MockHttpServletRequest();
-        request.addHeader("Proxy-Client-IP", "5.6.7.8");
-        interceptor.postHandle(request, new MockHttpServletResponse(), new Object(), new ModelAndView());
+        interceptor.preHandle(request, new MockHttpServletResponse(), new Object());
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
 
-        // Given: WL-Proxy-Client-IP header
-        request = new MockHttpServletRequest();
-        request.addHeader("WL-Proxy-Client-IP", "9.10.11.12");
-        interceptor.postHandle(request, new MockHttpServletResponse(), new Object(), new ModelAndView());
-        
-        // Given: Standard RemoteAddr
-        request = new MockHttpServletRequest();
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        AuditEvent event = captor.getValue();
+        assertEquals("/api/v1/test", event.url());
+        assertEquals("testUser", event.userId());
+        assertEquals("1.2.3.4", event.clientIp());
+    }
+
+    @Test
+    @DisplayName("afterCompletion - 비-CustomUserDetails principal 은 authentication.name 으로 기록")
+    void afterCompletion_nonCustomPrincipalUsesName() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/v1/x");
         request.setRemoteAddr("127.0.0.1");
-        interceptor.postHandle(request, new MockHttpServletResponse(), new Object(), new ModelAndView());
-
-        // Given: Non-CustomUserDetails principal (String)
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("anonymousUserPrincipal", null, java.util.Collections.emptyList())
-        );
-        interceptor.postHandle(request, new MockHttpServletResponse(), new Object(), new ModelAndView());
-        
-        SecurityContextHolder.clearContext();
+                new UsernamePasswordAuthenticationToken("plainName", null, java.util.Collections.emptyList()));
+
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
+
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertEquals("plainName", captor.getValue().userId());
+    }
+
+    @Test
+    @DisplayName("afterCompletion - 인증 없으면 ANONYMOUS 로 기록")
+    void afterCompletion_anonymousWhenNoAuth() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/v1/y");
+
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
+
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertEquals("ANONYMOUS", captor.getValue().userId());
+    }
+
+    @Test
+    @DisplayName("afterCompletion - 비 /api 요청(actuator/정적)은 이벤트 미발행")
+    void afterCompletion_skipsNonApi() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/actuator/health");
+
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
+
+        verifyNoInteractions(publisher);
     }
 }

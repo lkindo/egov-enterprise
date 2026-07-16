@@ -1,4 +1,4 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
+/* Pretendard font imported locally via layout.tsx */
 /* 
  * Design System: eGov Enterprise (Modernized)
  * Reference: docs/02-architecture/design.md
@@ -7,7 +7,7 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  --font-sans: "Pretendard", var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-sans: var(--font-pretendard), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-outfit: var(--font-outfit), sans-serif;
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -41,6 +41,8 @@
 
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
 
   --color-hub-blue: hsl(var(--hub-blue));
   --color-hub-orange: hsl(var(--hub-orange));
@@ -52,6 +54,7 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --radius-full: 9999px;
 
   /* Custom Animations */
   --animate-shake: shake 0.2s ease-in-out;
@@ -105,6 +108,8 @@
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
     --surface-sunken: 210 40% 98%;
@@ -112,7 +117,7 @@
 
     /* --- Core Design Tokens (Project-wide) --- */
     --font-size-hub-title: 1.875rem;    /* 3xl */
-    --font-size-hub-subtitle: 0.625rem; /* 10px */
+    --font-size-hub-subtitle: 0.8125rem; /* 13px */
     --font-weight-hub-title: 900;       /* black */
     --letter-spacing-hub: -0.05em;      /* tracking-tighter */
     --letter-spacing-label: -0.025em;   /* wide label tracking (normalized to tight) */
@@ -155,16 +160,13 @@
 
     --card: 222.2 47.4% 11.2%;
     --card-foreground: 210 40% 98%;
+    --popover: 222.2 47.4% 11.2%;
+    --popover-foreground: 210 40% 98%;
 
     --surface-sunken: 0 0% 0%;
     --surface-raised: 222.2 47.4% 15%;
 
-    /* Dark Mode Auto-Mapping Overrides */
-    --color-slate-950: 210 40% 98%;
-    --color-slate-900: 210 40% 98%;
-    --color-slate-800: 212.7 26.8% 83.9%;
-    --color-slate-700: 215 20.2% 75.1%;
-    --color-slate-600: 215 20.2% 65.1%;
+    /* Slate overrides removed to restore default Tailwind dark mode values */
   }
 }
 
@@ -223,7 +225,7 @@
   }
   
   .hub-subtitle-label {
-    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-tight text-muted-foreground;
+    @apply text-[length:var(--font-size-hub-subtitle)] font-medium tracking-tight text-muted-foreground;
   }
 
   .hub-card-section {
@@ -290,7 +292,7 @@
   .hub-tech-label {
     @apply font-mono font-bold tracking-wider uppercase;
     display: inline-flex;
-    items-center: center;
+    align-items: center;
     gap: 0.5em;
   }
 

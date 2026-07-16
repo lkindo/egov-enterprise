@@ -26,8 +26,6 @@ interface BoardArticle {
   qnaCatCd?: string;
   scrtYn?: string;
   useYn?: string;
-  userId?: string;
-  userNm?: string;
   pswd?: string;
   // extra fields for form logic
   replyYn?: string;
@@ -50,8 +48,6 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const qnaSttsCd = formData.get('qnaSttsCd') as string;
   const qnaCatCd = formData.get('qnaCatCd') as string;
   const pswd = formData.get('pswd') as string;
-  const userNm = formData.get('userNm') as string;
-  const userId = formData.get('userId') as string;
   const scrtYn = formData.get('scrtYn') as string || 'N';
   const useYn = formData.get('useYn') as string || 'Y';
   const pstBgngYmd = formData.get('pstBgngYmd') as string;
@@ -72,8 +68,6 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       qnaSttsCd: qnaSttsCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'QA01' : undefined), 
       qnaCatCd: qnaCatCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'CAT01' : undefined),
       pswd: pswd || '1',
-      userNm: userNm || undefined,
-      userId: userId || undefined,
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
       useYn: useYn === 'N' ? 'N' : 'Y'
     };
@@ -121,7 +115,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       throw new Error('저장에 실패했습니다.');
     }
 
-    revalidatePath(`/admin/community/boards/selectBoardList`);
+    revalidatePath(`/admin/community/boards/select-board-list`);
     const targetId = isEdit ? pstId : (response as any);
     
     return {
@@ -147,7 +141,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
 
     const response = await client.delete(`/boards/${bbsId}/posts/${pstId}`, axiosConfig);
     
-    revalidatePath(`/admin/community/boards/selectBoardList`);
+    revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';

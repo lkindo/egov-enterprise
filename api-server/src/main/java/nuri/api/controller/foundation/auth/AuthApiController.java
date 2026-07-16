@@ -1,11 +1,11 @@
 package nuri.api.controller.foundation.auth;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.security.service.CustomUserDetails;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.service.CustomUserDetails;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
@@ -79,6 +79,6 @@ public class AuthApiController {
                     userDto.emlAddr());
             return ApiResponse.success(body);
         }
-        throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
     }
 }

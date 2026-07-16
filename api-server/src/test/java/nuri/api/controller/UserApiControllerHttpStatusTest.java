@@ -1,11 +1,12 @@
 package nuri.api.controller;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.api.interceptor.OperationalAuditInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -70,7 +71,7 @@ class UserApiControllerHttpStatusTest {
     @Test
     @DisplayName("POST /api/v1/users/signup - 중복 ID (409 Conflict)")
     void signup_fail_duplicateUserId_returns409() throws Exception {
-        doThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID))
+        doThrow(new BusinessException(UserErrorCode.DUPLICATE_USER_ID))
                 .when(userService).signup(any(UserSignupRequest.class));
 
         String requestBody = """
@@ -90,7 +91,7 @@ class UserApiControllerHttpStatusTest {
                 .andExpect(status().isConflict())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value(ErrorCode.DUPLICATE_USER_ID.getCode()));
+                .andExpect(jsonPath("$.code").value(UserErrorCode.DUPLICATE_USER_ID.getCode()));
     }
 
 
@@ -98,7 +99,7 @@ class UserApiControllerHttpStatusTest {
     @DisplayName("POST /api/v1/users/signup - 서버 내부 오류 (500 Internal Server Error)")
     void signup_fail_internalError_returns500() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
+                .thenThrow(new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR));
 
         String requestBody = """
                 {

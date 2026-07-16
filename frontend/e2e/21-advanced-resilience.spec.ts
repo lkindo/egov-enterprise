@@ -38,14 +38,17 @@ test.describe('Tier 21: Advanced Resilience', () => {
         await searchInput.fill('ForceFail');
         await page.keyboard.press('Enter');
 
-        console.log('>>> Step 4: Verifying Error Toast/UI');
-        // The UI should show an error message instead of crashing
-        // Explicitly wait for the toast with the simulated message
-        const errorAlert = page.locator('[role="alert"]').filter({ hasText: /Simulated|500/ }).first();
-        await expect(errorAlert).toBeVisible({ timeout: 15000 });
-        const alertText = await errorAlert.innerText();
-        console.log(`>>> Detected Toast Text: ${alertText}`);
-        console.log('>>> Error Toast successfully detected and verified.');
+        console.log('>>> Step 4: Verifying Error Surface (Sonner toast)');
+        // UserManageClient는 500을 ErrorStateDisplay가 아니라 client.ts 인터셉터의 전역
+        // 'api-error' 이벤트 → ToastProvider → Sonner 토스트(role="status")로 노출하며,
+        // 백엔드 메시지(모의 500 body의 message)를 그대로 표시한다.
+        // 과거 셀렉터 [role="alert"]는 Sonner의 '빈' aria-live announcer만 매칭해 타임아웃되었으므로,
+        // 실제 렌더 텍스트('Internal Server Error (Simulated)')로 단언한다.
+        const errorToast = page.getByText('Internal Server Error (Simulated)').first();
+        await expect(errorToast).toBeVisible({ timeout: 15000 });
+        const alertText = await errorToast.innerText();
+        console.log(`>>> Detected Error Surface Text: ${alertText}`);
+        console.log('>>> Error surface successfully detected and verified.');
 
         // UI should still be interactable
         await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible();
@@ -73,9 +76,13 @@ test.describe('Tier 21: Advanced Resilience', () => {
         console.log('>>> System remained stable after rapid interaction.');
     });
 
-    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page }) => {
+    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page, consoleGuard }) => {
         // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.
-        await page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
+        // 경계값(255자) 제출은 zod 검증 실패를 '의도'한다. useAppForm이 검증 실패 시
+        // 브라우저 콘솔에 'Validation Errors:'를 출력하므로, 이 예상된 검증-실패 노이즈만
+        // 정밀 무시한다(다른 콘솔 결함은 그대로 감지 유지).
+        consoleGuard.addIgnorePattern(/Validation Errors/i);
+        await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
         const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR
         const hugeContent = 'Content '.repeat(500); // ~4000 characters
@@ -90,16 +97,18 @@ test.describe('Tier 21: Advanced Resilience', () => {
         const submitBtn = page.locator('button[type="submit"]').first();
         await submitBtn.click();
 
-        // If it succeeds, verify length in list/detail. If it fails due to validation, verify error message.
-        // For this test, we assume the system should either handle it or show validation.
-        const resultAlert = page.getByRole('alert');
-        await expect(resultAlert.first()).toBeVisible({ timeout: 30000 });
-        
-        const alertText = await resultAlert.first().innerText();
-        console.log(`>>> Submission Result Text: '${alertText}'`);
-        // [E2E 감사 B] both-branches console.log 제거 — 결과가 '성공 저장' 또는 '명시적 검증/길이 제한 메시지'
-        // 중 하나여야 한다. 아무 alert나 통과시키지 않고 경계값 처리 계약을 단언한다.
-        expect(alertText, `경계값 제출은 성공 또는 검증 메시지를 반환해야 함 (실제: '${alertText}')`)
-            .toMatch(/성공|저장|완료|글자|초과|제한|최대|길이|실패|유효/);
+        // pstTtl(255자)은 zod max(100)을 초과하므로 제출 시 검증이 '항상' 실패한다.
+        // providers.tsx의 zod 에러맵이 too_big(string)을 '최대 {maximum}자 이하로 입력해야 합니다.'로
+        // 매핑하고, 이 메시지는 pstTtl FormItem의 inline FormMessage(및 useAppForm의 Sonner 토스트)에
+        // 렌더된다. 과거 getByRole('alert')는 Sonner의 '빈' announcer를 매칭하던 오탐이었으므로,
+        // 실제 검증 메시지를 그 렌더 surface에서 단언한다.
+        const validationMessage = page.getByText('최대 100자 이하로 입력해야 합니다').first();
+        await expect(validationMessage).toBeVisible({ timeout: 30000 });
+
+        const alertText = await validationMessage.innerText();
+        console.log(`>>> Submission Validation Text: '${alertText}'`);
+        // 경계값 초과 제출은 반드시 최대 길이 검증 메시지를 노출해야 한다(계약 단언).
+        expect(alertText, `경계값(255자) 제출은 최대 길이 검증 메시지를 노출해야 함 (실제: '${alertText}')`)
+            .toContain('최대 100자 이하로 입력해야 합니다');
     });
 });

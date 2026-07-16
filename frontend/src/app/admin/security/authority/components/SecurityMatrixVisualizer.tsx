@@ -100,7 +100,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  variant="ghost" 
  size="icon" 
  onClick={() => setIsFullscreen(!isFullscreen)}
- className="h-11 w-14 rounded-lg bg-white/10 text-white border border-white/10 hover:bg-white hover:text-slate-900 transition-all shadow-xl"
+ className="h-11 w-14 rounded-lg bg-white/10 text-white border border-white/10 hover:bg-white hover:text-foreground transition-all shadow-xl"
  >
  {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
  </Button>
@@ -115,7 +115,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
 
  {/* Matrix Surface */}
- <div className="bg-slate-50 border-4 border-slate-100 rounded-lg p-10 flex flex-col gap-8 shadow-inner overflow-hidden">
+ <div className="bg-muted border-4 border-border rounded-lg p-10 flex flex-col gap-8 shadow-inner overflow-hidden">
  <div className="flex items-center gap-6">
  <div className="relative flex-1 group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
@@ -128,10 +128,10 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  </div>
 
- <div className="overflow-x-auto rounded-lg border-2 border-slate-100 bg-white shadow-2xl custom-scrollbar relative">
+ <div className="overflow-x-auto rounded-lg border-2 border-border bg-white shadow-2xl custom-scrollbar relative">
  <table className="w-full border-collapse table-fixed min-w-[1000px]">
  <thead>
- <tr className="border-b-2 border-slate-100 divide-x-2 divide-slate-50">
+ <tr className="border-b-2 border-border divide-x-2 divide-slate-50">
  <th className="sticky left-0 top-0 z-30 w-[240px] bg-slate-900 p-8 text-left border-r-4 border-slate-800">
  <div className="flex items-center gap-3">
  <Monitor size={16} className="text-primary" />
@@ -139,12 +139,12 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  </th>
  {authors.map((auth) => (
- <th key={auth.authorCode} className="p-8 bg-slate-50/50 min-w-[150px] transition-colors hover:bg-slate-100">
+ <th key={auth.authorCode} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
  <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
- <div className="w-10 h-10 rounded-lg bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
+ <div className="w-10 h-10 rounded-lg bg-white border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
  <Lock size={14} />
  </div>
- <span className="text-xs font-bold text-slate-900 tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
+ <span className="text-xs font-bold text-foreground tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
  <span className="text-xs font-bold text-slate-300 tracking-widest font-mono uppercase">{auth.authorCode}</span>
  </div>
  </th>
@@ -153,17 +153,17 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </thead>
  <tbody className="divide-y-2 divide-slate-100">
  {filteredMenus.map((menu) => (
- <tr key={menu.menuNo} className="divide-x-2 divide-slate-50 hover:bg-slate-50/50 transition-colors group/row">
- <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-slate-100 group-hover/row:bg-slate-50 transition-colors">
+ <tr key={menu.menuNo} className="divide-x-2 divide-slate-50 hover:bg-muted/50 transition-colors group/row">
+ <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-border group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
- menu.upMenuSn === 0 ? "bg-amber-50 text-amber-500" : "bg-slate-50 text-slate-400"
+ menu.upMenuSn === 0 ? "bg-amber-50 text-amber-500" : "bg-muted text-muted-foreground"
  )}>
  {menu.upMenuSn === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
  </div>
  <div className="flex flex-col min-w-0">
- <span className="text-sm font-bold text-slate-900 truncate tracking-tight">{menu.menuNm}</span>
+ <span className="text-sm font-bold text-foreground truncate tracking-tight">{menu.menuNm}</span>
  <span className="text-xs font-bold text-slate-300 tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
  </div>
  </div>
@@ -183,7 +183,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  "w-full h-11 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
  isSelected 
  ? "bg-slate-900 shadow-xl border-none" 
- : "bg-white hover:bg-slate-100 border-2 border-dashed border-slate-100 hover:border-slate-200"
+ : "bg-white hover:bg-muted border-2 border-dashed border-border hover:border-border"
  )}
  >
  <AnimatePresence mode="wait">
@@ -225,14 +225,14 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
 
  {/* Footer / Guide */}
- <div className="flex items-center gap-6 p-8 bg-slate-50 border-2 border-slate-100 border-dashed rounded-lg">
- <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm border border-slate-100 shrink-0">
+ <div className="flex items-center gap-6 p-8 bg-muted border-2 border-border border-dashed rounded-lg">
+ <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm border border-border shrink-0">
  <Info size={24} />
  </div>
  <div className="space-y-1">
- <p className="text-sm font-bold text-slate-900 tracking-tight leading-none uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
- <p className="text-xs font-medium text-slate-400">
- 각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-slate-900 font-bold">COMMIT_CHANGES</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
+ <p className="text-sm font-bold text-foreground tracking-tight leading-none uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
+ <p className="text-xs font-medium text-muted-foreground">
+ 각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-foreground font-bold">COMMIT_CHANGES</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
  </p>
  </div>
  </div>

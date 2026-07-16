@@ -33,10 +33,11 @@ export default function AdminError({
     reset();
   };
 
-  // 에러 메시지에서 HTTP 상태 코드 추출
-  const is401 = error.message?.includes('401');
-  const is403 = error.message?.includes('403') || error.message?.includes('Forbidden');
-  const is404 = error.message?.includes('404') || error.message?.includes('Not Found');
+  // 에러 메시지 및 구조화된 프로퍼티에서 HTTP 상태 코드 추출
+  const statusCode = (error as any).status || (error as any).statusCode || (error as any).response?.status || (error as any).cause?.status;
+  const is401 = statusCode === 401 || error.message?.includes('401');
+  const is403 = statusCode === 403 || error.message?.includes('403') || error.message?.includes('Forbidden');
+  const is404 = statusCode === 404 || error.message?.includes('404') || error.message?.includes('Not Found');
 
   // 에러 유형별 UI 분기
   if (is401) {
@@ -86,8 +87,8 @@ export default function AdminError({
     return (
       <ErrorLayout
         icon={<Bug className="w-12 h-12" />}
-        iconColor="text-slate-400"
-        iconBg="bg-slate-100"
+        iconColor="text-muted-foreground"
+        iconBg="bg-muted"
         title="페이지를 찾을 수 없습니다"
         description="요청하신 페이지가 존재하지 않거나, 주소가 변경되었을 수 있습니다. URL을 다시 확인하시거나 이전 페이지로 돌아가 주세요."
         actions={
@@ -147,11 +148,11 @@ function ErrorLayout({
         className="flex flex-col items-center text-center max-w-lg"
       >
         <div className={`p-6 rounded-lg ${iconBg} ${iconColor} mb-6`}>{icon}</div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">{title}</h2>
-        <p className="text-slate-500 font-medium leading-relaxed mb-8">{description}</p>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight mb-3">{title}</h2>
+        <p className="text-muted-foreground font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
         {digest && (
-          <p className="mt-8 text-xs text-slate-300 font-mono">
+          <p className="mt-8 text-xs text-muted-foreground/50 font-mono">
             참조 코드: {digest}
           </p>
         )}
@@ -176,8 +177,8 @@ function ActionButton({
       onClick={onClick}
       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 ${
         primary
-          ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
-          : 'border-2 border-slate-200 text-slate-600 hover:bg-slate-50'
+          ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl'
+          : 'border-2 border-border text-muted-foreground hover:bg-accent'
       }`}
     >
       {icon}

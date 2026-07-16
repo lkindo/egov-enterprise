@@ -133,7 +133,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  </div>
  <div className="text-left">
  <span className="font-bold tracking-tighter text-foreground block text-md uppercase leading-none">{item.prgrmKornNm}</span>
- <span className="text-xs font-bold text-slate-600 tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
  </div>
  </div>
  )
@@ -142,7 +142,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  header: '식별 파일명',
  accessor: (item: Program) => (
  <div className="flex justify-start">
- <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
+ <div className="px-3 py-1 bg-muted border border-border rounded-lg w-fit">
  <span className="text-xs font-bold text-primary tracking-tight font-mono">{item.prgrmFileNm}</span>
  </div>
  </div>
@@ -152,7 +152,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  {
  header: '엔드포인트(API/URL)',
  accessor: (item: Program) => (
- <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-600 tracking-tighter text-left">
+ <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tracking-tighter text-left">
  <LinkIcon size={12} className="text-primary opacity-40 shrink-0" />
  <span className="truncate">{item.url}</span>
  </div>
@@ -166,7 +166,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
  <Settings size={16} />
  </Button>
  </TooltipTrigger>
@@ -241,7 +241,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  value={currentSearchWrd}
  onChange={(e) => setCurrentSearchWrd(e.target.value)}
  onKeyDown={(e) => e.key === 'Enter' && loadData()}
- className="h-11 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+ className="h-11 pl-16 pr-8 w-full bg-muted/50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
  />
  </div>
  </div>

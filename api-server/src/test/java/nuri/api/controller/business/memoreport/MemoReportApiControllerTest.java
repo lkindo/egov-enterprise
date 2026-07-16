@@ -2,7 +2,7 @@ package nuri.api.controller.business.memoreport;
 
 import nuri.business.service.memoreport.EgovMemoReportService;
 import nuri.business.service.memoreport.dto.MemoReportDto;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

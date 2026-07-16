@@ -2,7 +2,7 @@ package nuri.openapi;
 
 import nuri.api.controller.UserApiController;
 import nuri.api.interceptor.OperationalAuditInterceptor;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;

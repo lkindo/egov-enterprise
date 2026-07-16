@@ -1,6 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.deptjob.EgovDeptJobBoxService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import org.junit.jupiter.api.DisplayName;

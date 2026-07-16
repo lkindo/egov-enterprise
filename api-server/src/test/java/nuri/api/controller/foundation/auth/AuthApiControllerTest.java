@@ -1,12 +1,12 @@
 package nuri.api.controller.foundation.auth;
  
-import nuri.business.core.exception.GlobalExceptionHandler;
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import nuri.business.service.user.UserService;
-import nuri.business.security.service.CustomUserDetails;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.domain.user.entity.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;

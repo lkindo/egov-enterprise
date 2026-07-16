@@ -60,8 +60,7 @@ class IdGenerationUtilTest {
                 .startsWith(Constants.User.MBER_PREFIX)
                 .hasSize(Constants.User.MBER_PREFIX.length() + Constants.User.ESNTL_ID_UUID_LENGTH);
 
-        assertThat(IdGenerationUtil.generateInformalSanctionId())
-                .startsWith(Constants.User.INFRML_PREFIX);
+
         assertThat(IdGenerationUtil.generateSmsId())
                 .startsWith(Constants.User.SMS_PREFIX);
         assertThat(IdGenerationUtil.generateMailId())

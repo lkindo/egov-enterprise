@@ -111,7 +111,7 @@ export default function SecurityDeptAuthorityClient() {
               }}
               className={cn(
                 "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
-                isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
+                isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-border hover:border-primary/40 rotate-12"
               )}
             >
               <CheckCircle size={16} className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
@@ -154,7 +154,7 @@ export default function SecurityDeptAuthorityClient() {
  <Button
  variant="ghost"
  onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
@@ -184,7 +184,7 @@ export default function SecurityDeptAuthorityClient() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
  <Input
  placeholder="부서명 검색..."
- className="pl-12 h-11 bg-slate-50/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
+ className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />
@@ -212,20 +212,20 @@ export default function SecurityDeptAuthorityClient() {
  "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
  selectedDept === d.ognzId
  ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
- : "bg-white border-slate-50 hover:border-slate-200"
+ : "bg-white border-slate-50 hover:border-border"
  )}
  >
  <div className="flex items-center gap-4 relative z-10">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
- selectedDept === d.ognzId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
+ selectedDept === d.ognzId ? "bg-white/10 text-white" : "bg-muted text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
  )}>
  <Users size={20} />
  </div>
  <div className="flex flex-col text-left">
  <span className={cn(
  "text-xs font-bold tracking-tighter leading-none mb-1",
- selectedDept === d.ognzId ? "text-white" : "text-slate-900"
+ selectedDept === d.ognzId ? "text-white" : "text-foreground"
  )}>{d.ognzNm}</span>
  <span className={cn(
  "text-xs font-mono font-bold tracking-widest",
@@ -264,7 +264,7 @@ export default function SecurityDeptAuthorityClient() {
  animate={{ opacity: 1 }} 
  className="h-full min-h-[600px] flex flex-col items-center justify-center text-center p-12 group select-none"
  >
- <div className="w-24 h-24 rounded-lg bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
+ <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
  <Key size={56} className="opacity-20" />
  </div>
  <div className="space-y-4">
@@ -307,15 +307,15 @@ export default function SecurityDeptAuthorityClient() {
       />
     </div>
 
- <div className="p-8 flex items-center gap-6 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100">
- <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
+ <div className="p-8 flex items-center gap-6 rounded-lg bg-muted border-2 border-dashed border-border">
+ <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-border">
  <ShieldAlert size={24} className="text-rose-500" />
  </div>
  <div className="space-y-1">
- <p className="text-xs font-bold text-slate-800 tracking-tight leading-relaxed">
+ <p className="text-xs font-bold text-foreground tracking-tight leading-relaxed">
  전역 정책 강제 배포(Batch Deployment) 시 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-bold ">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
  </p>
- <span className="text-xs font-bold text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재설정 주의</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase opacity-60">아키텍처 재설정 주의</span>
  </div>
  </div>
  </motion.div>

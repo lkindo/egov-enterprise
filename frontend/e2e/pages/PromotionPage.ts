@@ -83,12 +83,13 @@ export class PromotionPage {
 
     private async clickSubmitAndWait() {
         console.log('>>> [Promotion] Clicking submit button...');
-        // Match the button containing "운영 배포" or "자산 수정" or "등록" or "저장"
-        const submitBtn = this.page.getByRole('button', { name: /운영 배포|자산 수정|등록|저장/i }).first();
+        // 모달 푸터의 실제 제출 버튼 텍스트는 '운영 배포'(신규)/'자산 수정'(수정)뿐.
+        // ('등록'|'저장'을 넣으면 모달을 여는 '신규 배너/팝업 등록' 버튼이 .first()로 먼저 매칭돼 폼이 제출되지 않았음.)
+        const submitBtn = this.page.getByRole('button', { name: /운영 배포|자산 수정/i }).first();
         await submitBtn.waitFor({ state: 'visible', timeout: 5000 });
         await submitBtn.click({ force: true });
         console.log('>>> [Promotion] Submit button clicked, waiting for response...');
-        await this.page.waitForTimeout(3000); 
+        await this.page.waitForTimeout(3000);
         console.log('>>> [Promotion] Creation step completed');
     }
 

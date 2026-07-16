@@ -3,7 +3,7 @@ package nuri.api.controller.foundation.controller.system;
 import jakarta.validation.Valid;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.auth.RoleManageService;
 import nuri.business.service.auth.dto.RoleManageDto;
 import io.swagger.v3.oas.annotations.Operation;

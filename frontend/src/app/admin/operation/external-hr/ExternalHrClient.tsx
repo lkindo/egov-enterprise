@@ -96,7 +96,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         { 
             header: '번호', 
             accessor: (_, index) => (
-                <span className="font-mono text-xs font-bold text-slate-400">
+                <span className="font-mono text-xs font-bold text-muted-foreground">
                     {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
                 </span>
             ),
@@ -105,7 +105,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         { 
             header: '성명', 
             accessor: (item: any) => (
-                <span className="font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+                <span className="font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
                     {item.otsdHrNm || item.extrlHrNm || '미지정'}
                 </span>
             )
@@ -113,7 +113,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         { 
             header: '소속기관', 
             accessor: (item: any) => (
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
                     {item.ogdpInstNm || item.psitnInsttNm || '미지정'}
                 </span>
             )
@@ -125,7 +125,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                 const middle = item.mdTelno || item.middleTelno;
                 const end = item.endTelno || item.endTelno;
                 return (
-                    <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">
+                    <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
                         {area && middle && end ? `${area}-${middle}-${end}` : '미등록'}
                     </span>
                 );
@@ -135,7 +135,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         { 
             header: '이메일', 
             accessor: (item: any) => (
-                <span className="text-xs font-bold text-slate-400 tracking-tight">
+                <span className="text-xs font-bold text-muted-foreground tracking-tight">
                     {item.emlAddr || item.emailAdres || '-'}
                 </span>
             )
@@ -168,7 +168,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                         <Button
                             variant="outline"
                             onClick={() => loadData()}
-                            className="h-11 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm"
+                            className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
                         >
                             <RefreshCcw size={20} />
                         </Button>
@@ -196,12 +196,12 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                 className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
             >
                 <div className="space-y-8">
-                    <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+                    <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
                         <form onSubmit={(e) => { e.preventDefault(); loadData(); }} className="flex items-center gap-4 relative group/search max-w-xl w-full">
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                             <Input
                                 placeholder="인사 성명으로 검색..."
-                                className="h-11 pl-16 rounded-xl border-none bg-slate-50/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                                className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                                 value={searchKeyword}
                                 onChange={(e) => setSearchKeyword(e.target.value)}
                             />
@@ -247,9 +247,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                             name="otsdHrNm"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">성명</FormLabel>
+                                    <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">성명</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="홍길동" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                        <Input {...field} placeholder="홍길동" className="h-11 rounded-lg bg-muted border-border" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -260,9 +260,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                             name="ogdpInstNm"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">소속기관</FormLabel>
+                                    <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">소속기관</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="한국인재개발원" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                        <Input {...field} placeholder="한국인재개발원" className="h-11 rounded-lg bg-muted border-border" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -274,9 +274,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                                 name="areaNo"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">지역번호</FormLabel>
+                                        <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">지역번호</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="02" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                            <Input {...field} placeholder="02" className="h-11 rounded-lg bg-muted border-border" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -287,9 +287,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                                 name="mdTelno"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">국번</FormLabel>
+                                        <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">국번</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="1234" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                            <Input {...field} placeholder="1234" className="h-11 rounded-lg bg-muted border-border" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -300,9 +300,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                                 name="endTelno"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">종번</FormLabel>
+                                        <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">종번</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="5678" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                            <Input {...field} placeholder="5678" className="h-11 rounded-lg bg-muted border-border" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -314,9 +314,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                             name="emlAddr"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">이메일</FormLabel>
+                                    <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">이메일</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="example@domain.com" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                        <Input {...field} placeholder="example@domain.com" className="h-11 rounded-lg bg-muted border-border" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -327,9 +327,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                             name="brdtYmd"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">생년월일 (8자리)</FormLabel>
+                                    <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">생년월일 (8자리)</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="19900101" className="h-11 rounded-lg bg-slate-50 border-slate-200" />
+                                        <Input {...field} placeholder="19900101" className="h-11 rounded-lg bg-muted border-border" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

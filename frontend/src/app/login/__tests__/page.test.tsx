@@ -77,8 +77,8 @@ describe('LoginPage Component', () => {
     mockLogin.mockResolvedValueOnce({});
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText(/아이디/i);
-    const pwInput = screen.getByLabelText(/비밀번호/i);
+    const idInput = screen.getByPlaceholderText(/아이디를 입력하세요.../i);
+    const pwInput = screen.getByPlaceholderText(/비밀번호를 입력하세요/i);
     const submitButton = screen.getByRole('button', { name: /로그인/i });
 
     fireEvent.change(idInput, { target: { value: 'testuser' } });
@@ -96,8 +96,8 @@ describe('LoginPage Component', () => {
     
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText(/아이디/i);
-    const pwInput = screen.getByLabelText(/비밀번호/i);
+    const idInput = screen.getByPlaceholderText(/아이디를 입력하세요.../i);
+    const pwInput = screen.getByPlaceholderText(/비밀번호를 입력하세요/i);
     const submitButton = screen.getByRole('button', { name: /로그인/i });
 
     fireEvent.change(idInput, { target: { value: 'baduser' } });

@@ -491,7 +491,7 @@ npx playwright install --with-deps chromium
 
 #### 4. 스키마 변경 시 DDL 최신화 자동화 프로토콜 (Dump Clean Protocol)
 PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_test_schema.sql`도 동기화되어야 합니다. 이때 H2의 `SCRIPT` 엔진이 덤프하는 DDL 파일에는 H2 전용 환경 변수 설정(`SET DB_CLOSE_DELAY` 등) 및 불필요한 메타 정보 등의 불순물이 대거 유입됩니다.
-이를 완벽히 해결하기 위해 정규식(Regex) 기반의 실시간 후처리 청정 필터링을 내장한 [SchemaDumper.java](../../business-suite/src/test/java/nuri/business/support/SchemaDumper.java)가 실무 코드로 구현되어 있습니다.
+이를 완벽히 해결하기 위해 정규식(Regex) 기반의 실시간 후처리 청정 필터링을 내장한 [SchemaDumper.java](../../business-core/src/test/java/nuri/business/support/SchemaDumper.java)가 실무 코드로 구현되어 있습니다.
 
 - **실제 구현 클래스**: `nuri.business.support.SchemaDumper`
 - **검증 및 정제 동작 흐름**:
@@ -503,7 +503,7 @@ PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_te
   1. `SchemaDumper.java` 소스 상의 `@Disabled` 주석을 잠시 비활성화하거나, IDE에서 해당 단위 테스트를 단독 러닝시킵니다.
   2. 또는 터미널에서 아래 명시적인 Gradle 테스트 명령을 통해 덤프 태스크만 단독 구동할 수 있습니다:
      ```bash
-     ./gradlew :business-suite:test --tests nuri.business.support.SchemaDumper.dumpCleanSchema -Dspring.profiles.active=test-dump
+     ./gradlew :business-core:test --tests nuri.business.support.SchemaDumper.dumpCleanSchema -Dspring.profiles.active=test-dump
      ```
   3. 추출 및 정제가 완료되면 변경된 `V1__init_test_schema.sql` 파일의 변경 내역(Git Diff)을 가볍게 검토한 후 소스 코드와 함께 커밋합니다.
 

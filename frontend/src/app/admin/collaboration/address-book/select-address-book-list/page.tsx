@@ -12,7 +12,7 @@ const AddressBookListClient = dynamic(() => import('./AddressBookListClient'), {
 function AddressBookListSkeleton() {
   return (
     <div className="flex flex-col gap-8 p-8 max-w-7xl mx-auto w-full">
-       <div className="h-64 bg-slate-50 flex items-center justify-center rounded-lg border-2 border-dashed border-slate-200">
+       <div className="h-64 bg-muted flex items-center justify-center rounded-lg border-2 border-dashed border-border">
           <p className="text-xs font-bold tracking-widest text-muted-foreground animate-pulse uppercase">Syncing Address Book...</p>
        </div>
     </div>

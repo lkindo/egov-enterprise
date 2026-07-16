@@ -157,13 +157,13 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
         <h4 className="text-sm font-bold tracking-tight text-foreground">워크플로우 인텔리전스</h4>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-lg bg-emerald-500" /> Completed
+            <div className="w-2 h-2 rounded-full bg-emerald-500" /> Completed
           </div>
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-lg bg-primary animate-pulse" /> In Progress
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> In Progress
           </div>
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-lg bg-muted" /> Scheduled
+            <div className="w-2 h-2 rounded-full bg-muted" /> Scheduled
           </div>
         </div>
       </div>

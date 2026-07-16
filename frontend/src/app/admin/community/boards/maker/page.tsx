@@ -14,7 +14,7 @@ const BoardMakerWizard = dynamic(
  */
 export default function BoardMakerPage() {
   return (
-    <div className="container mx-auto py-10 min-h-screen bg-slate-50/30">
+    <div className="container mx-auto py-10 min-h-screen bg-muted/30">
       <BoardMakerWizard />
     </div>
   );

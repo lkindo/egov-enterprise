@@ -1,10 +1,10 @@
 package nuri.api.controller.business.faq;
+import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.service.faq.FaqService;
 import nuri.business.service.faq.dto.FaqDto;
-import nuri.business.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -82,7 +82,7 @@ class FaqApiControllerTest extends ControllerTestSupport {
     @DisplayName("FAQ 상세 조회 실패 - 존재하지 않는 FAQ")
     void getFaq_NotFound() throws Exception {
         // Given
-        given(faqService.getFaq(anyString())).willThrow(new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        given(faqService.getFaq(anyString())).willThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // When & Then
         mockMvc.perform(get("/api/v1/faqs/NOT_FOUND")

@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

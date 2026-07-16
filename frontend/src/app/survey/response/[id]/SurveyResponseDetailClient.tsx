@@ -61,7 +61,7 @@ export default function SurveyResponseDetailClient() {
                     <CardContent className="space-y-6 relative z-10">
                         <div className="space-y-1">
                             <p className="text-3xl font-bold tracking-tighter">{response?.rspnsNm}</p>
-                            <p className="text-xs font-bold text-slate-400">응답자 프로필</p>
+                            <p className="text-xs font-bold text-muted-foreground">응답자 프로필</p>
                         </div>
                         <div className="space-y-4 pt-4 border-t border-white/10">
                             <div className="flex items-center gap-3">
@@ -84,8 +84,8 @@ export default function SurveyResponseDetailClient() {
                     </CardHeader>
                     <CardContent className="pt-8 space-y-8">
                         <div className="space-y-3">
-                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
-                            <div className="p-6 rounded-lg bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
+                            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">설문 답변 내용</Label>
+                            <div className="p-6 rounded-lg bg-muted border-2 border-border min-h-[150px] leading-relaxed font-medium text-foreground shadow-inner">
                                 {response?.rspdntAnsCn || '응답 내용이 등록되지 않았습니다.'}
                             </div>
                         </div>

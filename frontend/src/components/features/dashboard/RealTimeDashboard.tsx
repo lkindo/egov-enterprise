@@ -114,7 +114,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={cn(
-            "w-2 h-2 rounded-lg",
+            "w-2 h-2 rounded-full",
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground">
@@ -255,7 +255,7 @@ function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
     USER: <Users size={14} className="text-blue-500" />,
     POST: <Activity size={14} className="text-green-500" />,
     COMMENT: <TrendingUp size={14} className="text-purple-500" />,
-    SYSTEM: <Bell size={14} className="text-gray-500" />,
+    SYSTEM: <Bell size={14} className="text-muted-foreground" />,
     ALERT: <AlertCircle size={14} className="text-red-500" />
   };
 

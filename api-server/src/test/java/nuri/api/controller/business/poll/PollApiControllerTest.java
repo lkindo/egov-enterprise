@@ -1,6 +1,6 @@
 package nuri.api.controller.business.poll;
  
-import nuri.business.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.service.system.service.survey.OnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;

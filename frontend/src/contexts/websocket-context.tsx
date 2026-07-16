@@ -66,11 +66,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     isConnecting.current = true;
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-    const socketUrl = API_URL.replace('/api/v1', '/ws');
-
     const client = new Client({
-      webSocketFactory: () => new SockJS(socketUrl),
+      // 동일 출처(same-origin) 상대 경로 → next.config rewrites('/ws/:path*')가 백엔드 WebSocket으로 프록시
+      webSocketFactory: () => new SockJS('/ws'),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -85,7 +83,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Connected to WebSocket');
       setIsConnected(true);
       isConnecting.current = false;
-      client.subscribe('/topic/notices', (msg) => handleNoticeRef.current(msg));
+      // '/topic/notices'는 백엔드에 발행자(publisher)가 없어 구독 제거 (BE는 /topic/public, /topic/dashboard/stats만 발행)
       client.subscribe('/user/queue/notifications', (msg) => handleNotificationRef.current(msg));
     };
 

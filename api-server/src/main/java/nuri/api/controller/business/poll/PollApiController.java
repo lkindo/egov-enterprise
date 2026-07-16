@@ -2,7 +2,7 @@ package nuri.api.controller.business.poll;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.core.response.PageResponse;
+import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.service.survey.EgovOnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
@@ -14,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -71,10 +69,14 @@ public class PollApiController {
     @Operation(summary = "설문 참여(투표)", description = "특정 설문 항목에 투표합니다.")
     @PostMapping("/{pollId}/vote/{pollIemId}")
     public ResponseEntity<ApiResponse<Void>> vote(
-            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String pollId,
             @PathVariable("pollIemId") String pollArtclId) {
-        pollService.vote(pollId, pollArtclId, userDetails.getUsername());
+        // 투표자 식별은 loginId 로 한다. 감사 컬럼 frst_rgtr_id(=loginId)·이중투표 유니크 제약과
+        // 동일한 식별자여야 하므로 getUsername()(=esntlId) 이 아니라 getCurrentLoginId() 를 쓴다.
+        String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
+                        "로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
+        pollService.vote(pollId, pollArtclId, loginId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

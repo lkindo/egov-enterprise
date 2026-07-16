@@ -43,7 +43,7 @@ export default function CommonCodeHubClient({
         breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]} 
       />
 
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <HubHeader 
           title="코드" 
           highlight="통합 허브" 
@@ -52,7 +52,7 @@ export default function CommonCodeHubClient({
         />
 
         {/* --- Multi-Level Hub Switcher --- */}
-        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
+        <div className="bg-muted/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-border/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
             label="표준 코드" 
@@ -135,8 +135,8 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
       className={cn(
         "relative flex items-center gap-3 px-10 py-4 rounded-lg text-xs font-bold tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 
-          ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
-          : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+          ? "bg-white text-foreground shadow-2xl ring-1 ring-slate-200" 
+          : "text-muted-foreground hover:text-foreground hover:bg-white/50"
       )}
     >
       <div className={cn(

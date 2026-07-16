@@ -174,7 +174,7 @@ export function BoardMasterListClient() {
       header: '메타 정보',
       accessor: (board: BoardMaster) => (
         <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
-          <p className="text-xs font-bold text-slate-500 truncate leading-snug">{board.bbsExpln}</p>
+          <p className="text-xs font-bold text-muted-foreground truncate leading-snug">{board.bbsExpln}</p>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
               {board.bbsTypeCdNm}
@@ -235,10 +235,10 @@ export function BoardMasterListClient() {
             <Trash2 size={20} />
           </Button>
           <Button 
-            onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
+            onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
             size="icon" 
             variant="ghost" 
-            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-slate-900 dark:hover:bg-white dark:hover:text-slate-900 hover:text-white transition-all shadow-sm"
+            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-slate-900 dark:hover:bg-white dark:hover:text-foreground hover:text-white transition-all shadow-sm"
           >
             <ArrowRight size={20} />
           </Button>
@@ -373,13 +373,13 @@ export function BoardMasterListClient() {
         />
       </div>
 
-      <div className="p-12 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-none text-slate-900 dark:text-white overflow-hidden relative group transition-colors">
+      <div className="p-12 rounded-lg bg-muted dark:bg-slate-900 border border-border dark:border-none text-foreground dark:text-white overflow-hidden relative group transition-colors">
         <div className="absolute top-0 right-0 p-20 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
           <Rocket size={400} />
         </div>
         <div className="max-w-3xl space-y-8 relative z-10">
           <h3 className="text-5xl font-bold tracking-tighter leading-tight uppercase transition-colors">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
-          <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
+          <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
           <Button 
             onClick={() => router.push('/admin/community/boards/maker')}
             className="h-11 px-12 rounded-lg bg-primary text-white text-2xl font-bold tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 "
@@ -398,7 +398,7 @@ export function BoardMasterListClient() {
             </div>
             <DialogHeader className="relative z-10">
               <DialogTitle className="text-3xl font-bold tracking-tighter uppercase">Board Configuration</DialogTitle>
-              <DialogDescription className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+              <DialogDescription className="text-muted-foreground font-bold uppercase tracking-widest text-xs">
                 게시판 마스터 설정 매트릭스
               </DialogDescription>
             </DialogHeader>
@@ -406,7 +406,7 @@ export function BoardMasterListClient() {
           
           <div className="p-10 space-y-8 bg-white dark:bg-slate-950 transition-colors">
             <div className="space-y-3">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시판 명칭</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
               <Input 
                 id="modal-bbs-name"
                 value={editData.bbsTtl || ''} 
@@ -416,7 +416,7 @@ export function BoardMasterListClient() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시판 소개</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
                 value={editData.bbsExpln || ''} 
@@ -425,10 +425,10 @@ export function BoardMasterListClient() {
               />
             </div>
 
-            <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-6 bg-muted dark:bg-slate-900 rounded-lg border border-border dark:border-slate-800 transition-colors">
               <div className="space-y-1">
-                <p className="font-bold text-slate-900 dark:text-white transition-colors">서비스 활성화 상태</p>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
+                <p className="font-bold text-foreground dark:text-white transition-colors">서비스 활성화 상태</p>
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
               </div>
               <Switch 
                 id="modal-bbs-use-at"
@@ -450,7 +450,7 @@ export function BoardMasterListClient() {
             </div>
           </div>
 
-          <DialogFooter className="p-8 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 transition-colors">
+          <DialogFooter className="p-8 bg-muted dark:bg-slate-900 border-t border-border dark:border-slate-800 transition-colors">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="h-11 px-8 rounded-lg font-bold">취소</Button>
             <Button onClick={handleSave} className="h-11 px-10 rounded-lg bg-primary text-white font-bold tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20">설정 적용하기</Button>
           </DialogFooter>
@@ -464,15 +464,15 @@ function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps
   return (
     <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
       <div className="flex items-center justify-between">
-        <div className={cn("w-14 h-11 rounded-lg bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform text-slate-400", color)}>
+        <div className={cn("w-14 h-11 rounded-lg bg-muted dark:bg-slate-900 flex items-center justify-center border border-border dark:border-slate-800 group-hover:scale-110 transition-transform text-muted-foreground", color)}>
           <Icon size={28} />
         </div>
-        <MoreVertical className="text-slate-200 dark:text-slate-700" size={20} />
+        <MoreVertical className="text-slate-200 dark:text-foreground" size={20} />
       </div>
       <div className="space-y-1">
-        <p className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest leading-none text-left">{label}</p>
-        <h4 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
-        <p className="text-xs font-bold text-slate-400/60 dark:text-slate-300 uppercase leading-none mt-2 text-left">{desc}</p>
+        <p className="text-xs font-bold text-muted-foreground dark:text-white/40 uppercase tracking-widest leading-none text-left">{label}</p>
+        <h4 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
+        <p className="text-xs font-bold text-muted-foreground/60 dark:text-slate-300 uppercase leading-none mt-2 text-left">{desc}</p>
       </div>
     </motion.div>
   );

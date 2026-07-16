@@ -61,7 +61,7 @@ export default function CommunityBoardsWriteClient() {
  // 캐시 무효화 추가
  queryClient.invalidateQueries({ queryKey: ['boardList'] });
  toast('새 게시물이 성공적으로 생성되었습니다.', 'success');
- router.push(`/admin/community/boards/selectBoardList?bbsId=${data.bbsId}`);
+ router.push(`/admin/community/boards/select-board-list?bbsId=${data.bbsId}`);
  } catch (error) {
  console.error('>>> API Submission ERROR:', error);
  toast('게시물 저장 중 오류가 발생했습니다.', 'error');
@@ -79,7 +79,7 @@ export default function CommunityBoardsWriteClient() {
  <Button
  variant="outline"
  onClick={() => router.back()}
- className="h-12 rounded-lg font-bold gap-2 border-slate-200"
+ className="h-12 rounded-lg font-bold gap-2 border-border"
  >
  <ArrowLeft size={18} /> 이전으로
  </Button>
@@ -90,7 +90,7 @@ export default function CommunityBoardsWriteClient() {
  <Form {...form}>
  <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
  <Card className="border-none shadow-2xl rounded-lg overflow-hidden bg-white ring-1 ring-slate-100">
- <CardHeader className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white p-10 pb-16 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden">
+ <CardHeader className="bg-muted dark:bg-slate-900 text-foreground dark:text-white p-10 pb-16 border-b border-border dark:border-slate-800 relative overflow-hidden">
  <div className="flex justify-between items-start relative z-10">
  <div className="space-y-3">
  <CardTitle className="text-4xl font-bold tracking-tighter flex items-center gap-4">
@@ -99,7 +99,7 @@ export default function CommunityBoardsWriteClient() {
  </div>
  새 콘텐츠 전개
  </CardTitle>
- <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">시스템 전역에 배포될 새로운 게시물 데이터를 정의합니다.</p>
+ <p className="text-muted-foreground dark:text-muted-foreground font-bold text-lg">시스템 전역에 배포될 새로운 게시물 데이터를 정의합니다.</p>
  </div>
  <div className="p-4 bg-primary/5 dark:bg-white/5 rounded-lg backdrop-blur-xl border border-primary/10 dark:border-white/10 text-right">
  <span className="text-xs font-bold tracking-widest text-primary uppercase animate-pulse">Waiting for Submit</span>
@@ -113,9 +113,9 @@ export default function CommunityBoardsWriteClient() {
 
  <CardContent className="p-10 -mt-8 space-y-10">
  {/* Basic Info Node */}
- <div className="bg-white rounded-lg p-8 border border-slate-100 shadow-xl space-y-8">
+ <div className="bg-white rounded-lg p-8 border border-border shadow-xl space-y-8">
  <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
- <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 font-bold ">01</div>
+ <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold ">01</div>
  <h3 className="text-xl font-bold tracking-tight">기본 메타데이터</h3>
  </div>
 
@@ -125,14 +125,14 @@ export default function CommunityBoardsWriteClient() {
  name="bbsId"
  render={({ field }) => (
  <FormItem className="space-y-2">
- <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
  <Layout size={14} className="text-primary" /> 게시판 식별자 (BBS_ID)
  </FormLabel>
  <FormControl>
  <Input
  {...field}
  placeholder="BBS_0000000000000001"
- className="h-11 rounded-lg bg-slate-50/50 border-slate-100 font-bold text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-11 rounded-lg bg-muted/50 border-border font-bold text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  maxLength={20}
  />
  </FormControl>
@@ -146,7 +146,7 @@ export default function CommunityBoardsWriteClient() {
  name="pstTtl"
  render={({ field }) => (
  <FormItem className="space-y-2">
- <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
  <MessageSquare size={14} className="text-primary" /> 게시물 제목
  </FormLabel>
  <FormControl>
@@ -165,9 +165,9 @@ export default function CommunityBoardsWriteClient() {
  </div>
 
  {/* Content Body Node */}
- <div className="bg-white rounded-lg p-8 border border-slate-100 shadow-xl space-y-8">
+ <div className="bg-white rounded-lg p-8 border border-border shadow-xl space-y-8">
  <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
- <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 font-bold ">02</div>
+ <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold ">02</div>
  <h3 className="text-xl font-bold tracking-tight">본문 콘텐츠 데이터</h3>
  </div>
 
@@ -180,7 +180,7 @@ export default function CommunityBoardsWriteClient() {
  <Textarea
  {...field}
  placeholder="본문 내용을 상세히 기술하십시오. 마크다운 및 HTML 파싱을 지원합니다."
- className="min-h-[400px] p-10 rounded-lg border-2 border-slate-50 bg-slate-50/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
+ className="min-h-[400px] p-10 rounded-lg border-2 border-slate-50 bg-muted/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
  maxLength={4000}
  />
  </FormControl>
@@ -192,10 +192,10 @@ export default function CommunityBoardsWriteClient() {
 
  {/* Policy & Date Node */}
  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
- <div className="bg-slate-50/50 rounded-lg p-8 border border-slate-100 space-y-6">
- <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
+ <div className="bg-muted/50 rounded-lg p-8 border border-border space-y-6">
+ <div className="flex items-center gap-3 border-b border-border/50 pb-4">
  <ShieldCheck size={18} className="text-primary" />
- <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">배포 및 보안 정책</h4>
+ <h4 className="font-bold text-sm uppercase tracking-widest text-foreground">배포 및 보안 정책</h4>
  </div>
 
  <div className="space-y-6">
@@ -203,10 +203,10 @@ export default function CommunityBoardsWriteClient() {
  control={form.control}
  name="noticeAt"
  render={({ field }) => (
- <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-slate-100">
+ <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-border">
  <div className="space-y-0.5">
- <Label className="text-sm font-bold text-slate-800">공지사항 설정</Label>
- <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">Notification Priority</p>
+ <Label className="text-sm font-bold text-foreground">공지사항 설정</Label>
+ <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">Notification Priority</p>
  </div>
  <Switch
  checked={field.value === 'Y'}
@@ -220,10 +220,10 @@ export default function CommunityBoardsWriteClient() {
  control={form.control}
  name="secretAt"
  render={({ field }) => (
- <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-slate-100">
+ <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-border">
  <div className="space-y-0.5">
- <Label className="text-sm font-bold text-slate-800">비밀글 보호</Label>
- <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">Privacy Guard</p>
+ <Label className="text-sm font-bold text-foreground">비밀글 보호</Label>
+ <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">Privacy Guard</p>
  </div>
  <Switch
  checked={field.value === 'Y'}
@@ -235,10 +235,10 @@ export default function CommunityBoardsWriteClient() {
  </div>
  </div>
 
- <div className="bg-slate-50/50 rounded-lg p-8 border border-slate-100 space-y-6">
- <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
+ <div className="bg-muted/50 rounded-lg p-8 border border-border space-y-6">
+ <div className="flex items-center gap-3 border-b border-border/50 pb-4">
  <Calendar size={18} className="text-primary" />
- <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">게시 기간 스케줄링</h4>
+ <h4 className="font-bold text-sm uppercase tracking-widest text-foreground">게시 기간 스케줄링</h4>
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -247,9 +247,9 @@ export default function CommunityBoardsWriteClient() {
  name="ntceBgnde"
  render={({ field }) => (
  <FormItem className="space-y-2">
- <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시 시작일</FormLabel>
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시 시작일</FormLabel>
  <FormControl>
- <Input type="date" {...field} className="h-11 rounded-lg border-slate-200 font-bold" />
+ <Input type="date" {...field} className="h-11 rounded-lg border-border font-bold" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />
  </FormItem>
@@ -261,9 +261,9 @@ export default function CommunityBoardsWriteClient() {
  name="ntceEndde"
  render={({ field }) => (
  <FormItem className="space-y-2">
- <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">게시 종료일</FormLabel>
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시 종료일</FormLabel>
  <FormControl>
- <Input type="date" {...field} className="h-11 rounded-lg border-slate-200 font-bold" />
+ <Input type="date" {...field} className="h-11 rounded-lg border-border font-bold" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />
  </FormItem>
@@ -275,9 +275,9 @@ export default function CommunityBoardsWriteClient() {
  name="evntDt"
  render={({ field }) => (
  <FormItem className="space-y-2">
- <FormLabel className="text-xs font-bold text-slate-400 uppercase tracking-widest">행사/이벤트 일자</FormLabel>
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행사/이벤트 일자</FormLabel>
  <FormControl>
- <Input type="date" {...field} className="h-11 rounded-lg border-slate-200 font-bold bg-primary/5" />
+ <Input type="date" {...field} className="h-11 rounded-lg border-border font-bold bg-primary/5" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-500" />
  </FormItem>
@@ -294,8 +294,8 @@ export default function CommunityBoardsWriteClient() {
  <Settings2 size={24} className="text-primary animate-spin-slow" />
  </div>
  <div className="text-left">
- <p className="font-bold text-slate-800">시스템 동기화 준비 완료</p>
- <p className="text-xs font-bold text-slate-400">ID, 제목, 본문 등 필수 필드 무결성 확인됨</p>
+ <p className="font-bold text-foreground">시스템 동기화 준비 완료</p>
+ <p className="text-xs font-bold text-muted-foreground">ID, 제목, 본문 등 필수 필드 무결성 확인됨</p>
  </div>
  </div>
  <div className="flex gap-4">
@@ -303,7 +303,7 @@ export default function CommunityBoardsWriteClient() {
  type="button"
  variant="ghost"
  onClick={() => router.back()}
- className="h-11 px-10 rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-slate-50"
+ className="h-11 px-10 rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-muted"
  >
  취소
  </Button>

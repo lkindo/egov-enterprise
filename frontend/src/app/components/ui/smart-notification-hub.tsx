@@ -19,6 +19,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { Input } from '@/components/ui/input';
+import { useNotifications } from '@/lib/hooks/use-notifications';
 
 interface Notification {
   id: string;
@@ -30,40 +31,30 @@ interface Notification {
   status: 'new' | 'read' | 'archived';
 }
 
-const SAMPLE_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    title: 'Security Protocol Alpha Activated',
-    content: 'Multiple failed login attempts detected from IP: 192.168.1.104. Automated firewall rules applied.',
-    time: '2026-05-10 14:22',
-    type: 'security',
-    priority: 'critical',
-    status: 'new'
-  },
-  {
-    id: '2',
-    title: 'System Intelligence Optimized',
-    content: 'AI-driven database indexing complete. Query performance improved by 24.5%.',
-    time: '2026-05-10 13:45',
-    type: 'system',
-    priority: 'medium',
-    status: 'new'
-  },
-  {
-    id: '3',
-    title: 'New Collaborative Message',
-    content: 'Admin_User_01 sent a new strategy document for the upcoming Q3 infrastructure review.',
-    time: '2026-05-10 12:00',
-    type: 'message',
-    priority: 'low',
-    status: 'read'
-  }
-];
-
 export function SmartNotificationHub() {
   const [activeTab, setActiveTab] = useState<'all' | 'critical' | 'unread'>('all');
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
+  // (과거엔 SAMPLE_NOTIFICATIONS 하드코딩이라 새로 생성한 알림이 검색/목록에 절대 안 나타났음.)
+  const { notifications: rawNotifications } = useNotifications();
+  const notifications = useMemo<Notification[]>(
+    () =>
+      (rawNotifications || []).map((n) => ({
+        id: n.notiSn,
+        title: n.notiTtlNm,
+        content: n.notiCn,
+        time: n.notiDt,
+        type:
+          n.type === 'SECURITY' ? 'security'
+          : n.type === 'SYSTEM' ? 'system'
+          : n.type === 'INFO' ? 'alert'
+          : 'message',
+        priority: n.type === 'SECURITY' ? 'critical' : n.type === 'SYSTEM' ? 'medium' : 'low',
+        status: n.readYn === 'Y' ? 'read' : 'new',
+      })),
+    [rawNotifications],
+  );
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter(n => {
@@ -80,7 +71,7 @@ export function SmartNotificationHub() {
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-slate-400">
+        <span className="font-mono text-xs font-bold text-muted-foreground">
           {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
         </span>
       ),
@@ -106,12 +97,12 @@ export function SmartNotificationHub() {
       accessor: (n) => (
         <div className="flex flex-col gap-1 py-1">
           <div className="flex items-center gap-2">
-            {n.status === 'new' && <span className="w-1.5 h-1.5 rounded-lg bg-primary animate-pulse" />}
-            <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors tracking-tight">
+            {n.status === 'new' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
               {n.title}
             </span>
           </div>
-          <p className="text-[11px] font-medium text-slate-400 truncate max-w-md">{n.content}</p>
+          <p className="text-[11px] font-medium text-muted-foreground truncate max-w-md">{n.content}</p>
         </div>
       )
     },
@@ -122,7 +113,7 @@ export function SmartNotificationHub() {
           "text-[10px] font-black tracking-widest uppercase",
           n.priority === 'critical' ? "text-rose-600" :
           n.priority === 'high' ? "text-rose-400" :
-          n.priority === 'medium' ? "text-indigo-500" : "text-slate-400"
+          n.priority === 'medium' ? "text-indigo-500" : "text-muted-foreground"
         )}>
           {n.priority}
         </span>
@@ -132,7 +123,7 @@ export function SmartNotificationHub() {
     {
       header: '발생 일시',
       accessor: (n) => (
-        <span className="text-xs font-bold text-slate-400 tabular-nums tracking-tighter">{n.time}</span>
+        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{n.time}</span>
       ),
       className: 'w-40'
     },
@@ -141,7 +132,7 @@ export function SmartNotificationHub() {
       accessor: () => (
         <div className="flex items-center justify-end pr-4">
           <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg">
-            <MoreVertical size={16} className="text-slate-400" />
+            <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
       ),
@@ -158,7 +149,7 @@ export function SmartNotificationHub() {
         icon={Bell} 
         actions={
           <div className="flex gap-3">
-             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+             <div className="flex bg-muted p-1 rounded-xl border border-border/50">
                {['all', 'unread', 'critical'].map((tab) => (
                  <Button
                    key={tab}
@@ -166,7 +157,7 @@ export function SmartNotificationHub() {
                    size="sm"
                    className={cn(
                      "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
-                     activeTab === tab ? "bg-white shadow-sm text-primary" : "text-slate-500"
+                     activeTab === tab ? "bg-white shadow-sm text-primary" : "text-muted-foreground"
                    )}
                    onClick={() => setActiveTab(tab as any)}
                  >
@@ -174,7 +165,7 @@ export function SmartNotificationHub() {
                  </Button>
                ))}
              </div>
-             <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary transition-all shadow-sm">
+             <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                 <RefreshCw size={18} />
              </Button>
           </div>
@@ -195,13 +186,13 @@ export function SmartNotificationHub() {
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100/50 pb-10 mb-8">
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <div className="relative group max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
               <Input 
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-slate-50/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
+                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
                 placeholder="알림 제목 또는 내용 검색.." 
               />
             </div>

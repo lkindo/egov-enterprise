@@ -9,12 +9,14 @@
 
 ### 제1조 (모듈별 책임 분립)
 본 프로젝트는 멀티 모듈 구조를 가지며, 각 모듈은 다음의 책임을 엄격히 준수한다.
-1. **`foundation`**: 프로젝트 전반에 사용되는 공통 유틸리티, 예외 클래스, 상수 등을 포함하며, 다른 어떤 모듈에도 의존하지 않는 최하위 모듈이다.
-2. **`business-suite`**: 핵심 비즈니스 로직, 엔티티(Entity), 리포지토리(Repository)를 포함하는 프로젝트의 심장부이다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
-3. **`api-server`**: 외부 요청의 진입점으로서 컨트롤러(Controller)와 API 관련 DTO를 관리한다. 비즈니스 로직을 직접 구현하지 않고 `business-suite`의 서비스를 호출하는 역할에 집중한다.
+1. **`foundation`**: 프로젝트 전반에 사용되는 공통 유틸리티, 예외 클래스, 상수와 함께 공통 응답 래퍼(`ApiResponse`·`PageResponse`)·에러 코드 체계(`ErrorCode`)·보안 백본(JWT/IAM/filter)·공통 엔티티(`BaseEntity`/`BaseTimeEntity`) 등 프레임워크 백본을 포함하며, 다른 어떤 모듈에도 의존하지 않는 최하위 모듈이다.
+2. **`business-core`**: 재사용 가능한 admin 코어 도메인(user·auth·menu·code·organization·system·survey 등)의 비즈니스 로직, 엔티티(Entity), 리포지토리(Repository) 및 공용 테스트 하네스를 포함하는 프레임워크의 심장부이다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
+3. **`business-app`**: 개별 프로젝트 고유 도메인(board·informalsanction·schedule·notification·memoreport·operation 등)의 비즈니스 로직·엔티티·리포지토리를 포함하며, `business-core`를 기반으로 확장한다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
+4. **`api-server`**: 외부 요청의 진입점으로서 컨트롤러(Controller)와 API 관련 DTO를 관리한다. 비즈니스 로직을 직접 구현하지 않고 `business-core`/`business-app`의 서비스를 호출하는 역할에 집중한다.
+5. **`migration-tool`**: 레거시 시스템을 표준 스키마로 이관하는 독립 실행형 ETL CLI 도구이다. 파생 프로젝트의 데이터 이관 시에만 선택적으로 포함하며, `foundation`에 의존하지 않는다.
 
 ### 제2조 (의존성 방향의 원칙)
-1. 의존성은 반드시 **하향식(`api-server` -> `business-suite` -> `foundation`)**으로만 흐르도록 설계한다.
+1. 의존성은 반드시 **하향식(`api-server` -> `business-app` -> `business-core` -> `foundation`)**으로만 흐르도록 설계한다. (`migration-tool`은 이 계층에 속하지 않는 독립 실행형 도구이다.)
 2. 하위 모듈이 상위 모듈을 참조하는 역방향 의존성이나, 모듈 간 순환 참조(Circular Dependency)는 엄격히 금지한다.
 
 ---
@@ -26,8 +28,8 @@
 2. 외부와의 데이터 교환은 반드시 전용 DTO(`Request`, `Response`)를 통해서만 수행한다.
 
 ### 제4조 (변환 책임의 소재 및 Facade 격리)
-1. 비즈니스 레이어(`business-suite`)의 비대화(God Class) 안티패턴을 방지하기 위해, 프레젠테이션 맞춤형 최종 API 응답(Response DTO) 조립 책임은 진입점인 `api-server` 모듈 내의 **Facade 클래스 또는 Controller-Level Mapper**로 전면 이관한다.
-2. `business-suite`의 핵심 서비스 레이어는 프론트엔드 UI 스펙에 종속되지 않은 순수 도메인 처리 결과(내부 전송용 Base DTO)만 반환하여 비즈니스 응집도를 극대화한다.
+1. 비즈니스 레이어(`business-core`/`business-app`)의 비대화(God Class) 안티패턴을 방지하기 위해, 프레젠테이션 맞춤형 최종 API 응답(Response DTO) 조립 책임은 진입점인 `api-server` 모듈 내의 **Facade 클래스 또는 Controller-Level Mapper**로 전면 이관한다.
+2. `business-core`/`business-app`의 핵심 서비스 레이어는 프론트엔드 UI 스펙에 종속되지 않은 순수 도메인 처리 결과(내부 전송용 Base DTO)만 반환하여 비즈니스 응집도를 극대화한다.
 3. 데이터의 변경이 없는 단순 복합 조회성 화면의 경우, 비즈니스 서비스나 Entity 맵핑을 거치지 않고 QueryDSL 등을 통해 데이터베이스에서 프레젠테이션 DTO로 직행하는 **조회 전용 프로젝션(CQRS 지향)** 방식을 명시적으로 허용하여 레이어 간 병목을 우회한다.
 
 ### 제5조 (도메인 캡슐화)

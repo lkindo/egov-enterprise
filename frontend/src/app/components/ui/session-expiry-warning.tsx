@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Shield, Clock, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 /**
  * 세션 만료 경고 컴포넌트
@@ -20,30 +20,35 @@ export function SessionExpiryWarning() {
   const [remainingSeconds, setRemainingSeconds] = useState(300); // 5분 = 300초
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const extendButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (showWarning) {
+      const timeoutId = setTimeout(() => {
+        extendButtonRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showWarning]);
 
   const getTokenExpiry = useCallback((): number | null => {
     if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem('accessToken');
-    if (!token) return null;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null; // ms 변환
-    } catch {
-      return null;
-    }
+    // accessToken 은 HttpOnly 라 JS 로 읽을 수 없다. 로그인/재발급 라우트가 심는
+    // 비민감 만료힌트 쿠키(session_exp = exp ms)에서 만료시각만 읽는다.
+    const m = document.cookie.match(/(?:^|;\s*)session_exp=([^;]+)/);
+    if (!m) return null;
+    const ms = parseInt(decodeURIComponent(m[1]), 10);
+    return Number.isFinite(ms) ? ms : null;
   }, []);
 
   const handleExtendSession = useCallback(async () => {
     try {
-      // client.ts의 reissue 로직을 직접 트리거
+      // client.ts의 reissue 로직을 직접 트리거.
+      // reissue 라우트가 새 accessToken 을 서버에서 HttpOnly 쿠키로 재설정하므로 클라이언트는 별도 저장이 불필요하다.
+      // ⚠ 토큰을 localStorage/JS-읽기 쿠키에 다시 쓰면 HttpOnly 전환(로드맵 #9)이 무력화되고
+      //    XSS 토큰 탈취 표면이 재생성되므로 절대 저장하지 않는다.
       const { default: client } = await import('@/lib/api/client');
-      const res: any = await (client as any).post('/auth/reissue', {});
-      
-      if (res?.accessToken) {
-        localStorage.setItem('accessToken', res.accessToken);
-        document.cookie = `accessToken=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      }
+      await (client as any).post('/auth/reissue', {});
     } catch {
       // reissue 실패 시에도 조용히 처리 (사용자가 작업을 계속할 수 있도록)
     }
@@ -128,77 +133,66 @@ export function SessionExpiryWarning() {
   };
 
   return (
-    <AnimatePresence>
-      {showWarning && (
-        <>
-          {/* 배경 오버레이 */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]"
-            onClick={() => setShowWarning(false)}
-          />
+    <Dialog open={showWarning} onOpenChange={(open) => { if (!open) setShowWarning(false); }}>
+      <DialogContent showCloseButton={false} className="max-w-md p-0 overflow-hidden border-border bg-card">
+        {/* 접근성을 위한 sr-only 제목 및 설명 */}
+        <DialogTitle className="sr-only">세션 만료 경고</DialogTitle>
+        <DialogDescription className="sr-only">보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.</DialogDescription>
 
-          {/* 경고 팝업 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-full max-w-md"
-          >
-            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden">
-              {/* 헤더 */}
-              <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <Shield className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="font-bold text-amber-800 text-sm">세션 만료 예정</span>
-                </div>
-                <button
-                  onClick={() => setShowWarning(false)}
-                  className="p-1 text-amber-400 hover:text-amber-600 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          {/* 헤더 */}
+          <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/20 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-
-              {/* 본문 */}
-              <div className="p-8 text-center">
-                <div className="inline-flex items-center gap-2 bg-rose-50 text-rose-600 px-4 py-2 rounded-lg mb-6">
-                  <Clock size={16} />
-                  <span className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  세션이 곧 만료됩니다
-                </h3>
-                <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                  보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.<br />
-                  작업을 계속하시려면 세션을 연장해 주세요.
-                </p>
-              </div>
-
-              {/* 액션 */}
-              <div className="px-6 pb-6 flex gap-3">
-                <button
-                  onClick={handleLogout}
-                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-bold text-sm rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  로그아웃
-                </button>
-                <button
-                  onClick={handleExtendSession}
-                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-bold text-sm rounded-lg hover:bg-slate-800 shadow-xl transition-all active:scale-95"
-                >
-                  세션 연장
-                </button>
-              </div>
+              <span className="font-bold text-amber-800 dark:text-amber-400 text-sm">세션 만료 예정</span>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            <button
+              onClick={() => setShowWarning(false)}
+              aria-label="세션 경고 닫기"
+              className="p-1 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* 본문 */}
+          <div className="p-8 text-center">
+            <div
+              className="inline-flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-lg mb-6"
+            >
+              <Clock size={16} />
+              {/* 매초 낭독(verbose) 방지: 시각 카운트다운은 aria-hidden, 경고 자체는 dialog role로 1회 고지 */}
+              <span aria-hidden="true" className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
+            </div>
+            <h3 className="text-xl font-bold text-card-foreground mb-2">
+              세션이 곧 만료됩니다
+            </h3>
+            <p className="text-muted-foreground font-medium text-sm leading-relaxed">
+              보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.<br />
+              작업을 계속하시려면 세션을 연장해 주세요.
+            </p>
+          </div>
+
+          {/* 액션 */}
+          <div className="px-6 pb-6 flex gap-3">
+            <button
+              onClick={handleLogout}
+              className="flex-1 px-4 py-3 border-2 border-border text-muted-foreground font-bold text-sm rounded-lg hover:bg-accent transition-colors cursor-pointer"
+            >
+              로그아웃
+            </button>
+            <button
+              ref={extendButtonRef}
+              onClick={handleExtendSession}
+              className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
+            >
+              세션 연장
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

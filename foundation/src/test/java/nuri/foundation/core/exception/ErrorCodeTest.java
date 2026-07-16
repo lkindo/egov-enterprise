@@ -10,7 +10,7 @@ class ErrorCodeTest {
     @Test
     @DisplayName("ErrorCode 필드 확인")
     void testErrorCodeFields() {
-        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
 
         assertEquals(400, errorCode.getStatus().value());
         assertEquals("C001", errorCode.getCode());
