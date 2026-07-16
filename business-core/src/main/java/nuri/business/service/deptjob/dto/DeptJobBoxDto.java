@@ -18,7 +18,7 @@ public class DeptJobBoxDto {
     @Size(max = 20)
     private String deptId;
     private String deptNm;
-    private Integer sortOrdr;
+    private Long sortOrdr;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

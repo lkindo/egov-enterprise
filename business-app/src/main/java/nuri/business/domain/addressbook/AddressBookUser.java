@@ -35,7 +35,7 @@ public class AddressBookUser extends BaseEntity {
     @Column(length = 100)
     private String nm;
 
-    @Column(length = 50)
+    @Column(length = 320)
     private String emlAddr;
 
     @Column(length = 11)
@@ -47,7 +47,7 @@ public class AddressBookUser extends BaseEntity {
     @Column(length = 11)
     private String ofcTelno;
 
-    @Column(length = 11)
+    @Column(length = 20)
     private String faxNo;
 
 

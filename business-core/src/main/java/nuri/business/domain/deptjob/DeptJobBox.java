@@ -25,10 +25,10 @@ public class DeptJobBox extends BaseEntity {
     @Column(length = 20)
     private String deptId;
 
-    private Integer sortOrdr;
+    private Long sortOrdr;
 
     // 정적 팩토리 전용 생성자 (빌더 위임 대상)
-    private DeptJobBox(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Integer sortOrdr) {
+    private DeptJobBox(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Long sortOrdr) {
         this.deptTaskBoxId = deptTaskBoxId;
         this.deptTaskBoxNm = deptTaskBoxNm;
         this.deptId = deptId;
@@ -40,11 +40,11 @@ public class DeptJobBox extends BaseEntity {
      * 기존 {@code DeptJobBox.builder()...build()} 호출부와 호환.
      */
     @Builder
-    public static DeptJobBox create(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Integer sortOrdr) {
+    public static DeptJobBox create(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Long sortOrdr) {
         return new DeptJobBox(deptTaskBoxId, deptTaskBoxNm, deptId, sortOrdr);
     }
 
-    public void update(String deptTaskBoxNm, String deptId, Integer sortOrdr) {
+    public void update(String deptTaskBoxNm, String deptId, Long sortOrdr) {
         this.deptTaskBoxNm = deptTaskBoxNm;
         this.deptId = deptId;
         this.sortOrdr = sortOrdr;

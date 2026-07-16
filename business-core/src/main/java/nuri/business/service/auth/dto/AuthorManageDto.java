@@ -23,7 +23,7 @@ public class AuthorManageDto {
     /** 권한코드 */
     @Schema(description = "권한코드", example = "ROLE_USER")
     @NotBlank(message = "권한코드는 필수 입력 사항입니다.")
-    @Size(max = 30)
+    @Size(max = 20)
     @NonNull
     private String authrtCd;
 

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class InstitutionCode extends BaseEntity {
  
     @Id
-    @Column(length = 20)
+    @Column(length = 7)
     private String instCd;
  
     @Column(length = 100)
@@ -35,16 +35,16 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 3)
     private String ord;
  
-    @Column(length = 12)
+    @Column(length = 2)
     private String instCycl;
  
-    @Column(length = 20)
+    @Column(length = 7)
     private String topInstCd;
  
-    @Column(length = 20)
+    @Column(length = 7)
     private String uprInstCd;
  
-    @Column(length = 20)
+    @Column(length = 7)
     private String reprsInstCd;
  
     @Column(length = 2)
@@ -56,10 +56,10 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 2)
     private String instTypeSclsf;
  
-    @Column(length = 13)
+    @Column(length = 11)
     private String telno;
  
-    @Column(length = 13)
+    @Column(length = 20)
     private String faxNo;
  
     @Column(length = 8)
@@ -80,15 +80,15 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 8)
     private String crtrYmd;
  
-    private Integer sortOrdr;
- 
+    private Long sortOrdr;
+
     @Builder
     public InstitutionCode(String instCd, String allInstNm, String lwstInstNm, String instAbbrNm,
             String odr, String ord, String instCycl, String topInstCd,
             String uprInstCd, String reprsInstCd, String instTypeLclsf,
             String instTypeMclsf, String instTypeSclas, String telno, String faxNo,
             String crtYmd, String ablYmd, String ablYn, String chgYmd,
-            String chgTm, String crtrYmd, Integer sortOrdr, String frstRgtrId) {
+            String chgTm, String crtrYmd, Long sortOrdr, String frstRgtrId) {
         this.instCd = instCd;
         this.allInstNm = allInstNm;
         this.lwstInstNm = lwstInstNm;
@@ -118,7 +118,7 @@ public class InstitutionCode extends BaseEntity {
             String instCycl, String topInstCd, String uprInstCd, String reprsInstCd,
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf, String telno,
             String faxNo, String crtYmd, String ablYmd, String ablYn, String chgYmd,
-            String chgTm, String crtrYmd, Integer sortOrdr, String lastMdfrId) {
+            String chgTm, String crtrYmd, Long sortOrdr, String lastMdfrId) {
         this.allInstNm = allInstNm;
         this.lwstInstNm = lwstInstNm;
         this.instAbbrNm = instAbbrNm;

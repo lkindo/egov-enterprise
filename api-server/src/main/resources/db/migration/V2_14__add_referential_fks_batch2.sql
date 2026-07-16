@@ -147,7 +147,10 @@ BEGIN
     ALTER TABLE tb_blog_user_map ADD CONSTRAINT fk_tb_blog_user_map_tb_user_info
       FOREIGN KEY (user_id) REFERENCES tb_user_info (esntl_id) NOT VALID;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tb_club_user_map_tb_cmnty_info') THEN
+  -- [시퀀싱 가드] tb_club_user_map 은 V2_16 이 고아 테이블로 DROP — 라이브(선적용 수렴 경로)처럼
+  -- 이미 드랍된 DB 에서는 스킵하고, fresh DB(V2_0 생성→본 FK→V2_16 DROP)에서만 실행된다.
+  IF to_regclass('public.tb_club_user_map') IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tb_club_user_map_tb_cmnty_info') THEN
     ALTER TABLE tb_club_user_map ADD CONSTRAINT fk_tb_club_user_map_tb_cmnty_info
       FOREIGN KEY (cmnty_id) REFERENCES tb_cmnty_info (cmnty_id) NOT VALID;
   END IF;
@@ -196,7 +199,13 @@ ALTER TABLE tb_menu_info          VALIDATE CONSTRAINT fk_tb_menu_info_tb_menu_in
 ALTER TABLE tb_sms_rcptn          VALIDATE CONSTRAINT fk_tb_sms_rcptn_tb_sms_info;
 ALTER TABLE tb_blog_user_map      VALIDATE CONSTRAINT fk_tb_blog_user_map_tb_blog_info;
 ALTER TABLE tb_blog_user_map      VALIDATE CONSTRAINT fk_tb_blog_user_map_tb_user_info;
-ALTER TABLE tb_club_user_map      VALIDATE CONSTRAINT fk_tb_club_user_map_tb_cmnty_info;
+DO $$
+BEGIN
+  -- [시퀀싱 가드] V2_16 드랍 이후 수렴 경로에서는 스킵 (위 FK 가드와 동일 사유)
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tb_club_user_map_tb_cmnty_info') THEN
+    ALTER TABLE tb_club_user_map VALIDATE CONSTRAINT fk_tb_club_user_map_tb_cmnty_info;
+  END IF;
+END $$;
 ALTER TABLE tb_login_policy       VALIDATE CONSTRAINT fk_tb_login_policy_tb_user_info;
 ALTER TABLE tb_user_absn          VALIDATE CONSTRAINT fk_tb_user_absn_tb_user_info;
 
@@ -229,7 +238,13 @@ CREATE INDEX IF NOT EXISTS ix_tb_user_info_group_id            ON tb_user_info (
 CREATE INDEX IF NOT EXISTS ix_tb_menu_info_up_menu_sn          ON tb_menu_info (up_menu_sn);
 CREATE INDEX IF NOT EXISTS ix_tb_sms_rcptn_sms_id              ON tb_sms_rcptn (sms_id);
 CREATE INDEX IF NOT EXISTS ix_tb_blog_user_map_user_id         ON tb_blog_user_map (user_id);
-CREATE INDEX IF NOT EXISTS ix_tb_club_user_map_cmnty_id        ON tb_club_user_map (cmnty_id);
+DO $$
+BEGIN
+  -- [시퀀싱 가드] V2_16 드랍 이후 수렴 경로에서는 스킵
+  IF to_regclass('public.tb_club_user_map') IS NOT NULL THEN
+    CREATE INDEX IF NOT EXISTS ix_tb_club_user_map_cmnty_id ON tb_club_user_map (cmnty_id);
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------
 -- 4) 기존 FK 자식측 인덱스 부재 11건 보강 (감사 MEDIUM 잔여 해소 — 재실측 완료)

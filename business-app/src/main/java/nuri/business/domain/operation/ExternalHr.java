@@ -52,7 +52,7 @@ public class ExternalHr {
     @Column(length = 4)
     private String endTelno;
 
-    @Column(length = 100)
+    @Column(length = 320)
     private String emlAddr;
 
     private LocalDateTime crtDt;

@@ -35,7 +35,7 @@ public class BannerDto {
     private String bnrExpln;
 
     @Schema(description = "정렬 순서")
-    private Integer sortOrdr;
+    private Long sortOrdr;
 
     @Schema(description = "반영 여부")
     @Size(max = 1)

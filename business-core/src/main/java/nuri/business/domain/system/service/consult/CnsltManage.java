@@ -1,6 +1,5 @@
 package nuri.business.domain.system.service.consult;
 
-import java.time.LocalDateTime;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,7 +50,7 @@ public class CnsltManage extends BaseEntity {
     @Column(length = 4)
     private String mblEndTelno;
 
-    @Column(length = 100)
+    @Column(length = 320)
     private String emlAddr;
 
     @Column(length = 1)
@@ -60,7 +59,7 @@ public class CnsltManage extends BaseEntity {
     @Column(length = 100)
     private String wrterNm;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String wrtYmd;
 
     @Column
@@ -75,7 +74,7 @@ public class CnsltManage extends BaseEntity {
     @Column(columnDefinition = "TEXT", length = 4000)
     private String procCn;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String mngYmd;
 
     // 팩토리 위임 대상 생성자. @Builder.Default 기본값(inqCnt=0, qnaProcSttsCd="1")을 널병합으로 재현한다.
@@ -145,6 +144,6 @@ public class CnsltManage extends BaseEntity {
     public void updateAnswer(String qnaProcSttsCd, String procCn) {
         this.qnaProcSttsCd = qnaProcSttsCd;
         this.procCn = procCn;
-        this.mngYmd = LocalDateTime.now().toString();
+        this.mngYmd = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 }

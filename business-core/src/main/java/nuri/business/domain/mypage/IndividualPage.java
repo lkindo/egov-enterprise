@@ -24,7 +24,7 @@ public class IndividualPage extends BaseEntity {
     @Column(length = 4000)
     private String pageExpln;
 
-    @Column(length = 30, nullable = false)
+    @Column(length = 20, nullable = false)
     private String userId;
 
     private IndividualPage(String pageId, String pageTtl, String pageExpln, String userId) {

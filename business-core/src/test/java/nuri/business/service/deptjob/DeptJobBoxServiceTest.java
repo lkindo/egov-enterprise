@@ -39,7 +39,7 @@ class DeptJobBoxServiceTest {
                 .deptTaskBoxId("BOX1")
                 .deptTaskBoxNm("Test Box")
                 .deptId("DEPT1")
-                .sortOrdr(1)
+                .sortOrdr(1L)
                 .build();
     }
 
@@ -94,7 +94,7 @@ class DeptJobBoxServiceTest {
         DeptJobBoxDto dto = new DeptJobBoxDto();
         dto.setDeptTaskBoxNm("New Box");
         dto.setDeptId("DEPT2");
-        dto.setSortOrdr(2);
+        dto.setSortOrdr(2L);
 
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
@@ -112,7 +112,7 @@ class DeptJobBoxServiceTest {
         DeptJobBoxDto dto = new DeptJobBoxDto();
         dto.setDeptTaskBoxNm("Updated Box");
         dto.setDeptId("DEPT1");
-        dto.setSortOrdr(2);
+        dto.setSortOrdr(2L);
 
         deptJobBoxService.updateDeptJobBox("BOX1", "user1", dto);
 

@@ -49,10 +49,10 @@ public class MemoReportDto {
     private String drctnMttr;
 
     @Schema(description = "지시사항등록일시")
-    private String drctnMttrRegDt;
+    private LocalDateTime drctnMttrRegDt;
 
     @Schema(description = "보고대상자조회일시")
-    private String rptrInqDt;
+    private LocalDateTime rptrInqDt;
 
     @Schema(description = "생성일시")
     private LocalDateTime crtDt;

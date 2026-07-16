@@ -99,6 +99,6 @@ public class InstitutionCodeDto {
     private String crtrYmd;
 
     @Schema(description = "정렬순서")
-    private Integer sortOrdr;
+    private Long sortOrdr;
 
 }

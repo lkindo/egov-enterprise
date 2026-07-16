@@ -12,7 +12,7 @@ import java.time.LocalDate;
 public class RoleInfo extends BaseEntity {
 
     @Id
-    @Column(name = "role_id", length = 30)
+    @Column(name = "role_id", length = 20)
     private String roleId;
 
     @Column(nullable = false, length = 100)

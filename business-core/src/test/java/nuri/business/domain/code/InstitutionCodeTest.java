@@ -33,7 +33,7 @@ class InstitutionCodeTest {
                 .chgYmd("20200505")
                 .chgTm("120000")
                 .crtrYmd("20200101")
-                .sortOrdr(1)
+                .sortOrdr(1L)
                 .frstRgtrId("admin")
                 .build();
 
@@ -58,7 +58,7 @@ class InstitutionCodeTest {
         assertEquals("20200505", code.getChgYmd());
         assertEquals("120000", code.getChgTm());
         assertEquals("20200101", code.getCrtrYmd());
-        assertEquals(1, code.getSortOrdr());
+        assertEquals(1L, code.getSortOrdr());
         assertEquals("admin", code.getFrstRgtrId());
     }
 
@@ -69,7 +69,7 @@ class InstitutionCodeTest {
         
         code.update("N_ALL", "N_LOW", "N_ABBR", "1", "2", "cycl", "T2", "U2", "R2",
                 "L2", "M2", "S2", "T_NEW", "F_NEW", "20210101", "20211231", "1",
-                "20210505", "130000", "20210101", 2, "user");
+                "20210505", "130000", "20210101", 2L, "user");
 
         assertEquals("N_ALL", code.getAllInstNm());
         assertEquals("N_LOW", code.getLwstInstNm());
@@ -91,7 +91,7 @@ class InstitutionCodeTest {
         assertEquals("20210505", code.getChgYmd());
         assertEquals("130000", code.getChgTm());
         assertEquals("20210101", code.getCrtrYmd());
-        assertEquals(2, code.getSortOrdr());
+        assertEquals(2L, code.getSortOrdr());
         assertEquals("user", code.getLastMdfrId());
     }
 

@@ -35,7 +35,7 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String userNm;
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false, length = 256)
     @NonNull
     private String pswd;
 
@@ -67,16 +67,16 @@ public class User extends BaseEntity implements Serializable {
     @Convert(converter = nuri.business.domain.common.RrnoEncryptionConverter.class)
     private String rrno;
 
-    @Column(length = 30)
+    @Column(length = 12)
     private String gndrCd;
 
     @Column(length = 8)
     private String brthYmd;
 
-    @Column(length = 50)
+    @Column(length = 320)
     private String emlAddr;
 
-    @Column(length = 20)
+    @Column(length = 11)
     private String mblTelno;
 
     // ■ 주소 정보
@@ -98,7 +98,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 4)
     private String endTelno;
 
-    @Column(length = 30)
+    @Column(length = 20)
     private String faxNo;
 
     @Column(length = 20)
@@ -122,7 +122,7 @@ public class User extends BaseEntity implements Serializable {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.organization.OrganizationManage organizationManage;
 
-    @Column(length = 30)
+    @Column(length = 12)
     private String pstinstCd;
 
     @Column(length = 20)
@@ -148,7 +148,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 100)
     private String rprsvNm;
 
-    @Column(length = 30)
+    @Column(length = 12)
     private String indutyCd;
 
     @Column(length = 12)
@@ -297,9 +297,10 @@ public class User extends BaseEntity implements Serializable {
         this.lckYn = "Y";
     }
 
-    public void changeUserId(String userId) {
-        this.userId = userId;
-    }
+    // [P2 키 규약, 2026-07-17] changeUserId 제거 — loginId(user_id) 는 불변으로 선언한다.
+    // 근거: 가변 자연키는 fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) 등 loginId 계층 참조를
+    // 파손시킬 수 있다. 프로덕션 호출 0건 데드코드였음(테스트 1곳은 빌더 직접 구성으로 전환).
+    // 로그인 ID 변경이 제품 요구로 필요해지면 Expand-and-Contract + 참조 재키잉 설계로 재도입할 것.
 
     public void changeUserTypeCd(String userTypeCd) {
         this.userTypeCd = userTypeCd;

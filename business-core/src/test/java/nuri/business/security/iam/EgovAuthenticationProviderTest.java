@@ -133,10 +133,16 @@ class EgovAuthenticationProviderTest {
     void authenticate_success_dbAuthorityAdmin() {
         // webmaster '특수 처리'(하드코딩 자동 ADMIN)는 보안 하드닝으로 제거됨.
         // 현행 모델: 역할은 DB 권한 매핑(tb_user_authrt_map, esntlId 기준)에서 결정된다.
-        // Given
-        testUser.changeUserId("webmaster");
+        // Given — [P2 키 규약] User.changeUserId 제거(loginId 불변 선언)에 따라 빌더로 직접 구성
+        User webmasterUser = User.builder()
+                .userId("webmaster")
+                .esntlId("USR_0000000000001")
+                .pswd("{egov}hashedPassword")
+                .userNm("Test User")
+                .lckYn("N")
+                .build();
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
-        lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(webmasterUser));
         lenient().when(egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");
         UserAuthority adminAuthority = UserAuthority.builder()
                 .scrtyDcsnTrgtId("USR_0000000000001")

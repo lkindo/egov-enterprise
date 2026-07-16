@@ -49,9 +49,8 @@ class SchemaNamingLinterTest {
     private static final Set<String> SEQUENCE_WHITELIST = Set.of(
             "seq_meta_standard_domains", "seq_meta_standard_terms", "revinfo_seq");
 
-    /** 명명 정정이 보류된 레거시 제약 — 예외 대장 §4 정리예정(RENAME 보류, 2026-07-17 사용자 결정) */
+    /** 프레임워크/메타 소유 제약 — 예외 대장 §1·§3. (fk_role_prgrm_map_* 2건은 2026-07-17 RENAME 정정 완료로 제거) */
     private static final Set<String> CONSTRAINT_WHITELIST = Set.of(
-            "fk_role_prgrm_map_role", "fk_role_prgrm_map_prgrm",
             "meta_standard_domains_pkey", "meta_standard_terms_pkey", "flyway_schema_history_pk");
 
     /** 감사컬럼(제8조) 검사 면제 테이블 — 프레임워크/메타 소유 */

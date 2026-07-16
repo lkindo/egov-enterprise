@@ -187,6 +187,6 @@ class MemoReportServiceTest {
         memoReportService.readMemoReport(reprtId);
 
         // then
-        verify(entity).updateInqireDt(anyString());
+        verify(entity).updateInqireDt(any(java.time.LocalDateTime.class));
     }
 }

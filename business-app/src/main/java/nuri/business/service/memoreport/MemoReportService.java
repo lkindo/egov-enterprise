@@ -96,7 +96,7 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
     @Transactional
     public void readMemoReport(@NonNull String rptId) {
         memoReportRepository.findById(rptId).ifPresent(entity -> {
-            entity.updateInqireDt(java.time.LocalDateTime.now().toString());
+            entity.updateInqireDt(java.time.LocalDateTime.now());
         });
     }
 
@@ -105,6 +105,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
     public void updateDrctMatter(String rptId, String instrCn) {
         MemoReport entity = memoReportRepository.findById(rptId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now().toString());
+        entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
     }
 }

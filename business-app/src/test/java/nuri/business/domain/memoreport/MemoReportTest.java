@@ -67,48 +67,33 @@ class MemoReportTest {
     }
 
     @Test
-    @DisplayName("MemoReport updateInqireDt - 정상 및 예외 케이스 검증")
+    @DisplayName("MemoReport updateInqireDt - LocalDateTime 설정 검증 (V2_18 timestamp 동기화)")
     void updateInqireDtTest() {
         MemoReport report = MemoReport.builder().build();
 
-        // null 또는 empty 검증 스킵
+        // null 허용 (미조회 상태)
         report.updateInqireDt(null);
         assertThat(report.getRptrInqDt()).isNull();
 
-        report.updateInqireDt("");
-        assertThat(report.getRptrInqDt()).isEmpty();
-
-        // yyyy-MM-dd HH:mm:ss 포맷
-        report.updateInqireDt("2026-06-04 23:45:00");
-        assertThat(report.getRptrInqDt()).isEqualTo("2026-06-04 23:45:00");
-
-        // yyyyMMddHHmmss 포맷
-        report.updateInqireDt("20260604234500");
-        assertThat(report.getRptrInqDt()).isEqualTo("20260604234500");
-
-        // 잘못된 일시 형식
-        assertThatThrownBy(() -> report.updateInqireDt("20260604"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("유효하지 않은 일시 형식입니다");
+        // LocalDateTime 설정
+        java.time.LocalDateTime inqDt = java.time.LocalDateTime.of(2026, 6, 4, 23, 45, 0);
+        report.updateInqireDt(inqDt);
+        assertThat(report.getRptrInqDt()).isEqualTo(inqDt);
     }
 
     @Test
-    @DisplayName("MemoReport updateDrctMatter - 정상 및 예외 케이스 검증")
+    @DisplayName("MemoReport updateDrctMatter - LocalDateTime 설정 검증 (V2_18 timestamp 동기화)")
     void updateDrctMatterTest() {
         MemoReport report = MemoReport.builder().build();
 
-        // yyyy-MM-dd HH:mm:ss 포맷
-        report.updateDrctMatter("Direction", "2026-06-04 23:45:00");
+        java.time.LocalDateTime regDt = java.time.LocalDateTime.of(2026, 6, 4, 23, 45, 0);
+        report.updateDrctMatter("Direction", regDt);
         assertThat(report.getDrctnMttr()).isEqualTo("Direction");
-        assertThat(report.getDrctnMttrRegDt()).isEqualTo("2026-06-04 23:45:00");
+        assertThat(report.getDrctnMttrRegDt()).isEqualTo(regDt);
 
-        // yyyyMMddHHmmss 포맷
-        report.updateDrctMatter("Direction", "20260604234500");
-        assertThat(report.getDrctnMttrRegDt()).isEqualTo("20260604234500");
-
-        // 잘못된 일시 형식
-        assertThatThrownBy(() -> report.updateDrctMatter("Direction", "invalid-date"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("유효하지 않은 일시 형식입니다");
+        // 지시일시 null 허용
+        report.updateDrctMatter("Direction2", null);
+        assertThat(report.getDrctnMttr()).isEqualTo("Direction2");
+        assertThat(report.getDrctnMttrRegDt()).isNull();
     }
 }

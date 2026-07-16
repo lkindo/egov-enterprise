@@ -21,7 +21,7 @@ import lombok.Setter;
 public class RoleManageDto {
     /** 롤코드 (롤 ID) */
     @Schema(description = "롤코드 (롤 ID)", example = "ROLE_USER")
-    @Size(max = 30)
+    @Size(max = 20)
     private String roleId;
     
     /** 롤명 */

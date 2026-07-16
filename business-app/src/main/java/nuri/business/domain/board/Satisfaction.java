@@ -41,7 +41,7 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(length = 4000)
     private String dgstfnCn;
 
-    @Column(length = 200)
+    @Column(length = 256)
     private String pswd;
 
     @Column(length = 1)

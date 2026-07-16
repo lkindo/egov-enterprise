@@ -64,10 +64,10 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String useYn = "Y";
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String pstBgngYmd;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String pstEndYmd;
 
     @Column(length = 20)
@@ -76,7 +76,7 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 100)
     private String userNm;
 
-    @Column(length = 200)
+    @Column(length = 256)
     private String pswd;
 
     @Column(name = "atch_file_id", length = 20)

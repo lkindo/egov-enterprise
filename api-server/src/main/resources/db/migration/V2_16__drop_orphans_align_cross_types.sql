@@ -36,7 +36,14 @@ DROP SEQUENCE IF EXISTS sq_ntt_id; -- linter:ignore (코드 소비 0·컬럼 DEF
 ALTER TABLE tb_dta_use_stats ALTER COLUMN pst_id TYPE varchar(20) USING pst_id::varchar; -- linter:ignore (0행 실측·무손실·DtaUseStats.pstId String 동일 릴리스 동기화)
 
 -- 3-2) prcs_tm: 의미는 양쪽 '처리 소요시간(ms)' 동일 실측 확정 — tb_web_log(bigint)와 타입 통일
-ALTER TABLE tb_sys_log ALTER COLUMN prcs_tm TYPE bigint USING NULLIF(prcs_tm, '')::bigint; -- linter:ignore (12행 전수 숫자 실측·무손실·SysLog.prcsTm Long 동일 릴리스 동기화)
+--      [멱등 가드] 재실행 시 USING 의 '' 리터럴이 이미 변환된 bigint 와 충돌하므로 타입 검사 후 실행
+DO $$
+BEGIN
+  IF (SELECT data_type FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'tb_sys_log' AND column_name = 'prcs_tm') <> 'bigint' THEN
+    ALTER TABLE tb_sys_log ALTER COLUMN prcs_tm TYPE bigint USING NULLIF(prcs_tm, '')::bigint; -- linter:ignore (12행 전수 숫자 실측·무손실·SysLog.prcsTm Long 동일 릴리스 동기화)
+  END IF;
+END $$;
 COMMENT ON COLUMN tb_sys_log.prcs_tm IS '처리 소요시간(ms)';
 COMMENT ON COLUMN tb_web_log.prcs_tm IS '처리 소요시간(ms) — AuditEvent.durationMs 기록';
 

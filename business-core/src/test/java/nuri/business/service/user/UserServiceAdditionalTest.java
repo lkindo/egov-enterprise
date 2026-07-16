@@ -182,8 +182,9 @@ class UserServiceAdditionalTest {
 
             // Then — FK(NO ACTION)를 통과하려면 종속 정리가 삭제 전에 모두 수행되어야 한다
             verify(userAuthorityRepository).deleteAllByIdInBatch(java.util.List.of("ESNTL_" + userId));
-            verify(refreshTokenRepository).deleteByUserId("ESNTL_" + userId); // esntlId 키 토큰
-            verify(refreshTokenRepository).deleteByUserId(userId); // loginId 키 토큰(혼재 이력)
+            // [P2 키 규약] rfsh_tk 는 esntlId 단일 키잉 — loginId 이중 삭제는 제거됨
+            verify(refreshTokenRepository).deleteByUserId("ESNTL_" + userId);
+            verify(refreshTokenRepository, never()).deleteByUserId(userId);
             var eventCaptor = org.mockito.ArgumentCaptor
                     .forClass(nuri.business.service.user.event.UserDeletionEvent.class);
             verify(eventPublisher).publishEvent(eventCaptor.capture());

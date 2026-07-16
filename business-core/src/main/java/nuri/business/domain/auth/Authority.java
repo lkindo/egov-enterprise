@@ -14,7 +14,7 @@ public class Authority extends BaseEntity implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "authrt_cd", length = 30)
+    @Column(name = "authrt_cd", length = 20)
     @NonNull
     private String authrtCd;
 

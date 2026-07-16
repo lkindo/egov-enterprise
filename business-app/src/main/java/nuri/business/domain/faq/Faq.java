@@ -25,7 +25,7 @@ public class Faq extends BaseEntity {
     @Column(columnDefinition = "TEXT", length = 4000)
     private String qstnCn;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String ansCn;
 
     private Integer inqCnt = 0;

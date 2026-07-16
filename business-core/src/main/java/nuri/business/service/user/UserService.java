@@ -316,9 +316,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
                 userAuthorityRepository.deleteAllByIdInBatch(esntlIds);
                 for (User user : users) {
-                        // tb_auth_rfsh_tk.user_id 는 esntlId/loginId 가 혼재 저장돼 온 이력이 있어(감사 실측) 양쪽 모두 정리
+                        // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
+                        // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음)
                         refreshTokenRepository.deleteByUserId(user.getEsntlId());
-                        refreshTokenRepository.deleteByUserId(user.getUserId());
                 }
                 // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId)·커뮤니티 멤버십 정리
                 loginPolicyRepository.deleteAllByIdInBatch(

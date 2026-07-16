@@ -40,10 +40,10 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(length = 100)
     private String wrterNm;
 
-    @Column(length = 200)
+    @Column(length = 256)
     private String pswd;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 4000)
     private String ansCn;
 
     @Column(length = 1)

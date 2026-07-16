@@ -50,19 +50,22 @@ VALUES
 ON CONFLICT (role_id) DO NOTHING;
 
 -- FK: role_id → tb_role_info(role_id)
+-- [명명 정정 2026-07-17, 사용자 승인] fk_role_prgrm_map_role → fk_tb_role_prgrm_map_tb_role_info
+-- (헌법 제6조 fk_[자식]_[부모] 정합). flyway history 미등재 상태에서 라이브 RENAME CONSTRAINT 와
+-- 원자 시행 — pending 실행 시 가드가 신명칭을 감지하여 중복 생성 없음.
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_role_prgrm_map_role') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tb_role_prgrm_map_tb_role_info') THEN
     ALTER TABLE public.tb_role_prgrm_map
-      ADD CONSTRAINT fk_role_prgrm_map_role
+      ADD CONSTRAINT fk_tb_role_prgrm_map_tb_role_info
       FOREIGN KEY (role_id) REFERENCES public.tb_role_info(role_id);
   END IF;
 END $$;
 
--- FK: prgrm_file_nm → tb_prgrm_lst(prgrm_file_nm)
+-- FK: prgrm_file_nm → tb_prgrm_lst(prgrm_file_nm) — 위와 동일한 명명 정정 적용
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_role_prgrm_map_prgrm') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tb_role_prgrm_map_tb_prgrm_lst') THEN
     ALTER TABLE public.tb_role_prgrm_map
-      ADD CONSTRAINT fk_role_prgrm_map_prgrm
+      ADD CONSTRAINT fk_tb_role_prgrm_map_tb_prgrm_lst
       FOREIGN KEY (prgrm_file_nm) REFERENCES public.tb_prgrm_lst(prgrm_file_nm);
   END IF;
 END $$;

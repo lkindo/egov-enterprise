@@ -4,6 +4,8 @@ import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tb_memo_rpt_info")
 @Getter
@@ -40,11 +42,9 @@ public class MemoReport extends BaseEntity {
     @Column(length = 2000)
     private String drctnMttr;
 
-    @Column(length = 20)
-    private String drctnMttrRegDt;
+    private LocalDateTime drctnMttrRegDt;
 
-    @Column(length = 20)
-    private String rptrInqDt;
+    private LocalDateTime rptrInqDt;
 
     private MemoReport(String rptId, String rptTtl, String memoRptYmd, String userId,
                        String rptrId, String rptCn, String atchFileId) {
@@ -74,13 +74,11 @@ public class MemoReport extends BaseEntity {
         this.atchFileId = atchFileId;
     }
 
-    public void updateInqireDt(String rptrInqDt) {
-        validateDateTimeFormat(rptrInqDt);
+    public void updateInqireDt(LocalDateTime rptrInqDt) {
         this.rptrInqDt = rptrInqDt;
     }
 
-    public void updateDrctMatter(String drctnMttr, String drctnMttrRegDt) {
-        validateDateTimeFormat(drctnMttrRegDt);
+    public void updateDrctMatter(String drctnMttr, LocalDateTime drctnMttrRegDt) {
         this.drctnMttr = drctnMttr;
         this.drctnMttrRegDt = drctnMttrRegDt;
     }
@@ -101,25 +99,6 @@ public class MemoReport extends BaseEntity {
         } catch (Exception e) {
             throw new nuri.foundation.core.exception.BusinessException(
                 "유효하지 않은 날짜 형식입니다: " + ymd, nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        }
-    }
-
-    private void validateDateTimeFormat(String dt) {
-        if (dt == null || dt.isEmpty()) {
-            return;
-        }
-        try {
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").parse(dt);
-            return;
-        } catch (Exception ignored) {}
-
-        try {
-            java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").parse(dt);
-            return;
-        } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException(
-                "유효하지 않은 일시 형식입니다 (yyyy-MM-dd HH:mm:ss 또는 yyyyMMddHHmmss): " + dt, 
-                nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         }
     }
 }

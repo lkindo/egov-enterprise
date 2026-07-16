@@ -33,7 +33,7 @@ public class Banner extends BaseEntity {
     @Column(length = 4000)
     private String bnrExpln;
 
-    private Integer sortOrdr;
+    private Long sortOrdr;
 
     @Column(length = 1)
     private String rfltYn;
@@ -42,7 +42,7 @@ public class Banner extends BaseEntity {
     private String atchFileId;
 
     private Banner(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
-                   String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+                   String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
         this.bnrId = bnrId;
         this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
@@ -55,12 +55,12 @@ public class Banner extends BaseEntity {
 
     @Builder
     public static Banner create(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
-                                String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+                                String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
         return new Banner(bnrId, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileId);
     }
 
     public void update(String bnrNm, String linkUrl, String bnrImgNm,
-                      String bnrExpln, Integer sortOrdr, String rfltYn, String atchFileId) {
+                      String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
         this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
         if (bnrImgNm != null) this.bnrImgNm = bnrImgNm;

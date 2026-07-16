@@ -36,12 +36,12 @@ public class EventInfoDto {
     @Size(max = 4000)
     private String evntCn;
 
-    @Schema(description = "행사 시작일", example = "2026-05-25")
-    @Size(max = 20)
+    @Schema(description = "행사 시작일", example = "20260525")
+    @Size(max = 8)
     private String evntBgngYmd;
 
-    @Schema(description = "행사 종료일", example = "2026-05-26")
-    @Size(max = 20)
+    @Schema(description = "행사 종료일", example = "20260526")
+    @Size(max = 8)
     private String evntEndYmd;
 
     @Schema(description = "참여 정원 (Capacity)", example = "150")
@@ -56,15 +56,15 @@ public class EventInfoDto {
     private String prepMttr;
 
     @Schema(description = "행사 유형 코드", example = "EVT01")
-    @Size(max = 30)
+    @Size(max = 12)
     private String evntTypeCd;
 
     @Schema(description = "승인 여부", example = "Y")
     @Size(max = 1)
     private String evntAprvYn;
 
-    @Schema(description = "승인 일자", example = "2026-05-25")
-    @Size(max = 20)
+    @Schema(description = "승인 일자", example = "20260525")
+    @Size(max = 8)
     private String evntAprvYmd;
 
     @Schema(description = "최초 등록자 ID", example = "webmaster")

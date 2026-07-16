@@ -190,8 +190,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .sortOrdr(sortOrdr)
                                         .pstTtl(request.pstTtl())
                                         .pstCn(request.pstCn())
-                                        .pstBgngYmd(request.pstBgngYmd())
-                                        .pstEndYmd(request.pstEndYmd())
+                                        .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
+                                        .pstEndYmd(normalizeYmd(request.pstEndYmd()))
                                         .atchFileId(request.atchFileId())
                                         .qnaCatCd(request.qnaCatCd())
                                         .scrtYn(request.scrtYn())
@@ -277,8 +277,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .ansLv(0)
                                 .pstTtl(request.pstTtl())
                                 .pstCn(request.pstCn())
-                                .pstBgngYmd(request.pstBgngYmd())
-                                .pstEndYmd(request.pstEndYmd())
+                                .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
+                                .pstEndYmd(normalizeYmd(request.pstEndYmd()))
                                 .atchFileId(request.atchFileId())
                                 .qnaCatCd(request.qnaCatCd())
                                 .scrtYn(request.scrtYn())
@@ -358,7 +358,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
                                 board.getUserNm(),
                                 request.pswd() != null ? request.pswd() : board.getPswd(),
-                                request.pstBgngYmd(), request.pstEndYmd(),
+                                normalizeYmd(request.pstBgngYmd()), normalizeYmd(request.pstEndYmd()),
                                 request.atchFileId(), eventDate,
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
                                 request.qnaCatCd(), request.scrtYn());
@@ -417,6 +417,14 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 board.increaseLikeCnt();
                 return board.getLikeCnt();
+        }
+
+        /**
+         * 게시 시작/종료일자(YYYY-MM-DD 또는 YYYYMMDD)를 물리 컬럼 표준(YYYYMMDD, varchar(8))으로 정규화한다.
+         * V2_18 스키마 동기화 — 하이픈 데이터 유입 경로 봉쇄.
+         */
+        private static String normalizeYmd(String ymd) {
+                return ymd == null ? null : ymd.replace("-", "");
         }
 
         private java.time.LocalDateTime parseDateTime(String dateStr) {

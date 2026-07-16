@@ -48,16 +48,16 @@ public class EventInfoService {
                 .bizYr(dto.getBizYr())
                 .bizCd(dto.getBizCd())
                 .evntCn(dto.getEvntCn())
-                .evntBgngYmd(dto.getEvntBgngYmd())
-                .evntEndYmd(dto.getEvntEndYmd())
+                .evntBgngYmd(normalizeYmd(dto.getEvntBgngYmd()))
+                .evntEndYmd(normalizeYmd(dto.getEvntEndYmd()))
                 .evntUseCnt(dto.getEvntUseCnt())
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
-                .evntAprvYmd(dto.getEvntAprvYmd())
+                .evntAprvYmd(normalizeYmd(dto.getEvntAprvYmd()))
                 .build();
- 
+
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
         log.info("Event created successfully: {}", saved.getEvntId());
         return eventId;
@@ -74,14 +74,14 @@ public class EventInfoService {
                 .bizYr(dto.getBizYr())
                 .bizCd(dto.getBizCd())
                 .evntCn(dto.getEvntCn())
-                .evntBgngYmd(dto.getEvntBgngYmd())
-                .evntEndYmd(dto.getEvntEndYmd())
+                .evntBgngYmd(normalizeYmd(dto.getEvntBgngYmd()))
+                .evntEndYmd(normalizeYmd(dto.getEvntEndYmd()))
                 .evntUseCnt(dto.getEvntUseCnt())
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
                 .evntAprvYn(dto.getEvntAprvYn())
-                .evntAprvYmd(dto.getEvntAprvYmd())
+                .evntAprvYmd(normalizeYmd(dto.getEvntAprvYmd()))
                 .build();
         // 재빌드-merge 패턴: 작성자(frstRgtrId)는 @CreatedBy 가 update 시 재적용되지 않으므로 기존 값 보존
         updated.setFrstRgtrId(eventInfo.getFrstRgtrId());
@@ -89,6 +89,14 @@ public class EventInfoService {
         log.info("Event updated successfully: {}", eventId);
     }
  
+    /**
+     * 행사 일자(YYYY-MM-DD 또는 YYYYMMDD)를 물리 컬럼 표준(YYYYMMDD, varchar(8))으로 정규화한다.
+     * V2_18 스키마 동기화 — 하이픈 데이터 유입 경로 봉쇄.
+     */
+    private static String normalizeYmd(String ymd) {
+        return ymd == null ? null : ymd.replace("-", "");
+    }
+
     @Transactional
     public void deleteEvent(String eventId) {
         log.warn("Deleting event ID: {}", eventId);

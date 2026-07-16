@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class EventInfo extends BaseEntity {
 
     @Id
-    @Column(name = "evnt_id", length = 30)
+    @Column(name = "evnt_id", length = 20)
     private String evntId;
 
     @Column(length = 4)
@@ -31,10 +31,10 @@ public class EventInfo extends BaseEntity {
     @Column(length = 4000)
     private String evntCn;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String evntBgngYmd;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String evntEndYmd;
 
     private Long evntUseCnt;
@@ -45,13 +45,13 @@ public class EventInfo extends BaseEntity {
     @Column(length = 2500)
     private String prepMttr;
 
-    @Column(length = 30)
+    @Column(length = 12)
     private String evntTypeCd;
 
     @Column(length = 1)
     private String evntAprvYn;
 
-    @Column(length = 20)
+    @Column(length = 8)
     private String evntAprvYmd;
 
     /**

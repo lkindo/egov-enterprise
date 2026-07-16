@@ -15,13 +15,13 @@ class DeptJobEntityTest {
                 .deptTaskBoxId("BOX_001")
                 .deptTaskBoxNm("Job Box 1")
                 .deptId("DEPT_001")
-                .sortOrdr(1)
+                .sortOrdr(1L)
                 .build();
 
         assertThat(box.getDeptTaskBoxId()).isEqualTo("BOX_001");
         assertThat(box.getDeptTaskBoxNm()).isEqualTo("Job Box 1");
         assertThat(box.getDeptId()).isEqualTo("DEPT_001");
-        assertThat(box.getSortOrdr()).isEqualTo(1);
+        assertThat(box.getSortOrdr()).isEqualTo(1L);
     }
 
     @Test

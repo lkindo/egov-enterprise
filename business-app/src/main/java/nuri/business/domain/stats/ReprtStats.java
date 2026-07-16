@@ -24,7 +24,7 @@ public class ReprtStats extends BaseEntity {
     @Column(length = 20)
     private String reprtId;
 
-    @Column(length = 255)
+    @Column(length = 256)
     private String reprtNm;
 
     @Column(length = 1)

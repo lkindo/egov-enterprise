@@ -44,10 +44,10 @@ public class AuthorityRole extends BaseEntity {
     @EqualsAndHashCode
     @Builder
     public static class AuthorityRoleId implements Serializable {
-        @Column(length = 30)
+        @Column(length = 20)
         private String authrtCd;
 
-        @Column(length = 12)
+        @Column(length = 20)
         private String roleCd;
     }
 }

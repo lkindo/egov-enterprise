@@ -49,13 +49,13 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 2)
     private String instCycl;
 
-    @Column(length = 20)
+    @Column(length = 7)
     private String topInstCd;
 
-    @Column(length = 20)
+    @Column(length = 7)
     private String uprInstCd;
 
-    @Column(length = 20)
+    @Column(length = 7)
     private String reprsInstCd;
 
     @Column(length = 2)
@@ -67,7 +67,7 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 2)
     private String instTypeSclsf;
 
-    @Column(length = 20)
+    @Column(length = 11)
     private String telno;
 
     @Column(length = 20)
@@ -91,7 +91,7 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 8)
     private String crtrYmd;
 
-        private Integer sortOrdr;
+        private Long sortOrdr;
 
     private LocalDateTime crtDt;
 
@@ -111,7 +111,7 @@ public class InstitutionCodeRecptnLog {
         @Column(length = 8)
         private String ocrnYmd;
 
-        @Column(length = 20)
+        @Column(length = 7)
         private String instCd;
 
                 private Long jobSn;
@@ -132,7 +132,7 @@ public class InstitutionCodeRecptnLog {
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf,
             String telno, String faxNo, String crtYmd, String ablYmd,
             String ablYn, String chgYmd, String chgTm,
-            String crtrYmd, Integer sortOrdr, String frstRgtrId) {
+            String crtrYmd, Long sortOrdr, String frstRgtrId) {
         this.id = id;
         this.chgSeCd = chgSeCd;
         this.procSe = procSe == null ? "0" : procSe;

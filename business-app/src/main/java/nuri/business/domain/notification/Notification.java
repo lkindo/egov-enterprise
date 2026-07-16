@@ -36,7 +36,7 @@ public class Notification extends BaseEntity {
     @Column(length = 1)
     private String readYn = "N";
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     private String linkUrl;
 
     private LocalDateTime notiDt;

@@ -113,7 +113,7 @@ class BannerServiceTest {
         BannerDto dto = BannerDto.builder()
                 .bnrNm("New Banner")
                 .linkUrl("http://example.com")
-                .sortOrdr(1)
+                .sortOrdr(1L)
                 .rfltYn("Y")
                 .build();
 
@@ -133,7 +133,7 @@ class BannerServiceTest {
         Banner existingBanner = Banner.builder()
                 .bnrId("BNR_01")
                 .bnrNm("Old Banner")
-                .sortOrdr(1)
+                .sortOrdr(1L)
                 .build();
         given(bannerRepository.findById("BNR_01")).willReturn(Optional.of(existingBanner));
 
@@ -141,7 +141,7 @@ class BannerServiceTest {
                 .bnrId("BNR_01")
                 .bnrNm("Updated Banner")
                 .linkUrl("http://updated.com")
-                .sortOrdr(2)
+                .sortOrdr(2L)
                 .rfltYn("N")
                 .build();
 
@@ -151,7 +151,7 @@ class BannerServiceTest {
         // then
         assertThat(existingBanner.getBnrNm()).isEqualTo("Updated Banner");
         assertThat(existingBanner.getLinkUrl()).isEqualTo("http://updated.com");
-        assertThat(existingBanner.getSortOrdr()).isEqualTo(2);
+        assertThat(existingBanner.getSortOrdr()).isEqualTo(2L);
         assertThat(existingBanner.getRfltYn()).isEqualTo("N");
     }
 
@@ -183,8 +183,8 @@ class BannerServiceTest {
     @DisplayName("반영된(Reflected) 배너 목록 조회")
     void getReflectedBanners() {
         // given
-        Banner banner1 = Banner.builder().bnrId("BNR_01").bnrNm("Reflected 1").rfltYn("Y").sortOrdr(1).build();
-        Banner banner2 = Banner.builder().bnrId("BNR_02").bnrNm("Reflected 2").rfltYn("Y").sortOrdr(2).build();
+        Banner banner1 = Banner.builder().bnrId("BNR_01").bnrNm("Reflected 1").rfltYn("Y").sortOrdr(1L).build();
+        Banner banner2 = Banner.builder().bnrId("BNR_02").bnrNm("Reflected 2").rfltYn("Y").sortOrdr(2L).build();
 
         given(bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y")).willReturn(List.of(banner1, banner2));
 

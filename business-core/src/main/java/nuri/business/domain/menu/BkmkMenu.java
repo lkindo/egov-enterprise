@@ -15,7 +15,7 @@ public class BkmkMenu extends BaseEntity {
     @EmbeddedId
     private BkmkMenuId id;
 
-    @Column(length = 60)
+    @Column(length = 100)
     private String menuNm;
 
     @Column(length = 100)

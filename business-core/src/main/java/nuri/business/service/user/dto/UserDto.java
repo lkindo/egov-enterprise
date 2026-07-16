@@ -72,7 +72,7 @@ public record UserDto(
     @Size(max = 11, message = "팩스 번호는 최대 11 자입니다")
     String faxNo,
 
-    @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
+    @Size(max = 12, message = "기관 코드는 최대 12 자입니다")
     String pstinstCd,
 
     @Size(max = 20, message = "조직 ID 는 최대 20 자입니다")
