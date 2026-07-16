@@ -36,7 +36,13 @@ class UserServiceTest {
     private UserAuthorityRepository userAuthorityRepository;
 
     @Mock
+    private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserService userService;
@@ -223,10 +229,14 @@ class UserServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
+            given(user.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
+            given(user.getUserId()).willReturn("user1");
             given(userRepository.findByUserId("user1")).willReturn(Optional.of(user));
-            
+
             userService.deleteUser("user1");
-            verify(userRepository).delete(user);
+            // [V2_12] 종속 정리(권한매핑) 후 일괄 삭제로 전환됨
+            verify(userAuthorityRepository).deleteAllByIdInBatch(List.of("USR_TEST_ESNTL_0001"));
+            verify(userRepository).deleteAllInBatch(List.of(user));
         }
     }
 
@@ -257,9 +267,16 @@ class UserServiceTest {
     void deleteUserListSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            
+            User user1 = mock(User.class);
+            User user2 = mock(User.class);
+            given(user1.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
+            given(user2.getEsntlId()).willReturn("USR_TEST_ESNTL_0002");
+            given(userRepository.findByUserId("user1")).willReturn(Optional.of(user1));
+            given(userRepository.findByUserId("user2")).willReturn(Optional.of(user2));
+
             userService.deleteUserList(List.of("user1", "user2"));
-            verify(userRepository).deleteAllByIdInBatch(anyList());
+            // [V2_12] loginId → 사용자 확정 후 종속 정리를 거쳐 일괄 삭제 (기존 PK 불일치 no-op 버그 수정)
+            verify(userRepository).deleteAllInBatch(List.of(user1, user2));
         }
     }
 

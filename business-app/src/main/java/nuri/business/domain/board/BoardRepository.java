@@ -48,4 +48,11 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @org.springframework.data.jpa.repository.Modifying
         @Query("UPDATE Board b SET b.likeCnt = COALESCE(b.likeCnt, 0) + 1 WHERE b.pstId = :pstId")
         int incrementLikeCntAtomic(@Param("pstId") String pstId);
+
+        // [V2_12 결속] 사용자 삭제 시 게시글 저자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
+        // (fk_tb_bbs_item_tb_user_info NO ACTION 하에서 저자 행 삭제 전 필수)
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+        @Query("UPDATE Board b SET b.userId = :newUserId WHERE b.userId IN :userIds")
+        int reassignAuthorByUserIdIn(@Param("userIds") java.util.List<String> userIds,
+                        @Param("newUserId") String newUserId);
 }

@@ -32,13 +32,20 @@ class UserServiceAdditionalTest {
     private UserAuthorityRepository userAuthorityRepository;
 
     @Mock
+    private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userAuthorityRepository, passwordEncoder);
+        userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
+                passwordEncoder, eventPublisher);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
@@ -152,7 +159,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("사용자 삭제 성공")
+    @DisplayName("사용자 삭제 성공 - 종속 데이터(권한매핑·토큰) 정리 후 이벤트 발행과 함께 삭제 (V2_12 FK 결속)")
     void deleteUser_success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
@@ -163,8 +170,15 @@ class UserServiceAdditionalTest {
             // When
             userService.deleteUser(userId);
 
-            // Then
-            verify(userRepository).delete(user);
+            // Then — FK(NO ACTION)를 통과하려면 종속 정리가 삭제 전에 모두 수행되어야 한다
+            verify(userAuthorityRepository).deleteAllByIdInBatch(java.util.List.of("ESNTL_" + userId));
+            verify(refreshTokenRepository).deleteByUserId("ESNTL_" + userId); // esntlId 키 토큰
+            verify(refreshTokenRepository).deleteByUserId(userId); // loginId 키 토큰(혼재 이력)
+            var eventCaptor = org.mockito.ArgumentCaptor
+                    .forClass(nuri.business.service.user.event.UserDeletionEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().esntlIds()).containsExactly("ESNTL_" + userId);
+            verify(userRepository).deleteAllInBatch(java.util.List.of(user));
         }
     }
 
@@ -181,6 +195,62 @@ class UserServiceAdditionalTest {
             assertThatThrownBy(() -> userService.deleteUser(userId))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 삭제 금지 - 시스템 관리자(webmaster)는 콘텐츠 재귀속 종착 계정이므로 삭제 불가")
+    void deleteUser_fail_systemAdminProtected() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            User webmaster = User.builder()
+                    .userId("webmaster")
+                    .esntlId(nuri.foundation.constants.Constants.User.SYSTEM_ADMIN_ESNTL_ID)
+                    .userNm("최고관리자")
+                    .pswd("password")
+                    .build();
+            when(userRepository.findByUserId("webmaster")).thenReturn(Optional.of(webmaster));
+
+            assertThatThrownBy(() -> userService.deleteUser("webmaster"))
+                    .isInstanceOf(BusinessException.class);
+            verify(userRepository, never()).deleteAllInBatch(anyList());
+            verify(userAuthorityRepository, never()).deleteAllByIdInBatch(anyList());
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 일괄 삭제 - loginId 목록을 esntlId 로 해석해 실제 삭제 (기존 침묵 no-op 버그 회귀 방지)")
+    void deleteUserList_resolvesLoginIdsToEsntlIds() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            User userA = createBaseUser("loginA").build();
+            User userB = createBaseUser("loginB").build();
+            when(userRepository.findByUserId("loginA")).thenReturn(Optional.of(userA));
+            when(userRepository.findByUserId("loginB")).thenReturn(Optional.of(userB));
+
+            // When — FE(UserOrgHubClient)는 loginId 목록을 보낸다
+            userService.deleteUserList(java.util.List.of("loginA", "loginB"));
+
+            // Then — PK(esntlId)로 확정된 실제 사용자들이 삭제되어야 한다
+            verify(userAuthorityRepository).deleteAllByIdInBatch(java.util.List.of("ESNTL_loginA", "ESNTL_loginB"));
+            verify(userRepository).deleteAllInBatch(java.util.List.of(userA, userB));
+            verify(eventPublisher).publishEvent(any(nuri.business.service.user.event.UserDeletionEvent.class));
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 일괄 삭제 - 존재하지 않는 ID 는 멱등 의미론으로 건너뜀")
+    void deleteUserList_skipsMissingIds() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            User userA = createBaseUser("loginA").build();
+            when(userRepository.findByUserId("loginA")).thenReturn(Optional.of(userA));
+            when(userRepository.findByUserId("ghost")).thenReturn(Optional.empty());
+            when(userRepository.findById("ghost")).thenReturn(Optional.empty());
+
+            userService.deleteUserList(java.util.List.of("loginA", "ghost"));
+
+            verify(userRepository).deleteAllInBatch(java.util.List.of(userA));
         }
     }
 }

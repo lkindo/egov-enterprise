@@ -38,9 +38,13 @@ class UserServiceBusinessLogicExceptionTest {
         private UserAuthorityRepository userAuthorityRepository;
 
         @Mock
+        private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
+
+        @Mock
         private PasswordEncoder passwordEncoder;
 
-
+        @Mock
+        private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
         @InjectMocks
         private UserService userService;

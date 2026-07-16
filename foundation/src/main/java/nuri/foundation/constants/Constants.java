@@ -45,6 +45,9 @@ public final class Constants {
         // 상한 13은 이 값을 쓰는 생성기 중 최장 접두사(7자) + varchar(20) PK 컬럼 제약(7+13=20)에서 도출.
         // (근본적 무충돌은 시퀀스 기반 EgovIdGnrConfig 또는 unique 위반 재시도 필요 — 별도 개선 대상)
         public static final int ESNTL_ID_UUID_LENGTH = 13;
+        // [V2_12] 시스템 최고관리자(webmaster) esntl_id — R__seed_framework.sql 시드와 결속.
+        // 탈퇴 사용자의 콘텐츠(게시글/댓글/주소록) 재귀속 대상이며, 이 계정 자체의 삭제는 금지된다.
+        public static final String SYSTEM_ADMIN_ESNTL_ID = "USRCNFRM_00000000001";
     }
 
     /**

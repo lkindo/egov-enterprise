@@ -355,7 +355,10 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
-        menuRepository.deleteById(Objects.requireNonNull(vo.getMenuNo()));
+        Long menuNo = Objects.requireNonNull(vo.getMenuNo());
+        // [V2_12 결속] fk_tb_menu_crt_dtl_tb_menu_info(NO ACTION) — 메뉴-권한 매핑을 먼저 정리해야 삭제 가능
+        menuAuthorityRepository.deleteByIdMenuSn(menuNo);
+        menuRepository.deleteById(menuNo);
     }
 
     @Transactional
@@ -371,6 +374,8 @@ public class MenuService {
             ids.add(Long.parseLong(menuNo));
         }
         if (!ids.isEmpty()) {
+            // [V2_12 결속] 메뉴-권한 매핑 선정리 (위 deleteMenuManage 와 동일 사유)
+            menuAuthorityRepository.deleteByIdMenuSnIn(ids);
             menuRepository.deleteAllById(Objects.requireNonNull(ids));
         }
     }

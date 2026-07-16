@@ -5,6 +5,7 @@ import nuri.business.domain.user.exception.UserErrorCode;
 import nuri.foundation.constants.Constants;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.domain.auth.RefreshTokenRepository;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.Role;
@@ -13,9 +14,11 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;
 import nuri.business.service.user.dto.UserSignupRequest;
+import nuri.business.service.user.event.UserDeletionEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -39,14 +42,20 @@ public class UserService extends BaseAbstractService implements EgovUserService 
 
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
+        private final RefreshTokenRepository refreshTokenRepository;
         private final PasswordEncoder passwordEncoder;
+        private final ApplicationEventPublisher eventPublisher;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
-                        PasswordEncoder passwordEncoder) {
+                        RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder,
+                        ApplicationEventPublisher eventPublisher) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
                                 "UserAuthorityRepository 는 null 일 수 없습니다");
+                this.refreshTokenRepository = required(refreshTokenRepository,
+                                "RefreshTokenRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
+                this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
         }
 
         /**
@@ -261,12 +270,45 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 if (!userRepository.findByUserId(userId).isPresent() && !userRepository.existsById(userId)) {
                         throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
                 }
-                
+
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-                
-                userRepository.delete(user);
+
+                cleanupDependentsAndDelete(List.of(user));
+        }
+
+        /**
+         * [무결성/V2_12 결속] 사용자 삭제 전 종속 데이터 정리 후 일괄 삭제.
+         *
+         * <p>V2_12 가 tb_user_authrt_map·tb_bbs_item·tb_bbs_comment·tb_adbk_manage·tb_user_noti 에
+         * tb_user_info(esntl_id) FK(NO ACTION)를 부여했으므로, 사용자 행 삭제 전에 같은 트랜잭션에서
+         * 종속 행을 반드시 정리해야 한다. 정리하지 않으면 커밋 시 FK 위반으로 삭제가 실패한다.
+         * <ul>
+         *   <li>보안 인가 매핑(tb_user_authrt_map)·리프레시 토큰: 여기서 직접 삭제</li>
+         *   <li>콘텐츠(게시글/댓글/주소록)·알림: {@link UserDeletionEvent} 동기 발행 →
+         *       business-app 의 UserDeletionCleanupListener 가 동일 트랜잭션에서
+         *       콘텐츠는 webmaster 재귀속, 알림은 삭제 처리</li>
+         *   <li>시스템 관리자 계정(webmaster)은 재귀속 종착지이므로 삭제 금지</li>
+         * </ul>
+         */
+        private void cleanupDependentsAndDelete(List<User> users) {
+                if (users.isEmpty()) {
+                        return;
+                }
+                List<String> esntlIds = users.stream().map(User::getEsntlId).collect(Collectors.toList());
+                if (esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)) {
+                        // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다
+                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+                }
+                userAuthorityRepository.deleteAllByIdInBatch(esntlIds);
+                for (User user : users) {
+                        // tb_auth_rfsh_tk.user_id 는 esntlId/loginId 가 혼재 저장돼 온 이력이 있어(감사 실측) 양쪽 모두 정리
+                        refreshTokenRepository.deleteByUserId(user.getEsntlId());
+                        refreshTokenRepository.deleteByUserId(user.getUserId());
+                }
+                eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
+                userRepository.deleteAllInBatch(users);
         }
 
         /**
@@ -332,7 +374,20 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
-                userRepository.deleteAllByIdInBatch(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
+                required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
+
+                // [버그수정] 기존 deleteAllByIdInBatch(userIds)는 PK(esntlId) 기준이라, FE(UserOrgHubClient)가
+                // 보내는 loginId 목록에서는 아무 행도 지우지 못하는 침묵 no-op 이었다. deleteUser 와 동일하게
+                // loginId → esntlId 순으로 해석해 실제 사용자를 확정한 뒤, 종속 정리를 거쳐 삭제한다.
+                // (존재하지 않는 ID 는 멱등 삭제 의미론으로 건너뛰고 경고만 남긴다)
+                List<User> users = userIds.stream()
+                                .map(id -> userRepository.findByUserId(id).or(() -> userRepository.findById(id)))
+                                .flatMap(java.util.Optional::stream)
+                                .collect(Collectors.toList());
+                if (users.size() < userIds.size()) {
+                        log.warn("deleteUserList: 요청 {}건 중 {}건만 실존 — 나머지는 건너뜀", userIds.size(), users.size());
+                }
+                cleanupDependentsAndDelete(users);
         }
 
         /**
