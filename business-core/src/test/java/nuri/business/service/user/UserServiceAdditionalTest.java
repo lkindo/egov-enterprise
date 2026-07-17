@@ -44,6 +44,9 @@ class UserServiceAdditionalTest {
     private nuri.business.domain.system.content.community.CommunityUserRepository communityUserRepository;
 
     @Mock
+    private nuri.business.domain.log.UserLogRepository userLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -55,7 +58,7 @@ class UserServiceAdditionalTest {
     void setUp() {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository, communityUserRepository,
-                passwordEncoder, eventPublisher);
+                userLogRepository, passwordEncoder, eventPublisher);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
@@ -185,6 +188,8 @@ class UserServiceAdditionalTest {
             // [P2 키 규약] rfsh_tk 는 esntlId 단일 키잉 — loginId 이중 삭제는 제거됨
             verify(refreshTokenRepository).deleteByUserId("ESNTL_" + userId);
             verify(refreshTokenRepository, never()).deleteByUserId(userId);
+            // [log-privacy] 사용통계 로그도 사용자 삭제 前 정리(FK 잠복결함 해소)
+            verify(userLogRepository).deleteByDmndUserIdIn(java.util.List.of("ESNTL_" + userId));
             var eventCaptor = org.mockito.ArgumentCaptor
                     .forClass(nuri.business.service.user.event.UserDeletionEvent.class);
             verify(eventPublisher).publishEvent(eventCaptor.capture());

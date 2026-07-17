@@ -68,10 +68,12 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
     @Override
     @Transactional
     public void deleteOldLogs(int months) {
-        String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_LOGIN_LOG WHERE TO_CHAR(CRT_DT, 'YYYYMMDD') < :targetDe";
+        // sargable 정정: TO_CHAR(CRT_DT,...) 함수 적용은 인덱스/스캔 최적화를 막는다. 컬럼 원형(timestamp)을
+        // 컷오프 시각과 직접 비교한다(경계 시맨틱 동일 — 만료월 시작시각 이전 = 기존 YMD 문자열 비교와 일치).
+        LocalDateTime cutoffTs = LocalDate.now().minusMonths(months).atStartOfDay();
+        String sql = "DELETE FROM TB_LOGIN_LOG WHERE CRT_DT < :cutoffTs";
         entityManager.createNativeQuery(sql)
-                .setParameter("targetDe", targetDe)
+                .setParameter("cutoffTs", cutoffTs)
                 .executeUpdate();
     }
 }

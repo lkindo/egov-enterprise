@@ -48,13 +48,15 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         private final LoginPolicyRepository loginPolicyRepository;
         private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
         private final CommunityUserRepository communityUserRepository;
+        private final nuri.business.domain.log.UserLogRepository userLogRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
                         nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
-                        CommunityUserRepository communityUserRepository, PasswordEncoder passwordEncoder,
+                        CommunityUserRepository communityUserRepository,
+                        nuri.business.domain.log.UserLogRepository userLogRepository, PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
@@ -67,6 +69,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 "UserAbsenceRepository 는 null 일 수 없습니다");
                 this.communityUserRepository = required(communityUserRepository,
                                 "CommunityUserRepository 는 null 일 수 없습니다");
+                this.userLogRepository = required(userLogRepository, "UserLogRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
         }
@@ -325,6 +328,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 users.stream().map(User::getUserId).collect(Collectors.toList()));
                 userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
                 communityUserRepository.deleteByIdUserIdIn(esntlIds);
+                // [log-privacy] 사용통계 로그 정리 — fk_tb_user_log_tb_user_info(dmnd_user_id→esntl_id) 잠복 결함 해소.
+                // 개인 단위 통계이므로 파기 대상(보존기간 정책은 접속기록 web/sys/login 에만 적용). 사용자 삭제 前 선행.
+                userLogRepository.deleteByDmndUserIdIn(esntlIds);
                 eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
                 userRepository.deleteAllInBatch(users);
         }
