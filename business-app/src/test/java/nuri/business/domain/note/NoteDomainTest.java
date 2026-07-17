@@ -51,7 +51,7 @@ class NoteDomainTest {
         // 2. 전체 인자 생성자 검증
         Note note = Note.builder().noteId("N1").build();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").build();
-        NoteRecptn recptn2 = new NoteRecptn("R2", note, trnsmit, "RcvId", "Y", "Cd1");
+        NoteRecptn recptn2 = new NoteRecptn("R2", note, trnsmit, "RcvId", "Y", "Cd1", "N");
         assertEquals("R2", recptn2.getNoteRcptnId());
         assertEquals(note, recptn2.getNote());
         assertEquals(trnsmit, recptn2.getNoteDsptch());

@@ -43,15 +43,26 @@ public class NoteRecptn extends BaseEntity {
     @Column(length = 12)
     private String rcptnSeCd;
 
+    /** 수신자 관점 삭제여부(파티별 논리삭제, V2_21). 'Y' 면 수신함에서 숨김. */
+    @Column(length = 1)
+    private String delYn;
+
     @Builder
     public static NoteRecptn create(String noteRcptnId, Note note, NoteTrnsmit noteDsptch,
             String rcvrId, String openYn, String rcptnSeCd) {
-        return new NoteRecptn(noteRcptnId, note, noteDsptch, rcvrId, openYn, rcptnSeCd);
+        return new NoteRecptn(noteRcptnId, note, noteDsptch, rcvrId, openYn, rcptnSeCd, "N");
+    }
+
+    /** 수신자 논리삭제(수신함에서 숨김). 발신 사본과 독립. */
+    public void markDeleted() {
+        this.delYn = "Y";
     }
 
     @PrePersist
     protected void onCreate() {
         if (this.openYn == null)
             this.openYn = "N";
+        if (this.delYn == null)
+            this.delYn = "N";
     }
 }

@@ -41,6 +41,11 @@ public class NoteTrnsmit extends BaseEntity {
         return new NoteTrnsmit(noteSndngId, note, sndrId, delYn);
     }
 
+    /** 발신자 논리삭제(발신함에서 숨김). 수신 사본과 독립. */
+    public void markDeleted() {
+        this.delYn = "Y";
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.delYn == null)

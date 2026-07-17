@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button';
 
 export default function NotePage() {
   const { toast } = useToast();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const confirm = useConfirm();
 
   const [tab, setTab] = useState<'received' | 'sent'>('received');
@@ -75,6 +74,31 @@ export default function NotePage() {
     setDetailOpen(true);
   };
 
+  const handleDelete = async (note: Note) => {
+    // relationId 소스는 탭별로 다르다 — 수신함=noteRecptnId, 발신함=noteDsptchId
+    const relationId = tab === 'received' ? note.noteRecptnId : note.noteDsptchId;
+    if (!relationId) {
+      toast('삭제 대상 식별자를 찾을 수 없습니다.', 'error');
+      return;
+    }
+    const ok = await confirm({
+      title: '쪽지 삭제',
+      message: tab === 'received'
+        ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
+        : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) return;
+    try {
+      await noteService.deleteNote(relationId, { type: tab });
+      toast('삭제되었습니다.', 'success');
+      loadNotes();
+    } catch {
+      toast('삭제 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
   const columns = [
     {
       header: '상태',
@@ -106,7 +130,7 @@ export default function NotePage() {
       header: '관리',
       accessor: (item: Note) => (
         <button
-          onClick={(e) => { e.stopPropagation(); toast('삭제되었습니다(Mock)', 'info'); }}
+          onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
           className="p-2 hover:bg-rose-50 text-rose-400 rounded-lg transition-colors group"
         >
           <Trash2 size={18} className="group-hover:scale-110 transition-transform" />

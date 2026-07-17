@@ -3,6 +3,9 @@ import { PageResponse } from '@/types/foundation/system';
 
 export interface Note {
  noteId: string;
+ // 삭제/상세의 relationId 소스 — 수신함=noteRecptnId, 발신함=noteDsptchId (백엔드 NoteDto 기존재)
+ noteRecptnId?: string;
+ noteDsptchId?: string;
  noteSj: string;
  noteCn: string;
  dsptchUserId: string;

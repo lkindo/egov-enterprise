@@ -244,25 +244,29 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("보낸 쪽지 삭제 - 발신자 본인")
-    void deleteNote_sent() {
+    @DisplayName("보낸 쪽지 삭제 - 발신자 소프트삭제(수신자 미삭제 시 물리 수거 없음)")
+    void deleteNote_sent_softDelete_noPurge() {
         // given
         String relationId = "T1";
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").delYn("N").build();
         given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+        given(noteTrnsmitRepository.findByIdForUpdate(relationId)).willReturn(Optional.of(trnsmit));
+        // 미삭제 수신 사본이 남아 있으면 수거 보류
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngIdAndDelYn(relationId, "N")).willReturn(1L);
 
         // when
         noteService.deleteNote(relationId, "sent", "user1");
 
-        // then
-        verify(noteTrnsmitRepository, times(1)).delete(trnsmit);
-        verify(noteRecptnRepository, never()).delete(any());
+        // then — 소프트삭제만, 물리 수거 없음
+        assertThat(trnsmit.getDelYn()).isEqualTo("Y");
+        verify(noteTrnsmitRepository, never()).delete(any());
+        verify(noteRepository, never()).deleteById(any());
     }
 
     @Test
-    @DisplayName("받은 쪽지 삭제 - 수신자 본인")
-    void deleteNote_received() {
-        // given
+    @DisplayName("받은 쪽지 삭제 - 수신자 소프트삭제")
+    void deleteNote_received_softDelete() {
+        // given (noteDsptch null → 수거 판정 생략)
         String relationId = "R1";
         NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(relationId).rcvrId("user2").build();
         given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
@@ -271,8 +275,33 @@ class NoteServiceImplTest {
         noteService.deleteNote(relationId, "received", "user2");
 
         // then
-        verify(noteRecptnRepository, times(1)).delete(recptn);
-        verify(noteTrnsmitRepository, never()).delete(any());
+        assertThat(recptn.getDelYn()).isEqualTo("Y");
+        verify(noteRecptnRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("양측 삭제 완료 시 물리 수거 — rcptn→sndng→info 순")
+    void deleteNote_bothPartiesDeleted_purge() {
+        // given: 발신은 이미 삭제(delYn='Y'), 마지막 수신 삭제로 양측 완료
+        String sndngId = "T1", noteId = "N1", rcptnId = "R1";
+        Note note = Note.builder().noteId(noteId).build();
+        NoteTrnsmit sndng = NoteTrnsmit.builder().noteSndngId(sndngId).note(note).sndrId("user1").delYn("Y").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(rcptnId).note(note).noteDsptch(sndng).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(rcptnId)).willReturn(Optional.of(recptn));
+        given(noteTrnsmitRepository.findByIdForUpdate(sndngId)).willReturn(Optional.of(sndng));
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngIdAndDelYn(sndngId, "N")).willReturn(0L);
+        given(noteRecptnRepository.findByNoteDsptchNoteSndngId(sndngId)).willReturn(List.of(recptn));
+        given(noteTrnsmitRepository.countByNoteNoteId(noteId)).willReturn(0L);
+        given(noteRecptnRepository.countByNoteNoteId(noteId)).willReturn(0L);
+
+        // when
+        noteService.deleteNote(rcptnId, "received", "user2");
+
+        // then — 자식(rcptn) → 부모(sndng) → 본문(info) 순 물리 수거
+        var order = inOrder(noteRecptnRepository, noteTrnsmitRepository, noteRepository);
+        order.verify(noteRecptnRepository).deleteAll(List.of(recptn));
+        order.verify(noteTrnsmitRepository).delete(sndng);
+        order.verify(noteRepository).deleteById(noteId);
     }
 
     @Test
@@ -288,6 +317,34 @@ class NoteServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.ACCESS_DENIED);
-        verify(noteTrnsmitRepository, never()).delete(any());
+        assertThat(trnsmit.getDelYn()).isNotEqualTo("Y"); // 소프트삭제조차 되지 않음
+    }
+
+    @Test
+    @DisplayName("쪽지 발송 - 공백/NULL 수신자 거부(INVALID_INPUT_VALUE)")
+    void sendNote_blankRecipients_rejected() throws Exception {
+        // given: 전부 공백인 수신자 → NULL-rcvr 사본(수거 영구봉쇄 원천) 생성 차단
+        NoteDto dto = NoteDto.builder().noteSj("S").noteCn("M").rcverId("  , ,").build();
+        given(egovNoteIdGnrService.getNextStringId()).willReturn("N-ID", "T-ID");
+
+        // when & then
+        assertThatThrownBy(() -> noteService.sendNote("user1", dto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(noteRecptnRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("보낸 쪽지 상세 - 소프트삭제된 건은 RESOURCE_NOT_FOUND")
+    void getNoteDetail_sent_softDeleted_notFound() {
+        String relationId = "T1";
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").delYn("Y").build();
+        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+
+        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 }
