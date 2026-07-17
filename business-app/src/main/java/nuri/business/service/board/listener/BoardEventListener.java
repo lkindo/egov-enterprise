@@ -22,7 +22,7 @@ public class BoardEventListener {
     private final CommentRepository commentRepository;
 
     // 발행 자체가 커밋 후 이뤄지도록 발행부(BoardService.createPost/replyPost)에서 runAfterCommit 로 감싼다.
-    // (이 프로젝트는 @TransactionalEventListener + @Async 조합이 RestrictedTransactionalEventListenerFactory 로 금지됨.)
+    // (@TransactionalEventListener + @Async 조합은 AsyncTransactionalListenerArchTest 게이트로 금지된다 — 커밋-전-async 방지.)
     @Async
     @EventListener
     @Transactional

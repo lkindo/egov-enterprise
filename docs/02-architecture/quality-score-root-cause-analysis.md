@@ -106,7 +106,8 @@ eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **�
 ### C. 횡단관심사의 비체계적 적용 — 그래서 버그가 "패턴"으로 재발
 인가·정체성·트랜잭션 경계·캐싱 같은 cross-cutting 관심사가 **관례/애스펙트가 아니라 엔드포인트마다 임기응변으로** 적용됐다.
 - **증거(전부 "N곳" 패턴)**: currentTimeMillis PK ×12 · 커밋-전-async ×3(Sanction/Board/SMS/Mail) · 함수레벨 인가 누락 ×6 · check-then-act ×5 · split-package ×여러. 이번 세션이 개별 인스턴스를 잡았으나 **체계(관례)는 여전히 없어** 다음 컨트롤러/서비스에서 재발할 구조.
-- **누르는 점수**: BE 단순성·연결부 · SEAM 적합성. 방어가 "단일 레이어 국소 수정"에 의존(실질 인가 경계가 백엔드 @PreAuthorize **한 겹**뿐, DB 엔 FK 8건/CHECK 0건, FE 미들웨어는 위조 가능).
+- **✅ 부분 해소(2026-07-18, 체계화 감사 → 게이트+관례 SSOT)**: 관심사별 게이트/관례 현황을 실측(`crosscutting-systematization-audit-2026-07-18`)해 **관례 SSOT 문서 신설**([cross-cutting-conventions.md](../03-guides/cross-cutting-conventions.md) — 6개 관심사 `[관례/근거/집행게이트/미집행갭]`). 최대 갭 2건을 **정적 게이트로 기계강제 전환**: ① `AsyncTransactionalListenerArchTest`(@Async+@TransactionalEventListener 금지) — 종전 `RestrictedTransactionalEventListenerFactory` **팬텀 가드**(주석만 존재·클래스 부재=거짓 안전감)를 실제 게이트로 대체하고 리스너 주석 3정정. ② `ServiceReadOnlyTransactionalLinterTest`(@Service 클래스레벨 readOnly 강제, 미준수 11종 동결·신규 드리프트 차단). 기존 게이트(Security/PkGen/UniqueMirror/SchemaNaming)와 합산해 인가(쓰기축)·PK채번·tx경계는 게이트화. **잔여(문서 방어)**: 인가 읽기축·SpEL, check-then-act 시맨틱, 캐시명 상수화(게이트 0), 정체성 컬럼축.
+- **누르는 점수**: BE 단순성·연결부 · SEAM 적합성. 방어가 "단일 레이어 국소 수정"에 의존(실질 인가 경계가 백엔드 @PreAuthorize **한 겹**뿐, DB 엔 FK 8건/CHECK 0건, FE 미들웨어는 위조 가능). *(2026-07-18 게이트화로 재발 방지의 "체계" 축은 일부 확보 — 인스턴스 정정에만 의존하던 구조에서 드리프트-차단 게이트로 이동.)*
 
 ### D. SSOT(단일 진실원) 전파 미정합 — 불변식이 한 레이어에만 존재
 DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 논다.**

@@ -32,8 +32,8 @@ import nuri.foundation.constants.Constants;
  * <p>⚠ 반드시 <b>동기</b> 리스너여야 한다({@code @Async} 금지). 사용자 행 DELETE 가 flush 되기
  * 전, 같은 트랜잭션 안에서 실행되어야 FK 를 통과한다. 비동기 전환 시 발행 트랜잭션 밖으로
  * 이탈하여 사용자 삭제가 FK 위반으로 실패하고, 정리 자체도 정합성을 잃는다.
- * (이 프로젝트는 @TransactionalEventListener+@Async 조합이
- * RestrictedTransactionalEventListenerFactory 로 금지돼 있기도 하다 — BoardEventListener 주석 참조)
+ * (@TransactionalEventListener+@Async 조합은 AsyncTransactionalListenerArchTest 게이트로 기계강제 금지된다 —
+ * 커밋-전-async 방지. BoardEventListener 주석 참조)
  */
 @Slf4j
 @Component
