@@ -34,6 +34,7 @@ class MailAsyncProcessorTest {
 
     @BeforeEach
     void setUp() {
+        mailAsyncProcessor.setSelf(mailAsyncProcessor);
         lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
             .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
     }
