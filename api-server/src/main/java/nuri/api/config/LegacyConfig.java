@@ -56,90 +56,10 @@ public class LegacyConfig {
         return new nuri.foundation.core.config.ApplicationContextProvider();
     }
 
-    // ID Generation Services
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl bbsMasterIdStrategy() {
-        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
-        strategy.setPrefix("BBSMSTR_");
-        strategy.setCipers(20);
-        strategy.setFillChar('0');
-        return strategy;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovBBSMstrIdGnrService(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
-            @org.springframework.beans.factory.annotation.Qualifier("bbsMasterIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
-        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
-        idGnrService.setDataSource(dataSource);
-        idGnrService.setStrategy(strategy);
-        idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
-        idGnrService.setTableName("BBS_ID");
-        return idGnrService;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl blogIdStrategy() {
-        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
-        strategy.setPrefix("BLOG_");
-        strategy.setCipers(15);
-        strategy.setFillChar('0');
-        return strategy;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovBlogIdGnrService(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
-            @org.springframework.beans.factory.annotation.Qualifier("blogIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
-        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
-        idGnrService.setDataSource(dataSource);
-        idGnrService.setStrategy(strategy);
-        idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
-        idGnrService.setTableName("BLOG_ID");
-        return idGnrService;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl answerNoStrategy() {
-        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
-        strategy.setCipers(20);
-        strategy.setFillChar('0');
-        return strategy;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovAnswerNoGnrService(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
-            @org.springframework.beans.factory.annotation.Qualifier("answerNoStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
-        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
-        idGnrService.setDataSource(dataSource);
-        idGnrService.setStrategy(strategy);
-        idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
-        idGnrService.setTableName("ANSWER_NO");
-        return idGnrService;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl stsfdgNoStrategy() {
-        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
-        strategy.setCipers(20);
-        strategy.setFillChar('0');
-        return strategy;
-    }
-
-    @Bean
-    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovStsfdgNoGnrService(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
-            @org.springframework.beans.factory.annotation.Qualifier("stsfdgNoStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
-        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
-        idGnrService.setDataSource(dataSource);
-        idGnrService.setStrategy(strategy);
-        idGnrService.setBlockSize(10);
-        idGnrService.setTable("COMTECOPSEQ");
-        idGnrService.setTableName("STSFDG_NO");
-        return idGnrService;
-    }
+    // [§2.A D3(a)(b) 정정 2026-07-17] egovBBSMstr/Blog/AnswerNo/StsfdgNo IdGnr 4빈 + strategy 4빈 제거.
+    // 근거(db-bridge 실측): ① setTable("COMTECOPSEQ") 인데 COMTECOPSEQ 테이블 실물 부재(채번 시 실패).
+    //   ② egovBBSMstrIdGnrService 는 foundation EgovIdGnrConfig(ids/BBSMSTR_/12)가 승자(DB PK 실값
+    //      BBSMSTR_000000002050 = 12자리로 증명) → LegacyConfig 정의(BBS_ID/20)는 패자·중복.
+    //   ③ Blog/AnswerNo/StsfdgNo 는 소비처 0(死빈). BoardMasterService @Qualifier("egovBBSMstrIdGnrService")
+    //      는 foundation 정의로 정상 해소. (@Profile("!test") 라 전체 테스트 미로드 — prod-boot 확인은 별도.)
 }
