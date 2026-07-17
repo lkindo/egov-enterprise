@@ -1,6 +1,6 @@
 package nuri.api.controller.business.admin.content.board;
 
-import nuri.business.service.board.EgovBoardMasterService;
+import nuri.business.service.board.BoardMasterService;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BoardMasterApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovBoardMasterService boardMasterService;
+    private BoardMasterService boardMasterService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

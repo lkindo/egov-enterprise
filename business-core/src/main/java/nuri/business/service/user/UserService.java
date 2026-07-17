@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service("egovUserService")
 @Transactional(readOnly = true)
-public class UserService extends BaseAbstractService implements EgovUserService {
+public class UserService extends BaseAbstractService {
 
 
         private final UserRepository userRepository;
@@ -77,7 +77,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 목록 조회 (N+1 쿼리 개선 버전)
          */
-        @Override
         @Cacheable(value = "users", key = "'userList'")
         public List<UserDto> getUserList() {
                 // [성능 개선] 단일 쿼리로 사용자와 권한 정보를 함께 조회 (N+1 방지)
@@ -105,7 +104,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 목록 페이지 조회 구현
          */
-        @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + (#searchKeyword ?: '') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
         public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
                 return userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
@@ -115,7 +113,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 목록 페이지 조회 (검색어 없음)
          */
-        @Override
         public Page<UserDto> getUserPage(@NonNull Pageable pageable) {
                 return getPagedUserList(null, pageable);
         }
@@ -123,7 +120,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 목록 페이지 조회 (기본 페이징 적용)
          */
-        @Override
         public Page<UserDto> searchUserPage(String searchKeyword) {
                 return getPagedUserList(searchKeyword, org.springframework.data.domain.PageRequest.of(0, 10));
         }
@@ -131,7 +127,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 상세 조회
          */
-        @Override
         @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
                 // 로그인 ID 또는 PK(esntlId) 중 어느 핸들로도 조회 허용.
@@ -256,7 +251,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 비밀번호 변경
          */
-        @Override
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
                 User user = userRepository.findByUserId(userId)
@@ -274,7 +268,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 삭제
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
@@ -338,7 +331,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 사용자 회원가입 (기존 API 호환 및 비밀번호 암호화 적용)
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
@@ -382,7 +374,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 비밀번호 검증
          */
-        @Override
         public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {
                 return passwordEncoder.matches(rawPassword, encodedPassword);
         }
@@ -390,7 +381,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 여러 사용자를 한꺼번에 삭제합니다.
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
@@ -417,7 +407,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 아이디 중복 여부를 확인합니다.
          */
-        @Override
         public boolean checkIdDplct(@NonNull String userId) {
                 return userRepository.findByUserId(required(userId, "사용자 ID 는 null 일 수 없습니다")).isPresent();
         }
@@ -425,7 +414,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
@@ -443,7 +431,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 여러 사용자의 상태를 한꺼번에 변경합니다.
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
@@ -459,7 +446,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
@@ -475,7 +461,6 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 여러 사용자의 권한을 한꺼번에 변경합니다.
          */
-        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {

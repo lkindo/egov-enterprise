@@ -1,6 +1,6 @@
 package nuri.api.controller.business.help;
 
-import nuri.business.service.help.EgovHelpService;
+import nuri.business.service.help.HelpService;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.OnlineManualDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +40,7 @@ class HelpApiControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private EgovHelpService helpService;
+    private HelpService helpService;
 
     @InjectMocks
     private HelpApiController helpApiController;

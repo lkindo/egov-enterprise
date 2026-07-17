@@ -1,6 +1,6 @@
 package nuri.api.controller.business.memoreport;
 
-import nuri.business.service.memoreport.EgovMemoReportService;
+import nuri.business.service.memoreport.MemoReportService;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,12 +27,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MemoReportApiControllerTest {
 
     private MockMvc mockMvc;
-    private EgovMemoReportService memoReportService;
+    private MemoReportService memoReportService;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        memoReportService = mock(EgovMemoReportService.class);
+        memoReportService = mock(MemoReportService.class);
         
         HandlerMethodArgumentResolver userDetailsResolver = new HandlerMethodArgumentResolver() {
             @Override

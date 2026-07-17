@@ -1,6 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
-import nuri.business.service.schedule.EgovScheduleService;
+import nuri.business.service.schedule.ScheduleService;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import nuri.business.support.ControllerTestSupport;
 class ScheduleApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovScheduleService egovScheduleService;
+    private ScheduleService egovScheduleService;
 
     @Test
     @DisplayName("일정 목록 조회 성공")

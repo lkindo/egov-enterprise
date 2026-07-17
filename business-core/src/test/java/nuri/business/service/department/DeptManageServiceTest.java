@@ -38,7 +38,7 @@ class DeptManageServiceTest {
     private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();
 
     @InjectMocks
-    private DeptManageServiceImpl deptManageService;
+    private DeptManageService deptManageService;
 
     @Test
     @DisplayName("부서 목록 조회 테스트")

@@ -21,12 +21,11 @@ import java.util.stream.Collectors;
 
 @Service("egovLoginPolicyManageService")
 @RequiredArgsConstructor
-public class LoginPolicyManageService extends BaseAbstractService implements EgovLoginPolicyManageService {
+public class LoginPolicyManageService extends BaseAbstractService {
 
     private final LoginPolicyRepository loginPolicyRepository;
     private final UserRepository userRepository;
 
-    @Override
     public List<LoginPolicyDto> selectLoginPolicyList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -43,13 +42,11 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
                 }).collect(Collectors.toList());
     }
 
-    @Override
     public int selectLoginPolicyListTotCnt(BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) loginPolicyRepository.searchLoginPolicies(searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
-    @Override
     public LoginPolicyDto selectLoginPolicy(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
@@ -75,7 +72,6 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
         return dto;
     }
 
-    @Override
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
         // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
@@ -94,7 +90,6 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
         loginPolicyRepository.save(entity);
     }
 
-    @Override
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
@@ -102,13 +97,11 @@ public class LoginPolicyManageService extends BaseAbstractService implements Ego
         entity.update(dto.getIpAddr(), dto.getDpcnPrmYn(), dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
     }
 
-    @Override
     @Transactional
     public void deleteLoginPolicy(LoginPolicyDto dto) {
         loginPolicyRepository.deleteById(dto.getUserId());
     }
 
-    @Override
     public void validateLoginPolicy(String userId, String clientIp) {
         loginPolicyRepository.findById(userId).ifPresent(policy -> {
             if ("Y".equals(policy.getLmtYn())) {

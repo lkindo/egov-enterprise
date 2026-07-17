@@ -1,6 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
-import nuri.business.service.scrap.EgovScrapService;
+import nuri.business.service.scrap.ScrapService;
 import nuri.business.service.scrap.dto.ScrapDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import nuri.business.support.ControllerTestSupport;
 class ScrapApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovScrapService egovScrapService;
+    private ScrapService egovScrapService;
 
     @Test
     @DisplayName("스크랩 목록 조회 성공")

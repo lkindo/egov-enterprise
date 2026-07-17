@@ -4,7 +4,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -32,7 +32,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserApiController {
 
-    private final EgovUserService userService;
+    private final UserService userService;
 
     // --- [일반 사용자 기능] /api/v1/users ---
 

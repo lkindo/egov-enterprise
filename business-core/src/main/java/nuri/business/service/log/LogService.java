@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 @Service("egovLogService")
 @Transactional(readOnly = true)
-public class LogService extends BaseAbstractService implements EgovLogService {
+public class LogService extends BaseAbstractService {
 
     private final LoginLogRepository loginLogRepository;
 
@@ -30,7 +30,6 @@ public class LogService extends BaseAbstractService implements EgovLogService {
     /**
      * 로그인 로그 기록 (비동기 처리)
      */
-    @Override
     @Async("logExecutor")
     @Transactional
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
@@ -49,7 +48,6 @@ public class LogService extends BaseAbstractService implements EgovLogService {
     /**
      * 최근 로그인 로그 목록 조회
      */
-    @Override
     public List<LogDto> getRecentLoginLogs() {
         return loginLogRepository.findTop100ByOrderByCrtDtDesc().stream()
                 .map(this::convertToDto)

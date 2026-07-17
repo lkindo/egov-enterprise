@@ -13,11 +13,10 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MemoTodoService implements EgovMemoTodoService {
+public class MemoTodoService {
 
     private final MemoTodoRepository memoTodoRepository;
 
-    @Override
     @Transactional
     public void registerMemoTodo(MemoTodoDto dto) {
         MemoTodo todo = MemoTodo.builder()
@@ -31,7 +30,6 @@ public class MemoTodoService implements EgovMemoTodoService {
         memoTodoRepository.save(Objects.requireNonNull(todo));
     }
 
-    @Override
     @Transactional
     public void updateMemoTodo(MemoTodoDto dto) {
         memoTodoRepository.findById(Objects.requireNonNull(dto.getTodoId()))
@@ -42,13 +40,11 @@ public class MemoTodoService implements EgovMemoTodoService {
                         dto.getTodoCn()));
     }
 
-    @Override
     @Transactional
     public void deleteMemoTodo(String todoId) {
         memoTodoRepository.deleteById(Objects.requireNonNull(todoId));
     }
 
-    @Override
     public MemoTodoDto getMemoTodo(String todoId) {
         return memoTodoRepository.findById(Objects.requireNonNull(todoId))
                 .map(t -> MemoTodoDto.builder()
@@ -62,7 +58,6 @@ public class MemoTodoService implements EgovMemoTodoService {
                 .orElse(null);
     }
 
-    @Override
     public Page<MemoTodoDto> getMemoTodoList(String userId, Pageable pageable) {
         return memoTodoRepository.findByUserId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
                 .map(t -> MemoTodoDto.builder()

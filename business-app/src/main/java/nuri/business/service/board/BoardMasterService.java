@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
+public class BoardMasterService extends BaseAbstractService {
 
     private final BoardMasterRepository boardMasterRepository;
     // @Primary egovFileIdGnrService 가 by-name 주입을 이겨 FILE_ 접두사 ID를 반환하던 회귀 방어.

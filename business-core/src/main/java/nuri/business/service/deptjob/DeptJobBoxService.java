@@ -17,30 +17,26 @@ import java.util.Objects;
 @Service("deptJobBoxService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class DeptJobBoxService implements EgovDeptJobBoxService {
+public class DeptJobBoxService {
 
     private final DeptJobBoxRepository deptJobBoxRepository;
 
-    @Override
     public Page<DeptJobBoxDto> getDeptJobBoxList(String keyword, Pageable pageable) {
         return deptJobBoxRepository.findByKeyword(keyword, Objects.requireNonNull(pageable))
                 .map(DeptJobBoxDto::fromEntity);
     }
 
-    @Override
     public Page<DeptJobBoxDto> getDeptJobBoxListByDept(String deptId, Pageable pageable) {
         return deptJobBoxRepository.findByDeptId(deptId, Objects.requireNonNull(pageable))
                 .map(DeptJobBoxDto::fromEntity);
     }
 
-    @Override
     public DeptJobBoxDto getDeptJobBox(String deptTaskBoxId) {
         return deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
                 .map(DeptJobBoxDto::fromEntity)
                 .orElse(null);
     }
 
-    @Override
     @Transactional
     public String createDeptJobBox(String userId, DeptJobBoxDto dto) {
         // [헌법 제8조 이중검증] 컨트롤러 @PreAuthorize(1차) + 서비스 2차 가드. 부서 업무함은
@@ -57,7 +53,6 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
         return id;
     }
 
-    @Override
     @Transactional
     public void updateDeptJobBox(String deptTaskBoxId, String userId, DeptJobBoxDto dto) {
         SecurityUtil.assertAdmin();
@@ -70,7 +65,6 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
                 dto.getSortOrdr());
     }
 
-    @Override
     @Transactional
     public void deleteDeptJobBox(String deptTaskBoxId) {
         SecurityUtil.assertAdmin();

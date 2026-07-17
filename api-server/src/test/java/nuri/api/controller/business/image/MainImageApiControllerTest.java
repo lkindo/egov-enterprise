@@ -1,6 +1,6 @@
 package nuri.api.controller.business.image;
 
-import nuri.business.service.image.EgovMainImageService;
+import nuri.business.service.image.MainImageService;
 import nuri.business.service.image.dto.MainImageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import nuri.business.support.ControllerTestSupport;
 class MainImageApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovMainImageService mainImageService;
+    private MainImageService mainImageService;
 
     @Test
     @WithMockCustomUser(role = "ADMIN")

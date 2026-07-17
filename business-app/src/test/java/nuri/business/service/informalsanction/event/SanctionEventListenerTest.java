@@ -4,7 +4,7 @@ import nuri.business.service.mail.MailService;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.sms.SmsService;
 import nuri.business.service.sms.dto.SmsDto;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class SanctionEventListenerTest {
 
     @Mock
-    private EgovUserService userService;
+    private UserService userService;
 
     @Mock
     private SmsService smsService;

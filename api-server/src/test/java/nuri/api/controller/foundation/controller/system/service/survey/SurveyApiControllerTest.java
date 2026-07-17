@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.test.BaseControllerTest;
-import nuri.business.service.system.service.survey.EgovSurveyService;
+import nuri.business.service.system.service.survey.SurveyService;
 import nuri.business.service.system.service.survey.dto.SurveyInfoDto;
 import nuri.business.service.system.service.survey.dto.SurveyTemplateDto;
 import nuri.business.service.system.service.survey.dto.SurveyArticleDto;
@@ -24,12 +24,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class SurveyApiControllerTest extends BaseControllerTest {
 
-    private EgovSurveyService surveyService;
+    private SurveyService surveyService;
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @Override
     protected Object getController() {
-        surveyService = mock(EgovSurveyService.class);
+        surveyService = mock(SurveyService.class);
         return new SurveyApiController(surveyService);
     }
 

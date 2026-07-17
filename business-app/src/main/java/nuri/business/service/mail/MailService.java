@@ -20,12 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MailService implements EgovMailService {
+public class MailService {
 
     private final SentMailRepository sentMailRepository;
     private final MailAsyncProcessor mailAsyncProcessor;
 
-    @Override
     public Page<SentMailDto> getSentMailList(String keyword, Pageable pageable) {
         log.debug("Fetching sent mail list with keyword: {}", keyword);
         if (keyword == null || keyword.isEmpty()) {
@@ -34,14 +33,12 @@ public class MailService implements EgovMailService {
         return sentMailRepository.findBySjContaining(keyword, Objects.requireNonNull(pageable)).map(SentMailDto::from);
     }
 
-    @Override
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching sent mails with condition: {}, keyword: {}", searchCondition, searchKeyword);
         return sentMailRepository.searchSentMails(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
                 .map(SentMailDto::from);
     }
 
-    @Override
     public SentMailDto getSentMail(String mssageId) {
         log.debug("Fetching mail details for ID: {}", mssageId);
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))
@@ -49,7 +46,6 @@ public class MailService implements EgovMailService {
         return SentMailDto.from(sentMail);
     }
 
-    @Override
     @Transactional
     public String sendMail(String userId, SentMailDto dto) {
         log.info("Sending mail requested by user: {}, subject: {}", userId, dto.getSj());
@@ -80,7 +76,6 @@ public class MailService implements EgovMailService {
         return mssageId;
     }
 
-    @Override
     @Transactional
     public void updateMailResult(String mssageId, String resultCode) {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))
@@ -88,7 +83,6 @@ public class MailService implements EgovMailService {
         sentMail.updateResult(resultCode);
     }
 
-    @Override
     @Transactional
     public void deleteMail(String mssageId) {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))

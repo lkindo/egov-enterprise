@@ -18,12 +18,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class BannerService implements EgovBannerService {
+public class BannerService {
 
     private final BannerRepository bannerRepository;
     private final BannerMapper bannerMapper;
 
-    @Override
     public Page<BannerDto> getBannerList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(bannerMapper::toDto);
@@ -32,14 +31,12 @@ public class BannerService implements EgovBannerService {
                 .map(bannerMapper::toDto);
     }
 
-    @Override
     public BannerDto getBanner(String bannerId) {
         return bannerRepository.findById(Objects.requireNonNull(bannerId))
                 .map(bannerMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public void insertBanner(BannerDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("BANNER_", 13);
@@ -56,7 +53,6 @@ public class BannerService implements EgovBannerService {
         bannerRepository.save(Objects.requireNonNull(entity));
     }
 
-    @Override
     @Transactional
     public void updateBanner(BannerDto dto) {
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrId()))
@@ -65,13 +61,11 @@ public class BannerService implements EgovBannerService {
                 dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileId());
     }
 
-    @Override
     @Transactional
     public void deleteBanner(String bannerId) {
         bannerRepository.deleteById(Objects.requireNonNull(bannerId));
     }
 
-    @Override
     public List<BannerDto> getReflectedBanners() {
         return bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y").stream()
                 .map(bannerMapper::toDto)

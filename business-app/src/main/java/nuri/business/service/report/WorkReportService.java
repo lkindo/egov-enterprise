@@ -18,11 +18,10 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class WorkReportService extends BaseAbstractService implements EgovWorkReportService {
+public class WorkReportService extends BaseAbstractService {
 
     private final WorkReportRepository workReportRepository;
 
-    @Override
     @Transactional
     public void createWorkReport(WorkReportDto dto) {
         WorkReport entity = WorkReport.builder()

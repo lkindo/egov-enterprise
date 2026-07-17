@@ -1,7 +1,7 @@
 package nuri.api.controller.business.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nuri.business.service.report.EgovWorkReportService;
+import nuri.business.service.report.WorkReportService;
 import nuri.business.service.report.dto.WorkReportDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class WorkReportApiControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private EgovWorkReportService workReportService;
+    private WorkReportService workReportService;
 
     @InjectMocks
     private WorkReportApiController workReportApiController;

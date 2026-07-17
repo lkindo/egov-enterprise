@@ -31,7 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
 @Service("egovCommonCodeService")
-public class CommonCodeService extends BaseAbstractService implements EgovCommonCodeService {
+public class CommonCodeService extends BaseAbstractService {
 
         private final CommonCodeRepository commonCodeRepository;
         private final CommonCodeCategoryRepository commonCodeCategoryRepository;
@@ -50,7 +50,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 this.commonCodeMapper = required(commonCodeMapper, "CommonCodeMapper 는 null 일 수 없습니다");
         }
 
-        @Override
         @Transactional(readOnly = true)
         @Cacheable(value = "commonCodes", key = "#codeGroupId")
         public List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId) {
@@ -61,7 +60,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .collect(Collectors.toList());
         }
 
-        @Override
         @PreAuthorize("hasRole('ADMIN')")
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
@@ -89,7 +87,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
         }
         // --- 공통분류코드 (CmmnClCode) ---
 
-        @Override
         public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -100,7 +97,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
         }
 
-        @Override
         public int selectCmmnClCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeCategoryRepository.searchCommonCodeCategories(
@@ -108,7 +104,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .getTotalElements();
         }
 
-        @Override
         public CmmnClCodeDto selectCmmnClCodeDetail(@NonNull CmmnClCodeDto dto) {
                 return commonCodeCategoryRepository
                                 .findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
@@ -116,7 +111,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .orElse(null);
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
@@ -134,7 +128,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
@@ -148,7 +141,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 });
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
@@ -170,7 +162,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
 
         // --- 공통코드 (CmmnCode) ---
 
-        @Override
         public List<CmmnCodeDto> selectCmmnCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -182,7 +173,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
         }
 
-        @Override
         public int selectCmmnCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeGroupRepository.searchCommonCodeGroups(
@@ -190,14 +180,12 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .getTotalElements();
         }
 
-        @Override
         public CmmnCodeDto selectCmmnCodeDetail(@NonNull CmmnCodeDto dto) {
                 return commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .map(this::toDto)
                                 .orElse(null);
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
@@ -216,7 +204,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
@@ -230,7 +217,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 });
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
@@ -268,7 +254,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
 
         // --- 공통상세코드 (CmmnDetailCode) ---
 
-        @Override
         public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull BaseSearchDto searchVO) {
                 int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
                 int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -280,7 +265,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
         }
 
-        @Override
         public int selectCmmnDetailCodeListTotCnt(@NonNull BaseSearchDto searchVO) {
                 Pageable pageable = PageRequest.of(0, 1);
                 return (int) commonCodeRepository.searchCommonCodeDetails(
@@ -288,7 +272,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .getTotalElements();
         }
 
-        @Override
         public CmmnDetailCodeDto selectCmmnDetailCodeDetail(@NonNull CmmnDetailCodeDto dto) {
                 return commonCodeRepository
                                 .findById(required(
@@ -299,7 +282,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .orElse(null);
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
@@ -321,7 +303,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                 commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
@@ -339,7 +320,6 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 });
         }
 
-        @Override
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {

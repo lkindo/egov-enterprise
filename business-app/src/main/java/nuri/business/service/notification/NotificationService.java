@@ -21,20 +21,18 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class NotificationService implements EgovNotificationService {
+public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationMapper notificationMapper;
 
-    @Override
     public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
         log.debug("Fetching notification list with keyword: {}", keyword);
         return notificationRepository.searchNotifications(keyword, pageable)
                 .map(notificationMapper::toDto);
     }
 
-    @Override
     public NotificationDto getNotification(String notiSn) {
         log.debug("Fetching notification details for ID: {}", notiSn);
         return notificationRepository.findById(Objects.requireNonNull(notiSn))
@@ -42,7 +40,6 @@ public class NotificationService implements EgovNotificationService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String createNotification(String userId, NotificationDto dto) {
         log.info("Creating notification for user: {}", userId);
@@ -71,7 +68,6 @@ public class NotificationService implements EgovNotificationService {
         return id;
     }
 
-    @Override
     @Transactional
     public void updateNotification(String notiSn, String userId, NotificationDto dto) {
         log.info("Updating notification ID: {} for user: {}", notiSn, userId);
@@ -80,21 +76,18 @@ public class NotificationService implements EgovNotificationService {
         entity.update(dto.getNotiTtlNm(), dto.getNotiCn(), dto.getNotiDt(), dto.getNotiIvlVal());
     }
 
-    @Override
     @Transactional
     public void deleteNotification(String notiSn) {
         log.warn("Deleting notification ID: {}", notiSn);
         notificationRepository.deleteById(notiSn);
     }
 
-    @Override
     public Page<NotificationDto> getActiveNotifications(Pageable pageable) {
         log.debug("Fetching active notifications with pagination");
         return notificationRepository.findAll(pageable)
                 .map(notificationMapper::toDto);
     }
 
-    @Override
     public List<NotificationDto> getActiveNotificationsAll() {
         // [경고] 대량 데이터 조회 - 배치 작업 등 특수한 경우에만 사용
         log.warn("Fetching ALL notifications without pagination - use with caution");
@@ -103,12 +96,10 @@ public class NotificationService implements EgovNotificationService {
                 .collect(Collectors.toList());
     }
 
-    @Override
     public long getUnreadCount(String userId) {
         return notificationRepository.countByRcvrIdAndReadYn(userId, "N");
     }
 
-    @Override
     @Transactional
     public void markAsRead(String notiSn) {
         log.info("Marking notification ID: {} as read", notiSn);

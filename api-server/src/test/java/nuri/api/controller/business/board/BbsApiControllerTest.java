@@ -1,6 +1,6 @@
 package nuri.api.controller.business.board;
 
-import nuri.business.service.board.EgovBoardService;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ import nuri.business.support.ControllerTestSupport;
 class BbsApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovBoardService boardService;
+    private BoardService boardService;
 
     @BeforeEach
     void setUp() {

@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import nuri.api.controller.UserApiController;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.UserService;
 import org.springframework.data.domain.PageImpl;
 import java.util.Collections;
 import nuri.api.interceptor.OperationalAuditInterceptor;
@@ -42,7 +42,7 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
-    private EgovUserService userService;
+    private UserService userService;
 
     @MockitoBean
     private OperationalAuditInterceptor operationalAuditInterceptor;

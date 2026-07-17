@@ -3,7 +3,7 @@ package nuri.api.controller.business.help;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.help.EgovHelpService;
+import nuri.business.service.help.HelpService;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.OnlineManualDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class HelpApiController {
 
-    private final EgovHelpService helpService;
+    private final HelpService helpService;
 
     // HPCM (Help)
 

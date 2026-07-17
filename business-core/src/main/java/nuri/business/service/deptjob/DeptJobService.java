@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Service("egovDeptJobService")
 @Transactional(readOnly = true)
-public class DeptJobService extends BaseAbstractService implements EgovDeptJobService {
+public class DeptJobService extends BaseAbstractService {
 
     private final DeptJobRepository deptJobRepository;
     private final DeptJobBoxRepository deptJobBoxRepository;
@@ -47,7 +47,6 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
     }
 
-    @Override
     public Page<DeptJobDto> getDeptJobList(String deptId, String deptJobbxId, String searchCondition, String keyword,
             Pageable pageable) {
         QDeptJob deptJob = QDeptJob.deptJob;
@@ -78,14 +77,12 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
     }
 
-    @Override
     public DeptJobDto getDeptJob(String id) {
         DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         return toDto(deptJob);
     }
 
-    @Override
     @Transactional
     public String createDeptJob(DeptJobDto dto) {
         DeptJob deptJob = DeptJob.builder()
@@ -101,7 +98,6 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         return deptJob.getDeptTaskId();
     }
 
-    @Override
     @Transactional
     public void updateDeptJob(String id, DeptJobDto dto) {
         DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
@@ -115,7 +111,6 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
                 dto.getAtchFileId());
     }
 
-    @Override
     @Transactional
     public void deleteDeptJob(String id) {
         deptJobRepository.deleteById(required(id, "id 는 null 일 수 없습니다"));

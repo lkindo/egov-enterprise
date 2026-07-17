@@ -20,38 +20,33 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MemoReportService extends BaseAbstractService implements EgovMemoReportService {
+public class MemoReportService extends BaseAbstractService {
 
     private final MemoReportRepository memoReportRepository;
     private final EgovIdGnrService egovMemoReportIdGnrService;
     private final MemoReportMapper memoReportMapper;
 
-    @Override
     public Page<MemoReportDto> getMemoReportList(String keyword, @NonNull Pageable pageable) {
         return memoReportRepository.searchMemoReports(null, keyword, Objects.requireNonNull(pageable))
                 .map(memoReportMapper::toDto);
     }
 
-    @Override
     public Page<MemoReportDto> getMyReportList(String writerId, @NonNull Pageable pageable) {
         return memoReportRepository.findByUserId(writerId, Objects.requireNonNull(pageable))
                 .map(memoReportMapper::toDto);
     }
 
-    @Override
     public Page<MemoReportDto> getReceivedReportList(String rptUserId, @NonNull Pageable pageable) {
         return memoReportRepository.findByRptrId(rptUserId, Objects.requireNonNull(pageable))
                 .map(memoReportMapper::toDto);
     }
 
-    @Override
     public MemoReportDto getMemoReport(@NonNull String rptId) {
         return memoReportRepository.findById(rptId)
                 .map(memoReportMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String createMemoReport(String userId, MemoReportDto dto) {
         try {
@@ -72,7 +67,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
         }
     }
 
-    @Override
     @Transactional
     public void updateMemoReport(String rptId, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
@@ -83,7 +77,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
         entity.setLastMdfrId(userId);
     }
 
-    @Override
     @Transactional
     public void deleteMemoReport(@NonNull String rptId) {
         MemoReport entity = memoReportRepository.findById(rptId)
@@ -92,7 +85,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
         memoReportRepository.delete(entity);
     }
 
-    @Override
     @Transactional
     public void readMemoReport(@NonNull String rptId) {
         memoReportRepository.findById(rptId).ifPresent(entity -> {
@@ -100,7 +92,6 @@ public class MemoReportService extends BaseAbstractService implements EgovMemoRe
         });
     }
 
-    @Override
     @Transactional
     public void updateDrctMatter(String rptId, String instrCn) {
         MemoReport entity = memoReportRepository.findById(rptId)

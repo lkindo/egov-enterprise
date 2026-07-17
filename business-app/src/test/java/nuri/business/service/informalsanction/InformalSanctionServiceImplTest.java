@@ -5,7 +5,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
 import nuri.business.domain.informalsanction.SanctionStatus;
-import nuri.business.service.code.EgovCommonCodeService;
+import nuri.business.service.code.CommonCodeService;
 import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import nuri.business.security.util.SecurityUtil;
@@ -34,20 +34,20 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("InformalSanctionServiceImpl 단위 테스트")
+@DisplayName("InformalSanctionService 단위 테스트")
 class InformalSanctionServiceImplTest {
 
     @org.mockito.Spy
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
 
     @InjectMocks
-    private InformalSanctionServiceImpl informalSanctionService;
+    private InformalSanctionService informalSanctionService;
 
     @Mock
     private InformalSanctionRepository informalSanctionRepository;
 
     @Mock
-    private EgovCommonCodeService commonCodeService;
+    private CommonCodeService commonCodeService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;

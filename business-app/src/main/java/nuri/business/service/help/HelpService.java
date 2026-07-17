@@ -20,7 +20,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class HelpService implements EgovHelpService {
+public class HelpService {
 
     private final HpcmRepository hpcmRepository;
     private final OnlineManualRepository onlineManualRepository;
@@ -28,21 +28,18 @@ public class HelpService implements EgovHelpService {
     private final OnlineManualMapper onlineManualMapper;
 
     // HPCM (Help)
-    @Override
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
         return hpcmRepository
                 .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
                 .map(hpcmMapper::toDto);
     }
 
-    @Override
     public HpcmDto getHpcm(String hlpId) {
         return hpcmRepository.findById(Objects.requireNonNull(hlpId))
                 .map(hpcmMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String createHpcm(String userId, HpcmDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("HPCM_", 13);
@@ -56,7 +53,6 @@ public class HelpService implements EgovHelpService {
         return id;
     }
 
-    @Override
     @Transactional
     public void updateHpcm(String hlpId, String userId, HpcmDto dto) {
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpId))
@@ -64,28 +60,24 @@ public class HelpService implements EgovHelpService {
         entity.update(dto.getHlpSeCd(), dto.getHlpDfn(), dto.getHlpExpln());
     }
 
-    @Override
     @Transactional
     public void deleteHpcm(String hlpId) {
         hpcmRepository.deleteById(Objects.requireNonNull(hlpId));
     }
 
     // Online Manual
-    @Override
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
         return onlineManualRepository
                 .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
                 .map(onlineManualMapper::toDto);
     }
 
-    @Override
     public OnlineManualDto getOnlineManual(String onlnMnlId) {
         return onlineManualRepository.findById(Objects.requireNonNull(onlnMnlId))
                 .map(onlineManualMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String createOnlineManual(String userId, OnlineManualDto dto) {
         if (dto == null) {
@@ -105,7 +97,6 @@ public class HelpService implements EgovHelpService {
         return id;
     }
 
-    @Override
     @Transactional
     public void updateOnlineManual(String onlnMnlId, String userId, OnlineManualDto dto) {
         OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlId))
@@ -113,7 +104,6 @@ public class HelpService implements EgovHelpService {
         entity.update(dto.getOnlnMnlNm(), dto.getOnlnMnlSeCd(), dto.getOnlnMnlDfn(), dto.getOnlnMnlExpln());
     }
 
-    @Override
     @Transactional
     public void deleteOnlineManual(String onlnMnlId) {
         onlineManualRepository.deleteById(Objects.requireNonNull(onlnMnlId));

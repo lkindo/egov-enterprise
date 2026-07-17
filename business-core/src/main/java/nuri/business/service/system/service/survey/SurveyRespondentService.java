@@ -16,25 +16,22 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SurveyRespondentService implements EgovSurveyRespondentService {
+public class SurveyRespondentService {
 
     private final SurveyRespondentRepository surveyRespondentRepository;
     private final SurveyRespondentMapper surveyRespondentMapper;
 
-    @Override
     public Page<SurveyRespondentDto> getSurveyRespondentList(String srvyId, String keyword, Pageable pageable) {
         return surveyRespondentRepository.findByRspdntNmContaining(keyword == null ? "" : keyword, pageable)
                 .map(surveyRespondentMapper::toDto);
     }
 
-    @Override
     public SurveyRespondentDto getSurveyRespondent(String respondentId) {
         return surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .map(surveyRespondentMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("SRES_", 13);
@@ -55,7 +52,6 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
         return id;
     }
 
-    @Override
     @Transactional
     public void updateSurveyRespondent(String respondentId, String userId, SurveyRespondentDto dto) {
         SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
@@ -64,7 +60,6 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 dto.getBrdt(), dto.getRgnTelno(), dto.getMidTelno(), dto.getEndTelno());
     }
 
-    @Override
     @Transactional
     public void deleteSurveyRespondent(String respondentId) {
         surveyRespondentRepository.deleteById(Objects.requireNonNull(respondentId));

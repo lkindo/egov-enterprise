@@ -3,7 +3,7 @@ package nuri.api.controller.business.smarttoolkit;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.deptjob.EgovDeptJobBoxService;
+import nuri.business.service.deptjob.DeptJobBoxService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DeptJobApiController {
 
-    private final EgovDeptJobBoxService egovDeptJobBoxService;
+    private final DeptJobBoxService egovDeptJobBoxService;
 
     @Operation(summary = "부서 업무함 목록 조회", description = "부서 업무함 목록을 페이징하여 조회합니다.")
     @GetMapping("/boxes")

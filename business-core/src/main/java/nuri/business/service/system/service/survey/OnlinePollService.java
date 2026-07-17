@@ -30,14 +30,13 @@ import java.util.ArrayList;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class OnlinePollService implements EgovOnlinePollService {
+public class OnlinePollService {
 
     private final OnlinePollManageRepository pollManageRepository;
     private final OnlinePollArticleRepository pollItemRepository;
     private final OnlinePollResultRepository pollResultRepository;
     private final OnlinePollArticleMapper onlinePollArticleMapper;
 
-    @Override
     public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
         Objects.requireNonNull(pageable);
         Page<OnlinePollManage> entities;
@@ -88,7 +87,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         items.forEach(item -> item.setPollIemCo(countByArtcl.getOrDefault(item.getPollArtclId(), 0L)));
     }
 
-    @Override
     public OnlinePollManageDto getPoll(String pollId) {
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(pollId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -97,7 +95,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         return dto;
     }
 
-    @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
         if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
@@ -143,7 +140,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         pollManageRepository.save(pollManage);
     }
 
-    @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
         if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
@@ -182,7 +178,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         }
     }
 
-    @Override
     @Transactional
     public void deletePoll(String pollId) {
         if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
@@ -195,7 +190,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         pollManageRepository.deleteById(Objects.requireNonNull(pollId));
     }
 
-    @Override
     public List<OnlinePollArticleDto> getPollItemList(String pollId) {
         List<OnlinePollArticleDto> items = pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
                 .map(onlinePollArticleMapper::toDto)
@@ -204,7 +198,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         return items;
     }
 
-    @Override
     @Transactional
     public void insertPollItem(OnlinePollArticleDto dto) {
         OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollId())
@@ -225,7 +218,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         pollItemRepository.save(Objects.requireNonNull(item));
     }
 
-    @Override
     @Transactional
     public void updatePollItem(OnlinePollArticleDto dto) {
         OnlinePollArticle entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollArtclId()))
@@ -237,7 +229,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         entity.setLastMdfrId(currentUserId);
     }
 
-    @Override
     @Transactional
     public void deletePollItem(String pollArtclId) {
         Objects.requireNonNull(pollArtclId);
@@ -246,7 +237,6 @@ public class OnlinePollService implements EgovOnlinePollService {
         pollItemRepository.deleteById(pollArtclId);
     }
 
-    @Override
     @Transactional
     public void vote(String pollId, String pollArtclId, String userId) {
         OnlinePollManage poll = pollManageRepository.findById(pollId)

@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 /**
  * JPA 기반 공통코드 서비스 구현체
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
- * - EgovCodeService 인터페이스 구현
+ * - CodeService 인터페이스 구현
  */
 @Service("egovCodeService")
 @Transactional(readOnly = true)
-public class CodeService extends BaseAbstractService implements EgovCodeService {
+public class CodeService extends BaseAbstractService {
 
     private final CommonCodeRepository commonCodeRepository;
 
@@ -28,7 +28,6 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
     /**
      * 특정 코드그룹 ID(CODE_ID)에 대한 상세 코드 목록 조회
      */
-    @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
         return commonCodeRepository.findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
                 .stream()
@@ -39,7 +38,6 @@ public class CodeService extends BaseAbstractService implements EgovCodeService 
     /**
      * 전체 활성 코드 목록 조회
      */
-    @Override
     public List<CodeDto> getAllActiveCodes() {
         return commonCodeRepository.findAll().stream()
                 .filter(code -> "Y".equals(code.getUseYn()))

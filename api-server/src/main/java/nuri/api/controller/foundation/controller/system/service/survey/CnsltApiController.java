@@ -3,7 +3,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.system.service.consult.EgovCnsltService;
+import nuri.business.service.system.service.consult.CnsltService;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CnsltApiController {
 
-    private final EgovCnsltService cnsltService;
+    private final CnsltService cnsltService;
 
     @Operation(summary = "상담 목록 페이징 조회")
     @GetMapping

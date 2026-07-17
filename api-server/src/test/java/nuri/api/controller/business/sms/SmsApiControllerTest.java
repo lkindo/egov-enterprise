@@ -1,7 +1,7 @@
 package nuri.api.controller.business.sms;
 
 
-import nuri.business.service.sms.EgovSmsService;
+import nuri.business.service.sms.SmsService;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ import nuri.business.support.ControllerTestSupport;
 class SmsApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovSmsService smsService;
+    private SmsService smsService;
 
     @Test
     @WithMockCustomUser

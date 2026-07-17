@@ -2,7 +2,7 @@ package nuri.api.controller.business.admin.content.banner;
 
 import nuri.business.test.BaseControllerTest;
 
-import nuri.business.service.system.content.banner.EgovBannerService;
+import nuri.business.service.system.content.banner.BannerService;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,12 +19,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("BannerApiController 테스트")
 class BannerApiControllerTest extends BaseControllerTest {
 
-    private EgovBannerService bannerService;
+    private BannerService bannerService;
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @Override
     protected Object getController() {
-        bannerService = mock(EgovBannerService.class);
+        bannerService = mock(BannerService.class);
         return new BannerApiController(bannerService);
     }
 

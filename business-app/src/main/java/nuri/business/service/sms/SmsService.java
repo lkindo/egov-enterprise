@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SmsService implements EgovSmsService {
+public class SmsService {
 
     private final SmsRepository smsRepository;
     private final SmsRecptnRepository smsRecptnRepository;
@@ -35,19 +35,16 @@ public class SmsService implements EgovSmsService {
     private final SmsMapper smsMapper;
     private final SmsRecptnMapper smsRecptnMapper;
 
-    @Override
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
         log.debug("Fetching SMS list with keyword: {}", keyword);
         return getSmsList("1", keyword, pageable); // Default to content search
     }
 
-    @Override
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching SMS with condition: {}, keyword: {}", searchCondition, searchKeyword);
         return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
     }
 
-    @Override
     public SmsDto getSms(String smsId) {
         log.debug("Fetching SMS details for ID: {}", smsId);
         return smsRepository.findById(Objects.requireNonNull(smsId))
@@ -55,7 +52,6 @@ public class SmsService implements EgovSmsService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
         log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getSndngTelno());
@@ -92,7 +88,6 @@ public class SmsService implements EgovSmsService {
         return smsId;
     }
 
-    @Override
     public List<SmsRecptnDto> getSmsRecipients(String smsId) {
         return smsRecptnRepository.findByIdSmsId(smsId).stream()
                 .map(smsRecptnMapper::toDto)

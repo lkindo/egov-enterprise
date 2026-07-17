@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional(readOnly = true)
-public class TemplateService implements EgovTemplateService {
+public class TemplateService {
 
     private final TemplateRepository templateRepository;
     private final TemplateMapper templateMapper;
@@ -31,7 +31,6 @@ public class TemplateService implements EgovTemplateService {
         this.templateMapper = templateMapper;
     }
 
-    @Override
     public Page<TemplateDto> getTemplateList(String keyword, Pageable pageable) {
         Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
@@ -40,19 +39,16 @@ public class TemplateService implements EgovTemplateService {
         return templateRepository.findByTmpltNmContaining(keyword, pageable).map(templateMapper::toDto);
     }
 
-    @Override
     public Page<TemplateDto> getTemplatesByType(String tmpltSeCd, Pageable pageable) {
         return templateRepository.findByTmpltSeCd(tmpltSeCd, pageable).map(templateMapper::toDto);
     }
 
-    @Override
     public TemplateDto getTemplate(String tmpltId) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         return templateMapper.toDto(template);
     }
 
-    @Override
     @Transactional
     public String createTemplate(String userId, TemplateDto dto) {
         String tmpltId = nuri.foundation.core.util.IdGenerationUtil.generateId("TMPL_", 13);
@@ -69,7 +65,6 @@ public class TemplateService implements EgovTemplateService {
         return tmpltId;
     }
 
-    @Override
     @Transactional
     public void updateTemplate(String tmpltId, String userId, TemplateDto dto) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
@@ -79,7 +74,6 @@ public class TemplateService implements EgovTemplateService {
                 dto.getUseYn());
     }
 
-    @Override
     @Transactional
     public void deleteTemplate(String tmpltId) {
         Template template = templateRepository.findById(Objects.requireNonNull(tmpltId))
@@ -87,14 +81,12 @@ public class TemplateService implements EgovTemplateService {
         templateRepository.delete(Objects.requireNonNull(template));
     }
 
-    @Override
     public List<TemplateDto> getActiveTemplates() {
         return templateRepository.findByUseYn("Y").stream()
                 .map(templateMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
     public List<TemplateDto> getActiveTemplatesByType(String tmpltSeCd) {
         return templateRepository.findByTmpltSeCdAndUseYn(tmpltSeCd, "Y").stream()
                 .map(templateMapper::toDto)

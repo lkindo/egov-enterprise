@@ -3,7 +3,7 @@ package nuri.api.controller.business.admin.content.banner;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.system.content.banner.EgovBannerService;
+import nuri.business.service.system.content.banner.BannerService;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BannerApiController {
 
-    private final EgovBannerService bannerService;
+    private final BannerService bannerService;
 
     @Operation(summary = "배너 목록 조회", description = "시스템에 등록된 배너들을 검색 조건에 따라 페이징 조회합니다.")
     @GetMapping

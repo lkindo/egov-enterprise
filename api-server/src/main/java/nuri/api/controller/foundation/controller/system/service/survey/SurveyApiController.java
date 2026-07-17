@@ -3,7 +3,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.system.service.survey.EgovSurveyService;
+import nuri.business.service.system.service.survey.SurveyService;
 import nuri.business.service.system.service.survey.dto.SurveyInfoDto;
 import nuri.business.service.system.service.survey.dto.SurveyTemplateDto;
 import nuri.business.service.system.service.survey.dto.SurveyArticleDto;
@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SurveyApiController {
 
-    private final EgovSurveyService surveyService;
+    private final SurveyService surveyService;
 
     // --- Templates ---
 

@@ -1,6 +1,6 @@
 package nuri.api.controller.business.smarttoolkit;
 
-import nuri.business.service.deptjob.EgovDeptJobBoxService;
+import nuri.business.service.deptjob.DeptJobBoxService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import nuri.business.support.ControllerTestSupport;
 class DeptJobApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovDeptJobBoxService egovDeptJobBoxService;
+    private DeptJobBoxService egovDeptJobBoxService;
 
     @Test
     @DisplayName("부서 업무함 목록 조회 성공")

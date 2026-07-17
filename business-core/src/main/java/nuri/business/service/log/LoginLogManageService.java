@@ -15,7 +15,7 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 
 @Service("egovLoginLogManageService")
-public class LoginLogManageService extends BaseAbstractService implements EgovLoginLogManageService {
+public class LoginLogManageService extends BaseAbstractService {
 
     private final LoginLogRepository loginLogRepository;
 
@@ -23,7 +23,6 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
         this.loginLogRepository = required(loginLogRepository, "LoginLogRepository 는 null 일 수 없습니다");
     }
 
-    @Override
     @Transactional
     public void logInsertLoginLog(@NonNull LoginLogDto dto) {
         LoginLog entity = LoginLog.builder()
@@ -37,7 +36,6 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
         loginLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
-    @Override
     public List<LoginLogDto> selectLoginLogList(@NonNull BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -48,7 +46,6 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    @Override
     public int selectLoginLogListTotCnt(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) loginLogRepository.searchLoginLogs(
@@ -56,7 +53,6 @@ public class LoginLogManageService extends BaseAbstractService implements EgovLo
                 .getTotalElements();
     }
 
-    @Override
     public LoginLogDto selectLoginLogDetail(@NonNull LoginLogDto dto) {
         return loginLogRepository.findById(required(dto.getLogId(), "dto.getLogId() 는 null 일 수 없습니다"))
                 .map(this::toDto)

@@ -16,8 +16,8 @@ import nuri.business.service.board.dto.BoardMapper;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
-import nuri.business.service.file.EgovFileService;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.file.FileService;
+import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -41,12 +41,12 @@ import java.util.List;
  */
 @Slf4j
 @Service("egovBoardService")
-public class BoardService extends BaseAbstractService implements EgovBoardService {
+public class BoardService extends BaseAbstractService {
 
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
-        private final EgovUserService userService;
-        private final EgovFileService fileService;
+        private final UserService userService;
+        private final FileService fileService;
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
         private final BoardViewCountService viewCountService;
@@ -54,8 +54,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
-                        EgovUserService userService,
-                        EgovFileService fileService,
+                        UserService userService,
+                        FileService fileService,
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
                         BoardViewCountService viewCountService,
@@ -71,20 +71,17 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         }
 
 
-        @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
                 return getBoardPosts(bbsId, "0", "", null, null, null, null, null, pageable);
         }
 
-        @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable) {
                 return getBoardPosts(bbsId, searchCnd, searchWrd, null, null, null, null, null, pageable);
         }
 
-        @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
@@ -125,7 +122,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
         }
 
-        @Override
         @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
                 long totalArticles = boardRepository.countByBbsIdAndUseYn(bbsId, "Y");
@@ -143,7 +139,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .build();
         }
 
-        @Override
         @Transactional
         public String createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 Timer.Sample sample = Timer.start(meterRegistry);
@@ -213,7 +208,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
         }
 
-        @Override
         @Transactional
         public String createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
@@ -232,7 +226,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 return createPost(userId, newRequest);
         }
 
-        @Override
         @Transactional
         public String replyPost(@NonNull String userId, @NonNull String parentId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository
@@ -298,7 +291,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 return pstId;
         }
 
-        @Override
         @Transactional
         public String replyPostWithFiles(@NonNull String userId, @NonNull String parentId,
                         @NonNull BoardSaveRequest request,
@@ -317,7 +309,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 return replyPost(userId, parentId, newRequest);
         }
 
-        @Override
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull String pstId) {
                 BoardDetailResult detail = boardRepository.findArticleDetail(pstId)
@@ -329,7 +320,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 return boardMapper.toDto(detail);
         }
 
-        @Override
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
@@ -364,7 +354,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 request.qnaCatCd(), request.scrtYn());
         }
 
-        @Override
         @Transactional
         public void updatePostWithFiles(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
@@ -389,7 +378,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 newRequest);
         }
 
-        @Override
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull String pstId, String authorId) {
                 Board board = boardRepository
@@ -408,7 +396,6 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 board.delete();
         }
 
-        @Override
         @Transactional
         public Integer incrementLike(@NonNull String bbsId, @NonNull String pstId) {
                 Board board = boardRepository

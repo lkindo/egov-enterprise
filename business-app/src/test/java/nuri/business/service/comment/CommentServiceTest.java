@@ -34,7 +34,7 @@ class CommentServiceTest {
     void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
 
     @InjectMocks
-    private CommentServiceImpl commentService;
+    private CommentService commentService;
 
     @Mock
     private CommentRepository commentRepository;

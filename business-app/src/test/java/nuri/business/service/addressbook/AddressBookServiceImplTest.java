@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
-@DisplayName("AddressBookServiceImpl 단위 테스트")
+@DisplayName("AddressBookService 단위 테스트")
 class AddressBookServiceImplTest {
 
     private org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> __secUtilMock;
@@ -36,7 +36,7 @@ class AddressBookServiceImplTest {
     void __closeSecUtilMock() { if (__secUtilMock != null) __secUtilMock.close(); }
 
     @InjectMocks
-    private AddressBookServiceImpl addressBookService;
+    private AddressBookService addressBookService;
 
     @Mock
     private AddressBookRepository addressBookRepository;

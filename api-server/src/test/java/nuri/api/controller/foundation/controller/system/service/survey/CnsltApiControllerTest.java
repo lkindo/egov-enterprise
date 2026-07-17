@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.test.BaseControllerTest;
-import nuri.business.service.system.service.consult.EgovCnsltService;
+import nuri.business.service.system.service.consult.CnsltService;
 import nuri.business.service.system.service.consult.dto.CnsltManageDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -21,12 +21,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class CnsltApiControllerTest extends BaseControllerTest {
 
-    private EgovCnsltService cnsltService;
+    private CnsltService cnsltService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @Override
     protected Object getController() {
-        cnsltService = mock(EgovCnsltService.class);
+        cnsltService = mock(CnsltService.class);
         return new CnsltApiController(cnsltService);
     }
 

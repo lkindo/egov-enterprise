@@ -30,11 +30,11 @@ import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
-@DisplayName("CommunityServiceImpl 단위 테스트")
+@DisplayName("CommunityService 단위 테스트")
 class CommunityServiceImplTest {
 
     @InjectMocks
-    private CommunityServiceImpl communityService;
+    private CommunityService communityService;
 
     @Mock
     private CommunityRepository communityRepository;

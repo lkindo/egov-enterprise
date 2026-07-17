@@ -15,7 +15,7 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 
 @Service("egovLogManageService")
-public class LogManageService extends BaseAbstractService implements EgovLogManageService {
+public class LogManageService extends BaseAbstractService {
 
     private final SysLogRepository sysLogRepository;
 
@@ -23,7 +23,6 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         this.sysLogRepository = required(sysLogRepository, "SysLogRepository 는 null 일 수 없습니다");
     }
 
-    @Override
     @Transactional
     public void logInsertSysLog(@NonNull SysLogDto dto) {
         SysLog entity = SysLog.builder()
@@ -54,7 +53,6 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         }
     }
 
-    @Override
     public List<SysLogDto> selectSysLogList(@NonNull BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -65,7 +63,6 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    @Override
     public int selectSysLogListTotCnt(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) sysLogRepository.searchSysLogs(
@@ -73,7 +70,6 @@ public class LogManageService extends BaseAbstractService implements EgovLogMana
                 .getTotalElements();
     }
 
-    @Override
     public SysLogDto selectSysLogDetail(@NonNull SysLogDto dto) {
         return sysLogRepository.findById(required(dto.getDmndId(), "dto.getDmndId() 는 null 일 수 없습니다"))
                 .map(this::toDto)

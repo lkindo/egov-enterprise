@@ -1,52 +1,73 @@
 package nuri.business.service.calendar;
+import nuri.foundation.core.exception.CommonErrorCode;
 
+import nuri.business.domain.calendar.Restde;
+import nuri.business.domain.calendar.RestdeRepository;
 import nuri.business.service.calendar.dto.RestdeDto;
+import nuri.business.service.calendar.dto.RestdeMapper;
+import nuri.foundation.core.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 /**
- * 휴일 관리 서비스 인터페이스
+ * 휴일 관리 서비스 구현체
  */
-public interface RestdeService {
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class RestdeService {
 
-    /**
-     * 휴일 목록 조회 (QueryDSL 페이징 검색)
-     * 
-     * @param searchCondition 검색 조건 (1: 휴일일자, 2: 휴일명)
-     * @param searchKeyword 검색어
-     * @param pageable 페이징 정보
-     * @return 휴일 목록 Page
-     */
-    Page<RestdeDto> getRestdeList(String searchCondition, String searchKeyword, Pageable pageable);
+    private final RestdeRepository restdeRepository;
+    private final RestdeMapper restdeMapper;
 
-    /**
-     * 휴일 상세 조회
-     * 
-     * @param hldySn 휴일 일련번호
-     * @return 휴일 상세 정보 DTO
-     */
-    RestdeDto getRestde(Integer hldySn);
+    public Page<RestdeDto> getRestdeList(String searchCondition, String searchKeyword, Pageable pageable) {
+        return restdeRepository.searchRestde(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+                .map(restdeMapper::toDto);
+    }
 
-    /**
-     * 휴일 신규 등록
-     * 
-     * @param dto 휴일 등록 정보 DTO
-     * @return 생성된 휴일 일련번호 (hldySn)
-     */
-    Integer createRestde(RestdeDto dto);
+    public RestdeDto getRestde(Integer hldySn) {
+        return restdeRepository.findById(Objects.requireNonNull(hldySn))
+                .map(restdeMapper::toDto)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
 
-    /**
-     * 휴일 정보 수정
-     * 
-     * @param hldySn 휴일 일련번호
-     * @param dto 휴일 수정 정보 DTO
-     */
-    void updateRestde(Integer hldySn, RestdeDto dto);
+    @Transactional
+    public Integer createRestde(RestdeDto dto) {
+        Objects.requireNonNull(dto);
+        Restde entity = Restde.builder()
+                .hldyYmd(dto.getHldyYmd())
+                .hldyNm(dto.getHldyNm())
+                .hldyExpln(dto.getHldyExpln())
+                .hldySeCd(dto.getHldySeCd())
+                .build();
+        restdeRepository.save(entity);
+        return entity.getHldySn();
+    }
 
-    /**
-     * 휴일 정보 삭제
-     * 
-     * @param hldySn 휴일 일련번호
-     */
-    void deleteRestde(Integer hldySn);
+    @Transactional
+    public void updateRestde(Integer hldySn, RestdeDto dto) {
+        Objects.requireNonNull(hldySn);
+        Objects.requireNonNull(dto);
+        Restde entity = restdeRepository.findById(hldySn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        
+        entity.update(
+                dto.getHldyYmd(),
+                dto.getHldyNm(),
+                dto.getHldyExpln(),
+                dto.getHldySeCd()
+        );
+    }
+
+    @Transactional
+    public void deleteRestde(Integer hldySn) {
+        Objects.requireNonNull(hldySn);
+        Restde entity = restdeRepository.findById(hldySn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        restdeRepository.delete(entity);
+    }
 }

@@ -14,18 +14,16 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceService {
+public class InternetSvcGuidanceService {
 
     private final InternetSvcGuidanceRepository internetSvcGuidanceRepository;
 
-    @Override
     public InternetSvcGuidanceDto getIntnetSvcGuidance(String intnetSvcId) {
         return internetSvcGuidanceRepository.findById(Objects.requireNonNull(intnetSvcId))
                 .map(this::convertToDto)
                 .orElse(null);
     }
 
-    @Override
     @Transactional
     public void registerIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         InternetSvcGuidance isg = InternetSvcGuidance.builder()
@@ -37,20 +35,17 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
         internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
     }
 
-    @Override
     @Transactional
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getIntnetSvcId()))
                 .ifPresent(isg -> isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt()));
     }
 
-    @Override
     @Transactional
     public void deleteIntnetSvcGuidance(String intnetSvcId) {
         internetSvcGuidanceRepository.deleteById(Objects.requireNonNull(intnetSvcId));
     }
 
-    @Override
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             return internetSvcGuidanceRepository.findByItntSvcNmContaining(searchKeyword, pageable)
@@ -60,7 +55,6 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
                 .map(this::convertToDto);
     }
 
-    @Override
     public List<InternetSvcGuidanceDto> getIntnetSvcGuidanceResult() {
         return java.util.Collections.emptyList();
     }

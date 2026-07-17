@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
 @Service("egovInstitutionCodeService")
-public class InstitutionCodeService extends BaseAbstractService implements EgovInstitutionCodeService {
+public class InstitutionCodeService extends BaseAbstractService {
 
     private final InstitutionCodeRepository institutionCodeRepository;
     private final InstitutionCodeRecptnLogRepository institutionCodeRecptnLogRepository;
@@ -34,7 +34,6 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 "InstitutionCodeRecptnLogRepository 는 null 일 수 없습니다");
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<InstitutionCodeDto> selectInstitutionCodeList(@NonNull BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -46,7 +45,6 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    @Override
     @Transactional
     @CacheEvict(value = "institutionCodes", allEntries = true)
     public void insertInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
@@ -90,7 +88,6 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         institutionCodeRecptnLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
-    @Override
     @Transactional
     public void updateInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
         institutionCodeRecptnLogRepository.findById(new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
@@ -99,22 +96,18 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 });
     }
 
-    @Override
     public List<InstitutionCodeRecptnDto> selectInstitutionCodeRecptnList(BaseSearchDto searchVO) {
         return institutionCodeRecptnLogRepository.findAll().stream().map(this::toLogDto).collect(Collectors.toList());
     }
 
-    @Override
     public int selectInstitutionCodeListTotCnt(BaseSearchDto searchVO) {
         return (int) institutionCodeRepository.count();
     }
 
-    @Override
     public InstitutionCodeDto selectInstitutionCodeDetail(InstitutionCodeDto dto) {
         return institutionCodeRepository.findById(dto.getInstCd()).map(this::toDto).orElse(null);
     }
 
-    @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void insertInstitutionCode(InstitutionCodeDto dto) {
@@ -149,7 +142,6 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         institutionCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
-    @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void updateInstitutionCode(InstitutionCodeDto dto) {
@@ -162,7 +154,6 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         });
     }
 
-    @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteInstitutionCode(InstitutionCodeDto dto) {

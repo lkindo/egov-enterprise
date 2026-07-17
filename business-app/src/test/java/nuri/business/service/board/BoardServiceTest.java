@@ -10,9 +10,9 @@ import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
-import nuri.business.service.file.EgovFileService;
+import nuri.business.service.file.FileService;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,9 +44,9 @@ class BoardServiceTest {
     @Mock
     private BoardMasterRepository boardMasterRepository;
     @Mock
-    private EgovUserService userService;
+    private UserService userService;
     @Mock
-    private EgovFileService fileService;
+    private FileService fileService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     private MeterRegistry meterRegistry;

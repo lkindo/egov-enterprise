@@ -35,7 +35,7 @@ class RestdeServiceTest {
     nuri.business.service.calendar.dto.RestdeMapper restdeMapper = new nuri.business.service.calendar.dto.RestdeMapperImpl();
 
     @InjectMocks
-    private RestdeServiceImpl restdeService;
+    private RestdeService restdeService;
 
     @BeforeEach
     void setUp() {

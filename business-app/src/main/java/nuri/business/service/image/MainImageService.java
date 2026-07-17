@@ -18,12 +18,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MainImageService implements EgovMainImageService {
+public class MainImageService {
 
     private final MainImageRepository mainImageRepository;
     private final MainImageMapper mainImageMapper;
 
-    @Override
     public Page<MainImageDto> getMainImageList(String searchKeyword, Pageable pageable) {
         if (searchKeyword == null || searchKeyword.isEmpty()) {
             return mainImageRepository.findAll(Objects.requireNonNull(pageable))
@@ -33,14 +32,12 @@ public class MainImageService implements EgovMainImageService {
                 .map(mainImageMapper::toDto);
     }
 
-    @Override
     public MainImageDto getMainImage(String imageId) {
         return mainImageRepository.findById(Objects.requireNonNull(imageId))
                 .map(mainImageMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public void insertMainImage(MainImageDto dto) {
         MainImage mainImage = MainImage.builder()
@@ -54,7 +51,6 @@ public class MainImageService implements EgovMainImageService {
         mainImageRepository.save(Objects.requireNonNull(mainImage));
     }
 
-    @Override
     @Transactional
     public void updateMainImage(MainImageDto dto) {
         MainImage mainImage = mainImageRepository.findById(Objects.requireNonNull(dto.getImgId()))
@@ -63,13 +59,11 @@ public class MainImageService implements EgovMainImageService {
         mainImage.update(dto.getImgNm(), dto.getMainImgFilePath(), dto.getImgFileNm(), dto.getMainImgExpln(), dto.getRfltYn());
     }
 
-    @Override
     @Transactional
     public void deleteMainImage(String imageId) {
         mainImageRepository.deleteById(Objects.requireNonNull(imageId));
     }
 
-    @Override
     public List<MainImageDto> getReflectedMainImages() {
         return mainImageRepository.findByRfltYn("Y").stream()
                 .map(mainImageMapper::toDto)

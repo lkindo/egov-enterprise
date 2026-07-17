@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
-@DisplayName("PopupServiceImpl 단위 테스트 (Full Coverage)")
+@DisplayName("PopupService 단위 테스트 (Full Coverage)")
 class PopupServiceImplTest {
 
     @Mock
@@ -38,7 +38,7 @@ class PopupServiceImplTest {
     private EgovIdGnrService egovPopupManageIdGnrService;
 
     @InjectMocks
-    private PopupServiceImpl popupService;
+    private PopupService popupService;
 
     // ==========================================
     // 1. 팝업 목록 및 상세 조회 테스트

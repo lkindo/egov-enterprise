@@ -16,12 +16,11 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CnsltService implements EgovCnsltService {
+public class CnsltService {
 
     private final CnsltManageRepository cnsltManageRepository;
     private final CnsltManageMapper cnsltManageMapper;
 
-    @Override
     public Page<CnsltManageDto> getCnsltList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return cnsltManageRepository.findAll(Objects.requireNonNull(pageable)).map(cnsltManageMapper::toDto);
@@ -30,7 +29,6 @@ public class CnsltService implements EgovCnsltService {
                 .map(cnsltManageMapper::toDto);
     }
 
-    @Override
     @Transactional
     public CnsltManageDto getCnslt(String cnsltId) {
         CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(cnsltId))
@@ -39,7 +37,6 @@ public class CnsltService implements EgovCnsltService {
         return cnsltManageMapper.toDto(entity);
     }
 
-    @Override
     @Transactional
     public void insertCnslt(CnsltManageDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("CNSLT_", 13);
@@ -53,7 +50,6 @@ public class CnsltService implements EgovCnsltService {
                 .build()));
     }
 
-    @Override
     @Transactional
     public void updateCnslt(CnsltManageDto dto) {
         CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(dto.getDscsnId()))
@@ -63,13 +59,11 @@ public class CnsltService implements EgovCnsltService {
                 null, null, dto.getWrterNm(), null);
     }
 
-    @Override
     @Transactional
     public void deleteCnslt(String cnsltId) {
         cnsltManageRepository.deleteById(Objects.requireNonNull(cnsltId));
     }
 
-    @Override
     @Transactional
     public void answerCnslt(String cnsltId, String answerCn) {
         CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(cnsltId))

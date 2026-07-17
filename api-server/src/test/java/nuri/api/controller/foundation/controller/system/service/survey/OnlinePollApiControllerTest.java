@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.security.annotation.WithMockCustomUser;
-import nuri.business.service.system.service.survey.EgovOnlinePollService;
+import nuri.business.service.system.service.survey.OnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import nuri.business.support.IntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +32,7 @@ class OnlinePollApiControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private EgovOnlinePollService onlinePollService;
+    private OnlinePollService onlinePollService;
 
     @Autowired
     private ObjectMapper objectMapper;

@@ -1,7 +1,7 @@
 package nuri.api.controller.business.admin.content.board;
 
 import jakarta.validation.Valid;
-import nuri.business.service.board.EgovBoardMasterService;
+import nuri.business.service.board.BoardMasterService;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BoardMasterApiController {
 
-    private final EgovBoardMasterService boardMasterService;
+    private final BoardMasterService boardMasterService;
 
     @Operation(summary = "게시판 마스터 목록 조회")
     @GetMapping

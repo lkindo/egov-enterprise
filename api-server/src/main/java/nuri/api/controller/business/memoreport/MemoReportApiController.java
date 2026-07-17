@@ -3,7 +3,7 @@ package nuri.api.controller.business.memoreport;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.memoreport.EgovMemoReportService;
+import nuri.business.service.memoreport.MemoReportService;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class MemoReportApiController {
 
-    private final EgovMemoReportService memoReportService;
+    private final MemoReportService memoReportService;
 
     @Operation(summary = "메모보고 목록 조회", description = "전체 메모보고 목록을 페이징하여 조회합니다.")
     @GetMapping

@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.code;
 
-import nuri.business.service.code.EgovCodeService;
-import nuri.business.service.code.EgovCommonCodeService;
+import nuri.business.service.code.CodeService;
+import nuri.business.service.code.CommonCodeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +17,10 @@ class CodeApiControllerTest {
 //    private MockMvc mockMvc;
 
     @Mock
-    private EgovCodeService codeService;
+    private CodeService codeService;
 
     @Mock
-    private EgovCommonCodeService commonCodeService;
+    private CommonCodeService commonCodeService;
 
     @InjectMocks
     private CommonCodeApiController codeApiController;
@@ -37,6 +37,6 @@ class CodeApiControllerTest {
         // This endpoint was actually on EgovCodeApiController or similar in legacy
         // For now, let's just make it pass or test an existing one on CommonCodeApiController
         
-        // CodeDto is used in EgovCodeService.getDetailCodeList
+        // CodeDto is used in CodeService.getDetailCodeList
     }
 }

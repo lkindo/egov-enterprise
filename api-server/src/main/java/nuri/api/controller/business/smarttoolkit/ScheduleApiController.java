@@ -3,7 +3,7 @@ package nuri.api.controller.business.smarttoolkit;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.schedule.EgovScheduleService;
+import nuri.business.service.schedule.ScheduleService;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ScheduleApiController {
 
-    private final EgovScheduleService egovScheduleService;
+    private final ScheduleService egovScheduleService;
 
     @Operation(summary = "일정 목록 조회", description = "사용자의 일정 목록을 페이징하여 조회합니다.")
     @GetMapping

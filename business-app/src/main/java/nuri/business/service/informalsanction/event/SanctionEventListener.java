@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class SanctionEventListener {
 
-    private final nuri.business.service.user.EgovUserService userService;
+    private final nuri.business.service.user.UserService userService;
     private final nuri.business.service.sms.SmsService smsService;
     private final nuri.business.service.mail.MailService mailService;
 
-    public SanctionEventListener(nuri.business.service.user.EgovUserService userService,
+    public SanctionEventListener(nuri.business.service.user.UserService userService,
                                 nuri.business.service.sms.SmsService smsService,
                                 nuri.business.service.mail.MailService mailService) {
         this.userService = userService;

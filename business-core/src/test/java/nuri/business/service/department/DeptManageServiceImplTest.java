@@ -28,11 +28,11 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
-@DisplayName("DeptManageServiceImpl 단위 테스트")
+@DisplayName("DeptManageService 단위 테스트")
 class DeptManageServiceImplTest {
 
     @InjectMocks
-    private DeptManageServiceImpl deptManageService;
+    private DeptManageService deptManageService;
 
     @Mock
     private DeptManageRepository deptManageRepository;

@@ -3,7 +3,7 @@ package nuri.api.controller.business.poll;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.system.service.survey.EgovOnlinePollService;
+import nuri.business.service.system.service.survey.OnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PollApiController {
 
-    private final EgovOnlinePollService pollService;
+    private final OnlinePollService pollService;
 
     @Operation(summary = "설문 목록 조회", description = "온라인 설문 목록을 페이징하여 조회합니다.")
     @GetMapping

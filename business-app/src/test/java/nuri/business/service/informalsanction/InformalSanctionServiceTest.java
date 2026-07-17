@@ -3,7 +3,7 @@ package nuri.business.service.informalsanction;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
-import nuri.business.service.code.EgovCommonCodeService;
+import nuri.business.service.code.CommonCodeService;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class InformalSanctionServiceTest {
     private InformalSanctionRepository informalSanctionRepository;
 
     @Mock
-    private EgovCommonCodeService commonCodeService;
+    private CommonCodeService commonCodeService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -49,7 +49,7 @@ class InformalSanctionServiceTest {
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
 
     @InjectMocks
-    private InformalSanctionServiceImpl informalSanctionService;
+    private InformalSanctionService informalSanctionService;
 
     private MockedStatic<SecurityUtil> securityUtilMock;
 

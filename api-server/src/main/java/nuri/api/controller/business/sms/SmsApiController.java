@@ -5,7 +5,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
-import nuri.business.service.sms.EgovSmsService;
+import nuri.business.service.sms.SmsService;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SmsApiController {
 
-    private final EgovSmsService smsService;
+    private final SmsService smsService;
 
     @Operation(summary = "SMS 발송 내역 조회", description = "발송된 SMS 목록을 페이징 조회합니다.")
     @GetMapping

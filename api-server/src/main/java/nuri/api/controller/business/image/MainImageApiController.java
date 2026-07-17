@@ -3,7 +3,7 @@ package nuri.api.controller.business.image;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.image.EgovMainImageService;
+import nuri.business.service.image.MainImageService;
 import nuri.business.service.image.dto.MainImageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MainImageApiController {
 
-    private final EgovMainImageService mainImageService;
+    private final MainImageService mainImageService;
 
     @Operation(summary = "메인 이미지 목록 조회", description = "메인 이미지 목록을 페이징하여 조회합니다.")
     @GetMapping

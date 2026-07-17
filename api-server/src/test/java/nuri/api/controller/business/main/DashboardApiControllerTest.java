@@ -1,6 +1,6 @@
 package nuri.api.controller.business.main;
 
-import nuri.business.service.board.EgovBoardService;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.InformalSanctionDashboardProvider;
 import org.springframework.context.annotation.Import;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DashboardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
-    private EgovBoardService boardService;
+    private BoardService boardService;
 
     @MockitoBean
     private InformalSanctionService approvalService;

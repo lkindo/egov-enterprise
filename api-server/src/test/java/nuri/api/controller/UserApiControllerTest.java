@@ -3,7 +3,7 @@ package nuri.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import nuri.foundation.security.service.CustomUserDetails;
-import nuri.business.service.user.EgovUserService;
+import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.*;
 import nuri.business.test.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("UserApiController 테스트")
 public class UserApiControllerTest extends BaseControllerTest {
     
-    private EgovUserService userService;
+    private UserService userService;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     
     // LoginUser 어노테이션 리졸버 모킹을 위해 CustomUserDetails 생성
@@ -41,7 +41,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
     @Override
     protected Object getController() {
-        userService = mock(EgovUserService.class);
+        userService = mock(UserService.class);
         return new UserApiController(userService);
     }
     

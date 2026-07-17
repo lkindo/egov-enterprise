@@ -2,7 +2,7 @@ package nuri.api.controller.business.board;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.board.EgovBoardService;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BbsApiController {
 
-    private final EgovBoardService boardService;
+    private final BoardService boardService;
 
     @Operation(summary = "게시글 목록 조회", description = "게시판의 게시글 목록을 조회합니다.")
     @GetMapping("/{bbsId}")

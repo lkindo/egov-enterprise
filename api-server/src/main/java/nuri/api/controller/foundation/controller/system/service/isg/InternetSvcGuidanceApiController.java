@@ -2,7 +2,7 @@ package nuri.api.controller.foundation.controller.system.service.isg;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.isg.EgovInternetSvcGuidanceService;
+import nuri.business.service.isg.InternetSvcGuidanceService;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class InternetSvcGuidanceApiController {
 
-    private final EgovInternetSvcGuidanceService isgService;
+    private final InternetSvcGuidanceService isgService;
 
     @Operation(summary = "서비스 안내 목록 조회")
     @GetMapping

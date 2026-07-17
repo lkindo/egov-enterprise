@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SurveyService implements EgovSurveyService {
+public class SurveyService {
 
     private final SurveyTemplateRepository tmplatRepository;
     private final SurveyInfoRepository infoRepository;
@@ -37,7 +37,6 @@ public class SurveyService implements EgovSurveyService {
     private final SurveyArticleMapper surveyArticleMapper;
 
     // 설문 템플릿
-    @Override
     public Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(surveyTemplateMapper::toDto);
@@ -46,14 +45,12 @@ public class SurveyService implements EgovSurveyService {
                 .map(surveyTemplateMapper::toDto);
     }
 
-    @Override
     public SurveyTemplateDto getTmplat(String tmplatId) {
         return tmplatRepository.findById(Objects.requireNonNull(tmplatId))
                 .map(surveyTemplateMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public void insertTmplat(SurveyTemplateDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QUSTMP_", 13);
@@ -65,7 +62,6 @@ public class SurveyService implements EgovSurveyService {
                 .build()));
     }
 
-    @Override
     @Transactional
     public void updateTmplat(SurveyTemplateDto dto) {
         SurveyTemplate entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmpltId()))
@@ -73,14 +69,12 @@ public class SurveyService implements EgovSurveyService {
         entity.update(dto.getSrvyTmpltTypeCd(), dto.getSrvyTmpltPathNm(), dto.getSrvyTmpltExpln());
     }
 
-    @Override
     @Transactional
     public void deleteTmplat(String tmplatId) {
         tmplatRepository.deleteById(Objects.requireNonNull(tmplatId));
     }
 
     // 설문 정보
-    @Override
     public Page<SurveyInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return infoRepository.findAll(Objects.requireNonNull(pageable)).map(surveyInfoMapper::toDto);
@@ -89,14 +83,12 @@ public class SurveyService implements EgovSurveyService {
                 .map(surveyInfoMapper::toDto);
     }
 
-    @Override
     public SurveyInfoDto getSurvey(String qustnrId) {
         return infoRepository.findById(Objects.requireNonNull(qustnrId))
                 .map(surveyInfoMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public void insertSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
@@ -113,7 +105,6 @@ public class SurveyService implements EgovSurveyService {
                 .build()));
     }
 
-    @Override
     @Transactional
     public void updateSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
@@ -123,7 +114,6 @@ public class SurveyService implements EgovSurveyService {
                 dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltId());
     }
 
-    @Override
     @Transactional
     public void deleteSurvey(String qustnrId) {
         Objects.requireNonNull(qustnrId);
@@ -137,7 +127,6 @@ public class SurveyService implements EgovSurveyService {
     }
 
     // 설문 문항
-    @Override
     public List<SurveyQuestionDto> getQuestionList(String qustnrId) {
         List<SurveyQuestion> questions = qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId));
         List<String> qstnIds = questions.stream().map(q -> q.getSrvyQstnId()).collect(Collectors.toList());
@@ -156,14 +145,12 @@ public class SurveyService implements EgovSurveyService {
                 .collect(Collectors.toList());
     }
 
-    @Override
     public SurveyQuestionDto getQuestion(String qesitmId) {
         return qesitmRepository.findById(Objects.requireNonNull(qesitmId))
                 .map(surveyQuestionMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    @Override
     @Transactional
     public void insertQuestion(SurveyQuestionDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QESITM_", 13);
@@ -178,7 +165,6 @@ public class SurveyService implements EgovSurveyService {
                 .build()));
     }
 
-    @Override
     @Transactional
     public void updateQuestion(SurveyQuestionDto dto) {
         SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnId()))
@@ -186,7 +172,6 @@ public class SurveyService implements EgovSurveyService {
         entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
     }
 
-    @Override
     @Transactional
     public void deleteQuestion(String qesitmId) {
         Objects.requireNonNull(qesitmId);
@@ -197,14 +182,12 @@ public class SurveyService implements EgovSurveyService {
     }
 
     // 설문 항목
-    @Override
     public List<SurveyArticleDto> getItemList(String qesitmId) {
         return iemRepository.findBySrvyQstnIdOrderByArtclSnAsc(Objects.requireNonNull(qesitmId)).stream()
                 .map(surveyArticleMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
     @Transactional
     public void insertItem(SurveyArticleDto dto) {
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("IEM_", 13);
@@ -219,7 +202,6 @@ public class SurveyService implements EgovSurveyService {
                 .build()));
     }
 
-    @Override
     @Transactional
     public void updateItem(SurveyArticleDto dto) {
         SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclId()))
@@ -227,7 +209,6 @@ public class SurveyService implements EgovSurveyService {
         entity.update(dto.getArtclSn(), dto.getArtclCn(), dto.getEtcAnsYn());
     }
 
-    @Override
     @Transactional
     public void deleteItem(String iemId) {
         Objects.requireNonNull(iemId);

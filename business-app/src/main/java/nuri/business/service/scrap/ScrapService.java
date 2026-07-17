@@ -20,19 +20,22 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ScrapService extends BaseAbstractService implements EgovScrapService {
+public class ScrapService extends BaseAbstractService {
 
     private final ScrapRepository scrapRepository;
     private final EgovIdGnrService egovScrapIdGnrService;
 
-    @Override
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
         return scrapRepository
                 .findByFrstRgtrIdAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
-    @Override
+    /** 레거시 별칭(구 EgovScrapService default) — getScrapList 위임. */
+    public Page<ScrapDto> getMyScrapList(String userId, @NonNull Pageable pageable) {
+        return getScrapList(userId, pageable);
+    }
+
     public ScrapDto getScrap(@NonNull String scrapId) {
         Scrap entity = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -40,7 +43,6 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         return convertToDto(entity);
     }
 
-    @Override
     @Transactional
     public void createScrap(String userId, ScrapDto dto) throws Exception {
         String scrapId = egovScrapIdGnrService.getNextStringId();
@@ -51,7 +53,6 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         scrapRepository.save(entity);
     }
 
-    @Override
     @Transactional
     public void updateScrap(String userId, ScrapDto dto) {
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(dto.getScrapId()))
@@ -61,7 +62,6 @@ public class ScrapService extends BaseAbstractService implements EgovScrapServic
         entity.setLastMdfrId(userId);
     }
 
-    @Override
     @Transactional
     public void deleteScrap(@NonNull String scrapId) {
         Scrap entity = scrapRepository.findById(scrapId)

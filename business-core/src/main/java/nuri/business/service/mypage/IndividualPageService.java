@@ -16,11 +16,10 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class IndividualPageService implements EgovIndividualPageService {
+public class IndividualPageService {
 
     private final IndividualPageRepository individualPageRepository;
 
-    @Override
     @Transactional
     public void registerIndividualPage(IndividualPageDto dto) {
         IndividualPage page = IndividualPage.builder()
@@ -32,7 +31,6 @@ public class IndividualPageService implements EgovIndividualPageService {
         individualPageRepository.save(Objects.requireNonNull(page));
     }
 
-    @Override
     @Transactional
     public void updateIndividualPage(IndividualPageDto dto) {
         IndividualPage page = individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
@@ -40,13 +38,11 @@ public class IndividualPageService implements EgovIndividualPageService {
         page.update(dto.getPageTtl(), dto.getPageExpln());
     }
 
-    @Override
     @Transactional
     public void deleteIndividualPage(String pageId) {
         individualPageRepository.deleteById(Objects.requireNonNull(pageId));
     }
 
-    @Override
     public IndividualPageDto getIndividualPage(String userId) {
         return individualPageRepository.findByUserId(userId)
                 .map(p -> IndividualPageDto.builder()

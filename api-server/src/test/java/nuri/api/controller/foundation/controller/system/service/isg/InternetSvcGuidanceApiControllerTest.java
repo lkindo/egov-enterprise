@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.isg;
 
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.business.service.isg.EgovInternetSvcGuidanceService;
+import nuri.business.service.isg.InternetSvcGuidanceService;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -32,7 +32,7 @@ class InternetSvcGuidanceApiControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private EgovInternetSvcGuidanceService isgService;
+    private InternetSvcGuidanceService isgService;
 
     @InjectMocks
     private InternetSvcGuidanceApiController internetSvcGuidanceApiController;

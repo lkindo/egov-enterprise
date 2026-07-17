@@ -50,11 +50,11 @@ class AddressBookServiceTest {
     @Mock(name = "egovAdbkUserIdGnrService")
     private EgovIdGnrService egovAdbkUserIdGnrService;
 
-    private AddressBookServiceImpl addressBookService;
+    private AddressBookService addressBookService;
 
     @BeforeEach
     void setUp() {
-        addressBookService = new AddressBookServiceImpl(
+        addressBookService = new AddressBookService(
             addressBookRepository,
             addressBookUserRepository,
             egovAdbkIdGnrService,

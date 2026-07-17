@@ -2,7 +2,7 @@ package nuri.api.controller.business.main;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.business.service.board.EgovBoardService;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.foundation.core.dashboard.DashboardItemProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +29,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DashboardApiController {
 
-    private final EgovBoardService boardService;
+    private final BoardService boardService;
     private final List<DashboardItemProvider> dashboardItemProviders;
 
     @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")

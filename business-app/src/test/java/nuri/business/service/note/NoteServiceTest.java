@@ -32,7 +32,7 @@ class NoteServiceTest {
     private NoteDomainRepository noteRepository;
 
     @InjectMocks
-    private NoteServiceImpl noteService;
+    private NoteService noteService;
 
     @BeforeEach
     void setUp() {

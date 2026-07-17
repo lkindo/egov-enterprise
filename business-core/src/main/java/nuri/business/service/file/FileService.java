@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service("egovFileService")
 @Transactional(readOnly = true)
-public class FileService extends BaseAbstractService implements EgovFileService {
+public class FileService extends BaseAbstractService {
 
     private final FileMasterRepository fileMasterRepository;
     private final FileDetailRepository fileDetailRepository;
@@ -53,7 +53,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 업로드 (멀티파트)
      */
-    @Override
     @Transactional
     public String uploadFiles(List<MultipartFile> files) throws IOException {
         // 선(先) 검증 패스: 하나라도 거부되면 어떤 파일도 디스크에 쓰지 않는다(부분 실패 시 고아 파일 방지).
@@ -95,7 +94,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 첨부파일 목록 조회
      */
-    @Override
     public List<FileDto> getFileList(String atchFileId) {
         if (atchFileId == null)
             return List.of();
@@ -109,7 +107,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 다운로드를 위한 리소스 조회
      */
-    @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
                 .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
@@ -123,7 +120,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 삭제 (전체)
      */
-    @Override
     @Transactional
     public void deleteFiles(String atchFileId) throws IOException {
         FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
@@ -141,7 +137,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 삭제 (단건)
      */
-    @Override
     @Transactional
     public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
@@ -157,7 +152,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 상세 조회 (단건)
      */
-    @Override
     public FileDto getFileDetail(String atchFileId, Integer fileSn) {
         FileDetail detail = fileDetailRepository
                 .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
@@ -169,7 +163,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 파일 수정 (추가 업로드)
      */
-    @Override
     @Transactional
     public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
         FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
@@ -213,7 +206,6 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     /**
      * 전체 파일 목록 조회 (관리자용)
      */
-    @Override
     public org.springframework.data.domain.Page<FileDto> getAllFileList(
             org.springframework.data.domain.Pageable pageable, String searchKeyword) {
         if (searchKeyword != null && !searchKeyword.isEmpty()) {

@@ -1,7 +1,7 @@
 package nuri.api.controller.business.smarttoolkit;
 
 import jakarta.validation.Valid;
-import nuri.business.service.scrap.EgovScrapService;
+import nuri.business.service.scrap.ScrapService;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ScrapApiController {
 
-    private final EgovScrapService egovScrapService;
+    private final ScrapService egovScrapService;
 
     @Operation(summary = "나의 스크랩 목록 조회")
     @GetMapping

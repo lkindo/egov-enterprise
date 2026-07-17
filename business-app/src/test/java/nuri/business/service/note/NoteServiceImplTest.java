@@ -30,7 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-@DisplayName("NoteServiceImpl 단위 테스트")
+@DisplayName("NoteService 단위 테스트")
 class NoteServiceImplTest {
 
     @Mock
@@ -46,7 +46,7 @@ class NoteServiceImplTest {
     private EgovIdGnrService egovNoteIdGnrService;
 
     @InjectMocks
-    private NoteServiceImpl noteService;
+    private NoteService noteService;
 
     @BeforeEach
     void setUp() {
