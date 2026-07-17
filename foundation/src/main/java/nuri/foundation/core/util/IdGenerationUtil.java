@@ -8,8 +8,10 @@ import java.util.UUID;
  *
  * <p>⚠ [주의] generateId는 랜덤 UUID(128비트)를 {@code length} hex 자리로 <b>절단</b>한다.
  * length가 작을수록 엔트로피가 급감하며(예: 10자리 = 40비트 → 약 130만건 누적 시 birthday 충돌),
- * 여기서 만든 값은 PK(esntlId)로 저장되지만 충돌 시 재시도 로직이 없다.
- * 대량/영속 PK에는 시퀀스 기반 무충돌 생성기({@code EgovIdGnrConfig}의 EgovTableIdGnrService) 사용을 권장한다.
+ * 여기서 만든 값은 PK로 저장되지만 충돌 시 재시도 로직이 없다.
+ * 대량/영속으로 엔트로피가 부족한 도메인은 DB 시퀀스 기반 무충돌 채번
+ * ({@code @GeneratedValue(SEQUENCE)} 또는 nextval, 예: {@code Board.pstId})을 고려한다.
+ * (구 egov {@code EgovTableIdGnrService}/{@code EgovIdGnrConfig} 는 2026-07 채번 통일로 제거됨.)
  */
 public final class IdGenerationUtil {
 
