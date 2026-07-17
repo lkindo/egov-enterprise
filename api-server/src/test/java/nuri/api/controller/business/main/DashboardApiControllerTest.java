@@ -1,6 +1,7 @@
 package nuri.api.controller.business.main;
 
 import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardDashboardProvider;
 import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.InformalSanctionDashboardProvider;
 import org.springframework.context.annotation.Import;
@@ -22,7 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DashboardApiController.class)
-@Import(InformalSanctionDashboardProvider.class) // 대시보드 위젯은 DashboardItemProvider 포트로 수집 → 슬라이스 테스트에 실 provider 로드(mock 서비스 주입)
+// 대시보드 위젯은 DashboardItemProvider 포트로만 수집(§2.B) → 슬라이스 테스트에 실 provider 로드(mock 서비스 주입).
+// board(할 일/공지)도 BoardDashboardProvider 로 역전됐으므로 함께 import 해야 taskList/notiList 가 채워진다.
+@Import({InformalSanctionDashboardProvider.class, BoardDashboardProvider.class})
 class DashboardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean

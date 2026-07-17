@@ -14,6 +14,7 @@ import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.domain.notification.NotificationRepository;
+import nuri.business.domain.system.content.community.CommunityUserRepository;
 import nuri.business.service.user.event.UserDeletionEvent;
 import nuri.foundation.constants.Constants;
 
@@ -45,6 +46,7 @@ public class UserDeletionCleanupListener {
     private final AddressBookRepository addressBookRepository;
     private final NotificationRepository notificationRepository;
     private final BlogUserRepository blogUserRepository;
+    private final CommunityUserRepository communityUserRepository;
 
     @EventListener
     @Transactional(propagation = Propagation.MANDATORY) // 삭제 트랜잭션 밖 발행은 프로그래밍 오류 — 조기 실패
@@ -59,7 +61,10 @@ public class UserDeletionCleanupListener {
         int posts = boardRepository.reassignAuthorByUserIdIn(esntlIds, systemAdmin);
         int comments = commentRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
         int addressBooks = addressBookRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
-        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림/블로그멤버십 삭제 {}/{}건, 게시글/댓글/주소록 재귀속 {}/{}/{}건",
+        // [§2.B] 커뮤니티 멤버십 정리 — 종전 UserService(필수 코어)의 CommunityUserRepository(샘플) 직접 결합을
+        // 이 이벤트 리스너로 역전(콘텐츠/알림 정리와 동일 경로). 사용자 행 삭제 前 동일 트랜잭션(MANDATORY)에서 실행돼 FK 통과.
+        communityUserRepository.deleteByIdUserIdIn(esntlIds);
+        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림/블로그멤버십 삭제 {}/{}건, 게시글/댓글/주소록 재귀속 {}/{}/{}건, 커뮤니티 멤버십 삭제",
                 esntlIds.size(), notifications, blogMemberships, posts, comments, addressBooks);
     }
 }

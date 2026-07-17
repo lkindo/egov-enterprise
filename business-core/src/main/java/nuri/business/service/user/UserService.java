@@ -9,7 +9,6 @@ import nuri.business.domain.auth.RefreshTokenRepository;
 import nuri.business.domain.auth.UserAuthority;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.login.LoginPolicyRepository;
-import nuri.business.domain.system.content.community.CommunityUserRepository;
 import nuri.business.domain.user.entity.Role;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -47,7 +46,6 @@ public class UserService extends BaseAbstractService {
         private final RefreshTokenRepository refreshTokenRepository;
         private final LoginPolicyRepository loginPolicyRepository;
         private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
-        private final CommunityUserRepository communityUserRepository;
         private final nuri.business.domain.log.UserLogRepository userLogRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
@@ -55,7 +53,6 @@ public class UserService extends BaseAbstractService {
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
                         nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
-                        CommunityUserRepository communityUserRepository,
                         nuri.business.domain.log.UserLogRepository userLogRepository, PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
@@ -67,8 +64,6 @@ public class UserService extends BaseAbstractService {
                                 "LoginPolicyRepository 는 null 일 수 없습니다");
                 this.userAbsenceRepository = required(userAbsenceRepository,
                                 "UserAbsenceRepository 는 null 일 수 없습니다");
-                this.communityUserRepository = required(communityUserRepository,
-                                "CommunityUserRepository 는 null 일 수 없습니다");
                 this.userLogRepository = required(userLogRepository, "UserLogRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
@@ -295,9 +290,9 @@ public class UserService extends BaseAbstractService {
          * 종속 행을 반드시 정리해야 한다. 정리하지 않으면 커밋 시 FK 위반으로 삭제가 실패한다.
          * <ul>
          *   <li>보안 인가 매핑(tb_user_authrt_map)·리프레시 토큰: 여기서 직접 삭제</li>
-         *   <li>콘텐츠(게시글/댓글/주소록)·알림: {@link UserDeletionEvent} 동기 발행 →
+         *   <li>콘텐츠(게시글/댓글/주소록)·알림·커뮤니티 멤버십: {@link UserDeletionEvent} 동기 발행 →
          *       business-app 의 UserDeletionCleanupListener 가 동일 트랜잭션에서
-         *       콘텐츠는 webmaster 재귀속, 알림은 삭제 처리</li>
+         *       콘텐츠는 webmaster 재귀속, 알림/커뮤니티 멤버십은 삭제 처리(§2.B: 필수 코어→샘플 직접 결합 제거)</li>
          *   <li>시스템 관리자 계정(webmaster)은 재귀속 종착지이므로 삭제 금지</li>
          * </ul>
          */
@@ -316,11 +311,12 @@ public class UserService extends BaseAbstractService {
                         // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음)
                         refreshTokenRepository.deleteByUserId(user.getEsntlId());
                 }
-                // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId)·커뮤니티 멤버십 정리
+                // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId) 정리 (커뮤니티 멤버십은 이벤트 리스너로 이관)
                 loginPolicyRepository.deleteAllByIdInBatch(
                                 users.stream().map(User::getUserId).collect(Collectors.toList()));
                 userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
-                communityUserRepository.deleteByIdUserIdIn(esntlIds);
+                // [§2.B] 커뮤니티 멤버십(샘플 도메인) 정리는 UserDeletionEvent 리스너(business-app
+                //  UserDeletionCleanupListener)로 역전 — 콘텐츠/알림 정리와 동일 경로. 필수 코어→샘플 직접 결합 제거.
                 // [log-privacy] 사용통계 로그 정리 — fk_tb_user_log_tb_user_info(dmnd_user_id→esntl_id) 잠복 결함 해소.
                 // 개인 단위 통계이므로 파기 대상(보존기간 정책은 접속기록 web/sys/login 에만 적용). 사용자 삭제 前 선행.
                 userLogRepository.deleteByDmndUserIdIn(esntlIds);

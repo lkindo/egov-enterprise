@@ -41,9 +41,6 @@ class UserServiceAdditionalTest {
     private nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
 
     @Mock
-    private nuri.business.domain.system.content.community.CommunityUserRepository communityUserRepository;
-
-    @Mock
     private nuri.business.domain.log.UserLogRepository userLogRepository;
 
     @Mock
@@ -57,7 +54,7 @@ class UserServiceAdditionalTest {
     @BeforeEach
     void setUp() {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
-                loginPolicyRepository, userAbsenceRepository, communityUserRepository,
+                loginPolicyRepository, userAbsenceRepository,
                 userLogRepository, passwordEncoder, eventPublisher);
     }
 

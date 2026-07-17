@@ -100,8 +100,9 @@ eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **�
 
 ### B. "프레임워크"가 목표인데 실체는 샘플 앱 (목적↔현실 괴리)
 저장소의 **진짜 목적은 신규 SI 재개발용 베이스 프레임워크**인데, 실체는 factoring 이 안 된 모놀리식 샘플이다.
-- **증거**: `foundation` 이 껍데기(코어 로직 빈약) · **빈 DB 로 부팅 불가**(bootstrap/admin seed 부재) · 필수 모듈(foundation+admin)과 고유 모듈 미분리 · 재사용성 자체 진단 ≈50/100([framework-reusability-assessment.md](framework-reusability-assessment.md)).
-- **누르는 점수**: DB 완성도 상한 및 전 차원의 "이걸 그대로 재사용할 수 있는가" 관점. 버그를 아무리 잡아도 "프레임워크로서의 완성"으로 번지지 못해 완성도가 80대 초반에서 막힌다.
+- **증거(2026-07-11 스냅샷)**: `foundation` 이 껍데기(코어 로직 빈약) · **빈 DB 로 부팅 불가**(bootstrap/admin seed 부재) · 필수 모듈(foundation+admin)과 고유 모듈 미분리 · 재사용성 자체 진단 ≈50/100([framework-reusability-assessment.md](framework-reusability-assessment.md)).
+- **✅ 대부분 해소 확인(2026-07-18, 재사용성 실태 감사 `framework-reusability-audit-2026-07-18`)**: 위 진단의 **구조적 절반은 이미 STALE**. 실측 대조: (1) foundation 껍데기 → **해소**(계약3종·JWT백본·UserAuthPort/DashboardItemProvider 포트·BaseEntity 실체 커널 38파일, business 도메인 import 0). (2) 빈 DB 부팅불가 → **거짓**(V2_0 baseline 101테이블 + R__seed_framework 가 webmaster/ROLE_ADMIN 멱등 시드 → 빈 Postgres 에서 마이그레이션→validate→admin 로그인→메뉴 렌더까지 성립, 하드 블로커 0). (3) 필수/샘플 미분리 → **대부분 해소**(business-core 필수16 / business-app 샘플20 물리분할 + 단방향 비순환, business-core→app import 0 → 샘플 삭제해도 컴파일 성립). **재사용 준비도 ≈50→≈70**. 남은 결합 2건도 이번에 역전: DashboardApiController→BoardService 를 `DashboardItemProvider` 포트로(BoardDashboardProvider), UserService(필수)→CommunityUserRepository(샘플)를 `UserDeletionEvent` 리스너로 → **서비스레이어 격리 게이트 신설**(`ServiceLayerIsolationTest`, DomainIsolationTest 의 서비스 사각지대 봉합). **잔여(제품결정)**: 필수/샘플을 제품으로 확정(샘플 삭제/추출)·business-core 내 샘플-in-core(survey/community ≈50파일)·RBAC 하드코딩 83+webmaster23·프론트 slate/gray 917·graphify-out 위생회귀.
+- **누르는 점수**: DB 완성도 상한 및 전 차원의 "이걸 그대로 재사용할 수 있는가" 관점. 버그를 아무리 잡아도 "프레임워크로서의 완성"으로 번지지 못해 완성도가 80대 초반에서 막힌다. *(2026-07-18 감사로 "떼어낼 수 있는가(구조)"는 사실상 해결 → 남은 30점은 "떼어낸 뒤 값만 갈아끼우기(RBAC·브랜딩 파라미터화·위생)"의 몫으로 문제 위상이 한 단계 상승.)*
 
 ### C. 횡단관심사의 비체계적 적용 — 그래서 버그가 "패턴"으로 재발
 인가·정체성·트랜잭션 경계·캐싱 같은 cross-cutting 관심사가 **관례/애스펙트가 아니라 엔드포인트마다 임기응변으로** 적용됐다.

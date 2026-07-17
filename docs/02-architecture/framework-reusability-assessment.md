@@ -12,6 +12,12 @@
 > - **생산성·거버넌스**: MapStruct 매핑 표준화(`@Mapper` componentModel="spring"), 제네릭 CRUD(`BaseCrudController`/`BaseCrudService`), `DomainIsolationTest`(ArchUnit 도메인 격리), next-intl i18n, 동일출처 프록시·브랜딩 토큰화, 시크릿 외부화·prod fail-fast.
 > 레거시 이관 도구 상세 설계는 [legacy-migration-tool-design.md](./legacy-migration-tool-design.md) 참조.
 
+> **✅ 실태 재검증 (2026-07-18, `framework-reusability-audit-2026-07-18`)**: 4-에이전트 감사로 본문 진단을 현재 코드와 대조. **구조적 진단은 대부분 FIXED로 확증, 재사용 준비도 ≈50 → ≈70**.
+> - **STALE(해소 확증)**: ①§2 foundation 껍데기 → foundation 38파일이 계약3종·JWT백본·`UserAuthPort`/`DashboardItemProvider` 포트·`BaseEntity` 실체 커널, business 도메인 import 0. ②§7/§8 빈 DB 부팅불가 → **거짓**: `V2_0__baseline`(101테이블 DDL)+`R__seed_framework`(webmaster/`USRCNFRM_00000000001`/ROLE_ADMIN, BCrypt 멱등) → 빈 Postgres 마이그레이션→validate(엔티티 84 @Table 누락0)→admin 로그인→메뉴 렌더 성립, **하드 블로커 0**. ③§1 business-suite 모놀리스 → business-core(필수16)/business-app(샘플20) 물리분할·단방향 비순환·business-core→app import 0. ④§10 ErrorCode 도메인 혼입 → 도메인별 enum 분해.
+> - **결합 2건 역전(2026-07-18 커밋)**: §3 지적 "코어/대시보드 하드결합"의 잔재 — `DashboardApiController`→`BoardService` 를 `BoardDashboardProvider`(DashboardItemProvider 포트)로, `UserService`(필수)→`CommunityUserRepository`(샘플) 를 `UserDeletionEvent` 리스너로 역전 + `ServiceLayerIsolationTest`(서비스레이어 격리 ArchUnit 게이트) 신설.
+> - **⚠ 위 2026-07-12 노트의 false-completion 정정**: "제네릭 CRUD(BaseCrudController/BaseCrudService)" → 실측 **0파일**(미이행). "브랜딩 토큰화" → frontend slate/gray 하드코딩 **917건**(미이행). "graphify-out 제거"(Phase1) → foundation/src/main/java/graphify-out **345파일 git 재추적(회귀)**. RBAC DB일원화 → `hasRole` 하드코딩 83 + webmaster 분기 23(장식적). 이 4건은 로드맵 [x] 이나 **미이행**.
+> - **현 3대 병목(구조→파라미터화로 위상 상승)**: (1) RBAC 코드 하드코딩(데이터주도 미실현), (2) 프론트 브랜딩 비-토큰화(slate/gray 917), (3) 위생 회귀(graphify-out 재추적)+스캐폴드 제너레이터 부재. **핵심 잔여인 "필수/샘플 제품 확정(샘플 삭제·추출)"은 제품결정**이다.
+
 ---
 
 ## 0. 한 문단 결론 (Executive Verdict)
