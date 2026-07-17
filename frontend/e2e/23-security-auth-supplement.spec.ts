@@ -28,6 +28,38 @@ function readAccessToken(authFile: string): string {
     return data.cookies.find((c: { name: string; value: string }) => c.name === 'accessToken')?.value ?? '';
 }
 
+// ───────── E0: 로그인 성공(회귀 방어) — 이중 프리픽스 파손(2026-07-17 확증) 재발 차단 ─────────
+// 배경: authService.login 이 baseURL('/api/v1') 전치로 '/api/v1/api/auth/login'(백엔드 401)을 호출해
+//       Next Route Handler(HttpOnly 쿠키 설정)에 도달하지 못하던 P0 회귀가 있었다. 전 티어가 auth.setup.ts
+//       의 백엔드 직결 로그인 storageState 를 재사용해 '성공 UI 로그인' 경로가 무검증이던 것이 원인.
+//       이 테스트는 실 LoginClient→authService→Route Handler 경로를 UI 로 구동해 그 공백을 메운다.
+test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double-prefix)', () => {
+    test('valid credentials authenticate via Route Handler and set HttpOnly session cookie', async ({ page, context, consoleGuard }) => {
+        // /login 초기 로드 시 AuthContext 가 인증상태 확인차 /auth/me 를 부르고 미인증이라 401 을 받는 것은 정상.
+        consoleGuard.addIgnorePattern(/auth\/me/);
+        await page.goto('/login');
+        await page.locator('input[name="id"]').fill('webmaster');
+        await page.locator('input[name="password"]').fill('1');
+
+        // Route Handler(/api/auth/login) 200 을 실제로 관측 — 이중 프리픽스면 이 응답이 오지 않는다.
+        const [loginResp] = await Promise.all([
+            page.waitForResponse((r) => r.url().includes('/api/auth/login') && r.request().method() === 'POST', { timeout: 20000 }),
+            page.locator('button[type="submit"]').click(),
+        ]);
+        expect(loginResp.status(), 'UI 로그인이 Route Handler 200 을 받지 못함(이중 프리픽스 회귀 의심)').toBe(200);
+
+        // 인증 성공 시 /admin 영역으로 진입하고 /login 을 벗어난다.
+        await expect(page).toHaveURL(/\/admin/, { timeout: 20000 });
+        await expect(page).not.toHaveURL(/\/login/);
+
+        // Route Handler 가 accessToken 을 HttpOnly 쿠키로 심었는지 확인(브라우저 JS 로는 못 읽는 쿠키).
+        const cookies = await context.cookies();
+        const at = cookies.find((c) => c.name === 'accessToken');
+        expect(at, 'accessToken 쿠키 미설정').toBeTruthy();
+        expect(at?.httpOnly, 'accessToken 이 HttpOnly 가 아님').toBe(true);
+    });
+});
+
 // ───────────────────────── E2: 로그인 실패(잘못된 자격증명) ─────────────────────────
 test.describe('Tier 23-E2: Login failure (negative auth)', () => {
     test('invalid password shows error and does NOT authenticate', async ({ page, consoleGuard }) => {
@@ -117,18 +149,39 @@ test.describe('Tier 23-E1: Access-token reissue / silent refresh', () => {
     // 인터셉터 계약(src/lib/api/client.ts): 클라이언트 API 401 → POST /auth/reissue → 새 accessToken.
     // reissue 실패 → window.location = /login?expired=true. 미들웨어는 accessToken '존재'만 확인하므로
     // 만료 시나리오는 쿠키를 '무효값'으로 덮어써야 한다(삭제하면 미들웨어가 먼저 /login으로 보냄).
-    test.fixme('expired access token → 자동 reissue 200 → 세션 유지', async ({ page, context }) => {
-        // 1) refreshToken 유지, accessToken을 무효값으로 교체(context.addCookies)
-        // 2) 클라이언트 fetch가 있는 보호 페이지로 이동(예: /admin/user/manage)
-        // 3) await page.waitForResponse(r => r.url().includes('/auth/reissue') && r.status() === 200)
-        // 4) await expect(page).not.toHaveURL(/\/login/)
-        void page; void context;
+    // ⚠ 미들웨어(middleware.ts:25)는 exp 를 선검사해 만료면 /login 으로 먼저 튕긴다 → 클라이언트 인터셉터의
+    //   reissue 경로에 도달 못 함. 따라서 이 토큰은 exp 를 '미래'로 두어 미들웨어를 통과시키되 서명만 무효로 만든다.
+    //   → 페이지 로드 후 XHR 이 백엔드 서명검증 401 을 받고, 그때 인터셉터가 reissue 를 태운다.
+    const BADSIG_FUTURE_ACCESS = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.invalidsig';
+
+    test('expired access token → 자동 reissue 200 → 세션 유지', async ({ page, context, consoleGuard }) => {
+        // 만료 accessToken 으로 인한 보호자원 401 과 reissue 왕복은 이 시나리오의 정상 동작이다.
+        consoleGuard.addIgnorePattern(/auth\/me|auth\/reissue|401/i);
+        // 1) refreshToken(admin.json)은 유지하고 accessToken 만 만료 서명본으로 교체
+        await context.addCookies([
+            { name: 'accessToken', value: BADSIG_FUTURE_ACCESS, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
+        ]);
+        // 2) 클라이언트 fetch 가 있는 보호 페이지로 이동
+        // 3) 401 → 인터셉터가 /api/auth/reissue 를 호출해 200(Route Handler 가 새 accessToken 쿠키 재설정)
+        const [reissueResp] = await Promise.all([
+            page.waitForResponse((r) => r.url().includes('/api/auth/reissue') && r.request().method() === 'POST', { timeout: 20000 }),
+            page.goto('/admin/user/manage'),
+        ]);
+        expect(reissueResp.status(), 'reissue 가 200 이 아님(이중 프리픽스면 401)').toBe(200);
+        // 4) 세션 유지 — 만료 리다이렉트로 튕기지 않는다
+        await expect(page).not.toHaveURL(/\/login/);
     });
 
-    test.fixme('invalid refresh token → reissue 실패 → /login?expired=true 리다이렉트', async ({ page, context }) => {
-        // accessToken·refreshToken 모두 무효 → 401 → reissue 401 → window.location = /login?expired=true
-        // await expect(page).toHaveURL(/\/login\?expired=true/)
-        void page; void context;
+    test('invalid refresh token → reissue 실패 → /login?expired=true 리다이렉트', async ({ page, context, consoleGuard }) => {
+        // 무효 토큰으로 인한 401 연쇄는 이 시나리오의 정상 동작(만료→로그인 유도 경로 검증).
+        consoleGuard.addIgnorePattern(/auth\/me|auth\/reissue|401/i);
+        // accessToken·refreshToken 모두 무효 → 보호 자원 401 → reissue 401 → window.location = /login?expired=true
+        await context.addCookies([
+            { name: 'accessToken', value: BADSIG_FUTURE_ACCESS, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
+            { name: 'refreshToken', value: 'invalid.refresh.token', url: 'http://localhost:3001', httpOnly: true, sameSite: 'Lax' },
+        ]);
+        await page.goto('/admin/user/manage');
+        await expect(page).toHaveURL(/\/login\?expired=true/, { timeout: 20000 });
     });
 });
 

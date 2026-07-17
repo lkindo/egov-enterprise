@@ -28,7 +28,8 @@ describe('authService', () => {
  const loginData = { id: 'testuser', password: 'password' };
  const result = await authService.login(loginData);
 
- expect(api.post).toHaveBeenCalledWith('/api/auth/login', loginData);
+ // baseURL:'' 오버라이드로 Route Handler 직결(이중 프리픽스 회귀 방어)
+ expect(api.post).toHaveBeenCalledWith('/api/auth/login', loginData, { baseURL: '' });
  expect(result).toEqual(mockResponse);
  });
 
@@ -37,7 +38,7 @@ describe('authService', () => {
 
  await authService.logout();
 
- expect(api.post).toHaveBeenCalledWith('/api/auth/logout');
+ expect(api.post).toHaveBeenCalledWith('/api/auth/logout', undefined, { baseURL: '' });
  });
 
  it('reissue should call api.post', async () => {
@@ -46,7 +47,7 @@ describe('authService', () => {
 
  const result = await authService.reissue();
 
- expect(api.post).toHaveBeenCalledWith('/api/auth/reissue');
+ expect(api.post).toHaveBeenCalledWith('/api/auth/reissue', undefined, { baseURL: '' });
  expect(result).toEqual(mockResponse);
  });
 

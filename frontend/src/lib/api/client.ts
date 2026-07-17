@@ -123,6 +123,9 @@ axiosInstance.interceptors.response.use(
           {},
           {
             _retry: true,
+            // baseURL:'' — Route Handler(/api/auth/reissue) 직결. 미지정 시 '/api/v1' 전치되어
+            // '/api/v1/api/auth/reissue'→백엔드 401 로 재발급 자체가 파손된다.
+            baseURL: '',
             headers: { 'Authorization': '' }
           } as AxiosRequestConfig & { _retry: boolean }
         );
