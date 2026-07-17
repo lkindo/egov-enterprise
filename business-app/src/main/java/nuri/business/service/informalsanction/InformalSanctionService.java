@@ -60,7 +60,9 @@ public class InformalSanctionService {
     }
 
     @Transactional
-    public void registerInformalSanction(InformalSanctionDto dto) {
+    public String registerInformalSanction(InformalSanctionDto dto) {
+        // [정체성] 결재 PK 는 서비스가 INFRML_ 접두로 생성한다(단일 소유). 과거 컨트롤러가 egov IdGnr 를
+        // by-type 주입하다 @Primary egovFileIdGnrService 에 오해소되어 "FILE_" 접두를 발급하던 잠복 결함 제거.
         String ifmlAtrzId = dto.getIfmlAtrzId();
         if (ifmlAtrzId == null || ifmlAtrzId.isEmpty()) {
             ifmlAtrzId = nuri.foundation.core.util.IdGenerationUtil.generateId("INFRML_", 13);
@@ -75,6 +77,7 @@ public class InformalSanctionService {
                 .aprvYn(SanctionStatus.REQUESTED.getCode()) // 초기상태: 신청
                 .build();
         informalSanctionRepository.save(Objects.requireNonNull(entity));
+        return ifmlAtrzId;
     }
 
     @Transactional

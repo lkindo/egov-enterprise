@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 public class InformalSanctionApiController {
 
     private final InformalSanctionService informalSanctionService;
-    private final EgovIdGnrService egovInfrmlSanctnIdGnrService;
 
     @Operation(summary = "비정형 결재 목록 조회", description = "신청자 또는 결재자 기준의 결재 목록을 조회합니다.")
     @GetMapping
@@ -59,11 +57,9 @@ public class InformalSanctionApiController {
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody InformalSanctionDto dto) throws Exception {
 
-        String id = egovInfrmlSanctnIdGnrService.getNextStringId();
-        dto.setIfmlAtrzId(id);
+        // 결재 PK 생성은 서비스가 단일 소유(INFRML_ 접두). 과거 egov IdGnr by-type 오해소로 "FILE_" 발급하던 결함 제거.
         dto.setAplcntId(userDetails.getEsntlId());
-
-        informalSanctionService.registerInformalSanction(dto);
+        String id = informalSanctionService.registerInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 

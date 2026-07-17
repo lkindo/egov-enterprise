@@ -2,7 +2,6 @@ package nuri.api.controller.business.approval;
 
 import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,9 +22,6 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean(name = "informalSanctionService")
     private InformalSanctionService informalSanctionService;
-
-    @MockitoBean(name = "egovInfrmlSanctnIdGnrService")
-    private EgovIdGnrService egovInfrmlSanctnIdGnrService;
 
     @Test
     @DisplayName("비정형 결재 목록 조회 테스트")
@@ -57,8 +53,9 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     @DisplayName("비정형 결재 등록 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void registerInformalSanctionTest() throws Exception {
-        given(egovInfrmlSanctnIdGnrService.getNextStringId()).willReturn("IS1");
-        
+        // 결재 PK 는 서비스가 INFRML_ 로 생성·반환한다(egov IdGnr 제거). 컨트롤러는 그 반환값을 응답한다.
+        given(informalSanctionService.registerInformalSanction(org.mockito.ArgumentMatchers.any())).willReturn("INFRML_0000000000001");
+
         InformalSanctionDto dto = InformalSanctionDto.builder()
                 .taskSeCd("001")
                 .aplcntId("user01")
