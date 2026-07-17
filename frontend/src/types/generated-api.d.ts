@@ -5434,11 +5434,6 @@ export interface components {
              */
             accessToken?: string;
             /**
-             * @description Refresh Token
-             * @example eyJhbGciOiJIUzI1NiJ9...
-             */
-            refreshToken?: string;
-            /**
              * @description User Role
              * @example ROLE_USER
              */

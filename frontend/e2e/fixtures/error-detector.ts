@@ -128,9 +128,10 @@ export class ConsoleErrorGuard {
         }
 
         // 특정 API 에러(401/403) 및 의도된 모의 에러(507 용량 초과, 403 IP 차단 등)는 인증/보안/기능 테스트에서 의도될 수 있음
-        const isExpectedError = 
+        const isExpectedError =
           ([401, 403].includes(status) && (
-            url.includes('/api/auth') || 
+            url.includes('/api/auth') ||
+            url.includes('/api/v1/auth') || // 실제 API base(/api/v1/auth/me 등) — 세션 확인 401 은 인증 라이프사이클 정상 상태
             url.includes('/api/user/info') ||
             url.includes('/api/v1/admin/') || // Generic RBAC test support
             url.includes('/api/v1/admin/system/banners/reflected') || 

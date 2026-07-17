@@ -30,21 +30,29 @@ const nextConfig = {
     root: '..',
   },
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    // [csp Phase 1] prod/dev 분리.
+    //  - script-src: prod 는 'unsafe-eval' 제거(앱 소스 eval 0건 실측). 'unsafe-inline' 은 Next RSC 부트스트랩
+    //    요구로 잔존(제거는 nonce+strict-dynamic=Phase 4, PPR 포기 제품결정에 게이트).
+    //  - connect-src: prod 는 'self' 만(동일출처 /api·/ws 프록시 + CSP3 'self' 가 same-origin WS 승격 커버).
+    //    bare 'ws: wss:'(모든 호스트 허용=XSS 유출 채널)는 dev HMR 에서만 유지.
+    //  - img-src: grainy-gradients(참조 0 실측) 제거.
+    //  - 위반 리포팅: /api/security/csp('csp-report' 문자열 회피 — 광고차단기 오차단 방지).
+    const cspProd = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
+    const cspDev = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
     return [
       {
         source: '/:path*',
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          // X-XSS-Protection 은 deprecated·XS-Leaks 벡터라 비활성('0'). 방어는 CSP·X-Content-Type-Options 로 대체.
+          { key: 'X-XSS-Protection', value: '0' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          {
-            // [csp-01] 브라우저가 동일 출처(same-origin) 프록시로 통신 → connect-src를 'self' + 스킴 전용 WS(dev HMR·SockJS /ws)로 축소
-            key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://grainy-gradients.vercel.app https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
-          },
+          { key: 'Reporting-Endpoints', value: 'csp-endpoint="/api/security/csp"' },
+          { key: 'Content-Security-Policy', value: isProd ? cspProd : cspDev },
         ],
       },
     ];

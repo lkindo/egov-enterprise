@@ -80,7 +80,9 @@ class AuthApiControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.accessToken").value("access-token"));
+                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                // [Phase 3 계약] refreshToken 은 바디에 노출되지 않는다(@JsonIgnore, HttpOnly 쿠키로만 전달)
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist());
     }
  
     @Test
@@ -110,7 +112,8 @@ class AuthApiControllerTest {
         mockMvc.perform(post("/api/v1/auth/reissue")
                 .cookie(new jakarta.servlet.http.Cookie("refreshToken", "old-refresh")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("new-access"));
+                .andExpect(jsonPath("$.data.accessToken").value("new-access"))
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist());
     }
  
     @Test

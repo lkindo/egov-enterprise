@@ -108,46 +108,33 @@ export class SurveyPage {
 
         console.log(`>>> [Survey] Creating via API: begin=${fmt(beginDe)}, end=${fmt(endDe)}`);
 
-        // Navigate first to ensure localStorage is populated with accessToken
+        // 인증된 페이지로 이동. 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly accessToken 쿠키에서
+        // Bearer 를 주입하므로 토큰을 수동 추출/첨부하지 않는다(HttpOnly 전환 정합).
         await this.page.goto('/admin/survey/manage');
         await this.page.waitForLoadState('domcontentloaded');
         await this.page.waitForTimeout(1000); // Small buffer for script execution
 
-        // Extract JWT access token from localStorage (set by auth.setup.ts)
-        const accessToken = await this.page.evaluate(() => {
-            return localStorage.getItem('accessToken') || '';
-        });
-
-        if (!accessToken) {
-            throw new Error('Survey creation failed: accessToken not found in localStorage');
-        }
-
-        const result = await this.page.evaluate(async ({ data, token }) => {
+        const result = await this.page.evaluate(async ({ data }) => {
             const res = await fetch('/api/v1/polls', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             return { ok: res.ok, status: res.status, body: await res.text() };
-        }, { data: payload, token: accessToken });
+        }, { data: payload });
 
         if (!result.ok) {
             throw new Error(`Survey creation via API failed: ${result.status} - ${result.body}`);
         }
 
         // Extract the pollId by querying the polls list with the title
-        const pollId = await this.page.evaluate(async ({ title: t, token }: { title: string, token: string }) => {
-            const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=0`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        const pollId = await this.page.evaluate(async ({ title: t }: { title: string }) => {
+            const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=0`);
             const json = await res.json();
             const list = json.data?.list || json.data?.content || [];
             const found = list.find((p: any) => p.pollNm === t);
             return found?.pollId || null;
-        }, { title, token: accessToken });
+        }, { title });
 
         if (!pollId) {
             throw new Error(`Could not find newly created poll by title: ${title}`);
@@ -196,17 +183,13 @@ export class SurveyPage {
      * pollId로 설문에 직접 투표 (API-first, UI 우회)
      */
     async voteByPollId(pollId: string): Promise<void> {
-        const accessToken = await this.page.evaluate(() => localStorage.getItem('accessToken') || '');
-        if (!accessToken) throw new Error('voteByPollId: accessToken not found');
-
+        // 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly 쿠키에서 Bearer 를 주입한다(수동 토큰 불요).
         // Get poll items
-        const items = await this.page.evaluate(async ({ pid, token }: { pid: string, token: string }) => {
-            const res = await fetch(`/api/v1/polls/${pid}/items`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        const items = await this.page.evaluate(async ({ pid }: { pid: string }) => {
+            const res = await fetch(`/api/v1/polls/${pid}/items`);
             const json = await res.json();
             return json.data || [];
-        }, { pid: pollId, token: accessToken });
+        }, { pid: pollId });
 
         if (!items || items.length === 0) {
             throw new Error(`voteByPollId: no items found for poll ${pollId}`);
@@ -216,13 +199,13 @@ export class SurveyPage {
         console.log(`>>> Voting on poll ${pollId}, item ${firstItemId} (${items[0].pollArtclNm})`);
 
         // Cast vote via API
-        const voteResult = await this.page.evaluate(async ({ pid, iid, token }: { pid: string, iid: string, token: string }) => {
+        const voteResult = await this.page.evaluate(async ({ pid, iid }: { pid: string, iid: string }) => {
             const res = await fetch(`/api/v1/polls/${pid}/vote/${iid}`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' }
             });
             return { ok: res.ok, status: res.status, body: await res.text() };
-        }, { pid: pollId, iid: firstItemId, token: accessToken });
+        }, { pid: pollId, iid: firstItemId });
 
         if (!voteResult.ok) {
             console.log(`>>> Vote API response: ${voteResult.status} - ${voteResult.body}`);

@@ -902,7 +902,6 @@ export type ApiResponseTokenResponse = z.infer<typeof ApiResponseTokenResponseSc
 // ==========================================================================
 export const TokenResponseSchema = z.object({
   accessToken: z.string().optional(),
-  refreshToken: z.string().optional(),
   role: z.string().optional(),
 });
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;

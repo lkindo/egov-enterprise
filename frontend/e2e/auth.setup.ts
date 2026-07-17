@@ -6,13 +6,19 @@ import { TEST_CREDENTIALS } from './test-credentials';
 const adminFile = path.resolve('playwright/.auth/admin.json');
 const userFile = path.resolve('playwright/.auth/user.json');
 
+/** 응답 헤더의 Set-Cookie 문자열에서 특정 쿠키 값을 추출한다(바디 토큰 축소 대비). */
+function extractSetCookie(headers: Record<string, string>, name: string): string {
+    const raw = headers['set-cookie'] || '';
+    const m = raw.match(new RegExp(`${name}=([^;]+)`));
+    return m ? m[1] : '';
+}
+
 async function authenticate(request: any, id: string, password: string, authFilePath: string) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/';
     const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
 
     let token: string = '';
     let refreshToken: string = '';
-    let role: string = '';
     let success = false;
     let lastErr: any;
 
@@ -26,8 +32,9 @@ async function authenticate(request: any, id: string, password: string, authFile
             if (response.ok()) {
                 const resBody = await response.json();
                 token = resBody.data.accessToken;
-                refreshToken = resBody.data.refreshToken;
-                role = resBody.data.role;
+                // [Phase 3 대비] refreshToken 은 응답 바디 축소(@JsonIgnore) 후에도 Set-Cookie 로 발급되므로
+                // 바디 우선, 부재 시 Set-Cookie 헤더에서 파싱(계약 축소에 선제 대응).
+                refreshToken = resBody.data.refreshToken || extractSetCookie(response.headers(), 'refreshToken');
                 success = true;
                 break;
             } else {
@@ -48,17 +55,17 @@ async function authenticate(request: any, id: string, password: string, authFile
 
     const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
     const domain = new URL(webUrl).hostname;
+    // 프로덕션 정합: accessToken 은 HttpOnly(브라우저 JS 미접근). userRole 쿠키·localStorage accessToken 은
+    // 어떤 프로덕션 코드도 소비하지 않는 죽은 잔재라 제거한다. egov_smart_tour_v1 은 투어 오버레이 억제용 살아있는 의존.
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' },
-            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' },
-            { name: 'userRole', value: role, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' }
+            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' as const },
+            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' as const }
         ],
         origins: [
             {
                 origin: webUrl,
                 localStorage: [
-                    { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }
                 ]
             }

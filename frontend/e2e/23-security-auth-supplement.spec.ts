@@ -142,46 +142,33 @@ test.describe('Tier 23-E4: Middleware sensitive-path RBAC redirect', () => {
     });
 });
 
-// ───────────── E1: 토큰 재발급(silent refresh) — 런타임 쿠키 조작 검증 필요로 fixme ─────────────
-test.describe('Tier 23-E1: Access-token reissue / silent refresh', () => {
+// ───────────── E1: 위조 토큰 거부 — 미들웨어 JWT 서명 검증(Web Crypto HMAC) ─────────────
+// Phase 1 하드닝: 미들웨어가 accessToken 의 서명·만료를 실제 검증한다. base64 페이로드만 디코드하던
+// 과거엔 서명 없는 위조 토큰(role=ADMIN·미래 exp)으로 관리자 UI 셸을 열람할 수 있었다 — 이를 차단한다.
+test.describe('Tier 23-E1: Forged-token rejection (middleware signature verification)', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    // 인터셉터 계약(src/lib/api/client.ts): 클라이언트 API 401 → POST /auth/reissue → 새 accessToken.
-    // reissue 실패 → window.location = /login?expired=true. 미들웨어는 accessToken '존재'만 확인하므로
-    // 만료 시나리오는 쿠키를 '무효값'으로 덮어써야 한다(삭제하면 미들웨어가 먼저 /login으로 보냄).
-    // ⚠ 미들웨어(middleware.ts:25)는 exp 를 선검사해 만료면 /login 으로 먼저 튕긴다 → 클라이언트 인터셉터의
-    //   reissue 경로에 도달 못 함. 따라서 이 토큰은 exp 를 '미래'로 두어 미들웨어를 통과시키되 서명만 무효로 만든다.
-    //   → 페이지 로드 후 XHR 이 백엔드 서명검증 401 을 받고, 그때 인터셉터가 reissue 를 태운다.
-    const BADSIG_FUTURE_ACCESS = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.invalidsig';
+    // header=HS512, payload={role:ROLE_ADMIN, exp:먼 미래}, 서명='invalidsig'(위조). 과거 미들웨어는 통과시켰다.
+    const FORGED_ADMIN_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.invalidsig';
 
-    test('expired access token → 자동 reissue 200 → 세션 유지', async ({ page, context, consoleGuard }) => {
-        // 만료 accessToken 으로 인한 보호자원 401 과 reissue 왕복은 이 시나리오의 정상 동작이다.
-        consoleGuard.addIgnorePattern(/auth\/me|auth\/reissue|401/i);
-        // 1) refreshToken(admin.json)은 유지하고 accessToken 만 만료 서명본으로 교체
+    test('forged (bad-signature) admin token is rejected by middleware → /login', async ({ page, context }) => {
+        // 유효 세션 쿠키를 위조 토큰으로 덮어쓴다. 미들웨어가 서명 검증 실패로 로그인으로 돌려보내야 한다.
         await context.addCookies([
-            { name: 'accessToken', value: BADSIG_FUTURE_ACCESS, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
+            { name: 'accessToken', value: FORGED_ADMIN_TOKEN, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
         ]);
-        // 2) 클라이언트 fetch 가 있는 보호 페이지로 이동
-        // 3) 401 → 인터셉터가 /api/auth/reissue 를 호출해 200(Route Handler 가 새 accessToken 쿠키 재설정)
-        const [reissueResp] = await Promise.all([
-            page.waitForResponse((r) => r.url().includes('/api/auth/reissue') && r.request().method() === 'POST', { timeout: 20000 }),
-            page.goto('/admin/user/manage'),
-        ]);
-        expect(reissueResp.status(), 'reissue 가 200 이 아님(이중 프리픽스면 401)').toBe(200);
-        // 4) 세션 유지 — 만료 리다이렉트로 튕기지 않는다
-        await expect(page).not.toHaveURL(/\/login/);
+        await page.goto('/admin/system/menus');
+        // 위조 토큰으로는 관리자 셸에 진입하지 못하고 /login 으로 리다이렉트된다.
+        await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
     });
 
-    test('invalid refresh token → reissue 실패 → /login?expired=true 리다이렉트', async ({ page, context, consoleGuard }) => {
-        // 무효 토큰으로 인한 401 연쇄는 이 시나리오의 정상 동작(만료→로그인 유도 경로 검증).
-        consoleGuard.addIgnorePattern(/auth\/me|auth\/reissue|401/i);
-        // accessToken·refreshToken 모두 무효 → 보호 자원 401 → reissue 401 → window.location = /login?expired=true
+    test('unknown-algorithm (alg=none style) token is rejected → /login', async ({ page, context }) => {
+        // alg 화이트리스트(HS256/384/512) 밖은 거부. header.alg='none'.
+        const NONE_ALG_TOKEN = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.';
         await context.addCookies([
-            { name: 'accessToken', value: BADSIG_FUTURE_ACCESS, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
-            { name: 'refreshToken', value: 'invalid.refresh.token', url: 'http://localhost:3001', httpOnly: true, sameSite: 'Lax' },
+            { name: 'accessToken', value: NONE_ALG_TOKEN, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
         ]);
-        await page.goto('/admin/user/manage');
-        await expect(page).toHaveURL(/\/login\?expired=true/, { timeout: 20000 });
+        await page.goto('/admin/system/menus');
+        await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
     });
 });
 

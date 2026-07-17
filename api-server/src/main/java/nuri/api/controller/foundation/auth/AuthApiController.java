@@ -44,6 +44,10 @@ public class AuthApiController {
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response) {
         TokenResponse tokenResponse = authService.reissue(refreshToken);
+        // [Phase 3 대칭화] login 과 동일하게 refreshToken 을 HttpOnly 쿠키로 재발급한다. 현재 reissue 는
+        // 토큰을 회전하지 않아 사실상 동일 쿠키 재설정이지만, 향후 회전 도입 시 새 토큰의 전달 경로가
+        // 소멸하는 잠복 함정을 지금 닫는다(바디에서 refreshToken 을 뺐으므로 쿠키가 유일 전달 경로).
+        jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);
     }
 
