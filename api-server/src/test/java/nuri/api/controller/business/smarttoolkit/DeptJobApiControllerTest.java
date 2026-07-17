@@ -1,6 +1,5 @@
 package nuri.api.controller.business.smarttoolkit;
 
-import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.deptjob.EgovDeptJobBoxService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +18,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import nuri.business.support.ControllerTestSupport;
@@ -62,18 +60,14 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    // 쓰기 3본은 @PreAuthorize(ADMIN/SYSTEM). esntlId="USR_001" 로 서비스 mock 인자 매칭 유지.
     @Test
-    @DisplayName("부서 업무함 등록 성공")
+    @DisplayName("부서 업무함 등록 성공 (ADMIN)")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void createDeptJobBox_Success() throws Exception {
-        // Given
-        CustomUserDetails userDetails = CustomUserDetails.builder()
-                .esntlId("USR_001")
-                .build();
         given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn("NEW_ID");
 
-        // When & Then
         mockMvc.perform(post("/api/v1/dept-jobs/boxes")
-                        .with(user(userDetails))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
@@ -85,17 +79,12 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    @DisplayName("부서 업무함 수정 성공")
+    @DisplayName("부서 업무함 수정 성공 (ADMIN)")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void updateDeptJobBox_Success() throws Exception {
-        // Given
-        CustomUserDetails userDetails = CustomUserDetails.builder()
-                .esntlId("USR_001")
-                .build();
         doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq("BOX1"), eq("USR_001"), any(DeptJobBoxDto.class));
 
-        // When & Then
         mockMvc.perform(put("/api/v1/dept-jobs/boxes/BOX1")
-                        .with(user(userDetails))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
@@ -107,19 +96,20 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    @DisplayName("부서 업무함 삭제 성공")
+    @DisplayName("부서 업무함 삭제 성공 (ADMIN)")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void deleteDeptJobBox_Success() throws Exception {
-        // Given
-        CustomUserDetails userDetails = CustomUserDetails.builder()
-                .esntlId("USR_001")
-                .build();
         doNothing().when(egovDeptJobBoxService).deleteDeptJobBox("BOX1");
 
-        // When & Then
         mockMvc.perform(delete("/api/v1/dept-jobs/boxes/BOX1")
-                        .with(user(userDetails))
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    // 참고: 비관리자 쓰기 차단(403)의 실집행 검증은 두 곳에 있다.
+    //  ① 존재: SecurityAuthAnnotationLinterTest 가 이 컨트롤러 쓰기 3본의 @PreAuthorize 를 정적 오딧(allow-list 졸업).
+    //  ② 집행: 서비스 2차 가드(SecurityUtil.assertAdmin)의 ACCESS_DENIED 는 DeptJobBoxServiceTest 네거티브가 검증.
+    // @WebMvcTest 슬라이스는 메서드 시큐리티 미적용(코드베이스 관례: 통합 RBAC 매트릭스가 집행 담당)이라
+    // 여기서는 해피패스(ADMIN)만 둔다.
 }

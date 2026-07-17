@@ -3,6 +3,7 @@ package nuri.business.service.deptjob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
+import nuri.business.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,9 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     @Override
     @Transactional
     public String createDeptJobBox(String userId, DeptJobBoxDto dto) {
+        // [헌법 제8조 이중검증] 컨트롤러 @PreAuthorize(1차) + 서비스 2차 가드. 부서 업무함은
+        // 소유 모델이 없는 공유 관리 자원 → ADMIN/SYSTEM 전용(소유 스코프 승격 시 이 가드를 교체).
+        SecurityUtil.assertAdmin();
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("DEPTJOB_", 13);
         DeptJobBox entity = DeptJobBox.builder()
                 .deptTaskBoxId(id)
@@ -56,6 +60,7 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     @Override
     @Transactional
     public void updateDeptJobBox(String deptTaskBoxId, String userId, DeptJobBoxDto dto) {
+        SecurityUtil.assertAdmin();
         DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
                 .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptTaskBoxId));
 
@@ -68,6 +73,7 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
     @Override
     @Transactional
     public void deleteDeptJobBox(String deptTaskBoxId) {
+        SecurityUtil.assertAdmin();
         deptJobBoxRepository.deleteById(Objects.requireNonNull(deptTaskBoxId));
     }
 }

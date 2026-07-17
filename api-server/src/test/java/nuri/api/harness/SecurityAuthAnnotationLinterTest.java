@@ -190,8 +190,9 @@ class SecurityAuthAnnotationLinterTest {
             "CommunityUserApiController", // 커뮤니티 가입=자기서비스
             "ApprovalApiController",          // 결재 확정=서비스 소유권(aprvrId) 검사
             "InformalSanctionApiController",  // 결재(비정형)=서비스 소유권(confirm=aprvrId, update/delete=aplcntId) 검사
-            "FileApiController",              // 파일 업로드=자기서비스(본인 첨부)
-            "DeptJobApiController"            // [보류] 부서 공유 리소스 — 소유 모델 제품결정 대기
+            "FileApiController"               // 파일 업로드=자기서비스(본인 첨부)
+            // DeptJobApiController — 졸업(2026-07-17): 쓰기 3본에 @PreAuthorize(ADMIN/SYSTEM) 명시,
+            //   더 이상 allow-list 예외가 아니라 린터가 직접 오딧하는 대상이다.
     );
 
     @Test

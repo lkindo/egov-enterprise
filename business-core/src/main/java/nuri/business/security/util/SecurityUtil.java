@@ -117,4 +117,17 @@ public class SecurityUtil {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
     }
+
+    /**
+     * 관리자(ADMIN/SYSTEM) 전용 자원에 대한 서비스 레이어 2차 인가 가드.
+     * 컨트롤러의 {@code @PreAuthorize}(1차)와 짝을 이루는 이중 검증(백엔드 헌법 제8조)이다.
+     * 소유 모델이 없는 공유 관리 자원(예: 부서 업무함)의 쓰기 경로에서 사용한다.
+     *
+     * @throws BusinessException ACCESS_DENIED — 현재 주체가 ADMIN/SYSTEM 이 아닐 때
+     */
+    public static void assertAdmin() {
+        if (!hasRole(AuthorityConstants.ROLE_ADMIN) && !hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
 }

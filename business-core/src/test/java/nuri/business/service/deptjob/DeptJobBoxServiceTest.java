@@ -3,6 +3,8 @@ package nuri.business.service.deptjob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
+import nuri.foundation.core.exception.BusinessException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,8 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,6 +47,19 @@ class DeptJobBoxServiceTest {
                 .deptId("DEPT1")
                 .sortOrdr(1L)
                 .build();
+        // 쓰기 경로는 SecurityUtil.assertAdmin(ADMIN/SYSTEM) 2차 가드를 통과해야 하므로 ADMIN 컨텍스트를 심는다.
+        setAuthorities("ROLE_ADMIN");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void setAuthorities(String authority) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("tester", "pw",
+                        List.of(new SimpleGrantedAuthority(authority))));
     }
 
     @Test
@@ -137,5 +156,36 @@ class DeptJobBoxServiceTest {
         deptJobBoxService.deleteDeptJobBox("BOX1");
 
         verify(deptJobBoxRepository, times(1)).deleteById("BOX1");
+    }
+
+    // ── 서비스 2차 가드(assertAdmin): 비관리자(USER)의 쓰기는 ACCESS_DENIED 로 차단, 저장소는 미접촉 ──
+    @Test
+    @DisplayName("부서함 생성 - 비관리자 차단")
+    void createDeptJobBox_deniedForNonAdmin() {
+        setAuthorities("ROLE_USER");
+        DeptJobBoxDto dto = new DeptJobBoxDto();
+        dto.setDeptTaskBoxNm("New Box");
+
+        assertThrows(BusinessException.class, () -> deptJobBoxService.createDeptJobBox("user1", dto));
+        verify(deptJobBoxRepository, never()).save(any(DeptJobBox.class));
+    }
+
+    @Test
+    @DisplayName("부서함 수정 - 비관리자 차단")
+    void updateDeptJobBox_deniedForNonAdmin() {
+        setAuthorities("ROLE_USER");
+        DeptJobBoxDto dto = new DeptJobBoxDto();
+
+        assertThrows(BusinessException.class, () -> deptJobBoxService.updateDeptJobBox("BOX1", "user1", dto));
+        verify(deptJobBoxRepository, never()).findById(anyString());
+    }
+
+    @Test
+    @DisplayName("부서함 삭제 - 비관리자 차단")
+    void deleteDeptJobBox_deniedForNonAdmin() {
+        setAuthorities("ROLE_USER");
+
+        assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox("BOX1"));
+        verify(deptJobBoxRepository, never()).deleteById(anyString());
     }
 }
