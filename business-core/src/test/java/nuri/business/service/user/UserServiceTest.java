@@ -48,6 +48,9 @@ class UserServiceTest {
     private nuri.business.domain.system.content.community.CommunityUserRepository communityUserRepository;
 
     @Mock
+    private nuri.business.domain.log.UserLogRepository userLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
