@@ -68,7 +68,7 @@ public class CommunityService {
 
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
-        String cmntyId = IdGenerationUtil.generateId("CMMNTY_", 13);
+        String cmntyId = IdGenerationUtil.generateUniqueId("CMMNTY_", 13, communityRepository::existsById);
         Community community = Community.builder()
                 .cmntyId(cmntyId)
                 .cmntyNm(dto.getCmntyNm())

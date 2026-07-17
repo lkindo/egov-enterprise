@@ -47,7 +47,7 @@ public class MemoReportService extends BaseAbstractService {
 
     @Transactional
     public String createMemoReport(String userId, MemoReportDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("MEMO_", 15);
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateUniqueId("MEMO_", 15, memoReportRepository::existsById);
         MemoReport entity = MemoReport.builder()
                 .rptId(id)
                 .rptTtl(dto.getRptTtl())

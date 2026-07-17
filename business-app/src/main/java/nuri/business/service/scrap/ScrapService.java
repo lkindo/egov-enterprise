@@ -44,7 +44,7 @@ public class ScrapService extends BaseAbstractService {
 
     @Transactional
     public void createScrap(String userId, ScrapDto dto) throws Exception {
-        String scrapId = IdGenerationUtil.generateId("SCRAP_", 14);
+        String scrapId = IdGenerationUtil.generateUniqueId("SCRAP_", 14, scrapRepository::existsById);
         Scrap entity = Scrap.builder()
                 .scrapId(scrapId)
                 .scrapNm(dto.getScrapNm())

@@ -45,7 +45,7 @@ public class PopupService {
 
     @Transactional
     public String createPopup(String userId, PopupDto dto) {
-        String popupId = IdGenerationUtil.generateId("POPUP_", 14);
+        String popupId = IdGenerationUtil.generateUniqueId("POPUP_", 14, popupRepository::existsById);
         Popup popup = Popup.builder()
                 .popupId(popupId)
                 .popupTtlNm(dto.getPopupTtlNm())

@@ -37,6 +37,32 @@ public final class IdGenerationUtil {
         return prefix + UUID.randomUUID().toString().replace("-", "").substring(0, length).toUpperCase();
     }
 
+    /** {@code generateUniqueId} 의 최대 재시도 횟수. 충돌 확률이 극히 낮아 소수 시도로 충분(초과 시 예외). */
+    private static final int MAX_UNIQUE_RETRIES = 5;
+
+    /**
+     * 충돌하지 않는 고유 ID를 생성합니다 — {@code exists} 로 중복을 검사하며 최대 {@link #MAX_UNIQUE_RETRIES}회 재시도한다.
+     *
+     * <p>{@link #generateId(String, int)} 는 UUID를 {@code length} 로 <b>절단</b>하므로 엔트로피가 낮은 도메인에서
+     * 이론상 birthday 충돌 위험이 있다. PK 쓰기 경로에서는 이 메서드로 리포지토리 존재검사를 넘겨 충돌을 무재현화한다.
+     *
+     * @param exists 후보 ID가 이미 존재하는지 검사(보통 {@code repository::existsById})
+     * @throws IllegalStateException 재시도 한도 내 고유 ID 확보 실패 시(사실상 발생 불가 — 방어적)
+     */
+    public static String generateUniqueId(String prefix, int length, java.util.function.Predicate<String> exists) {
+        if (exists == null) {
+            throw new IllegalArgumentException("exists predicate must not be null");
+        }
+        for (int i = 0; i < MAX_UNIQUE_RETRIES; i++) {
+            String candidate = generateId(prefix, length);
+            if (!exists.test(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException(
+                "고유 ID 생성 실패: " + MAX_UNIQUE_RETRIES + "회 시도 내 미충돌 값 확보 불가(prefix=" + prefix + ", length=" + length + ")");
+    }
+
     /**
      * 사용자용 고유 ID(EsntlId)를 생성합니다.
      */

@@ -120,7 +120,7 @@ public class ReportStatsService {
      */
     @Transactional
     public void insertReprtStats(ReprtStats reprtStats) throws Exception {
-        String reprtId = nuri.foundation.core.util.IdGenerationUtil.generateId("REPRT_", 10);
+        String reprtId = nuri.foundation.core.util.IdGenerationUtil.generateUniqueId("REPRT_", 10, reprtStatsRepository::existsById);
         ReprtStats newStats = ReprtStats.builder()
                 .reprtId(reprtId)
                 .reprtNm(reprtStats.getReprtNm())

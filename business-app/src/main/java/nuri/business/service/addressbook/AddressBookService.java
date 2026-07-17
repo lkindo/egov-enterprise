@@ -50,7 +50,7 @@ public class AddressBookService {
     @Transactional
     public void createAddressBook(String userId, AddressBookDto dto) {
         try {
-            String adbkId = IdGenerationUtil.generateId("ADBK_", 15);
+            String adbkId = IdGenerationUtil.generateUniqueId("ADBK_", 15, addressBookRepository::existsById);
             AddressBook entity = AddressBook.builder()
                     .adbkId(adbkId)
                     .adbkNm(dto.getAdbkNm())
@@ -64,7 +64,7 @@ public class AddressBookService {
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-                    String adbkUserId = IdGenerationUtil.generateId("ADBKUSER_", 11);
+                    String adbkUserId = IdGenerationUtil.generateUniqueId("ADBKUSER_", 11, addressBookUserRepository::existsById);
                     AddressBookUser userEntity = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
                             .addressBook(entity)
@@ -114,7 +114,7 @@ public class AddressBookService {
                     .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(userDto.getUserId())));
             if (!exists) {
                 try {
-                    String adbkUserId = IdGenerationUtil.generateId("ADBKUSER_", 11);
+                    String adbkUserId = IdGenerationUtil.generateUniqueId("ADBKUSER_", 11, addressBookUserRepository::existsById);
                     AddressBookUser newUser = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
                             .addressBook(entity)

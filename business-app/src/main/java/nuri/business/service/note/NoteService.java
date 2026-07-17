@@ -72,7 +72,7 @@ public class NoteService extends BaseAbstractService {
     @Transactional
     public void sendNote(String dsptchUserId, NoteDto dto) {
         try {
-            String noteId = IdGenerationUtil.generateId("NOTE_", 10);
+            String noteId = IdGenerationUtil.generateUniqueId("NOTE_", 10, noteRepository::existsById);
             Note note = Note.builder()
                     .noteId(noteId)
                     .noteTtl(dto.getNoteSj())
@@ -80,7 +80,7 @@ public class NoteService extends BaseAbstractService {
                     .build();
             noteRepository.save(note);
 
-            String trnsmitId = IdGenerationUtil.generateId("NOTE_", 10);
+            String trnsmitId = IdGenerationUtil.generateUniqueId("NOTE_", 10, noteTrnsmitRepository::existsById);
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
                     .noteSndngId(trnsmitId)
                     .note(note)
@@ -99,7 +99,7 @@ public class NoteService extends BaseAbstractService {
                     }
                     anyRecipient = true;
                     NoteRecptn recptn = NoteRecptn.builder()
-                            .noteRcptnId(IdGenerationUtil.generateId("NOTE_", 10))
+                            .noteRcptnId(IdGenerationUtil.generateUniqueId("NOTE_", 10, noteRecptnRepository::existsById))
                             .note(note)
                             .noteDsptch(trnsmit)
                             .rcvrId(raw.trim())

@@ -67,7 +67,7 @@ public class BoardMasterService extends BaseAbstractService {
     public String createBoardMaster(String userId, BoardMasterDto dto) {
         String bbsId = dto.getBbsId();
         if (bbsId == null || bbsId.isEmpty()) {
-            bbsId = IdGenerationUtil.generateId("BBSMSTR_", 12);
+            bbsId = IdGenerationUtil.generateUniqueId("BBSMSTR_", 12, boardMasterRepository::existsById);
         }
 
         BoardMaster entity = BoardMaster.builder()
