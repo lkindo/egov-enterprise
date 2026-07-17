@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -41,9 +40,6 @@ class NoteServiceImplTest {
 
     @Mock
     private NoteDomainRepository noteRepository;
-
-    @Mock
-    private EgovIdGnrService egovNoteIdGnrService;
 
     @InjectMocks
     private NoteService noteService;
@@ -192,8 +188,6 @@ class NoteServiceImplTest {
                 .rcverId("user2")
                 .build();
 
-        given(egovNoteIdGnrService.getNextStringId()).willReturn("ID-1", "ID-2", "ID-3");
-
         // when
         noteService.sendNote(dsptchUserId, dto);
 
@@ -214,8 +208,6 @@ class NoteServiceImplTest {
                 .rcverId("user2, user3")
                 .build();
 
-        given(egovNoteIdGnrService.getNextStringId()).willReturn("N-ID", "T-ID", "R-ID1", "R-ID2");
-
         // when
         noteService.sendNote(dsptchUserId, dto);
 
@@ -224,23 +216,6 @@ class NoteServiceImplTest {
         verify(noteTrnsmitRepository, times(1)).save(any(NoteTrnsmit.class));
         // 수신자가 2명이므로 2번 호출되어야 함
         verify(noteRecptnRepository, times(2)).save(any(NoteRecptn.class));
-    }
-
-    @Test
-    @DisplayName("쪽지 발송 실패 - ID 생성 오류 발생 시 비즈니스 예외 전환")
-    void sendNote_failure_internalError() throws Exception {
-        // given
-        String dsptchUserId = "user1";
-        NoteDto dto = NoteDto.builder().noteSj("Subject").noteCn("Message").build();
-
-        given(egovNoteIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID generator failed"));
-
-        // when & then
-        assertThatThrownBy(() -> noteService.sendNote(dsptchUserId, dto))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("쪽지 발송 중 오류가 발생했습니다.")
-                .extracting("errorCode")
-                .isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -325,7 +300,6 @@ class NoteServiceImplTest {
     void sendNote_blankRecipients_rejected() throws Exception {
         // given: 전부 공백인 수신자 → NULL-rcvr 사본(수거 영구봉쇄 원천) 생성 차단
         NoteDto dto = NoteDto.builder().noteSj("S").noteCn("M").rcverId("  , ,").build();
-        given(egovNoteIdGnrService.getNextStringId()).willReturn("N-ID", "T-ID");
 
         // when & then
         assertThatThrownBy(() -> noteService.sendNote("user1", dto))

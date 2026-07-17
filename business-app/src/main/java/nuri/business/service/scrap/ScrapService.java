@@ -7,8 +7,8 @@ import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.security.util.SecurityUtil;
+import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,6 @@ import java.util.Objects;
 public class ScrapService extends BaseAbstractService {
 
     private final ScrapRepository scrapRepository;
-    private final EgovIdGnrService egovScrapIdGnrService;
 
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
         return scrapRepository
@@ -45,7 +44,7 @@ public class ScrapService extends BaseAbstractService {
 
     @Transactional
     public void createScrap(String userId, ScrapDto dto) throws Exception {
-        String scrapId = egovScrapIdGnrService.getNextStringId();
+        String scrapId = IdGenerationUtil.generateId("SCRAP_", 14);
         Scrap entity = Scrap.builder()
                 .scrapId(scrapId)
                 .scrapNm(dto.getScrapNm())

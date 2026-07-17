@@ -1,17 +1,16 @@
 package nuri.business.service.stats;
 
 import nuri.business.domain.stats.*;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +32,6 @@ class ReportStatsServiceTest {
 
     @Mock
     private DtaUseStatsRepository dtaUseStatsRepository;
-
-    @Mock
-    private EgovIdGnrService reprtStatsIdGnrService;
 
     @Test
     @DisplayName("보고서 통계 목록 조회")
@@ -88,13 +84,12 @@ class ReportStatsServiceTest {
     @Test
     @DisplayName("보고서 통계 등록")
     void insertReprtStats() throws Exception {
-        ReflectionTestUtils.setField(reportStatsService, "reprtStatsIdGnrService", reprtStatsIdGnrService);
-        given(reprtStatsIdGnrService.getNextStringId()).willReturn("REPRT_001");
-        
         ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtType("A").build();
         reportStatsService.insertReprtStats(stats);
 
-        verify(reprtStatsRepository).save(any(ReprtStats.class));
+        ArgumentCaptor<ReprtStats> captor = ArgumentCaptor.forClass(ReprtStats.class);
+        verify(reprtStatsRepository).save(captor.capture());
+        assertThat(captor.getValue().getReprtId()).startsWith("REPRT_");
     }
     
     @Test

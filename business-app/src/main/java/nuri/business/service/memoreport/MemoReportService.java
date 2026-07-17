@@ -8,7 +8,6 @@ import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import java.util.Objects;
 public class MemoReportService extends BaseAbstractService {
 
     private final MemoReportRepository memoReportRepository;
-    private final EgovIdGnrService egovMemoReportIdGnrService;
     private final MemoReportMapper memoReportMapper;
 
     public Page<MemoReportDto> getMemoReportList(String keyword, @NonNull Pageable pageable) {
@@ -49,22 +47,18 @@ public class MemoReportService extends BaseAbstractService {
 
     @Transactional
     public String createMemoReport(String userId, MemoReportDto dto) {
-        try {
-            String id = egovMemoReportIdGnrService.getNextStringId();
-            MemoReport entity = MemoReport.builder()
-                    .rptId(id)
-                    .rptTtl(dto.getRptTtl())
-                    .memoRptYmd(dto.getMemoRptYmd())
-                    .userId(userId)
-                    .rptrId(dto.getRptrId())
-                    .rptCn(dto.getRptCn())
-                    .atchFileId(dto.getAtchFileId())
-                    .build();
-            memoReportRepository.save(entity);
-            return id;
-        } catch (Exception e) {
-            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("MEMO_", 15);
+        MemoReport entity = MemoReport.builder()
+                .rptId(id)
+                .rptTtl(dto.getRptTtl())
+                .memoRptYmd(dto.getMemoRptYmd())
+                .userId(userId)
+                .rptrId(dto.getRptrId())
+                .rptCn(dto.getRptCn())
+                .atchFileId(dto.getAtchFileId())
+                .build();
+        memoReportRepository.save(entity);
+        return id;
     }
 
     @Transactional

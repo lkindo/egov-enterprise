@@ -3,7 +3,6 @@ package nuri.business.service.scrap;
 import nuri.business.domain.scrap.Scrap;
 import nuri.business.domain.scrap.ScrapRepository;
 import nuri.business.service.scrap.dto.ScrapDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,9 +36,6 @@ class ScrapServiceTest {
 
     @Mock
     private ScrapRepository scrapRepository;
-
-    @Mock
-    private EgovIdGnrService egovScrapIdGnrService;
 
     @InjectMocks
     private ScrapService scrapService;
@@ -78,7 +74,6 @@ class ScrapServiceTest {
     void createScrap_Success() throws Exception {
         // Given
         ScrapDto dto = ScrapDto.builder().scrapNm("New").build();
-        given(egovScrapIdGnrService.getNextStringId()).willReturn("S1");
 
         // when
         scrapService.createScrap("user1", dto);

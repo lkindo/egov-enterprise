@@ -10,7 +10,7 @@ import nuri.business.domain.system.content.community.CommunityUserId;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +28,6 @@ public class CommunityService {
     private final CommunityRepository communityRepository;
     private final CommunityUserRepository communityUserRepository;
     private final JPAQueryFactory queryFactory;
-    private final EgovIdGnrService egovCmmntyIdGnrService;
 
     public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
             @org.springframework.lang.NonNull Pageable pageable) {
@@ -69,21 +68,17 @@ public class CommunityService {
 
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
-        try {
-            String cmntyId = egovCmmntyIdGnrService.getNextStringId();
-            Community community = Community.builder()
-                    .cmntyId(cmntyId)
-                    .cmntyNm(dto.getCmntyNm())
-                    .cmntyIntroCn(dto.getCmntyIntroCn())
-                    .regSeCd("REGC01")
-                    .tmpltId(dto.getTmpltId())
-                    .useYn("Y")
-                    .build();
-            return CommunityDto.from(Objects
-                    .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate community ID", e);
-        }
+        String cmntyId = IdGenerationUtil.generateId("CMMNTY_", 13);
+        Community community = Community.builder()
+                .cmntyId(cmntyId)
+                .cmntyNm(dto.getCmntyNm())
+                .cmntyIntroCn(dto.getCmntyIntroCn())
+                .regSeCd("REGC01")
+                .tmpltId(dto.getTmpltId())
+                .useYn("Y")
+                .build();
+        return CommunityDto.from(Objects
+                .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
     }
 
     @Transactional

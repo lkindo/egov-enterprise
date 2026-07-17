@@ -10,9 +10,9 @@ import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,9 +28,6 @@ public class NoteService extends BaseAbstractService {
     private final NoteDomainRepository noteRepository;
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
     private final NoteRecptnDomainRepository noteRecptnRepository;
-
-    @org.springframework.beans.factory.annotation.Qualifier("egovNoteIdGnrService")
-    private final EgovIdGnrService egovNoteIdGnrService;
 
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
         return noteRecptnRepository
@@ -75,7 +72,7 @@ public class NoteService extends BaseAbstractService {
     @Transactional
     public void sendNote(String dsptchUserId, NoteDto dto) {
         try {
-            String noteId = egovNoteIdGnrService.getNextStringId();
+            String noteId = IdGenerationUtil.generateId("NOTE_", 10);
             Note note = Note.builder()
                     .noteId(noteId)
                     .noteTtl(dto.getNoteSj())
@@ -83,7 +80,7 @@ public class NoteService extends BaseAbstractService {
                     .build();
             noteRepository.save(note);
 
-            String trnsmitId = egovNoteIdGnrService.getNextStringId();
+            String trnsmitId = IdGenerationUtil.generateId("NOTE_", 10);
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
                     .noteSndngId(trnsmitId)
                     .note(note)
@@ -102,7 +99,7 @@ public class NoteService extends BaseAbstractService {
                     }
                     anyRecipient = true;
                     NoteRecptn recptn = NoteRecptn.builder()
-                            .noteRcptnId(egovNoteIdGnrService.getNextStringId())
+                            .noteRcptnId(IdGenerationUtil.generateId("NOTE_", 10))
                             .note(note)
                             .noteDsptch(trnsmit)
                             .rcvrId(raw.trim())

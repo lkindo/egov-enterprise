@@ -3,7 +3,6 @@ package nuri.business.service.memoreport;
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.service.memoreport.dto.MemoReportDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,9 +35,6 @@ class MemoReportServiceTest {
 
     @Mock
     private MemoReportRepository memoReportRepository;
-
-    @Mock
-    private EgovIdGnrService egovMemoReportIdGnrService;
 
     @org.mockito.Spy
     nuri.business.service.memoreport.dto.MemoReportMapper memoReportMapper = new nuri.business.service.memoreport.dto.MemoReportMapperImpl();
@@ -124,13 +120,12 @@ class MemoReportServiceTest {
                 .rptrId("reportr1")
                 .memoRptYmd("20240501")
                 .build();
-        given(egovMemoReportIdGnrService.getNextStringId()).willReturn("R1");
 
         // when
         String id = memoReportService.createMemoReport(userId, dto);
 
         // then
-        assertThat(id).isEqualTo("R1");
+        assertThat(id).startsWith("MEMO_");
         verify(memoReportRepository).save(any(MemoReport.class));
     }
 

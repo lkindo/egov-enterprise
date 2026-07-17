@@ -17,8 +17,7 @@ import nuri.business.service.board.dto.BlogMapper;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.springframework.beans.factory.annotation.Qualifier;
+import nuri.foundation.core.util.IdGenerationUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -38,10 +37,6 @@ import java.util.stream.Collectors;
 public class BoardMasterService extends BaseAbstractService {
 
     private final BoardMasterRepository boardMasterRepository;
-    // @Primary egovFileIdGnrService 가 by-name 주입을 이겨 FILE_ 접두사 ID를 반환하던 회귀 방어.
-    // (Spring 은 다중 후보 시 @Primary 를 필드명 매칭보다 우선 해소하므로 @Qualifier 로 명시 고정)
-    @Qualifier("egovBBSMstrIdGnrService")
-    private final EgovIdGnrService egovBBSMstrIdGnrService;
     private final BoardRepository boardRepository;
     private final BoardMasterMapper boardMasterMapper;
     private final BlogMapper blogMapper;
@@ -72,11 +67,7 @@ public class BoardMasterService extends BaseAbstractService {
     public String createBoardMaster(String userId, BoardMasterDto dto) {
         String bbsId = dto.getBbsId();
         if (bbsId == null || bbsId.isEmpty()) {
-            try {
-                bbsId = egovBBSMstrIdGnrService.getNextStringId();
-            } catch (Exception e) {
-                throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate BBS ID");
-            }
+            bbsId = IdGenerationUtil.generateId("BBSMSTR_", 12);
         }
 
         BoardMaster entity = BoardMaster.builder()

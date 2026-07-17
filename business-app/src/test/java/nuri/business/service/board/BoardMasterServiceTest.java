@@ -8,7 +8,6 @@ import nuri.business.service.board.dto.BlogMapperImpl;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
 import nuri.business.service.board.dto.BoardMasterMapperImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,9 +53,6 @@ class BoardMasterServiceTest {
 
     @Mock
     private BoardRepository boardRepository;
-
-    @Mock
-    private EgovIdGnrService egovBBSMstrIdGnrService;
 
     // createBoardMaster 는 save() 대신 EntityManager.persist() 로 신규 INSERT 한다(@MapsId 옵션 낙관적 락 회피)
     @Mock
@@ -128,12 +124,11 @@ class BoardMasterServiceTest {
     void createBoardMaster() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(egovBBSMstrIdGnrService.getNextStringId()).willReturn("BBS_01");
             BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("New Board").build();
 
             String bbsId = boardMasterService.createBoardMaster("user1", dto);
 
-            assertThat(bbsId).isEqualTo("BBS_01");
+            assertThat(bbsId).startsWith("BBSMSTR_");
             verify(entityManager).persist(any(BoardMaster.class));
         }
     }
@@ -218,20 +213,10 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("ID 생성 실패 시 예외 발생")
-    void createBoardMaster_IdGenError() throws Exception {
-        given(egovBBSMstrIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID Gen Error"));
-        BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("Error Board").build();
-
-        assertThrows(BusinessException.class, () -> boardMasterService.createBoardMaster("user1", dto));
-    }
-
-    @Test
     @DisplayName("옵션 필드(블로그, 댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(egovBBSMstrIdGnrService.getNextStringId()).willReturn("BBS_02");
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
                     .blogYn("Y")

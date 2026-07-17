@@ -8,9 +8,9 @@ import nuri.business.domain.addressbook.AddressBookUserRepository;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -28,11 +28,6 @@ public class AddressBookService {
 
     private final AddressBookRepository addressBookRepository;
     private final AddressBookUserRepository addressBookUserRepository;
-
-    @org.springframework.beans.factory.annotation.Qualifier("egovAdbkIdGnrService")
-    private final EgovIdGnrService egovAdbkIdGnrService;
-    @org.springframework.beans.factory.annotation.Qualifier("egovAdbkUserIdGnrService")
-    private final EgovIdGnrService egovAdbkUserIdGnrService;
 
     public Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOgnzId, String searchCnd,
             String searchWrd, @NonNull Pageable pageable) {
@@ -55,7 +50,7 @@ public class AddressBookService {
     @Transactional
     public void createAddressBook(String userId, AddressBookDto dto) {
         try {
-            String adbkId = egovAdbkIdGnrService.getNextStringId();
+            String adbkId = IdGenerationUtil.generateId("ADBK_", 15);
             AddressBook entity = AddressBook.builder()
                     .adbkId(adbkId)
                     .adbkNm(dto.getAdbkNm())
@@ -69,7 +64,7 @@ public class AddressBookService {
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-                    String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
+                    String adbkUserId = IdGenerationUtil.generateId("ADBKUSER_", 11);
                     AddressBookUser userEntity = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
                             .addressBook(entity)
@@ -119,7 +114,7 @@ public class AddressBookService {
                     .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(userDto.getUserId())));
             if (!exists) {
                 try {
-                    String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
+                    String adbkUserId = IdGenerationUtil.generateId("ADBKUSER_", 11);
                     AddressBookUser newUser = AddressBookUser.builder()
                             .adbkConstntId(adbkUserId)
                             .addressBook(entity)

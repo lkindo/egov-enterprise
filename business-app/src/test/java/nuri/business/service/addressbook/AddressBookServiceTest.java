@@ -4,7 +4,6 @@ import nuri.business.domain.addressbook.AddressBook;
 import nuri.business.domain.addressbook.AddressBookRepository;
 import nuri.business.domain.addressbook.AddressBookUserRepository;
 import nuri.business.service.addressbook.dto.AddressBookDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -44,21 +42,13 @@ class AddressBookServiceTest {
     @Mock
     private AddressBookUserRepository addressBookUserRepository;
 
-    @Mock(name = "egovAdbkIdGnrService")
-    private EgovIdGnrService egovAdbkIdGnrService;
-
-    @Mock(name = "egovAdbkUserIdGnrService")
-    private EgovIdGnrService egovAdbkUserIdGnrService;
-
     private AddressBookService addressBookService;
 
     @BeforeEach
     void setUp() {
         addressBookService = new AddressBookService(
             addressBookRepository,
-            addressBookUserRepository,
-            egovAdbkIdGnrService,
-            egovAdbkUserIdGnrService
+            addressBookUserRepository
         );
     }
 
@@ -93,9 +83,8 @@ class AddressBookServiceTest {
 
     @Test
     @DisplayName("주소록 등록 성공")
-    void createAddressBook_Success() throws Exception {
+    void createAddressBook_Success() {
         // Given
-        given(egovAdbkIdGnrService.getNextStringId()).willReturn("ADBK_1");
         AddressBookDto dto = AddressBookDto.builder().adbkNm("New").build();
 
         // When
@@ -121,12 +110,9 @@ class AddressBookServiceTest {
 
     @Test
     @DisplayName("주소록 등록 성공 - 사용자 포함")
-    void createAddressBook_WithUsers_Success() throws Exception {
+    void createAddressBook_WithUsers_Success() {
         // Given
-        given(egovAdbkIdGnrService.getNextStringId()).willReturn("ADBK_1");
-        given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("USER_1");
-        
-        nuri.business.service.addressbook.dto.AddressBookUserDto userDto = 
+        nuri.business.service.addressbook.dto.AddressBookUserDto userDto =
             nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("EMP_1").nm("User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkNm("New").adbkMan(List.of(userDto)).build();
 
@@ -139,19 +125,8 @@ class AddressBookServiceTest {
     }
 
     @Test
-    @DisplayName("주소록 등록 실패 - 예외 발생")
-    void createAddressBook_Failure() throws Exception {
-        // Given
-        given(egovAdbkIdGnrService.getNextStringId()).willThrow(new RuntimeException("Error"));
-        AddressBookDto dto = AddressBookDto.builder().adbkNm("New").build();
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> addressBookService.createAddressBook("user", dto));
-    }
-
-    @Test
     @DisplayName("주소록 수정 성공 - 사용자 추가 및 삭제 포함")
-    void updateAddressBook_WithUserUpdates_Success() throws Exception {
+    void updateAddressBook_WithUserUpdates_Success() {
         // Given
         String adbkId = "ADBK_1";
         AddressBook entity = AddressBook.builder().adbkId(adbkId).adbkNm("Old").build();
@@ -160,9 +135,8 @@ class AddressBookServiceTest {
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
             nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkId(adbkId).build()).build();
         given(addressBookUserRepository.findByAdbkId(adbkId)).willReturn(List.of(existingUser));
-        given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("NEW_USER_ID");
 
-        nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto = 
+        nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto =
             nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").nm("New User").build();
         AddressBookDto dto = AddressBookDto.builder().adbkId(adbkId).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 

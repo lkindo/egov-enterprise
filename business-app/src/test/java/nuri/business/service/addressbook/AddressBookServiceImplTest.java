@@ -3,7 +3,6 @@ package nuri.business.service.addressbook;
 import nuri.business.domain.addressbook.*;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,11 +42,6 @@ class AddressBookServiceImplTest {
     @Mock
     private AddressBookUserRepository addressBookUserRepository;
 
-    @Mock(name = "egovAdbkIdGnrService")
-    private EgovIdGnrService egovAdbkIdGnrService;
-    @Mock(name = "egovAdbkUserIdGnrService")
-    private EgovIdGnrService egovAdbkUserIdGnrService;
-
     @Test
     @DisplayName("주소록 목록 조회")
     void getAddressBookList() {
@@ -79,14 +73,11 @@ class AddressBookServiceImplTest {
 
     @Test
     @DisplayName("주소록 생성 - 성공")
-    void createAddressBook_Success() throws Exception {
+    void createAddressBook_Success() {
         AddressBookDto dto = AddressBookDto.builder()
                 .adbkNm("New Book")
                 .adbkMan(List.of(AddressBookUserDto.builder().nm("User").build()))
                 .build();
-        
-        given(egovAdbkIdGnrService.getNextStringId()).willReturn("A1");
-        given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("AU1");
 
         addressBookService.createAddressBook("user1", dto);
 
@@ -96,10 +87,10 @@ class AddressBookServiceImplTest {
 
     @Test
     @DisplayName("주소록 수정 - 성공")
-    void updateAddressBook_Success() throws Exception {
+    void updateAddressBook_Success() {
         AddressBook entity = AddressBook.builder().adbkId("A1").adbkNm("Old").build();
         given(addressBookRepository.findById("A1")).willReturn(Optional.of(entity));
-        
+
         AddressBookUser existingUser = AddressBookUser.builder().adbkConstntId("AU1").addressBook(AddressBook.builder().adbkId("A1").build()).userId("E1").build();
         given(addressBookUserRepository.findByAdbkId("A1")).willReturn(List.of(existingUser));
 
@@ -108,8 +99,6 @@ class AddressBookServiceImplTest {
                 .adbkNm("New")
                 .adbkMan(List.of(AddressBookUserDto.builder().userId("E2").nm("NewUser").build())) // Add new user, remove E1
                 .build();
-        
-        given(egovAdbkUserIdGnrService.getNextStringId()).willReturn("AU2");
 
         addressBookService.updateAddressBook("user1", dto);
 

@@ -8,7 +8,6 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +44,6 @@ class CommunityServiceImplTest {
     @Mock
     private JPAQuery<Community> jpaQuery;
 
-    @Mock
-    private EgovIdGnrService egovCmmntyIdGnrService;
-
     @Test
     @DisplayName("커뮤니티 생성 - 성공")
     void createCommunity() throws Exception {
@@ -58,16 +54,15 @@ class CommunityServiceImplTest {
                 .cmntyIntroCn("Description")
                 .tmpltId("TMP_01")
                 .build();
-        
-        given(egovCmmntyIdGnrService.getNextStringId()).willReturn("CMMNTY_01");
+
         given(communityRepository.save(any(Community.class))).willAnswer(inv -> inv.getArgument(0));
 
         // when
         CommunityDto created = communityService.createCommunity(userId, dto);
-        
+
         // then
         assertThat(created).isNotNull();
-        assertThat(created.getCmntyId()).isEqualTo("CMMNTY_01");
+        assertThat(created.getCmntyId()).startsWith("CMMNTY_");
         assertThat(created.getCmntyNm()).isEqualTo("Test Community");
         verify(communityRepository, times(1)).save(any(Community.class));
     }

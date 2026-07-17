@@ -6,7 +6,7 @@ import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 public class PopupService {
 
     private final PopupDomainRepository popupRepository;
-    private final EgovIdGnrService egovPopupManageIdGnrService;
 
     public Page<PopupDto> getPopupList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -46,27 +45,23 @@ public class PopupService {
 
     @Transactional
     public String createPopup(String userId, PopupDto dto) {
-        try {
-            String popupId = egovPopupManageIdGnrService.getNextStringId();
-            Popup popup = Popup.builder()
-                    .popupId(popupId)
-                    .popupTtlNm(dto.getPopupTtlNm())
-                    .fileUrl(dto.getFileUrl())
-                    .popupWdthPstn(dto.getPopupWdthPstn())
-                    .popupVrtcPstn(dto.getPopupVrtcPstn())
-                    .popupVrtcSz(dto.getPopupVrtcSz())
-                    .popupWdthSz(dto.getPopupWdthSz())
-                    .ntceBgnde(dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null)
-                    .ntceEndde(dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null)
-                    .stopvewSetupYn(dto.getStopvewSetupYn())
-                    .ntceYn(dto.getNtceYn())
-                    .build();
-            popup.setFrstRgtrId(userId);
-            popupRepository.save(Objects.requireNonNull(popup));
-            return popupId;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate popup ID", e);
-        }
+        String popupId = IdGenerationUtil.generateId("POPUP_", 14);
+        Popup popup = Popup.builder()
+                .popupId(popupId)
+                .popupTtlNm(dto.getPopupTtlNm())
+                .fileUrl(dto.getFileUrl())
+                .popupWdthPstn(dto.getPopupWdthPstn())
+                .popupVrtcPstn(dto.getPopupVrtcPstn())
+                .popupVrtcSz(dto.getPopupVrtcSz())
+                .popupWdthSz(dto.getPopupWdthSz())
+                .ntceBgnde(dto.getNtceBgnde() != null ? LocalDate.parse(dto.getNtceBgnde()) : null)
+                .ntceEndde(dto.getNtceEndde() != null ? LocalDate.parse(dto.getNtceEndde()) : null)
+                .stopvewSetupYn(dto.getStopvewSetupYn())
+                .ntceYn(dto.getNtceYn())
+                .build();
+        popup.setFrstRgtrId(userId);
+        popupRepository.save(Objects.requireNonNull(popup));
+        return popupId;
     }
 
     @Transactional

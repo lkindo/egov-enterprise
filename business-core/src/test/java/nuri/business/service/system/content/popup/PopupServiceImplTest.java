@@ -4,7 +4,6 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
 import nuri.business.service.system.content.popup.dto.PopupDto;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,9 +32,6 @@ class PopupServiceImplTest {
 
     @Mock
     private PopupDomainRepository popupRepository;
-
-    @Mock
-    private EgovIdGnrService egovPopupManageIdGnrService;
 
     @InjectMocks
     private PopupService popupService;
@@ -132,7 +128,7 @@ class PopupServiceImplTest {
 
     @Test
     @DisplayName("팝업 등록 - 성공")
-    void createPopup_Success() throws Exception {
+    void createPopup_Success() {
         // given
         PopupDto dto = PopupDto.builder()
                 .popupTtlNm("Test Popup")
@@ -141,27 +137,13 @@ class PopupServiceImplTest {
                 .stopvewSetupYn("Y")
                 .ntceYn("Y")
                 .build();
-        given(egovPopupManageIdGnrService.getNextStringId()).willReturn("POP_99");
 
         // when
         String popupId = popupService.createPopup("admin", dto);
 
         // then
-        assertThat(popupId).isEqualTo("POP_99");
+        assertThat(popupId).startsWith("POPUP_");
         verify(popupRepository, times(1)).save(any(Popup.class));
-    }
-
-    @Test
-    @DisplayName("팝업 등록 - ID 생성 실패 시 RuntimeException 발생")
-    void createPopup_IdGnrException_ShouldThrowRuntimeException() throws Exception {
-        // given
-        PopupDto dto = PopupDto.builder().popupTtlNm("Test").build();
-        given(egovPopupManageIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID generation fail"));
-
-        // when & then
-        assertThatThrownBy(() -> popupService.createPopup("admin", dto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to generate popup ID");
     }
 
     @Test

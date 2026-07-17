@@ -27,9 +27,6 @@ public class ReportStatsService {
     private final nuri.business.domain.user.repository.UserRepository userRepository;
     private final nuri.business.domain.board.BoardRepository boardRepository;
 
-    @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
-    private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
-
     // ========== 사용자 통계 ==========
 
     /**
@@ -123,7 +120,7 @@ public class ReportStatsService {
      */
     @Transactional
     public void insertReprtStats(ReprtStats reprtStats) throws Exception {
-        String reprtId = reprtStatsIdGnrService.getNextStringId();
+        String reprtId = nuri.foundation.core.util.IdGenerationUtil.generateId("REPRT_", 10);
         ReprtStats newStats = ReprtStats.builder()
                 .reprtId(reprtId)
                 .reprtNm(reprtStats.getReprtNm())
