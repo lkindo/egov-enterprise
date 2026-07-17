@@ -551,10 +551,10 @@ export type InternetSvcGuidanceDto = z.infer<typeof InternetSvcGuidanceDtoSchema
 // GroupManageDto Schema
 // ==========================================================================
 export const GroupManageDtoSchema = z.object({
-  groupId: z.string().min(0).max(30).optional(),
+  groupId: z.string().min(0).max(20).optional(),
   groupNm: z.string().min(0).max(100).optional(),
   groupDc: z.string().min(0).max(4000).optional(),
-  groupCrtYmd: z.string().optional(),
+  groupCrtDt: z.string().optional(),
 });
 export type GroupManageDto = z.infer<typeof GroupManageDtoSchema>;
 
@@ -978,7 +978,7 @@ export type DeptAuthorBatchRequest = z.infer<typeof DeptAuthorBatchRequestSchema
 // ==========================================================================
 export const InstitutionCodeRecptnDtoSchema = z.object({
   ocrnYmd: z.string().min(0).max(8).optional(),
-  instCd: z.string().min(0).max(20).optional(),
+  instCd: z.string().min(0).max(7).optional(),
   jobSn: z.number().optional(),
   chgSeCd: z.string().min(0).max(12).optional(),
   procSe: z.string().min(0).max(1).optional(),
@@ -989,14 +989,14 @@ export const InstitutionCodeRecptnDtoSchema = z.object({
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
-  topInstCd: z.string().min(0).max(20).optional(),
-  uprInstCd: z.string().min(0).max(20).optional(),
-  reprsInstCd: z.string().min(0).max(20).optional(),
+  topInstCd: z.string().min(0).max(7).optional(),
+  uprInstCd: z.string().min(0).max(7).optional(),
+  reprsInstCd: z.string().min(0).max(7).optional(),
   instTypeLclsf: z.string().min(0).max(2).optional(),
   instTypeMclsf: z.string().min(0).max(2).optional(),
   instTypeSclsf: z.string().min(0).max(2).optional(),
-  telno: z.string().min(0).max(20).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
+  telno: z.string().min(0).max(11).optional(),
+  faxNo: z.string().min(0).max(20).optional(),
   crtYmd: z.string().min(0).max(8).optional(),
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),
@@ -2994,21 +2994,21 @@ export type ApiResponsePageResponseInstitutionCodeDto = z.infer<typeof ApiRespon
 // InstitutionCodeDto Schema
 // ==========================================================================
 export const InstitutionCodeDtoSchema = z.object({
-  instCd: z.string().min(0).max(20).optional(),
+  instCd: z.string().min(0).max(7).optional(),
   allInstNm: z.string().min(0).max(100).optional(),
   lwstInstNm: z.string().min(0).max(100).optional(),
   instAbbrNm: z.string().min(0).max(100).optional(),
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
-  topInstCd: z.string().min(0).max(20).optional(),
-  uprInstCd: z.string().min(0).max(20).optional(),
-  reprsInstCd: z.string().min(0).max(20).optional(),
+  topInstCd: z.string().min(0).max(7).optional(),
+  uprInstCd: z.string().min(0).max(7).optional(),
+  reprsInstCd: z.string().min(0).max(7).optional(),
   instTypeLclsf: z.string().min(0).max(2).optional(),
   instTypeMclsf: z.string().min(0).max(2).optional(),
   instTypeSclsf: z.string().min(0).max(2).optional(),
-  telno: z.string().min(0).max(20).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
+  telno: z.string().min(0).max(11).optional(),
+  faxNo: z.string().min(0).max(20).optional(),
   crtYmd: z.string().min(0).max(8).optional(),
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),

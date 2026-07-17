@@ -37,7 +37,7 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(length = 4000)
     private String drctnMttr;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 4000)
     private String excptnMttr;
 
     @Column(length = 20)

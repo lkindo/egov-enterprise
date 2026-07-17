@@ -18,7 +18,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class GroupManageDto {
     /** 그룹ID */
-    @Size(max = 30)
+    @Size(max = 20)
     private String groupId;
     /** 그룹명 */
     @Size(max = 100)
@@ -26,6 +26,6 @@ public class GroupManageDto {
     /** 그룹설명 */
     @Size(max = 4000)
     private String groupDc;
-    /** 그룹생성일 */
-    private String groupCrtYmd;
+    /** 그룹생성일시 (V2_19: group_crt_ymd → group_crt_dt 리네임 동기화) */
+    private String groupCrtDt;
 }

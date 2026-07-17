@@ -24,20 +24,21 @@ public class GroupManage extends BaseEntity {
     @Column(length = 4000)
     private String groupDc;
 
-    private LocalDateTime groupCrtYmd = LocalDateTime.now();
+    // V2_19: 타입(timestamp)-접미사 정합 리네임 group_crt_ymd → group_crt_dt
+    private LocalDateTime groupCrtDt = LocalDateTime.now();
 
     // @SuperBuilder -> 정적 팩토리 @Builder 전환에 따른 전체 인자 private 생성자
-    // groupCrtYmd 는 기존 @Builder.Default 재현: null 이면 기본값(LocalDateTime.now()) 병합
-    private GroupManage(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtYmd) {
+    // groupCrtDt 는 기존 @Builder.Default 재현: null 이면 기본값(LocalDateTime.now()) 병합
+    private GroupManage(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtDt) {
         this.groupId = groupId;
         this.groupNm = groupNm;
         this.groupDc = groupDc;
-        this.groupCrtYmd = groupCrtYmd != null ? groupCrtYmd : LocalDateTime.now();
+        this.groupCrtDt = groupCrtDt != null ? groupCrtDt : LocalDateTime.now();
     }
 
     @Builder
-    public static GroupManage create(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtYmd) {
-        return new GroupManage(groupId, groupNm, groupDc, groupCrtYmd);
+    public static GroupManage create(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtDt) {
+        return new GroupManage(groupId, groupNm, groupDc, groupCrtDt);
     }
 
     public void update(String groupNm, String groupDc) {

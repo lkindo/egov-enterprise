@@ -20,7 +20,7 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(length = 100, nullable = false)
     private String rptTtl;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String rptCn;
 
     @Column(length = 20)

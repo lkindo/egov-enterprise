@@ -28,7 +28,7 @@ public class Note extends BaseEntity {
     @Column(length = 100)
     private String noteTtl;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String noteCn;
 
     @Column(name = "atch_file_id", length = 20)

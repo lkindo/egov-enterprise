@@ -35,8 +35,9 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 3)
     private String ord;
  
-    @Column(length = 2)
-    private String instCycl;
+    // 기관차수 — SSOT 도메인 수N2(NUMERIC(2), V2_19 전환). API 계약(String)은 서비스 경계에서 변환.
+    @Column(columnDefinition = "numeric(2)")
+    private Integer instCycl;
  
     @Column(length = 7)
     private String topInstCd;
@@ -84,7 +85,7 @@ public class InstitutionCode extends BaseEntity {
 
     @Builder
     public InstitutionCode(String instCd, String allInstNm, String lwstInstNm, String instAbbrNm,
-            String odr, String ord, String instCycl, String topInstCd,
+            String odr, String ord, Integer instCycl, String topInstCd,
             String uprInstCd, String reprsInstCd, String instTypeLclsf,
             String instTypeMclsf, String instTypeSclas, String telno, String faxNo,
             String crtYmd, String ablYmd, String ablYn, String chgYmd,
@@ -115,7 +116,7 @@ public class InstitutionCode extends BaseEntity {
     }
  
     public void update(String allInstNm, String lwstInstNm, String instAbbrNm, String odr, String ord,
-            String instCycl, String topInstCd, String uprInstCd, String reprsInstCd,
+            Integer instCycl, String topInstCd, String uprInstCd, String reprsInstCd,
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf, String telno,
             String faxNo, String crtYmd, String ablYmd, String ablYn, String chgYmd,
             String chgTm, String crtrYmd, Long sortOrdr, String lastMdfrId) {

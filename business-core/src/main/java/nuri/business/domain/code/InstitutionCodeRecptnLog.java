@@ -46,8 +46,9 @@ public class InstitutionCodeRecptnLog {
     @Column(length = 3)
     private String ord;
 
-    @Column(length = 2)
-    private String instCycl;
+    // 기관차수 — SSOT 도메인 수N2(NUMERIC(2), V2_19 전환). API 계약(String)은 서비스 경계에서 변환.
+    @Column(columnDefinition = "numeric(2)")
+    private Integer instCycl;
 
     @Column(length = 7)
     private String topInstCd;
@@ -127,7 +128,7 @@ public class InstitutionCodeRecptnLog {
     @Builder
     public InstitutionCodeRecptnLog(InstitutionCodeRecptnLogId id, String chgSeCd, String procSe,
             String etcCd, String allInstNm, String lwstInstNm,
-            String instAbbrNm, String odr, String ord, String instCycl,
+            String instAbbrNm, String odr, String ord, Integer instCycl,
             String topInstCd, String uprInstCd, String reprsInstCd,
             String instTypeLclsf, String instTypeMclsf, String instTypeSclsf,
             String telno, String faxNo, String crtYmd, String ablYmd,

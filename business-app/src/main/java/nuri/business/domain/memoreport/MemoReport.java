@@ -28,7 +28,7 @@ public class MemoReport extends BaseEntity {
     @Column(length = 20, nullable = false)
     private String rptrId;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String rptCn;
 
     @Column(name = "atch_file_id", length = 20)

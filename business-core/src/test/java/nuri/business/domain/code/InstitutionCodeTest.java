@@ -18,7 +18,7 @@ class InstitutionCodeTest {
                 .instAbbrNm("약어")
                 .odr("01")
                 .ord("001")
-                .instCycl("cycl")
+                .instCycl(3)
                 .topInstCd("TOP")
                 .uprInstCd("UP")
                 .reprsInstCd("RPRS")
@@ -43,7 +43,7 @@ class InstitutionCodeTest {
         assertEquals("약어", code.getInstAbbrNm());
         assertEquals("01", code.getOdr());
         assertEquals("001", code.getOrd());
-        assertEquals("cycl", code.getInstCycl());
+        assertEquals(3, code.getInstCycl());
         assertEquals("TOP", code.getTopInstCd());
         assertEquals("UP", code.getUprInstCd());
         assertEquals("RPRS", code.getReprsInstCd());
@@ -67,7 +67,7 @@ class InstitutionCodeTest {
     void testUpdate() {
         InstitutionCode code = InstitutionCode.builder().instCd("I1").build();
         
-        code.update("N_ALL", "N_LOW", "N_ABBR", "1", "2", "cycl", "T2", "U2", "R2",
+        code.update("N_ALL", "N_LOW", "N_ABBR", "1", "2", 5, "T2", "U2", "R2",
                 "L2", "M2", "S2", "T_NEW", "F_NEW", "20210101", "20211231", "1",
                 "20210505", "130000", "20210101", 2L, "user");
 
@@ -76,7 +76,7 @@ class InstitutionCodeTest {
         assertEquals("N_ABBR", code.getInstAbbrNm());
         assertEquals("1", code.getOdr());
         assertEquals("2", code.getOrd());
-        assertEquals("cycl", code.getInstCycl());
+        assertEquals(5, code.getInstCycl());
         assertEquals("T2", code.getTopInstCd());
         assertEquals("U2", code.getUprInstCd());
         assertEquals("R2", code.getReprsInstCd());

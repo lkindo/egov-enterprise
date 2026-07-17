@@ -24,10 +24,10 @@ public class OnlineManual extends BaseEntity {
     @Column(length = 12, nullable = false)
     private String onlnMnlSeCd;
 
-    @Column(length = 1000)
+    @Column(length = 4000)
     private String onlnMnlDfn;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String onlnMnlExpln;
 
     // 전체 own 필드 위임 생성자 (팩토리 전용, 시그니처 충돌 방지 위해 private)

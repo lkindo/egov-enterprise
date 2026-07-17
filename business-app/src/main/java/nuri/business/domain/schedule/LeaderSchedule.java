@@ -33,7 +33,7 @@ public class LeaderSchedule extends BaseEntity implements Serializable {
     @Column(length = 100, nullable = false)
     private String schdlNm;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String schdlCn;
 
     @Column(length = 12)

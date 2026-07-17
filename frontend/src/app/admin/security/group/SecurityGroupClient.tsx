@@ -153,7 +153,7 @@ export default function SecurityGroupClient() {
  accessor: (item: GroupManage) => (
  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
  <Calendar size={12} className="opacity-40" />
- {item.groupCrtYmd || 'N/A'}
+ {item.groupCrtDt || 'N/A'}
  </div>
  ),
  className: 'w-48'

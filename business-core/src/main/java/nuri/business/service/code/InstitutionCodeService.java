@@ -68,7 +68,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
-                .instCycl(dto.getInstCycl())
+                .instCycl(parseInstCycl(dto.getInstCycl()))
                 .topInstCd(dto.getTopInstCd())
                 .uprInstCd(dto.getUprInstCd())
                 .reprsInstCd(dto.getReprsInstCd())
@@ -128,7 +128,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .instAbbrNm(dto.getInstAbbrNm())
                 .odr(dto.getOdr())
                 .ord(dto.getOrd())
-                .instCycl(dto.getInstCycl())
+                .instCycl(parseInstCycl(dto.getInstCycl()))
                 .topInstCd(dto.getTopInstCd())
                 .uprInstCd(dto.getUprInstCd())
                 .reprsInstCd(dto.getReprsInstCd())
@@ -155,7 +155,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
     public void updateInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
             entity.update(dto.getAllInstNm(), dto.getLwstInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
-                    dto.getInstCycl(), dto.getTopInstCd(), dto.getUprInstCd(), dto.getReprsInstCd(),
+                    parseInstCycl(dto.getInstCycl()), dto.getTopInstCd(), dto.getUprInstCd(), dto.getReprsInstCd(),
                     dto.getInstTypeLclsf(), dto.getInstTypeMclsf(), dto.getInstTypeSclsf(), dto.getTelno(),
                     dto.getFaxNo(), dto.getCrtYmd(), dto.getAblYmd(), dto.getAblYn(), dto.getChgYmd(),
                     dto.getChgTm(), dto.getCrtrYmd(), dto.getSortOrdr(), "SYSTEM");
@@ -169,6 +169,18 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
         institutionCodeRepository.deleteById(dto.getInstCd());
     }
 
+    /**
+     * 기관차수 API 계약(String) ↔ 물리 도메인 수N2(Integer, V2_19) 경계 변환.
+     * V2_16(sys_log prcs_tm)과 동일 패턴 — DTO 는 String 유지로 Breaking Change 차단.
+     */
+    private static Integer parseInstCycl(String instCycl) {
+        return (instCycl == null || instCycl.isBlank()) ? null : Integer.valueOf(instCycl.trim());
+    }
+
+    private static String formatInstCycl(Integer instCycl) {
+        return instCycl == null ? null : String.valueOf(instCycl);
+    }
+
     private InstitutionCodeDto toDto(InstitutionCode entity) {
         return InstitutionCodeDto.builder()
                 .instCd(entity.getInstCd())
@@ -177,7 +189,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
-                .instCycl(entity.getInstCycl())
+                .instCycl(formatInstCycl(entity.getInstCycl()))
                 .topInstCd(entity.getTopInstCd())
                 .uprInstCd(entity.getUprInstCd())
                 .reprsInstCd(entity.getReprsInstCd())
@@ -209,7 +221,7 @@ public class InstitutionCodeService extends BaseAbstractService implements EgovI
                 .instAbbrNm(entity.getInstAbbrNm())
                 .odr(entity.getOdr())
                 .ord(entity.getOrd())
-                .instCycl(entity.getInstCycl())
+                .instCycl(formatInstCycl(entity.getInstCycl()))
                 .topInstCd(entity.getTopInstCd())
                 .uprInstCd(entity.getUprInstCd())
                 .reprsInstCd(entity.getReprsInstCd())

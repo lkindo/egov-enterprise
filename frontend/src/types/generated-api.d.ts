@@ -4969,7 +4969,7 @@ export interface components {
             groupId?: string;
             groupNm?: string;
             groupDc?: string;
-            groupCrtYmd?: string;
+            groupCrtDt?: string;
         };
         /** @description 부서 정보 DTO */
         DeptManageDto: {

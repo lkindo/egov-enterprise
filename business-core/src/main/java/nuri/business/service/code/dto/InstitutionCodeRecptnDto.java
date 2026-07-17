@@ -20,7 +20,7 @@ public class InstitutionCodeRecptnDto {
     private String ocrnYmd;
 
     @Schema(description = "기관코드")
-    @Size(max = 20)
+    @Size(max = 7)
     private String instCd;
 
     @Schema(description = "작업일련번호")
@@ -63,15 +63,15 @@ public class InstitutionCodeRecptnDto {
     private String instCycl;
 
     @Schema(description = "최상위기관코드")
-    @Size(max = 20)
+    @Size(max = 7)
     private String topInstCd;
 
     @Schema(description = "상위기관코드")
-    @Size(max = 20)
+    @Size(max = 7)
     private String uprInstCd;
 
     @Schema(description = "대표기관코드")
-    @Size(max = 20)
+    @Size(max = 7)
     private String reprsInstCd;
 
     @Schema(description = "기관유형대분류")
@@ -87,11 +87,11 @@ public class InstitutionCodeRecptnDto {
     private String instTypeSclsf;
 
     @Schema(description = "전화번호")
-    @Size(max = 20)
+    @Size(max = 11)
     private String telno;
 
     @Schema(description = "팩스번호")
-    @Size(max = 11)
+    @Size(max = 20)
     private String faxNo;
 
     @Schema(description = "생성일자")

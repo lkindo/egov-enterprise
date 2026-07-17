@@ -23,7 +23,7 @@ public class CnsltManage extends BaseEntity {
     @Column(length = 100)
     private String dscsnTtl;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String dscsnCn;
 
     @Column(length = 1)
@@ -71,7 +71,7 @@ public class CnsltManage extends BaseEntity {
     @Column(length = 20)
     private String atchFileId;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String procCn;
 
     @Column(length = 8)

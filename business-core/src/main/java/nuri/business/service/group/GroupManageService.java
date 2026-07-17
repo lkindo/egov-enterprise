@@ -123,7 +123,7 @@ public class GroupManageService {
                 .groupId(entity.getGroupId())
                 .groupNm(entity.getGroupNm())
                 .groupDc(entity.getGroupDc())
-                .groupCrtYmd(entity.getGroupCrtYmd() != null ? entity.getGroupCrtYmd().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "")
+                .groupCrtDt(entity.getGroupCrtDt() != null ? entity.getGroupCrtDt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "")
                 .build();
     }
 }

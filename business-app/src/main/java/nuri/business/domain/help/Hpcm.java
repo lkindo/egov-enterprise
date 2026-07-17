@@ -24,7 +24,7 @@ public class Hpcm extends BaseEntity {
     @Column(length = 1000, nullable = false)
     private String hlpDfn;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 4000)
     private String hlpExpln;
 
     private Hpcm(String hlpId, String hlpSeCd, String hlpDfn, String hlpExpln) {

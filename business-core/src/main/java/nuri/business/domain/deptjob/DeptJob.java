@@ -25,7 +25,7 @@ public class DeptJob extends BaseEntity {
     @Column(length = 100)
     private String deptTaskNm;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String deptTaskCn;
 
     @Column(length = 20)

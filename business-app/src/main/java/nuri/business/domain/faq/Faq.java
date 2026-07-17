@@ -22,7 +22,7 @@ public class Faq extends BaseEntity {
     @Column(length = 100, nullable = false)
     private String qstnTtl;
 
-    @Column(columnDefinition = "TEXT", length = 4000)
+    @Column(length = 4000)
     private String qstnCn;
 
     @Column(length = 4000)

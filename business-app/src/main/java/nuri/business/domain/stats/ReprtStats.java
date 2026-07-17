@@ -24,7 +24,8 @@ public class ReprtStats extends BaseEntity {
     @Column(length = 20)
     private String reprtId;
 
-    @Column(length = 256)
+    // 물리 컬럼은 표준 용어(보고서명=RPTP_NM, V2_19)로 리네임 — Java 필드/JSON 계약은 유지
+    @Column(name = "rptp_nm", length = 256)
     private String reprtNm;
 
     @Column(length = 1)
