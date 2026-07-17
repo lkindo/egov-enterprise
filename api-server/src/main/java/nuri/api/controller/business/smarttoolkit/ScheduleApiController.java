@@ -5,14 +5,12 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.schedule.ScheduleService;
 import nuri.business.service.schedule.dto.ScheduleDto;
-import nuri.foundation.security.service.CustomUserDetails;
+import nuri.business.security.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +30,7 @@ public class ScheduleApiController {
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
         Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
@@ -43,7 +41,7 @@ public class ScheduleApiController {
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getDeptScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
         // schdlSeCd = "1" is Dept in eGov
         Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("1", userId, pageable);
@@ -54,7 +52,7 @@ public class ScheduleApiController {
     @GetMapping("/monthly")
     public ResponseEntity<ApiResponse<List<ScheduleDto>>> getMonthlySchedule(
             @RequestParam String yearMonth) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         List<ScheduleDto> schedules = egovScheduleService.getMonthlySchedule(userId, yearMonth);
         return ResponseEntity.ok(ApiResponse.success(schedules));
     }
@@ -64,7 +62,7 @@ public class ScheduleApiController {
     public ResponseEntity<ApiResponse<List<ScheduleDto>>> getScheduleByDateRange(
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         List<ScheduleDto> schedules = egovScheduleService.getScheduleListByDateRange(userId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(schedules));
     }
@@ -80,7 +78,7 @@ public class ScheduleApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         String newId = egovScheduleService.createSchedule(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(newId));
     }
@@ -88,7 +86,7 @@ public class ScheduleApiController {
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable String id, @Valid @RequestBody ScheduleDto dto) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         egovScheduleService.updateSchedule(id, userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -96,16 +94,13 @@ public class ScheduleApiController {
     @Operation(summary = "일정 삭제", description = "일정을 삭제합니다.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable String id) {
-        String userId = getCurrentUserId();
+        String userId = currentLoginId();
         egovScheduleService.deleteSchedule(id, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    private String getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            return userDetails.getLoginId(); // [정체성] 일정 소유/필터/감사는 frstRgtrId(=loginId) 기준
-        }
-        return "anonymous";
+    /** 현재 인증 주체의 loginId(일정 소유/필터/감사 frstRgtrId 저장 축). 미인증 폴백 "anonymous"(기존 동작 보존; 프로덕션은 Security 가 미인증을 선차단). */
+    private String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId().orElse("anonymous");
     }
 }

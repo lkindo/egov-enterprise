@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service("egovLoginPolicyManageService")
 @RequiredArgsConstructor
+@Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(insert/update/delete)는 메서드 @Transactional 이 오버라이드
 public class LoginPolicyManageService extends BaseAbstractService {
 
     private final LoginPolicyRepository loginPolicyRepository;

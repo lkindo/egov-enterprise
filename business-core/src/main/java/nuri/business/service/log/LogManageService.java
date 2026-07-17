@@ -15,6 +15,7 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 
 @Service("egovLogManageService")
+@Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(logInsertSysLog)는 메서드 @Transactional 이 오버라이드
 public class LogManageService extends BaseAbstractService {
 
     private final SysLogRepository sysLogRepository;
