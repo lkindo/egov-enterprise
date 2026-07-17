@@ -49,14 +49,14 @@ public class AdministCodeApiController {
     @Operation(summary = "행정코드 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
-        administCodeService.createAdministCode(dto, currentEsntlId());
+        administCodeService.createAdministCode(dto, currentLoginId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 수정")
     @PutMapping("/{code}")
     public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @Valid @RequestBody AdministCodeDto dto) {
-        administCodeService.updateAdministCode(code, dto, currentEsntlId());
+        administCodeService.updateAdministCode(code, dto, currentLoginId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -67,8 +67,8 @@ public class AdministCodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /** 현재 인증 주체의 esntlId(행정코드 감사 컬럼 저장 축). 미인증 폴백 "anonymous"(기존 동작 보존; 프로덕션은 Security 가 미인증을 선차단). */
-    private String currentEsntlId() {
-        return SecurityUtil.getCurrentEsntlId().orElse("anonymous");
+    /** 현재 인증 주체의 loginId(감사 컬럼 lastMdfrId=@LastModifiedBy 저장 축과 동일). 미인증 폴백 "anonymous"(프로덕션은 Security 가 미인증을 선차단). */
+    private String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId().orElse("anonymous");
     }
 }

@@ -46,7 +46,7 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createBoardMaster(@Valid @RequestBody BoardMasterDto dto) {
-        String userId = currentEsntlId();
+        String userId = currentLoginId();
         String bbsId = boardMasterService.createBoardMaster(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(bbsId));
     }
@@ -54,7 +54,7 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 수정")
     @PutMapping("/{bbsId}")
     public ResponseEntity<ApiResponse<Void>> updateBoardMaster(@PathVariable String bbsId, @Valid @RequestBody BoardMasterDto dto) {
-        String userId = currentEsntlId();
+        String userId = currentLoginId();
         dto.setBbsId(bbsId);
         boardMasterService.updateBoardMaster(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -63,13 +63,13 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 삭제")
     @DeleteMapping("/{bbsId}")
     public ResponseEntity<ApiResponse<Void>> deleteBoardMaster(@PathVariable String bbsId) {
-        String userId = currentEsntlId();
+        String userId = currentLoginId();
         boardMasterService.deleteBoardMaster(userId, bbsId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /** 현재 인증 주체의 esntlId(게시판 마스터 감사 컬럼 저장 축). 미인증 폴백 "anonymous"(기존 동작 보존; 프로덕션은 Security 가 미인증을 선차단). */
-    private String currentEsntlId() {
-        return SecurityUtil.getCurrentEsntlId().orElse("anonymous");
+    /** 현재 인증 주체의 loginId(감사 컬럼 lastMdfrId=@LastModifiedBy 저장 축과 동일). 미인증 폴백 "anonymous"(프로덕션은 Security 가 미인증을 선차단). */
+    private String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId().orElse("anonymous");
     }
 }
