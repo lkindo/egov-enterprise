@@ -26,10 +26,19 @@
 | tb_role_info | 258 | **15** | 0 |
 | authrt_role_map / role_prgrm_map / user_authrt_map | 3 / 52 / 24 | **불변** | 0 |
 
-## 4. 동반 처리
+## 4. 동반 처리 — 🚨 api-docs 계보 역전 발견·정정 (V2_18 false-completion)
 
-- **frontend/api-docs.json 리포 등재** (사용자 승인): bootRun 수렴 기동 산출물(204 paths), git 이력 전무·비ignore
-  상태였음 → 오프라인 `codegen:file`의 SSOT 입력이므로 커밋. codegen diff 0 기왕 검증(V2_18 태스크 §4).
+- 등재 직후 pre-push 로그에서 codegen 이 `../api-docs.json`(**루트**)을 읽는 것을 포착 → 실측:
+  **루트 api-docs.json(추적본)=stale(07-15, V2_17 이전 계약)** vs **frontend/api-docs.json=신계약(07-17 수렴 추출본,
+  MemoReportDto date-time·sortOrdr int64·@Size 축소 반영)**. V2_18 세션이 추출본을 codegen 이 읽지 않는
+  `frontend/` 경로에 떨어뜨리고 루트 교체를 누락 → **"codegen diff 0 = FE 영향 없음 실증"은 stale 원본 대비
+  측정이라 무효**(false-completion).
+- **정정**: 신계약 → 루트 승격 + 미아 파일 제거 + codegen:file/zod 재생성. 실측 diff = Zod 제약 조임
+  (pstinstCd 20→12·roleId/authrtCd 30→20·evnt*Ymd 20→8 등, V2_18 @Size 와 정합) + CustomUserDetails.authorityCodes
+  신필드 + FileDto 블록 재배치(z.lazy 라 순서 무해) + springdoc 경로 출력순서 변동 노이즈.
+  **`npx tsc --noEmit` exit 0 — 타입 파손 없음, 실제 FE 영향은 Zod 런타임 제약 강화뿐.**
+- **교훈**: "생성물 diff 0" 검증은 **codegen 이 실제로 읽는 경로의 원본을 교체한 뒤**에만 유효하다.
+  api-docs 추출 시 정본 위치=리포 루트(`openapi-typescript ../api-docs.json`), frontend/ 하위 아님.
 - P4 잔여 "죽은 스캐너 2파일 삭제"는 4323ee46d에서 기왕 완료 확인(check-db-standard.js 등) — 잔여 목록에서 제거.
 - 미푸시 7커밋(P0~P5 로드맵 전체) + 본 세션 커밋 → origin/main 푸시 (사용자 승인).
 

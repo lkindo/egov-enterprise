@@ -44,6 +44,7 @@ export const CustomUserDetailsSchema = z.object({
   roleName: z.string().optional(),
   lockAt: z.string().optional(),
   authorCode: z.string().optional(),
+  authorityCodes: z.array(z.string().optional()).optional(),
 });
 export type CustomUserDetails = z.infer<typeof CustomUserDetailsSchema>;
 
@@ -66,7 +67,7 @@ export const UserDtoSchema = z.object({
   endTelno: z.string().min(0).max(4).optional(),
   mbrTypeCd: z.string().min(0).max(20).optional(),
   faxNo: z.string().min(0).max(11).optional(),
-  pstinstCd: z.string().min(0).max(20).optional(),
+  pstinstCd: z.string().min(0).max(12).optional(),
   ognzId: z.string().min(0).max(20).optional(),
   groupId: z.string().min(0).max(20).optional(),
   homeAddr: z.string().min(0).max(300).optional(),
@@ -436,7 +437,7 @@ export type SurveyTemplateDto = z.infer<typeof SurveyTemplateDtoSchema>;
 // RoleManageDto Schema
 // ==========================================================================
 export const RoleManageDtoSchema = z.object({
-  roleId: z.string().min(0).max(30).optional(),
+  roleId: z.string().min(0).max(20).optional(),
   roleNm: z.string().min(0).max(100),
   rolePatrn: z.string().min(0).max(300).optional(),
   roleExpln: z.string().min(0).max(4000).optional(),
@@ -682,7 +683,7 @@ export type BannerDto = z.infer<typeof BannerDtoSchema>;
 // AuthorManageDto Schema
 // ==========================================================================
 export const AuthorManageDtoSchema = z.object({
-  authrtCd: z.string().min(0).max(30),
+  authrtCd: z.string().min(0).max(20),
   authrtNm: z.string().min(0).max(60),
   authrtExpln: z.string().min(0).max(200).optional(),
   authrtCrtYmd: z.string().optional(),
@@ -697,14 +698,14 @@ export const EventInfoDtoSchema = z.object({
   bizCd: z.string().min(0).max(30).optional(),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
-  evntBgngYmd: z.string().min(0).max(20).optional(),
-  evntEndYmd: z.string().min(0).max(20).optional(),
+  evntBgngYmd: z.string().min(0).max(8).optional(),
+  evntEndYmd: z.string().min(0).max(8).optional(),
   evntUseCnt: z.number().optional(),
   picNm: z.string().min(0).max(300).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
-  evntTypeCd: z.string().min(0).max(30).optional(),
+  evntTypeCd: z.string().min(0).max(12).optional(),
   evntAprvYn: z.string().min(0).max(1).optional(),
-  evntAprvYmd: z.string().min(0).max(20).optional(),
+  evntAprvYmd: z.string().min(0).max(8).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),
@@ -1861,35 +1862,6 @@ export const ApiResponseHpcmDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseHpcmDto = z.infer<typeof ApiResponseHpcmDtoSchema>;
-
-// ==========================================================================
-// ApiResponseListFileDto Schema
-// ==========================================================================
-export const ApiResponseListFileDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
-
-// ==========================================================================
-// FileDto Schema
-// ==========================================================================
-export const FileDtoSchema = z.object({
-  atchFileId: z.string().min(0).max(30).optional(),
-  fileSn: z.number().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.string().optional(),
-});
-export type FileDto = z.infer<typeof FileDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseFaqDto Schema
@@ -3492,6 +3464,35 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListFileDto Schema
+// ==========================================================================
+export const ApiResponseListFileDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
+
+// ==========================================================================
+// FileDto Schema
+// ==========================================================================
+export const FileDtoSchema = z.object({
+  atchFileId: z.string().min(0).max(30).optional(),
+  fileSn: z.number().optional(),
+  fileStreCours: z.string().optional(),
+  streFileNm: z.string().optional(),
+  orignlFileNm: z.string().optional(),
+  fileExtsn: z.string().optional(),
+  fileMg: z.number().optional(),
+  fileCn: z.string().min(0).max(4000).optional(),
+  crtDt: z.string().optional(),
+});
+export type FileDto = z.infer<typeof FileDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseEventInfoDto Schema
