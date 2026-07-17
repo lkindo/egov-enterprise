@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import javax.sql.DataSource;
 
@@ -37,19 +36,9 @@ public class LegacyConfig {
         return dataSource;
     }
 
-    @Bean(name = "messageSource")
-    public ReloadableResourceBundleMessageSource messageSource() {
-        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.setBasenames(
-                "classpath:/egovframework/message/messages",
-                "classpath:/egovframework/message/com/message-common",
-                "classpath:/egovframework/message/com/message-validation",
-                "classpath:/org/egovframe/rte/fdl/idgnr/messages/idgnr",
-                "classpath:/org/egovframe/rte/fdl/property/messages/properties");
-        messageSource.setDefaultEncoding("UTF-8");
-        messageSource.setCacheSeconds(60);
-        return messageSource;
-    }
+    // [정리 2026-07-18] messageSource 빈 이중정의 해소 — foundation EgovMessageConfig.messageSource(전 프로파일,
+    // 동일 basename 5종, 빈명 "messageSource")가 단독 제공하므로 여기의 @Profile("!test") 중복 정의를 제거.
+    // (⚠@Profile("!test") 라 전체 테스트 미로드 — 컴파일+동일-basename 확인으로 확증, prod-boot 은 §4.1 보류)
 
     @Bean
     public nuri.foundation.core.config.ApplicationContextProvider applicationContextProvider() {

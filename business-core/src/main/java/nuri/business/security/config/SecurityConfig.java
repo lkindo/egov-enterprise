@@ -32,12 +32,12 @@ public class SecurityConfig {
         }
 
         @Bean
-        @SuppressWarnings("deprecation")
         public PasswordEncoder passwordEncoder() {
+                // 신규 비번=BCrypt. 옛 SHA-256 은 EgovAuthenticationProvider 가 검증 후 로그인 시 BCrypt 로 재해싱 마이그레이션.
+                // (구 NoOp("egov") 항목 제거 — 도달 불가 死항목이자 OWASP footgun)
                 String encodingId = "bcrypt";
                 Map<String, PasswordEncoder> encoders = new HashMap<>();
                 encoders.put("bcrypt", new BCryptPasswordEncoder());
-                encoders.put("egov", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance());
                 return new DelegatingPasswordEncoder(encodingId, encoders);
         }
 

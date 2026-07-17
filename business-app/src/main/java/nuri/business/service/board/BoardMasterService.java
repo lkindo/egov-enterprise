@@ -91,7 +91,7 @@ public class BoardMasterService extends BaseAbstractService {
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         entity.registerOption(dto.getAnsYn(), dto.getStsfdgYn());
         // assigned String @Id + @MapsId 옵션은 save()→merge 경로에서 옵션에 spurious UPDATE(낙관적 락 409)를
-        // 유발한다. 신규 생성이므로 persist 로 명시 INSERT 한다. (시드 EgovTestDataConfig 도 동일 패턴)
+        // 유발한다. 신규 생성이므로 persist 로 명시 INSERT 한다.
         entityManager.persist(entity);
         return entity.getBbsId();
     }

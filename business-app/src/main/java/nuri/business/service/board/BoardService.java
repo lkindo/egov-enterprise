@@ -35,9 +35,8 @@ import java.util.List;
 
 
 /**
- * JPA 기반 게시판 비즈니스 로직 구현 클래스
- * - 전자정부 표준프레임워크 5.0 명세에 맞춘 기능 구현
- * - EgovAbstractServiceImpl 상속 및 BoardService 인터페이스 구현
+ * JPA 기반 게시판 비즈니스 로직 서비스
+ * - BaseAbstractService(공통 유틸 POJO) 상속 (구 EgovAbstractServiceImpl 상속·인터페이스는 2026-07 제거)
  */
 @Slf4j
 @Service

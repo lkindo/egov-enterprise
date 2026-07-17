@@ -30,7 +30,7 @@ public class ScrapService extends BaseAbstractService {
                 .map(this::convertToDto);
     }
 
-    /** 레거시 별칭(구 EgovScrapService default) — getScrapList 위임. */
+    /** getMyScrapList 별칭 — getScrapList 위임(하위호환). */
     public Page<ScrapDto> getMyScrapList(String userId, @NonNull Pageable pageable) {
         return getScrapList(userId, pageable);
     }
