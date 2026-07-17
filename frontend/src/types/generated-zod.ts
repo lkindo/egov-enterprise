@@ -202,26 +202,6 @@ export const MainImageDtoSchema = z.object({
 export type MainImageDto = z.infer<typeof MainImageDtoSchema>;
 
 // ==========================================================================
-// LeaderScheduleDto Schema
-// ==========================================================================
-export const LeaderScheduleDtoSchema = z.object({
-  schdlId: z.string().min(0).max(20).optional(),
-  leaderId: z.string().min(0).max(20).optional(),
-  leaderNm: z.string().optional(),
-  schdlNm: z.string().min(0).max(100),
-  schdlCn: z.string().min(0).max(4000).optional(),
-  schdlBgngYmd: z.string().min(0).max(8).optional(),
-  schdlEndYmd: z.string().min(0).max(8).optional(),
-  crtDt: z.string().optional(),
-  schdlSeCd: z.string().min(0).max(12).optional(),
-  schdlPlcNm: z.string().min(0).max(100).optional(),
-  reptSeCd: z.string().min(0).max(12).optional(),
-  schdlImprtCd: z.string().min(0).max(12).optional(),
-  schdlPicId: z.string().min(0).max(20).optional(),
-});
-export type LeaderScheduleDto = z.infer<typeof LeaderScheduleDtoSchema>;
-
-// ==========================================================================
 // InformalSanctionDto Schema
 // ==========================================================================
 export const InformalSanctionDtoSchema = z.object({
@@ -695,7 +675,7 @@ export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 // ==========================================================================
 export const EventInfoDtoSchema = z.object({
   evntId: z.string().min(0).max(20).optional(),
-  bizCd: z.string().min(0).max(30).optional(),
+  evntNm: z.string().min(0).max(200).optional(),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
   evntBgngYmd: z.string().min(0).max(8).optional(),
@@ -1672,82 +1652,6 @@ export const ApiResponseSentMailDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseSentMailDto = z.infer<typeof ApiResponseSentMailDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseLeaderScheduleDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseLeaderScheduleDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseLeaderScheduleDtoSchema).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponsePageResponseLeaderScheduleDto = z.infer<typeof ApiResponsePageResponseLeaderScheduleDtoSchema>;
-
-// ==========================================================================
-// PageResponseLeaderScheduleDto Schema
-// ==========================================================================
-export const PageResponseLeaderScheduleDtoSchema = z.object({
-  list: z.array(z.lazy(() => LeaderScheduleDtoSchema)).optional(),
-  total: z.number().optional(),
-  page: z.number().optional(),
-  size: z.number().optional(),
-  totalPage: z.number().optional(),
-});
-export type PageResponseLeaderScheduleDto = z.infer<typeof PageResponseLeaderScheduleDtoSchema>;
-
-// ==========================================================================
-// ApiResponseLeaderScheduleDto Schema
-// ==========================================================================
-export const ApiResponseLeaderScheduleDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => LeaderScheduleDtoSchema).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponseLeaderScheduleDto = z.infer<typeof ApiResponseLeaderScheduleDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseLeaderStatusDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseLeaderStatusDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseLeaderStatusDtoSchema).optional(),
-  timestamp: z.string().optional(),
-});
-export type ApiResponsePageResponseLeaderStatusDto = z.infer<typeof ApiResponsePageResponseLeaderStatusDtoSchema>;
-
-// ==========================================================================
-// LeaderStatusDto Schema
-// ==========================================================================
-export const LeaderStatusDtoSchema = z.object({
-  leaderId: z.string().min(0).max(20).optional(),
-  leaderNm: z.string().optional(),
-  orgnztNm: z.string().optional(),
-  leaderSttsCd: z.string().min(0).max(12).optional(),
-  leaderSttusNm: z.string().optional(),
-  crtDt: z.string().optional(),
-});
-export type LeaderStatusDto = z.infer<typeof LeaderStatusDtoSchema>;
-
-// ==========================================================================
-// PageResponseLeaderStatusDto Schema
-// ==========================================================================
-export const PageResponseLeaderStatusDtoSchema = z.object({
-  list: z.array(z.lazy(() => LeaderStatusDtoSchema)).optional(),
-  total: z.number().optional(),
-  page: z.number().optional(),
-  size: z.number().optional(),
-  totalPage: z.number().optional(),
-});
-export type PageResponseLeaderStatusDto = z.infer<typeof PageResponseLeaderStatusDtoSchema>;
 
 // ==========================================================================
 // ApiResponseInformalSanctionDto Schema

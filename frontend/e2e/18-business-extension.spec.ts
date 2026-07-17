@@ -13,12 +13,7 @@ test.describe('Tier 18: Business Extensions & Identity Governance', () => {
         await businessPage.approveFirstPendingSanction('E2E Automated Decision: Operational Validation');
     });
 
-    test('LSM: Leader Schedule Management Access', async ({ businessPage }) => {
-        await businessPage.gotoLsm();
-        // Verify dashboard components
-        await expect(businessPage.page.getByText(/실시간 일정 매트릭스|간부 상태 모니터링/i).first()).toBeVisible();
-        await expect(businessPage.page.getByText(/전체_등록_일정|활성_간부_수/i).first()).toBeVisible();
-    });
+    // [2026-07-17] LSM(간부일정) 도메인 제거 — 0행·계약파손·사경화 실측(A그룹 leader b). 케이스 삭제.
 
     test('HPCM: Help Content Management Access', async ({ businessPage }) => {
         await businessPage.gotoHpcm();

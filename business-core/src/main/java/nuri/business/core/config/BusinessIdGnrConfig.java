@@ -58,11 +58,6 @@ public class BusinessIdGnrConfig {
         return createIdGnrService("CTSNN_ID", "CTSNN_", 10);
     }
 
-    @Bean(name = "egovLeaderSchdlIdGnrService")
-    public EgovIdGnrService egovLeaderSchdlIdGnrService() {
-        return createIdGnrService("ids", "SCHDL_", 20);
-    }
-
     @Bean(name = "egovScrapIdGnrService")
     public EgovIdGnrService egovScrapIdGnrService() {
         return createIdGnrService("ids", "SCRAP_", 14);

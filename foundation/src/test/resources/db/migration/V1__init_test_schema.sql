@@ -185,7 +185,7 @@ CREATE MEMORY TABLE "public"."tb_event_info"(
     "crt_dt" TIMESTAMP(6),
     "evnt_use_cnt" BIGINT,
     "mdfcn_dt" TIMESTAMP(6),
-    "biz_cd" CHARACTER VARYING(20),
+    "evnt_nm" CHARACTER VARYING(200),
     "evnt_aprv_ymd" CHARACTER VARYING(20),
     "evnt_bgng_ymd" CHARACTER VARYING(20),
     "evnt_end_ymd" CHARACTER VARYING(20),

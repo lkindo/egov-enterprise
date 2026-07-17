@@ -166,7 +166,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       const testLogs = [
         { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전", type: "TEST" },
         { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전", type: "TEST" },
-        { id: "TEST_03", testName: "LeaderScheduleServiceTest.getLeaderStatusList_withKeyword", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" },
+        { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" },
         { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전", type: "TEST" }
       ];
       return testLogs.find(t => t.id === idStr) || null;
@@ -339,7 +339,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     const testLogs = [
       { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전" },
       { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전" },
-      { id: "TEST_03", testName: "LeaderScheduleServiceTest.getLeaderStatusList_withKeyword", queries: 4, max: 10, status: "SAFE", time: "8분 전" },
+      { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전" },
       { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전" }
     ];
 
@@ -1005,7 +1005,7 @@ function TestDetailView({ test }: { test: any }) {
     "TEST_03": {
       summary: "대용량 일괄 조회: 부서장 상태 키워드 매핑 및 일정 일괄 조회 성능 통과",
       stacks: [
-        { sql: "SELECT * FROM tb_leader_status WHERE dept_id IN (...)", table: "tb_leader_status", type: "SELECT" },
+        { sql: "SELECT * FROM tb_note_info WHERE note_id IN (...)", table: "tb_note_info", type: "SELECT" },
         { sql: "SELECT * FROM tb_schedule WHERE creator_id IN (...)", table: "tb_schedule", type: "SELECT" }
       ]
     },

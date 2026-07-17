@@ -29,7 +29,7 @@ export default function EventManagementClient() {
  const [rceptBgngYmd, setRceptBgngYmd] = useState('');
  const [rceptEndYmd, setRceptEndYmd] = useState('');
  const [form, setForm] = useState<Partial<EventInfo>>({
- bizCd: '',
+ evntNm: '',
  evntCn: '',
  evntBgngYmd: '',
  evntEndYmd: '',
@@ -56,7 +56,7 @@ export default function EventManagementClient() {
  setRceptBgngYmd('');
  setRceptEndYmd('');
  setForm({
- bizCd: '',
+ evntNm: '',
  evntCn: '',
  evntBgngYmd: '',
  evntEndYmd: '',
@@ -107,7 +107,7 @@ export default function EventManagementClient() {
  accessor: (event) => (
  <div className="flex flex-col gap-1 py-1">
  <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
- {event.bizCd}
+ {event.evntNm}
  </span>
  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
  {event.evntBgngYmd} ~ {event.evntEndYmd}
@@ -277,12 +277,12 @@ export default function EventManagementClient() {
  <div className="col-span-2 space-y-2">
  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Event_Name</Label>
  <Input 
- value={form.bizCd}
- onChange={(e) => setForm({...form, bizCd: e.target.value})}
+ value={form.evntNm}
+ onChange={(e) => setForm({...form, evntNm: e.target.value})}
  placeholder="행사 명칭을 입력하십시오"
  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
  required
- maxLength={30}
+ maxLength={200}
  />
  </div>
  <div className="col-span-2 space-y-2">

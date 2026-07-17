@@ -198,34 +198,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/leader-schedules/{schdlId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 간부 일정 상세 조회
-         * @description 특정 간부 일정의 상세 정보를 조회합니다.
-         */
-        get: operations["getLeaderSchedule"];
-        /**
-         * 간부 일정 수정
-         * @description 간부 일정 정보를 수정합니다.
-         */
-        put: operations["updateLeaderSchedule"];
-        post?: never;
-        /**
-         * 간부 일정 삭제
-         * @description 간부 일정 정보를 삭제합니다.
-         */
-        delete: operations["deleteLeaderSchedule"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/ism/{informalSanctionId}": {
         parameters: {
             query?: never;
@@ -1451,30 +1423,6 @@ export interface paths {
          * @description 새로운 메일을 작성하여 발송합니다.
          */
         post: operations["sendMail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/leader-schedules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 간부 일정 목록 조회
-         * @description 간부 일정 목록을 페이징하여 조회합니다.
-         */
-        get: operations["getLeaderSchedules"];
-        put?: never;
-        /**
-         * 간부 일정 등록
-         * @description 새로운 간부 일정을 등록합니다.
-         */
-        post: operations["insertLeaderSchedule"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3291,26 +3239,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/leader-schedules/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 간부 상태 목록 조회
-         * @description 간부 상태 목록을 페이징하여 조회합니다.
-         */
-        get: operations["getLeaderStatuses"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -4440,33 +4368,6 @@ export interface components {
              */
             crtDt?: string;
         };
-        /** @description 간부일정 정보 */
-        LeaderScheduleDto: {
-            /** @description 일정아이디 */
-            schdlId?: string;
-            /** @description 간부아이디 */
-            leaderId?: string;
-            /** @description 간부명 */
-            leaderNm?: string;
-            /** @description 일정제목 */
-            schdlNm: string;
-            /** @description 일정내용 */
-            schdlCn?: string;
-            /** @description 일정시작일시 */
-            schdlBgngYmd?: string;
-            /** @description 일정종료일시 */
-            schdlEndYmd?: string;
-            /**
-             * Format: date-time
-             * @description 등록일시
-             */
-            crtDt?: string;
-            schdlSeCd?: string;
-            schdlPlcNm?: string;
-            reptSeCd?: string;
-            schdlImprtCd?: string;
-            schdlPicId?: string;
-        };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
             /** @description 비정형 결재 ID */
@@ -5164,7 +5065,7 @@ export interface components {
              * @description 행사 명칭
              * @example 사내 인공지능 해커톤 캠페인
              */
-            bizCd?: string;
+            evntNm?: string;
             /**
              * @description 행사 연도
              * @example 2026
@@ -6275,76 +6176,6 @@ export interface components {
             data?: components["schemas"]["SentMailDto"];
             /** Format: date-time */
             timestamp?: string;
-        };
-        ApiResponsePageResponseLeaderScheduleDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseLeaderScheduleDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        PageResponseLeaderScheduleDto: {
-            list?: components["schemas"]["LeaderScheduleDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseLeaderScheduleDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["LeaderScheduleDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        ApiResponsePageResponseLeaderStatusDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseLeaderStatusDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        /** @description 간부 상태 정보 DTO */
-        LeaderStatusDto: {
-            /** @description 간부아이디 */
-            leaderId?: string;
-            /** @description 간부명 */
-            leaderNm?: string;
-            /** @description 조직명 */
-            orgnztNm?: string;
-            /** @description 간부상태코드 */
-            leaderSttsCd?: string;
-            /** @description 간부상태명 */
-            leaderSttusNm?: string;
-            /**
-             * Format: date-time
-             * @description 등록일시
-             */
-            crtDt?: string;
-        };
-        PageResponseLeaderStatusDto: {
-            list?: components["schemas"]["LeaderStatusDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
         };
         ApiResponseInformalSanctionDto: {
             success?: boolean;
@@ -8448,77 +8279,6 @@ export interface operations {
             header?: never;
             path: {
                 imageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getLeaderSchedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 일정 ID */
-                schdlId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseLeaderScheduleDto"];
-                };
-            };
-        };
-    };
-    updateLeaderSchedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schdlId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LeaderScheduleDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteLeaderSchedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schdlId: string;
             };
             cookie?: never;
         };
@@ -11813,53 +11573,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SentMailDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    getLeaderSchedules: {
-        parameters: {
-            query: {
-                keyword?: string;
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseLeaderScheduleDto"];
-                };
-            };
-        };
-    };
-    insertLeaderSchedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LeaderScheduleDto"];
             };
         };
         responses: {
@@ -15175,29 +14888,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getLeaderStatuses: {
-        parameters: {
-            query: {
-                keyword?: string;
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseLeaderStatusDto"];
                 };
             };
         };

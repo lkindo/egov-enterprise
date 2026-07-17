@@ -2,7 +2,7 @@ import client from '@/lib/api/client';
 
 export interface EventInfo {
   evntId: string;
-  bizCd: string;     // Mapping eventNm to bizCd
+  evntNm: string;    // 행사명 (V2_22: biz_cd 오용 정화)
   evntCn: string;
   evntBgngYmd: string; // Mapping eventBeginDe to evntBgngYmd
   evntEndYmd: string;  // Mapping eventEndDe to evntEndYmd

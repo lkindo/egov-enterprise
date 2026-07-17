@@ -13,12 +13,6 @@ export class BusinessExtensionPage {
         await expect(this.page.getByText(/인포멀 생션 아키텍처|약식결재/i).first()).toBeVisible({ timeout: 15000 });
     }
 
-    async gotoLsm() {
-        console.log('>>> [Business] Navigating to Leader Schedule Management (LSM)');
-        await this.page.goto('/admin/system/lsm');
-        await expect(this.page.getByText(/간부 일정 관리|LSM/i).first()).toBeVisible({ timeout: 15000 });
-    }
-
     async gotoHpcm() {
         console.log('>>> [Business] Navigating to Help Content Management (HPCM)');
         await this.page.goto('/admin/system/hpcm');

@@ -24,9 +24,9 @@ public class EventInfoDto {
     @Size(max = 20)
     private String evntId;
 
-    @Schema(description = "행사 명칭", example = "사내 인공지능 해커톤 캠페인", maxLength = 30)
-    @Size(max = 30)
-    private String bizCd; // Mapping bsnsCode to eventNm as a temporary measure if name is missing
+    @Schema(description = "행사 명칭", example = "사내 인공지능 해커톤 캠페인", maxLength = 200)
+    @Size(max = 200)
+    private String evntNm;
 
     @Schema(description = "행사 연도", example = "2026")
     @Size(max = 4)
