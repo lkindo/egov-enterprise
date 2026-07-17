@@ -234,6 +234,63 @@ async function cleanup() {
       console.warn(`  => Manual cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
+    // 11. Cleanup Security Artifacts (Authorities: ROLE_E2E_, Groups: GROUP_E2E_, Roles: URL_E2E_)
+    // 02-admin-system.spec.ts 가 생성하는 권한/그룹/롤이 정리 대상에 없어 라이브 DB 에
+    // 가비지가 축적됐음(2026-07-17 실측 411+155행 수동 정리). 재축적 방지.
+    console.log('>>> Cleaning up test security artifacts (roles/groups/authorities)...');
+    try {
+      const rolesRes = await axios.get(`${API_BASE}/admin/system/roles`, {
+        headers,
+        params: { size: 100 }
+      });
+      const roles = rolesRes.data.data?.list || rolesRes.data.data?.content || [];
+      const testRoles = roles.filter((r: any) =>
+        r.roleId?.startsWith('URL_E2E_') || r.roleNm?.startsWith('E2E Role')
+      );
+      for (const role of testRoles) {
+        process.stdout.write(`  - Deleting Role: ${role.roleNm} (${role.roleId})... `);
+        await axios.delete(`${API_BASE}/admin/system/roles/${role.roleId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testRoles.length} role(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Role cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+    try {
+      const groupsRes = await axios.get(`${API_BASE}/admin/system/groups`, {
+        headers,
+        params: { searchKeyword: 'E2E' }
+      });
+      const groups = groupsRes.data.data?.list || groupsRes.data.data?.content || [];
+      const testGroups = groups.filter((g: any) =>
+        g.groupId?.startsWith('GROUP_E2E_') || g.groupNm?.startsWith('E2E Group')
+      );
+      for (const group of testGroups) {
+        process.stdout.write(`  - Deleting Group: ${group.groupNm} (${group.groupId})... `);
+        await axios.delete(`${API_BASE}/admin/system/groups/${group.groupId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testGroups.length} group(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Group cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+    try {
+      const authRes = await axios.get(`${API_BASE}/admin/system/authorities`, {
+        headers,
+        params: { size: 100 }
+      });
+      const authorities = authRes.data.data?.list || authRes.data.data?.content || [];
+      const testAuths = authorities.filter((a: any) => a.authrtCd?.startsWith('ROLE_E2E_'));
+      for (const auth of testAuths) {
+        process.stdout.write(`  - Deleting Authority: ${auth.authrtNm} (${auth.authrtCd})... `);
+        await axios.delete(`${API_BASE}/admin/system/authorities/${auth.authrtCd}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testAuths.length} authority(ies) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Authority cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
     console.log('>>> [DB Cleanup] All test data removed successfully!\n');
   } catch (error: any) {
     const errorMsg = error.response?.data?.message || error.message;
