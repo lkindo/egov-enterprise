@@ -16,17 +16,18 @@
 
 | 테이블 | 성격 | 개인정보 | 처리 | 보존기간(권장) |
 |---|---|---|---|---|
-| `tb_web_log` | 접속기록(요청 URL·IP) | dmnd_user_id(loginId)·IP | 보존기간 만료 배치 파기 | **1~2년** (인수처 결정) |
-| `tb_sys_log` | 시스템 처리 로그 | 처리주체 | 보존기간 만료 배치 파기 | 1~2년 |
-| `tb_login_log` | 로그인 이력 | 로그인 주체 | 보존기간 만료 배치 파기 | 1~2년 (기록경로 복원 시, 아래 §4) |
-| `tb_user_log` | 개인 사용통계 | dmnd_user_id(**esntl_id, FK**) | **사용자 삭제 시 즉시 파기** + 잔여 백스톱 배치 | 13개월(백스톱) |
+| `tb_web_log` | 접속기록(요청 URL·IP) | dmnd_user_id(loginId)·IP | 보존기간 만료 배치 파기 | **2년(확정 2026-07-17)** |
+| `tb_sys_log` | 시스템 처리 로그 | 처리주체 | 보존기간 만료 배치 파기 | **2년** |
+| `tb_login_log` | 로그인 이력 | 로그인 주체 | 보존기간 만료 배치 파기 | **2년** (기록경로 복원 시, 아래 §4) |
+| `tb_user_log` | 개인 사용통계 | dmnd_user_id(**esntl_id, FK**) | **사용자 삭제 시 즉시 파기** + 잔여 백스톱 배치 | **2년(백스톱)** |
 | `tb_privacy_log` | 개인정보 조회 로그 | dmnd_user_id·IP·조회정보 | (현재 0행·기록경로 死) — 인수처 활성화 시 접속기록으로 편입 | 1~2년 |
 | `tb_inst_cd_rcptn_log` | 기관코드 수신 로그 | 없음(개인정보 무관) | 보존 대상 아님 | — |
 
 ## 3. 배치 동작 (LogRetentionScheduler)
 
-- **기본 비활성**: `nuri.log.retention.enabled=false`. 인수처가 보존기간 수치를 확정한 뒤 켠다.
-- 설정: `nuri.log.retention.{web,sys,login,user}-months`, `nuri.log.retention.cron`(기본 `0 0 4 * * *`, Asia/Seoul).
+- **활성**(`nuri.log.retention.enabled=true`, 2026-07-17 정책 확정). 환경별 재정의: `LOG_RETENTION_ENABLED=false`
+  로 끌 수 있고, **테스트 프로파일은 비활성**(application-test.yml). 적용 시점 실측: 2년 초과 로그 0건(최고령 2026-07-12) → 현재 삭제 0건.
+- 설정(application.yml): `nuri.log.retention.{web,sys,login,user}-months=24`, `nuri.log.retention.cron`(기본 `0 0 4 * * *`, Asia/Seoul).
 - **전량파기 방지 하한 가드**: 보존월이 **법정 최저(12개월) 미만**이면 해당 테이블 삭제를 **건너뛴다**(WARN 로그).
   `enabled=true` 인데 월수 미설정(0)/음수로 cutoff 가 '오늘'이 되어 접속기록 전량이 파기되는 사고를 코드가 차단한다.
 - **삭제 술어**: `occr_ymd < cutoff`(web/user) 및 `crt_dt < cutoffTs`(login — sargable 정정 완료). `tb_web_log`
@@ -46,9 +47,9 @@
 | tb_web_log·tb_sys_log·tb_login_log | **보존** — 접속기록 보존의무. 만료 시 배치 파기(가명화하지 않음) |
 | 감사컬럼(frst_rgtr_id/last_mdfr_id)의 loginId 스냅샷 | **보존** — 행위자 표기(키 규약 ②, 의도된 설계) |
 
-## 5. 제품 결정 대기 (인수처 확정 필요)
+## 5. 제품 결정 (일부 확정)
 
-- **보존기간 수치**: 접속기록 1년 vs 2년(고유식별정보/5만명↑ 프로파일에 따름). user_log 백스톱은 더 짧게(예: 13개월) 가능.
-- **법적 트랙**: 보존의무 원형보존(본 정책) vs 사용자 삭제 시 가명화 추가(얹으면 전 감사컬럼 일관성 범위도 결정).
+- ~~**보존기간 수치**~~ → **확정(2026-07-17): 접속기록·백스톱 전부 2년(24개월)**. §2·§3 반영, 스케줄러 활성.
+- **법적 트랙**(미확정): 보존의무 원형보존(본 정책) vs 사용자 삭제 시 가명화 추가(얹으면 전 감사컬럼 일관성 범위도 결정).
 - **tb_login_log 기록경로 복원**: 로그인 성공/실패 이력을 살릴지(AuthServiceImpl 에서 EgovLogService.logLogin 연결)
   vs 死코드(0행·호출자 0) 제거. 어느 쪽도 데이터 파손 없음.

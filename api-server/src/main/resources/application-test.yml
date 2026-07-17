@@ -1,3 +1,10 @@
+# 테스트 컨텍스트에선 로그 보존 스케줄러를 비활성화(H2 대상 스케줄 삭제 배제, 컨텍스트 단순 유지).
+# 보존 로직 자체는 LogRetentionSchedulerTest(단위)가 검증한다.
+nuri:
+  log:
+    retention:
+      enabled: false
+
 spring:
   main:
     allow-bean-definition-overriding: true
