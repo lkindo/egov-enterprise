@@ -1,8 +1,9 @@
 # 품질 스코어 근본원인 분석 (Quality Score Root-Cause Analysis)
 
 > 작성: 2026-07-15 · 기준: 코드 실물 검증 기반 재평가(2026-07-13 baseline → 2026-07-15, 백엔드 하드닝 17커밋 반영)
+> **갱신: 2026-07-17 — DB 축 재측정 추가(§1.1). V2_12~V2_23 DB 표준화 스윕 반영, 라이브 OCI DB 실측. 완성도/연결부/단순성 83·79·72 → 89·88·82.**
 > 방법론: DB/BE/FE/연결부 4차원 독립 assessor가 커밋 메시지가 아닌 **코드 실물을 Read/Grep 로 검증**해 채점 → 메인 재검증. 이 저장소의 감사수치 과장 이력을 감안해 **과장 배제** 원칙 적용.
-> 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md)
+> 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md) · [log-retention-policy.md](../04-operations/log-retention-policy.md)
 
 ---
 
@@ -16,6 +17,24 @@
 | **연결부(seam)** | 계약체인 / 적합성 / 추적성 | 64 / 58 / 48 | **65 / 66 / 54** | +1 / **+8** / +6 |
 
 **핵심 관찰**: 최대 이동은 **BE 완성도(+5)** 와 **SEAM 적합성(+8)** — 백엔드 정확성/보안/정체성에 집중된 세션 성격과 정합. DB·FE 는 각 +1 소폭. 점수는 여전히 **55~83 대**에 머무는데, 이는 **버그 때문이 아니라(버그는 대거 수정됨) 구조·아키텍처 부채** 때문이다.
+
+### 1.1. DB 축 재측정 (2026-07-17, 라이브 OCI DB 실측)
+
+> 07-15 이후 DB 표준화 스윕(V2_12~V2_23: 고아 정리·FK 확장·메타사전 정규화·terms→domains 매핑·길이/타입 정합·死도메인 제거)이 대량 반영되어 DB 축만 재측정. 방법론 동일(실물 SELECT·과장 배제). **baseline(07-15) 은 델타 추적 위해 상단 표에 보존.**
+
+| 축 | 07-15 | **07-17** | Δ |
+|---|:---:|:---:|:---:|
+| **완성도** | 83 | **89** | **+6** |
+| **연결부** | 79 | **88** | **+9** |
+| **단순성** | 72 | **82** | **+10** |
+
+**실측 지표(근거)**: FK 18→**58**(`pg_constraint`), 고아 행 730→**0**(V2_12+FK VALIDATED 구조적 불가), UNIQUE 4→**9**, 테이블 104→**92**(死테이블 정리), 빈(0행) 테이블 **~2**, tb_ 명명 **85/85**·char 고정형 **0**·감사컬럼 4종 **85/85**(전면 준수), cross-type 드리프트 **0**·길이 분열 그룹 **0**(V2_16/18/19), TEXT 잔존 **2**(meta), **SSOT terms→domains 매핑 0→13,173/13,173(100%)+FK**(V2_17), 집행 게이트 1→**3**(+SchemaNaming/+SecurityAuth 린터), Flyway 수렴 **rank 28(V2_23) 전량 success**.
+
+- **연결부(+9, 최대 이동)**: §2.D 가 지목한 "SSOT 전파 미정합(도메인 매핑 컬럼 자체 부재)"이 V2_17 로 100% 해소 → **헌법 제5조 3단계(용어→도메인 타입·길이) 기계검증이 사상 처음 가능**. validate 클린(cross-type/길이분열 0)·FK↔삭제플로우 결속이 보강.
+- **단순성(+10)**: cross-type·길이분열 완전 소거 + 死도메인(leader·club 등) 정리 + biz_cd 오용(사업코드↔행사명) 정화 + 명명 드리프트(online→onln) 해소로 "이행 중 스냅샷" 지저분함이 크게 감소.
+- **완성도(+6)**: FK 3배 확장·고아 0·수렴 클린·명명/감사 100%·명명 린터 신설.
+
+**여전히 90대를 못 넘는 캡(정직)**: ① **CHECK 제약 0**(도메인 검증이 앱 레이어에만) ② **FK 미완**(로그/인증 테이블 esntlId/loginId 키혼용 — [user-reference-key-policy.md](user-reference-key-policy.md) 로 문서화됐으나 미통일) ③ **빈 DB 부팅 불가**(프레임워크化 미완, §2.B — 스키마 품질과 별개 축) ④ UNIQUE 의 JPA `@Table(uniqueConstraints)` 미러링 미완 ⑤ currentTimeMillis PK 등 코드 레벨 레거시. **캡의 핵심은 DB 스키마 자체가 아니라 § 2.B(프레임워크化)·§2.D 잔여(불변식 미러)·§2.C(횡단관심사)** 다.
 
 > ⚠ 채점 노트: SEAM 적합성 +8 은 정체성 footgun 봉합·인가 일관성·409 표준화·재발방지 린터를 근거로 하며, 하나의 사실오류(ApprovalApiController.confirm 을 "미검증"으로 나열했으나 실제로는 `aprvrId` 소유권 가드 존재)가 있으나 이는 점수를 낮추는 방향이라 66 은 유효(오히려 약간 보수적).
 
@@ -42,8 +61,9 @@ eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **�
 
 ### D. SSOT(단일 진실원) 전파 미정합 — 불변식이 한 레이어에만 존재
 DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 논다.**
-- **증거**: 이번에 추가한 UNIQUE 제약(V2_4/V2_5)이 **JPA `@Table(uniqueConstraints)` 에 미러링 안 됨**(불변식이 SQL 에만) · DTO↔Zod wire-shape 드리프트를 계약게이트가 **backend-shape↔api-docs 괴리는 탐지 못함** · meta_standard 가 명명 SSOT 라면서 빌드게이트 미강제.
-- **누르는 점수**: SEAM 계약체인(65, 사실상 정체)·추적성(54). "한 곳 바꾸면 나머지가 자동 정합"이 안 되므로 계약체인 점수가 근본적으로 낮다.
+- **증거**: 이번에 추가한 UNIQUE 제약(V2_4/V2_5)이 **JPA `@Table(uniqueConstraints)` 에 미러링 안 됨**(불변식이 SQL 에만) · DTO↔Zod wire-shape 드리프트를 계약게이트가 **backend-shape↔api-docs 괴리는 탐지 못함** · ~~meta_standard 가 명명 SSOT 라면서 빌드게이트 미강제~~.
+- **✅ 부분 해소(2026-07-17)**: meta_standard **terms→domains 매핑 부재**(당시 5컬럼뿐)가 V2_17 로 100% 복원(13,173/13,173 + FK) → **헌법 제5조 3단계 기계검증 원천 확보**. 명명 검증은 **SchemaNamingLinterTest 신설(P4)** 로 빌드게이트화. **잔여**: UNIQUE↔JPA 미러링·DTO↔Zod backend-shape 게이트는 미해결(계약체인 캡 유지).
+- **누르는 점수**: SEAM 계약체인(65, 사실상 정체)·추적성(54). "한 곳 바꾸면 나머지가 자동 정합"이 안 되므로 계약체인 점수가 근본적으로 낮다. *(DB 축 연결부는 §1.1 재측정에서 79→88 로 상승 — SSOT 매핑 복원 반영.)*
 
 ### E. 정체성 모델의 근원적 혼란 (esntlId vs loginId)
 `getUsername()`=esntlId 인데 감사/소유권=loginId. **두 ID 개념을 상속했지만 사용 계약을 통일하지 않았다.**
