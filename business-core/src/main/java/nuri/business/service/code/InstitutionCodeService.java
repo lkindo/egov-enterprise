@@ -10,7 +10,7 @@ import nuri.business.repository.code.InstitutionCodeRepository;
 import nuri.business.service.code.dto.InstitutionCodeDto;
 import nuri.business.service.code.dto.InstitutionCodeRecptnDto;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.security.access.prepost.PreAuthorize;
+import nuri.foundation.security.annotation.AdminOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -21,7 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
-@Service("egovInstitutionCodeService")
+@Service
 public class InstitutionCodeService extends BaseAbstractService {
 
     private final InstitutionCodeRepository institutionCodeRepository;
@@ -109,7 +109,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOnly
     public void insertInstitutionCode(InstitutionCodeDto dto) {
         if (institutionCodeRepository.existsById(dto.getInstCd())) {
             throw new BusinessException(CodeErrorCode.DUPLICATE_CODE);
@@ -143,7 +143,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOnly
     public void updateInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
             entity.update(dto.getAllInstNm(), dto.getLwstInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
@@ -155,7 +155,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOnly
     public void deleteInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.deleteById(dto.getInstCd());
     }

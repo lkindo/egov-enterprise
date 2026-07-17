@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * - 전자정부 프레임워크 5.0 호환성 인증 요건 충실
  * - BaseAbstractService 상속으로 중복 코드 제거
  */
-@Service("egovLogService")
+@Service
 @Transactional(readOnly = true)
 public class LogService extends BaseAbstractService {
 

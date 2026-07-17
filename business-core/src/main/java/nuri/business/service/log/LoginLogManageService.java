@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 
-@Service("egovLoginLogManageService")
+@Service
 public class LoginLogManageService extends BaseAbstractService {
 
     private final LoginLogRepository loginLogRepository;

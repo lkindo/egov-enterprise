@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * - BaseAbstractService 상속으로 중복 코드 제거
  */
 @Slf4j
-@Service("egovUserService")
+@Service
 @Transactional(readOnly = true)
 public class UserService extends BaseAbstractService {
 

@@ -40,7 +40,7 @@ import java.util.List;
  * - EgovAbstractServiceImpl 상속 및 BoardService 인터페이스 구현
  */
 @Slf4j
-@Service("egovBoardService")
+@Service
 public class BoardService extends BaseAbstractService {
 
         private final BoardRepository boardRepository;

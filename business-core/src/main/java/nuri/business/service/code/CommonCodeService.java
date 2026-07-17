@@ -12,7 +12,7 @@ import nuri.business.service.code.dto.CommonCodeSaveRequest;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import nuri.foundation.security.annotation.AdminOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -30,7 +30,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
-@Service("egovCommonCodeService")
+@Service
 public class CommonCodeService extends BaseAbstractService {
 
         private final CommonCodeRepository commonCodeRepository;
@@ -60,7 +60,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .collect(Collectors.toList());
         }
 
-        @PreAuthorize("hasRole('ADMIN')")
+        @AdminOnly
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {

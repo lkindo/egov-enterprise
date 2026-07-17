@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -57,7 +57,7 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 등록", description = "새로운 부서 업무함을 등록합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
+    @AdminOrSystem
     @PostMapping("/boxes")
     public ResponseEntity<ApiResponse<String>> createDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
@@ -68,7 +68,7 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 수정", description = "기존 부서 업무함 정보를 수정합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
+    @AdminOrSystem
     @PutMapping("/boxes/{deptJobbxId}")
     public ResponseEntity<ApiResponse<Void>> updateDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
@@ -80,7 +80,7 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 삭제", description = "부서 업무함을 삭제합니다.")
-    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM')")
+    @AdminOrSystem
     @DeleteMapping("/boxes/{deptJobbxId}")
     public ResponseEntity<ApiResponse<Void>> deleteDeptJobBox(
             @LoginUser CustomUserDetails userDetails,

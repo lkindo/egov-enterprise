@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service("egovLoginPolicyManageService")
+@Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(insert/update/delete)는 메서드 @Transactional 이 오버라이드
 public class LoginPolicyManageService extends BaseAbstractService {

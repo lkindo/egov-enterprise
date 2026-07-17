@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service("egovDeptJobService")
+@Service
 @Transactional(readOnly = true)
 public class DeptJobService extends BaseAbstractService {
 

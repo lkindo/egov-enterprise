@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
  * - CodeService 인터페이스 구현
  */
-@Service("egovCodeService")
+@Service
 @Transactional(readOnly = true)
 public class CodeService extends BaseAbstractService {
 

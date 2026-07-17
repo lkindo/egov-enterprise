@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * 템플릿 정보 서비스
  */
-@Service("egovTemplateService")
+@Service
 @Transactional(readOnly = true)
 public class TmplatInfoService extends BaseAbstractService {
 

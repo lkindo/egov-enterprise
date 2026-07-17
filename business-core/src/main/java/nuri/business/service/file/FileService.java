@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족을 위한 서비스 구현
  */
 @Slf4j
-@Service("egovFileService")
+@Service
 @Transactional(readOnly = true)
 public class FileService extends BaseAbstractService {
 
