@@ -82,7 +82,9 @@
 
 **여전히 60대에 묶는 캡(정직)**: ① **§2.A 잔여 egov 결합(남은 절반)** — IdGnr·상속만 벗었을 뿐 security·crypto(EgovFileScrty/ARIA)·property·message·**컴포넌트스캔 벽**이 프로덕션 활성 잔존(오히려 더 손대기 어려운 보안·암호 계약 쪽이 남음) ② **PK 채번 93% 편중**(69/74 수동, @GeneratedValue 5 — "수동 vs JPA관리" 근본 파편은 D1[위험] 동결) ③ **§2.G false-completion 死주석**(소폭 증가) — BoardService.java:40(EgovAbstractServiceImpl/인터페이스 이중 오서술)·BoardMasterService.java:94(EgovTestDataConfig)·ScrapService.java:33(별칭 shim)이 삭제된 스캐폴드 참조 ④ **i18n 반쪽 스캐폴드**(MessageSource 2중 정의 vs 실사용 1곳, 하드코딩 한글 지배) ⑤ **egov 오명명 잔존**(nuri.* Egov* 4종 + egov 빈ID 5종) ⑥ **split-package**(business-app/core 동일 FQN 테스트 중복).
 
-> ⚠ 채점 노트: §2.A 반영분은 실물 확증(EgovIdGnr 런타임 0·config Glob 0·상속 0·死config 0)과 커밋 주장이 일치했고 전체 백엔드 테스트로 게이트 검증됐다. 단순성 +6 은 '최심층 캡의 두 가닥(상속+ID채번) 소멸 + config 28빈·死배선 5종 제거'의 확정 이득이며, 상한은 잔여 egov 런타임 결합(보안·암호·프로퍼티·메시지·스캔)과 PK 93% 편중이 누른다. 이번 세션은 §2.A 의 IdGnr·상속 절반만 손댔고, 남은 절반(crypto/security/property/message/scan)은 [위험-설계결정]으로 미착수.
+> ⚠ 채점 노트: §2.A 반영분은 실물 확증(EgovIdGnr 런타임 0·config Glob 0·상속 0·死config 0)과 커밋 주장이 일치했고 전체 백엔드 테스트로 게이트 검증됐다. 단순성 +6 은 '최심층 캡의 두 가닥(상속+ID채번) 소멸 + config 28빈·死배선 5종 제거'의 확정 이득이며, 상한은 잔여 egov 런타임 결합(보안·암호·프로퍼티·메시지·스캔)과 PK 93% 편중이 누른다. 이번 세션은 §2.A 의 IdGnr·상속 절반을 손댔다.
+>
+> ⚠ **후속(2026-07-18, 재측정 이후)**: **D4 컴포넌트스캔 벽 해체**(ApiServerApplication basePackages egovframework/org.egovframe + 제외필터 25줄 제거, 커밋 fdd1efab5) — 실측 결과 우리가 소비하는 egov 는 전부 우리 @Configuration 이 정의하는 라이브러리 인스턴스라 스캔 제거와 무관했다(부팅 egov 결합 소멸). **D5 비번 crypto** 는 재측정이 "미착수"로 오분류했으나 실은 **BCrypt DelegatingPasswordEncoder + 로그인 시 SHA-256→BCrypt 투명 마이그레이션이 이미 완비**(EgovAuthenticationProvider:76-83)돼 있었다. 따라서 위 캡 ①의 "scan/security/crypto 미착수" 서술은 **scan=해체됨·비번=이미 현대화됨**으로 정정한다(잔여 egov 결합은 property/message config·ARIA 데이터암호·레거시 해시검증용 EgovFileScrty 로 축소). 단순성 점수는 재측정 시점(68) 유지 — D4 는 추가 소폭 개선이나 별도 재측정 없이 정성 반영.
 
 ---
 
