@@ -69,7 +69,8 @@
 
 ### A. 미완결 레거시 현대화 — 두 패러다임의 공존 (가장 깊은 원인)
 eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **새 레이어를 위에 얹었을 뿐 재설계하지 않았다.** 구·신 패러다임이 한 코드베이스에 공존한다.
-- **증거**: 감사컬럼 `frst_rgtr_id` 를 투표자 업무식별자로 오버로드 · 오명명 패키지(`usermanagement`=실제 부서관리) · `Egov*` 접두 레거시 네이밍 · split-package 지뢰(core 승격 잔재로 동일 FQN 이 core/app 중복) · `System.currentTimeMillis()` PK 채번 12곳.
+- **증거(표면부채 — 2026-07-17 대부분 해소)**: ~~감사컬럼 `frst_rgtr_id` 오버로드~~(poll 이중투표 fix) · ~~오명명 패키지 `usermanagement`~~(→`service/department` 정명) · ~~`Egov*` 접두 네이밍~~(인터페이스 39·빈ID 12·`EgovAbstractServiceImpl` 상속·死 config 4 제거) · ~~split-package 지뢰~~(core↔app 동일FQN main 중복 0, 잔여 1) · ~~`System.currentTimeMillis()` PK 채번 12곳~~(프로덕션 0).
+- **증거(심층결합 — 잔존, [위험-DB설계결정] 티어)**: `EgovIdGnrService` 테이블 채번(ecopseq/ids, config 27빈+서비스 주입) + **PK 채번 6+1전략 공존** · egov 라이브러리 런타임 결합(`EgovPropertyConfig`/`EgovMessageConfig`(classpath:/egovframework/message)/`EgovFrameConfig` LeaveaTrace) · **컴포넌트스캔 벽**(ApiServerApplication basePackages egovframework/org.egovframe + 레거시 web 억제 exclude 17+필터) · 암호결합(`EgovFileScrty` SHA-256·ARIA·EgovEnvCrypto — 레거시 비번 호환). 이들은 라이브 공유 DB·시퀀스·보안계약에 닿아 개별 설계 승인 필요(§2.A 본질=클래스 개명 아닌 egov **런타임 결합 제거**).
 - **누르는 점수**: BE 단순성(56) · DB 연결부(79) · SEAM 추적성(54). 코드가 "정리된 하나의 설계"가 아니라 "이행 중 스냅샷"이라 단순성·추적성이 근본적으로 낮다.
 
 ### B. "프레임워크"가 목표인데 실체는 샘플 앱 (목적↔현실 괴리)

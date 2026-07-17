@@ -13,6 +13,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
 import nuri.foundation.security.annotation.AdminOnly;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
 @Service
+@Slf4j
 public class CommonCodeService extends BaseAbstractService {
 
         private final CommonCodeRepository commonCodeRepository;
@@ -65,7 +67,7 @@ public class CommonCodeService extends BaseAbstractService {
         @CacheEvict(value = "commonCodes", allEntries = true)
         public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
 
-                egovLogger.info("Creating common code: {}/{}", request.cdId(), request.dtlCd());
+                log.info("Creating common code: {}/{}", request.cdId(), request.dtlCd());
 
                 if (commonCodeRepository
                                 .findById(new nuri.business.domain.code.CommonCodeId(

@@ -144,7 +144,7 @@
 
 | 한계 | sev | 근거 |
 |---|:--:|---|
-| user 관심사 5+ 패키지 분산 + `usermanagement`가 실제 부서관리(오명명) | 🔴 | `service/usermanagement/EgovDeptManageService` |
+| user 관심사 5+ 패키지 분산 | 🟡 | ~~`usermanagement`=부서관리 오명명~~ 정명 완료(→ `service/department/DeptManageService`, 2026-07). 잔여: user 도메인 패키지 분산 |
 | 표준 도메인 스캐폴드 부재 — user만 nested, 33개 flat | 🔴 | `domain/user`만 entity/repository/dto/vo |
 | 서비스 인터페이스/구현 네이밍 4종 공존 | 🔴 | Egov접두 / XServiceImpl / impl/ / 무인터페이스 |
 | 필수 코어여야 할 공통 인프라가 business-suite에 존재 | 🔴 | (4.2 B1과 동일 축) |
@@ -293,7 +293,7 @@
 
 | 도메인 | 분류 | 대표 테이블 | 삭제 안전도 | 비고 |
 |---|:--:|---|:--:|---|
-| auth / login / user | **A** | tb_user·tb_authrt_* | 필수 | 인증·로그인정책. `usermanagement`=실제 부서관리(오명명) |
+| auth / login / user | **A** | tb_user·tb_authrt_* | 필수 | 인증·로그인정책 (`usermanagement` 오명명은 → `service/department` 정명 완료) |
 | menu / program / code | **A** | tb_menu_info·tb_prgrm_lst | 필수 | 네비·공통코드. 시드 비활성 주의 |
 | organization / deptjob / group | **A** | tb_ognz_info·tb_dept_* | 필수 | 조직·부서·권한그룹 |
 | file / log / config / common | **A** | tb_login_log 등 | 필수 | 첨부·감사로그·BaseEntity |

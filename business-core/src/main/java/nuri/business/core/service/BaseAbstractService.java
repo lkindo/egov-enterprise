@@ -1,7 +1,6 @@
 package nuri.business.core.service;
 
 import nuri.foundation.core.util.ValidationUtils;
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +47,7 @@ import java.util.function.Supplier;
  * @author eGov Enterprise Modernization Team
  * @since 2026-04-01
  */
-public abstract class BaseAbstractService extends EgovAbstractServiceImpl {
+public abstract class BaseAbstractService {
 
     /**
      * 객체가 null 이 아닌지 검증합니다.
