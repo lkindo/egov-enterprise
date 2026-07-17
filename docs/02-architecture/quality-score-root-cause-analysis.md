@@ -3,6 +3,7 @@
 > 작성: 2026-07-15 · 기준: 코드 실물 검증 기반 재평가(2026-07-13 baseline → 2026-07-15, 백엔드 하드닝 17커밋 반영)
 > **갱신: 2026-07-17 — DB 축 재측정 추가(§1.1). V2_12~V2_23 DB 표준화 스윕 반영, 라이브 OCI DB 실측. 완성도/연결부/단순성 83·79·72 → 89·88·82.**
 > **갱신: 2026-07-17(2) — BE 축 재측정 추가(§1.2). 단순성 로드맵 #1~#5(인터페이스 제거·getCurrentUserId 통합·config 정리·에러코드·tx) 반영, 코드 실물 검증. 완성도/연결부/단순성 81·73·56 → 83·74·62.**
+> **갱신: 2026-07-18 — BE 단순성 재측정 추가(§1.3). §2.A 대량 작업(egov IdGnr 전면제거·EgovAbstractServiceImpl 상속이탈·死코드/config 삭제·결재PK 버그정정·PK표준 린터) 반영. 단순성 62 → 68(완성도/연결부 83/74 유지).**
 > 방법론: DB/BE/FE/연결부 4차원 독립 assessor가 커밋 메시지가 아닌 **코드 실물을 Read/Grep 로 검증**해 채점 → 메인 재검증. 이 저장소의 감사수치 과장 이력을 감안해 **과장 배제** 원칙 적용.
 > 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md) · [log-retention-policy.md](../04-operations/log-retention-policy.md)
 
@@ -60,6 +61,28 @@
 **여전히 60~80대에 묶는 캡(정직)**: ① **§2.A Two-paradigm 앵커** — BaseAbstractService extends EgovAbstractServiceImpl + EgovIdGnrService 결합(접두 rename 은 표층, egov 패러다임은 상속·ID채번으로 잔존) ② **PK 채번 6전략 파편화**(currentTimeMillis 는 사라졌으나 이질 5~6전략 패치워크가 대체) ③ **egov 빈ID 12개**(명명 불일치 냄새) ④ **§2.G false-completion** — BaseCrud 채택 0·i18n getMessage 1곳(死 스캐폴드+하드코딩 한글 에러메시지) ⑤ **@PreAuthorize 역할 SpEL 하드코딩**(InstitutionCode/CommonCode/DeptJob/ApiSecurityConfig — SecurityUtil.hasRole 은 AuthorityConstants 상수화됐으나 SpEL 특성상 미도달) ⑥ **베이스 상속 부분적**(~20/65 서비스만 BaseAbstractService) ⑦ **§2.D 잔여** — UNIQUE↔@Table 미러 수동 3/~12·무강제+backend-shape→api-docs 하드게이트 CI 편중(과금 차단, 오프라인 결정적 보증 부재). **캡의 핵심은 BE 코드 자체가 아니라 §2.A(레거시 공존)·§2.C(횡단관심사)·§2.D(SSOT 파이프라인)·§2.G(false-completion)** 이며 #1~#5 는 이들에 손대지 않았다.
 
 > ⚠ 채점 노트: #1~#5 는 5건 전부 코드 실물과 커밋 주장이 일치(과장 없음)했다. 단순성 +6 은 '안티패턴 인터페이스 0 달성+플러밍/config 정돈'의 확정 이득에서 나오며, 상한은 egov/JPA 이중 패러다임과 채번 패치워크가 누른다. 완성도·연결부의 소폭 Δ 는 #4/#5(correctness)·#2(DRY)에 한정된 접점을 반영한 보수적 산정이다.
+
+### 1.3. BE 단순성 재측정 (2026-07-18, §2.A 반영)
+
+> 07-17(§1.2) 이후 **§2.A(미완결 레거시 현대화 — 두 패러다임 공존, 본문 A항) 대량 작업**이 반영되어 BE 단순성 축만 재측정. 방법론 동일(커밋 메시지 아닌 **코드 실물 Grep/Read** 검증·과장 배제, 독립 measurer). **baseline(07-17=62) 은 델타 추적 위해 보존.** §2.A 는 §1.2 가 최심층 캡으로 지목한 ①("BaseAbstractService extends EgovAbstractServiceImpl + EgovIdGnrService 결합")의 **상속·ID채번 두 가닥을 모두 실물 제거**한 세션이라 거의 전적으로 **단순성** 축 사건이다.
+
+| 축 | 07-17 | **07-18** | Δ |
+|---|:---:|:---:|:---:|
+| **완성도** | 83 | **83** | 0 |
+| **연결부** | 74 | **74** | 0 |
+| **단순성** | 62 | **68** | **+6** |
+
+**반영된 §2.A 작업(전부 코드 실물 일치 — 과장 없음, 전체 백엔드 테스트 BUILD SUCCESSFUL 로 게이트 검증)**: **S1** `BaseAbstractService` POJO화(`BaseAbstractService.java:50`=`public abstract class BaseAbstractService {`, extends 절 없음) · **D1①** egov IdGnr 전면 이관(8서비스 `getNextStringId`→`IdGenerationUtil` + `EgovIdGnrConfig` 16빈·`BusinessIdGnrConfig` 12빈 삭제) · **S2~S4·V1/V4** 死코드/死배선 config 삭제(`EgovMap`/`EgovMailConfig`/`EgovConfig`/`EgovTestDataConfig`/`EgovFrameConfig`) · **D3(a)(b)** LegacyConfig 死·중복 egov IdGnr 8빈 삭제 · **D3(c)** 결재 PK 오채번 버그 정정 · **D1(B)** `PkGenerationStandardLinterTest` 신설.
+
+**실측 지표(근거)**: EgovIdGnrService 런타임 결합 **28곳/설정 2개 → 0**(Grep `getNextStringId|EgovIdGnrService|EgovTableIdGnr` 유일 히트가 `IdGenerationUtil.java:14` 死 javadoc·나머지 주석/docs, 프로덕션 0). `**/*IdGnr*.java` Glob **=0**(config 물리 삭제 확증). `extends EgovAbstractServiceImpl` **0**. PK 채번 전략 **6→5**(egov IdGnr 갈래 통째 소멸, 잔여=수동 IdGenerationUtil / native nextval / SEQUENCE / IDENTITY / UUID). 死배선 5 config grep **0**. `PkGenerationStandardLinterTest` 가동(GRANDFATHERED 69종 census + vacuous-green 가드). 대비 **잔존 캡**: egov security/crypto 빈 프로덕션 활성(`EgovPasswordEncoder`→SecurityConfig:45·ApiSecurityConfig:71, `EgovAuthenticationProvider`→ApiSecurityConfig:95, `EgovFileScrty`·`getBean("ariacryptoService")`), 컴포넌트스캔 벽(basePackages `egovframework`/`org.egovframe` + ~22 REGEX exclude + 3 ASSIGNABLE), PK 수동 편중 **69/74 엔티티**(@GeneratedValue 5뿐), MessageSource 빈 **2중 정의**(LegacyConfig + EgovMessageConfig 동일 빈명), getMessage 실사용 **1곳**.
+
+- **단순성(+6, 유일 이동)**: §1.2 지목 최심층 캡 ①의 **두 명명 가닥(상속 + ID채번)이 모두 실물 소멸** — 상속 체인(§2.A 패러다임 앵커)이 POJO화로 끊기고 egov `getNextStringId` 한 갈래가 통째 사라져 "수동 채번 = `IdGenerationUtil` 단일 경로"로 수렴(config 28빈 + 死배선 5종 제거로 clutter 대폭 감소). §1.2 인터페이스 39제거(+6)와 동급 구조 제거로 동일 Δ. 잔여 egov 결합·PK 93% 편중·신규 死주석이 무거워 **70대 후반 이상은 근거 없음**.
+- **완성도(0)**: §2.A 는 死코드 제거(단순성)가 지배. §2.A 커밋들은 **전체 백엔드 테스트 BUILD SUCCESSFUL(11m26s)·실패 0 으로 게이트 검증**됨(D3(c) 결재 PK 정정 포함). 완성도 Δ +0 은 D3(c) 가 **소규모 correctness 정정이라 축 이동이 미세**하기 때문(미검증이 아님).
+- **연결부(0)**: 死배선 egov config 제거로 부팅 결합 표면 미세 축소됐으나, 컴포넌트스캔 벽·EgovProperty/MessageConfig·crypto 결합이 그대로라 프로덕션 부팅은 여전히 egov 컨텍스트 결속 → 실질 무변.
+
+**여전히 60대에 묶는 캡(정직)**: ① **§2.A 잔여 egov 결합(남은 절반)** — IdGnr·상속만 벗었을 뿐 security·crypto(EgovFileScrty/ARIA)·property·message·**컴포넌트스캔 벽**이 프로덕션 활성 잔존(오히려 더 손대기 어려운 보안·암호 계약 쪽이 남음) ② **PK 채번 93% 편중**(69/74 수동, @GeneratedValue 5 — "수동 vs JPA관리" 근본 파편은 D1[위험] 동결) ③ **§2.G false-completion 死주석**(소폭 증가) — BoardService.java:40(EgovAbstractServiceImpl/인터페이스 이중 오서술)·BoardMasterService.java:94(EgovTestDataConfig)·ScrapService.java:33(별칭 shim)이 삭제된 스캐폴드 참조 ④ **i18n 반쪽 스캐폴드**(MessageSource 2중 정의 vs 실사용 1곳, 하드코딩 한글 지배) ⑤ **egov 오명명 잔존**(nuri.* Egov* 4종 + egov 빈ID 5종) ⑥ **split-package**(business-app/core 동일 FQN 테스트 중복).
+
+> ⚠ 채점 노트: §2.A 반영분은 실물 확증(EgovIdGnr 런타임 0·config Glob 0·상속 0·死config 0)과 커밋 주장이 일치했고 전체 백엔드 테스트로 게이트 검증됐다. 단순성 +6 은 '최심층 캡의 두 가닥(상속+ID채번) 소멸 + config 28빈·死배선 5종 제거'의 확정 이득이며, 상한은 잔여 egov 런타임 결합(보안·암호·프로퍼티·메시지·스캔)과 PK 93% 편중이 누른다. 이번 세션은 §2.A 의 IdGnr·상속 절반만 손댔고, 남은 절반(crypto/security/property/message/scan)은 [위험-설계결정]으로 미착수.
 
 ---
 
