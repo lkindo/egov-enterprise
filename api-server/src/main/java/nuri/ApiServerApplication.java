@@ -14,62 +14,19 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
 @SpringBootApplication(nameGenerator = FullBeanNameGenerator.class, exclude = {
                 org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration.class
 })
-@ComponentScan(basePackages = { "nuri", "egovframework",
-                "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
-                                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-                                                org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class,
-                                                org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class,
-                                                org.egovframe.rte.fdl.access.config.EgovAccessConfiguration.class
-                                }),
-
+// [§2.A D4 2026-07-18] 컴포넌트스캔 "벽" 해체 — basePackages 에서 egovframework/org.egovframe 제거.
+// 실측 근거: nuri main 이 소비하는 egov 는 전부 우리 @Configuration(EgovPropertyConfig/EgovMessageConfig/
+// ProjectCryptoConfig/EgovPasswordEncoder) 이 정의하는 라이브러리 인스턴스 + static EgovFileScrty 뿐이며,
+// 스캔으로 등록되는 egov @Component 를 주입/소비하는 코드는 0(import egovframework/org.egovframe grep 6건 전부
+// @Bean 정의·static util). 따라서 egov 스캔은 원치 않는 컨트롤러/auto-config 만 끌어와 다시 배제하던 순부담이라
+// 스캔·제외필터(22 REGEX + 3 egov ASSIGNABLE) 통째 제거. 우리 egov @Bean 은 그대로 유지된다.
+@ComponentScan(basePackages = { "nuri" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 nuri.business.security.config.SecurityConfig.class
                                 }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
-                                @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class }),
-
-                                // 보안 및 권한 관리 (web 패키지 제외)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.gmt\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.rmt\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
-
-                                // 시스템 관리 (sym) 모듈 - 배치 및 백업 제외 (modern 컨트롤러 사용)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.bat\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.bak\\..*"),
-
-                                // 공통코드 관리 (sym.ccm)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\..*"),
-
-                                // 로그 관리 (sym.log)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\..*"),
-
-                                // 메뉴 관리 (sym.mnu)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mpm\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mcm\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.bmm\\.web\\..*"),
-
-                                // 프로그램 관리 (sym.prm)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.prm\\.web\\..*"),
-
-                                // 협업 관리 (cop) - 메일 및 게시판 관리 제외
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"),
-
-                                // 사용자 권한 관리 (uss) - 레거시 컨트롤러 제외
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.umt\\.web\\.EgovUserManageController"),
-                                // 설문 및 기타 관리 (uss.olp, uss.olh 등)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olh\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rss\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rsm\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntr\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntm\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.noi\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ctn\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.evt\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.nts\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\..*")
+                                @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class })
                 })
 public class ApiServerApplication extends SpringBootServletInitializer {
 
