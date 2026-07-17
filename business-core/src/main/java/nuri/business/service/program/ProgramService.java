@@ -64,7 +64,8 @@ public class ProgramService {
      */
     public ProgramDto selectProgrm(BaseSearchDto searchVO) {
         if (searchVO.getSearchKeyword() == null)
-            throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND);
+            // null 검색어는 '못 찾음'(404)이 아니라 '잘못된 입력'(400) — ENTITY_NOT_FOUND 404 전환에 맞춰 정정
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         return programRepository.findById(searchVO.getSearchKeyword())
                 .map(programMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
