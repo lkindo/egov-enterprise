@@ -2,6 +2,7 @@
 
 > 작성: 2026-07-15 · 기준: 코드 실물 검증 기반 재평가(2026-07-13 baseline → 2026-07-15, 백엔드 하드닝 17커밋 반영)
 > **갱신: 2026-07-17 — DB 축 재측정 추가(§1.1). V2_12~V2_23 DB 표준화 스윕 반영, 라이브 OCI DB 실측. 완성도/연결부/단순성 83·79·72 → 89·88·82.**
+> **갱신: 2026-07-17(2) — BE 축 재측정 추가(§1.2). 단순성 로드맵 #1~#5(인터페이스 제거·getCurrentUserId 통합·config 정리·에러코드·tx) 반영, 코드 실물 검증. 완성도/연결부/단순성 81·73·56 → 83·74·62.**
 > 방법론: DB/BE/FE/연결부 4차원 독립 assessor가 커밋 메시지가 아닌 **코드 실물을 Read/Grep 로 검증**해 채점 → 메인 재검증. 이 저장소의 감사수치 과장 이력을 감안해 **과장 배제** 원칙 적용.
 > 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md) · [log-retention-policy.md](../04-operations/log-retention-policy.md)
 
@@ -37,6 +38,28 @@
 **여전히 90대를 못 넘는 캡(정직)**: ① **CHECK 제약 0**(도메인 검증이 앱 레이어에만) ② **FK 미완**(로그/인증 테이블 esntlId/loginId 키혼용 — [user-reference-key-policy.md](user-reference-key-policy.md) 로 문서화됐으나 미통일) ③ **빈 DB 부팅 불가**(프레임워크化 미완, §2.B — 스키마 품질과 별개 축) ④ UNIQUE 의 JPA `@Table(uniqueConstraints)` 미러링 미완 ⑤ currentTimeMillis PK 등 코드 레벨 레거시. **캡의 핵심은 DB 스키마 자체가 아니라 § 2.B(프레임워크化)·§2.D 잔여(불변식 미러)·§2.C(횡단관심사)** 다.
 
 > ⚠ 채점 노트: SEAM 적합성 +8 은 정체성 footgun 봉합·인가 일관성·409 표준화·재발방지 린터를 근거로 하며, 하나의 사실오류(ApprovalApiController.confirm 을 "미검증"으로 나열했으나 실제로는 `aprvrId` 소유권 가드 존재)가 있으나 이는 점수를 낮추는 방향이라 66 은 유효(오히려 약간 보수적).
+
+### 1.2. BE 축 재측정 (2026-07-17, 코드 실물 Grep/Read 검증)
+
+> 07-15 이후 BE 단순성 로드맵 #1~#5(커밋 130c512f4·86ed1df7e·ac999c529, 푸시됨)가 반영되어 BE 축만 재측정. 방법론 동일(커밋 메시지 아닌 **코드 실물** 검증·과장 배제). **baseline(07-15) 은 델타 추적 위해 상단 표에 보존.** #1~#5 는 대부분 단순성(naming/dedup/config/consistency) 개선이며, 깊은 구조 캡(§2.A 레거시 공존·§2.B 프레임워크化·§2.C 횡단관심사·§2.D SSOT·§2.G false-completion)은 대부분 잔존한다.
+
+| 축 | 07-15 | **07-17** | Δ |
+|---|:---:|:---:|:---:|
+| **완성도** | 81 | **83** | **+2** |
+| **연결부** | 73 | **74** | **+1** |
+| **단순성** | 56 | **62** | **+6** |
+
+**반영된 #1~#5 (5건 전부 코드 실물 일치 — 과장 없음)**: **#1** 단일-impl 서비스 인터페이스 39개(Egov*Service 31+*ServiceImpl 8) 제거→concrete 직접주입, 안티패턴 인터페이스 잔존 **0**(정당 잔여 3: Auth/UserAbsence 정석 계층분리+FileStorageService 헥사고날 포트). **#2** 4컨트롤러(AdministCode/BoardMaster/Scrap/Schedule) private getCurrentUserId 4벌 제거→SecurityUtil 위임(`private \w+ getCurrentUserId` grep **0**). **#3** 死 config 2개(nuri.config.CacheConfig 스텁·nuri.business.config.QuerydslConfig 이중빈) 삭제 확인(canonical nuri.business.core.config.QuerydslConfig 유지). **#4** CommonErrorCode.ENTITY_NOT_FOUND=**HttpStatus.NOT_FOUND(404)**(형제 RESOURCE_NOT_FOUND 정합)+ProgramService null가드=INVALID_INPUT_VALUE(400) 정정. **#5** LogManageService·LoginPolicyManageService 클래스레벨 **@Transactional(readOnly=true)**+쓰기 메서드레벨 오버라이드.
+
+**실측 지표(근거)**: 안티패턴 서비스 인터페이스 39→**0**, 컨트롤러 private getCurrentUserId 4→**0**, 死 config 삭제 **2/2 확인**, ENTITY_NOT_FOUND **404**(C003), tx readOnly 클래스레벨 **2 서비스** 적용. 대비 **잔존 캡 실측**: BaseAbstractService **extends EgovAbstractServiceImpl**(20+서비스 공통상위), EgovIdGnrService 결합 **28곳/설정 2개**, egov 빈ID **12개**(egovUserService 등, 클래스명↔빈ID 불일치), PK 채번 **6전략 파편화**(EgovIdGnr/SEQUENCE/IDENTITY/UUID/native nextval/MAX+1; System.currentTimeMillis PK 는 프로덕션 **0** — 기존 문서 "12곳"은 stale, 회피주석+HealthCheck timestamp 뿐), `extends BaseCrud*` 프로덕션 **0**(死 스캐폴드), getMessage 사용 **1곳**(i18n 死채택), split-package main **1건**(nuri.business.service.log)·core↔app 동일FQN main 중복 **0**.
+
+- **단순성(+6, 최대 이동)**: #1 의 39파일 표면적 정리와 **안티패턴 인터페이스 0 달성**(clutter·계약 축소)이 상승분의 핵심. #2 플러밍 dedup·#3 config 정돈이 보강. split-package 는 실측상 이미 main 1건까지 감소해 이 하위축은 양호. 그러나 단순성을 지배하는 구조 캡(two-paradigm 상속·PK 6전략·egov ID채번 결합·死 i18n 스캐폴드)은 **미해결** → 대약진 근거 없음, Δ 를 '작음~보통'으로 제한.
+- **완성도(+2)**: #4(상태코드 시맨틱 정합 404/400)·#5(tx readOnly 경계 일관)가 직접 기여하는 correctness 개선. 기반 견고(GlobalExceptionHandler 13핸들러·@Valid 44파일/95회·서비스 hasRole 이중검증+SecurityAuthAnnotationLinterTest 전수오딧·컨트롤러 Entity반환 위반 0). #1~#3 은 단순성 성격이라 완성도 기여 한계적.
+- **연결부(+1, 최소 이동)**: seam 접점은 #2(DRY·정체성 축 가시성↑, 그러나 **축 통일 아님**)·#3(split-package 아웃라이어 1건)뿐. 모듈/레이어 경계는 ArchUnit 스위트(controller!→entity·layered·domain 단방향·no-cycle·foundation!→business·DomainIsolation ALLOW-LIST 동결)로 이미 강하게 게이트(위반 0)돼 baseline 에 반영됨. #2 는 AdministCode/BoardMaster 가 loginId-축 감사컬럼(lastMdfrId=@LastModifiedBy)에 **getCurrentEsntlId() 주입**+"감사=esntlId" 주석을 남겨 축 정확성은 미해결(감사 flush 가 loginId 로 덮어써 데이터는 정합되나 코드 축 2/4 오류·pass-through dead — 잔존 정리 대상).
+
+**여전히 60~80대에 묶는 캡(정직)**: ① **§2.A Two-paradigm 앵커** — BaseAbstractService extends EgovAbstractServiceImpl + EgovIdGnrService 결합(접두 rename 은 표층, egov 패러다임은 상속·ID채번으로 잔존) ② **PK 채번 6전략 파편화**(currentTimeMillis 는 사라졌으나 이질 5~6전략 패치워크가 대체) ③ **egov 빈ID 12개**(명명 불일치 냄새) ④ **§2.G false-completion** — BaseCrud 채택 0·i18n getMessage 1곳(死 스캐폴드+하드코딩 한글 에러메시지) ⑤ **@PreAuthorize 역할 SpEL 하드코딩**(InstitutionCode/CommonCode/DeptJob/ApiSecurityConfig — SecurityUtil.hasRole 은 AuthorityConstants 상수화됐으나 SpEL 특성상 미도달) ⑥ **베이스 상속 부분적**(~20/65 서비스만 BaseAbstractService) ⑦ **§2.D 잔여** — UNIQUE↔@Table 미러 수동 3/~12·무강제+backend-shape→api-docs 하드게이트 CI 편중(과금 차단, 오프라인 결정적 보증 부재). **캡의 핵심은 BE 코드 자체가 아니라 §2.A(레거시 공존)·§2.C(횡단관심사)·§2.D(SSOT 파이프라인)·§2.G(false-completion)** 이며 #1~#5 는 이들에 손대지 않았다.
+
+> ⚠ 채점 노트: #1~#5 는 5건 전부 코드 실물과 커밋 주장이 일치(과장 없음)했다. 단순성 +6 은 '안티패턴 인터페이스 0 달성+플러밍/config 정돈'의 확정 이득에서 나오며, 상한은 egov/JPA 이중 패러다임과 채번 패치워크가 누른다. 완성도·연결부의 소폭 Δ 는 #4/#5(correctness)·#2(DRY)에 한정된 접점을 반영한 보수적 산정이다.
 
 ---
 
