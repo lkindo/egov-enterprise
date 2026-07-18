@@ -31,7 +31,7 @@ export function ActivityFeed() {
       {activities.map((activity, idx) => (
         <div key={`activity-${activity.id}`} className="relative flex gap-4">
           {idx !== activities.length - 1 && (
-            <div className="absolute left-[17px] top-9 bottom-[-24px] w-px bg-slate-200" />
+            <div className="absolute left-[17px] top-9 bottom-[-24px] w-px bg-muted" />
           )}
 
           <div className={cn(

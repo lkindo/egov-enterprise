@@ -35,14 +35,14 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
     if (isError) return "bg-rose-500 shadow-rose-200 text-white";
     if (isSecurity) return "bg-indigo-600 shadow-indigo-200 text-white";
     if (isSystem) return "bg-emerald-600 shadow-emerald-200 text-white";
-    return "bg-slate-900 shadow-slate-200 text-white";
+    return "bg-surface-inverse text-surface-inverse-foreground";
   };
 
   const getBorderColor = () => {
-    if (isSelected) return "border-slate-900 ring-4 ring-slate-100";
+    if (isSelected) return "border-slate-900 ring-4 ring-border";
     if (isError) return "border-rose-100 hover:border-rose-300";
     if (isSecurity) return "border-indigo-100 hover:border-indigo-300";
-    return "border-slate-50 hover:border-border";
+    return "border-border hover:border-border";
   };
 
   return (
@@ -75,7 +75,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
       {/* Content Fabric */}
       <div className={cn(
-        "flex-1 p-8 rounded-lg border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
+        "flex-1 p-8 rounded-lg border-2 bg-card transition-all duration-500 shadow-sm overflow-hidden relative",
         getBorderColor(),
         isSelected ? "shadow-2xl translate-x-3 bg-muted/50" : "hover:shadow-lg"
       )}>
@@ -93,7 +93,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
              </h4>
           </div>
           <div className="flex items-center gap-2">
-             <div className="px-5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold tracking-widest uppercase">
+             <div className="px-5 py-1.5 rounded-lg bg-surface-inverse text-surface-inverse-foreground text-xs font-bold tracking-widest uppercase">
                 {log.rqesterId}
              </div>
              {isError && (
@@ -104,7 +104,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-t border-slate-50 pt-4 relative z-10">
+        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-t border-border pt-4 relative z-10">
            <div className="flex items-center gap-3">
               <Database size={12} className="opacity-40" />
               <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.srvcNm}</span>

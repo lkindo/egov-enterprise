@@ -146,20 +146,20 @@ const SortableMenuNode = ({
                     className="absolute top-0 bottom-0 border-l-2 border-border" 
                     style={{ left: `-${24}px`, height: '100%' }}
                 >
-                    <div className="absolute top-6 left-0 w-4 h-0.5 bg-slate-300" />
+                    <div className="absolute top-6 left-0 w-4 h-0.5 bg-border" />
                 </div>
             )}
 
             <div className={cn(
                 "flex items-center justify-between p-4 rounded-lg border transition-all relative overflow-hidden",
                 depth === 0 
-                  ? "bg-slate-900 border-slate-800 shadow-xl min-h-[5rem]" 
+                  ? "bg-surface-inverse border-surface-inverse-border shadow-xl min-h-[5rem]"
                   : depth === 1 
-                    ? "bg-white border-border shadow-sm" 
+                    ? "bg-card border-border shadow-sm"
                     : "bg-muted border-transparent",
                 "hover:border-primary/40 backdrop-blur-xl mb-2",
-                depth !== 0 && "bg-white/60",
-                isOverlay && "border-primary bg-white shadow-3xl ring-8 ring-primary/5 scale-[1.02]",
+                depth !== 0 && "bg-card/60",
+                isOverlay && "border-primary bg-card shadow-3xl ring-8 ring-primary/5 scale-[1.02]",
                 !isOverlay && depth > 0 && "ml-3"
             )}>
                 <div className="flex items-center gap-5 relative z-10 w-full">
@@ -168,7 +168,7 @@ const SortableMenuNode = ({
                         {...listeners} 
                         className={cn(
                           "p-2 hover:bg-muted rounded-lg cursor-grab active:cursor-grabbing transition-colors",
-                          depth === 0 ? "text-muted-foreground hover:text-white" : "text-muted-foreground hover:text-primary"
+                          depth === 0 ? "text-muted-foreground hover:text-surface-inverse-foreground" : "text-muted-foreground hover:text-primary"
                         )}
                     >
                         <GripVertical size={20} />
@@ -181,7 +181,7 @@ const SortableMenuNode = ({
                                     onClick={(e) => { e.stopPropagation(); onToggle(item.menuNo); }}
                                     className={cn(
                                       "p-2 hover:bg-muted rounded-lg transition-colors mr-2",
-                                      depth === 0 ? "text-muted-foreground hover:text-white" : "text-muted-foreground"
+                                      depth === 0 ? "text-muted-foreground hover:text-surface-inverse-foreground" : "text-muted-foreground"
                                     )}
                                 >
                                     <ChevronRight size={22} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
@@ -190,7 +190,7 @@ const SortableMenuNode = ({
                             {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
                             <div className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                                depth === 0 ? "bg-white text-foreground" : depth === 1 ? "bg-slate-900 text-white" : "bg-white text-muted-foreground border border-border shadow-sm"
+                                depth === 0 ? "bg-white text-foreground" : depth === 1 ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-card text-muted-foreground border border-border shadow-sm"
                             )}>
                                 {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
                             </div>
@@ -198,14 +198,14 @@ const SortableMenuNode = ({
                         <div className="flex flex-col">
                             <span className={cn(
                               "font-black tracking-tight transition-colors", 
-                              depth === 0 ? "text-white text-base" : depth === 1 ? "text-foreground text-sm" : "text-muted-foreground text-xs"
+                              depth === 0 ? "text-surface-inverse-foreground text-base" : depth === 1 ? "text-foreground text-sm" : "text-muted-foreground text-xs"
                             )}>
                                 {item.menuNm}
                             </span>
                             <div className="flex items-center gap-3 mt-1">
                                 <span className={cn(
                                   "text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest",
-                                   depth === 0 ? "bg-white/10 text-white/40" : "bg-muted text-muted-foreground opacity-100"
+                                   depth === 0 ? "bg-white/10 text-surface-inverse-muted" : "bg-muted text-muted-foreground opacity-100"
                                 )}>
                                     ID: {item.menuNo}
                                 </span>
@@ -244,7 +244,7 @@ const SortableMenuNode = ({
                             onClick={() => onEdit(item)}
                             className={cn(
                               "h-9 w-9 rounded-lg",
-                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-white hover:text-foreground" : "bg-muted hover:bg-slate-900 hover:text-white"
+                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-white hover:text-foreground" : "bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground"
                             )}
                         >
                             <Settings size={14} />
@@ -464,7 +464,7 @@ export default function MenuAdminClient({
         subtitle="항목을 자유롭게 이동하여 시스템 계층 구조를 설계하십시오."
         icon={FolderTree}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-10 px-8 rounded-xl bg-slate-900 text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 active:scale-95">
+          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-10 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 active:scale-95">
             <Plus size={18} /> 신규 등록
           </Button>
         }

@@ -147,7 +147,7 @@ export default function NotePage() {
         actions={
           <Button
             onClick={() => setWriteOpen(true)}
-            className="h-11 px-10 rounded-lg bg-slate-950 border-none text-white font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
+            className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
           >
             <SendHorizonal size={20} className="group-hover:translate-x-1 transition-transform" /> 쪽지 상세 기안
           </Button>
@@ -155,7 +155,7 @@ export default function NotePage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900 rounded-lg p-10 text-white relative overflow-hidden group border-none shadow-2xl">
+          <div className="bg-surface-inverse rounded-lg p-10 text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
                 <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Sparkles size={120} className="text-primary" />
                 </div>
@@ -182,7 +182,7 @@ export default function NotePage() {
           </div>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-slate-50 shadow-2xl overflow-hidden p-6">
+      <div className="bg-white rounded-lg border-2 border-border shadow-2xl overflow-hidden p-6">
         <StandardDataTable
           columns={columns}
           data={notes}
@@ -200,7 +200,7 @@ export default function NotePage() {
         footer={
           <div className="flex gap-4 w-full">
             <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-lg font-bold text-muted-foreground">취소</Button>
-            <Button onClick={handleSend} className="h-11 flex-[2] bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
+            <Button onClick={handleSend} className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
           </div>
         }
       >
@@ -219,7 +219,7 @@ export default function NotePage() {
               </div>
               <Button
                 onClick={() => setPickerOpen(true)}
-                className="h-11 px-8 bg-white border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
+                className="h-11 px-8 bg-white border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
@@ -275,7 +275,7 @@ export default function NotePage() {
               </div>
               <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
             </div>
-            <div className="text-xl font-bold leading-[1.8] text-foreground bg-muted/50 p-12 rounded-lg border-2 border-slate-50 min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
+            <div className="text-xl font-bold leading-[1.8] text-foreground bg-muted/50 p-12 rounded-lg border-2 border-border min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
               {selectedNote.noteCn}
             </div>
             <div className="flex gap-4 justify-end pt-4">
@@ -287,7 +287,7 @@ export default function NotePage() {
                     setFormData({ ...formData, rcverId: selectedNote.dsptchUserId, noteSj: `Re: ${selectedNote.noteSj}` });
                     setWriteOpen(true);
                   }}
-                  className="h-11 px-10 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
+                  className="h-11 px-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
                 >
                   <SendHorizonal size={18} /> 실시간 답장 전송
                 </Button>
@@ -307,7 +307,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       className={cn(
         "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
         active
-          ? "bg-white text-slate-950 shadow-2xl shadow-slate-200 scale-[1.03] z-10"
+          ? "bg-white text-foreground shadow-2xl scale-[1.03] z-10"
           : "text-muted-foreground hover:text-muted-foreground"
       )}
     >
@@ -316,7 +316,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       {count !== undefined && (
         <span className={cn(
           "ml-3 text-xs px-2.5 py-1 rounded-lg font-bold shadow-inner",
-          active ? "bg-slate-950 text-white" : "bg-slate-200 text-muted-foreground text-xs"
+          active ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-muted text-muted-foreground text-xs"
         )}>
           {count}
         </span>

@@ -95,7 +95,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  header: '식별 코드', 
  accessor: (item: InstitutionCode) => (
  <div className="flex items-center gap-4 py-2">
- <div className="w-10 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
+ <div className="w-10 h-9 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:rotate-6 transition-transform">
  <Building2 size={18} />
  </div>
  <div>
@@ -212,7 +212,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  item.procSe !== '1' && (
  <Button 
  onClick={() => handleProcess(item)}
- className="h-9 px-5 rounded-lg bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 active:scale-95"
+ className="h-9 px-5 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 active:scale-95"
  >
  <MonitorCheck size={14} /> 반영
  </Button>
@@ -235,7 +235,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  onClick={() => setActiveTab('list')}
  className={cn(
  "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'list' ? "bg-slate-900 text-white shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
+ activeTab === 'list' ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
  )}>
  <Server size={14} /> Inventory
  </button>
@@ -243,7 +243,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  onClick={() => setActiveTab('reception')}
  className={cn(
  "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'reception' ? "bg-slate-900 text-white shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
+ activeTab === 'reception' ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
  )}>
  <History size={14} /> Pipeline
  </button>
@@ -266,7 +266,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
  <div className="flex-1">
  <div className="relative group/search max-w-xl">
- <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="검색어를 입력하세요..."
  value={searchWrd}
@@ -276,11 +276,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
  activeTab === 'list' ? loadListData(searchWrd, 1) : loadReceptionData(searchWrd, 1);
  }
  }}
- className="h-10 pl-14 pr-8 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ className="h-10 pl-14 pr-8 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
  />
  </div>
  </div>
- <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-white font-black text-xs tracking-widest uppercase gap-2 hover:bg-slate-900 hover:text-white transition-all shadow-sm group">
+ <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-white font-black text-xs tracking-widest uppercase gap-2 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm group">
  <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> Export
  </Button>
  </div>

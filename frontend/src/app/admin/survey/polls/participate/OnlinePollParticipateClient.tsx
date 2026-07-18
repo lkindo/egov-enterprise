@@ -114,8 +114,8 @@ export default function OnlinePollParticipateClient() {
  {viewMode === 'list' && (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
  {(polls || []).length === 0 ? (
- <div className="col-span-full p-20 text-center bg-white rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
- <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-slate-300">
+ <div className="col-span-full p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+ <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
  <Target size={40} />
  </div>
  <div className="space-y-2">
@@ -133,8 +133,8 @@ export default function OnlinePollParticipateClient() {
 
  {(viewMode === 'vote' || viewMode === 'result') && selectedPoll && (
  <div className="max-w-3xl mx-auto">
- <div className="bg-white rounded-lg overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-border">
- <div className="bg-slate-900 p-12 text-white relative overflow-hidden">
+ <div className="bg-card rounded-lg overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-border">
+ <div className="bg-surface-inverse p-12 text-surface-inverse-foreground relative overflow-hidden">
  <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
  <Vote size={160} />
  </div>
@@ -180,7 +180,7 @@ export default function OnlinePollParticipateClient() {
  <Button 
  variant="ghost" 
  onClick={() => setViewMode('list')}
- className="h-11 px-10 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-muted border-2 border-slate-50"
+ className="h-11 px-10 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-muted border-2 border-border"
  >
  뒤로가기
  </Button>
@@ -188,7 +188,7 @@ export default function OnlinePollParticipateClient() {
  <Button 
  disabled={!selectedItemId || isVoting}
  onClick={handleVote}
- className="h-11 flex-1 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
+ className="h-11 flex-1 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
  >
  {isVoting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserCheck size={20} />}
  투표 제출하기
@@ -210,10 +210,10 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  return (
  <div 
  onClick={onSelect}
- className="group cursor-pointer bg-white rounded-lg p-10 border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
+ className="group cursor-pointer bg-card rounded-lg p-10 border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
  >
  <div className="flex justify-between items-start mb-10">
- <div className="w-16 h-11 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl transition-transform group-hover:rotate-6">
+ <div className="w-16 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:rotate-6">
  <Vote size={28} />
  </div>
  <div className={cn(
@@ -232,12 +232,12 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  </div>
  </div>
 
- <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
+ <div className="mt-10 pt-8 border-t border-border flex items-center justify-between">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
  <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-60">Ready for Interaction</span>
  </div>
- <ChevronRight size={18} className="text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+ <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
  </div>
 
  <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] group-hover:scale-110 transition-all duration-700 grayscale">
@@ -256,15 +256,15 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  data-testid={testId}
  className={cn(
  "relative p-8 rounded-lg border-2 transition-all group overflow-hidden cursor-pointer",
- isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-slate-50 bg-muted/50 hover:border-border",
- mode === 'result' && "cursor-default border-slate-50 bg-white"
+ isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-muted/50 hover:border-border",
+ mode === 'result' && "cursor-default border-border bg-card"
  )}
  >
  <div className="flex items-center justify-between relative z-10">
  <div className="flex items-center gap-6">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-all",
- isSelected ? "bg-primary text-white" : "bg-white text-muted-foreground group-hover:text-primary"
+ isSelected ? "bg-primary text-white" : "bg-card text-muted-foreground group-hover:text-primary"
  )}>
  {isSelected ? <CheckCircle2 size={20} /> : String(index + 1).padStart(2, '0')}
  </div>

@@ -114,7 +114,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
           </span>
           <div className="flex items-center gap-2 opacity-60">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.rwardCode}</span>
-            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">•</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">•</span>
             <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{item.rwardLevel || 'STANDARD'}</span>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     {
       header: '승인일시',
       accessor: 'sanctnDt',
-      className: 'w-48 text-slate-300 text-[10px] tabular-nums font-bold pr-8 text-right'
+      className: 'w-48 text-muted-foreground text-[10px] tabular-nums font-bold pr-8 text-right'
     }
   ];
 
@@ -181,7 +181,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             </Button>
             <Button 
               onClick={() => setIsModalOpen(true)}
-              className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
+              className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
             >
               <Plus size={20} /> 포상 기록 등록
             </Button>
@@ -205,14 +205,14 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
         <div className="space-y-8">
           <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
               <Input
                 placeholder="포상 명칭 또는 대상자 식별자로 분석..."
                 className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
               />
-              <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">ANALYZE</Button>
+              <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">ANALYZE</Button>
             </form>
           </div>
 
@@ -245,7 +245,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             <Button 
               onClick={form.handleSubmit(onRegisterSubmit)}
               disabled={registerLoading}
-              className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+              className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
               <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
             </Button>

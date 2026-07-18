@@ -66,7 +66,7 @@ export default function AdminStatsClient({
       header: '인텔리전스 노드',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
+          <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg transition-transform group-hover:scale-110">
             <Layout size={18} />
           </div>
           <div>
@@ -180,7 +180,7 @@ export default function AdminStatsClient({
             description="사용자 접속 환경의 프로파일링 및 기기별 세션 비중입니다"
             icon={Monitor}
           >
-            <div className="bg-slate-900 text-white rounded-lg p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
+            <div className="bg-surface-inverse text-surface-inverse-foreground rounded-lg p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
               <div className="absolute inset-x-0 top-0 h-1 bg-primary/20 blur-[40px] pointer-events-none" />
               <StandardChartWrapper
                 title="ENVIRONMENT DISTRIBUTION"
@@ -224,7 +224,7 @@ export default function AdminStatsClient({
             description="익명화된 데이터 기반 네트워크 지리적 기원지 매핑입니다"
             icon={Globe}
           >
-            <div className="p-4 bg-white rounded-lg border-2 border-slate-50 flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
+            <div className="p-4 bg-white rounded-lg border-2 border-border flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
               <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0)', backgroundSize: '16px 16px' }} />
               <NationalDistributionMap />
             </div>
@@ -251,19 +251,19 @@ export default function AdminStatsClient({
         </div>
       </HubSectionCard>
 
-      <div className="relative group rounded-lg overflow-hidden bg-slate-900 shadow-2xl p-24 border border-white/5">
+      <div className="relative group rounded-lg overflow-hidden bg-surface-inverse shadow-2xl p-24 border border-white/5">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/5 opacity-50" />
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-lg group-hover:scale-150 transition-transform duration-[3s]" />
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
             <div className="space-y-4">
-              <h2 className="text-xs font-bold tracking-[0.6em] text-white/80 uppercase leading-none">시스템 무결성 요약</h2>
-              <h3 className="text-5xl lg:text-8xl font-bold tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
+              <h2 className="text-xs font-bold tracking-[0.6em] text-surface-inverse-foreground/80 uppercase leading-none">시스템 무결성 요약</h2>
+              <h3 className="text-5xl lg:text-8xl font-bold tracking-tighter text-surface-inverse-foreground leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
                 <span className="text-primary">_ Intelligence</span> Core
               </h3>
             </div>
-            <p className="text-lg lg:text-xl text-white/90 font-bold max-w-3xl leading-relaxed tracking-tight">
+            <p className="text-lg lg:text-xl text-surface-inverse-foreground/90 font-bold max-w-3xl leading-relaxed tracking-tight">
               시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 주요 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
             </p>
           </div>
@@ -288,7 +288,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
   };
 
   const iconBgMap: any = {
-    slate: "bg-slate-900 text-white shadow-xl shadow-slate-900/20",
+    slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
     primary: "bg-primary text-white shadow-xl shadow-primary/20",
     indigo: "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20",
     rose: "bg-white text-rose-600 shadow-sm"

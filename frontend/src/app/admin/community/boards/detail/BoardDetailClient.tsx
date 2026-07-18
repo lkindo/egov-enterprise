@@ -121,7 +121,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               className="group px-0 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors flex items-center gap-4"
               aria-label="뒤로 가기"
             >
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-border group-hover:shadow-md transition-all">
+              <div className="p-2 bg-card rounded-xl shadow-sm border border-border group-hover:shadow-md transition-all">
                 <ArrowLeft className="group-hover:-translate-x-1 transition-transform" size={20} />
               </div>
               <span className="text-xs font-black tracking-[0.4em] uppercase">Return to Hub</span>
@@ -139,7 +139,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 {bbsId === 'BBSMSTR_AAAAAAAAAAAA' ? 'WIKI ARCHIVE' : 'TECH COMMUNITY'}
               </Badge>
               <div className="h-[2px] w-10 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-black text-slate-300 tracking-[0.3em] uppercase">NODE_REF: {pstId?.slice(-8)}</span>
+              <span className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">NODE_REF: {pstId?.slice(-8)}</span>
             </motion.div>
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
@@ -161,7 +161,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstId=${pstId}`)}
-            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
             <Edit3 size={20} className="text-primary" /> Edit Node
@@ -169,7 +169,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
-            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
             <Plus size={20} className="text-primary" /> Fork Thread
@@ -178,7 +178,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             variant="outline"
             onClick={handleLike}
             disabled={liking}
-            className="h-14 px-10 rounded-2xl border-2 border-border bg-white/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 추천"
           >
             <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
@@ -211,7 +211,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-8 p-12 bg-white/60 backdrop-blur-xl rounded-3xl border-white border shadow-2xl ring-1 ring-black/5"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-8 p-12 bg-card/60 backdrop-blur-xl rounded-3xl border-white border shadow-2xl ring-1 ring-black/5"
       >
         <MetaItem icon={<User size={20} />} label="Contributor" value={article.frstRgtrId || 'System'} />
         <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.crtDt || 'Today'} />
@@ -227,7 +227,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="relative bg-white/80 backdrop-blur-3xl rounded-[3rem] p-16 md:p-32 border border-white shadow-[0_80px_150px_-30px_rgba(0,0,0,0.1)] overflow-hidden ring-1 ring-black/5"
+          className="relative bg-card/80 backdrop-blur-3xl rounded-[3rem] p-16 md:p-32 border border-white shadow-[0_80px_150px_-30px_rgba(0,0,0,0.1)] overflow-hidden ring-1 ring-black/5"
         >
           <div className="absolute top-0 right-0 p-16 opacity-[0.02] grayscale pointer-events-none group-hover:rotate-12 group-hover:scale-110 transition-transform duration-1000">
             <Quote size={300} className="text-primary" />
@@ -251,15 +251,15 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 "prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:text-foreground",
                 "prose-p:my-12",
                 "prose-blockquote:border-l-[8px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-14 prose-blockquote:py-12 prose-blockquote:rounded-3xl prose-blockquote:not-italic prose-blockquote:text-foreground prose-blockquote:font-black",
-                "prose-code:bg-muted prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-slate-900 prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
+                "prose-code:bg-muted prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-surface-inverse prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
               )}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || (article as any).knoCn || '') }}
             />
 
             <div className="pt-32 flex items-center justify-center opacity-10">
-              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
               <div className="px-12"><FileText size={40} className="text-muted-foreground" /></div>
-              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             </div>
           </div>
         </motion.div>
@@ -271,10 +271,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="bg-slate-900 rounded-[2.5rem] p-16 shadow-2xl relative overflow-hidden group border border-white/10"
+          className="bg-surface-inverse rounded-[2.5rem] p-16 shadow-2xl relative overflow-hidden group border border-white/10"
         >
           <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-1000">
-            <Package size={120} className="text-white" />
+            <Package size={120} className="text-surface-inverse-foreground" />
           </div>
           <div className="relative z-10 space-y-12">
             <div className="flex items-center gap-6">
@@ -283,7 +283,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">Encrypted_Assets</p>
-                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">Associated Data Payloads</h3>
+                <h3 className="text-2xl font-black text-surface-inverse-foreground tracking-tighter uppercase">Associated Data Payloads</h3>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -297,7 +297,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                     <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">3.4 MB • PDF Document</span>
                   </div>
                 </div>
-                <div className="p-3 bg-white/10 rounded-xl group-hover/file:bg-slate-900 group-hover/file:text-white transition-all">
+                <div className="p-3 bg-white/10 rounded-xl group-hover/file:bg-surface-inverse group-hover/file:text-surface-inverse-foreground transition-all">
                   <Download size={20} aria-label="파일 다운로드" />
                 </div>
               </div>
@@ -329,7 +329,7 @@ function MetaItem({ icon, label, value }: { icon: React.ReactNode, label: string
         {icon}
       </div>
       <div className="space-y-1.5">
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] leading-none">{label}</p>
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] leading-none">{label}</p>
         <p className="text-lg font-black text-foreground tracking-tighter leading-none">{value}</p>
       </div>
     </div>

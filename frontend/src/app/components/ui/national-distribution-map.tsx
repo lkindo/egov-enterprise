@@ -90,7 +90,7 @@ export function NationalDistributionMap({ className }: { className?: string }) {
           <span className="text-xs font-bold text-muted-foreground tracking-tight">분석 핵심 지점</span>
           <span className="text-xs font-bold text-foreground ">서울 본사 / 영남 허브</span>
         </div>
-        <div className="h-8 w-px bg-slate-200 mx-2" />
+        <div className="h-8 w-px bg-border mx-2" />
         <div className="flex flex-col items-end">
           <span className="text-xs font-bold text-muted-foreground tracking-tight">전체 분포도</span>
           <span className="text-xs font-bold text-blue-600 ">98.4% COVERAGE</span>

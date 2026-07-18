@@ -62,7 +62,7 @@ export function BannerSlider() {
     : `/api/v1/files/download?fileId=${currentBanner.atchFileId || currentBanner.bnrImgNm}`;
 
   return (
-    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-lg bg-slate-900 shadow-lg">
+    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-lg bg-surface-inverse shadow-lg">
       <Image
         src={imageUrl}
         alt={currentBanner.bnrNm}

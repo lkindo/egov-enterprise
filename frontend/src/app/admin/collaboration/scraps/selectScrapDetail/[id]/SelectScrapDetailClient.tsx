@@ -92,7 +92,7 @@ const SelectScrapDetailClient = () => {
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
       <DynamicBreadcrumb />
 
-      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
+      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-border">
         <form onSubmit={handleSubmit}>
           <CardHeader className="border-b bg-gradient-to-tr from-indigo-50 via-slate-50 to-white pb-12 pt-12 px-10">
             <div className="flex items-center justify-between">

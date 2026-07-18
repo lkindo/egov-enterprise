@@ -61,7 +61,7 @@ export function SurveyHubClient() {
  <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
  <span className="text-xs font-bold tracking-tight text-rose-500 leading-none px-3 py-1 bg-rose-500/5 rounded-lg border border-rose-500/10">Survey Matrix</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-bold text-foreground dark:text-white tracking-tighter leading-none">
+ <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tighter leading-none">
  Insight <span className="text-rose-500">Analytics</span>
  </h1>
  <p className="text-sm font-bold text-muted-foreground max-w-lg leading-relaxed tracking-tight">
@@ -74,12 +74,12 @@ export function SurveyHubClient() {
  {isSurveyLoading ? (
    <Skeleton className="h-8 w-20 mt-1" />
  ) : (
-   <span className="text-xl font-bold text-foreground dark:text-white tabular-nums mt-1">{totalSurveys} / 50</span>
+   <span className="text-xl font-bold text-foreground tabular-nums mt-1">{totalSurveys} / 50</span>
  )}
  </div>
  <Button 
  onClick={() => router.push('/admin/survey/manage/create')}
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Launch New Survey
  </Button>
@@ -164,7 +164,7 @@ function TabTrigger({ value, icon: Icon, label }: { value: string, icon: any, la
  return (
  <TabsTrigger 
  value={value} 
- className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-2xl rounded-lg h-11 px-8 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-slate-800 hover:bg-muted"
+ className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-8 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
  >
  <Icon size={16} /> {label}
  </TabsTrigger>
@@ -180,7 +180,7 @@ function MetricCard({ label, value, trend, icon: Icon, color }: any) {
  };
 
  return (
- <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 flex flex-col gap-4 group hover:ring-[20px] hover:ring-slate-100/30 transition-all shadow-sm">
+ <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 flex flex-col gap-4 group hover:ring-[20px] hover:ring-border/30 transition-all shadow-sm">
  <div className="flex items-center justify-between">
  <span className="text-xs font-bold text-muted-foreground tracking-tight">{label}</span>
  <div className={cn("p-2 rounded-lg border", colorMap[color])}>

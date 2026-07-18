@@ -79,8 +79,8 @@ export default function SurveyManageCreateClient() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
-        <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card ring-1 ring-border">
+        <CardHeader className="bg-surface-inverse pb-12 pt-12 px-10 text-surface-inverse-foreground relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
                 <Sparkles size={120} />
             </div>

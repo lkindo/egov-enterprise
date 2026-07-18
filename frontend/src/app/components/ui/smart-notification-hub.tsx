@@ -157,7 +157,7 @@ export function SmartNotificationHub() {
                    size="sm"
                    className={cn(
                      "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
-                     activeTab === tab ? "bg-white shadow-sm text-primary" : "text-muted-foreground"
+                     activeTab === tab ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
                    )}
                    onClick={() => setActiveTab(tab as any)}
                  >
@@ -165,7 +165,7 @@ export function SmartNotificationHub() {
                  </Button>
                ))}
              </div>
-             <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+             <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                 <RefreshCw size={18} />
              </Button>
           </div>
@@ -183,12 +183,12 @@ export function SmartNotificationHub() {
         title="알림 스트림 매트릭스" 
         description="시스템에서 감지된 모든 이벤트 및 보안 알림의 실시간 스트림입니다." 
         icon={Bell}
-        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+        className="bg-card/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
           <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <div className="relative group max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
               <Input 
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}

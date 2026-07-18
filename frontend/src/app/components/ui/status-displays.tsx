@@ -40,7 +40,7 @@ export function ErrorStateDisplay({
         <Button
           variant="outline"
           size="lg"
-          className="rounded-lg font-bold text-xs tracking-[0.1em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group shadow-lg"
+          className="rounded-lg font-bold text-xs tracking-[0.1em] border-2 px-10 hover:bg-surface-inverse hover:text-white dark:hover:bg-primary transition-all group shadow-lg"
           onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
@@ -79,7 +79,7 @@ export function EmptyStateDisplay({
       <Button
         variant="outline"
         size="lg"
-        className="mt-6 rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all group"
+        className="mt-6 rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-surface-inverse hover:text-white dark:hover:bg-primary transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />

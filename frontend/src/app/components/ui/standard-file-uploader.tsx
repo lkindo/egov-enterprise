@@ -186,7 +186,7 @@ export function StandardFileUploader({
           "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden group",
           isDragging 
             ? "border-primary bg-primary/5 shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)]" 
-            : "border-border dark:border-slate-800 bg-muted/50 dark:bg-slate-900/50 hover:bg-muted/50 dark:hover:bg-slate-800/50"
+            : "border-border bg-muted/50 hover:bg-muted/50"
         )}
       >
         <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
@@ -195,12 +195,12 @@ export function StandardFileUploader({
             transition={{ repeat: Infinity, duration: 1.5 }}
             className={cn(
               "w-16 h-11 rounded-lg flex items-center justify-center mb-4 transition-colors",
-              isDragging ? "bg-primary text-white" : "bg-white dark:bg-slate-800 text-muted-foreground shadow-sm"
+              isDragging ? "bg-primary text-white" : "bg-card text-muted-foreground shadow-sm"
             )}
           >
             <Upload size={32} />
           </motion.div>
-          <p className="mb-2 text-sm text-foreground dark:text-slate-100 font-bold tracking-tight">
+          <p className="mb-2 text-sm text-foreground font-bold tracking-tight">
             {isDragging ? "여기에 파일을 놓으세요" : "클릭하거나 파일을 이곳에 드래그하세요"}
           </p>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
@@ -233,19 +233,19 @@ export function StandardFileUploader({
               exit={{ opacity: 0, x: 20, height: 0 }}
               className="group relative overflow-hidden"
             >
-              <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-border dark:border-slate-800 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
                     fs.status === 'completed' ? "bg-emerald-50 text-emerald-500" :
-                    fs.status === 'pending' ? "bg-muted text-muted-foreground dark:bg-slate-800" : "bg-muted text-muted-foreground"
+                    fs.status === 'pending' ? "bg-muted text-muted-foreground" : "bg-muted text-muted-foreground"
                   )}>
                     {fs.status === 'uploading' ? <Loader2 size={20} className="animate-spin" /> : 
                      fs.status === 'pending' ? <Hourglass size={20} className="animate-pulse" /> : <FileIcon size={20} />}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-foreground dark:text-slate-100 truncate tracking-tight">
+                      <p className="text-sm font-bold text-foreground truncate tracking-tight">
                         {fs.file.name}
                       </p>
                       <span className="text-xs font-bold text-muted-foreground uppercase">
@@ -258,7 +258,7 @@ export function StandardFileUploader({
                         첨부 대기 중 (폼 제출 시 최종 업로드됨)
                       </p>
                     ) : (
-                      <div className="relative w-full h-1.5 bg-muted dark:bg-slate-800 rounded-lg overflow-hidden">
+                      <div className="relative w-full h-1.5 bg-muted rounded-lg overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${fs.progress}%` }}

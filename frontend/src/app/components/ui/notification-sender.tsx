@@ -150,7 +150,7 @@ export function NotificationSender() {
           </div>
 
           {/* Preview Banner */}
-          <div className="p-6 bg-slate-900 rounded-lg text-white flex items-center justify-between shadow-xl">
+          <div className="p-6 bg-surface-inverse rounded-lg text-surface-inverse-foreground flex items-center justify-between shadow-xl">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                 <Zap size={18} className="text-yellow-400" />

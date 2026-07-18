@@ -50,7 +50,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       {/* Skip Navigation: 본문 바로가기 링크 추가 (웹 접근성 준수) */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-slate-900 focus:text-white focus:px-5 focus:py-3 focus:rounded-[var(--radius-hub-item)] focus:font-bold focus:shadow-2xl focus:border focus:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-surface-inverse focus:text-surface-inverse-foreground focus:px-5 focus:py-3 focus:rounded-[var(--radius-hub-item)] focus:font-bold focus:shadow-2xl focus:border focus:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
       >
         본문 바로가기
       </a>

@@ -87,7 +87,7 @@ export function Sidebar({
           {/* Mobile Header in Sidebar */}
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
             <Link href="/" aria-label="메인 화면으로 이동" className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg" onClick={() => setSidebarOpen(false)}>
-              <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
                 <span className="text-primary font-bold text-lg">EG</span>
               </div>
               <div className="flex flex-col">
@@ -162,7 +162,7 @@ export function Sidebar({
 
           {/* Sidebar Footer */}
           <div className="mt-auto pt-8 px-2 pb-10">
-            <div className="p-5 rounded-[var(--radius-hub-item)] bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden group">
+            <div className="p-5 rounded-[var(--radius-hub-item)] bg-surface-inverse text-surface-inverse-foreground border-none shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
                 <Sparkles size={40} className="text-primary" />
               </div>

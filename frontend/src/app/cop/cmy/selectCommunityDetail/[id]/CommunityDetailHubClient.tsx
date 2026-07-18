@@ -52,7 +52,7 @@ export default function CommunityDetailHubClient({
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
           actions={
             <Link href="/cop/cmy/selectCommunityList">
-              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-[var(--radius-hub-item)] hover:bg-slate-900 hover:text-white transition-all tracking-tight text-xs">
+              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-[var(--radius-hub-item)] hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all tracking-tight text-xs">
                 <ChevronLeft size={16} /> 목록으로 돌아가기
               </Button>
             </Link>
@@ -72,14 +72,14 @@ export default function CommunityDetailHubClient({
                     <Share2 size={22} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
+                <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
                   커뮤니티 공유하기
                 </TooltipContent>
               </Tooltip>
 
               <Button 
                 size="lg" 
-                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <UserPlus size={20} />
                 커뮤니티 가입 신청
@@ -125,18 +125,18 @@ export default function CommunityDetailHubClient({
               icon={MessageSquare}
             >
               <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
-                <div className="w-20 h-11 bg-white border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
+                <div className="w-20 h-11 bg-white border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
                 <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ No_Posts_Detected</h4>
-                <p className="text-xs font-bold text-slate-300 tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
               </div>
             </HubSectionCard>
           </div>
 
           {/* Sidebar Area */}
           <div className="col-span-12 lg:col-span-4 space-y-[var(--gap-hub-section)]">
-            <div className="rounded-[var(--radius-hub-section)] bg-slate-900 text-white p-12 space-y-10 shadow-2xl relative overflow-hidden group border-none">
+            <div className="rounded-[var(--radius-hub-section)] bg-surface-inverse text-surface-inverse-foreground p-12 space-y-10 shadow-2xl relative overflow-hidden group border-none">
               <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                 <Settings size={240} className="text-primary" />
               </div>
@@ -163,7 +163,7 @@ export default function CommunityDetailHubClient({
                   {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className="flex items-center justify-between group/user">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs group-hover/user:bg-slate-900 group-hover/user:text-white transition-all">
+                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs group-hover/user:bg-surface-inverse group-hover/user:text-surface-inverse-foreground transition-all">
                           ID
                         </div>
                         <div>

@@ -60,7 +60,7 @@ function CommunityBoardContent() {
  <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
  <span className="text-xs font-bold tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Board Intelligence</span>
  </div>
- <h1 className="text-4xl md:text-5xl font-bold text-foreground dark:text-white tracking-tighter uppercase leading-none transition-colors">
+ <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tighter uppercase leading-none transition-colors">
  Knowledge <span className="text-primary">Stream</span>
  </h1>
  <p className="text-sm font-bold text-muted-foreground max-w-lg leading-relaxed uppercase tracking-widest ">
@@ -70,7 +70,7 @@ function CommunityBoardContent() {
  <div className="flex items-center gap-4">
  <button
  onClick={() => router.push('/admin/community/boards/write')}
- className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
+ className="h-11 px-10 rounded-lg bg-surface-inverse text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Create New Node
  </button>
@@ -89,7 +89,7 @@ function CommunityBoardContent() {
  <Input
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 pl-14 bg-white/50 border-2 border-border rounded-lg text-lg font-bold placeholder:text-slate-200 focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
+ className="h-11 pl-14 bg-white/50 border-2 border-border rounded-lg text-lg font-bold placeholder:text-muted-foreground focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
  placeholder="데이터셋 내 지식 검색..."
  aria-label="게시글 검색"
  />
@@ -136,7 +136,7 @@ function CommunityBoardContent() {
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}
  onClick={() => handleRowClick(item)}
- className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-slate-50 rounded-lg hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
+ className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-border rounded-lg hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
  role="button"
  aria-label={`${item.pstTtl} 게시글 보기`}
  >
@@ -170,7 +170,7 @@ function CommunityBoardContent() {
  </div>
  </div>
  <div className="flex items-center gap-4 mt-6 md:mt-0 relative z-10">
- <div className="w-12 h-12 rounded-lg border-2 border-slate-50 flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all group-hover:rotate-45">
+ <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all group-hover:rotate-45">
  <ChevronRight size={20} className="text-slate-300 group-hover:text-primary transition-colors" />
  </div>
  </div>
@@ -187,7 +187,7 @@ function CommunityBoardContent() {
  <Sparkles size={16} className="text-primary animate-pulse" />
  <span className="text-xs font-bold text-muted-foreground uppercase tracking-[0.3em] ">Intelligence_Node_Total: <span className="text-foreground font-mono">{totalCount}</span></span>
  </div>
- <div className="w-px h-6 bg-slate-200" />
+ <div className="w-px h-6 bg-muted" />
  <div className="flex gap-2">
  {Array.from({ length: Math.ceil(totalCount / 10) }).map((_, i) => (
  <button
@@ -196,7 +196,7 @@ function CommunityBoardContent() {
  className={cn(
  "w-10 h-10 rounded-lg font-bold text-xs font-mono transition-all",
  page === i
- ? "bg-slate-900 text-white shadow-lg scale-110"
+ ? "bg-surface-inverse text-white shadow-lg scale-110"
  : "bg-white text-muted-foreground border border-border hover:border-primary/20 hover:text-primary"
  )}
  aria-label={`${i + 1} 페이지로 이동`}
@@ -218,18 +218,18 @@ export default function CommunityBoardClient() {
         {/* PageHeader 1:1 스켈레톤 */}
         <div className="flex justify-between items-center pb-6 border-b border-border">
           <div className="space-y-2 w-1/3">
-            <div className="h-8 bg-slate-200 rounded-lg w-3/4" />
+            <div className="h-8 bg-muted rounded-lg w-3/4" />
             <div className="h-4 bg-muted/80 rounded-lg w-1/2" />
           </div>
-          <div className="h-10 bg-slate-200 rounded-lg w-28" />
+          <div className="h-10 bg-muted rounded-lg w-28" />
         </div>
         {/* StandardSearchFilter 1:1 스켈레톤 */}
         <div className="h-16 bg-muted/80 rounded-xl border border-border" />
         {/* StandardDataTable 1:1 스켈레톤 */}
         <div className="space-y-3">
-          <div className="h-12 bg-slate-200/80 rounded-lg" />
+          <div className="h-12 bg-muted/80 rounded-lg" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted/50 rounded-lg border border-slate-50" />
+            <div key={i} className="h-16 bg-muted/50 rounded-lg border border-border" />
           ))}
         </div>
       </div>

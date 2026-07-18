@@ -130,8 +130,8 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
             {/* Hierarchy Line */}
             {node.depth > 0 && !isOverlay && (
                 <>
-                    <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-slate-200" />
-                    <div className="absolute left-[11px] top-1/2 w-3 h-px bg-slate-200" />
+                    <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-muted" />
+                    <div className="absolute left-[11px] top-1/2 w-3 h-px bg-muted" />
                 </>
             )}
 
@@ -433,7 +433,7 @@ export default function UserOrgHubClient({
                   <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+              <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 환경 설정
               </TooltipContent>
             </Tooltip>
@@ -449,13 +449,13 @@ export default function UserOrgHubClient({
                       setIsUserModalOpen(true);
                     }
                   }}
-                  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group flex items-center justify-center shrink-0 cursor-pointer outline-none"
+                  className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group flex items-center justify-center shrink-0 cursor-pointer outline-none"
                 >
                   {activeTab === 'DEPTS' ? <LayoutGrid size={18} /> : <UserPlus size={18} />}
                   <span>{activeTab === 'DEPTS' ? '부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+              <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                 {activeTab === 'DEPTS' ? '새로운 부서 추가' : '새로운 사용자 생성'}
               </TooltipContent>
             </Tooltip>
@@ -489,12 +489,12 @@ export default function UserOrgHubClient({
                       type="button"
                       aria-label="서버 데이터 동기화" 
                       onClick={() => queryClient.invalidateQueries()} 
-                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-muted hover:bg-slate-900 text-foreground hover:text-white border border-border/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
+                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-muted hover:bg-surface-inverse text-foreground hover:text-surface-inverse-foreground border border-border/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
                     >
                       <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 동기화
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
+                  <TooltipContent side="left" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
                     데이터 동기화
                   </TooltipContent>
                 </Tooltip>
@@ -503,7 +503,7 @@ export default function UserOrgHubClient({
               <div className="relative group/search">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                 <Input
-                  className="pl-14 h-10 bg-muted border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+                  className="pl-14 h-10 bg-muted border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                   placeholder="검색어를 입력하세요..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -660,7 +660,7 @@ export default function UserOrgHubClient({
 
                   <div className="flex items-start justify-between border-b border-border/50 pb-10 relative z-10">
                     <div className="flex items-center gap-8">
-                      <div className="w-24 h-20 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-4xl text-white shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
+                      <div className="w-24 h-20 bg-surface-inverse rounded-2xl flex items-center justify-center font-black text-4xl text-surface-inverse-foreground shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
                         <span className="text-primary">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
                         </span>
@@ -685,7 +685,7 @@ export default function UserOrgHubClient({
                       variant="ghost" 
                       size="icon" 
                       aria-label="정보 수정"
-                      className="h-10 w-14 rounded-xl bg-muted hover:bg-slate-900 hover:text-white shadow-sm border border-border transition-all group"
+                      className="h-10 w-14 rounded-xl bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground shadow-sm border border-border transition-all group"
                       onClick={() => {
                         setFormMode('edit');
                         if (activeTab === 'DEPTS') {
@@ -720,7 +720,7 @@ export default function UserOrgHubClient({
                         </div>
                         <button 
                           type="button"
-                          className="h-10 px-5 rounded-xl bg-muted hover:bg-slate-900 text-[10px] font-black text-foreground hover:text-white gap-2 transition-all uppercase flex items-center justify-center outline-none cursor-pointer"
+                          className="h-10 px-5 rounded-xl bg-muted hover:bg-surface-inverse text-[10px] font-black text-foreground hover:text-surface-inverse-foreground gap-2 transition-all uppercase flex items-center justify-center outline-none cursor-pointer"
                         >
                           권한 설정 <ChevronRight size={14} />
                         </button>
@@ -744,7 +744,7 @@ export default function UserOrgHubClient({
                     >
                       접근 차단
                     </button>
-                    <Button className="flex-[2] h-10 bg-slate-900 text-white rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase">
+                    <Button className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase">
                       <Zap size={16} className="text-primary group-hover:animate-pulse" /> 변경사항 저장
                     </Button>
                   </div>
@@ -845,7 +845,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkStatusModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -868,7 +868,7 @@ export default function UserOrgHubClient({
                 }
               }}
               disabled={isSaving}
-              className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
+              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
               {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '상태 일괄 적용'}
             </Button>
@@ -923,7 +923,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkMoveModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -950,7 +950,7 @@ export default function UserOrgHubClient({
                 }
               }}
               disabled={isSaving}
-              className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
+              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
               {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '부서 이동 실행'}
             </Button>
@@ -1010,7 +1010,7 @@ export default function UserOrgHubClient({
             <button 
               type="button"
               onClick={() => setIsBulkRoleModalOpen(false)} 
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
@@ -1033,7 +1033,7 @@ export default function UserOrgHubClient({
                 }
               }}
               disabled={isSaving}
-              className="flex-[2] h-11 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
+              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
               {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '권한 변경 실행'}
             </Button>
@@ -1053,7 +1053,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-300 relative overflow-hidden",
         active
-          ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10 scale-[1.02] z-10"
+          ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg scale-[1.02] z-10"
           : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-white/40"
       )}
     >

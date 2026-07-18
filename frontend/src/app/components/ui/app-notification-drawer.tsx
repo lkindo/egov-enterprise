@@ -76,7 +76,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
           <div className="flex h-24 items-center justify-between border-b border-border px-8 bg-card sticky top-0 z-20">
             <div className="space-y-1">
               <h2 className="text-xl font-bold flex items-center gap-3 tracking-tighter uppercase text-card-foreground">
-                <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground flex items-center justify-center shadow-lg">
                    <Bell size={20} className="animate-pulse" />
                 </div>
                 알림 센터

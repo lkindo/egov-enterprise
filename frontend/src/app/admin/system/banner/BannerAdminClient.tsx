@@ -298,7 +298,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '비주얼 자산 스냅샷',
  accessor: (item: Banner) => (
- <div className="w-56 h-24 bg-slate-900 rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
+ <div className="w-56 h-24 bg-surface-inverse rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
  {item.atchFileId && (
  <Image
@@ -335,7 +335,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '우선순위',
  accessor: (item: Banner) => (
- <div className="w-12 h-12 rounded-lg bg-muted border-2 border-border flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-500">
+ <div className="w-12 h-12 rounded-lg bg-muted border-2 border-border flex items-center justify-center shadow-inner group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground transition-all duration-500">
  <span className="font-bold text-lg font-mono tabular-nums leading-none">{item.sortOrdr}</span>
  </div>
  ),
@@ -354,7 +354,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} />
  </Button>
  <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId)}>
@@ -410,7 +410,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} />
  </Button>
  <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId)}>
@@ -437,7 +437,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button
  onClick={handleCreate}
  size="lg"
- className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+ className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
  >
  <Plus size={20} /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
  </Button>
@@ -453,15 +453,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  <div className="grid grid-cols-12 gap-12">
  <div className="col-span-12 lg:col-span-3 h-full">
- <div className="rounded-lg bg-white border-2 border-border shadow-xl h-full p-4 flex flex-col gap-4">
+ <div className="rounded-lg bg-card border-2 border-border shadow-xl h-full p-4 flex flex-col gap-4">
  <button
  onClick={() => setTab('banner')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'banner' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+ activeTab === 'banner' ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
  )}
  >
- <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white")}>
+ <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-primary group-hover:text-white")}>
  <ImageIcon size={22} />
  </div>
  <div className="flex flex-col text-left relative z-10">
@@ -474,10 +474,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  onClick={() => setTab('popup')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'popup' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+ activeTab === 'popup' ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
  )}
  >
- <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-indigo-500 group-hover:text-white")}>
+ <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-indigo-500 group-hover:text-white")}>
  <Monitor size={22} />
  </div>
  <div className="flex flex-col text-left relative z-10">
@@ -486,7 +486,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  {activeTab === 'popup' && <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
  </button>
- <div className="mt-auto p-8 rounded-lg bg-slate-900 text-white space-y-4 relative overflow-hidden group">
+ <div className="mt-auto p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-4 relative overflow-hidden group">
  <div className="relative z-10 space-y-4">
  <div className="flex items-center gap-3">
  <Sparkles size={16} className="text-primary animate-pulse" />
@@ -541,7 +541,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button
  onClick={activeTab === 'banner' ? (bannerForm.handleSubmit(onBannerSubmit) as any) : (popupForm.handleSubmit(onPopupSubmit) as any)}
  disabled={activeTab === 'banner' ? bannerForm.formState.isSubmitting : popupForm.formState.isSubmitting}
- className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
+ className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
  >
  <Zap size={18} className="group-hover:animate-pulse mr-2" /> {editingItem ? '자산 수정' : '운영 배포'}
  </Button>
@@ -648,7 +648,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Banner)?.atchFileId && (
- <div className="p-8 rounded-lg bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
+ <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
@@ -812,7 +812,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Popup)?.fileUrl && (
- <div className="p-8 rounded-lg bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
+ <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
@@ -833,7 +833,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-white font-bold text-xs tracking-widest uppercase shadow-sm">
+ <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-card font-bold text-xs tracking-widest uppercase shadow-sm">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
@@ -854,7 +854,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-white font-bold text-xs tracking-widest uppercase shadow-sm">
+ <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-card font-bold text-xs tracking-widest uppercase shadow-sm">
  <SelectValue />
  </SelectTrigger>
  </FormControl>

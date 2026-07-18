@@ -89,8 +89,8 @@ export default function CommunityBoardsWriteClient() {
  <div className="max-w-5xl mx-auto">
  <Form {...form}>
  <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
- <Card className="border-none shadow-2xl rounded-lg overflow-hidden bg-white ring-1 ring-slate-100">
- <CardHeader className="bg-muted dark:bg-slate-900 text-foreground dark:text-white p-10 pb-16 border-b border-border dark:border-slate-800 relative overflow-hidden">
+ <Card className="border-none shadow-2xl rounded-lg overflow-hidden bg-white ring-1 ring-border">
+ <CardHeader className="bg-muted text-foreground p-10 pb-16 border-b border-border relative overflow-hidden">
  <div className="flex justify-between items-start relative z-10">
  <div className="space-y-3">
  <CardTitle className="text-4xl font-bold tracking-tighter flex items-center gap-4">
@@ -114,7 +114,7 @@ export default function CommunityBoardsWriteClient() {
  <CardContent className="p-10 -mt-8 space-y-10">
  {/* Basic Info Node */}
  <div className="bg-white rounded-lg p-8 border border-border shadow-xl space-y-8">
- <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
+ <div className="flex items-center gap-3 border-b border-border pb-6 mb-2">
  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold ">01</div>
  <h3 className="text-xl font-bold tracking-tight">기본 메타데이터</h3>
  </div>
@@ -166,7 +166,7 @@ export default function CommunityBoardsWriteClient() {
 
  {/* Content Body Node */}
  <div className="bg-white rounded-lg p-8 border border-border shadow-xl space-y-8">
- <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
+ <div className="flex items-center gap-3 border-b border-border pb-6 mb-2">
  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold ">02</div>
  <h3 className="text-xl font-bold tracking-tight">본문 콘텐츠 데이터</h3>
  </div>
@@ -180,7 +180,7 @@ export default function CommunityBoardsWriteClient() {
  <Textarea
  {...field}
  placeholder="본문 내용을 상세히 기술하십시오. 마크다운 및 HTML 파싱을 지원합니다."
- className="min-h-[400px] p-10 rounded-lg border-2 border-slate-50 bg-muted/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
+ className="min-h-[400px] p-10 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
  maxLength={4000}
  />
  </FormControl>
@@ -288,7 +288,7 @@ export default function CommunityBoardsWriteClient() {
  </div>
 
  {/* Final Action Area */}
- <div className="flex items-center justify-between pt-10 border-t-2 border-slate-50 border-dashed">
+ <div className="flex items-center justify-between pt-10 border-t-2 border-border border-dashed">
  <div className="flex items-center gap-4">
  <div className="w-12 h-12 bg-primary/5 rounded-lg flex items-center justify-center">
  <Settings2 size={24} className="text-primary animate-spin-slow" />

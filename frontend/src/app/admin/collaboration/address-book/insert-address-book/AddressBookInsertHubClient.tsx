@@ -93,7 +93,7 @@ export default function AddressBookInsertHubClient() {
  <div className="flex items-center gap-3">
  <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Organizational Network</span>
  </div>
- <h1 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none transition-colors">
+ <h1 className="text-4xl font-bold text-foreground tracking-tighter leading-none transition-colors">
  Identity <span className="text-primary">Registration</span>
  </h1>
  </div>
@@ -209,7 +209,7 @@ export default function AddressBookInsertHubClient() {
  type="submit"
  disabled={isSubmitting}
  data-testid="commit-identity-button"
- className="h-11 flex-1 sm:flex-none px-12 rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ className="h-11 flex-1 sm:flex-none px-12 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
  {isSubmitting ? (
  <span className="animate-pulse">Registering...</span>

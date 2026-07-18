@@ -373,7 +373,7 @@ export function BoardMasterListClient() {
         />
       </div>
 
-      <div className="p-12 rounded-lg bg-muted dark:bg-slate-900 border border-border dark:border-none text-foreground dark:text-white overflow-hidden relative group transition-colors">
+      <div className="p-12 rounded-lg bg-muted border border-border dark:border-none text-foreground overflow-hidden relative group transition-colors">
         <div className="absolute top-0 right-0 p-20 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
           <Rocket size={400} />
         </div>
@@ -392,7 +392,7 @@ export function BoardMasterListClient() {
       {/* Settings Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[600px] rounded-lg p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-slate-900 p-10 text-white relative">
+          <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative">
             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
               <Settings2 size={120} />
             </div>
@@ -404,7 +404,7 @@ export function BoardMasterListClient() {
             </DialogHeader>
           </div>
           
-          <div className="p-10 space-y-8 bg-white dark:bg-slate-950 transition-colors">
+          <div className="p-10 space-y-8 bg-card transition-colors">
             <div className="space-y-3">
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
               <Input 
@@ -425,9 +425,9 @@ export function BoardMasterListClient() {
               />
             </div>
 
-            <div className="flex items-center justify-between p-6 bg-muted dark:bg-slate-900 rounded-lg border border-border dark:border-slate-800 transition-colors">
+            <div className="flex items-center justify-between p-6 bg-muted rounded-lg border border-border transition-colors">
               <div className="space-y-1">
-                <p className="font-bold text-foreground dark:text-white transition-colors">서비스 활성화 상태</p>
+                <p className="font-bold text-foreground transition-colors">서비스 활성화 상태</p>
                 <p className="text-xs text-muted-foreground font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
               </div>
               <Switch 
@@ -450,7 +450,7 @@ export function BoardMasterListClient() {
             </div>
           </div>
 
-          <DialogFooter className="p-8 bg-muted dark:bg-slate-900 border-t border-border dark:border-slate-800 transition-colors">
+          <DialogFooter className="p-8 bg-muted border-t border-border transition-colors">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="h-11 px-8 rounded-lg font-bold">취소</Button>
             <Button onClick={handleSave} className="h-11 px-10 rounded-lg bg-primary text-white font-bold tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20">설정 적용하기</Button>
           </DialogFooter>
@@ -462,17 +462,17 @@ export function BoardMasterListClient() {
 
 function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps) {
   return (
-    <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
+    <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-border/30 transition-all border-2 border-border/50">
       <div className="flex items-center justify-between">
-        <div className={cn("w-14 h-11 rounded-lg bg-muted dark:bg-slate-900 flex items-center justify-center border border-border dark:border-slate-800 group-hover:scale-110 transition-transform text-muted-foreground", color)}>
+        <div className={cn("w-14 h-11 rounded-lg bg-muted flex items-center justify-center border border-border group-hover:scale-110 transition-transform text-muted-foreground", color)}>
           <Icon size={28} />
         </div>
         <MoreVertical className="text-slate-200 dark:text-foreground" size={20} />
       </div>
       <div className="space-y-1">
-        <p className="text-xs font-bold text-muted-foreground dark:text-white/40 uppercase tracking-widest leading-none text-left">{label}</p>
-        <h4 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
-        <p className="text-xs font-bold text-muted-foreground/60 dark:text-slate-300 uppercase leading-none mt-2 text-left">{desc}</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none text-left">{label}</p>
+        <h4 className="text-4xl font-bold text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
+        <p className="text-xs font-bold text-muted-foreground/60 uppercase leading-none mt-2 text-left">{desc}</p>
       </div>
     </motion.div>
   );

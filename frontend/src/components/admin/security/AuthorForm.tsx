@@ -134,14 +134,14 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
           <button 
             type="button" 
             onClick={onCancel} 
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group px-6"
+            className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group px-6"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
             {mode === 'create' ? '권한 배포' : '권한 수정'}

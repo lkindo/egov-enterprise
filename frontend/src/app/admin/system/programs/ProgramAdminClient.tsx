@@ -128,7 +128,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  header: '파일명',
  accessor: (item: Program) => (
  <div className="flex items-center gap-4 py-3">
- <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+ <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:scale-110 transition-transform">
  <Cpu size={20} />
  </div>
  <div className="text-left">
@@ -170,7 +170,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Settings size={16} />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+ <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
  프로그램 속성 및 엔드포인트 수정
  </TooltipContent>
  </Tooltip>
@@ -181,7 +181,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Trash2 size={16} />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase text-rose-300">
+ <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase text-rose-300">
  시스템 자산 영구 삭제
  </TooltipContent>
  </Tooltip>
@@ -208,12 +208,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Button
  onClick={handleOpenCreate}
  size="lg"
- className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+ className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
  >
  <Plus size={20} /> 신규 등록
  </Button>
  </TooltipTrigger>
- <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+ <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
  새로운 물리 프로그램 자산 정의
  </TooltipContent>
  </Tooltip>
@@ -245,7 +245,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  />
  </div>
  </div>
- <Button onClick={() => loadData()} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
+ <Button onClick={() => loadData()} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
  <Search size={18} /> 검색
  </Button>
  </div>

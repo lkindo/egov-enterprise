@@ -112,7 +112,7 @@ export default function MailSendHubClient() {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold tracking-tight text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">Enterprise Mail System</span>
           </div>
-          <h1 className="text-4xl font-bold text-foreground dark:text-white tracking-tighter leading-none transition-colors">
+          <h1 className="text-4xl font-bold text-foreground tracking-tighter leading-none transition-colors">
             Compose <span className="text-primary">Mail</span>
           </h1>
         </div>
@@ -146,7 +146,7 @@ export default function MailSendHubClient() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="flex flex-wrap gap-2 mb-4 p-4 bg-slate-900 rounded-lg shadow-inner min-h-[60px] items-center"
+                      className="flex flex-wrap gap-2 mb-4 p-4 bg-surface-inverse rounded-lg shadow-inner min-h-[60px] items-center"
                     >
                       {selectedRecipients.map((recipient) => (
                         <motion.div
@@ -155,7 +155,7 @@ export default function MailSendHubClient() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.8, opacity: 0 }}
                           data-testid="selected-recipient-badge"
-                          className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/10 transition-colors group"
+                          className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-white/10 hover:bg-white/20 text-surface-inverse-foreground rounded-lg border border-white/10 transition-colors group"
                         >
                           <span className="text-xs font-bold">{recipient.name}</span>
                           <button
@@ -175,7 +175,7 @@ export default function MailSendHubClient() {
                   <Input
                     data-testid="mail-recipient-input"
                     placeholder="성명 또는 ID로 수신자를 검색하십시오..."
-                    className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-slate-300"
+                    className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
                     onChange={(e) => handleSearchUsers(e.target.value)}
                   />
@@ -185,7 +185,7 @@ export default function MailSendHubClient() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-50 w-full mt-2 bg-white border-2 border-border rounded-lg shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-slate-50"
+                        className="absolute z-50 w-full mt-2 bg-white border-2 border-border rounded-lg shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-border"
                       >
                         {isSearching ? (
                           <div className="p-8 text-center text-muted-foreground flex items-center justify-center gap-3">
@@ -213,7 +213,7 @@ export default function MailSendHubClient() {
                               className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors group text-left"
                             >
                               <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-bold text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
+                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
                                   {(user.nm || user.userNm || user.adbkNm || user.ncrdNm)?.charAt(0)}
                                 </div>
                                 <div className="flex flex-col">
@@ -225,7 +225,7 @@ export default function MailSendHubClient() {
                                   </span>
                                 </div>
                               </div>
-                              <Plus size={16} className="text-slate-200 group-hover:text-primary transition-colors" />
+                              <Plus size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
                             </button>
                           ))
                         ) : (
@@ -282,7 +282,7 @@ export default function MailSendHubClient() {
             data-testid="mail-content-textarea"
             value={form.emailCn}
             onChange={(e) => setForm({ ...form, emailCn: e.target.value })}
-            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-white border-2 border-border rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-slate-200"
+            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-white border-2 border-border rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
             placeholder="전달할 상세 내용을 기술하십시오..."
             required
           />
@@ -336,7 +336,7 @@ export default function MailSendHubClient() {
       <div className="text-center">
         <div className="inline-flex items-center gap-3 px-6 py-2 bg-muted rounded-lg border border-border">
           <Sparkles size={14} className="text-primary/40" />
-          <span className="text-xs font-bold text-slate-300 tracking-tight">Enterprise Neural Link - V4.5.1</span>
+          <span className="text-xs font-bold text-muted-foreground tracking-tight">Enterprise Neural Link - V4.5.1</span>
         </div>
       </div>
     </div>

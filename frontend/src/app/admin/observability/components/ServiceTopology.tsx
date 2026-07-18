@@ -41,7 +41,7 @@ const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodePro
           />
         )}
         
-        <div className="w-16 h-11 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-lg flex items-center justify-center shadow-2xl relative z-10">
+        <div className="w-16 h-11 bg-surface-inverse/80 backdrop-blur-xl border border-white/10 rounded-lg flex items-center justify-center shadow-2xl relative z-10">
           <div className={`${statusColor}`}>
             {React.cloneElement(icon as React.ReactElement<{ size: number }>, { size: 28 })}
           </div>
@@ -49,7 +49,7 @@ const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodePro
       </div>
 
       <div className="text-center">
-        <p className="text-xs font-bold text-white uppercase tracking-tighter opacity-90">{label}</p>
+        <p className="text-xs font-bold text-surface-inverse-foreground uppercase tracking-tighter opacity-90">{label}</p>
         {latency && (
           <div className="flex items-center justify-center gap-1 mt-0.5">
             <Activity size={10} className="text-emerald-400" />
@@ -125,7 +125,7 @@ export default function ServiceTopology() {
   ];
 
   return (
-    <div className="relative w-full h-[450px] bg-slate-950/40 rounded-[2.5rem] border border-white/5 overflow-hidden backdrop-blur-md">
+    <div className="relative w-full h-[450px] bg-surface-inverse/40 rounded-[2.5rem] border border-white/5 overflow-hidden backdrop-blur-md">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} 
@@ -162,7 +162,7 @@ export default function ServiceTopology() {
       <div className="absolute top-6 right-8">
         <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 backdrop-blur-md flex items-center gap-2">
           <Activity size={12} className="text-emerald-400" />
-          <span className="text-xs text-white/60 font-bold tracking-tight">System Map v2.1</span>
+          <span className="text-xs text-surface-inverse-muted font-bold tracking-tight">System Map v2.1</span>
         </div>
       </div>
     </div>

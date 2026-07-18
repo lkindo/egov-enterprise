@@ -66,7 +66,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  isFullscreen ? "fixed inset-0 z-[100] bg-white p-12 overflow-y-auto" : ""
  )}>
  {/* UI Header / Stats */}
- <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-slate-900 rounded-lg p-10 shadow-2xl relative overflow-hidden group">
+ <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-surface-inverse rounded-lg p-10 shadow-2xl relative overflow-hidden group">
  <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] opacity-10 pointer-events-none" />
  
  <div className="flex items-center gap-6 relative z-10 text-center lg:text-left">
@@ -75,7 +75,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="absolute -inset-2 bg-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
  </div>
  <div>
- <h3 className="text-2xl font-bold text-white tracking-tighter uppercase leading-none">Security_Matrix_Observer</h3>
+ <h3 className="text-2xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-none">Security_Matrix_Observer</h3>
  <p className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase mt-2">Global Access Plane & Permission Heatmap</p>
  </div>
  </div>
@@ -83,7 +83,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="flex items-center gap-10 relative z-10 bg-white/5 p-6 rounded-lg border border-white/5 backdrop-blur-md">
  <div className="space-y-1">
  <p className="text-xs font-bold text-white/30 tracking-widest uppercase">Coverage_Index</p>
- <p className="text-2xl font-bold text-white tabular-nums">{coverage.toFixed(1)}%</p>
+ <p className="text-2xl font-bold text-surface-inverse-foreground tabular-nums">{coverage.toFixed(1)}%</p>
  </div>
  <div className="w-px h-10 bg-white/10" />
  <div className="space-y-1 text-right">
@@ -100,7 +100,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  variant="ghost" 
  size="icon" 
  onClick={() => setIsFullscreen(!isFullscreen)}
- className="h-11 w-14 rounded-lg bg-white/10 text-white border border-white/10 hover:bg-white hover:text-foreground transition-all shadow-xl"
+ className="h-11 w-14 rounded-lg bg-white/10 text-surface-inverse-foreground border border-white/10 hover:bg-white hover:text-foreground transition-all shadow-xl"
  >
  {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
  </Button>
@@ -118,7 +118,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="bg-muted border-4 border-border rounded-lg p-10 flex flex-col gap-8 shadow-inner overflow-hidden">
  <div className="flex items-center gap-6">
  <div className="relative flex-1 group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={20} />
  <Input 
  className="h-11 pl-16 rounded-lg border-none shadow-xl text-md font-bold tracking-tight focus:ring-8 focus:ring-primary/5"
  placeholder="메뉴 노드 검색(명칭, ID)..."
@@ -131,8 +131,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="overflow-x-auto rounded-lg border-2 border-border bg-white shadow-2xl custom-scrollbar relative">
  <table className="w-full border-collapse table-fixed min-w-[1000px]">
  <thead>
- <tr className="border-b-2 border-border divide-x-2 divide-slate-50">
- <th className="sticky left-0 top-0 z-30 w-[240px] bg-slate-900 p-8 text-left border-r-4 border-slate-800">
+ <tr className="border-b-2 border-border divide-x-2 divide-border">
+ <th className="sticky left-0 top-0 z-30 w-[240px] bg-surface-inverse p-8 text-left border-r-4 border-surface-inverse-border">
  <div className="flex items-center gap-3">
  <Monitor size={16} className="text-primary" />
  <span className="text-xs font-bold text-white/40 tracking-[0.4em] uppercase ">Entity_Map</span>
@@ -145,15 +145,15 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <Lock size={14} />
  </div>
  <span className="text-xs font-bold text-foreground tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
- <span className="text-xs font-bold text-slate-300 tracking-widest font-mono uppercase">{auth.authorCode}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">{auth.authorCode}</span>
  </div>
  </th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y-2 divide-slate-100">
+ <tbody className="divide-y-2 divide-border">
  {filteredMenus.map((menu) => (
- <tr key={menu.menuNo} className="divide-x-2 divide-slate-50 hover:bg-muted/50 transition-colors group/row">
+ <tr key={menu.menuNo} className="divide-x-2 divide-border hover:bg-muted/50 transition-colors group/row">
  <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-border group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
  <div className={cn(
@@ -164,7 +164,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  <div className="flex flex-col min-w-0">
  <span className="text-sm font-bold text-foreground truncate tracking-tight">{menu.menuNm}</span>
- <span className="text-xs font-bold text-slate-300 tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
  </div>
  </div>
  </td>
@@ -203,8 +203,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  animate={{ opacity: 0.2 }}
  className="flex flex-col items-center gap-1 group-hover/cell:opacity-100 transition-opacity"
  >
- <Lock size={16} className="text-slate-300" />
- <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">DENIED</span>
+ <Lock size={16} className="text-muted-foreground" />
+ <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">DENIED</span>
  </motion.div>
  )}
  </AnimatePresence>

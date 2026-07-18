@@ -59,7 +59,7 @@ function AdminStatsLoading() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 h-[450px] bg-muted rounded-lg" />
-        <div className="h-[450px] bg-slate-900/5 rounded-lg" />
+        <div className="h-[450px] bg-muted rounded-lg" />
       </div>
       <div className="h-96 w-full bg-muted rounded-lg" />
     </div>

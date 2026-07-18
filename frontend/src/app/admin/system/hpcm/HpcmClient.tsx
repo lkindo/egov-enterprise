@@ -79,7 +79,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       header: '콘텐츠 명세',
       accessor: (item) => (
         <div className="flex items-center gap-5 py-4">
-          <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
             <BookOpen size={18} />
           </div>
           <div className="flex flex-col gap-1 text-left">
@@ -125,7 +125,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
         actions={
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="h-12 px-8 bg-slate-900 text-white rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all"
+            className="h-12 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all"
           >
             <Plus size={16} className="mr-2" /> 콘텐츠 등록
           </Button>
@@ -161,7 +161,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             <Button 
               onClick={form.handleSubmit(onRegisterSubmit)}
               disabled={registerLoading}
-              className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+              className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
               <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
             </Button>

@@ -166,7 +166,7 @@ export default function PolicyAdminClient() {
  {/* Edit Modal */}
  <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
  <DialogContent className="max-w-5xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
- <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
+ <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
  <DialogHeader>
  <DialogTitle className="text-2xl font-bold flex items-center gap-3">
  <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.plcyTypeCd}</span>
@@ -226,7 +226,7 @@ export default function PolicyAdminClient() {
  <Button 
  type="submit"
  disabled={form.formState.isSubmitting}
- className="rounded-lg h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-bold text-xs tracking-widest uppercase"
+ className="rounded-lg h-12 px-8 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground transition-all shadow-lg font-bold text-xs tracking-widest uppercase"
  >
  {form.formState.isSubmitting ? '저장 중...' : '변경 사항 반영하기'}
  </Button>

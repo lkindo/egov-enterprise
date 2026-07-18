@@ -19,7 +19,7 @@ export interface HubSummaryCardProps {
 const colorMap: Record<HubSummaryColor, string> = {
   blue: "bg-hub-blue/5 dark:bg-hub-blue/10 text-hub-blue dark:text-blue-400 border-hub-blue/20 dark:border-blue-500/30 shadow-xl shadow-hub-blue/5",
   orange: "bg-white dark:bg-white/5 text-foreground dark:text-orange-400 border-primary/20 dark:border-orange-500/30 shadow-xl shadow-primary/5",
-  purple: "bg-white dark:bg-white/5 text-foreground dark:text-purple-400 border-border dark:border-purple-500/30 shadow-xl shadow-slate-200/50 dark:shadow-none",
+  purple: "bg-white dark:bg-white/5 text-foreground dark:text-purple-400 border-border dark:border-purple-500/30 shadow-xl dark:shadow-none",
   emerald: "bg-hub-emerald/5 dark:bg-hub-emerald/10 text-hub-emerald dark:text-emerald-400 border-hub-emerald/20 dark:border-emerald-500/30 shadow-xl shadow-hub-emerald/5",
   rose: "bg-hub-rose/5 dark:bg-hub-rose/10 text-hub-rose dark:text-rose-400 border-hub-rose/20 dark:border-rose-500/30 shadow-xl shadow-hub-rose/5",
   amber: "bg-hub-amber/5 dark:bg-hub-amber/10 text-hub-amber dark:text-amber-400 border-hub-amber/20 dark:border-amber-500/30 shadow-xl shadow-hub-amber/5"
@@ -83,10 +83,10 @@ export function HubSummaryCard({
           {title}
           {e2eLabel && <span className="e2e-label sr-only">{e2eLabel}</span>}
         </p>
-        <h4 className="text-3xl font-bold tracking-tighter leading-none tabular-nums text-foreground dark:text-white">{value}</h4>
+        <h4 className="text-3xl font-bold tracking-tighter leading-none tabular-nums text-foreground">{value}</h4>
         {description && (
           <div className="pt-4 border-t border-border/10 dark:border-white/5">
-            <p className="text-xs opacity-75 font-semibold leading-relaxed max-w-[240px] text-muted-foreground dark:text-slate-300">
+            <p className="text-xs opacity-75 font-semibold leading-relaxed max-w-[240px] text-muted-foreground">
               {description}
             </p>
           </div>

@@ -23,7 +23,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
   return (
     <div className="hub-glass-premium rounded-[var(--radius-hub-section)] overflow-hidden bg-card/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all shadow-2xl border-2 border-border/40">
       {/* Premium Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-4 border-b bg-muted/50 dark:bg-slate-900/50 backdrop-blur-md">
+      <div className="flex flex-wrap items-center gap-1 p-4 border-b bg-muted/50 backdrop-blur-md">
         <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-lg border border-border/40">
             <EditorButton onClick={() => applyStyle('bold')} icon={<Bold size={16} />} label="Bold" />
             <EditorButton onClick={() => applyStyle('italic')} icon={<Italic size={16} />} label="Italic" />
@@ -72,7 +72,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
       </div>
 
       {/* Status Footer */}
-      <div className="px-6 py-3 border-t bg-muted/30 dark:bg-slate-900/30 flex justify-between items-center">
+      <div className="px-6 py-3 border-t bg-muted/30 flex justify-between items-center">
           <div className="flex items-center gap-4">
               <span className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
               <span className="text-xs font-bold text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
@@ -94,7 +94,7 @@ function EditorButton({ onClick, icon, label, className }: any) {
             onClick={onClick} 
             title={label}
             className={cn(
-                "p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all hover:shadow-md hover:scale-110 active:scale-95 text-muted-foreground hover:text-primary border border-transparent hover:border-border/40",
+                "p-2.5 hover:bg-card rounded-lg transition-all hover:shadow-md hover:scale-110 active:scale-95 text-muted-foreground hover:text-primary border border-transparent hover:border-border/40",
                 className
             )}
         >

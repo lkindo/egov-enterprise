@@ -108,7 +108,7 @@ export default function OnlinePollAdminClient({
  header: '설문 명',
  accessor: (item: OnlinePollDto) => (
  <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-white shadow-xl transition-transform group-hover:scale-110">
+ <div className="w-12 h-12 rounded-lg bg-surface-inverse border border-surface-inverse-border flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:scale-110">
  <Vote size={22} />
  </div>
  <div>
@@ -277,11 +277,11 @@ export default function OnlinePollAdminClient({
  </HubSectionCard>
 
  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
- <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-lg p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl relative overflow-x-hidden">
+ <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-lg p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl relative overflow-x-hidden">
  <div className="absolute top-[-15%] left-[-15%] w-64 h-64 bg-primary/5 blur-[80px] rounded-lg pointer-events-none" />
  
  <DialogHeader className="space-y-6 relative z-10 text-center">
- <div className="w-20 h-11 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-2xl mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
+ <div className="w-20 h-11 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-2xl mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
  <Vote size={32} />
  </div>
  <div className="space-y-2">
@@ -302,7 +302,7 @@ export default function OnlinePollAdminClient({
  placeholder="설문 명..."
  value={newPoll.pollNm}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollNm: e.target.value }))}
- className="h-11 px-8 rounded-lg border-none bg-muted text-xl font-bold focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+ className="h-11 px-8 rounded-lg border-none bg-muted text-xl font-bold focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
  />
  </section>
  
@@ -310,24 +310,24 @@ export default function OnlinePollAdminClient({
  <div className="space-y-4">
  <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">시작일시</label>
  <div className="relative group">
- <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+ <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
  value={newPoll.pollBgngYmd}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: e.target.value }))}
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white transition-all shadow-inner"
+ className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>
  </div>
  <div className="space-y-4">
  <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">종료일시</label>
  <div className="relative group">
- <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+ <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
  value={newPoll.pollEndYmd}
  onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: e.target.value }))}
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white transition-all shadow-inner"
+ className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>
  </div>
@@ -355,7 +355,7 @@ export default function OnlinePollAdminClient({
  key={index} 
  className="flex items-center gap-4 group/item"
  >
- <div className="w-14 h-11 rounded-lg bg-slate-900/5 dark:bg-muted/30 flex flex-col items-center justify-center font-bold text-slate-300 dark:text-muted-foreground text-xs shadow-inner border border-border/10 shrink-0">
+ <div className="w-14 h-11 rounded-lg bg-muted flex flex-col items-center justify-center font-bold text-muted-foreground text-xs shadow-inner border border-border/10 shrink-0">
  <span className="opacity-40 uppercase mb-0.5">노드</span>
  <span className="text-foreground leading-none">{String(index + 1).padStart(2, '0')}</span>
  </div>
@@ -368,7 +368,7 @@ export default function OnlinePollAdminClient({
  items[index].pollArtclNm = e.target.value;
  setNewPoll(prev => ({ ...prev, pollArticles: items }));
  }}
- className="h-11 px-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+ className="h-11 px-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
  />
  </div>
  {index > 1 && (
@@ -399,7 +399,7 @@ export default function OnlinePollAdminClient({
  <Button
  onClick={handleAdd}
  disabled={loading}
- className="h-11 flex-1 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+ className="h-11 flex-1 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
  >
  {loading ? <RefreshCcw size={18} className="animate-spin" /> : <MonitorCheck size={18} />}
  Commit Protocol
@@ -413,7 +413,7 @@ export default function OnlinePollAdminClient({
 
 function SummaryBlock({ title, value, icon, status, color, bg }: any) {
  return (
- <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white border-border/50 shadow-md", bg)}>
+ <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-card border-border/50 shadow-md", bg)}>
  <div className="flex justify-between items-start mb-10">
  <div className={cn("w-14 h-11 rounded-lg bg-muted dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
  {icon}

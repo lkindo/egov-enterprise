@@ -118,14 +118,14 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Button 
  onClick={() => router.push('/admin/community/boards/master')}
  variant="outline"
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-border bg-white text-foreground font-bold tracking-tight text-xs md:text-xs hover:bg-muted hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg border-2 border-border bg-card text-foreground font-bold tracking-tight text-xs md:text-xs hover:bg-muted hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> Master Console
  </Button>
  )}
  <Button 
  onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg bg-slate-900 text-white font-bold tracking-tight text-xs md:text-xs hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg md:rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs md:text-xs hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록
  </Button>
@@ -138,7 +138,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </motion.div>
 
  {/* 2. Intelligent Search Matrix */}
- <motion.div variants={hubItemVariants} className="relative h-[320px] md:h-[420px] rounded-lg md:rounded-lg bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-6 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none mx-2">
+ <motion.div variants={hubItemVariants} className="relative h-[320px] md:h-[420px] rounded-lg md:rounded-lg bg-surface-inverse overflow-hidden flex flex-col items-center justify-center p-6 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none mx-2">
  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-rose-500/10 opacity-60 animate-pulse duration-[10s]" />
  
  {isScanning && (
@@ -152,7 +152,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  <div className="relative z-20 text-center w-full max-w-4xl space-y-8 md:space-y-12 px-2 font-sans">
  <div className="space-y-3 md:space-y-4">
- <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tighter leading-none">지식 베이스</h1>
+ <h1 className="text-4xl md:text-6xl font-bold text-surface-inverse-foreground tracking-tighter leading-none">지식 베이스</h1>
  <div className="flex items-center justify-center gap-3 md:gap-4">
  <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
  <HubInsightBadge label="Enterprise Collective Intelligence Matrix" className="text-white/40 !opacity-40 text-xs md:text-xs" />
@@ -170,7 +170,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Input 
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-11 md:h-24 bg-white/5 border-2 border-white/5 rounded-lg md:rounded-lg px-16 md:px-24 text-white text-lg md:text-3xl font-bold placeholder:text-white/10 focus:bg-white focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
+ className="h-11 md:h-24 bg-white/5 border-2 border-white/5 rounded-lg md:rounded-lg px-16 md:px-24 text-surface-inverse-foreground text-lg md:text-3xl font-bold placeholder:text-white/10 focus:bg-white focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
  placeholder="지식 인텔리전스 검색..."
  />
  </div>
@@ -237,7 +237,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  animate={{ opacity: 1, scale: 1 }}
  className="flex flex-col items-center justify-center p-24 space-y-8 bg-muted border-2 border-dashed rounded-lg border-primary/20"
  >
- <div className="w-24 h-24 rounded-lg bg-white shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10 animate-bounce">
+ <div className="w-24 h-24 rounded-lg bg-card shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10 animate-bounce">
  <ShieldAlert size={48} />
  </div>
  <div className="text-center space-y-4 max-w-sm">
@@ -247,7 +247,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Button 
  onClick={() => setActiveCategory('COMMUNITY')}
  variant="outline"
- className="h-11 px-8 rounded-lg border-2 font-bold tracking-tight text-xs gap-3 shadow-xl hover:bg-slate-900 hover:text-white transition-all"
+ className="h-11 px-8 rounded-lg border-2 font-bold tracking-tight text-xs gap-3 shadow-xl hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all"
  >
  <ArrowRight size={16} /> Open Public Community
  </Button>
@@ -269,7 +269,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
  onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)}
- className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-lg md:rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
+ className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-card border border-border/40 rounded-lg md:rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
  >
  <div className="flex gap-4 md:gap-6 items-start">
  <div className="w-12 h-12 md:w-16 md:h-11 rounded-lg md:rounded-lg bg-muted flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
@@ -347,7 +347,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </HubSectionCard>
 
  <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 flex flex-col items-center justify-center text-center space-y-6">
- <div className="w-20 h-11 rounded-full bg-white flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
+ <div className="w-20 h-11 rounded-full bg-card flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
  <Sparkles size={32} />
  </div>
  <div>
@@ -382,7 +382,7 @@ function FilterButton({ active, onClick, label }: any) {
  "px-6 py-2 rounded-lg text-xs font-bold tracking-tight transition-all",
  active 
  ? "bg-primary text-white shadow-lg shadow-primary/20" 
- : "text-white/40 hover:text-white hover:bg-white/5"
+ : "text-white/40 hover:text-surface-inverse-foreground hover:bg-white/5"
  )}
  >
  {label}
@@ -459,7 +459,7 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
  "relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6 text-left w-full",
  active 
  ? "border-primary bg-primary/5 shadow-2xl scale-105" 
- : "border-border/40 bg-white hover:border-primary/20 hover:ring-[20px] hover:ring-primary/5"
+ : "border-border/40 bg-card hover:border-primary/20 hover:ring-[20px] hover:ring-primary/5"
  )}
  >
  <div className={cn("w-16 h-11 rounded-lg flex items-center justify-center shadow-inner", colorMap[color])}>

@@ -36,12 +36,12 @@ export default async function InstitutionCodePage() {
       
       <Suspense fallback={
         <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-muted/50 rounded-lg border-2 border-dashed border-border animate-pulse">
-            <div className="w-20 h-11 rounded-lg bg-slate-200/50 flex items-center justify-center">
-                <Building2 size={40} className="text-slate-300" />
+            <div className="w-20 h-11 rounded-lg bg-muted/50 flex items-center justify-center">
+                <Building2 size={40} className="text-muted-foreground" />
             </div>
             <div className="space-y-3 text-center">
-                <div className="h-4 w-48 bg-slate-200 rounded-lg mx-auto" />
-                <div className="h-3 w-32 bg-slate-200/60 rounded-lg mx-auto" />
+                <div className="h-4 w-48 bg-muted rounded-lg mx-auto" />
+                <div className="h-3 w-32 bg-muted/60 rounded-lg mx-auto" />
             </div>
         </div>
       }>

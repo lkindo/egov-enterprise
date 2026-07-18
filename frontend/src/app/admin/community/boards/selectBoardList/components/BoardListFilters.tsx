@@ -43,12 +43,12 @@ export const BoardListFilters = ({
   mounted
 }: BoardListFiltersProps) => {
   return (
-    <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-lg border border-slate-200 shadow-inner">
+    <div className="flex flex-row items-center gap-3 mb-4 bg-muted/50 p-6 rounded-lg border border-border shadow-inner">
       <form onSubmit={onSearch} className="flex flex-col gap-3 w-full">
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
           {mounted ? (
             <Select value={searchCnd} onValueChange={setSearchCnd}>
-              <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-lg border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
+              <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-lg border border-border bg-white font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
                 <SelectValue placeholder="검색 조건" />
               </SelectTrigger>
               <SelectContent>
@@ -58,22 +58,22 @@ export const BoardListFilters = ({
               </SelectContent>
             </Select>
           ) : (
-            <div className="w-full md:w-[220px] h-12 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
+            <div className="w-full md:w-[220px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
           )}
           <div className="relative flex-1 group !h-12">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 group-focus-within:text-primary transition-colors" />
             <Input
               id="board-search-input"
               data-testid="board-search-input"
               type="text"
-              className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+              className="pl-12 pr-10 !h-12 text-sm border border-border bg-white shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
               placeholder="어떤 정보를 찾으시나요?"
               value={searchWrd}
               onChange={(e) => setSearchWrd(e.target.value)}
               aria-label="검색어 입력"
             />
             {!searchWrd && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-xs font-bold text-slate-400 pointer-events-none select-none">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-muted text-xs font-bold text-muted-foreground pointer-events-none select-none">
                 <span className="text-xs opacity-100">⌘</span>K
               </div>
             )}
@@ -81,7 +81,7 @@ export const BoardListFilters = ({
               <button
                 type="button"
                 onClick={() => setSearchWrd("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="검색어 초기화"
               >
                 <X className="w-4 h-4" />
@@ -98,7 +98,7 @@ export const BoardListFilters = ({
                   <Button
                     variant="outline"
                     className={cn(
-                      "!h-12 px-5 justify-start text-left font-bold rounded-lg border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
+                      "!h-12 px-5 justify-start text-left font-bold rounded-lg border border-border bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
                       !startDate && "text-muted-foreground"
                     )}
                     aria-label="기간 선택"
@@ -119,12 +119,12 @@ export const BoardListFilters = ({
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-lg overflow-hidden border-none shadow-2xl" align="start">
                   <div className="p-3 bg-white border-b flex items-center justify-between">
-                    <span className="font-bold text-slate-800 text-sm">기간 설정</span>
+                    <span className="font-bold text-foreground text-sm">기간 설정</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
-                      className="!h-7 px-2 text-xs font-bold text-slate-400 hover:text-red-500"
+                      className="!h-7 px-2 text-xs font-bold text-muted-foreground hover:text-red-500"
                       aria-label="기간 초기화"
                     >
                       <X size={12} className="mr-1" /> 초기화
@@ -151,12 +151,12 @@ export const BoardListFilters = ({
                 </PopoverContent>
               </Popover>
             ) : (
-              <div className="w-full md:w-[220px] h-12 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
+              <div className="w-full md:w-[220px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
             )}
 
             {mounted ? (
               <Select value={orderBy} onValueChange={setOrderBy}>
-                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-lg border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
+                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-lg border border-border bg-white font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
                   <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                   <SelectValue placeholder="정렬 방식" />
                 </SelectTrigger>
@@ -167,15 +167,15 @@ export const BoardListFilters = ({
                 </SelectContent>
               </Select>
             ) : (
-              <div className="w-full md:w-[140px] h-12 rounded-lg border border-slate-200 bg-slate-100 animate-pulse" />
+              <div className="w-full md:w-[140px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
             )}
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">
-             <Button type="button" variant="outline" size="lg" onClick={onReset} className="!h-12 px-6 gap-2 border-slate-200 font-bold rounded-lg" aria-label="필터 초기화">
+             <Button type="button" variant="outline" size="lg" onClick={onReset} className="!h-12 px-6 gap-2 border-border font-bold rounded-lg" aria-label="필터 초기화">
                초기화
              </Button>
-             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-white rounded-lg flex items-center leading-none" aria-label="검색 수행">
+             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-12 px-10 gap-2 bg-surface-inverse border border-surface-inverse-border shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-surface-inverse-foreground rounded-lg flex items-center leading-none" aria-label="검색 수행">
                <Search className="w-4 h-4 shrink-0" /> 조회
              </Button>
           </div>

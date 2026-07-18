@@ -100,7 +100,7 @@ export function SmartOnboardingHub() {
         </div>
 
         {/* Left Side: Visual Preview */}
-        <div className="flex-1 bg-slate-900 p-12 flex items-center justify-center relative overflow-hidden group">
+        <div className="flex-1 bg-surface-inverse p-12 flex items-center justify-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-30" />
           <div className="relative z-10 w-full aspect-video rounded-lg border border-white/10 bg-black shadow-2xl flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />

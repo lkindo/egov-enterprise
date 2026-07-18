@@ -210,7 +210,7 @@ export default function ManualAdminClient({
             </Button>
             <Button
               onClick={handleOpenAdd}
-              className="h-11 px-8 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
+              className="h-11 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
             >
               <Plus size={18} /> 새 매뉴얼 등록
             </Button>
@@ -226,7 +226,7 @@ export default function ManualAdminClient({
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
           <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
               <BookOpen size={24} />
             </div>
             <div className="text-left">
@@ -247,7 +247,7 @@ export default function ManualAdminClient({
             </div>
             <Button
               onClick={handleRefresh}
-              className="h-11 px-8 bg-slate-900 text-white rounded-lg font-bold text-xs tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95"
+              className="h-11 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95"
             >
               검색
             </Button>
@@ -351,7 +351,7 @@ export default function ManualAdminClient({
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 px-16 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
+                  className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
                 >
                   {loading ? '처리 중...' : mode === 'edit' ? '수정 완료' : '등록 완료'}
                 </Button>

@@ -62,7 +62,7 @@ export default function UserManageClient() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
               <Users size={18} />
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-foreground dark:text-white">사용자 관리</h1>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">사용자 관리</h1>
           </div>
           <p className="text-muted-foreground font-bold text-sm tracking-tight pl-1">
             조직의 계정 권한 및 사용자 인벤토리를 관리합니다.
@@ -70,11 +70,11 @@ export default function UserManageClient() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-muted dark:bg-slate-800 p-1 rounded-lg border border-border/50">
+          <div className="flex bg-muted p-1 rounded-lg border border-border/50">
             <Button 
               variant="ghost" 
               size="sm" 
-              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'table' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'table' && "bg-card shadow-sm text-primary")}
               onClick={() => setViewMode('table')}
             >
               <List size={14} className="mr-2" />
@@ -83,14 +83,14 @@ export default function UserManageClient() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'grid' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              className={cn("h-8 rounded-lg px-3 font-bold text-[11px]", viewMode === 'grid' && "bg-card shadow-sm text-primary")}
               onClick={() => setViewMode('grid')}
             >
               <LayoutGrid size={14} className="mr-2" />
               그리드
             </Button>
           </div>
-          <Button className="h-10 rounded-xl px-5 bg-slate-900 hover:bg-black text-white font-bold text-xs tracking-tight shadow-lg transition-all hover:scale-105 active:scale-95 group">
+          <Button className="h-10 rounded-xl px-5 bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-lg transition-all hover:scale-105 active:scale-95 group">
             <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
             사용자 추가
           </Button>
@@ -102,7 +102,7 @@ export default function UserManageClient() {
  
  {/* 🛡️ Search & Filter Control (Bento Left) */}
  <div className="col-span-12 lg:col-span-4 space-y-6">
- <div className="hub-bento-card bg-slate-900 border-none p-8 text-white group relative overflow-hidden h-full flex flex-col justify-between">
+ <div className="hub-bento-card bg-surface-inverse border-none p-8 text-surface-inverse-foreground group relative overflow-hidden h-full flex flex-col justify-between">
  <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
  <Shield size={160} />
  </div>
@@ -149,7 +149,7 @@ export default function UserManageClient() {
  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
  <span className="text-xs font-bold tracking-widest opacity-60">REAL-TIME SYNC ACTIVE</span>
  </div>
- <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-white/40 hover:text-white hover:bg-white/5 h-8 px-2">
+ <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-surface-inverse-foreground/40 hover:text-surface-inverse-foreground hover:bg-white/5 h-8 px-2">
  <RefreshCw size={14} className="mr-2" />
  <span className="text-xs font-bold">REFRESH</span>
  </Button>
@@ -160,20 +160,20 @@ export default function UserManageClient() {
 
  {/* 📊 Inventory & Data Grid (Bento Right) */}
  <div className="col-span-12 lg:col-span-8">
- <div className="hub-bento-card p-0 bg-white dark:bg-slate-900 shadow-xl border-border/50 h-full flex flex-col">
- <div className="px-8 py-6 border-b border-border dark:border-slate-800 flex items-center justify-between bg-muted/50 dark:bg-slate-800/30">
+ <div className="hub-bento-card p-0 bg-card shadow-xl border-border/50 h-full flex flex-col">
+ <div className="px-8 py-6 border-b border-border flex items-center justify-between bg-muted/50">
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
  <Database size={16} />
  </div>
- <h3 className="text-sm font-bold tracking-tighter uppercase text-muted-foreground dark:text-slate-300">사용자 인벤토리</h3>
+ <h3 className="text-sm font-bold tracking-tighter uppercase text-muted-foreground">사용자 인벤토리</h3>
  </div>
  <div className="flex items-center gap-4">
- <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-lg">
+ <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg">
  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
- <span className="text-xs font-bold text-muted-foreground dark:text-muted-foreground">전체 {data?.total || 0}</span>
+ <span className="text-xs font-bold text-muted-foreground">전체 {data?.total || 0}</span>
  </div>
- <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+ <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
  <MoreHorizontal size={14} />
  </Button>
  </div>
@@ -182,7 +182,7 @@ export default function UserManageClient() {
  <div className="flex-1 overflow-hidden">
  <Table className="relative">
  <TableHeader>
- <TableRow className="hover:bg-transparent border-border dark:border-slate-800">
+ <TableRow className="hover:bg-transparent border-border">
  <TableHead className="w-[80px] py-6 text-xs font-bold text-muted-foreground uppercase text-center">Protocol</TableHead>
  <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Core Identity</TableHead>
  <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Clearance</TableHead>
@@ -195,23 +195,23 @@ export default function UserManageClient() {
  [...Array(5)].map((_, i) => (
  <TableRow key={`skeleton-${i}`} className="animate-pulse">
  <TableCell colSpan={5} className="py-10">
- <div className="h-4 bg-muted dark:bg-slate-800 rounded-lg w-full" />
+ <div className="h-4 bg-muted rounded-lg w-full" />
  </TableCell>
  </TableRow>
  ))
  ) : users.length > 0 ? (
  users.map((user: UserManage, idx: number) => (
- <TableRow key={user.esntlId} className="group hover:bg-muted dark:hover:bg-slate-800/50 transition-colors border-slate-50 dark:border-slate-800">
+ <TableRow key={user.esntlId} className="group hover:bg-muted transition-colors border-border">
  <TableCell className="text-center font-mono text-xs font-bold text-muted-foreground group-hover:text-primary transition-colors">
  #{idx + 1 + ((searchParams.pageIndex || 1) - 1) * (searchParams.size || 10)}
  </TableCell>
  <TableCell className="py-5">
  <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-muted dark:bg-slate-800 flex items-center justify-center text-muted-foreground group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner">
+ <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner">
  <UserCheck size={18} />
  </div>
  <div className="flex flex-col">
- <span className="font-bold text-foreground dark:text-white text-base tracking-tight leading-none mb-1">{user.userNm}</span>
+ <span className="font-bold text-foreground text-base tracking-tight leading-none mb-1">{user.userNm}</span>
  <span className="text-xs font-bold text-muted-foreground leading-none">{user.userId} • {user.emlAddr}</span>
  </div>
  </div>
@@ -220,7 +220,7 @@ export default function UserManageClient() {
  <div className="flex flex-col gap-1">
  <div className="flex items-center gap-2">
  <Shield size={10} className="text-muted-foreground" />
- <span className="text-xs font-bold text-muted-foreground dark:text-slate-300 uppercase tracking-tighter">Level_04</span>
+ <span className="text-xs font-bold text-muted-foreground uppercase tracking-tighter">Level_04</span>
  </div>
  <span className="text-xs font-bold text-muted-foreground ">Global Admin Access</span>
  </div>
@@ -232,7 +232,7 @@ export default function UserManageClient() {
  </TableCell>
  <TableCell className="text-right">
  <div className="flex items-center justify-end gap-2">
- <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-slate-900 hover:text-white transition-all">
+ <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all">
  <Edit2 size={16} />
  </Button>
  <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
@@ -256,11 +256,11 @@ export default function UserManageClient() {
  </Table>
  </div>
  
- <div className="px-8 py-6 border-t border-border dark:border-slate-800 flex items-center justify-between bg-muted/50 dark:bg-slate-800/30">
+ <div className="px-8 py-6 border-t border-border flex items-center justify-between bg-muted/50">
  <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Encryption Standard: AES-256-GCM</p>
  <div className="flex items-center gap-2">
  {[1, 2, 3].map(p => (
- <Button key={p} variant="outline" className={cn("w-8 h-8 p-0 rounded-lg font-bold text-xs", p === 1 && "bg-slate-900 text-white border-none shadow-lg")}>
+ <Button key={p} variant="outline" className={cn("w-8 h-8 p-0 rounded-lg font-bold text-xs", p === 1 && "bg-surface-inverse text-surface-inverse-foreground border-none shadow-lg")}>
  {p}
  </Button>
  ))}

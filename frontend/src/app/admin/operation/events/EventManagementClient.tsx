@@ -169,7 +169,7 @@ export default function EventManagementClient() {
  </Button>
  <Button 
  onClick={() => setIsCreateModalOpen(true)}
- className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3"
+ className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3"
  >
  <Plus size={18} /> 행사 등록
  </Button>
@@ -219,7 +219,7 @@ export default function EventManagementClient() {
  </div>
  {/* Radar Map (Visual Stats) */}
  <div className="col-span-12 lg:col-span-4 relative group lg:sticky lg:top-8 h-fit">
- <Card className="rounded-lg border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
+ <Card className="rounded-lg border-0 bg-surface-inverse text-surface-inverse-foreground shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-rose-500/5 pointer-events-none opacity-40 animate-pulse" />
  <div className="relative z-10 space-y-8">
  <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ export default function EventManagementClient() {
  <Settings2 size={20} className="text-white/20 group-hover:text-primary transition-colors cursor-pointer" />
  </div>
  <div className="space-y-2">
- <h1 className="text-6xl font-bold tracking-tighter tabular-nums text-white group-hover:text-primary transition-colors">
+ <h1 className="text-6xl font-bold tracking-tighter tabular-nums text-surface-inverse-foreground group-hover:text-primary transition-colors">
  {totalItems}
  </h1>
  <p className="text-xs font-bold text-white/40 tracking-[0.5em] uppercase">등록된 전역 행사 유닛 (Active Units)</p>
@@ -241,7 +241,7 @@ export default function EventManagementClient() {
  <div className="relative h-40 flex items-center justify-center opacity-20 my-8">
  <div className="absolute w-32 h-32 rounded-lg border border-white/10 group-hover:scale-150 transition-transform duration-1000" />
  <div className="absolute w-20 h-11 rounded-lg border border-primary/20 animate-ping" />
- <Calendar size={48} className="text-white group-hover:rotate-12 transition-transform" />
+ <Calendar size={48} className="text-surface-inverse-foreground group-hover:rotate-12 transition-transform" />
  </div>
 
  <div className="relative z-10 p-6 bg-white/5 rounded-lg backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
@@ -266,7 +266,7 @@ export default function EventManagementClient() {
  {/* Creation Modal */}
  <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
  <DialogContent className="max-w-2xl bg-white rounded-lg border-none shadow-2xl p-0 overflow-hidden">
- <div className="bg-slate-900 p-8 text-white">
+ <div className="bg-surface-inverse p-8 text-surface-inverse-foreground">
  <DialogHeader>
  <DialogTitle className="text-2xl font-bold tracking-tighter uppercase">Dispatch New Event</DialogTitle>
  <DialogDescription className="text-white/40 text-xs font-bold tracking-[0.2em] uppercase">Enterprise Event Protocol v1.0</DialogDescription>
@@ -346,7 +346,7 @@ export default function EventManagementClient() {
  />
  </div>
  </div>
- <DialogFooter className="pt-8 border-t border-slate-50">
+ <DialogFooter className="pt-8 border-t border-border">
  <Button type="button" variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="h-11 px-8 font-bold text-xs uppercase tracking-widest">Abort</Button>
  <Button type="submit" disabled={createMutation.isPending} className="h-11 px-10 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
  {createMutation.isPending ? 'Syncing...' : <><Zap size={16} /> Deploy Protocol</>}
@@ -378,7 +378,7 @@ function InsightCard({ label, value, desc, trend, type }: any) {
  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{label}</span>
  <h4 className={cn("text-3xl font-bold tracking-tighter leading-none", colorMap[type])}>{value}</h4>
  </div>
- <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+ <div className="pt-6 border-t border-border flex items-center justify-between">
  <div className="space-y-0.5">
  <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">{desc}</p>
  <span className={cn("text-xs font-bold tracking-widest uppercase", colorMap[type])}>{trend} SIGNALS</span>

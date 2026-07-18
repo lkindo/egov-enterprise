@@ -98,7 +98,7 @@ const BBSDetailClient = () => {
       />
 
       <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-lg bg-card ring-1 ring-primary/5">
-        <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
+        <CardHeader className="border-b bg-surface-inverse pb-20 pt-20 px-12 md:px-20 text-surface-inverse-foreground relative overflow-hidden">
           {/* Background Accents */}
           <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-lg blur-[100px]" />
@@ -125,7 +125,7 @@ const BBSDetailClient = () => {
                   tmpltId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
                   "text-primary"
                 )} />
-                <span className="text-xs font-bold tracking-[0.3em] text-white">
+                <span className="text-xs font-bold tracking-[0.3em] text-surface-inverse-foreground">
                   {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
                   {tmpltId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
                    tmpltId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
@@ -139,7 +139,7 @@ const BBSDetailClient = () => {
                 {pathname?.includes('insertBoardArticle') ? '새로운 통찰을' : '내용을 수정하여'} <br />
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
-              <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
+              <p className="text-surface-inverse-muted font-medium text-lg max-w-lg leading-relaxed">
                 {tmpltId === 'TMPLT_QNA' 
                   ? '궁금한 점을 상세히 적어주시면 정확한 답변을 드릴 수 있습니다.'
                   : '새로운 아이디어나 소식을 공유하여 커뮤니티의 가치를 높여주세요.'}
@@ -147,7 +147,7 @@ const BBSDetailClient = () => {
             </div>
             <div className="hidden lg:block relative">
               <div className="w-32 h-32 rounded-lg bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
-                <MessageSquare className="w-12 h-12 text-white/40" />
+                <MessageSquare className="w-12 h-12 text-surface-inverse-foreground/40" />
               </div>
               <div className="absolute -top-4 -right-4 w-12 h-12 rounded-lg bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
                 <Send size={20} className="text-white ml-1" />
@@ -280,14 +280,14 @@ const BBSDetailClient = () => {
             </div>
 
             {/* 보안 공지 */}
-            <div className="p-10 bg-slate-900 rounded-lg flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
+            <div className="p-10 bg-surface-inverse rounded-lg flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
               <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-lg blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
-              <div className="w-20 h-11 bg-slate-800 rounded-lg border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
+              <div className="w-20 h-11 bg-slate-800 rounded-lg border border-surface-inverse-border shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
               <div className="space-y-3 relative z-10 text-center md:text-left">
-                <p className="font-bold text-2xl text-white tracking-tight ">보안 준수 사항</p>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
+                <p className="font-bold text-2xl text-surface-inverse-foreground tracking-tight ">보안 준수 사항</p>
+                <p className="text-surface-inverse-muted text-sm font-medium leading-relaxed max-w-[450px]">
                   작성하신 정보는 프로젝트 자산으로 등록됩니다. <br />민감한 개인정보나 기밀 정보가 포함되지 않도록 주의해 주세요.
                 </p>
               </div>

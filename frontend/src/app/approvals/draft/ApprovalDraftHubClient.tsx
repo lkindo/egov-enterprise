@@ -100,7 +100,7 @@ export default function ApprovalDraftHubClient() {
             <Button 
                 variant="ghost" 
                 onClick={() => step === 'CATALOG' ? router.back() : setStep('CATALOG')}
-                className="w-14 h-11 rounded-lg bg-white shadow-xl hover:bg-muted transition-all border-none"
+                className="w-14 h-11 rounded-lg bg-card shadow-xl hover:bg-muted transition-all border-none"
             >
               <ArrowLeft size={24} className="text-foreground" />
             </Button>
@@ -114,7 +114,7 @@ export default function ApprovalDraftHubClient() {
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-xl border border-border">
+          <div className="hidden md:flex items-center gap-2 px-6 py-3 bg-card rounded-lg shadow-xl border border-border">
             <ShieldCheck size={16} className="text-emerald-500" />
             <span className="text-xs font-bold text-muted-foreground tracking-tight">Encryption Active</span>
           </div>
@@ -135,7 +135,7 @@ export default function ApprovalDraftHubClient() {
                     key={form.id}
                     whileHover={{ y: -5 }}
                     onClick={() => handleSelectForm(form)}
-                    className="group cursor-pointer bg-white p-8 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-primary/20 relative overflow-hidden"
+                    className="group cursor-pointer bg-card p-8 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-primary/20 relative overflow-hidden"
                   >
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                         {form.icon}
@@ -153,7 +153,7 @@ export default function ApprovalDraftHubClient() {
                           <span className="text-xs font-bold tracking-tight text-primary bg-primary/5 px-2 py-0.5 rounded">
                             {form.category}
                           </span>
-                          <span className="text-xs font-bold text-slate-300">_ #{form.id}</span>
+                          <span className="text-xs font-bold text-muted-foreground">_ #{form.id}</span>
                         </div>
                         <h3 className="text-xl font-bold text-foreground tracking-tight leading-none group-hover:text-primary transition-colors">
                           {form.title}
@@ -165,7 +165,7 @@ export default function ApprovalDraftHubClient() {
                     </div>
                     
                     <div className="mt-8 flex items-center justify-end">
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
                         <ChevronRight size={20} />
                       </div>
                     </div>
@@ -173,11 +173,11 @@ export default function ApprovalDraftHubClient() {
                 ))}
               </div>
               
-              <div className="p-12 bg-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center">
+              <div className="p-12 bg-surface-inverse rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
                 <div className="relative z-10 space-y-4">
-                  <h4 className="text-xl font-bold text-white tracking-tighter">_ "Precision in every dispatch."</h4>
-                  <p className="text-xs text-white/40 font-bold tracking-tight">Enterprise Autonomous Governance Core</p>
+                  <h4 className="text-xl font-bold text-surface-inverse-foreground tracking-tighter">_ "Precision in every dispatch."</h4>
+                  <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">Enterprise Autonomous Governance Core</p>
                 </div>
               </div>
             </motion.div>
@@ -191,7 +191,7 @@ export default function ApprovalDraftHubClient() {
             >
               {/* --- Left: Meta Info --- */}
               <div className="lg:col-span-4 space-y-6">
-                <Card className="rounded-[2.5rem] border-none bg-white shadow-2xl p-8 space-y-8 overflow-hidden relative">
+                <Card className="rounded-[2.5rem] border-none bg-card shadow-2xl p-8 space-y-8 overflow-hidden relative">
                    <div className="absolute top-0 right-0 p-6 opacity-[0.02]">
                       <Zap size={100} />
                    </div>
@@ -213,7 +213,7 @@ export default function ApprovalDraftHubClient() {
                            <span className="text-primary">SECURE</span>
                         </div>
                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-muted-foreground">
+                           <div className="w-10 h-10 rounded-lg bg-card shadow-sm flex items-center justify-center text-muted-foreground">
                               <User size={18} />
                            </div>
                            <div className="space-y-1">
@@ -224,26 +224,26 @@ export default function ApprovalDraftHubClient() {
                       </div>
                       
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-300 tracking-tight">
+                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground tracking-tight">
                            <Info size={14} className="text-primary" /> Logic Path
                         </div>
                         <div className="flex items-center gap-2">
                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                            <span className="text-xs font-bold text-muted-foreground tracking-tight">Draft</span>
-                           <ChevronRight size={12} className="text-slate-200" />
-                           <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                           <span className="text-xs font-bold text-slate-300 tracking-tight opacity-50">L1 Approval</span>
-                           <ChevronRight size={12} className="text-slate-200" />
-                           <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                           <span className="text-xs font-bold text-slate-300 tracking-tight opacity-50">Commit</span>
+                           <ChevronRight size={12} className="text-muted-foreground" />
+                           <div className="w-1.5 h-1.5 rounded-full bg-muted" />
+                           <span className="text-xs font-bold text-muted-foreground tracking-tight opacity-50">L1 Approval</span>
+                           <ChevronRight size={12} className="text-muted-foreground" />
+                           <div className="w-1.5 h-1.5 rounded-full bg-muted" />
+                           <span className="text-xs font-bold text-muted-foreground tracking-tight opacity-50">Commit</span>
                         </div>
                       </div>
                    </div>
                 </Card>
                 
-                <Card className="rounded-[2.5rem] border-none bg-slate-900 text-white shadow-2xl p-10 space-y-4">
+                <Card className="rounded-[2.5rem] border-none bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-10 space-y-4">
                    <h4 className="text-xs font-bold text-primary tracking-tight">Audit Protocol</h4>
-                   <p className="text-sm font-bold text-white/60 leading-relaxed">
+                   <p className="text-sm font-bold text-surface-inverse-muted leading-relaxed">
                     "All submissions are subject to real-time integrity checks and permanent ledger logging."
                    </p>
                 </Card>
@@ -251,7 +251,7 @@ export default function ApprovalDraftHubClient() {
 
               {/* --- Right: Secure Entry --- */}
               <div className="lg:col-span-8">
-                <Card className="rounded-[2.5rem] border-none bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col h-full min-h-[600px]">
+                <Card className="rounded-[2.5rem] border-none bg-card shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col h-full min-h-[600px]">
                   <div className="p-10 lg:p-14 space-y-12 flex-1">
                     <div className="space-y-6">
                        <label className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-3">
@@ -288,7 +288,7 @@ export default function ApprovalDraftHubClient() {
                     </Button>
                     <Button 
                         onClick={handleSubmit}
-                        className="h-11 px-10 rounded-lg bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none tracking-tight text-xs"
+                        className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none tracking-tight text-xs"
                     >
                       <Send size={20} /> Commit to Ledger
                     </Button>

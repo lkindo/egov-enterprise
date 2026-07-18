@@ -261,7 +261,7 @@ export function BoardMakerWizard() {
  <Check size={64} strokeWidth={4} />
  </div>
  <div className="space-y-4">
- <h2 className="text-5xl font-bold tracking-tighter text-foreground dark:text-white transition-colors">MISSION COMPLETE!</h2>
+ <h2 className="text-5xl font-bold tracking-tighter text-foreground transition-colors">MISSION COMPLETE!</h2>
  <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed max-w-md mx-auto transition-colors">
  게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
  </p>
@@ -290,7 +290,7 @@ export function BoardMakerWizard() {
  <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left">
  {/* Stepper Header */}
  <div className="flex justify-between items-center px-4 relative">
- <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0" />
+ <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
  {STEPS.map((step) => {
  const Icon = step.icon;
  const isActive = currentStep === step.id;
@@ -312,7 +312,7 @@ export function BoardMakerWizard() {
  <p className={cn("text-xs font-bold tracking-tighter", isActive ? "text-primary" : "text-muted-foreground")}>
  STEP 0{step.id}
  </p>
- <p className={cn("text-sm font-bold truncate max-w-[100px]", isActive ? "text-foreground dark:text-white" : "text-muted-foreground")}>
+ <p className={cn("text-sm font-bold truncate max-w-[100px]", isActive ? "text-foreground" : "text-muted-foreground")}>
  {step.title}
  </p>
  </div>
@@ -322,9 +322,9 @@ export function BoardMakerWizard() {
  </div>
 
  {/* Main Content Card */}
- <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50">
+ <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-border/50">
  <form onSubmit={handleSubmit(onSubmit, (errors) => console.log('>>> [Validation Error] ', errors))}>
- <CardHeader className="bg-muted dark:bg-slate-900 p-12 text-foreground dark:text-white relative border-b border-border dark:border-slate-800 transition-colors">
+ <CardHeader className="bg-muted p-12 text-foreground relative border-b border-border transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <h3 className="text-4xl font-bold tracking-tighter text-left">
  {STEPS[currentStep - 1].title}
@@ -351,7 +351,7 @@ export function BoardMakerWizard() {
  {currentStep === 1 && (
  <div className="space-y-10 text-left">
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsTtl" className="text-xl font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
+ <Label htmlFor="bbsTtl" className="text-xl font-bold text-foreground flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-primary rounded-lg inline-block" />
  게시판 명칭
  </Label>
@@ -360,8 +360,8 @@ export function BoardMakerWizard() {
  autoFocus
  placeholder="예) 사내 소식 공유 게시판"
  className={cn(
- "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-white dark:bg-slate-950",
- errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-border dark:border-slate-800"
+ "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-card",
+ errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-border"
  )}
  {...register('bbsTtl')}
  />
@@ -369,20 +369,20 @@ export function BoardMakerWizard() {
  </div>
 
  <div className="space-y-4 text-left">
- <Label htmlFor="bbsExpln" className="text-xl font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
- <span className="w-1.5 h-6 bg-slate-200 dark:bg-slate-700 rounded-lg inline-block" />
+ <Label htmlFor="bbsExpln" className="text-xl font-bold text-foreground flex items-center gap-2 transition-colors">
+ <span className="w-1.5 h-6 bg-muted rounded-lg inline-block" />
  게시판 소개
  </Label>
  <Textarea
  id="bbsExpln"
  placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
- className="min-h-[140px] text-lg rounded-lg border-2 border-border dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
+ className="min-h-[140px] text-lg rounded-lg border-2 border-border bg-card px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
  {...register('bbsExpln')}
  />
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-slate-50 bg-muted/30 group hover:border-primary/20 transition-all text-left">
+ <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
  <Label className="text-lg font-bold text-foreground flex items-center gap-2">
  댓글 사용 여부
@@ -397,9 +397,9 @@ export function BoardMakerWizard() {
  />
  </div>
 
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border dark:border-slate-800 bg-muted/30 dark:bg-slate-900/10 group hover:border-primary/20 transition-all text-left">
+ <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
- <Label className="text-lg font-bold text-foreground dark:text-white flex items-center gap-2 transition-colors">
+ <Label className="text-lg font-bold text-foreground flex items-center gap-2 transition-colors">
  파일 첨부 여부
  <Info className="w-4 h-4 text-slate-300 dark:text-muted-foreground" />
  </Label>
@@ -436,7 +436,7 @@ export function BoardMakerWizard() {
  }}
  className={cn(
  "group relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
- isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-muted/30 hover:border-border"
+ isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-border bg-muted/30 hover:border-border"
  )}
  >
  <div className={cn(
@@ -465,7 +465,7 @@ export function BoardMakerWizard() {
  );
  })}
  </div>
- <div className="p-8 bg-muted dark:bg-slate-950 rounded-lg text-muted-foreground dark:text-white/40 font-mono text-xs tracking-widest leading-relaxed text-left border border-border dark:border-slate-800 transition-colors">
+ <div className="p-8 bg-muted rounded-lg text-muted-foreground dark:text-white/40 font-mono text-xs tracking-widest leading-relaxed text-left border border-border transition-colors">
  디자인 최적화 활성 <br />
  UI 렌더링 모드: 고해상도 <br />
  템플릿 ID: {selectedTemplate}
@@ -487,18 +487,18 @@ export function BoardMakerWizard() {
 
  {currentStep === 3 && (
  <div className="space-y-8 text-left">
- <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-inner bg-muted/30">
+ <div className="rounded-lg border-2 border-border overflow-hidden shadow-inner bg-muted/30">
  <div className="overflow-x-auto">
  <table className="w-full min-w-[800px]">
  <thead>
- <tr className="bg-slate-900/5 border-b">
+ <tr className="bg-muted border-b">
  <th className="p-8 text-left font-bold text-muted-foreground text-sm tracking-widest uppercase">사용자 그룹 (Roles)</th>
  {PERMISSIONS.map(p => (
  <th key={p.id} className="p-8 text-center font-bold text-muted-foreground text-sm tracking-widest uppercase">{p.name}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-slate-100">
+ <tbody className="divide-y divide-border">
  {ROLES.map(role => {
  const RoleIcon = role.icon;
  const rolePerms = (permissions[role.id] as string[]) || [];
@@ -593,7 +593,7 @@ export function BoardMakerWizard() {
  </div>
  </div>
 
- <div className="p-10 rounded-lg bg-muted dark:bg-slate-900 text-foreground dark:text-white border border-border dark:border-none flex items-center justify-between group overflow-hidden relative text-left transition-colors">
+ <div className="p-10 rounded-lg bg-muted text-foreground border border-border dark:border-none flex items-center justify-between group overflow-hidden relative text-left transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <p className="text-primary font-bold tracking-widest text-xs uppercase text-left transition-colors">Generated Path</p>
  <h5 className="text-2xl font-bold tracking-tight flex items-center gap-3 text-left transition-colors">
@@ -619,7 +619,7 @@ export function BoardMakerWizard() {
  size="lg"
  onClick={prevStep}
  disabled={currentStep === 1 || isSubmitting}
- className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-white hover:text-slate-950 transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
+ className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-white hover:text-foreground transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
  >
  <ChevronLeft className="w-6 h-6" /> 이전 단계
  </Button>

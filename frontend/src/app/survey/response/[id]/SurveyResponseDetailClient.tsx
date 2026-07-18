@@ -51,7 +51,7 @@ export default function SurveyResponseDetailClient() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="md:col-span-1 border-none shadow-lg bg-slate-900 text-white overflow-hidden relative">
+                <Card className="md:col-span-1 border-none shadow-lg bg-surface-inverse text-surface-inverse-foreground overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
                         <User size={120} />
                     </div>

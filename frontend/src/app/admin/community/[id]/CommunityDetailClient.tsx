@@ -158,18 +158,18 @@ export default function CommunityDetailClient() {
                 {/* PageHeader 1:1 스켈레톤 */}
                 <div className="flex justify-between items-center pb-6 border-b border-border">
                     <div className="space-y-2 w-1/3">
-                        <div className="h-8 bg-slate-200 rounded-lg w-3/4" />
+                        <div className="h-8 bg-muted rounded-lg w-3/4" />
                         <div className="h-4 bg-muted/80 rounded-lg w-1/2" />
                     </div>
-                    <div className="h-10 bg-slate-200 rounded-lg w-28" />
+                    <div className="h-10 bg-muted rounded-lg w-28" />
                 </div>
                 {/* StandardSearchFilter 1:1 스켈레톤 */}
                 <div className="h-16 bg-muted/80 rounded-xl border border-border" />
                 {/* StandardDataTable 1:1 스켈레톤 */}
                 <div className="space-y-3">
-                    <div className="h-12 bg-slate-200/80 rounded-lg" />
+                    <div className="h-12 bg-muted/80 rounded-lg" />
                     {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="h-16 bg-muted/50 rounded-lg border border-slate-50" />
+                        <div key={i} className="h-16 bg-muted/50 rounded-lg border border-border" />
                     ))}
                 </div>
             </div>

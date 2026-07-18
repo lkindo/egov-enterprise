@@ -32,7 +32,7 @@ export function HubMetricCard({
     rose: "text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10 shadow-rose-500/5",
     amber: "text-amber-600 dark:text-amber-400 bg-amber-500/5 border-amber-500/10 shadow-amber-500/5",
     indigo: "text-indigo-600 dark:text-indigo-400 bg-indigo-600/5 border-indigo-500/10 shadow-indigo-600/5",
-    slate: "text-foreground dark:text-slate-200 bg-muted dark:bg-slate-900 border-border dark:border-slate-800 shadow-slate-900/5",
+    slate: "text-foreground bg-muted border-border shadow-slate-900/5",
   };
 
   const iconBgMap = {
@@ -46,7 +46,7 @@ export function HubMetricCard({
 
   return (
     <div className={cn(
-      "hub-table-container p-8 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white dark:bg-slate-950 border-border/50 dark:border-border/40 shadow-md",
+      "hub-table-container p-8 group hover:scale-[1.02] transition-all relative overflow-hidden bg-card border-border/50 dark:border-border/40 shadow-md",
       className
     )}>
       <div className="flex justify-between items-start mb-8 relative z-10">
@@ -69,7 +69,7 @@ export function HubMetricCard({
         </div>
       </div>
       <div className="relative z-10">
-        <h3 className="text-3xl font-bold tracking-tighter text-foreground dark:text-white leading-none tabular-nums flex items-baseline gap-1.5">
+        <h3 className="text-3xl font-bold tracking-tighter text-foreground leading-none tabular-nums flex items-baseline gap-1.5">
           {typeof value === 'number' ? value.toLocaleString() : value}
           {unit && <span className="text-xs font-bold text-muted-foreground dark:text-muted-foreground tracking-tight uppercase">{unit}</span>}
         </h3>

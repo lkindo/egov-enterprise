@@ -11,7 +11,7 @@ const SearchPageClient = () => {
             <div className="min-h-[80vh] flex flex-col items-center justify-center gap-10 p-20 text-center animate-in fade-in duration-1000">
                 <div className="relative group">
                     <div className="absolute inset-0 bg-primary/20 rounded-lg blur-3xl group-hover:scale-150 transition-transform duration-1000 animate-pulse" />
-                    <div className="relative w-32 h-32 bg-white rounded-lg border-2 border-border flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">
+                    <div className="relative w-32 h-32 bg-card rounded-lg border-2 border-border flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">
                         <Loader2 className="w-16 h-11 text-primary animate-spin" strokeWidth={3} />
                     </div>
                 </div>
@@ -21,7 +21,7 @@ const SearchPageClient = () => {
                         <span className="text-xs font-bold text-primary uppercase tracking-[0.4em] font-mono">통합 신경망 검색 분석</span>
                     </div>
                     <h2 className="text-4xl font-bold tracking-tighter text-foreground leading-tight">데이터 인구조사 분석 중...</h2>
-                    <p className="text-sm font-bold text-slate-300 max-w-xs mx-auto tracking-tight uppercase leading-relaxed font-mono">실시간 분산 검색 인덱스에서 최적의 파라미터를 추출하고 있습니다.</p>
+                    <p className="text-sm font-bold text-muted-foreground max-w-xs mx-auto tracking-tight uppercase leading-relaxed font-mono">실시간 분산 검색 인덱스에서 최적의 파라미터를 추출하고 있습니다.</p>
                 </div>
                 <div className="w-64 h-1.5 bg-muted rounded-lg overflow-hidden relative">
                     <div className="absolute inset-0 bg-primary w-1/3 animate-[progress_2s_infinite_ease-in-out]" />

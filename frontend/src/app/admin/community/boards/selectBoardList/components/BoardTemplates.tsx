@@ -66,12 +66,12 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
     >
       {page === 1 && (
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-12 p-12 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl text-white relative overflow-hidden group border-none shadow-2xl">
+          <Card className="lg:col-span-12 p-12 bg-surface-inverse rounded-3xl text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
             <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
             <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
             
             <div className="relative z-10 space-y-8">
-              <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">FEATURED_KNOWLEDGE</Badge>
+              <Badge className="bg-white/10 backdrop-blur-md text-surface-inverse-foreground border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">FEATURED_KNOWLEDGE</Badge>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
                 <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].pstTtl}</h3>
               </Link>
@@ -107,20 +107,20 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
                 <BookOpen size={80} />
               </div>
               <div className="flex items-center justify-between mb-2">
-                <Badge variant="secondary" className="bg-slate-100/80 text-slate-500 font-bold px-3 py-1 rounded-lg">KNOWLEDGE</Badge>
+                <Badge variant="secondary" className="bg-muted/80 text-muted-foreground font-bold px-3 py-1 rounded-lg">KNOWLEDGE</Badge>
                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">UNIT_{String(item.pstId).slice(-4)}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
-                <h4 className="font-black text-slate-800 text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
+                <h4 className="font-black text-foreground text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
               </Link>
-              <div className="flex justify-between items-center pt-6 border-t border-slate-200/50">
+              <div className="flex justify-between items-center pt-6 border-t border-border/50">
                 <div className="flex gap-4">
-                  <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={16} className="text-slate-300" /> {item.inqCnt}</div>
-                  <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><MessageSquare size={16} className="text-slate-300" /> 0</div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={16} className="text-slate-300" /> {item.inqCnt}</div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={16} className="text-slate-300" /> 0</div>
                 </div>
                 <motion.div 
                   whileHover={{ x: 5 }}
-                  className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm transition-all"
+                  className="w-12 h-12 rounded-2xl bg-white border border-border flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm transition-all"
                 >
                   <ChevronRight size={20} />
                 </motion.div>
@@ -145,41 +145,41 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
       {list.map((item: BoardPost) => (
         <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md border border-white shadow-xl transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 ring-1 ring-black/5">
-            <div className="h-72 overflow-hidden relative bg-slate-100">
-              <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
+            <div className="h-72 overflow-hidden relative bg-muted">
+              <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-white to-purple-100 group-hover:scale-110 transition-transform duration-1000" />
                 <BookOpen size={140} className="text-slate-200 opacity-40 relative z-10 group-hover:rotate-12 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
               </div>
-              <div className="absolute top-8 right-8 px-5 py-2 bg-slate-900/80 backdrop-blur-xl rounded-2xl text-white text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
+              <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
             </div>
             <CardContent className="p-10 space-y-8">
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-[1.1] group-hover:text-primary transition-all cursor-pointer line-clamp-2">
+                <h3 className="text-3xl font-black text-foreground tracking-tighter leading-[1.1] group-hover:text-primary transition-all cursor-pointer line-clamp-2">
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h3>
               </Link>
-              <div className="flex items-center justify-between pt-8 border-t border-slate-100/50">
+              <div className="flex items-center justify-between pt-8 border-t border-border/50">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-black text-xs border border-white shadow-inner">OP</div>
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-muted-foreground font-black text-xs border border-white shadow-inner">OP</div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-black text-slate-800 leading-none mb-1.5">
+                    <span className="text-sm font-black text-foreground leading-none mb-1.5">
                       <HighlightText text={item.userNm} highlight={querySearchWrd} />
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <motion.button 
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-slate-400 hover:text-primary hover:border-primary/30 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
                     aria-label="좋아요"
                   >
                     <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} />
                     <span className="text-sm font-black text-slate-900">{item.likeCnt || 0}</span>
                   </motion.button>
-                  <Button variant="ghost" size="icon" className="rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400">
+                  <Button variant="ghost" size="icon" className="rounded-xl bg-muted hover:bg-accent text-muted-foreground">
                     <Share2 size={20} />
                   </Button>
                 </div>
@@ -224,31 +224,31 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest uppercase">
                   {item.qnaCatCd || 'GENERAL_QNA'}
                 </Badge>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                <span className="text-[10px] font-black text-slate-400 flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-muted" />
+                <span className="text-[10px] font-black text-muted-foreground flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
-                <h4 className="text-3xl font-black text-slate-900 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
+                <h4 className="text-3xl font-black text-foreground leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h4>
               </Link>
               <div className="flex flex-wrap items-center gap-8 pt-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black border border-white shadow-sm">AD</div>
-                  <span className="text-xs font-black text-slate-600 uppercase tracking-tight">
+                  <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-black border border-white shadow-sm">AD</div>
+                  <span className="text-xs font-black text-muted-foreground uppercase tracking-tight">
                     <HighlightText text={item.userNm} highlight={querySearchWrd} />
                   </span>
                 </div>
-                <div className="h-4 w-px bg-slate-100" />
-                <div className="flex items-center gap-2.5 text-slate-400 font-black text-[10px] tracking-widest uppercase">
+                <div className="h-4 w-px bg-muted" />
+                <div className="flex items-center gap-2.5 text-muted-foreground font-black text-[10px] tracking-widest uppercase">
                   <MessageSquare size={16} className="text-amber-400" />
                   <span>{item.commentCnt || 0} Responses</span>
                 </div>
-                <div className="h-4 w-px bg-slate-100" />
-                <motion.button 
+                <div className="h-4 w-px bg-muted" />
+                <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => handleLike(e, String(item.pstId))}
-                  className="flex items-center gap-2.5 text-slate-400 hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
+                  className="flex items-center gap-2.5 text-muted-foreground hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
                   aria-label="좋아요"
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
@@ -297,7 +297,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex justify-between items-center bg-slate-900 p-10 rounded-[2.5rem] text-white relative overflow-hidden shadow-2xl"
+        className="flex justify-between items-center bg-surface-inverse p-10 rounded-[2.5rem] text-surface-inverse-foreground relative overflow-hidden shadow-2xl"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
         <div className="space-y-2 relative z-10">
@@ -333,7 +333,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
         className="grid grid-cols-7 gap-5"
       >
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} className="text-center font-black text-slate-300 text-[10px] tracking-[0.4em] pb-6 border-b-2 border-slate-50 uppercase">{d}</div>
+          <div key={d} className="text-center font-black text-slate-300 text-[10px] tracking-[0.4em] pb-6 border-b-2 border-border uppercase">{d}</div>
         ))}
         {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
           const isCurrentMonth = day > 0 && day <= daysInMonth;
@@ -346,21 +346,21 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               variants={itemVariants}
               className={cn(
                 "min-h-[180px] p-6 border-2 transition-all relative group rounded-3xl",
-                isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-slate-50 hover:border-slate-200 hover:shadow-xl",
-                !isCurrentMonth ? "opacity-10 pointer-events-none bg-slate-50/50" : ""
+                isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-border hover:border-border hover:shadow-xl",
+                !isCurrentMonth ? "opacity-10 pointer-events-none bg-muted/50" : ""
               )}
             >
               <div className="flex justify-between items-start mb-6">
                 <span className={cn(
                   "text-2xl font-black tracking-tighter", 
-                  isToday ? "text-primary" : "text-slate-200 group-hover:text-slate-900",
+                  isToday ? "text-primary" : "text-slate-200 group-hover:text-foreground",
                   (i % 7 === 0) && isCurrentMonth ? "text-rose-400" : "", // Sunday
                   (i % 7 === 6) && isCurrentMonth ? "text-indigo-400" : "" // Saturday
                 )}>
                   {isCurrentMonth ? day : ''}
                 </span>
                 {dayPosts.length > 0 && (
-                  <Badge className="bg-slate-900 text-white hover:bg-primary text-[10px] font-black h-6 w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
+                  <Badge className="bg-surface-inverse text-surface-inverse-foreground hover:bg-primary text-[10px] font-black h-6 w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
                     {dayPosts.length}
                   </Badge>
                 )}
@@ -373,7 +373,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate uppercase tracking-tight",
-                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white"
+                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-border text-slate-900 hover:bg-slate-900 hover:text-white"
                     )}
                     title={post.pstTtl}
                   >
@@ -403,7 +403,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
       <Card 
         className={cn(
           "overflow-hidden transition-all duration-500 rounded-3xl border border-white shadow-xl ring-1 ring-black/5",
-          isOpen ? "bg-white/80 backdrop-blur-xl shadow-2xl border-indigo-200" : "bg-white/40 hover:bg-white hover:border-slate-200"
+          isOpen ? "bg-white/80 backdrop-blur-xl shadow-2xl border-indigo-200" : "bg-white/40 hover:bg-white hover:border-border"
         )}
       >
         <div 
@@ -419,7 +419,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
             </div>
             <h4 className={cn(
               "text-2xl font-black tracking-tighter transition-colors uppercase leading-tight",
-              isOpen ? "text-indigo-600" : "text-slate-800"
+              isOpen ? "text-indigo-600" : "text-foreground"
             )}>
               {item.pstTtl}
             </h4>
@@ -443,19 +443,19 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
             >
-              <div className="px-8 pb-10 ml-[88px] border-t border-slate-100/50 pt-8 relative overflow-hidden">
+              <div className="px-8 pb-10 ml-[88px] border-t border-border/50 pt-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] grayscale pointer-events-none">
                   <BookOpen size={120} className="text-indigo-500" />
                 </div>
                 <div className="flex items-start gap-6 relative z-10">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-xl shadow-emerald-500/20">A</div>
                   <div className="space-y-6 flex-1">
-                    <p className="text-slate-600 font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
+                    <p className="text-muted-foreground font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
                       {item.pstCn}
                     </p>
-                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-slate-50">
+                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-border">
                       <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-100" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted" />
                       <span className="flex items-center gap-2"><Eye size={12} /> Reach: {item.inqCnt} Units</span>
                     </div>
                   </div>
@@ -498,31 +498,31 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
         <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden bg-white/40 backdrop-blur-md border border-white hover:border-slate-900 transition-all rounded-[2.5rem] shadow-xl hover:shadow-2xl ring-1 ring-black/5">
             <div className="flex flex-col md:flex-row">
-              <div className="w-full md:w-24 bg-slate-900 flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
+              <div className="w-full md:w-24 bg-surface-inverse flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <BookOpen className="text-white opacity-40 group-hover:opacity-100 group-hover:scale-125 transition-all relative z-10" size={32} />
+                <BookOpen className="text-surface-inverse-foreground opacity-40 group-hover:opacity-100 group-hover:scale-125 transition-all relative z-10" size={32} />
               </div>
               <div className="flex-1 p-10 space-y-6">
                 <div className="flex items-center gap-5">
-                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 rounded-lg border-slate-100 px-4 py-1.5">Documentation_v3.0</Badge>
+                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground rounded-lg border-border px-4 py-1.5">Documentation_v3.0</Badge>
                   <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                 </div>
                 <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
-                  <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
+                  <h4 className="text-2xl font-black text-foreground leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
                     <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </h4>
                 </Link>
-                <p className="text-slate-500 font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
-                <div className="flex items-center gap-10 pt-8 border-t border-slate-50">
+                <p className="text-muted-foreground font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
+                <div className="flex items-center gap-10 pt-8 border-t border-border">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Compiler</span>
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                    <span className="text-xs font-black text-foreground uppercase tracking-tight">
                        <HighlightText text={item.userNm} highlight={querySearchWrd} />
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Global_Index</span>
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{(item.inqCnt || 0).toLocaleString()}</span>
+                    <span className="text-xs font-black text-foreground uppercase tracking-tight">{(item.inqCnt || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -539,24 +539,24 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
   return (
     <div className="overflow-hidden">
       <Table>
-        <TableHeader className="bg-slate-50/50">
-          <TableRow className="hover:bg-transparent border-b-2 border-slate-100">
-            <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-wider text-[11px] py-6">번호</TableHead>
-            <TableHead className="font-black text-slate-900 tracking-wider text-[11px] py-6 px-8">제목</TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">작성자</TableHead>
-            <TableHead className="w-[120px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">등록일</TableHead>
-            <TableHead className="w-[160px] font-black text-slate-400 tracking-wider text-[11px] py-6 text-center">조회/추천</TableHead>
+        <TableHeader className="bg-muted/50">
+          <TableRow className="hover:bg-transparent border-b-2 border-border">
+            <TableHead className="w-[80px] text-center font-black text-muted-foreground tracking-wider text-[11px] py-6">번호</TableHead>
+            <TableHead className="font-black text-foreground tracking-wider text-[11px] py-6 px-8">제목</TableHead>
+            <TableHead className="w-[120px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">작성자</TableHead>
+            <TableHead className="w-[120px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">등록일</TableHead>
+            <TableHead className="w-[160px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">조회/추천</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {list.map((item: BoardPost, idx: number) => (
-            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-slate-50 last:border-0 relative">
-              <TableCell className="text-center font-bold text-xs text-slate-400 py-5">
+            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-border last:border-0 relative">
+              <TableCell className="text-center font-bold text-xs text-muted-foreground py-5">
                 {(totalCount - ((page - 1) * 10) - idx).toString().padStart(3, '0')}
               </TableCell>
               <TableCell className="px-8 py-5">
                 <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
-                  <div className="text-sm font-black text-slate-800 group-hover/link:text-primary transition-all tracking-tight leading-snug truncate">
+                  <div className="text-sm font-black text-foreground group-hover/link:text-primary transition-all tracking-tight leading-snug truncate">
                     <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -566,12 +566,12 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                 </Link>
               </TableCell>
               <TableCell className="text-center py-5">
-                <div className="font-bold text-xs text-slate-600 tracking-tight">
+                <div className="font-bold text-xs text-muted-foreground tracking-tight">
                   <HighlightText text={item.userNm} highlight={querySearchWrd} />
                 </div>
               </TableCell>
               <TableCell className="text-center py-5">
-                <div className="font-bold text-xs text-slate-400 tracking-tight">
+                <div className="font-bold text-xs text-muted-foreground tracking-tight">
                   {item.crtDt ? String(item.crtDt).substring(0, 10).replace(/-/g, '.') : '-'}
                 </div>
               </TableCell>
@@ -584,7 +584,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
-                    className="font-bold text-[10px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-100 shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
+                    className="font-bold text-[10px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
                     aria-label="좋아요"
                   >
                     <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
@@ -621,7 +621,7 @@ export const BoardSkeleton = ({ tmpltId }: { tmpltId: string }) => {
     return (
       <div className="p-10 space-y-8">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex gap-8 p-10 border-2 border-slate-50 rounded-[2.5rem]">
+          <div key={i} className="flex gap-8 p-10 border-2 border-border rounded-[2.5rem]">
             <Skeleton className="w-20 h-16 rounded-2xl shrink-0" />
             <div className="space-y-4 flex-1">
               <Skeleton className="h-10 w-1/2 rounded-xl" />

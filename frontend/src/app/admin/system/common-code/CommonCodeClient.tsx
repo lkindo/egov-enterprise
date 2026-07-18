@@ -124,10 +124,10 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  >
  {/* Hierarchy Line for Groups */}
  {!isCluster && !isOverlay && (
- <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-slate-200" />
+ <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-border" />
  )}
  {!isCluster && !isOverlay && (
- <div className="absolute left-[11px] top-1/2 w-3 h-px bg-slate-200" />
+ <div className="absolute left-[11px] top-1/2 w-3 h-px bg-border" />
  )}
 
  <button
@@ -140,7 +140,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  isCluster 
  ? "bg-muted/50 hover:bg-muted/50 border border-transparent" 
  : "hover:bg-muted border border-transparent",
- isSelected && isCluster && "bg-slate-900 text-white shadow-xl border-slate-800",
+ isSelected && isCluster && "bg-surface-inverse text-surface-inverse-foreground shadow-xl border-surface-inverse-border",
  isSelected && !isCluster && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
  isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
  )}
@@ -518,7 +518,7 @@ export default function CommonCodeClient({
  <div className="p-6 border-b border-border/50 bg-muted/30 space-y-4">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2.5">
- <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+ <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
  <Database size={16} />
  </div>
  <h3 className="text-[10px] font-black tracking-widest text-foreground uppercase">
@@ -545,7 +545,7 @@ export default function CommonCodeClient({
  placeholder="검색어를 입력하세요..."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-10 pl-12 pr-6 bg-white/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ className="h-10 pl-12 pr-6 bg-white/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
  />
  </div>
  </div>
@@ -612,7 +612,7 @@ export default function CommonCodeClient({
  <div className="space-y-6">
  <div className="p-8 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-black/5">
  <div className="flex items-center gap-6">
- <div className="w-14 h-11 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-2xl rotate-2">
+ <div className="w-14 h-11 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-2xl rotate-2">
  <Fingerprint size={24} />
  </div>
  <div className="space-y-1.5">

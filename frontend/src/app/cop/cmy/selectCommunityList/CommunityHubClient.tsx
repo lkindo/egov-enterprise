@@ -57,7 +57,7 @@ export default function CommunityHubClient({
       header: '커뮤니티',
       accessor: (item) => (
         <div className="flex items-center gap-6 py-2">
-          <div className="w-14 h-11 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary font-bold text-xs shadow-lg group-hover:rotate-6 transition-transform">
+          <div className="w-14 h-11 rounded-[var(--radius-hub-item)] bg-surface-inverse flex items-center justify-center text-primary font-bold text-xs shadow-lg group-hover:rotate-6 transition-transform">
             CM
           </div>
           <div className="space-y-1">
@@ -99,7 +99,7 @@ export default function CommunityHubClient({
       header: '이동',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntyId}`}>
-          <Button size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-slate-900 hover:text-white transition-all group">
+          <Button size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>
@@ -128,14 +128,14 @@ export default function CommunityHubClient({
                     <Sparkles size={22} className="group-hover:rotate-12 transition-transform" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
+                <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
                   AI 추천 커뮤니티 탐색
                 </TooltipContent>
               </Tooltip>
 
               <Button 
                 size="lg" 
-                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <Plus size={20} />
                 커뮤니티 개설 신청
@@ -195,13 +195,13 @@ export default function CommunityHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => queryClient.invalidateQueries({ queryKey: ['communities'] })}
-                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-muted border border-border transition-all group shadow-sm"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-surface-inverse hover:text-surface-inverse-foreground bg-muted border border-border transition-all group shadow-sm"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         동기화
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
+                    <TooltipContent side="left" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
                       실시간 데이터 동기화
                     </TooltipContent>
                   </Tooltip>
@@ -260,13 +260,13 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "w-full group p-6 rounded-[var(--radius-hub-item)] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
         active
-          ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
+          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
           : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-[var(--radius-hub-item)] flex items-center justify-center transition-all shadow-lg relative z-10",
-        active ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-white text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
       )}>
         {icon}
       </div>

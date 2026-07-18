@@ -107,14 +107,14 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
           <button 
             type="button" 
             onClick={onCancel} 
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all group"
+            className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
             {mode === 'create' ? '부서 등록' : '정보 수정'}

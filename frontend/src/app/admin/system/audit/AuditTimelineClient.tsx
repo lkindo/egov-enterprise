@@ -86,7 +86,7 @@ export function AuditTimelineClient() {
             <Button 
                 size="lg" 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-audit-timeline'] })}
-                className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <RefreshCcw size={20} className={cn(isFetching && "animate-spin")} /> 실시간 리프레시
             </Button>
@@ -104,8 +104,8 @@ export function AuditTimelineClient() {
       <div className="grid grid-cols-12 gap-12 px-2 h-full">
         {/* --- Main Timeline Filter & List --- */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-10">
-           <div className="rounded-lg bg-white border-2 border-border shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
-              <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
+           <div className="rounded-lg bg-card border-2 border-border shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
+              <div className="flex items-center justify-between border-b border-border pb-8 relative z-10">
                  <div className="space-y-1">
                     <h3 className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase">행동 분석</h3>
                     <p className="text-2xl font-bold tracking-tighter text-foreground uppercase leading-none">_ 감사 로드맵 매트릭스</p>
@@ -116,14 +116,14 @@ export function AuditTimelineClient() {
                        <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">전체 기간</span>
                     </div>
                     <div className="h-6 w-px bg-muted" />
-                    <Filter size={18} className="text-slate-300 hover:text-foreground cursor-pointer transition-colors" />
+                    <Filter size={18} className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" />
                  </div>
               </div>
 
               <div className="relative group z-10">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-primary transition-colors" size={20} />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                 <Input 
-                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
+                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                   placeholder="행위, 시스템명 또는 행동 상세 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -145,7 +145,7 @@ export function AuditTimelineClient() {
                    ))
                 ) : (
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
-                      <Search size={100} className="text-slate-300 mb-6" />
+                      <Search size={100} className="text-muted-foreground mb-6" />
                       <h3 className="text-2xl font-bold text-foreground tracking-tighter uppercase">_ 검색 결과가 없습니다</h3>
                       <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
                    </div>
@@ -169,7 +169,7 @@ export function AuditTimelineClient() {
                     transition={{ duration: 0.6, ease: "circOut" }}
                     className="h-full"
                  >
-                    <div className="rounded-lg bg-slate-900 border-4 border-slate-900 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] h-full p-16 space-y-12 flex flex-col relative overflow-hidden group">
+                    <div className="rounded-lg bg-surface-inverse border-4 border-surface-inverse-border shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] h-full p-16 space-y-12 flex flex-col relative overflow-hidden group">
                        <div className="border-b border-white/5 pb-12 relative z-10 transition-transform duration-700 group-hover:-translate-y-1">
                           <div className="flex items-center gap-3 mb-6">
                               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
@@ -208,9 +208,9 @@ export function AuditTimelineClient() {
                     </div>
                  </motion.div>
               ) : (
-                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-lg border-4 border-dashed border-border bg-muted/50 group hover:border-primary/20 hover:bg-white transition-all duration-1000 group">
-                    <div className="w-32 h-32 rounded-lg bg-white border-2 border-border flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
-                        <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
+                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-lg border-4 border-dashed border-border bg-muted/50 group hover:border-primary/20 hover:bg-card transition-all duration-1000 group">
+                    <div className="w-32 h-32 rounded-lg bg-card border-2 border-border flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
+                        <Activity size={100} className="text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <h3 className="text-4xl font-bold text-foreground tracking-tighter uppercase leading-tight mb-4">
                        데이터 인스턴스 <br /> 미선택

@@ -93,7 +93,7 @@ export default function SmsHubClient({
       header: 'RECIPIENT',
       accessor: (item) => (
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-surface-inverse flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
             <Phone size={16} />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tighter">
@@ -147,22 +147,22 @@ export default function SmsHubClient({
                 <DialogTrigger asChild>
                   <Button 
                     size="lg" 
-                    className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                    className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                   >
                     <Plus size={20} />
                     신규 문자 발송
                     <Zap size={16} className="text-primary opacity-0 group-hover:opacity-100 transition-all group-hover:scale-125" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-xl bg-white border-none shadow-[0_0_100px_rgba(0,0,0,0.1)] p-0 overflow-hidden rounded-lg">
-                    <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
+                <DialogContent className="sm:max-w-xl bg-card border-none shadow-[0_0_100px_rgba(0,0,0,0.1)] p-0 overflow-hidden rounded-lg">
+                    <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 scale-150">
                             <Send size={150} />
                         </div>
                         <div className="relative z-10 space-y-2">
                             <span className="text-xs font-bold text-primary tracking-tight">_ Protocol_Transmission</span>
                             <DialogHeader>
-                                <DialogTitle className="text-3xl font-bold tracking-tighter flex items-center gap-4 text-white">
+                                <DialogTitle className="text-3xl font-bold tracking-tighter flex items-center gap-4 text-surface-inverse-foreground">
                                     <MessageSquare className="text-primary" /> Send_Message
                                 </DialogTitle>
                                 <DialogDescription className="text-muted-foreground text-xs font-bold mt-2">
@@ -176,10 +176,10 @@ export default function SmsHubClient({
                             <div className="space-y-3">
                                 <Label className="text-xs font-bold text-muted-foreground tracking-tight">_ Recipient_Phone_Number</Label>
                                 <div className="relative group">
-                                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
+                                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                                     <Input
                                         placeholder="010-0000-0000"
-                                        className="pl-16 h-11 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200"
+                                        className="pl-16 h-11 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                                         value={newSms.rcptnTelno}
                                         onChange={(e) => setNewSms({ ...newSms, rcptnTelno: e.target.value })}
                                     />
@@ -190,11 +190,11 @@ export default function SmsHubClient({
                                 <div className="relative group">
                                     <Textarea
                                         placeholder="전달할 메시지 내용을 입력하세요..."
-                                        className="min-h-[200px] p-8 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed"
+                                        className="min-h-[200px] p-8 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground leading-relaxed"
                                         value={newSms.sndngCn}
                                         onChange={(e) => setNewSms({ ...newSms, sndngCn: e.target.value })}
                                     />
-                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-xs font-bold text-muted-foreground tracking-tight">
+                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-muted rounded-lg text-xs font-bold text-muted-foreground tracking-tight">
                                         _ {newSms.sndngCn.length} / 80 BYTES
                                     </div>
                                 </div>
@@ -246,10 +246,10 @@ export default function SmsHubClient({
               </div>
             </div>
 
-            <div className="rounded-[var(--radius-hub-section)] bg-slate-900 p-8 text-white space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="rounded-[var(--radius-hub-section)] bg-surface-inverse p-8 text-surface-inverse-foreground space-y-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
                 <h5 className="text-xs font-bold text-primary tracking-tight">_ Security_Audit</h5>
-                <p className="text-xs font-bold text-white/60 leading-relaxed">
+                <p className="text-xs font-bold text-surface-inverse-muted leading-relaxed">
                     모든 메시지 전송은 정보통신망법에 의거하여 로깅 및 감사가 수행됩니다.
                 </p>
                 <div className="flex items-center gap-3 p-4 bg-white/5 rounded-[var(--radius-hub-item)] border border-white/5">
@@ -284,13 +284,13 @@ export default function SmsHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => refetch()}
-                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-slate-900 hover:text-white bg-muted border border-border transition-all group shadow-sm"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-xs font-bold tracking-tight gap-3 hover:bg-surface-inverse hover:text-surface-inverse-foreground bg-muted border border-border transition-all group shadow-sm"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
+                    <TooltipContent side="left" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
                       실시간 데이터 동기화
                     </TooltipContent>
                   </Tooltip>

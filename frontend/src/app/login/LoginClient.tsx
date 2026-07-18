@@ -69,10 +69,10 @@ function LoginContent() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-muted dark:bg-gray-900 bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat">
+        <div className="min-h-screen flex items-center justify-center bg-muted bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat">
             {/* Background Overlay from previous design style */}
             <h1 className="sr-only">전자정부 Enterprise 로그인</h1>
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-surface-inverse/40 backdrop-blur-[2px]" />
 
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -83,7 +83,7 @@ function LoginContent() {
                 }}
                 className="w-full max-w-md relative z-10 px-4"
             >
-                <Card className="relative overflow-hidden border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[var(--radius-hub-section)]">
+                <Card className="relative overflow-hidden border-0 shadow-2xl bg-card/95 backdrop-blur-xl rounded-[var(--radius-hub-section)]">
 
                     {/* Advanced Loading Overlay (Functionality Ported) */}
                     <AnimatePresence>
@@ -92,7 +92,7 @@ function LoginContent() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
+                                className="absolute inset-0 z-50 bg-surface-inverse/80 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
                             >
                                 <motion.div
                                     initial={{ scale: 0.8 }}
@@ -107,7 +107,7 @@ function LoginContent() {
                                 </motion.div>
 
                                 <div className="space-y-2">
-                                    <h3 className="text-xl font-bold text-white">
+                                    <h3 className="text-xl font-bold text-surface-inverse-foreground">
                                         {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
                                     </h3>
                                     <p className="text-muted-foreground text-sm">
@@ -127,7 +127,7 @@ function LoginContent() {
                         >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
-                        <CardTitle className="text-2xl font-bold tracking-tight text-foreground dark:text-white">
+                        <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
                             엔터프라이즈
                         </CardTitle>
                         <CardDescription className="text-muted-foreground font-bold text-xs tracking-tight">
@@ -225,7 +225,7 @@ function LoginContent() {
                                 className="w-full"
                             >
                                 <Button
-                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                    className="w-full h-11 rounded-[var(--radius-hub-item)] bg-surface-inverse hover:bg-primary text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
                                     type="submit"
                                     disabled={isSubmitting}
                                 >

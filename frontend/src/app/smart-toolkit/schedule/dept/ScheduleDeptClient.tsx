@@ -132,7 +132,7 @@ export default function ScheduleDeptClient() {
                 <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
 
-            <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white">
+            <div className="rounded-lg border-2 border-border overflow-hidden shadow-sm bg-card">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>

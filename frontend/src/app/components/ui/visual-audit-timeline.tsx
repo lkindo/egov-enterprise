@@ -135,7 +135,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  "group cursor-pointer rounded-lg border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
  expandedLog === log.id
  ? "bg-card border-primary/20 shadow-xl"
- : "bg-white dark:bg-slate-800 border-transparent hover:bg-muted/40"
+ : "bg-card border-transparent hover:bg-muted/40"
  )}
  >
  <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -169,7 +169,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  {/* Expanded Detail: Side-by-Side Diff */}
  {expandedLog === log.id && log.changes && (
- <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-muted dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
+ <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-muted space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-xs font-bold text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
    <Cpu size={12} /> AI 기반 변경 감지 엔진
  </h4>

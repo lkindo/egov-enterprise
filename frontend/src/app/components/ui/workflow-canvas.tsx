@@ -47,7 +47,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
   };
 
   return (
-    <div className={cn("relative w-full h-[600px] bg-white dark:bg-slate-900 border rounded-lg overflow-hidden group/canvas", className)}>
+    <div className={cn("relative w-full h-[600px] bg-card border rounded-lg overflow-hidden group/canvas", className)}>
       {/* Background Grid */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '30px 30px' }} />

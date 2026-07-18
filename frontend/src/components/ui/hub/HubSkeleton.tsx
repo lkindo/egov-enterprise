@@ -7,7 +7,7 @@ export function HubListSkeleton() {
   return (
     <div className="space-y-4">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="p-5 rounded-lg bg-white border border-slate-50 flex items-center justify-between">
+        <div key={i} className="p-5 rounded-lg bg-white border border-border flex items-center justify-between">
           <div className="flex items-center gap-5">
             <Skeleton className="w-12 h-12 rounded-lg" />
             <div className="space-y-2">
@@ -25,7 +25,7 @@ export function HubListSkeleton() {
 export function HubDetailSkeleton() {
   return (
     <Card className="h-full rounded-[2.5rem] border-none bg-white shadow-xl overflow-hidden flex flex-col">
-      <CardHeader className="p-10 lg:p-14 border-b border-slate-50 space-y-8">
+      <CardHeader className="p-10 lg:p-14 border-b border-border space-y-8">
         <div className="space-y-4">
           <Skeleton className="h-5 w-24 rounded-lg" />
           <Skeleton className="h-10 w-3/4" />

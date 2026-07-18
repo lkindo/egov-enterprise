@@ -98,7 +98,7 @@ export default function SurveyManageClient() {
     {
       header: '등록일',
       accessor: (poll) => (
-        <span className="text-xs font-bold text-slate-300 tabular-nums tracking-widest uppercase">
+        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-widest uppercase">
           {poll.crtDt?.slice(0, 10).replace(/-/g, '.')}
         </span>
       ),
@@ -123,11 +123,11 @@ export default function SurveyManageClient() {
             <Button
               variant="outline"
               onClick={() => setParams(prev => ({ ...prev }))}
-              className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+              className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
             >
               <RefreshCcw size={20} />
             </Button>
-            <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+            <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
               <Plus size={20} /> 설문 등록
             </Button>
           </div>
@@ -145,19 +145,19 @@ export default function SurveyManageClient() {
         title="설문 아카이브 매트릭스" 
         description="관리 중인 모든 온라인 설문 및 투표의 핵심 데이터 스트림입니다." 
         icon={FileText}
-        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+        className="bg-card/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
           <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
               <Input 
                 value={params.searchKeyword}
                 onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
                 placeholder="설문 제목으로 검색.." 
               />
-              <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
+              <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
             </form>
           </div>
 

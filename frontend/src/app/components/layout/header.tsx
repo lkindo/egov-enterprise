@@ -68,7 +68,7 @@ export function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b border-border bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 relative overflow-hidden">
+    <header className="sticky top-0 z-[100] w-full border-b border-border bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       <React.Suspense fallback={null}>
         <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
@@ -87,7 +87,7 @@ export function Header({
         </Button>
 
         <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
-          <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
             <span className="text-primary font-bold text-lg">EG</span>
           </div>
           <div className="hidden sm:flex flex-col">
@@ -117,8 +117,8 @@ export function Header({
                   className={cn(
                     "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                     isActive
-                      ? "bg-slate-900 text-white shadow-xl"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white"
+                      ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card"
                   )}
                 >
                   <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
@@ -210,7 +210,7 @@ export function Header({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Link href="/login" aria-label="로그인 이동" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-slate-900 text-white shadow-xl hover:bg-primary transition-all")}>
+                <Link href="/login" aria-label="로그인 이동" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-surface-inverse text-surface-inverse-foreground shadow-xl hover:bg-primary transition-all")}>
                   로그인
                 </Link>
               )

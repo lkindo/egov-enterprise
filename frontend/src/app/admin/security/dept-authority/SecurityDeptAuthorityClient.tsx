@@ -160,7 +160,7 @@ export default function SecurityDeptAuthorityClient() {
  </Button>
  <Button
  onClick={handleSave}
- className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
  <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> 정책 마스터 배포
  </Button>
@@ -181,7 +181,7 @@ export default function SecurityDeptAuthorityClient() {
  <HubSectionCard title="조직 아키텍처 식별" description="권한 정책 일괄 배포 시스템 내 하위 조직을 식별하세요" icon={Building2}>
  <div className="space-y-8 pt-4">
  <div className="relative group/search">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
+ <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={16} />
  <Input
  placeholder="부서명 검색..."
  className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
@@ -195,7 +195,7 @@ export default function SecurityDeptAuthorityClient() {
  {filteredDepts.length === 0 ? (
  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center space-y-4">
  <Users size={48} className="mx-auto opacity-10 scale-125" />
- <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.4em]">Resource_Not_Found</p>
+ <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.4em]">Resource_Not_Found</p>
  </motion.div>
  ) : (
  filteredDepts.map((d, idx) => (
@@ -211,25 +211,25 @@ export default function SecurityDeptAuthorityClient() {
  className={cn(
  "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
  selectedDept === d.ognzId
- ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
- : "bg-white border-slate-50 hover:border-border"
+ ? "bg-surface-inverse border-surface-inverse-border shadow-2xl"
+ : "bg-white border-border hover:border-border"
  )}
  >
  <div className="flex items-center gap-4 relative z-10">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
- selectedDept === d.ognzId ? "bg-white/10 text-white" : "bg-muted text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
+ selectedDept === d.ognzId ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground"
  )}>
  <Users size={20} />
  </div>
  <div className="flex flex-col text-left">
  <span className={cn(
  "text-xs font-bold tracking-tighter leading-none mb-1",
- selectedDept === d.ognzId ? "text-white" : "text-foreground"
+ selectedDept === d.ognzId ? "text-surface-inverse-foreground" : "text-foreground"
  )}>{d.ognzNm}</span>
  <span className={cn(
  "text-xs font-mono font-bold tracking-widest",
- selectedDept === d.ognzId ? "text-white/30" : "text-slate-300"
+ selectedDept === d.ognzId ? "text-surface-inverse-foreground/30" : "text-muted-foreground"
  )}>{d.ognzId}</span>
  </div>
  </div>
@@ -278,7 +278,7 @@ export default function SecurityDeptAuthorityClient() {
  animate={{ opacity: 1, y: 0 }} 
  className="space-y-8"
  >
- <div className="p-10 bg-slate-900 rounded-lg text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
+ <div className="p-10 bg-surface-inverse rounded-lg text-surface-inverse-foreground flex items-center gap-8 shadow-2xl relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Database size={160} className="text-primary" />
  </div>
@@ -286,16 +286,16 @@ export default function SecurityDeptAuthorityClient() {
  <Building2 size={36} className="text-primary" />
  </div>
  <div className="relative z-10 space-y-2">
- <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
+ <span className="text-xs font-bold text-surface-inverse-foreground/30 tracking-[0.4em] uppercase font-mono">Organization_Context_Locked</span>
  <div className="flex items-baseline gap-3">
  <h4 className="text-3xl font-bold tracking-tighter leading-none">{currentDept?.ognzNm}</h4>
- <span className="text-xs font-bold text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
+ <span className="text-xs font-bold text-surface-inverse-foreground/40 tracking-widest font-mono">[{selectedDept}]</span>
  </div>
  <p className="text-xs font-bold text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 구성원에게 전역 정책 설정을 시작할 수 있는 상태입니다.</p>
  </div>
  </div>
 
-    <div className="min-h-[500px] bg-white rounded-lg border-2 border-slate-50 p-4">
+    <div className="min-h-[500px] bg-white rounded-lg border-2 border-border p-4">
       <StandardDataTable
         columns={columns}
         data={roles}

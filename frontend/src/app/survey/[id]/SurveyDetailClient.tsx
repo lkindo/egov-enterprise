@@ -21,14 +21,14 @@ const SurveyDetailSkeleton = () => (
       <Card key={idx} className="shadow-sm overflow-hidden border border-border">
         <div className="bg-muted/50 border-b p-6 flex items-center justify-between">
           <div className="flex items-center gap-3 w-2/3">
-            <div className="bg-slate-200 w-6 h-6 rounded-lg" />
-            <div className="h-5 bg-slate-200 rounded-lg w-3/4" />
+            <div className="bg-muted w-6 h-6 rounded-lg" />
+            <div className="h-5 bg-muted rounded-lg w-3/4" />
           </div>
-          <div className="w-16 h-6 bg-slate-200 rounded" />
+          <div className="w-16 h-6 bg-muted rounded" />
         </div>
         <div className="p-6 space-y-4">
           <div className="flex justify-between w-1/3">
-            <div className="h-4 bg-slate-200 rounded w-24" />
+            <div className="h-4 bg-muted rounded w-24" />
             <div className="h-4 bg-muted rounded w-12" />
           </div>
           <div className="w-full bg-muted rounded-lg h-2.5" />

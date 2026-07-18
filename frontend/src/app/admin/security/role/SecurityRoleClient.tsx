@@ -117,7 +117,7 @@ export default function SecurityRoleClient() {
       header: '보안 롤 프로파일',
       accessor: (item: RoleManage) => (
         <div className="flex items-center gap-4 py-3">
-          <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
+          <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl group-hover:rotate-12 transition-all duration-500">
             <Lock size={18} className="text-primary" />
           </div>
           <div className="flex flex-col">
@@ -186,7 +186,7 @@ export default function SecurityRoleClient() {
  </Button>
  <Button
  onClick={handleCreate}
- className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 롤 설정
  </Button>
@@ -210,14 +210,14 @@ export default function SecurityRoleClient() {
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
  <div className="flex items-center gap-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="롤코드 또는 롤명으로 검색"
  className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
  />
- <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
+ <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
  </form>
  </div>
  <div>
@@ -340,11 +340,11 @@ export default function SecurityRoleClient() {
   <button
     type="button"
     onClick={() => setIsDialogOpen(false)}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-slate-900 hover:text-white transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>
- <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
  {createMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
  <span className="ml-2">롤 아키텍처 배포</span>
  </Button>

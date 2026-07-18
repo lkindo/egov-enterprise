@@ -114,7 +114,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  header: '식별 코드', 
  accessor: (item: any) => (
  <div className="flex items-center gap-4 py-2">
- <div className="w-10 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:rotate-6 transition-transform">
+ <div className="w-10 h-9 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:rotate-6 transition-transform">
  <MapPin size={18} />
  </div>
  <div className="flex flex-col gap-0.5">
@@ -130,7 +130,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  accessor: (item: any) => (
  <div className={cn(
  "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
- item.admdstSeCd === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-muted text-muted-foreground border-border'
+ item.admdstSeCd === '1' ? 'bg-surface-inverse text-surface-inverse-foreground border-surface-inverse-border' : 'bg-muted text-muted-foreground border-border'
  )}>
  {item.admdstSeCd === '1' ? '법정동' : '행정동'}
  </div>
@@ -187,7 +187,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  </Button>
  <Button 
   onClick={() => setIsModalOpen(true)}
-  className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
+  className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
  >
  <Plus size={18} /> 신규 등록
  </Button>
@@ -211,7 +211,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  </div>
  <div className="relative z-10 space-y-10">
  <div className="space-y-4">
- <div className="w-16 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-2xl">
+ <div className="w-16 h-10 rounded-xl bg-surface-inverse flex items-center justify-center shadow-2xl">
  <Monitor size={28} className="text-primary" />
  </div>
  <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-foreground">공간 인텔리전스<br />허브</h4>
@@ -241,15 +241,15 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-8 mb-8 ring-1 ring-black/5">
  <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
  <div className="relative group/search flex-1">
- <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
  placeholder="행정구역명을 입력하세요..."
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-10 pl-14 pr-6 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+ className="h-10 pl-14 pr-6 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
  />
  </div>
- <Button type="submit" size="lg" className="h-10 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 group active:scale-95">
+ <Button type="submit" size="lg" className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 group active:scale-95">
  <Layers size={18} className="group-hover:rotate-180 transition-transform duration-700" /> 검색 실행
  </Button>
  </form>
@@ -301,7 +301,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
        <Button 
          onClick={form.handleSubmit(onRegisterSubmit)}
          disabled={registerLoading}
-         className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+         className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
        >
          <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
        </Button>

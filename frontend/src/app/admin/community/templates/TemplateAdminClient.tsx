@@ -89,7 +89,7 @@ export default function TemplateAdminClient({
  header: '템플릿 명',
  accessor: (item: TmplatInfo) => (
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-md">
+ <div className="w-8 h-8 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-md">
  <Layout size={14} />
  </div>
  <span className="font-bold tracking-tighter text-foreground">{item.tmpltNm}</span>
@@ -143,7 +143,7 @@ export default function TemplateAdminClient({
  </Button>
  <Button
  onClick={() => setIsAddOpen(true)}
- className="h-11 px-8 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 "
+ className="h-11 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 "
  >
  <Plus size={18} />
  신규 블루프린트
@@ -154,7 +154,7 @@ export default function TemplateAdminClient({
 
  <div className="responsive-card p-6 md:p-12 border-2 border-border bg-white/50 backdrop-blur-xl relative overflow-hidden group">
  <div className="flex items-center gap-4 mb-12">
- <div className="w-12 h-12 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
+ <div className="w-12 h-12 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
  <FileCode size={24} />
  </div>
  <div>
@@ -256,7 +256,7 @@ export default function TemplateAdminClient({
  <Button
  onClick={handleAdd}
  disabled={loading}
- className="h-11 px-14 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+ className="h-11 px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
  등록 승인

@@ -68,8 +68,8 @@ export default function SurveyManageDetailClient() {
                 </Button>
             </div>
 
-            <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
-                <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
+            <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card ring-1 ring-border">
+                <CardHeader className="bg-surface-inverse pb-12 pt-12 px-10 text-surface-inverse-foreground relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
                         <Sparkles size={120} />
                     </div>
@@ -90,7 +90,7 @@ export default function SurveyManageDetailClient() {
                             value={formData.pollNm}
                             onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
                             placeholder="설문 주제를 입력하세요"
-                            className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
+                            className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-card transition-all font-bold px-6"
                         />
                     </div>
 
@@ -165,7 +165,7 @@ export default function SurveyManageDetailClient() {
                     </div>
 
                     <div className="flex pt-6">
-                        <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+                        <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
                             <Send className="w-5 h-5" /> 설정 저장 완료
                         </Button>
                     </div>

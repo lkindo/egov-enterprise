@@ -104,7 +104,7 @@ export default function ApprovalHubClient() {
   const renderApprovalList = () => (
     <div className="space-y-3">
       {list.length === 0 ? (
-        <div className="h-64 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-50 rounded-lg">
+        <div className="h-64 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
           <FileText size={40} className="mb-4 opacity-20" />
           <p className="text-xs font-bold tracking-tight">요청 내역이 없습니다.</p>
         </div>
@@ -117,8 +117,8 @@ export default function ApprovalHubClient() {
             className={cn(
               "group p-5 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
               selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)
-                ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
-                : "bg-white border-slate-50 hover:border-primary/20 shadow-sm"
+                ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
+                : "bg-white border-border hover:border-primary/20 shadow-sm"
             )}
           >
             {/* Quick Action Overlay (Only for Pending) */}
@@ -150,7 +150,7 @@ export default function ApprovalHubClient() {
 
             {/* Processing Loader */}
             {processingId === item.approvalId && (
-              <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center z-30">
+              <div className="absolute inset-0 bg-card/60 backdrop-blur-[2px] flex items-center justify-center z-30">
                 <Loader2 size={24} className="text-primary animate-spin" />
               </div>
             )}
@@ -169,7 +169,7 @@ export default function ApprovalHubClient() {
                   <span className={cn(
                     "text-xs font-bold tracking-tight px-2 py-0.5 rounded",
                     (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) 
-                        ? "bg-white/10 text-white" 
+                        ? "bg-white/10 text-surface-inverse-foreground"
                         : "bg-muted text-muted-foreground"
                   )}>
                     {item.jobTypeNm || 'GENERAL_APPROVAL'}
@@ -180,7 +180,7 @@ export default function ApprovalHubClient() {
                 </div>
                 <h4 className={cn(
                     "text-sm font-bold tracking-tight leading-none", 
-                    (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) ? "text-white" : "text-foreground"
+                    (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) ? "text-surface-inverse-foreground" : "text-foreground"
                 )}>
                   #{item.approvalId}
                 </h4>
@@ -205,9 +205,9 @@ export default function ApprovalHubClient() {
         {/* --- Premium Hub Header --- */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-4">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-11 bg-slate-900 rounded-lg flex items-center justify-center shadow-2xl rotate-3 relative overflow-hidden group">
+            <div className="w-16 h-11 bg-surface-inverse rounded-lg flex items-center justify-center shadow-2xl rotate-3 relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <ShieldCheck size={32} className="text-white relative z-10" />
+              <ShieldCheck size={32} className="text-surface-inverse-foreground relative z-10" />
             </div>
             <div className="space-y-1">
               <h1 className="text-4xl font-bold text-foreground tracking-tighter leading-none flex items-center gap-3">
@@ -216,7 +216,7 @@ export default function ApprovalHubClient() {
               </h1>
               <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground tracking-tight">
                 <span className="flex items-center gap-1"><Zap size={12} className="text-primary" /> 자율 결재 로직</span>
-                <span className="w-1 h-1 rounded-full bg-slate-200" />
+                <span className="w-1 h-1 rounded-full bg-muted" />
                 <span>기업용 보안 암호화</span>
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function ApprovalHubClient() {
           <div className="flex items-center gap-4">
             <Link href="/approvals/draft" passHref>
               <Button 
-                  className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
+                  className="h-11 px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none group"
               >
                 <Plus size={20} className="group-hover:rotate-90 transition-transform" />
                 새 결재 기안
@@ -239,7 +239,7 @@ export default function ApprovalHubClient() {
           
           {/* 1. Left: Intelligent Navigation (2.5/12) */}
           <div className="col-span-12 lg:col-span-3 xl:col-span-2 space-y-6">
-            <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-white/50">
+            <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl overflow-hidden ring-1 ring-white/50">
               <CardHeader className="p-8 pb-4">
                 <CardTitle className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
                   <Layers size={14} className="text-primary" /> 핵심 대기열
@@ -267,7 +267,7 @@ export default function ApprovalHubClient() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2.5rem] border-none bg-slate-900 text-white shadow-2xl p-8 relative overflow-hidden group">
+            <Card className="rounded-[2.5rem] border-none bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-700">
                 <ShieldCheck size={120} />
               </div>
@@ -278,7 +278,7 @@ export default function ApprovalHubClient() {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-2xl font-bold tracking-tighter">99.9% Compliance</h4>
-                  <p className="text-xs text-white/40 font-bold tracking-tight">감사 노드: KR-SEOUL-01</p>
+                  <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">감사 노드: KR-SEOUL-01</p>
                 </div>
               </div>
             </Card>
@@ -286,7 +286,7 @@ export default function ApprovalHubClient() {
 
           {/* 2. Center: Resource Stream (4.5/12) */}
           <div className="col-span-12 lg:col-span-4 xl:col-span-4 space-y-6">
-            <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl shadow-slate-200/50 overflow-hidden flex flex-col h-[750px] ring-1 ring-white/50">
+            <Card className="rounded-[2.5rem] border-none bg-white/60 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col h-[750px] ring-1 ring-white/50">
               <CardHeader className="p-8 space-y-6 border-b border-white/50">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xs font-bold text-muted-foreground tracking-tight">
@@ -297,7 +297,7 @@ export default function ApprovalHubClient() {
                   </Button>
                 </div>
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                   <Input 
                     className="pl-12 h-11 bg-white/50 border-white/20 rounded-lg text-sm font-bold shadow-inner" 
                     placeholder="결재 요청 검색..."
@@ -325,15 +325,15 @@ export default function ApprovalHubClient() {
                   exit={{ opacity: 0, x: -20 }}
                   className="h-full"
                 >
-                  <Card className="h-full rounded-[2.5rem] border-none bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] flex flex-col ring-1 ring-slate-100 overflow-hidden min-h-[750px]">
-                    <CardHeader className="bg-muted/30 p-10 lg:p-14 border-b border-slate-50 space-y-8">
+                  <Card className="h-full rounded-[2.5rem] border-none bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] flex flex-col ring-1 ring-border overflow-hidden min-h-[750px]">
+                    <CardHeader className="bg-muted/30 p-10 lg:p-14 border-b border-border space-y-8">
                       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                         <div className="space-y-4">
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-slate-900 text-white text-xs font-bold rounded-lg tracking-tight px-3 py-1">
+                            <Badge className="bg-surface-inverse text-surface-inverse-foreground text-xs font-bold rounded-lg tracking-tight px-3 py-1">
                               인텔리전스 뷰
                             </Badge>
-                            <span className="text-xs font-bold text-slate-300 tracking-tight">#{selectedItem.approvalId}</span>
+                            <span className="text-xs font-bold text-muted-foreground tracking-tight">#{selectedItem.approvalId}</span>
                           </div>
                           <h2 className="text-4xl font-bold text-foreground tracking-tighter leading-none">
                             {selectedItem.jobTypeNm || '일반 결재 요청'}
@@ -359,7 +359,7 @@ export default function ApprovalHubClient() {
                         )}
                       </div>
 
-                      <div className="bg-white rounded-lg p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                      <div className="bg-white rounded-lg p-10 border-2 border-border shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-8">
                           <h4 className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
                             <Zap size={14} className="text-primary" /> 결재 체인 분석
@@ -387,10 +387,10 @@ export default function ApprovalHubClient() {
                       </div>
 
                       <div className="space-y-6">
-                        <h4 className="text-xs font-bold text-slate-300 tracking-tight flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
                           <Info size={14} className="text-primary" /> 암호화된 페이로드
                         </h4>
-                        <div className="p-10 bg-muted/50 rounded-lg border-2 border-slate-50/50 min-h-[200px] shadow-[inset_0_2px_20px_rgba(0,0,0,0.02)] relative overflow-hidden group">
+                        <div className="p-10 bg-muted/50 rounded-lg border-2 border-border min-h-[200px] shadow-[inset_0_2px_20px_rgba(0,0,0,0.02)] relative overflow-hidden group">
                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
                               <FileText size={100} />
                            </div>
@@ -401,8 +401,8 @@ export default function ApprovalHubClient() {
                       </div>
                     </CardContent>
 
-                    <div className="p-8 bg-muted/20 border-t border-slate-50 flex items-center justify-center">
-                      <p className="text-xs font-bold text-slate-200 tracking-tight animate-pulse">
+                    <div className="p-8 bg-muted/20 border-t border-border flex items-center justify-center">
+                      <p className="text-xs font-bold text-muted-foreground tracking-tight animate-pulse">
                         ENTERPRISE_SECURE_KERNEL_V5.1_SYNC
                       </p>
                     </div>
@@ -410,11 +410,11 @@ export default function ApprovalHubClient() {
                 </motion.div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center p-20 text-center bg-white/40 rounded-[2.5rem] border-4 border-dashed border-border animate-in fade-in duration-1000">
-                  <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
-                    <ShieldCheck size={56} className="text-slate-100 group-hover:text-primary transition-colors" />
+                  <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl rotate-12 group hover:rotate-0 transition-transform duration-500">
+                    <ShieldCheck size={56} className="text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-300 tracking-tighter mb-4">_ 결재 문서 선택</h3>
-                  <p className="text-xs font-bold text-slate-200 tracking-tight">상세 내역 대기 중</p>
+                  <h3 className="text-3xl font-bold text-muted-foreground tracking-tighter mb-4">_ 결재 문서 선택</h3>
+                  <p className="text-xs font-bold text-muted-foreground tracking-tight">상세 내역 대기 중</p>
                 </div>
               )}
             </AnimatePresence>
@@ -432,7 +432,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "w-full group p-5 rounded-lg transition-all flex items-center gap-4 relative overflow-hidden",
         active
-          ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20 scale-[1.02] z-10"
+          ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl scale-[1.02] z-10"
           : "text-muted-foreground hover:text-foreground hover:bg-white/80"
       )}
     >

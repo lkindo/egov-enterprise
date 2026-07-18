@@ -103,7 +103,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 p-4 bg-muted border border-border rounded-xl">
-        <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
+        <div className="w-10 h-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
           {isEdit ? <Pencil size={18} /> : <Plus size={18} />}
         </div>
         <div className="text-left">
@@ -221,13 +221,13 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-11 px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-slate-900 hover:text-white transition-all flex-1"
+              className="h-11 px-10 rounded-lg border border-border text-muted-foreground font-bold text-sm tracking-tight hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all flex-1"
             >
               취소
             </Button>
             <Button 
               type="submit"
-              className="h-11 px-14 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+              className="h-11 px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
             >
               <Save size={18} />
               시스템 동기화

@@ -242,7 +242,7 @@ export default function SmsAdminClient({
               <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary/10 blur-[80px] rounded-lg pointer-events-none" />
               
               <DialogHeader className="p-12 pb-0 space-y-6 relative z-10">
-                <div className="w-20 h-11 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
+                <div className="w-20 h-11 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
                   <Send size={32} />
                 </div>
                 <div className="text-center space-y-2">
@@ -314,7 +314,7 @@ export default function SmsAdminClient({
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 px-16 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+                  className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
                 >
                   {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} />}
                   Execute Send

@@ -9,8 +9,8 @@ export default function SurveyItemsPage() {
         title="설문 항목 관리"
         breadcrumbs={[{ label: '설문조사' }, { label: '항목 관리' }]}
       />
-      <div className="p-20 text-center bg-white rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
-        <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-slate-300">
+      <div className="p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+        <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
             <ClipboardList size={40} />
         </div>
         <div className="space-y-2">

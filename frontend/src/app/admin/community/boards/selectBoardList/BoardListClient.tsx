@@ -215,21 +215,21 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
            <motion.div 
              initial={{ scale: 0.8, opacity: 0 }}
              animate={{ scale: 1, opacity: 1 }}
-             className="p-10 bg-slate-50/50 rounded-2xl"
+             className="p-10 bg-muted/50 rounded-2xl"
            >
              <MessageSquare className="w-16 h-11 opacity-10" />
            </motion.div>
            {querySearchWrd ? (
              <div className="text-center space-y-2">
-               <p className="text-xl font-bold text-slate-400">
+               <p className="text-xl font-bold text-muted-foreground">
                  &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.
                </p>
-               <p className="text-sm font-medium text-slate-400">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
+               <p className="text-sm font-medium text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
                <button
                  onClick={() => {
                    router.push(`${pathname}?bbsId=${bbsId}`);
                  }}
-                 className="mt-4 px-6 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+                 className="mt-4 px-6 py-2.5 bg-surface-inverse text-surface-inverse-foreground font-bold text-sm rounded-xl hover:bg-surface-inverse/90 transition-all active:scale-95 flex items-center gap-2 mx-auto"
                  aria-label="필터 초기화"
                >
                  <X size={14} /> 필터 초기화
@@ -286,7 +286,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <motion.div 
    initial={{ opacity: 0 }}
    animate={{ opacity: 1 }}
-   className="flex flex-col gap-6 p-6 pb-20 relative min-h-screen bg-slate-50/50"
+   className="flex flex-col gap-6 p-6 pb-20 relative min-h-screen bg-muted/50"
  >
    {/* Decorative Background Elements */}
    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
@@ -317,7 +317,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    initial={{ x: -20, opacity: 0 }}
    animate={{ x: 0, opacity: 1 }}
    transition={{ delay: 0.1 }}
-   className="text-slate-500 font-bold ml-5 text-lg"
+   className="text-muted-foreground font-bold ml-5 text-lg"
  >
  {masterInfo?.bbsExpln || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
  </motion.p>
@@ -335,7 +335,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  )}
 
  <Card className="border border-white/40 shadow-2xl overflow-hidden rounded-3xl bg-white/70 backdrop-blur-2xl ring-1 ring-black/5">
- <CardHeader className="py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-slate-100/50 relative overflow-hidden">
+ <CardHeader className="py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-border/50 relative overflow-hidden">
    {/* Header Gradient Decoration */}
    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
    
@@ -354,14 +354,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </span>
  </CardTitle>
- <p className="text-slate-400 font-bold text-lg ml-1">총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 소중한 이야기가 담겨있습니다.</p>
+ <p className="text-muted-foreground font-bold text-lg ml-1">총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 소중한 이야기가 담겨있습니다.</p>
  </div>
  <CardAction className="flex items-center gap-4 relative z-10">
  {mounted && (
  <>
  {isAdmin && (
  <Link href="/admin/community/boards/master">
- <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-slate-200 bg-white/50 backdrop-blur-md text-slate-900 hover:bg-slate-900 hover:text-white font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
+ <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-border bg-white/50 backdrop-blur-md text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
  <Settings2 className="w-6 h-6" /> 게시판 관리
  </Button>
  </Link>

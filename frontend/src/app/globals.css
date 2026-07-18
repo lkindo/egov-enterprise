@@ -44,6 +44,13 @@
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
 
+  /* Surface-Inverse: 의도적 다크 서피스(밝은 페이지 위 프리미엄 다크 카드/히어로) 토큰.
+     테마와 무관하게 항상 어둡다(라이트=다크카드, 다크=동일). 리브랜딩 시 이 토큰만 조정. */
+  --color-surface-inverse: hsl(var(--surface-inverse));
+  --color-surface-inverse-foreground: hsl(var(--surface-inverse-foreground));
+  --color-surface-inverse-muted: hsl(var(--surface-inverse-muted));
+  --color-surface-inverse-border: hsl(var(--surface-inverse-border));
+
   --color-hub-blue: hsl(var(--hub-blue));
   --color-hub-orange: hsl(var(--hub-orange));
   --color-hub-purple: hsl(var(--hub-purple));
@@ -110,6 +117,12 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
+
+    /* Surface-Inverse (의도적 다크 서피스 — slate-900 계열, 라이트/다크 공통 고정) */
+    --surface-inverse: 222.2 47.4% 11.2%;        /* slate-900 */
+    --surface-inverse-foreground: 210 40% 98%;   /* slate-50 (다크 서피스 위 본문) */
+    --surface-inverse-muted: 215 20.2% 75%;      /* slate-300 (다크 서피스 위 보조) */
+    --surface-inverse-border: 215 27.9% 27%;     /* slate-700 (다크 서피스 경계) */
 
     --radius: 0.5rem;
     --surface-sunken: 210 40% 98%;
@@ -229,7 +242,7 @@
   }
 
   .hub-card-section {
-    @apply bg-white/95 text-foreground border border-slate-200/60 backdrop-blur-md dark:bg-card/95 dark:border-border/40 p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/5;
+    @apply bg-card/95 text-foreground border border-border/60 backdrop-blur-md p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/5;
   }
 
   .hub-icon-box {
@@ -244,7 +257,7 @@
     position: relative;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.95);
-    @apply dark:bg-slate-950;
+    @apply dark:bg-card;
     border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
     border-radius: var(--radius-hub-widget);
     box-shadow: 
@@ -263,15 +276,15 @@
   }
 
   .hub-table-container {
-    @apply rounded-lg border border-slate-200/60 overflow-hidden bg-white/80 dark:bg-slate-900/80 dark:border-border/40 shadow-sm transition-all duration-500;
+    @apply rounded-lg border border-border/60 overflow-hidden bg-card/80 shadow-sm transition-all duration-500;
   }
 
   .hub-card-premium {
-    @apply rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
+    @apply rounded-lg bg-gradient-to-br from-card to-muted dark:from-card dark:to-background p-8 text-foreground border border-border/40 shadow-2xl relative overflow-hidden;
   }
 
   .hub-card-dark {
-    @apply rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
+    @apply rounded-lg bg-surface-inverse p-8 text-surface-inverse-foreground shadow-2xl relative overflow-hidden;
   }
 
   /* --- Premium Animations --- */
@@ -339,7 +352,7 @@
 
   @supports not (backdrop-filter: blur(1px)) {
     .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .standard-glass, .hub-card-section {
-      @apply bg-background/95 dark:bg-slate-900/95;
+      @apply bg-background/95 dark:bg-card/95;
       backdrop-filter: none !important;
     }
   }

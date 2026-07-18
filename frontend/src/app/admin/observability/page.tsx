@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 // P2: Dynamic Import for the heavy Topology visualization
 const ServiceTopology = dynamic(() => import('./components/ServiceTopology'), {
   ssr: false,
-  loading: () => <div className="w-full h-[450px] bg-slate-900/40 rounded-[2.5rem] animate-pulse flex items-center justify-center text-muted-foreground font-bold uppercase tracking-widest">맵 초기화 중...</div>
+  loading: () => <div className="w-full h-[450px] bg-surface-inverse/40 rounded-[2.5rem] animate-pulse flex items-center justify-center text-muted-foreground font-bold uppercase tracking-widest">맵 초기화 중...</div>
 });
 
 // 실측 데이터 미가용 시(백엔드/액추에이터 미기동) fabricated number 대신 노출할 플레이스홀더.
@@ -155,7 +155,7 @@ export default function ObservabilityPage() {
             <Button onClick={fetchMetrics} variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                 <RefreshCcw size={18} /> 실시간 동기화
             </Button>
-            <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+            <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
                 <ExternalLink size={18} /> 데이터 익스포트
             </Button>
           </div>
@@ -173,7 +173,7 @@ export default function ObservabilityPage() {
         title="서비스 토폴로지 맵"
         description="분산 마이크로서비스 간의 상관관계 및 실시간 트래픽 플로우를 시각화합니다."
         icon={Layers}
-        className="bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden"
+        className="bg-surface-inverse border-none shadow-2xl rounded-[2.5rem] overflow-hidden"
       >
         <div className="relative group min-h-[500px]">
            <ServiceTopology />

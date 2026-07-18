@@ -57,7 +57,7 @@ export default function WorkflowClient() {
                         <Button variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
                         </Button>
-                        <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+                        <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
                             <Plus size={20} /> 설계 등록
                         </Button>
                     </div>
@@ -140,7 +140,7 @@ export default function WorkflowClient() {
                                                 <p className="text-[10px] text-muted-foreground font-bold tabular-nums">2026.05.10 14:20:01</p>
                                             </div>
                                             <div className="relative opacity-50">
-                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-slate-200 border-4 border-white shadow-sm" />
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-muted border-4 border-white shadow-sm" />
                                                 <p className="text-xs font-bold text-muted-foreground">Queue Synchronizing</p>
                                                 <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Waiting...</p>
                                             </div>
@@ -148,7 +148,7 @@ export default function WorkflowClient() {
                                     </div>
                                 </div>
 
-                                <Button className="w-full h-12 bg-slate-900 hover:bg-primary text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
+                                <Button className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
                                     Execute Action
                                 </Button>
                             </div>

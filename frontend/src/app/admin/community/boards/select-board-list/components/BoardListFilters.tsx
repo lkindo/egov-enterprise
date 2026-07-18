@@ -175,7 +175,7 @@ export const BoardListFilters = ({
              <Button type="button" variant="outline" size="lg" onClick={onReset} className="!h-12 px-6 gap-2 border-border font-bold rounded-lg" aria-label="필터 초기화">
                초기화
              </Button>
-             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-white rounded-lg flex items-center leading-none" aria-label="검색 수행">
+             <Button type="submit" size="lg" className="flex-1 md:flex-none !h-12 px-10 gap-2 bg-surface-inverse border border-surface-inverse-border shadow-xl hover:scale-105 transition-all active:scale-95 font-bold text-surface-inverse-foreground rounded-lg flex items-center leading-none" aria-label="검색 수행">
                <Search className="w-4 h-4 shrink-0" /> 조회
              </Button>
           </div>

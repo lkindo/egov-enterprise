@@ -99,7 +99,7 @@ export default function RoughMapManagementClient() {
  <Button className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground font-bold tracking-widest text-xs uppercase hover:text-primary transition-all shadow-sm">
  <Globe size={18} /> 서비스 연동
  </Button>
- <Button className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl">
+ <Button className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl">
  <Plus size={18} /> 거점 등록
  </Button>
  </div>
@@ -122,7 +122,7 @@ export default function RoughMapManagementClient() {
  <div className="space-y-8">
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <div className="relative group max-w-xl w-full">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}

@@ -131,7 +131,7 @@ export default function LayoutManagerClient() {
                         setThemeConfig(newConfig);
                         applyDesignTokens(newConfig); 
                       }}
-                      className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                      className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">

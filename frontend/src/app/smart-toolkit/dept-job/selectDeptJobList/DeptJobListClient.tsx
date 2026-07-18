@@ -92,14 +92,14 @@ const DeptJobListClient = () => {
         </CardHeader>
         <CardContent className="pt-10 px-8">
           <div className="mb-8 flex items-center gap-4">
-            <div className="bg-slate-900 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 ring-8 ring-slate-50">
+            <div className="bg-surface-inverse text-surface-inverse-foreground px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 ring-8 ring-border">
               <CheckSquare className="w-5 h-5 text-primary" />
               <span className="text-sm font-bold opacity-60 tracking-tight">전체 진행 건수</span>
               <span className="text-xl font-bold">{totalCount}건</span>
             </div>
           </div>
 
-          <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100">
+          <div className="rounded-lg border-2 border-border overflow-hidden shadow-sm bg-card ring-1 ring-border">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
@@ -147,7 +147,7 @@ const DeptJobListClient = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-border rounded-lg text-foreground font-bold text-sm shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-card border border-border rounded-lg text-foreground font-bold text-sm shadow-sm">
                           <User className="w-3.5 h-3.5 opacity-40" /> {item.picNm || '-'}
                         </div>
                       </TableCell>
@@ -180,11 +180,11 @@ const DeptJobListClient = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                 disabled={pageNo === 1}
-                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-white transition-all tracking-tight text-xs"
+                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-card transition-all tracking-tight text-xs"
               >
                 이전
               </Button>
-              <div className="bg-muted text-foreground border-2 border-white px-10 py-3 rounded-lg shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
+              <div className="bg-muted text-foreground border-2 border-white px-10 py-3 rounded-lg shadow-xl flex items-center gap-4 ring-8 ring-border">
                 <span className="text-xl font-bold">{pageNo}</span>
                 <div className="h-4 w-px bg-slate-200" />
                 <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
@@ -194,7 +194,7 @@ const DeptJobListClient = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                 disabled={pageNo === totalPages}
-                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-white transition-all tracking-tight text-xs"
+                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-card transition-all tracking-tight text-xs"
               >
                 다음
               </Button>

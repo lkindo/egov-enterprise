@@ -203,7 +203,7 @@ export default function MailHistoryHubClient() {
         className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8"
       >
         <div className="relative group max-w-xl w-full">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
           <Input 
             aria-label="메일 검색"
             value={searchKeyword}
@@ -251,13 +251,13 @@ export default function MailHistoryHubClient() {
               title="Mail Intelligence"
               description="선택된 메시지의 전송 프로토콜 및 수신자 명세입니다."
               icon={Zap}
-              className="bg-slate-900 text-white border-none shadow-2xl h-full sticky top-8"
+              className="bg-surface-inverse text-surface-inverse-foreground border-none shadow-2xl h-full sticky top-8"
             >
               <div className="space-y-10">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <span className="text-[10px] font-black tracking-[0.3em] text-primary uppercase">Protocol_Details</span>
-                    <h3 className="text-2xl font-bold tracking-tighter text-white">{selectedMail.sj}</h3>
+                    <h3 className="text-2xl font-bold tracking-tighter text-surface-inverse-foreground">{selectedMail.sj}</h3>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -275,14 +275,14 @@ export default function MailHistoryHubClient() {
                       <User size={14} />
                       <span className="text-[10px] font-bold uppercase tracking-widest">Recipient</span>
                     </div>
-                    <p className="text-sm font-bold text-white">{selectedMail.recptnPerson}</p>
+                    <p className="text-sm font-bold text-surface-inverse-foreground">{selectedMail.recptnPerson}</p>
                   </div>
                   <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-3">
                     <div className="flex items-center gap-2 text-white/40">
                       <Clock size={14} />
                       <span className="text-[10px] font-bold uppercase tracking-widest">Timestamp</span>
                     </div>
-                    <p className="text-sm font-bold text-white">{selectedMail.crtDt}</p>
+                    <p className="text-sm font-bold text-surface-inverse-foreground">{selectedMail.crtDt}</p>
                   </div>
                 </div>
 
@@ -300,7 +300,7 @@ export default function MailHistoryHubClient() {
                 <div className="flex gap-4 pt-6">
                   <Button 
                     variant="outline" 
-                    className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white hover:text-foreground font-bold text-xs uppercase tracking-widest transition-all"
+                    className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 text-surface-inverse-foreground hover:bg-white hover:text-foreground font-bold text-xs uppercase tracking-widest transition-all"
                   >
                     <ExternalLink size={16} className="mr-2" /> View Full
                   </Button>
@@ -323,7 +323,7 @@ export default function MailHistoryHubClient() {
             animate={{ opacity: 1 }}
             className="h-full flex flex-col items-center justify-center p-20 bg-muted rounded-2xl border-2 border-dashed border-border text-center space-y-6"
           >
-            <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center text-slate-300">
+            <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center text-muted-foreground">
               <Mail size={40} />
             </div>
             <div className="space-y-2">

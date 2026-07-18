@@ -57,7 +57,7 @@ export default function SurveyStatsClient() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="rounded-lg border-none shadow-sm bg-slate-900 text-white p-8 space-y-4 text-left">
+            <Card className="rounded-lg border-none shadow-sm bg-surface-inverse text-surface-inverse-foreground p-8 space-y-4 text-left">
                 <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                     <FileBarChart size={24} className="text-amber-400" />
                 </div>
@@ -66,16 +66,16 @@ export default function SurveyStatsClient() {
                     <h3 className="text-4xl font-bold text-left">{totalCount}</h3>
                 </div>
             </Card>
-            <Card className="rounded-lg border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
+            <Card className="rounded-lg border-none shadow-sm bg-card p-8 space-y-4 ring-1 ring-border text-left">
                 <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center">
                     <TrendingUp size={24} className="text-amber-600" />
                 </div>
                 <div className="text-left">
                     <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase text-left">Response Rate</p>
-                    <h3 className="text-4xl font-bold text-left">78.4<span className="text-lg text-slate-300 font-bold ml-1">%</span></h3>
+                    <h3 className="text-4xl font-bold text-left">78.4<span className="text-lg text-muted-foreground font-bold ml-1">%</span></h3>
                 </div>
             </Card>
-            <Card className="rounded-lg border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
+            <Card className="rounded-lg border-none shadow-sm bg-card p-8 space-y-4 ring-1 ring-border text-left">
                 <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-left">
                     <PieChart size={24} className="text-muted-foreground" />
                 </div>
@@ -86,19 +86,19 @@ export default function SurveyStatsClient() {
             </Card>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card ring-1 ring-border">
         <CardHeader className="bg-muted/50 border-b p-8 text-left">
             <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
                 <div className="relative flex-1 w-full group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-amber-500 transition-colors" />
                     <Input
                         placeholder="분석할 설문명을 입력하세요"
-                        className="h-11 pl-14 rounded-lg border-2 border-transparent bg-white shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
+                        className="h-11 pl-14 rounded-lg border-2 border-transparent bg-card shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
                         value={params.searchKeyword || ''}
                         onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                     />
                 </div>
-                <Button type="submit" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
+                <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
             </form>
         </CardHeader>
         <CardContent className="p-0 text-left">
@@ -124,7 +124,7 @@ export default function SurveyStatsClient() {
                 </TableRow>
               ) : (
                 polls.map((poll, index) => (
-                  <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition-all border-b last:border-0 group border-slate-50">
+                  <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition-all border-b last:border-0 group border-border">
                     <TableCell className="text-center font-mono text-sm text-muted-foreground py-6">
                         {index + 1 + (params.page || 0) * 10}
                     </TableCell>

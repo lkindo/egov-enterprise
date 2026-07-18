@@ -150,7 +150,7 @@ export default function MemoReportManagementClient() {
  전체
  </Button>
  </div>
- <Button className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+ <Button className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
  <Plus size={18} /> 신규 보고
  </Button>
  </div>
@@ -173,7 +173,7 @@ export default function MemoReportManagementClient() {
  <div className="space-y-8">
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
  <div className="relative group max-w-xl w-full">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input 
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}

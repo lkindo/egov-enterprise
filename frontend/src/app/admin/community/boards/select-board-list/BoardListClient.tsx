@@ -229,7 +229,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                  onClick={() => {
                    router.push(`${pathname}?bbsId=${bbsId}`);
                  }}
-                 className="mt-4 px-6 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+                 className="mt-4 px-6 py-2.5 bg-surface-inverse text-surface-inverse-foreground font-bold text-sm rounded-xl hover:bg-surface-inverse/90 transition-all active:scale-95 flex items-center gap-2 mx-auto"
                  aria-label="필터 초기화"
                >
                  <X size={14} /> 필터 초기화
@@ -361,7 +361,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <>
  {isAdmin && (
  <Link href="/admin/community/boards/master">
- <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-border bg-white/50 backdrop-blur-md text-foreground hover:bg-slate-900 hover:text-white font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
+ <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-border bg-white/50 backdrop-blur-md text-foreground hover:bg-surface-inverse hover:text-white font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
  <Settings2 className="w-6 h-6" /> 게시판 관리
  </Button>
  </Link>

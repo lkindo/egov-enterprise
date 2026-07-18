@@ -84,7 +84,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '인프라 노드 ID',
             accessor: (item: Network) => (
                 <div className="flex items-center gap-4 py-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:scale-110 transition-transform">
                         <Cpu size={18} />
                     </div>
                     <div className="text-left">
@@ -121,7 +121,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-slate-900 hover:text-white rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
                         <Settings size={16} />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.ntwrkId)}>
@@ -145,7 +145,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
                 icon={NetworkIcon}
                 actions={
-                    <Button onClick={handleCreate} size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
+                    <Button onClick={handleCreate} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
                         <Plus size={18} /> 신규 노드 등록
                     </Button>
                 }

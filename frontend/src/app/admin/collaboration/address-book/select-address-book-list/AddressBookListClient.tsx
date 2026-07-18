@@ -147,7 +147,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <RefreshCcw size={20} />
  </Button>
  <Link href="/admin/collaboration/address-book/insert-address-book">
- <Button className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+ <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
  <Plus size={20} /> 연락처 등록
  </Button>
  </Link>
@@ -178,7 +178,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
  placeholder="성명, 전화번호, 소속 등으로 검색.." 
  />
- <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
+ <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
  </form>
  </div>
 

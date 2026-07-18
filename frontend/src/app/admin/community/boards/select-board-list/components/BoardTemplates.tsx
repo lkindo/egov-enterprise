@@ -66,7 +66,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
     >
       {page === 1 && (
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-12 p-12 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl text-white relative overflow-hidden group border-none shadow-2xl">
+          <Card className="lg:col-span-12 p-12 bg-surface-inverse rounded-3xl text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
             <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
             <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
             
@@ -146,12 +146,12 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
         <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md border border-white shadow-xl transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 ring-1 ring-black/5">
             <div className="h-72 overflow-hidden relative bg-muted">
-              <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
+              <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-white to-purple-100 group-hover:scale-110 transition-transform duration-1000" />
                 <BookOpen size={140} className="text-slate-200 opacity-40 relative z-10 group-hover:rotate-12 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
               </div>
-              <div className="absolute top-8 right-8 px-5 py-2 bg-slate-900/80 backdrop-blur-xl rounded-2xl text-white text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
+              <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
             </div>
             <CardContent className="p-10 space-y-8">
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
@@ -224,7 +224,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest uppercase">
                   {item.qnaCatCd || 'GENERAL_QNA'}
                 </Badge>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                <div className="w-1.5 h-1.5 rounded-full bg-muted" />
                 <span className="text-[10px] font-black text-muted-foreground flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
@@ -297,7 +297,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex justify-between items-center bg-slate-900 p-10 rounded-[2.5rem] text-white relative overflow-hidden shadow-2xl"
+        className="flex justify-between items-center bg-surface-inverse p-10 rounded-[2.5rem] text-surface-inverse-foreground relative overflow-hidden shadow-2xl"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
         <div className="space-y-2 relative z-10">
@@ -333,7 +333,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
         className="grid grid-cols-7 gap-1 md:gap-4 lg:gap-5"
       >
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} className="text-center font-black text-slate-300 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-slate-50 uppercase">{d}</div>
+          <div key={d} className="text-center font-black text-slate-300 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-border uppercase">{d}</div>
         ))}
         {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
           const isCurrentMonth = day > 0 && day <= daysInMonth;
@@ -346,7 +346,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               variants={itemVariants}
               className={cn(
                 "min-h-[60px] md:min-h-[140px] lg:min-h-[180px] p-1 md:p-3 lg:p-6 border-2 transition-all relative group rounded-xl md:rounded-3xl",
-                isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-slate-50 hover:border-border hover:shadow-xl",
+                isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-border hover:border-border hover:shadow-xl",
                 !isCurrentMonth ? "opacity-10 pointer-events-none bg-muted/50" : ""
               )}
             >
@@ -360,7 +360,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                   {isCurrentMonth ? day : ''}
                 </span>
                 {dayPosts.length > 0 && (
-                  <Badge className="bg-slate-900 text-white hover:bg-primary text-[8px] md:text-[10px] font-black h-4 w-4 md:h-6 md:w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
+                  <Badge className="bg-surface-inverse text-surface-inverse-foreground hover:bg-primary text-[8px] md:text-[10px] font-black h-4 w-4 md:h-6 md:w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
                     {dayPosts.length}
                   </Badge>
                 )}
@@ -373,7 +373,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
                       "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate uppercase tracking-tight",
-                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-border text-foreground hover:bg-slate-900 hover:text-white"
+                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-border text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground"
                     )}
                     title={post.pstTtl}
                   >
@@ -453,7 +453,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
                     <p className="text-muted-foreground font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
                       {item.pstCn}
                     </p>
-                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-slate-50">
+                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-border">
                       <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                       <div className="w-1.5 h-1.5 rounded-full bg-muted" />
                       <span className="flex items-center gap-2"><Eye size={12} /> Reach: {item.inqCnt} Units</span>
@@ -498,9 +498,9 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
         <motion.div key={item.pstId} variants={itemVariants}>
           <Card className="group overflow-hidden bg-white/40 backdrop-blur-md border border-white hover:border-slate-900 transition-all rounded-[2.5rem] shadow-xl hover:shadow-2xl ring-1 ring-black/5">
             <div className="flex flex-col md:flex-row">
-              <div className="w-full md:w-24 bg-slate-900 flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
+              <div className="w-full md:w-24 bg-surface-inverse flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <BookOpen className="text-white opacity-40 group-hover:opacity-100 group-hover:scale-125 transition-all relative z-10" size={32} />
+                <BookOpen className="text-surface-inverse-foreground opacity-40 group-hover:opacity-100 group-hover:scale-125 transition-all relative z-10" size={32} />
               </div>
               <div className="flex-1 p-10 space-y-6">
                 <div className="flex items-center gap-5">
@@ -513,7 +513,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                   </h4>
                 </Link>
                 <p className="text-muted-foreground font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
-                <div className="flex items-center gap-10 pt-8 border-t border-slate-50">
+                <div className="flex items-center gap-10 pt-8 border-t border-border">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Compiler</span>
                     <span className="text-xs font-black text-foreground uppercase tracking-tight">
@@ -550,7 +550,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
         </TableHeader>
         <TableBody>
           {list.map((item: BoardPost, idx: number) => (
-            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-slate-50 last:border-0 relative">
+            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-border last:border-0 relative">
               <TableCell className="text-center font-bold text-xs text-muted-foreground py-5">
                 {(totalCount - ((page - 1) * 10) - idx).toString().padStart(3, '0')}
               </TableCell>
@@ -621,7 +621,7 @@ export const BoardSkeleton = ({ tmpltId }: { tmpltId: string }) => {
     return (
       <div className="p-10 space-y-8">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex gap-8 p-10 border-2 border-slate-50 rounded-[2.5rem]">
+          <div key={i} className="flex gap-8 p-10 border-2 border-border rounded-[2.5rem]">
             <Skeleton className="w-20 h-16 rounded-2xl shrink-0" />
             <div className="space-y-4 flex-1">
               <Skeleton className="h-10 w-1/2 rounded-xl" />

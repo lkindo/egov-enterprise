@@ -34,7 +34,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  return (
  <div className="w-full h-full bg-muted border-4 border-slate-900 rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
  {/* Browser Bar */}
- <div className="h-12 bg-slate-900 flex items-center px-6 gap-2">
+ <div className="h-12 bg-surface-inverse flex items-center px-6 gap-2">
  <div className="w-3 h-3 rounded-full bg-rose-500" />
  <div className="w-3 h-3 rounded-full bg-amber-500" />
  <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -52,7 +52,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  <p className="text-sm font-bold text-muted-foreground tracking-tight">{bbsExpln || 'Board description placeholder...'}</p>
  </div>
  <div className="flex gap-2">
- <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
+ <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
  <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xs tracking-tighter">WRITE</div>
  </div>
  </div>
@@ -79,7 +79,7 @@ function HubLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-8">
  <div className="grid grid-cols-2 gap-6">
- <div className="col-span-2 p-8 bg-slate-900 rounded-lg text-white relative overflow-hidden group">
+ <div className="col-span-2 p-8 bg-surface-inverse rounded-lg text-white relative overflow-hidden group">
  <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-lg" />
  <div className="relative z-10 space-y-4">
  <span className="text-xs font-bold tracking-[0.4em] text-primary uppercase">FEATURED_KNOWLEDGE</span>
@@ -121,7 +121,7 @@ function ListLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-2">
  {posts.map(post => (
- <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-slate-50 hover:bg-muted transition-all group">
+ <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-border hover:bg-muted transition-all group">
  <div className="flex-1 flex items-center gap-8">
  <span className="text-xs font-bold text-slate-300 w-10">0{post.id}</span>
  <div className="flex-1">
@@ -152,13 +152,13 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  <div key={post.id} className="group overflow-hidden rounded-lg bg-white border-2 border-border shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-48 overflow-hidden relative">
  <Image src={post.image} alt={post.title} fill className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
- <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-lg text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
+ <div className="absolute top-4 right-4 px-4 py-1.5 bg-surface-inverse/40 backdrop-blur-md rounded-lg text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
  </div>
  <div className="p-8 space-y-6">
  <h4 className="text-xl font-bold text-foreground tracking-tighter leading-snug">{post.title}</h4>
- <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+ <div className="flex items-center justify-between pt-4 border-t border-border">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-xs ">OP</div>
+ <div className="w-8 h-8 rounded-lg bg-surface-inverse flex items-center justify-center text-white font-bold text-xs ">OP</div>
  <span className="text-xs font-bold text-foreground">{post.author}</span>
  </div>
  <div className="flex gap-4">
@@ -208,7 +208,7 @@ function FaqLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-4">
  {posts.slice(0, 3).map((post, idx) => (
- <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-lg hover:border-purple-500 transition-all group">
+ <Card key={idx} className="border-2 border-border overflow-hidden rounded-lg hover:border-purple-500 transition-all group">
  <div className="p-6 flex items-center justify-between">
  <div className="flex items-center gap-6">
  <div className={cn(
@@ -238,9 +238,9 @@ function WikiLayout({ posts }: { posts: any[] }) {
  return (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {posts.map((post, idx) => (
- <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-lg">
+ <Card key={idx} className="group overflow-hidden border-2 border-border hover:border-slate-900 transition-all rounded-lg">
  <div className="flex">
- <div className="w-16 bg-muted flex items-center justify-center shrink-0 border-r border-border group-hover:bg-slate-900 group-hover:text-white transition-colors">
+ <div className="w-16 bg-muted flex items-center justify-center shrink-0 border-r border-border group-hover:bg-surface-inverse group-hover:text-white transition-colors">
  <Book size={24} className="opacity-40" />
  </div>
  <div className="p-8 space-y-4">
@@ -271,7 +271,7 @@ function CalendarLayout({ posts }: { posts: any[] }) {
  ))}
  {days.map((day, i) => (
  <div key={i} className={cn(
- "h-24 p-2 border-2 border-slate-50 rounded-lg transition-all relative group overflow-hidden",
+ "h-24 p-2 border-2 border-border rounded-lg transition-all relative group overflow-hidden",
  day === 20 ? "bg-primary/5 border-primary/20" : "bg-white",
  day <= 0 || day > 31 ? "opacity-10" : "hover:border-slate-900"
  )}>
@@ -284,7 +284,7 @@ function CalendarLayout({ posts }: { posts: any[] }) {
  </div>
  )}
  {day === 21 && (
- <div className="mt-1 p-1.5 bg-slate-900 text-white text-xs font-bold leading-tight rounded-sm opacity-40">
+ <div className="mt-1 p-1.5 bg-surface-inverse text-white text-xs font-bold leading-tight rounded-sm opacity-40">
  MAINTENANCE_LOG
  </div>
  )}

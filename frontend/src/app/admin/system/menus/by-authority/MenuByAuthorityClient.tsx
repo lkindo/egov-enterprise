@@ -127,17 +127,17 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  style={{ paddingLeft: `${depth * 32 + 24}px` }}
  onClick={() => hasChildren && toggleExpand(menu.menuNo)}
  >
- <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white shadow-sm border border-border group-hover:border-primary/30 transition-colors">
+ <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-card shadow-sm border border-border group-hover:border-primary/30 transition-colors">
  {hasChildren ? (
  <ChevronRight className={cn("h-4 w-4 transition-transform text-muted-foreground group-hover:text-primary", isExpanded ? 'rotate-90' : '')} />
  ) : (
- <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-primary/40 transition-colors" />
+ <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-primary/40 transition-colors" />
  )}
  </div>
 
  <div className={cn(
  "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border border-border transition-all",
- hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-muted text-muted-foreground group-hover:bg-slate-900 group-hover:text-white"
+ hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-muted text-muted-foreground group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground"
  )}>
  {hasChildren ? <Folder size={18} /> : <File size={16} />}
  </div>
@@ -150,13 +150,13 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || 'NODE_ENDPOINT'}</span>
  </div>
  
- <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+ <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-card border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
  <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">ID_{menu.menuNo}</span>
  </div>
  </div>
  {hasChildren && isExpanded && (
  <div className="relative">
- <div className="absolute left-[38px] top-0 bottom-0 w-px bg-slate-200" style={{ marginLeft: `${depth * 32}px` }} />
+ <div className="absolute left-[38px] top-0 bottom-0 w-px bg-border" style={{ marginLeft: `${depth * 32}px` }} />
  {renderMenuTree(menu.children!, depth + 1)}
  </div>
  )}
@@ -182,11 +182,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <Button
  variant="ghost"
  onClick={() => {}}
- className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
- <Button className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+ <Button className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
  <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 인벤토리
  </Button>
  </div>
@@ -213,7 +213,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <SelectValue placeholder="역할을 선택하십시오..." />
  </div>
  </SelectTrigger>
- <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-slate-900 text-white">
+ <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-surface-inverse text-surface-inverse-foreground">
  {authorities.map((auth: AuthorInfo) => (
  <SelectItem 
  key={auth.authrtCd} 
@@ -227,7 +227,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </Select>
  </div>
 
- <div className="p-8 rounded-lg bg-slate-950 text-white relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
+ <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
  <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <ShieldAlert size={180} className="text-primary" />
  </div>
@@ -237,7 +237,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </div>
  <div className="space-y-3">
  <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 매핑<br />인텔리전스</h4>
- <p className="text-xs text-white/40 font-bold tracking-[0.3em] uppercase font-mono">Real-time Hierarchy Analysis</p>
+ <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">Real-time Hierarchy Analysis</p>
  </div>
  </div>
  </div>

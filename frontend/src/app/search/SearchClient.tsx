@@ -73,20 +73,20 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700 p-4 md:p-10">
             {/* Search Header */}
-            <div className="relative group p-12 bg-slate-950 rounded-lg overflow-hidden shadow-2xl shadow-primary/10">
+            <div className="relative group p-12 bg-surface-inverse rounded-lg overflow-hidden shadow-2xl shadow-primary/10">
                 <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
 
                 <div className="relative z-10 space-y-8 text-center md:text-left">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-2">
-                        <h1 className="text-3xl md:text-3xl font-bold text-white tracking-tighter ">
+                        <h1 className="text-3xl md:text-3xl font-bold text-surface-inverse-foreground tracking-tighter ">
                             통합 지식 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
                         </h1>
                         <p className="text-muted-foreground font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                     </div>
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-bold text-white tracking-tight">실시간 인덱스 활성화</span>
+                            <span className="text-sm font-bold text-surface-inverse-foreground tracking-tight">실시간 인덱스 활성화</span>
                         </div>
                     </div>
 
@@ -124,7 +124,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         </div>
                     </div>
 
-                    <div className="p-8 bg-slate-900 rounded-lg text-white shadow-2xl relative overflow-hidden group">
+                    <div className="p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground shadow-2xl relative overflow-hidden group">
                     <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-lg blur-[60px]" />
                     <div className="relative z-10 space-y-4">
                         <h4 className="text-sm font-bold tracking-tight text-primary">유용한 도움말</h4>

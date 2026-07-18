@@ -47,7 +47,7 @@ const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observabilit
 const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[700px] flex flex-col items-center justify-center bg-slate-950 rounded-lg space-y-6">
+    <div className="w-full h-[700px] flex flex-col items-center justify-center bg-surface-inverse rounded-lg space-y-6">
       <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">Initializing Topology Stream...</p>
     </div>
@@ -310,7 +310,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
          ]}
       />
 
-      <div className="rounded-lg p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
+      <div className="rounded-lg p-12 bg-surface-inverse text-surface-inverse-foreground shadow-2xl relative overflow-hidden group border-none">
         <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
           <Zap size={200} className="text-primary" />
         </div>
@@ -428,7 +428,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <div className="text-xs font-bold text-foreground">{log.queries} / {log.max} SQL</div>
-                    <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1 relative">
+                    <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden mt-1 relative">
                       <div 
                         className="h-full bg-emerald-500" 
                         style={{ width: `${(log.queries / log.max) * 100}%` }}
@@ -475,12 +475,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="flex gap-4 p-2">
             <button 
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-11 px-8 rounded-lg border-2 border-border bg-white text-foreground font-bold text-xs tracking-tight gap-3 hover:bg-slate-900 hover:text-white transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
+                className="h-11 px-8 rounded-lg border-2 border-border bg-white text-foreground font-bold text-xs tracking-tight gap-3 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform shrink-0" />
               <span>리포트 스냅샷</span>
             </button>
-            <Button size="lg" className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
+            <Button size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
               <Bell size={20} /> 알림 정책
             </Button>
           </div>
@@ -500,7 +500,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
           </div>
 
-          <div className="bg-slate-900 text-white rounded-lg p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
+          <div className="bg-surface-inverse text-surface-inverse-foreground rounded-lg p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
             <div className="w-20 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 shadow-inner transition-transform hover:rotate-12 duration-500">
               <ShieldCheck size={40} className="text-primary" />
             </div>
@@ -634,7 +634,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                        <span className="text-xs font-bold text-muted-foreground tracking-tight">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
-                    <Button className="w-full h-11 bg-slate-900 text-white rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group overflow-hidden">
+                    <Button className="w-full h-11 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       유지보수 파이프라인 실행
                     </Button>
@@ -678,14 +678,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   <span className="text-xs font-bold text-foreground">_ Reconciliation Range</span>
                   <span className="text-xs font-bold text-primary px-3 py-1 bg-primary/10 rounded-lg">LAST_24_HOURS</span>
                </div>
-               <div className="h-2 bg-slate-200 rounded-lg overflow-hidden">
+               <div className="h-2 bg-muted rounded-lg overflow-hidden">
                   <div className="h-full bg-primary w-2/3 animate-pulse" />
                </div>
                <p className="text-xs text-muted-foreground font-medium">데이터 수집 및 통합성 검증이 백그라운드에서 실행됩니다</p>
             </div>
 
             <div className="flex gap-4">
-               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-tight hover:bg-primary transition-all">
+               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all">
                   INITIALIZE_GENERATION
                </Button>
             </div>
@@ -717,13 +717,13 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-6",
         active 
-          ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10 shadow-slate-200" 
+          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
           : "bg-transparent border-transparent hover:bg-white hover:border-border text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg",
-        active ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
       )}>
         {icon}
       </div>
@@ -741,7 +741,7 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
       </div>
       <div className="flex items-center gap-4">
         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)] animate-pulse" />
-        <span className="text-2xl font-bold tracking-tighter text-white">{status}</span>
+        <span className="text-2xl font-bold tracking-tighter text-surface-inverse-foreground">{status}</span>
       </div>
     </div>
   );
@@ -761,13 +761,13 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
 
       <div className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar relative z-10">
         {/* Core Stats */}
-        <div className="p-6 bg-slate-900 rounded-lg text-white space-y-4 shadow-inner relative overflow-hidden group border-none">
+        <div className="p-6 bg-surface-inverse rounded-lg text-surface-inverse-foreground space-y-4 shadow-inner relative overflow-hidden group border-none">
           <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
             <ShieldCheck size={120} className="text-primary" />
           </div>
           <div className="space-y-0.5">
             <span className="text-[9px] font-black tracking-widest text-primary uppercase">ORCHESTRATION SCORE</span>
-            <div className="text-3xl font-black text-white font-mono leading-none">99.8<span className="text-sm font-bold text-muted-foreground">%</span></div>
+            <div className="text-3xl font-black text-surface-inverse-foreground font-mono leading-none">99.8<span className="text-sm font-bold text-muted-foreground">%</span></div>
           </div>
           <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
             <div>
@@ -945,7 +945,7 @@ function SkillDetailView({ skill }: { skill: any }) {
           <span className={cn("text-xs font-black", currentMeta.impact === "HIGH" ? "text-rose-500" : "text-amber-500")}>
             {currentMeta.impact} SEVERITY
           </span>
-          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mt-2">
+          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
             <div className={cn("h-full", currentMeta.impact === "HIGH" ? "bg-rose-500 w-full" : "bg-amber-500 w-2/3")} />
           </div>
         </div>
@@ -1039,7 +1039,7 @@ function TestDetailView({ test }: { test: any }) {
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">JPA SQL CALLS BUDGET</span>
           <span className="text-xs font-black text-foreground font-mono">{test.queries} / {test.max} SQL</span>
         </div>
-        <div className="w-full h-3 bg-slate-200 rounded-lg overflow-hidden relative">
+        <div className="w-full h-3 bg-muted rounded-lg overflow-hidden relative">
           <div 
             className="h-full bg-emerald-500 transition-all duration-1000" 
             style={{ width: `${fillPercentage}%` }}
@@ -1072,7 +1072,7 @@ function TestDetailView({ test }: { test: any }) {
                 <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black tracking-widest rounded uppercase font-mono">
                   {stack.type}
                 </span>
-                <span className="px-2 py-0.5 bg-slate-200 text-foreground text-[9px] font-black tracking-widest rounded font-mono uppercase">
+                <span className="px-2 py-0.5 bg-muted text-foreground text-[9px] font-black tracking-widest rounded font-mono uppercase">
                   {stack.table}
                 </span>
               </div>

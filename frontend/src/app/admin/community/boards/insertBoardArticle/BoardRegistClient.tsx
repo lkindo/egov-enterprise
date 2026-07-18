@@ -156,10 +156,10 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="w-16 h-16 rounded-2xl border-2 border-slate-200 group hover:bg-slate-900 transition-all duration-500 shadow-xl"
+            className="w-16 h-16 rounded-2xl border-2 border-border group hover:bg-surface-inverse transition-all duration-500 shadow-xl"
             aria-label="뒤로 가기"
           >
-            <ArrowLeft className="group-hover:text-white transition-all w-8 h-8" />
+            <ArrowLeft className="group-hover:text-surface-inverse-foreground transition-all w-8 h-8" />
           </Button>
         </motion.div>
         <div className="space-y-3">
@@ -174,7 +174,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none"
+            className="text-5xl font-black text-foreground tracking-tighter uppercase leading-none"
           >
             {pstId ? 'Update Knowledge Asset' : 'New Knowledge Asset'}
           </motion.h1>
@@ -191,14 +191,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             className="p-12 bg-white/70 backdrop-blur-3xl rounded-[2.5rem] border border-white shadow-2xl relative overflow-hidden group ring-1 ring-black/5"
           >
             <div className="absolute top-0 right-0 p-16 opacity-[0.02] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-              <Layers size={180} className="rotate-12 text-slate-900" />
+              <Layers size={180} className="rotate-12 text-foreground" />
             </div>
             <div className="relative z-10 space-y-8">
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
                   <Zap size={24} />
                 </div>
-                <FormLabel className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase">Dataset Core Subject</FormLabel>
+                <FormLabel className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase">Dataset Core Subject</FormLabel>
               </div>
               <FormField
                 control={form.control}
@@ -209,7 +209,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                       <Input
                         {...field}
                         data-testid="article-title-input"
-                        className="h-16 bg-transparent border-none text-slate-900 text-4xl font-black placeholder:text-slate-100 focus-visible:ring-0 p-0 tracking-tighter"
+                        className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-muted-foreground focus-visible:ring-0 p-0 tracking-tighter"
                         placeholder="INJECT SUBJECT LINE..."
                         autoFocus
                         aria-label="게시글 제목"
@@ -232,14 +232,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           >
             <div className="flex items-center justify-between px-4">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
                   <Package size={20} />
                 </div>
-                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.4em]">Knowledge Node Payload</h3>
+                <h3 className="text-[10px] font-black text-foreground uppercase tracking-[0.4em]">Knowledge Node Payload</h3>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Real-time Sync Active</span>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Real-time Sync Active</span>
               </div>
             </div>
             <FormField
@@ -248,7 +248,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-slate-100 bg-white shadow-2xl shadow-slate-200/50" data-testid="rich-text-editor">
+                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-white shadow-2xl" data-testid="rich-text-editor">
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
@@ -267,14 +267,14 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-10 pt-12 border-t-2 border-slate-100"
+            className="flex flex-col sm:flex-row items-center justify-between gap-10 pt-12 border-t-2 border-border"
           >
             <div className="flex items-center gap-10">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-2">Dataset Type</span>
-                <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
+                <span className="text-sm font-black text-foreground uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
               </div>
-              <div className="w-[2px] h-10 bg-slate-100" />
+              <div className="w-[2px] h-10 bg-muted" />
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-2">Security Clearance</span>
                 <span className="text-sm font-black text-emerald-500 uppercase tracking-tight flex items-center gap-2">
@@ -288,7 +288,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
-                className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-slate-200 font-black tracking-widest text-[10px] uppercase hover:bg-slate-50 transition-all active:scale-95"
+                className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-border font-black tracking-widest text-[10px] uppercase hover:bg-muted transition-all active:scale-95"
                 aria-label="취소"
               >
                 Abort
@@ -296,7 +296,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
+                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
                 aria-label="게시글 저장"
               >
                 {isSubmitting ? (
@@ -322,7 +322,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         transition={{ delay: 0.5 }}
         className="text-center pt-8"
       >
-        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/50">
+        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-border shadow-xl">
           <Monitor size={16} className="text-slate-200" />
           <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">Enterprise Command Node - Unit Ver 3.0.0</span>
         </div>

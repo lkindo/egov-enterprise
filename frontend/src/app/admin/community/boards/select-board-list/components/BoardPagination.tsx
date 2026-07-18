@@ -23,10 +23,10 @@ export const BoardPagination = ({ currentPage, totalPages, onPageChange }: Board
       >
         이전
       </Button>
-      <div className="flex items-center gap-4 bg-muted dark:bg-slate-900 px-8 py-3 rounded-lg shadow-xl border border-border dark:border-slate-800">
-        <span className="text-lg font-bold text-foreground dark:text-white" aria-label={`현재 ${currentPage}페이지`}>{currentPage}</span>
+      <div className="flex items-center gap-4 bg-muted px-8 py-3 rounded-lg shadow-xl border border-border">
+        <span className="text-lg font-bold text-foreground" aria-label={`현재 ${currentPage}페이지`}>{currentPage}</span>
         <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
-        <span className="text-sm font-bold text-muted-foreground dark:text-white/50" aria-label={`총 ${totalPages}페이지`}>{totalPages}</span>
+        <span className="text-sm font-bold text-muted-foreground" aria-label={`총 ${totalPages}페이지`}>{totalPages}</span>
       </div>
       <Button
         variant="outline"

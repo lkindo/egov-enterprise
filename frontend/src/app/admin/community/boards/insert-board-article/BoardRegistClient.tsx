@@ -156,7 +156,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="w-16 h-16 rounded-2xl border-2 border-border group hover:bg-slate-900 transition-all duration-500 shadow-xl"
+            className="w-16 h-16 rounded-2xl border-2 border-border group hover:bg-surface-inverse transition-all duration-500 shadow-xl"
             aria-label="뒤로 가기"
           >
             <ArrowLeft className="group-hover:text-white transition-all w-8 h-8" />
@@ -174,7 +174,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl font-black text-foreground dark:text-white tracking-tighter leading-none"
+            className="text-5xl font-black text-foreground tracking-tighter leading-none"
           >
             {pstId ? '게시글 수정' : '새 게시글 작성'}
           </motion.h1>
@@ -209,7 +209,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
                       <Input
                         {...field}
                         data-testid="article-title-input"
-                        className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-slate-100 focus-visible:ring-0 p-0 tracking-tighter"
+                        className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-muted-foreground focus-visible:ring-0 p-0 tracking-tighter"
                         placeholder="INJECT SUBJECT LINE..."
                         autoFocus
                         aria-label="게시글 제목"
@@ -232,7 +232,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
           >
             <div className="flex items-center justify-between px-4">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-white shadow-lg">
                   <Package size={20} />
                 </div>
                 <h3 className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</h3>
@@ -248,7 +248,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-white shadow-2xl shadow-slate-200/50" data-testid="rich-text-editor">
+                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-white shadow-2xl" data-testid="rich-text-editor">
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
@@ -296,7 +296,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
+                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-surface-inverse text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
                 aria-label="게시글 저장"
               >
                 {isSubmitting ? (
@@ -322,7 +322,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         transition={{ delay: 0.5 }}
         className="text-center pt-8"
       >
-        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-border shadow-xl shadow-slate-100/50">
+        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-border shadow-xl">
           <Monitor size={16} className="text-slate-200" />
           <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">Enterprise Command Node - Unit Ver 3.0.0</span>
         </div>

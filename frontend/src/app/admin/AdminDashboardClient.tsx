@@ -140,7 +140,7 @@ export default function AdminDashboardClient() {
               onClick={() => toast.success("시스템 동기화가 성공적으로 시작되었습니다.", {
                 description: "백그라운드에서 지능형 엔진이 최적화를 진행 중입니다."
               })}
-              className="h-11 px-10 rounded-lg bg-slate-900 border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
+              className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
             >
               <motion.div
                 className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"
@@ -310,7 +310,7 @@ export default function AdminDashboardClient() {
           <div className="p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col h-[600px]">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900 rounded-lg text-white shadow-xl">
+                <div className="p-2 bg-surface-inverse rounded-lg text-surface-inverse-foreground shadow-xl">
                   <Clock size={18} />
                 </div>
                 <h2 className="text-sm font-bold text-foreground uppercase tracking-widest leading-none">보안 감사 이력</h2>
@@ -323,12 +323,12 @@ export default function AdminDashboardClient() {
             </div>
 
             <div className="mt-8 pt-8 border-t border-border/50">
-              <div className="flex items-center gap-4 p-5 rounded-lg bg-muted border border-dashed border-border group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
+              <div className="flex items-center gap-4 p-5 rounded-lg bg-muted border border-dashed border-border group hover:bg-surface-inverse group-hover:border-surface-inverse-border transition-all cursor-pointer">
                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shadow-sm">
                   <AlertCircle size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground group-hover:text-white uppercase tracking-tight">무결성 검사</p>
+                  <p className="text-xs font-bold text-foreground group-hover:text-surface-inverse-foreground uppercase tracking-tight">무결성 검사</p>
                   <p className="text-xs font-bold text-muted-foreground">최근 검사: 2시간 전</p>
                 </div>
               </div>
@@ -349,7 +349,7 @@ export default function AdminDashboardClient() {
             데이터 오케스트레이션 엔진의 최적화 상태를 확인하세요.
           </p>
         </div>
-        <div className="p-8 rounded-lg bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-l-4 border-primary">
+        <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground shadow-2xl relative overflow-hidden group border-l-4 border-primary">
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
             <Cpu size={120} />
           </div>
@@ -381,7 +381,7 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
             whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="p-8 h-full rounded-lg bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
+            className="p-8 h-full rounded-lg bg-white border-2 border-border shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
               <div className={cn("p-3.5 rounded-lg border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
@@ -416,7 +416,7 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
           </motion.div>
         </Link>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
+      <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
         {title} 상세 페이지로 이동
       </TooltipContent>
     </Tooltip>

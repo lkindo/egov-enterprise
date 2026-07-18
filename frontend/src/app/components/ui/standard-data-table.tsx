@@ -232,7 +232,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             initial={{ y: 100, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.95 }}
-            className="fixed bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-[100] flex flex-col sm:flex-row items-center justify-between w-[95vw] sm:w-auto sm:min-w-[580px] max-w-[95vw] p-3 sm:p-2 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-2xl text-white rounded-2xl shadow-2xl border border-white/10 overflow-hidden gap-3 sm:gap-0"
+            className="fixed bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-[100] flex flex-col sm:flex-row items-center justify-between w-[95vw] sm:w-auto sm:min-w-[580px] max-w-[95vw] p-3 sm:p-2 bg-surface-inverse/95 backdrop-blur-2xl text-white rounded-2xl shadow-2xl border border-white/10 overflow-hidden gap-3 sm:gap-0"
             role="toolbar"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
@@ -289,7 +289,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             stickyHeader && "table-sticky-header"
           )}>
             <thead className="relative z-20">
-              <tr className="bg-muted/80 dark:bg-slate-900/80 backdrop-blur-xl border-b-2 border-border/80">
+              <tr className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
                   <th className="px-6 py-5 w-16 text-center" scope="col">
                     <Checkbox
@@ -301,7 +301,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-bold text-foreground dark:text-slate-100 text-xs uppercase tracking-[0.25em] whitespace-nowrap",
+                    "px-6 py-5 font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
                   )} scope="col">
                     <div className="flex items-center gap-2">

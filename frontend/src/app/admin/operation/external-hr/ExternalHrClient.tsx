@@ -143,7 +143,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         { 
             header: '생년월일', 
             accessor: (item: any) => (
-                <span className="text-xs font-bold text-slate-300 tabular-nums tracking-widest">
+                <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-widest">
                     {item.brdtYmd || item.brthdy || '-'}
                 </span>
             ),
@@ -174,7 +174,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                         </Button>
                         <Button 
                             onClick={() => setIsModalOpen(true)}
-                            className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
+                            className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
                         >
                             <Plus size={20} /> 인사 등록
                         </Button>
@@ -198,14 +198,14 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
                         <form onSubmit={(e) => { e.preventDefault(); loadData(); }} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
                             <Input
                                 placeholder="인사 성명으로 검색..."
                                 className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                                 value={searchKeyword}
                                 onChange={(e) => setSearchKeyword(e.target.value)}
                             />
-                            <Button type="submit" className="h-11 px-10 rounded-xl bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
+                            <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">SEARCH</Button>
                         </form>
                     </div>
 
@@ -233,7 +233,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                         <Button 
                             onClick={form.handleSubmit(onRegisterSubmit)}
                             disabled={registerLoading}
-                            className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+                            className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
                         >
                             <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
                         </Button>

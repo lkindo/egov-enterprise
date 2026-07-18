@@ -71,7 +71,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         header: '발생 시각',
         accessor: (item: any) => (
           <div className="flex items-center gap-3 py-2">
-            <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-muted shadow-sm">
               <Clock size={14} />
             </div>
             <span className="text-xs font-black text-muted-foreground tracking-tight">{item.creatDt || item.occcrrncDe || '-'}</span>
@@ -88,7 +88,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           header: '요청자',
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center bg-white shadow-sm font-black text-xs text-muted-foreground">
+              <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center bg-card shadow-sm font-black text-xs text-muted-foreground">
                 {item.loginNm?.substring(0, 1)}
               </div>
               <span className="text-xs font-black text-foreground tracking-tight">{item.loginNm} ({item.loginId})</span>
@@ -159,7 +159,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         icon={History}
         actions={
           <div className="flex gap-3">
-            <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-white font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-slate-900 hover:text-white transition-all">
+            <Button variant="outline" size="lg" className="h-10 px-8 rounded-xl border border-border bg-card font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all">
               <SearchCode size={18} /> 상세 검색
             </Button>
           </div>
@@ -183,13 +183,13 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 className={cn(
                   "w-full group p-6 rounded-xl border border-transparent transition-all flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
-                    ? "bg-slate-900 text-white shadow-2xl scale-[1.03] z-10"
+                    ? "bg-surface-inverse text-surface-inverse-foreground shadow-2xl scale-[1.03] z-10"
                     : "hover:bg-white/50 text-muted-foreground hover:text-foreground"
                 )}
               >
                 <div className={cn(
                   "w-10 h-9 rounded-xl flex items-center justify-center transition-all shadow-md",
-                  activeCategory === cat.id ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:text-primary"
+                  activeCategory === cat.id ? "bg-white/10 text-surface-inverse-foreground" : "bg-card text-slate-300 group-hover:text-primary"
                 )}>
                   {cat.icon}
                 </div>
@@ -245,7 +245,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         <div className="p-8 space-y-8 font-sans text-left">
           <div className="flex items-center justify-between p-6 bg-muted/50 rounded-xl border border-border shadow-inner">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+              <div className="w-12 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl">
                 <Terminal size={22} />
               </div>
               <div className="text-left">
@@ -258,7 +258,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
 
           <div className="space-y-4">
             <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Raw Payload</h4>
-            <div className="p-10 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-[10px] overflow-auto shadow-2xl relative group max-h-[400px]">
+            <div className="p-10 rounded-2xl bg-surface-inverse text-emerald-400 font-mono text-[10px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />
               </div>
@@ -270,7 +270,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <button 
                 type="button"
                 onClick={() => setSelectedLog(null)} 
-                className="flex-1 h-11 rounded-xl bg-slate-900 border-none text-white font-black text-xs tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
+                className="flex-1 h-11 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
             >
               Close
             </button>

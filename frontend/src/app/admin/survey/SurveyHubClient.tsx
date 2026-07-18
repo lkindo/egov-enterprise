@@ -98,7 +98,7 @@ export default function SurveyHubClient() {
             <NavButton icon={<BarChart3 size={20} />} label="고급 통계" active={activeTab === 'STATS'} onClick={() => setActiveTab('STATS')} />
           </div>
 
-          <div className="hub-table-container p-10 bg-slate-900 border-none text-white relative overflow-hidden group">
+          <div className="hub-table-container p-10 bg-surface-inverse border-none text-surface-inverse-foreground relative overflow-hidden group">
             <div className="absolute top-[-20%] right-[-20%] w-48 h-48 bg-primary/20 blur-[60px] rounded-lg group-hover:scale-150 transition-transform duration-[2s]" />
             <div className="relative z-10 space-y-8">
               <div className="flex items-center justify-between">
@@ -109,7 +109,7 @@ export default function SurveyHubClient() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-bold text-white/30 tracking-tight leading-none">총 참여</p>
-                <h4 className="text-4xl font-bold tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">명</span></h4>
+                <h4 className="text-4xl font-bold tracking-tighter text-surface-inverse-foreground leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">명</span></h4>
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 mt-4 bg-emerald-400/10 w-fit px-3 py-1 rounded-lg border border-emerald-400/20">
                   <Activity size={10} /> +12.4% INCREMENTAL
                 </div>
@@ -147,7 +147,7 @@ export default function SurveyHubClient() {
                     className={cn(
                       "group p-6 rounded-lg border transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
                       selectedSurveyId === survey.id
-                        ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
+                        ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
                         : "bg-white border-border/50 hover:border-primary/50 text-foreground shadow-sm"
                     )}
                   >
@@ -166,7 +166,7 @@ export default function SurveyHubClient() {
                         )}
                         <span className="text-xs font-bold text-muted-foreground/30 tracking-tight opacity-60">ID: #{survey.id}</span>
                       </div>
-                      <h4 className={cn("text-lg font-bold tracking-tighter leading-none truncate ", selectedSurveyId === survey.id ? "text-white" : "text-foreground")}>
+                      <h4 className={cn("text-lg font-bold tracking-tighter leading-none truncate ", selectedSurveyId === survey.id ? "text-surface-inverse-foreground" : "text-foreground")}>
                         {survey.title}
                       </h4>
                       <div className={cn("flex items-center gap-2 text-xs font-bold opacity-40 tracking-tight", selectedSurveyId === survey.id ? "text-white/60" : "text-muted-foreground")}>
@@ -174,7 +174,7 @@ export default function SurveyHubClient() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 relative z-10">
-                      <span className={cn("text-xl font-bold tracking-tighter tabular-nums leading-none", selectedSurveyId === survey.id ? "text-white" : "text-primary")}>
+                      <span className={cn("text-xl font-bold tracking-tighter tabular-nums leading-none", selectedSurveyId === survey.id ? "text-surface-inverse-foreground" : "text-primary")}>
                         {survey.participants.toLocaleString()}
                       </span>
                       <span className="text-xs font-bold tracking-tight opacity-40">명</span>
@@ -221,7 +221,7 @@ export default function SurveyHubClient() {
                         </h4>
                         <span className="text-xs font-bold text-primary tracking-tight">라이브 게이지</span>
                       </div>
-                      <div className="h-56 rounded-lg bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
+                      <div className="h-56 rounded-lg bg-surface-inverse border-8 border-surface-inverse-border flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/10 blur-[40px] pointer-events-none" />
                         <Bar height={40} opacity={0.3} color="bg-white/10" />
                         <Bar height={70} opacity={0.5} color="bg-white/20" />
@@ -243,7 +243,7 @@ export default function SurveyHubClient() {
                       <Button variant="outline" className="h-11 flex-1 rounded-lg border-2 border-border font-bold tracking-tight shadow-sm gap-3">
                         <Share2 size={18} /> Protocol Link
                       </Button>
-                      <Button className="h-11 flex-[2] bg-slate-900 border-none text-white rounded-lg font-bold tracking-tight shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all gap-3">
+                      <Button className="h-11 flex-[2] bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold tracking-tight shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all gap-3">
                         Export Data <Download size={20} />
                       </Button>
                     </div>
@@ -252,7 +252,7 @@ export default function SurveyHubClient() {
               </motion.div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-muted dark:bg-muted/5 rounded-lg border-4 border-dashed border-border/20">
-                <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center text-muted-foreground/20 shadow-inner mb-10 border border-border/10">
+                <div className="w-24 h-24 bg-card rounded-lg flex items-center justify-center text-muted-foreground/20 shadow-inner mb-10 border border-border/10">
                   <PieChart size={48} />
                 </div>
                 <div className="space-y-4">
@@ -279,13 +279,13 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-6",
         active
-          ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
+          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
           : "bg-white border-transparent hover:border-primary/20 text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-md",
-        active ? "bg-white/10 text-white" : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
       )}>
         {icon}
       </div>

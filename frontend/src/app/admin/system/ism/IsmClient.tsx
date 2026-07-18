@@ -121,7 +121,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  header: '도메인 및 아키텍처',
  accessor: (item: InfrmlSanctn) => (
  <div className="flex items-center gap-5 py-4">
- <div className="w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
+ <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
  <Layers size={18} />
  </div>
  <div className="flex flex-col gap-1 text-left">
@@ -172,7 +172,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  {(item.confmAt === 'N' || item.confmAt === 'A') && (
  <Button
  onClick={() => handleOpenConfirm(item)}
- className="h-10 px-6 bg-slate-900 text-white rounded-lg text-xs font-bold tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl shadow-slate-900/10 flex items-center gap-2 group"
+ className="h-10 px-6 bg-surface-inverse text-surface-inverse-foreground rounded-lg text-xs font-bold tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl flex items-center gap-2 group"
  >
  <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 승인 실행
  </Button>
@@ -229,7 +229,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <div className="grid grid-cols-12 gap-12 text-left">
  {/* Intelligence Shield Panel */}
  <div className="col-span-12 lg:col-span-4 h-full">
- <div className="rounded-lg bg-slate-900 text-white p-12 shadow-2xl relative overflow-hidden group h-full border-none">
+ <div className="rounded-lg bg-surface-inverse text-surface-inverse-foreground p-12 shadow-2xl relative overflow-hidden group h-full border-none">
  <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
  <Terminal size={240} className="text-primary" />
  </div>
@@ -293,7 +293,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <Button
  onClick={form.handleSubmit((v) => onFormSubmit(v, 'C'))}
  disabled={loading}
- className="flex-[2] h-11 bg-slate-900 border-none text-white rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
+ className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
  >
  <CheckCircle2 size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 승인
  </Button>
@@ -302,7 +302,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  >
  <Form {...form}>
  <form className="space-y-12 pt-4 text-left">
- <div className="p-10 bg-slate-900 rounded-lg shadow-2xl relative overflow-hidden group/modal-target">
+ <div className="p-10 bg-surface-inverse rounded-lg shadow-2xl relative overflow-hidden group/modal-target">
  <div className="relative z-10 space-y-4">
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20">
@@ -310,11 +310,11 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  </div>
  <span className="text-xs text-primary/60 font-bold tracking-[0.4em] uppercase">Target_Sequence_Probe</span>
  </div>
- <h4 className="text-3xl font-bold text-white tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
+ <h4 className="text-3xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
  <div className="flex items-center gap-6 pt-4 border-t border-white/5">
  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-lg border border-white/5">
  <User size={14} className="text-muted-foreground" />
- <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
+ <span className="text-xs font-bold text-surface-inverse-muted uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
  </div>
  <div className="flex items-center gap-3">
  <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">UUID: {selectedSanctn?.infrmlSanctnId}</span>
@@ -336,7 +336,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <textarea
  {...field}
  placeholder="결재 또는 반려 사유를 입력하세요..."
- className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
+ className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-muted-foreground"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />

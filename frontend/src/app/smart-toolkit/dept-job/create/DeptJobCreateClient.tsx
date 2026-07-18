@@ -51,8 +51,8 @@ export default function DeptJobCreateClient() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-white">
-        <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card">
+        <CardHeader className="bg-surface-inverse pb-12 pt-12 px-10 text-surface-inverse-foreground relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
                 <Briefcase size={120} />
             </div>
@@ -74,7 +74,7 @@ export default function DeptJobCreateClient() {
                 value={formData.deptTaskNm}
                 onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
-                className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
+                className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-card transition-all font-bold px-6"
               />
             </div>
 
@@ -113,13 +113,13 @@ export default function DeptJobCreateClient() {
               id="deptTaskCn"
               value={formData.deptTaskCn}
               onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskCn: e.target.value }))}
-              className="min-h-[250px] p-8 rounded-lg border-2 bg-muted/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
+              className="min-h-[250px] p-8 rounded-lg border-2 bg-muted/50 focus:bg-card text-lg font-medium leading-relaxed transition-all resize-none"
               placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
             />
           </div>
 
           <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+            <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
               <Send className="w-5 h-5" /> 업무 등록 완료
             </Button>
           </div>

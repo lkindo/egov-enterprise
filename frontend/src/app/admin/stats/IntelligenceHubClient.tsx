@@ -78,8 +78,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       {/* --- Header --- */}
       <div className="flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-11 bg-slate-900 rounded-lg flex items-center justify-center shadow-2xl skew-x-2">
-            <BarChart3 size={28} className="text-white" />
+          <div className="w-14 h-11 bg-surface-inverse rounded-lg flex items-center justify-center shadow-2xl skew-x-2">
+            <BarChart3 size={28} className="text-surface-inverse-foreground" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-foreground tracking-tighter">
@@ -94,7 +94,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           <Button variant="outline" className="h-11 px-6 rounded-lg border-2 font-bold tracking-tight gap-2">
             <Download size={18} /> 데이터셋 내보내기
           </Button>
-          <Button className="h-11 px-8 rounded-lg bg-slate-900 text-white font-bold tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
+          <Button className="h-11 px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-xl hover:-translate-y-1 transition-all gap-2">
             <RefreshCcw size={20} /> 강제 새로고침
           </Button>
         </div>
@@ -104,7 +104,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <Card className="rounded-lg border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
+          <Card className="rounded-lg border-0 bg-card shadow-2xl p-4 ring-1 ring-border">
             <NavButton icon={<LayoutDashboard size={20} />} label="글로벌 개요" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
             <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
             <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
@@ -113,15 +113,15 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <NavButton icon={<FileText size={20} />} label="운영 보고서" active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
           </Card>
 
-          <Card className="rounded-lg border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
+          <Card className="rounded-lg border-0 bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-10 space-y-8 relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
             <div className="relative z-10 space-y-6">
-              <h3 className="text-xs font-bold text-white/70 tracking-tight leading-tight">_ 예상 효율성</h3>
+              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">_ 예상 효율성</h3>
               <div className="flex items-center gap-4">
                 <span className="text-6xl font-bold tracking-tighter tabular-nums">+{userStats?.length || 24}%</span>
                 <Zap size={32} className="text-primary fill-primary" />
               </div>
-              <p className="text-xs text-white/60 font-bold tracking-tight">인텔리전스 엔진 v4.2 최적화</p>
+              <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">인텔리전스 엔진 v4.2 최적화</p>
             </div>
           </Card>
         </div>
@@ -139,7 +139,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             </div>
           )}
 
-          <Card className="rounded-lg border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
+          <Card className="rounded-lg border-0 bg-card shadow-2xl overflow-hidden ring-1 ring-border min-h-[500px] flex flex-col">
             <CardHeader className="bg-muted/50 border-b p-10 flex flex-row items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-xs font-bold text-muted-foreground tracking-tight">_ 심층 분석 뷰포트</h3>
@@ -173,7 +173,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                       {surveys?.list?.map((s: any) => (
                         <div 
                           key={s.qestnrId} 
-                          className="group p-8 rounded-xl bg-white border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center justify-between relative overflow-hidden"
+                          className="group p-8 rounded-xl bg-card border-2 border-border hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center justify-between relative overflow-hidden"
                         >
                           <div className="flex items-center gap-8 relative z-10">
                             <div className="w-16 h-12 bg-muted group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">
@@ -185,7 +185,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                                   "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
                                   (nowStr && s.qestnrEndDe > nowStr)
                                     ? "bg-emerald-500/10 text-emerald-500" 
-                                    : "bg-slate-500/10 text-muted-foreground"
+                                    : "bg-muted text-muted-foreground"
                                 )}>
                                   {(nowStr && s.qestnrEndDe > nowStr) ? 'Active' : 'Archived'}
                                 </span>
@@ -198,7 +198,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                           </div>
                           <Button 
                             variant="ghost" 
-                            className="rounded-lg h-12 px-6 text-xs font-bold tracking-tight gap-2 transition-all hover:bg-slate-900 hover:text-white border-2 border-transparent hover:border-slate-900 group-hover:translate-x-2"
+                            className="rounded-lg h-12 px-6 text-xs font-bold tracking-tight gap-2 transition-all hover:bg-surface-inverse hover:text-surface-inverse-foreground border-2 border-transparent hover:border-surface-inverse-border group-hover:translate-x-2"
                           >
                             인텔리전스 리포트 <ChevronRight size={16} />
                           </Button>
@@ -280,13 +280,13 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       className={cn(
         "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-5 mb-2",
         active
-          ? "bg-slate-900 border-slate-900 text-white shadow-xl"
-          : "bg-white border-transparent hover:border-slate-50 text-muted-foreground hover:text-foreground"
+          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-xl"
+          : "bg-card border-transparent hover:border-border text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
-        active ? "bg-white/10 text-white" : "bg-muted text-muted-foreground group-hover:bg-muted"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted"
       )}>
         {icon}
       </div>
@@ -297,7 +297,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 
 function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon: React.ReactNode, label: string, value: string, trend: string, color?: string }) {
   return (
-    <Card className="rounded-lg border-0 bg-white shadow-2xl p-10 ring-1 ring-slate-100 hover:scale-[1.05] transition-all">
+    <Card className="rounded-lg border-0 bg-card shadow-2xl p-10 ring-1 ring-border hover:scale-[1.05] transition-all">
       <div className="space-y-6">
         <div className={cn(
           "w-14 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform hover:rotate-12",

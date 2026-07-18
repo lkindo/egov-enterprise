@@ -118,9 +118,9 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         <div className="flex items-center gap-6 relative z-10">
           <motion.div 
             whileHover={{ rotate: 10, scale: 1.1 }}
-            className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]"
+            className="w-16 h-16 rounded-2xl bg-surface-inverse flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]"
           >
-            <MessageSquare className="w-8 h-8 text-white" />
+            <MessageSquare className="w-8 h-8 text-surface-inverse-foreground" />
           </motion.div>
           <div>
             <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase leading-none mb-2">Discussion Hub</h3>
@@ -138,7 +138,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
               animate={{ opacity: 1, y: 0 }}
               className="py-24 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/50"
             >
-              <p className="text-slate-300 font-black tracking-widest uppercase text-xs">No entries found. Initiate the thread below.</p>
+              <p className="text-muted-foreground font-black tracking-widest uppercase text-xs">No entries found. Initiate the thread below.</p>
             </motion.div>
           ) : (
             optimisticComments.map((comment) => (
@@ -151,7 +151,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                 transition={{ type: "spring" as const, stiffness: 100 }}
               >
                 <Card className={cn(
-                  "border border-white shadow-2xl shadow-slate-200/40 rounded-3xl overflow-hidden bg-white/70 backdrop-blur-md ring-1 ring-black/5 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all group",
+                  "border border-white shadow-2xl rounded-3xl overflow-hidden bg-white/70 backdrop-blur-md ring-1 ring-black/5 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all group",
                   (comment as any).isOptimistic && "opacity-60 grayscale-[0.5]"
                 )}>
                   <CardContent className="p-10">
@@ -163,7 +163,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                           </div>
                           <div className="space-y-1">
                             <h4 className="font-black text-foreground tracking-tight text-lg leading-none uppercase">{comment.wrterNm}</h4>
-                            <div className="flex items-center gap-3 text-[10px] font-black text-slate-300 tracking-widest uppercase mt-2">
+                            <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground tracking-widest uppercase mt-2">
                               <Clock className="w-3.5 h-3.5" />
                               {comment.crtDt ? format(new Date(comment.crtDt), 'yyyy-MM-dd HH:mm') : '-'}
                             </div>
@@ -218,7 +218,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
           <CardContent className="p-12 space-y-8">
             <div className="flex items-center gap-4 mb-2">
-              <Badge className="px-5 py-2 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:bg-slate-900 shadow-xl">Initiate Response</Badge>
+              <Badge className="px-5 py-2 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:bg-surface-inverse shadow-xl">Initiate Response</Badge>
               <div className="h-[2px] flex-1 bg-muted" />
             </div>
             <Textarea
@@ -226,13 +226,13 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
               placeholder="Inject your thoughts into the collective knowledge..."
               value={ansCn}
               onChange={(e) => setAnsCn(e.target.value)}
-              className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-foreground tracking-tighter resize-none p-0 bg-transparent placeholder:text-slate-200 placeholder:uppercase"
+              className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-foreground tracking-tighter resize-none p-0 bg-transparent placeholder:text-muted-foreground placeholder:uppercase"
             />
             <div className="flex justify-end border-t border-border pt-8">
               <Button
                 type="submit"
                 disabled={isPending || !ansCn.trim()}
-                className="h-16 px-12 rounded-[1.5rem] bg-slate-900 hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
+                className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
                 {isPending ? (
                   <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> COMMITTING...</>

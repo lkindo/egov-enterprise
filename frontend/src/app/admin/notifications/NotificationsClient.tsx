@@ -38,7 +38,7 @@ export default function NotificationsClient() {
               onClick={() => setView(view === 'hub' ? 'dispatch' : 'hub')}
               className={cn(
                 "rounded-lg h-11 px-8 shadow-xl gap-2 font-bold transition-all",
-                view === 'hub' ? "bg-primary shadow-primary/20" : "bg-slate-900 shadow-slate-900/20"
+                view === 'hub' ? "bg-primary shadow-primary/20" : "bg-surface-inverse shadow-slate-900/20"
               )}
             >
               {view === 'hub' ? <Send size={18} /> : <Zap size={18} />}

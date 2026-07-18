@@ -52,7 +52,7 @@ const SelectAddressBookDetailClient = () => {
                 <span className="text-foreground font-bold">신규 등록</span>
             </div>
 
-            <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
+            <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-border">
                 <CardHeader className="border-b bg-muted/50 pb-10 pt-10 px-12">
                     <CardTitle className="text-3xl font-bold tracking-tighter flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-lg text-primary">
@@ -122,12 +122,12 @@ const SelectAddressBookDetailClient = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 bg-slate-900 rounded-lg flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
+                        <div className="p-6 bg-surface-inverse rounded-lg flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
                             <div className="p-2 bg-primary/20 rounded-lg text-primary mt-1">
                                 <Info className="w-5 h-5" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-white font-bold text-sm">정보 보호 안내</p>
+                                <p className="text-surface-inverse-foreground font-bold text-sm">정보 보호 안내</p>
                                 <p className="text-muted-foreground text-xs font-bold leading-relaxed">
                                     등록된 주소록 연락처는 부서/협업 시스템 내에서 공유 및 관리됩니다. 개인정보 보호 가이드라인을 준수하여 정확한 정보를 기입해 주세요.
                                 </p>
@@ -140,7 +140,7 @@ const SelectAddressBookDetailClient = () => {
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
                         </Link>
-                        <Button type="submit" className="h-11 px-16 gap-3 font-bold bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-lg" disabled={loading}>
+                        <Button type="submit" className="h-11 px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-black transition-all active:scale-95 rounded-lg" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-2 animate-pulse">처리 중...</span>
                             ) : (

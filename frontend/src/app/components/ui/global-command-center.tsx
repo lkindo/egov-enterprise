@@ -182,7 +182,7 @@ export function GlobalCommandCenter() {
       />
 
       <div
-        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
+        className="relative w-full max-w-3xl bg-card border-2 border-primary/20 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
         {/* Search Header */}
