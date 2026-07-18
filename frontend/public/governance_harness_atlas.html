@@ -2168,24 +2168,23 @@ npm run dev                   # Windows: .\start-dev.ps1
       document.querySelectorAll('.sim-step').forEach(step => step.classList.remove('active'));
     }
 
-    function selectStep(stepNum) {
-      if (simulationInterval) clearInterval(simulationInterval);
-      
+    // 스텝 표시 전용(인터벌을 건드리지 않음). 자동 실행/수동 클릭 공용 렌더러.
+    function renderStep(stepNum) {
       document.querySelectorAll('.sim-step').forEach(step => step.classList.remove('active'));
       const activeStep = document.getElementById(`step-node-${stepNum}`);
       if (activeStep) activeStep.classList.add('active');
-      
+
       const monStage = document.getElementById('mon-stage');
       monStage.innerText = `STAGE ${stepNum} / 7`;
-      
+
       const screen = document.getElementById('mon-screen');
       const data = simulatorPresets[activePreset];
-      
+
       let consoleLog = `>>> EXECUTING STAGE ${stepNum}...\n`;
       for (let i = 0; i < stepNum; i++) {
         consoleLog += `[SUCCESS] ${data.steps[i] || "Processed."}\n`;
       }
-      
+
       if (stepNum === 7) {
         consoleLog += `\n################================================##\n`;
         consoleLog += `🎉 TASK COMPLETE WITH 100% INTEGRITY AND ZERO DRIFT!\n`;
@@ -2193,23 +2192,35 @@ npm run dev                   # Windows: .\start-dev.ps1
       } else {
         consoleLog += `\n[RUNNING] Active cursor listening... <span class="console-cursor"></span>`;
       }
-      
+
       screen.innerHTML = consoleLog;
     }
 
+    // 수동 클릭: 자동 시뮬레이션이 돌고 있으면 중단하고 해당 스텝을 표시한다.
+    function selectStep(stepNum) {
+      if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+      }
+      renderStep(stepNum);
+    }
+
     function startWorkflowSimulation() {
-      if (simulationInterval) clearInterval(simulationInterval);
-      
+      if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+      }
+
       let currentStep = 1;
-      selectStep(currentStep);
-      
+      renderStep(currentStep); // 자동 실행은 renderStep 사용 — selectStep 을 쓰면 인터벌을 스스로 죽여 2단계에서 멈춘다(회귀 방지).
+
       simulationInterval = setInterval(() => {
         currentStep++;
         if (currentStep > 7) {
           clearInterval(simulationInterval);
           simulationInterval = null;
         } else {
-          selectStep(currentStep);
+          renderStep(currentStep);
         }
       }, 1400);
     }
