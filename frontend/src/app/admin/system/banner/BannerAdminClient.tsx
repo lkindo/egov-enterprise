@@ -477,14 +477,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  activeTab === 'popup' ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
  )}
  >
- <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-indigo-500 group-hover:text-white")}>
+ <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-hub-indigo group-hover:text-white")}>
  <Monitor size={22} />
  </div>
  <div className="flex flex-col text-left relative z-10">
  <span className="text-xs font-bold tracking-widest uppercase mb-1 opacity-40">영역 02</span>
  <span className="text-md font-bold tracking-tighter uppercase leading-tight">팝업 설정</span>
  </div>
- {activeTab === 'popup' && <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
+ {activeTab === 'popup' && <div className="absolute right-0 top-0 w-32 h-32 bg-hub-indigo/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
  </button>
  <div className="mt-auto p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-4 relative overflow-hidden group">
  <div className="relative z-10 space-y-4">
@@ -823,7 +823,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  )}
  <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-lg shadow-sm">
- <p className="text-xs font-bold text-indigo-500/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
+ <p className="text-xs font-bold text-hub-indigo/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
  <div className="grid grid-cols-2 gap-6">
  <ShadcnFormField
  control={popupForm.control}

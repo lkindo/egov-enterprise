@@ -83,7 +83,7 @@ export function SmartNotificationHub() {
         <div className={cn(
           "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase",
           n.type === 'security' ? "bg-rose-500/10 text-rose-600" :
-          n.type === 'system' ? "bg-indigo-500/10 text-indigo-600" :
+          n.type === 'system' ? "bg-hub-indigo/10 text-hub-indigo" :
           n.type === 'message' ? "bg-emerald-500/10 text-emerald-600" :
           "bg-amber-500/10 text-amber-600"
         )}>
@@ -113,7 +113,7 @@ export function SmartNotificationHub() {
           "text-[10px] font-black tracking-widest uppercase",
           n.priority === 'critical' ? "text-rose-600" :
           n.priority === 'high' ? "text-rose-400" :
-          n.priority === 'medium' ? "text-indigo-500" : "text-muted-foreground"
+          n.priority === 'medium' ? "text-hub-indigo" : "text-muted-foreground"
         )}>
           {n.priority}
         </span>

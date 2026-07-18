@@ -198,11 +198,11 @@ export default function AdminDashboardClient() {
         <div className="lg:col-span-2 p-8 rounded-lg bg-card border border-border shadow-sm flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-hub-indigo/10 text-hub-indigo flex items-center justify-center">
                 <TrendingUp size={24} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">활동 인텔리전스</h2>
+                <h2 className="text-lg font-bold text-foreground tracking-tight underline decoration-hub-indigo/20 decoration-4 underline-offset-4">활동 인텔리전스</h2>
                 <p className="text-xs font-bold text-foreground uppercase tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
               </div>
             </div>
@@ -367,7 +367,7 @@ export default function AdminDashboardClient() {
 
 function DashboardStatCard({ title, value, icon, trend, color, link, description }: any) {
   const colorMap: any = {
-    blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+    blue: "text-hub-blue bg-hub-blue/10 border-hub-blue/20",
     emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",

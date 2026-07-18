@@ -254,7 +254,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2 w-full pr-4">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === c.ansSn ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-600"
+            selectedItemId === c.ansSn ? "bg-white/10 text-white" : "bg-hub-indigo/10 text-hub-indigo"
           )}>
             <MessageSquare size={20} />
           </div>
@@ -443,13 +443,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             ))}
           </div>
 
-          <div className="p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-lg flex items-center gap-4">
-            <div className="p-3 bg-white rounded-lg shadow-sm border border-indigo-100 text-primary shrink-0">
+          <div className="p-4 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg flex items-center gap-4">
+            <div className="p-3 bg-white rounded-lg shadow-sm border border-hub-indigo/20 text-primary shrink-0">
               <CheckCircle2 size={20} />
             </div>
             <div className="space-y-0.5">
-              <h6 className="text-xs font-bold text-indigo-950 uppercase tracking-tight leading-none">Shift-Left Quality Assurance</h6>
-              <p className="text-[10px] font-bold text-indigo-700 leading-tight">
+              <h6 className="text-xs font-bold text-hub-indigo uppercase tracking-tight leading-none">Shift-Left Quality Assurance</h6>
+              <p className="text-[10px] font-bold text-hub-indigo leading-tight">
                 테스트 가동 시 스레드 로컬 카운터가 데이터베이스 질의를 자동 카운팅하며, 임계값 초과 시 즉각 테스트를 강제 실패시켜 N+1 발생을 실시간 경보합니다.
               </p>
             </div>
@@ -840,7 +840,7 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
         </div>
 
         {/* Guides */}
-        <div className="p-5 bg-indigo-50/50 border border-indigo-100/50 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
+        <div className="p-5 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
           <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
           <p className="text-muted-foreground font-medium leading-relaxed">
             좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 8대 스킬 엔진 카드나 실시간 JPA 쿼리 성능 계측 로그 항목을 클릭하십시오.
@@ -957,12 +957,12 @@ function SkillDetailView({ skill }: { skill: any }) {
       </div>
 
       {/* Constitution Mapping */}
-      <div className="p-6 rounded-lg bg-indigo-50/50 border border-indigo-100/50 space-y-3">
+      <div className="p-6 rounded-lg bg-hub-indigo/5 border border-hub-indigo/10 space-y-3">
         <div className="flex items-center gap-2 text-primary font-bold text-xs">
           <ShieldCheck size={14} />
           <span>연관 기술 헌법: {currentMeta.constitution}</span>
         </div>
-        <p className="text-xs font-bold text-indigo-900 leading-normal">
+        <p className="text-xs font-bold text-hub-indigo leading-normal">
           {currentMeta.constDesc}
         </p>
       </div>

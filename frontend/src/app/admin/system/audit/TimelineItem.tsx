@@ -33,7 +33,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
   const getColor = () => {
     if (isError) return "bg-rose-500 shadow-rose-200 text-white";
-    if (isSecurity) return "bg-indigo-600 shadow-indigo-200 text-white";
+    if (isSecurity) return "bg-hub-indigo shadow-hub-indigo/30 text-white";
     if (isSystem) return "bg-emerald-600 shadow-emerald-200 text-white";
     return "bg-surface-inverse text-surface-inverse-foreground";
   };

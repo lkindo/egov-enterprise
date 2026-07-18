@@ -204,7 +204,7 @@ export function AuditTimelineClient() {
                        </div>
 
                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary rounded-lg blur-[120px] -mr-32 -mb-32 opacity-20 animate-pulse" />
-                       <div className="absolute top-0 left-0 w-32 h-32 bg-indigo-500 rounded-lg blur-[80px] -ml-16 -mt-16 opacity-10" />
+                       <div className="absolute top-0 left-0 w-32 h-32 bg-hub-indigo rounded-lg blur-[80px] -ml-16 -mt-16 opacity-10" />
                     </div>
                  </motion.div>
               ) : (

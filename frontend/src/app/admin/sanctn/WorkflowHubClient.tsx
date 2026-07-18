@@ -250,7 +250,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
         >
           <MonitorCard title="시스템 상태" value="Optimal" icon={<ShieldCheck size={24} className="text-emerald-500" />} status="Healthy" description="All nodes in the cluster are performing within expected latency parameters." />
           <MonitorCard title="엔진 가동률" value="42%" icon={<Zap size={24} className="text-amber-500" />} status="Moderate" description="Current workflow processing load across active worker nodes." />
-          <MonitorCard title="동시 세션" value="1,240" icon={<History size={24} className="text-indigo-500" />} status="Active" description="Real-time concurrent user sessions participating in approval flows." />
+          <MonitorCard title="동시 세션" value="1,240" icon={<History size={24} className="text-hub-indigo" />} status="Active" description="Real-time concurrent user sessions participating in approval flows." />
         </motion.div>
       )}
     </AnimatePresence>

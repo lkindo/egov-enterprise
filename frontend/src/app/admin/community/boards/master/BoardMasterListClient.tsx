@@ -280,7 +280,7 @@ export function BoardMasterListClient() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-4 gap-8"
       >
-        <InsightCard label="총계" value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
+        <InsightCard label="총계" value="32" desc="Active Board Masters" icon={Layers} color="text-hub-indigo" />
         <InsightCard label="교류" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
         <InsightCard label="시스템" value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
         <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />

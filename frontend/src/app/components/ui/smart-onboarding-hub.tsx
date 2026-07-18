@@ -65,7 +65,7 @@ export function SmartOnboardingHub() {
     {
       title: "인텔리전스 커맨드 센터",
       description: "명령어 기반의 빠른 탐색과 액션을 경험하세요. 마우스 없이 CMD+K 만으로 시스템의 모든 구석구석을 제어하고 정보를 찾을 수 있습니다.",
-      icon: <Command className="text-purple-500" size={40} />
+      icon: <Command className="text-hub-purple" size={40} />
     },
     {
       title: "실시간 시스템 관측 (Observability)",
@@ -75,7 +75,7 @@ export function SmartOnboardingHub() {
     {
       title: "워크플로우 프로세스 캔버스",
       description: "복잡한 비즈니스 로직을 시각화된 캔버스에서 관리하세요. 이벤트 기반 오케스트레이션 엔진이 당신의 업무 프로세스를 유연하게 연결합니다.",
-      icon: <Layout className="text-indigo-500" size={40} />
+      icon: <Layout className="text-hub-indigo" size={40} />
     },
     {
       title: "하이크-데이터 그리드",
@@ -101,7 +101,7 @@ export function SmartOnboardingHub() {
 
         {/* Left Side: Visual Preview */}
         <div className="flex-1 bg-surface-inverse p-12 flex items-center justify-center relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-hub-purple/10 opacity-30" />
           <div className="relative z-10 w-full aspect-video rounded-lg border border-white/10 bg-black shadow-2xl flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 duration-1000">

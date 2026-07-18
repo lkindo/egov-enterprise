@@ -99,7 +99,7 @@ function StatsContent() {
                       </span>
                       {stat.qstnCn}
                     </CardTitle>
-                    <div className="text-sm font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded ">
+                    <div className="text-sm font-semibold px-2 py-1 bg-hub-blue/10 text-hub-blue rounded ">
                       {stat.qstnTypeCd === '1' ? '객관식' : '주관식'}
                     </div>
                   </div>

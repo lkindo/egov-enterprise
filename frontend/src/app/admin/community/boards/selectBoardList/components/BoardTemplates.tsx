@@ -68,7 +68,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-12 p-12 bg-surface-inverse rounded-3xl text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
             <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
-            <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
+            <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-hub-indigo/10 blur-[100px] rounded-full" />
             
             <div className="relative z-10 space-y-8">
               <Badge className="bg-white/10 backdrop-blur-md text-surface-inverse-foreground border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">FEATURED_KNOWLEDGE</Badge>
@@ -355,7 +355,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                   "text-2xl font-black tracking-tighter", 
                   isToday ? "text-primary" : "text-slate-200 group-hover:text-foreground",
                   (i % 7 === 0) && isCurrentMonth ? "text-rose-400" : "", // Sunday
-                  (i % 7 === 6) && isCurrentMonth ? "text-indigo-400" : "" // Saturday
+                  (i % 7 === 6) && isCurrentMonth ? "text-hub-indigo" : "" // Saturday
                 )}>
                   {isCurrentMonth ? day : ''}
                 </span>
@@ -413,13 +413,13 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
           <div className="flex items-center gap-8">
             <div className={cn(
               "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl transition-all shadow-xl",
-              isOpen ? "bg-indigo-500 text-white shadow-indigo-500/20 rotate-12" : "bg-white text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-500 group-hover:shadow-indigo-500/10"
+              isOpen ? "bg-hub-indigo text-white shadow-hub-indigo/20 rotate-12" : "bg-white text-slate-300 group-hover:bg-indigo-50 group-hover:text-hub-indigo group-hover:shadow-hub-indigo/10"
             )}>
               Q
             </div>
             <h4 className={cn(
               "text-2xl font-black tracking-tighter transition-colors uppercase leading-tight",
-              isOpen ? "text-indigo-600" : "text-foreground"
+              isOpen ? "text-hub-indigo" : "text-foreground"
             )}>
               {item.pstTtl}
             </h4>
@@ -428,7 +428,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
             animate={{ rotate: isOpen ? 180 : 0 }}
             className={cn(
               "transition-colors",
-              isOpen ? "text-indigo-500" : "text-slate-300"
+              isOpen ? "text-hub-indigo" : "text-slate-300"
             )}
           >
             <ChevronDown size={32} />
@@ -445,7 +445,7 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
             >
               <div className="px-8 pb-10 ml-[88px] border-t border-border/50 pt-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] grayscale pointer-events-none">
-                  <BookOpen size={120} className="text-indigo-500" />
+                  <BookOpen size={120} className="text-hub-indigo" />
                 </div>
                 <div className="flex items-start gap-6 relative z-10">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-xl shadow-emerald-500/20">A</div>

@@ -58,7 +58,7 @@ function CommunityDetailContent() {
             header: '번호',
             accessor: (item: BoardPost) => (
                 (item as any).noticeYn === 'Y' ?
-                    <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
+                    <span className="flex items-center gap-1.5 text-hub-blue font-bold"><Megaphone size={14} /> 공지</span> :
                     item.pstId
             ),
             className: 'w-20'

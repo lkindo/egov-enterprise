@@ -53,7 +53,7 @@ const SystemLogsWebClient = () => {
             accessor: (item: WebLog) => (
                 <div className="flex justify-start">
                     <code className={`px-2 py-1 rounded border font-mono text-xs font-bold ${
-                        item.method === 'GET' ? 'bg-sky-50 text-sky-600 border-sky-100' :
+                        item.method === 'GET' ? 'bg-info/10 text-info border-info/20' :
                         item.method === 'POST' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         item.method === 'PUT' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                         'bg-red-50 text-red-600 border-red-100'

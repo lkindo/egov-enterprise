@@ -75,7 +75,7 @@ export default function NotificationsClient() {
             </div>
             <div className="px-6 py-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-md flex items-center justify-between">
               <span className="text-xs font-bold tracking-tight opacity-50">활성 트리거</span>
-              <span className="text-xl font-bold text-indigo-400">2,412</span>
+              <span className="text-xl font-bold text-hub-indigo">2,412</span>
             </div>
           </div>
         </div>
@@ -90,9 +90,9 @@ export default function NotificationsClient() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               {[
-                { title: 'Email Templates', icon: <Mail className="text-blue-500" />, desc: '전문적인 비즈니스 이메일 템플릿 라이브러리' },
+                { title: 'Email Templates', icon: <Mail className="text-hub-blue" />, desc: '전문적인 비즈니스 이메일 템플릿 라이브러리' },
                 { title: 'SMS Quick-Replies', icon: <MessageSquare className="text-emerald-500" />, desc: '가장 많이 사용되는 SMS 단축 문구 및 예약' },
-                { title: 'AI Assistant', icon: <Sparkles className="text-indigo-500" />, desc: '맞춤형 메시지 톤앤매너 및 콘텐츠 자동 교정' },
+                { title: 'AI Assistant', icon: <Sparkles className="text-hub-indigo" />, desc: '맞춤형 메시지 톤앤매너 및 콘텐츠 자동 교정' },
               ].map((card, i) => (
                 <div key={i} className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl group hover:border-primary/20 transition-all cursor-pointer">
                   <div className="w-16 h-11 rounded-lg bg-muted border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">

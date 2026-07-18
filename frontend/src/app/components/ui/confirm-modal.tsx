@@ -57,7 +57,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <DialogHeader className="flex flex-row items-start gap-4 text-left">
               <div className={cn(
                 "p-2 rounded-lg shrink-0",
-                options.variant === 'destructive' ? "bg-red-100 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "bg-blue-100 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400"
+                options.variant === 'destructive' ? "bg-red-100 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "bg-hub-blue/10 text-hub-blue"
               )}>
                 <AlertCircle size={24} />
               </div>

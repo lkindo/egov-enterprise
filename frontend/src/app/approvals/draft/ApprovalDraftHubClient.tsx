@@ -63,7 +63,7 @@ const FORMS: ApprovalForm[] = [
     title: '시간외 근무 신청', 
     category: 'OPERATION', 
     icon: <Clock size={24} />, 
-    color: 'bg-indigo-500',
+    color: 'bg-hub-indigo',
     description: '평일 야간 및 휴일 근무에 대한 사전 승인 요청'
   }
 ];

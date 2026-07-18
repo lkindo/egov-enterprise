@@ -135,7 +135,7 @@ export default function OnlinePollAdminClient({
  <div className="flex items-center gap-6 min-w-[200px]">
  <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
  <div 
- className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-lg transition-all duration-1000 shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]" 
+ className="h-full bg-gradient-to-r from-primary to-hub-indigo rounded-lg transition-all duration-1000 shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]" 
  style={{ width: `${Math.min(100, (totalVotes / 100) * 100)}%` }} 
  />
  </div>
@@ -237,7 +237,7 @@ export default function OnlinePollAdminClient({
  value={polls.length} 
  icon={<BarChart size={26} />} 
  status="동기화됨"
- color="text-indigo-600"
+ color="text-hub-indigo"
  />
  </div>
 

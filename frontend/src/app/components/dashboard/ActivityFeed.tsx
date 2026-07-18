@@ -10,8 +10,8 @@ const activities = [
     action: '새 공지사항을 등록했습니다.',
     target: '2026년 상반기 시스템 점검 안내',
     time: '10분 전',
-    icon: <MessageSquare size={14} className="text-blue-500" />,
-    bg: 'bg-blue-50'
+    icon: <MessageSquare size={14} className="text-hub-blue" />,
+    bg: 'bg-hub-blue/10'
   },
   {
     id: 2,

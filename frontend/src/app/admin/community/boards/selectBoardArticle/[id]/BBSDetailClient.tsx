@@ -101,28 +101,28 @@ const BBSDetailClient = () => {
         <CardHeader className="border-b bg-surface-inverse pb-20 pt-20 px-12 md:px-20 text-surface-inverse-foreground relative overflow-hidden">
           {/* Background Accents */}
           <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-lg blur-[100px]" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-hub-blue/10 rounded-lg blur-[100px]" />
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
             <div className="space-y-6 text-center md:text-left">
               <div className={cn(
                 "flex items-center gap-3 px-5 py-2 w-fit rounded-lg border backdrop-blur-xl mx-auto md:mx-0",
                 tmpltId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : 
-                tmpltId === 'TMPLT_HUB' ? "bg-indigo-500/20 border-indigo-500/30" :
-                tmpltId === 'TMPLT_FAQ' ? "bg-purple-500/20 border-purple-500/30" :
+                tmpltId === 'TMPLT_HUB' ? "bg-hub-indigo/20 border-hub-indigo/30" :
+                tmpltId === 'TMPLT_FAQ' ? "bg-hub-purple/20 border-hub-purple/30" :
                 tmpltId === 'TMPLT_WIKI' ? "bg-emerald-500/20 border-emerald-500/30" :
                 tmpltId === 'TMPLT_GALLERY' ? "bg-rose-500/20 border-rose-500/30" :
-                tmpltId === 'TMPLT_CALENDAR' ? "bg-cyan-500/20 border-cyan-500/30" :
+                tmpltId === 'TMPLT_CALENDAR' ? "bg-info/20 border-info/30" :
                 "bg-white/10 border-white/10"
               )}>
                 <Edit3 className={cn(
                   "w-4 h-4 animate-bounce", 
                   tmpltId === 'TMPLT_QNA' ? "text-amber-400" : 
-                  tmpltId === 'TMPLT_HUB' ? "text-indigo-400" :
-                  tmpltId === 'TMPLT_FAQ' ? "text-purple-400" :
+                  tmpltId === 'TMPLT_HUB' ? "text-hub-indigo" :
+                  tmpltId === 'TMPLT_FAQ' ? "text-hub-purple" :
                   tmpltId === 'TMPLT_WIKI' ? "text-emerald-400" :
                   tmpltId === 'TMPLT_GALLERY' ? "text-rose-400" :
-                  tmpltId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
+                  tmpltId === 'TMPLT_CALENDAR' ? "text-info" :
                   "text-primary"
                 )} />
                 <span className="text-xs font-bold tracking-[0.3em] text-surface-inverse-foreground">
@@ -212,20 +212,20 @@ const BBSDetailClient = () => {
             )}
 
             {tmpltId === 'TMPLT_CALENDAR' && (
-              <div className="p-10 bg-cyan-900/10 border-2 border-cyan-500/20 rounded-lg flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
-                 <div className="w-16 h-11 bg-cyan-500 rounded-lg flex items-center justify-center text-white shadow-xl shadow-cyan-500/20 shrink-0">
+              <div className="p-10 bg-info/10 border-2 border-info/20 rounded-lg flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
+                 <div className="w-16 h-11 bg-info rounded-lg flex items-center justify-center text-white shadow-xl shadow-info/20 shrink-0">
                     <Calendar size={32} />
                  </div>
                  <div className="flex-1 space-y-4">
                     <div className="space-y-1">
-                        <p className="text-sm font-bold text-cyan-700 uppercase tracking-tighter">Event Schedule</p>
-                        <p className="text-xs text-cyan-600/70 font-medium">행사가 진행될 정확한 일시를 지정해 주세요.</p>
+                        <p className="text-sm font-bold text-info uppercase tracking-tighter">Event Schedule</p>
+                        <p className="text-xs text-info/70 font-medium">행사가 진행될 정확한 일시를 지정해 주세요.</p>
                     </div>
                     <Input 
                         type="datetime-local" 
                         value={selectedEventDate.slice(0, 16)} 
                         onChange={(e) => setSelectedEventDate(new Date(e.target.value).toISOString())}
-                        className="max-w-xs border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500/20"
+                        className="max-w-xs border-info focus:border-info focus:ring-info/20"
                     />
                  </div>
               </div>

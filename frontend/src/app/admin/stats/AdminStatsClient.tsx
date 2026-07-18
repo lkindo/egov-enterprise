@@ -28,7 +28,7 @@ const NationalDistributionMap = dynamic(() => import('@/app/components/ui/nation
   ssr: false,
   loading: () => (
     <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-lg space-y-4">
-      <div className="w-12 h-12 border-4 border-border border-t-indigo-500 rounded-full animate-spin" />
+      <div className="w-12 h-12 border-4 border-border border-t-hub-indigo rounded-full animate-spin" />
       <p className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
     </div>
   )
@@ -91,7 +91,7 @@ export default function AdminStatsClient({
         <div className="flex items-center gap-6 min-w-[240px]">
           <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
             <div
-              className="h-full bg-gradient-to-r from-primary via-indigo-500 to-violet-500 transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
+              className="h-full bg-gradient-to-r from-primary via-hub-indigo to-hub-purple transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
               style={{ width: `${item?.percentage || 0}%` }}
             />
           </div>
@@ -252,7 +252,7 @@ export default function AdminStatsClient({
       </HubSectionCard>
 
       <div className="relative group rounded-lg overflow-hidden bg-surface-inverse shadow-2xl p-24 border border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/5 opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-hub-indigo/5 opacity-50" />
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-lg group-hover:scale-150 transition-transform duration-[3s]" />
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
@@ -283,14 +283,14 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
   const colorMap: any = {
     slate: "bg-white text-foreground border-border/50 shadow-md",
     primary: "bg-white text-primary border-primary/10 shadow-md",
-    indigo: "bg-white text-indigo-600 border-indigo-100 shadow-md",
+    indigo: "bg-white text-hub-indigo border-indigo-100 shadow-md",
     rose: "bg-rose-50 text-rose-600 border-rose-100 shadow-md"
   };
 
   const iconBgMap: any = {
     slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
     primary: "bg-primary text-white shadow-xl shadow-primary/20",
-    indigo: "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20",
+    indigo: "bg-hub-indigo text-white shadow-xl shadow-hub-indigo/20",
     rose: "bg-white text-rose-600 shadow-sm"
   };
 

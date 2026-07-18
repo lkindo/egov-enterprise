@@ -214,7 +214,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       >
         <input type="hidden" name="bbsId" value={bbsId} />
         <input type="hidden" name="pstId" value={pstId} />
-        <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-indigo-500/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
+        <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-hub-indigo/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
         <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
           <CardContent className="p-12 space-y-8">
             <div className="flex items-center gap-4 mb-2">

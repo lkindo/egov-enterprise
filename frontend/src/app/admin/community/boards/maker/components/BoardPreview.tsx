@@ -208,12 +208,12 @@ function FaqLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-4">
  {posts.slice(0, 3).map((post, idx) => (
- <Card key={idx} className="border-2 border-border overflow-hidden rounded-lg hover:border-purple-500 transition-all group">
+ <Card key={idx} className="border-2 border-border overflow-hidden rounded-lg hover:border-hub-purple transition-all group">
  <div className="p-6 flex items-center justify-between">
  <div className="flex items-center gap-6">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl transition-all",
- idx === 0 ? "bg-purple-500 text-white shadow-lg" : "bg-muted text-muted-foreground"
+ idx === 0 ? "bg-hub-purple text-white shadow-lg" : "bg-muted text-muted-foreground"
  )}>
  Q
  </div>
@@ -223,7 +223,7 @@ function FaqLayout({ posts }: { posts: any[] }) {
  </div>
  {idx === 0 && (
  <div className="px-24 pb-10">
- <div className="p-8 bg-muted rounded-lg border-l-8 border-purple-500 text-muted-foreground font-medium leading-relaxed">
+ <div className="p-8 bg-muted rounded-lg border-l-8 border-hub-purple text-muted-foreground font-medium leading-relaxed">
  {post.content}
  </div>
  </div>

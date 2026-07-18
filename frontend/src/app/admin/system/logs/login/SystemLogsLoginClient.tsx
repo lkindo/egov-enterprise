@@ -77,7 +77,7 @@ const SystemLogsLoginClient = () => {
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tighter ${
-                        item.loginMthd === 'LOGIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-muted text-muted-foreground border-border'
+                        item.loginMthd === 'LOGIN' ? 'bg-hub-indigo/10 text-hub-indigo border-hub-indigo/20' : 'bg-muted text-muted-foreground border-border'
                     }`}>
                         {item.loginMthd}
                     </span>

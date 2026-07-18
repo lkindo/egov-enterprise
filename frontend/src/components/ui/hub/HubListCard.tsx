@@ -24,14 +24,14 @@ export interface HubListCardProps {
 }
 
 const colorMap: Record<string, string> = {
-  blue: "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400",
+  blue: "bg-hub-blue/10 text-hub-blue",
   emerald: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
   amber: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
   rose: "bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400"
 };
 
 const itemHoverColorMap: Record<string, string> = {
-  blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50 dark:group-hover/item:bg-blue-500/5",
+  blue: "group-hover/item:border-hub-blue/30 group-hover/item:bg-hub-blue/5",
   emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5",
   amber: "group-hover/item:border-amber-500/30 group-hover/item:bg-amber-50/50 dark:group-hover/item:bg-amber-500/5",
   rose: "group-hover/item:border-rose-500/30 group-hover/item:bg-rose-50/50 dark:group-hover/item:bg-rose-500/5"

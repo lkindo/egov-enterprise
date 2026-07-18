@@ -62,7 +62,7 @@ const SystemLogsTransferClient = () => {
             header: '요청시스템',
             accessor: (item: TransferLog) => (
                 <div className="text-left">
-                    <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-xs font-bold rounded border border-sky-100">
+                    <code className="px-2 py-0.5 bg-info/10 text-info text-xs font-bold rounded border border-info/20">
                         {item.requstSysCode}
                     </code>
                 </div>

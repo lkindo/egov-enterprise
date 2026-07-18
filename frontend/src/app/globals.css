@@ -52,6 +52,7 @@
   --color-surface-inverse-border: hsl(var(--surface-inverse-border));
 
   --color-hub-blue: hsl(var(--hub-blue));
+  --color-hub-indigo: hsl(var(--hub-indigo));
   --color-hub-orange: hsl(var(--hub-orange));
   --color-hub-purple: hsl(var(--hub-purple));
   --color-hub-emerald: hsl(var(--hub-emerald));
@@ -79,6 +80,7 @@
 
     /* Hub Accent Colors (Updated to #0055FF) */
     --hub-blue: 219 100% 50%;
+    --hub-indigo: 243 75% 59%;   /* indigo-600 — 지배적 액센트 변이 토큰화(브랜딩 재사용성) */
     --hub-orange: 24.6 95% 45%;
     --hub-purple: 262.1 83.3% 50%;
     --hub-emerald: 142.1 70.6% 35%;

@@ -92,7 +92,7 @@ export const InsightBanner: React.FC = () => {
 
  return (
  <div className="relative group text-left">
- <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+ <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-hub-indigo/10 to-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
  
  <div className={cn(
  "relative min-h-[140px] rounded-lg border-2 bg-card/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl hover:shadow-primary/5",

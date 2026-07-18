@@ -111,7 +111,7 @@ export default function CommonCodeHubClient({
             )}
             {activeTab === 'INSTITUTION' && (
               <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-border relative overflow-hidden bg-white/50 backdrop-blur-xl">
-                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-hub-indigo/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
                 <InstitutionCodeClient initialData={{ list: [], total: 0 }} />
               </div>
             )}

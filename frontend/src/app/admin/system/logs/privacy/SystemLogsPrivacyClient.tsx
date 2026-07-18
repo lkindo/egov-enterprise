@@ -53,7 +53,7 @@ const SystemLogsPrivacyClient = () => {
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
-                    <code className="px-2 py-0.5 bg-purple-50 text-purple-600 text-xs font-bold rounded border border-purple-100">
+                    <code className="px-2 py-0.5 bg-hub-purple/10 text-hub-purple text-xs font-bold rounded border border-hub-purple/20">
                         {item.trgetClCode}
                     </code>
                 </div>

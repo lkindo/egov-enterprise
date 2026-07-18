@@ -10,7 +10,7 @@ export default function NotFound() {
         <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Orbs */}
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-lg blur-[100px] -z-10" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-lg blur-[120px] -z-10" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-hub-blue/10 rounded-lg blur-[120px] -z-10" />
 
             <div className="max-w-md w-full bg-background/60 backdrop-blur-xl border-2 border-primary/5 rounded-lg p-10 shadow-2xl shadow-primary/5 text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative inline-block">

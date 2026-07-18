@@ -61,7 +61,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  switch (action) {
  case 'CREATE': return <ShieldCheck size={16} className="text-emerald-500" />;
  case 'DELETE': return <AlertCircle size={16} className="text-rose-500" />;
- case 'RESTORE': return <RotateCcw size={16} className="text-blue-500" />;
+ case 'RESTORE': return <RotateCcw size={16} className="text-hub-blue" />;
  default: return <FileEdit size={16} className="text-amber-500" />;
  }
  };
@@ -215,7 +215,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <span className="text-xs font-bold text-foreground tracking-tight">마스터 저장소 동기화됨</span>
  </div>
  <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+ <div className="w-2 h-2 rounded-full bg-hub-blue animate-pulse" />
    <span className="text-xs font-bold text-foreground tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
  </div>
  </div>

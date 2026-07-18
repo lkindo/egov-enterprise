@@ -221,7 +221,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
       {/* --- CONTENT AREA --- */}
       <div className="relative group">
-        <div className="absolute -inset-10 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10 blur-[120px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+        <div className="absolute -inset-10 bg-gradient-to-br from-primary/10 via-transparent to-hub-indigo/10 blur-[120px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
         <motion.div 
           initial={{ y: 40, opacity: 0 }}

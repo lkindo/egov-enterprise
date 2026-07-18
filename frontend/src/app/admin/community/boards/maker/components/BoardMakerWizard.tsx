@@ -62,7 +62,7 @@ const TEMPLATES = [
  description: '지식 공유에 최적화된 고도화된 대시보드형 레이아웃',
  typeCode: 'BBST01',
  icon: BookOpen,
- color: 'bg-indigo-500',
+ color: 'bg-hub-indigo',
  },
  {
  id: 'TMPLT_LIST',
@@ -94,7 +94,7 @@ const TEMPLATES = [
  description: '날짜 기반의 전사 일정 및 교육 현황 관리 레이아웃',
  typeCode: 'BBST05',
  icon: CalendarDays,
- color: 'bg-cyan-500',
+ color: 'bg-info',
  },
  {
  id: 'TMPLT_FAQ',
@@ -102,7 +102,7 @@ const TEMPLATES = [
  description: '질문과 답변을 한눈에 펼쳐보는 아코디언 스타일의 FAQ 레이아웃',
  typeCode: 'BBST06',
  icon: MessageSquare,
- color: 'bg-purple-500',
+ color: 'bg-hub-purple',
  },
  {
  id: 'TMPLT_WIKI',
@@ -116,7 +116,7 @@ const TEMPLATES = [
 
 const ROLES = [
  { id: 'ROLE_ADMIN', name: '시스템 관리자', icon: Lock, color: 'text-rose-500' },
- { id: 'ROLE_USER', name: '일반 임직원', icon: UserCircle, color: 'text-blue-500' },
+ { id: 'ROLE_USER', name: '일반 임직원', icon: UserCircle, color: 'text-hub-blue' },
  { id: 'ROLE_ANONYMOUS', name: '익명 사용자', icon: UserMinus, color: 'text-muted-foreground' },
 ];
 

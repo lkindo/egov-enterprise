@@ -285,7 +285,7 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  <div className="mt-6 h-2 bg-muted rounded-lg overflow-hidden">
  <div 
  style={{ width: `${percentage}%` }}
- className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-lg transition-all duration-1000"
+ className="h-full bg-gradient-to-r from-primary to-hub-indigo rounded-lg transition-all duration-1000"
  />
  </div>
  )}

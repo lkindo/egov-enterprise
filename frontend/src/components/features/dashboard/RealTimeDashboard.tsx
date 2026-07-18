@@ -219,9 +219,9 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
 function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }: any) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+    blue: 'bg-hub-blue/10 text-hub-blue',
     green: 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400',
-    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+    purple: 'bg-hub-purple/10 text-hub-purple',
     red: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
   };
 
@@ -252,9 +252,9 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }
 
 function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
   const icons = {
-    USER: <Users size={14} className="text-blue-500" />,
+    USER: <Users size={14} className="text-hub-blue" />,
     POST: <Activity size={14} className="text-green-500" />,
-    COMMENT: <TrendingUp size={14} className="text-purple-500" />,
+    COMMENT: <TrendingUp size={14} className="text-hub-purple" />,
     SYSTEM: <Bell size={14} className="text-muted-foreground" />,
     ALERT: <AlertCircle size={14} className="text-red-500" />
   };

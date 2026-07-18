@@ -150,7 +150,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                 <div className="flex items-center gap-3 truncate relative z-10 w-full">
                     <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
-                        isSelected ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-500 group-hover:bg-primary/10 group-hover:text-primary"
+                        isSelected ? "bg-white/20 text-white" : "bg-hub-indigo/10 text-hub-indigo group-hover:bg-primary/10 group-hover:text-primary"
                     )}>
                         <Building2 size={14} />
                     </div>

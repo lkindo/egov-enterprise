@@ -290,7 +290,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  >
    {/* Decorative Background Elements */}
    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-   <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+   <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-hub-indigo/5 blur-[100px] rounded-full pointer-events-none -z-10" />
 
  {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
  <DynamicBreadcrumb 
@@ -307,11 +307,11 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    animate={{ x: 0, opacity: 1 }}
    className="flex items-center gap-3"
  >
- <div className={cn("w-2 h-10 rounded-full shadow-lg", tmpltId === 'TMPLT_HUB' ? "bg-gradient-to-b from-indigo-500 to-purple-500" : "bg-gradient-to-b from-primary to-primary/60")} />
+ <div className={cn("w-2 h-10 rounded-full shadow-lg", tmpltId === 'TMPLT_HUB' ? "bg-gradient-to-b from-hub-indigo to-hub-purple" : "bg-gradient-to-b from-primary to-primary/60")} />
  <h2 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
  {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </h2>
- {tmpltId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
+ {tmpltId === 'TMPLT_HUB' && <Badge className="bg-hub-indigo/10 text-hub-indigo border-hub-indigo/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
  </motion.div>
  <motion.p 
    initial={{ x: -20, opacity: 0 }}
@@ -342,7 +342,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  <div className="flex-1 space-y-4 relative z-10">
  <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
  {tmpltId === 'TMPLT_HUB' ? (
-   <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500 shadow-inner">
+   <div className="p-3 bg-hub-indigo/10 rounded-2xl text-hub-indigo shadow-inner">
      <BookOpen className="w-10 h-10" />
    </div>
  ) : (

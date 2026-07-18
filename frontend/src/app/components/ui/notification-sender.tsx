@@ -93,12 +93,12 @@ export function NotificationSender() {
           </div>
 
           <div className="flex gap-4 pt-6">
-            <div className="flex-1 p-6 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
-              <div className="flex items-center gap-2 text-indigo-600 mb-2">
+            <div className="flex-1 p-6 rounded-lg bg-hub-indigo/5 border border-hub-indigo/10">
+              <div className="flex items-center gap-2 text-hub-indigo mb-2">
                 <ShieldCheck size={16} />
                 <span className="text-xs font-bold tracking-tight leading-none">무결성 검증 통과</span>
               </div>
-              <p className="text-xs font-bold text-indigo-900/40">메시지 중복 발송 방지 필터에 의해 안전하게 보호되고 있습니다.</p>
+              <p className="text-xs font-bold text-hub-indigo/40">메시지 중복 발송 방지 필터에 의해 안전하게 보호되고 있습니다.</p>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export function NotificationSender() {
                 variant="ghost"
                 onClick={simulateAIGenerate}
                 disabled={isGenerating}
-                className="rounded-lg h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-xs tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
+                className="rounded-lg h-10 px-6 gap-2 bg-gradient-to-r from-hub-indigo to-hub-purple text-white font-bold text-xs tracking-tight shadow-lg shadow-hub-indigo/20 hover:scale-105 active:scale-95 transition-all"
               >
                 {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 AI 콘텐츠 초안 생성
@@ -144,7 +144,7 @@ export function NotificationSender() {
 
             {isGenerating && (
               <div className="absolute inset-x-10 bottom-32 h-1 bg-muted rounded-lg overflow-hidden p-0.5">
-                <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg animate-ai-progress" />
+                <div className="h-full bg-gradient-to-r from-hub-indigo via-hub-purple to-pink-500 rounded-lg animate-ai-progress" />
               </div>
             )}
           </div>

@@ -163,7 +163,7 @@ export default function UserManageClient() {
  <div className="hub-bento-card p-0 bg-card shadow-xl border-border/50 h-full flex flex-col">
  <div className="px-8 py-6 border-b border-border flex items-center justify-between bg-muted/50">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+ <div className="w-8 h-8 rounded-lg bg-hub-indigo/10 flex items-center justify-center text-hub-indigo">
  <Database size={16} />
  </div>
  <h3 className="text-sm font-bold tracking-tighter uppercase text-muted-foreground">사용자 인벤토리</h3>
@@ -287,12 +287,12 @@ export default function UserManageClient() {
  </div>
  </div>
  <div className="col-span-12 md:col-span-4">
- <div className="hub-bento-card p-8 group hover:border-indigo-500/50">
+ <div className="hub-bento-card p-8 group hover:border-hub-indigo/50">
  <div className="flex items-center justify-between mb-6">
- <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+ <div className="w-12 h-12 rounded-lg bg-hub-indigo/10 flex items-center justify-center text-hub-indigo">
  <Lock size={20} />
  </div>
- <ArrowUpRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+ <ArrowUpRight size={16} className="text-slate-300 group-hover:text-hub-indigo transition-colors" />
  </div>
  <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Security Lockdowns</h4>
  <p className="text-xs font-bold text-muted-foreground leading-relaxed">
