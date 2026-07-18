@@ -40,7 +40,7 @@
 - **단순성(+10)**: cross-type·길이분열 완전 소거 + 死도메인(leader·club 등) 정리 + biz_cd 오용(사업코드↔행사명) 정화 + 명명 드리프트(online→onln) 해소로 "이행 중 스냅샷" 지저분함이 크게 감소.
 - **완성도(+6)**: FK 3배 확장·고아 0·수렴 클린·명명/감사 100%·명명 린터 신설.
 
-**여전히 90대를 못 넘는 캡(정직)**: ① **CHECK 제약 0**(도메인 검증이 앱 레이어에만) ② **FK 미완**(로그/인증 테이블 esntlId/loginId 키혼용 — [user-reference-key-policy.md](user-reference-key-policy.md) 로 문서화됐으나 미통일) ③ **빈 DB 부팅 불가**(프레임워크化 미완, §2.B — 스키마 품질과 별개 축) ④ UNIQUE 의 JPA `@Table(uniqueConstraints)` 미러링 미완 ⑤ currentTimeMillis PK 등 코드 레벨 레거시. **캡의 핵심은 DB 스키마 자체가 아니라 § 2.B(프레임워크化)·§2.D 잔여(불변식 미러)·§2.C(횡단관심사)** 다.
+**여전히 90대를 못 넘는 캡(정직)**: ① ~~**CHECK 제약 0**~~ → **V2_24 로 해소 착수**(_yn 불리언 59컬럼 CHECK IN('Y','N') + meta FK 인덱스; route_mdfcn_yn 은 값'2' 저장 오명명이라 제외. OCI 롤백 트랜잭션 dry-run 62 completed·에러0 실증, ZeroDowntime/SchemaNaming 린터 green. **다음 Flyway 부팅 시 적용** → 적용 후 DB 완성도 재측정 대상). 도메인 검증이 앱 레이어에만 있던 갭 봉합 ② **FK 미완**(로그/인증 테이블 esntlId/loginId 키혼용 — [user-reference-key-policy.md](user-reference-key-policy.md) 로 문서화됐으나 미통일) ③ **빈 DB 부팅 불가**(프레임워크化 미완, §2.B — 스키마 품질과 별개 축) ④ UNIQUE 의 JPA `@Table(uniqueConstraints)` 미러링 미완 ⑤ currentTimeMillis PK 등 코드 레벨 레거시. **캡의 핵심은 DB 스키마 자체가 아니라 § 2.B(프레임워크化)·§2.D 잔여(불변식 미러)·§2.C(횡단관심사)** 다.
 
 > ⚠ 채점 노트: SEAM 적합성 +8 은 정체성 footgun 봉합·인가 일관성·409 표준화·재발방지 린터를 근거로 하며, 하나의 사실오류(ApprovalApiController.confirm 을 "미검증"으로 나열했으나 실제로는 `aprvrId` 소유권 가드 존재)가 있으나 이는 점수를 낮추는 방향이라 66 은 유효(오히려 약간 보수적).
 
