@@ -6,12 +6,11 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
-import { UserPicker } from '@/app/components/ui/user-picker';
 import { StatusBadge } from '@/app/components/ui/status-badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, Sparkles, User } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -24,7 +23,6 @@ export default function NotePage() {
   const [notes, setNotes] = useState<Note[]>([]);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
-  const [isPickerOpen, setPickerOpen] = useState(false);
   const [isDetailModalOpen, setDetailOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [formData, setFormData] = useState({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
@@ -63,10 +61,6 @@ export default function NotePage() {
     } catch {
       toast('전송 중 오류가 발생했습니다.', 'error');
     }
-  };
-
-  const handleUserSelect = (user: any) => {
-    setFormData({ ...formData, rcverId: user.emplyrId || user.adbkUserId, rcverNm: user.nm });
   };
 
   const handleDetail = (note: Note) => {
@@ -205,24 +199,16 @@ export default function NotePage() {
         }
       >
         <div className="space-y-8 p-4">
-          <FormField label="대상자 식별 (수신자)" required>
-            <div className="flex gap-3">
-              <div className="relative flex-1 group">
-                <UserPlus size={18} className="absolute left-6 top-5 text-slate-300 group-hover:text-primary transition-colors" />
-                <input
-                  type="text"
-                  value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
-                  placeholder="대상자를 식별하십시오..."
-                  readOnly
-                  className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-muted transition-all font-mono"
-                />
-              </div>
-              <Button
-                onClick={() => setPickerOpen(true)}
-                className="h-11 px-8 bg-white border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
-              >
-                <Search size={16} className="mr-2" /> 타겟 검색
-              </Button>
+          <FormField label="대상자 식별 (수신자 ID)" required>
+            <div className="relative group">
+              <UserPlus size={18} className="absolute left-6 top-5 text-slate-300 group-hover:text-primary transition-colors" />
+              <input
+                type="text"
+                value={formData.rcverId}
+                onChange={(e) => setFormData({ ...formData, rcverId: e.target.value, rcverNm: '' })}
+                placeholder="수신자 사용자 ID 를 입력하십시오..."
+                className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all font-mono"
+              />
             </div>
           </FormField>
           <FormField label="시스템 제목" required>
@@ -244,12 +230,6 @@ export default function NotePage() {
           </FormField>
         </div>
       </StandardModal>
-
-      <UserPicker
-        isOpen={isPickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={handleUserSelect}
-      />
 
       <StandardModal
         isOpen={isDetailModalOpen}

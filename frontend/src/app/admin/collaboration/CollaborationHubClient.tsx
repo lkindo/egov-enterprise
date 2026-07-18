@@ -11,7 +11,6 @@ import {
  Bookmark,
  Search,
  Plus,
- Users,
  Zap,
  Share2,
  Activity,
@@ -23,14 +22,13 @@ import {
 import { cn } from '@/lib/utils';
 import { noteService } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
-import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
 
-type CollaborationTab = 'MESSAGES' | 'ADDRESS_BOOK' | 'SCRAPS';
+type CollaborationTab = 'MESSAGES' | 'SCRAPS';
 
 export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any) {
  const router = useRouter();
@@ -52,13 +50,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  });
  const notes = (noteData as any)?.list || [];
 
- const { data: addressData, isLoading: addressLoading } = useQuery({
- queryKey: ['collab-addressbook', searchKeyword],
- queryFn: () => addressbookUserService.getAddressBooks({ size: 50, searchWrd: searchKeyword }),
- enabled: activeTab === 'ADDRESS_BOOK'
- });
- const addresses = (addressData as any)?.list || [];
-
  const { data: scrapData, isLoading: scrapsLoading } = useQuery({
  queryKey: ['collab-scraps', activeTab, searchKeyword],
  queryFn: () => scrapService.getMyScraps({ page: 0, size: 50 }),
@@ -66,9 +57,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  });
  const scraps = (scrapData as any)?.list || [];
 
- const isLoading = 
+ const isLoading =
     (activeTab === 'MESSAGES' && notesLoading) ||
-    (activeTab === 'ADDRESS_BOOK' && addressLoading) ||
     (activeTab === 'SCRAPS' && scrapsLoading);
 
  const messageColumns: Column<any>[] = [
@@ -112,34 +102,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  }
  ];
 
- const addressColumns: Column<any>[] = [
- {
- header: '번호',
- accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
- className: 'w-20 text-center'
- },
- {
- header: '성명',
- accessor: (item) => <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.adbkNm}</span>
- },
- {
- header: '이메일',
- accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.email || '-'}</span>,
- className: 'w-64'
- },
- {
- header: '관리',
- accessor: () => (
- <div className="flex justify-end pr-4">
- <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg hover:bg-muted">
- <MoreVertical size={16} className="text-muted-foreground" />
- </Button>
- </div>
- ),
- className: 'w-20 text-right'
- }
- ];
-
  const scrapColumns: Column<any>[] = [
  {
  header: '번호',
@@ -169,19 +131,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  ];
 
  const headerAction = useMemo(() => {
-    if (activeTab === 'ADDRESS_BOOK') {
-      return (
-        <Button onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
-          <Plus size={18} /> 신규 연락처
-        </Button>
-      );
-    }
     return (
       <Button onClick={() => router.push('/admin/collaboration/mail-send')} className="h-11 px-8 rounded-xl bg-slate-900 text-white font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
         <Plus size={18} /> 신규 전송
       </Button>
     );
-  }, [activeTab, router]);
+  }, [router]);
 
  return (
  <TooltipProvider delayDuration={0}>
@@ -210,14 +165,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
  <Button
  variant="ghost"
  size="sm"
- className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'ADDRESS_BOOK' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
- onClick={() => { setActiveTab('ADDRESS_BOOK'); setSearchKeyword(''); }}
- >
- CONTACTS
- </Button>
- <Button
- variant="ghost"
- size="sm"
  className={cn("h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all", activeTab === 'SCRAPS' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
  onClick={() => { setActiveTab('SCRAPS'); setSearchKeyword(''); }}
  >
@@ -231,13 +178,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
 
  <HubMetricGrid>
  <HubMetricCard title="메시지 노드" value={notes.length} icon={Inbox} color="primary" />
- <HubMetricCard title="인적 자산" value={addresses.length} icon={Users} color="emerald" />
  <HubMetricCard title="지식 노드" value={scraps.length} icon={Bookmark} color="amber" />
  <HubMetricCard title="데이터 상태" value="Normal" icon={Activity} color="indigo" />
  </HubMetricGrid>
 
  <HubSectionCard 
- title={activeTab === 'MESSAGES' ? "메시지 스트림 매트릭스" : activeTab === 'ADDRESS_BOOK' ? "네트워크 인덱스" : "지식 스크랩 아카이브"}
+ title={activeTab === 'MESSAGES' ? "메시지 스트림 매트릭스" : "지식 스크랩 아카이브"}
  description="조직 내에서 발생하는 실시간 협업 데이터 스트림 및 자산 명세입니다." 
  icon={Zap}
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
@@ -260,8 +206,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: any)
 
  <div className="min-h-[500px]">
  <StandardDataTable
- columns={activeTab === 'MESSAGES' ? messageColumns : activeTab === 'ADDRESS_BOOK' ? addressColumns : scrapColumns}
- data={activeTab === 'MESSAGES' ? notes : activeTab === 'ADDRESS_BOOK' ? addresses : scraps}
+ columns={activeTab === 'MESSAGES' ? messageColumns : scrapColumns}
+ data={activeTab === 'MESSAGES' ? notes : scraps}
  loading={isLoading}
  emptyMessage="식별된 협업 데이터 유닛이 없습니다."
  isPremium={true}

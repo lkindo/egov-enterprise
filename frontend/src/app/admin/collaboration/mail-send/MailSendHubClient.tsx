@@ -2,28 +2,25 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { NameCard } from '@/types/business/addressbook';
-import { 
-  Send, 
-  ArrowLeft, 
-  User, 
-  Zap, 
-  ShieldCheck, 
-  Clock, 
-  Search, 
+import {
+  Send,
+  ArrowLeft,
+  User,
+  Zap,
+  ShieldCheck,
+  Clock,
+  Search,
   X,
   Plus,
   Mail,
   Layers,
-  Sparkles,
-  Loader2
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { mailService } from '@/services/business/mail/MailService';
-import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 ;
@@ -34,8 +31,6 @@ export default function MailSendHubClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [searchResults, setSearchResults] = useState<NameCard[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -52,22 +47,15 @@ export default function MailSendHubClient() {
     emailCn: ''
   });
 
-  const handleSearchUsers = async (val: string) => {
-    setRecipientSearch(val);
-    if (val.length < 2) {
-      setSearchResults([]);
-      return;
+  // [재사용 base] 주소록(addressbook) 도메인 제거로 자동완성 검색 대신 수동 입력을 사용한다.
+  // 수신자 ID(또는 이메일)를 입력하고 Enter/추가로 대상 목록에 추가한다.
+  const handleAddRecipient = () => {
+    const val = recipientSearch.trim();
+    if (!val) return;
+    if (!selectedRecipients.find(r => r.id === val)) {
+      setSelectedRecipients(prev => [...prev, { id: val, name: val, email: val.includes('@') ? val : '' }]);
     }
-
-    setIsSearching(true);
-    try {
-      const response = await addressbookUserService.searchUsers(val);
-      setSearchResults(response?.list || []);
-    } catch (error) {
-      console.error('User search failed', error);
-    } finally {
-      setIsSearching(false);
-    }
+    setRecipientSearch('');
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -171,71 +159,18 @@ export default function MailSendHubClient() {
                   )}
                 </AnimatePresence>
 
-                <div className="relative">
+                <div className="relative flex gap-3">
                   <Input
                     data-testid="mail-recipient-input"
-                    placeholder="성명 또는 ID로 수신자를 검색하십시오..."
+                    placeholder="수신자 ID 또는 이메일을 입력 후 추가하십시오..."
                     className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
-                    onChange={(e) => handleSearchUsers(e.target.value)}
+                    onChange={(e) => setRecipientSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddRecipient(); } }}
                   />
-                  <AnimatePresence>
-                    {(isSearching || searchResults.length > 0 || (recipientSearch.length >= 2 && !isSearching && searchResults.length === 0)) && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-50 w-full mt-2 bg-white border-2 border-border rounded-lg shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-border"
-                      >
-                        {isSearching ? (
-                          <div className="p-8 text-center text-muted-foreground flex items-center justify-center gap-3">
-                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                            <span className="text-xs font-bold tracking-tight text-xs">Searching Records...</span>
-                          </div>
-                        ) : searchResults.length > 0 ? (
-                          searchResults.map((user: any) => (
-                            <button
-                              key={user.userId || user.adbkId || user.emplyrId}
-                              type="button"
-                              data-testid="recipient-item"
-                              onClick={() => {
-                                const newRecipient = { 
-                                  id: user.emplyrId || user.userId || user.adbkId || user.ncrdId || user.id, 
-                                  name: user.userNm || user.adbkNm || user.ncrdNm || user.nm || user.name,
-                                  email: user.emlAddr || user.email || ''
-                                };
-                                if (!selectedRecipients.find(r => r.id === newRecipient.id)) {
-                                  setSelectedRecipients(prev => [...prev, newRecipient]);
-                                }
-                                setSearchResults([]);
-                                setRecipientSearch('');
-                              }}
-                              className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors group text-left"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
-                                  {(user.nm || user.userNm || user.adbkNm || user.ncrdNm)?.charAt(0)}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-                                    {user.nm || user.userNm || user.adbkNm || user.ncrdNm}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {user.email || user.emlAddr || user.emplyrId || user.userId || user.adbkId || user.ncrdId}
-                                  </span>
-                                </div>
-                              </div>
-                              <Plus size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-8 text-center text-muted-foreground">
-                            <span className="text-xs font-bold tracking-tight">No Matches Found</span>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <Button type="button" onClick={handleAddRecipient} className="h-11 px-6 rounded-lg bg-slate-900 text-white font-bold text-xs tracking-widest shrink-0">
+                    <Plus size={16} className="mr-2" /> 추가
+                  </Button>
                 </div>
               </div>
             </div>
