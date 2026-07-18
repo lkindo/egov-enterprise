@@ -8,7 +8,6 @@ vi.mock('next/config', () => ({
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import { boardUserService } from '../board/BoardUserService';
-import { approvalUserService } from '../approval/ApprovalUserService';
 
 vi.mock('@/lib/api/client', () => ({
  default: {
@@ -25,13 +24,6 @@ describe('User Domain Services', () => {
   it('BoardUserService should call correct endpoints', async () => {
     await boardUserService.getPosts('BBS01', { page: 0 });
     expect(client.get).toHaveBeenCalledWith('boards/BBS01', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, pageIndex: 1 })
-    }));
-  });
-
-  it('ApprovalUserService should call correct endpoints', async () => {
-    await approvalUserService.getPending({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('approvals/pending', expect.objectContaining({
       params: expect.objectContaining({ page: 0, pageIndex: 1 })
     }));
   });

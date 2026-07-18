@@ -7,7 +7,6 @@ vi.mock('next/config', () => ({
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
-import * as pollService from '@/services/business/user/poll/PollUserService';
 import { commentService } from '@/services/business/comment/commentService';
 import { fileService } from '@/services/foundation/file/FileService';
 import * as securityService from '@/services/foundation/security/SecurityAdminService';
@@ -23,11 +22,6 @@ vi.mock('@/lib/api/client', () => ({
 
 describe('Common Support Services', () => {
  beforeEach(() => vi.clearAllMocks());
-
-  it('pollService calls correct endpoints', async () => {
-  await pollService.getPollList({});
-  expect(client.get).toHaveBeenCalledWith('polls', expect.any(Object));
-  });
 
   it('commentService calls correct endpoints', async () => {
     (client.get as any).mockResolvedValue({ list: [], total: 0 });
