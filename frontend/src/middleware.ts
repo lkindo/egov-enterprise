@@ -120,9 +120,7 @@ export async function middleware(request: NextRequest) {
     // 시스템 사용자 보안 민감관리경로
     const isSensitivePath = pathname.startsWith('/admin/system') ||
       pathname.startsWith('/admin/user') ||
-      pathname.startsWith('/admin/security') ||
-      pathname.startsWith('/admin/stats') ||
-      pathname.startsWith('/admin/workflow');
+      pathname.startsWith('/admin/security');
 
     if (isSensitivePath && !isAdmin) {
       const fallbackUrl = new URL('/', request.url);

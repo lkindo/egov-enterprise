@@ -6,14 +6,8 @@ import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardMasterSearchResult;
-import nuri.business.domain.board.Blog;
-import nuri.business.domain.board.BlogUser;
-import nuri.business.domain.board.BlogRepository;
-import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
-import nuri.business.service.board.dto.BlogDto;
-import nuri.business.service.board.dto.BlogMapper;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
@@ -29,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +32,6 @@ public class BoardMasterService extends BaseAbstractService {
     private final BoardMasterRepository boardMasterRepository;
     private final BoardRepository boardRepository;
     private final BoardMasterMapper boardMasterMapper;
-    private final BlogMapper blogMapper;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -203,53 +195,6 @@ public class BoardMasterService extends BaseAbstractService {
         return boardMasterRepository.findById(bbsId)
                 .map(m -> "Y".equals(m.getAnsYn()))
                 .orElse(false);
-    }
-
-    private final BlogRepository blogRepository;
-    private final BlogUserRepository blogUserRepository;
-
-    public Page<BlogDto> getBlogList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
-        return blogRepository.findAll(pageable).map(blogMapper::toDto);
-    }
-
-    public BlogDto getBlog(@NonNull String blogId) {
-        return blogRepository.findById(blogId)
-                .map(blogMapper::toDto)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-    }
-
-    @Transactional
-    public void createBlog(String userId, BlogDto dto) {
-        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 persist 시 로그인 사용자로 설정하므로 빌더에서 제외
-        Blog entity = Blog.builder()
-                .blogId(dto.getBlogId())
-                .blogTtl(dto.getBlogTtl())
-                .blogIntroCn(dto.getBlogIntroCn())
-                .useYn("Y")
-                .build();
-        blogRepository.save(entity);
-    }
-
-    @Transactional
-    public void joinBlog(String blogId, String userId, String mngrYn) {
-        // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
-        BlogUser entity = BlogUser.builder()
-                .blogId(blogId)
-                .userId(userId)
-                .mngrYn(mngrYn)
-                .useYn("Y")
-                .build();
-        blogUserRepository.save(entity);
-    }
-
-    public boolean checkBlogUser(String userId) {
-        return blogRepository.existsByFrstRgtrId(userId);
-    }
-
-    public List<BlogDto> getBlogListPortlet() {
-        return blogRepository.findAll(PageRequest.of(0, 10)).getContent().stream()
-                .map(blogMapper::toDto)
-                .collect(Collectors.toList());
     }
 
     private BoardMasterDto toDto(BoardMasterSearchResult projection) {

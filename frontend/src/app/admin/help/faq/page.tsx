@@ -1,6 +1,0 @@
-import React from 'react';
-import KnowledgeHubClient from '../KnowledgeHubClient';
-
-export default function FAQPage() {
- return <KnowledgeHubClient defaultTab="FAQ" />;
-}

@@ -106,10 +106,6 @@ export function CommandMenu() {
             <Database size={18} className="mr-3 text-emerald-500" />
             <span className="font-bold">로그 분석 마스터</span>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/admin/operation/events'))} className="h-12 rounded-lg mx-2 my-1 cursor-pointer transition-all">
-            <Globe size={18} className="mr-3 text-emerald-500" />
-            <span className="font-bold">글로벌 운영 자산</span>
-          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator className="my-2 opacity-10" />

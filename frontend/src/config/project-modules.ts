@@ -10,26 +10,9 @@ export interface ProjectModuleConfig {
   basePath: string;
 }
 
-export const projectModules: ProjectModuleConfig[] = [
-  {
-    id: 'informalsanction',
-    name: '비공식 제재 (Informal Sanction)',
-    enabled: true,
-    basePath: '/admin/sanctn'
-  },
-  {
-    id: 'memoreport',
-    name: '메모 보고 (Memo Report)',
-    enabled: true,
-    basePath: '/admin/memoreport'
-  },
-  {
-    id: 'operation',
-    name: '업무 운영 (Operation)',
-    enabled: true,
-    basePath: '/admin/operation'
-  }
-];
+// 재사용 base: 샘플 선택 모듈(informalsanction·memoreport·operation)은 제거됐다.
+// 신규 프로젝트에서 선택 도메인을 추가할 때 여기에 { id, name, enabled, basePath } 를 등록한다.
+export const projectModules: ProjectModuleConfig[] = [];
 
 /**
  * 특정 라우트 경로가 현재 활성화된 모듈에 속하는지 체크함

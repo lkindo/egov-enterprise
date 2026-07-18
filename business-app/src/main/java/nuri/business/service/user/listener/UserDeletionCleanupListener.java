@@ -9,24 +9,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nuri.business.domain.addressbook.AddressBookRepository;
-import nuri.business.domain.board.BlogUserRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.domain.notification.NotificationRepository;
-import nuri.business.domain.system.content.community.CommunityUserRepository;
 import nuri.business.service.user.event.UserDeletionEvent;
 import nuri.foundation.constants.Constants;
 
 /**
  * 사용자 삭제 시 business-app 도메인 종속 데이터 정리 리스너.
  *
- * <p>[V2_12 FK 결속] tb_bbs_item·tb_bbs_comment·tb_adbk_manage·tb_user_noti 가
+ * <p>[V2_12 FK 결속] tb_bbs_item·tb_bbs_comment·tb_user_noti 가
  * tb_user_info(esntl_id) 를 FK(NO ACTION)로 참조한다. UserService(business-core)는 모듈 의존
  * 방향상 이 도메인들의 리포지토리를 직접 참조할 수 없으므로, {@link UserDeletionEvent} 를
  * 확장 seam 으로 받아 정리한다.
  * <ul>
- *   <li>콘텐츠(게시글/댓글/주소록): 시스템 계정(webmaster) <b>재귀속</b> — 콘텐츠 보존 정책(2026-07-16 승인)</li>
+ *   <li>콘텐츠(게시글/댓글): 시스템 계정(webmaster) <b>재귀속</b> — 콘텐츠 보존 정책(2026-07-16 승인)</li>
  *   <li>알림(수신함): <b>삭제</b> — 수신자 소멸 시 의미 없는 데이터</li>
  * </ul>
  *
@@ -43,10 +40,7 @@ public class UserDeletionCleanupListener {
 
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
-    private final AddressBookRepository addressBookRepository;
     private final NotificationRepository notificationRepository;
-    private final BlogUserRepository blogUserRepository;
-    private final CommunityUserRepository communityUserRepository;
 
     @EventListener
     @Transactional(propagation = Propagation.MANDATORY) // 삭제 트랜잭션 밖 발행은 프로그래밍 오류 — 조기 실패
@@ -57,14 +51,9 @@ public class UserDeletionCleanupListener {
         }
         String systemAdmin = Constants.User.SYSTEM_ADMIN_ESNTL_ID;
         int notifications = notificationRepository.deleteByRcvrIdIn(esntlIds);
-        int blogMemberships = blogUserRepository.deleteByUserIdIn(esntlIds); // [V2_13] 멤버십은 삭제(알림과 동일 정책)
         int posts = boardRepository.reassignAuthorByUserIdIn(esntlIds, systemAdmin);
         int comments = commentRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
-        int addressBooks = addressBookRepository.reassignWriterByWrterIdIn(esntlIds, systemAdmin);
-        // [§2.B] 커뮤니티 멤버십 정리 — 종전 UserService(필수 코어)의 CommunityUserRepository(샘플) 직접 결합을
-        // 이 이벤트 리스너로 역전(콘텐츠/알림 정리와 동일 경로). 사용자 행 삭제 前 동일 트랜잭션(MANDATORY)에서 실행돼 FK 통과.
-        communityUserRepository.deleteByIdUserIdIn(esntlIds);
-        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림/블로그멤버십 삭제 {}/{}건, 게시글/댓글/주소록 재귀속 {}/{}/{}건, 커뮤니티 멤버십 삭제",
-                esntlIds.size(), notifications, blogMemberships, posts, comments, addressBooks);
+        log.info("사용자 삭제 종속 정리: 대상 {}명 — 알림 삭제 {}건, 게시글/댓글 재귀속 {}/{}건",
+                esntlIds.size(), notifications, posts, comments);
     }
 }
