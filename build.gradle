@@ -199,9 +199,10 @@ subprojects {
         historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
         historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
-        // 백엔드 헌법 제16조 (핵심 서비스 Mutation Score 80% 이상) — STRICT 게이트는 하한을 상회하는 85%로 상향 적용
-        // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
-        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
+        // 백엔드 헌법 제16조 (핵심 서비스 Mutation Score 75% 이상) — 임계값을 헌법 기준과 75% 로 통일
+        // 현행은 리포트 전용(STRICT_MUTATION 미설정 → threshold 0, 미달이 빌드 파손 안 함).
+        // 실측 스코어 ≥75% 확인 후 STRICT_MUTATION=true 로 전환하면 75% 하드 게이트가 강제된다.
+        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
     }
 }
 

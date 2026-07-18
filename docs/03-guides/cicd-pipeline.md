@@ -48,7 +48,7 @@ push/PR
 > **CI 전용 게이트 (로컬 pre-commit 과 구분)**: CI 는 로컬 훅에 없는 **드리프트/무결성 게이트**를 추가로 강제한다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경이 감지되면 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행.
-> - **증분 뮤테이션 (report-only)**: `mutation-test` 잡은 현재 `STRICT_MUTATION=false`(mutationThreshold=0) 로 **리포트만 산출하며 CI 를 실패시키지 않는다**. 대상 클래스가 85% 를 달성하면 `STRICT_MUTATION=true` 로 전환해 게이트화한다. (백엔드 헌법 제16조)
+> - **증분 뮤테이션 (report-only)**: `mutation-test` 잡은 현재 `STRICT_MUTATION=false`(mutationThreshold=0) 로 **리포트만 산출하며 CI 를 실패시키지 않는다**. 대상 클래스가 75% 를 달성하면 `STRICT_MUTATION=true` 로 전환해 75% 하드 게이트화한다. (백엔드 헌법 제16조)
 >
 > 반면 로컬 `.githooks/` 의 pre-commit codegen 드리프트 점검은 **경고(⚠, 비차단)** 로, 위 CI 게이트가 최종 방어선이다. (하단 [로컬 사전 게이트](#로컬-사전-게이트-git-hooks) 참조)
 

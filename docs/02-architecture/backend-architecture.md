@@ -125,7 +125,7 @@ public class BoardService {
 
 ### 4.1 Mutation Score 강제 및 커버리지
 - 단위 테스트 및 통합 테스트 작성 시, 코드의 논리적 허점을 파고드는 **Mutation Testing (의도적 버그 주입)**을 통과해야 한다.
-- 돌연변이 스코어 게이트는 PITest Gradle 플러그인의 `mutationThreshold`로 강제되며, `STRICT_MUTATION=true`일 때 최소 **Mutation Score 85%**를 통과해야 한다. 다만 **현재 CI는 `STRICT_MUTATION=false`(`mutationThreshold=0`)로 리포트 전용**이라 스코어 미달이 빌드를 파손하지 않으며, 헌법 제16조 2항의 80% 최소 기준도 현재는 미집행 상태다. 85% 하드 게이트는 `STRICT_MUTATION=true` 전환 시에만 활성되는 설계 의도로, **전환 시 이 80% 최소 기준을 충족·상회하도록 설계됨**이다.
+- 돌연변이 스코어 게이트는 PITest Gradle 플러그인의 `mutationThreshold`로 강제되며, `STRICT_MUTATION=true`일 때 최소 **Mutation Score 75%**를 통과해야 한다(헌법 제16조와 임계값 75% 통일). 다만 **현재 CI는 `STRICT_MUTATION=false`(`mutationThreshold=0`)로 리포트 전용**이라 스코어 미달이 빌드를 파손하지 않으며, 헌법 제16조 2항의 75% 기준도 현재는 미집행 상태다. 75% 하드 게이트는 각 대상 클래스의 실측 스코어가 75%를 상회함을 확인한 뒤 `STRICT_MUTATION=true` 로 전환할 때에만 활성된다(미달 상태 전환은 빌드 파손을 유발하므로 금지).
 - 상세: docs/02-architecture/pitest-mutation-testing.md · 테스트 전략 SSOT: docs/03-guides/testing-guide.md
 
 ### 4.2 글로벌 예외 처리 (Global Exception Handling)

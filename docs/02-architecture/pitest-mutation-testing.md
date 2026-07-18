@@ -1,10 +1,10 @@
 # 🧬 PITest (점진적 Mutation Testing) Gradle 완전 연동 설계 보고서
 
-본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 80% 이상 강제)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
+본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 75% 이상 품질 기준)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
 
 > **⚠ 현재 집행 상태(2026-07-18 실측 — 정직 고지)**: 뮤테이션 게이트는 **현재 "리포트 전용"**이다.
 > `ci.yml`(STRICT_MUTATION: false) → `build.gradle`(mutationThreshold=0)이라 스코어 미달이 빌드를 파손하지
-> **않는다.** 헌법 제16조의 80%/85% 하드 게이트는 **각 대상 클래스의 실측 스코어를 확인한 뒤
+> **않는다.** 헌법 제16조의 75% 하드 게이트는 **각 대상 클래스의 실측 스코어를 확인한 뒤
 > `STRICT_MUTATION: true` 로 전환해야 활성**된다(미달 상태에서 flip 하면 빌드가 즉시 파손되므로 제품 결정 사안).
 > 아래 본문의 "강제"는 **STRICT_MUTATION=true 전제의 설계 의도**이며, 현 시점 CI 의 실제 거동이 아니다.
 
@@ -65,9 +65,9 @@
           historyInputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
           historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
-          // 백엔드 헌법 제16조 (Mutation Score 80% 이상 강제) 유동적 연동
-          // STRICT_MUTATION 환경변수 활성화 시 엄격한 85% 게이트 통과 적용
-          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 85 : 0
+          // 백엔드 헌법 제16조 (Mutation Score 75% 이상) 유동적 연동
+          // STRICT_MUTATION 환경변수 활성화 시 75% 게이트 통과 적용 (현행 CI 는 리포트 전용)
+          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
       }
   }
   ```
@@ -107,7 +107,7 @@ $env:PIT_TARGET_TESTS="nuri.foundation.domain.code.CommonCodeTest"
 ```
 > `PIT_TARGET_CLASSES` / `PIT_TARGET_TESTS`는 콤마(,)로 복수 지정할 수 있으며, 변수를 해제하거나 새 셸을 열면 기본값 `nuri.*`(전체)로 복귀합니다.
 
-### 4.4 STRICT_MUTATION 강제 통과 모드 기동 (Mutation Score 85% — 헌법 제16조 80% 하한 상회, CI 파이프라인)
+### 4.4 STRICT_MUTATION 강제 통과 모드 기동 (Mutation Score 75% — 헌법 제16조 기준, CI 파이프라인)
 ```powershell
 $env:STRICT_MUTATION="true"
 ./gradlew :business-core:pitest

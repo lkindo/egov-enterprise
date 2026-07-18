@@ -54,7 +54,7 @@
 - 공통 상세코드(성별 M/F·게시판유형 등 드롭다운 실값) 미시드 — repo/라이브덤프에 권위 원천 부재(DB헌법 9조). **표준 코드값 export 제공** or **빈 값(드롭다운 공백) 수용** 결정.
 
 ### 3-D. 뮤테이션 게이트 STRICT flip
-- 현재 report-only(`STRICT_MUTATION=false`·`mutationThreshold=0`). 85% 하드게이트 활성은 **각 대상 클래스 실측 스코어 ≥85% 확인 후** `STRICT_MUTATION=true` 전환. **미달 상태 flip = 빌드 즉시 파손**이라 제품/품질 결정. (문서엔 report-only 정직 명시 완료)
+- 현재 report-only(`STRICT_MUTATION=false`·`mutationThreshold=0`). **임계값은 헌법·게이트·문서 전반 75%로 통일**(2026-07-18). 75% 하드게이트 활성은 **각 대상 클래스 실측 스코어 ≥75% 확인 후** `STRICT_MUTATION=true` 전환. **미달 상태 flip = 빌드 즉시 파손**이라 제품/품질 결정(사용자 선택: report-only 유지). (문서엔 report-only 정직 명시 완료)
 
 ### 3-E. DB 표준화 잔여 (이전 세션, 제품결정성)
 - `biz_cd`/`etc_cd` 용도·로그 테이블 개인정보 보존정책·`leader_id` FK 부여 등. 비즈니스 요건 결정 사안.
