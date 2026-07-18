@@ -30,11 +30,8 @@ public class LegacyConfig {
         return DataSourceBuilder.create().build();
     }
 
-    @Bean(name = "egov.dataSource")
-    @org.springframework.context.annotation.Lazy
-    public DataSource egovDataSource(DataSource dataSource) {
-        return dataSource;
-    }
+    // [정리 2026-07-18(2)] egov.dataSource lazy 별칭 빈 제거 — egov IdGnr/SqlMap(§2.A) 소거 후 소비처 0
+    //  (@Qualifier("egov.dataSource") 참조 0 실측). primary dataSource 로의 死 별칭이라 컨테이너 표면 축소.
 
     // [정리 2026-07-18] messageSource 빈 이중정의 해소 — foundation EgovMessageConfig.messageSource(전 프로파일,
     // 동일 basename 5종, 빈명 "messageSource")가 단독 제공하므로 여기의 @Profile("!test") 중복 정의를 제거.

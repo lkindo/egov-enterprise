@@ -17,8 +17,7 @@ public class EgovMessageConfig {
         messageSource.setBasenames(
                 "classpath:/egovframework/message/messages",
                 "classpath:/egovframework/message/com/message-common",
-                "classpath:/egovframework/message/com/message-validation",
-                "classpath:/org/egovframe/rte/fdl/property/messages/properties");
+                "classpath:/egovframework/message/com/message-validation");
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setCacheSeconds(60);
         return messageSource;

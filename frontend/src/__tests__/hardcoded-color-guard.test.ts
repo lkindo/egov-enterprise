@@ -24,7 +24,8 @@ const VARIANT = '(?:dark:|hover:|focus:|group-hover:|focus-within:|active:|group
 const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]{2,3}(?:\\/[0-9]{1,3})?`, 'g');
 
 // [동결 2026-07-18] 브랜딩 토큰화(중립 861 + 액센트 195) 이후 잔여 census. 방향은 감소만 허용.
-const BASELINE = 247;
+// [하향 래칫 2026-07-18(2)] 死 camelCase 게시판 라우트 3종 삭제로 40 감소 → 247→207.
+const BASELINE = 207;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
