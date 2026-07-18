@@ -9,7 +9,10 @@
     "all": "npm run dev",
     "test": "npx cross-env TZ=Asia/Seoul gradlew test -Dfile.encoding=UTF-8",
     "test:ci": "npx cross-env TZ=Asia/Seoul gradlew test --continue -Dfile.encoding=UTF-8",
-    "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew test jacocoRootReport --continue -Dfile.encoding=UTF-8"
+    "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew test jacocoRootReport --continue -Dfile.encoding=UTF-8",
+    "verify": "node scripts/verify.mjs all",
+    "verify:be": "node scripts/verify.mjs be",
+    "verify:fe": "node scripts/verify.mjs fe"
   },
   "dependencies": {
     "cross-env": "^7.0.3",
