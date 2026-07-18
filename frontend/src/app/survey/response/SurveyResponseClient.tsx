@@ -32,6 +32,7 @@ import {
   Trash2,
   BarChart3
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SurveyResponseClient() {
   const [pageNo, setPageNo] = useState(1);
@@ -48,10 +49,10 @@ export default function SurveyResponseClient() {
     mutationFn: (id: string) => deleteQustnrRespondInfo(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
-      alert('삭제되었습니다.');
+      toast.success('삭제되었습니다.');
     },
     onError: (err) => {
-      alert(`삭제 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+      toast.error(`삭제 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     }
   });
 

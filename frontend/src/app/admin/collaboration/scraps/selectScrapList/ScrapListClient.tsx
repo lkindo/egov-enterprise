@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from '@/lib/api/client';
+import { toast } from 'sonner';
 import {
     Table,
     TableBody,
@@ -57,7 +58,7 @@ const ScrapListClient = () => {
             await axios.delete(`/scraps/${id}`);
             fetchList();
         } catch (error) {
-            alert('삭제에 실패했습니다.');
+            toast.error('삭제에 실패했습니다.');
         }
     };
 

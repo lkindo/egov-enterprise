@@ -24,6 +24,7 @@ import { CalendarIcon, ArrowLeft, Send, Sparkles, Plus } from "lucide-react";
 import { createPoll } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from 'sonner';
 
 export default function SurveyManageDetailClient() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function SurveyManageDetailClient() {
 
     const handleSave = async () => {
         if (!formData.pollNm || !beginDate || !endDate) {
-            alert('필수 항목을 입력해주세요.');
+            toast.error('필수 항목을 입력해주세요.');
             return;
         }
 
@@ -52,11 +53,11 @@ export default function SurveyManageDetailClient() {
 
         try {
             await createPoll(payload);
-            alert('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
+            toast.success('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
             router.push('/admin/survey/manage');
         } catch (error) {
             console.error(error);
-            alert('설문 등록에 실패했습니다.');
+            toast.error('설문 등록에 실패했습니다.');
         }
     };
 

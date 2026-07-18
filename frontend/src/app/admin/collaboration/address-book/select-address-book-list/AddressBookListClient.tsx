@@ -3,6 +3,7 @@
 import React, { use,  useState } from 'react';
 import Link from 'next/link';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search,  Plus,  Trash2,  UserCircle,  Layers,  Zap,  RefreshCcw,  Activity } from "lucide-react";
@@ -61,7 +62,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  await addressbookUserService.deleteAddressBook(adbkId);
  fetchList(pageNo, searchWrd);
  } catch {
- alert('삭제에 실패했습니다.');
+ toast.error('삭제에 실패했습니다.');
  }
  };
 

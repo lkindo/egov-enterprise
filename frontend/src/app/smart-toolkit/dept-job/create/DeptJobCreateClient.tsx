@@ -17,6 +17,7 @@ import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUser
 import { DeptJobVO } from '@/types/business/deptJob';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
+import { toast } from 'sonner';
 
 export default function DeptJobCreateClient() {
   const router = useRouter();
@@ -29,17 +30,17 @@ export default function DeptJobCreateClient() {
 
   const handleSave = async () => {
     if (!formData.deptTaskNm || !formData.deptTaskCn) {
-      alert('업무명과 내용은 필수입니다.');
+      toast.error('업무명과 내용은 필수입니다.');
       return;
     }
 
     try {
       await deptJobUserService.createDeptJob(formData as DeptJobVO);
-      alert('업무가 성공적으로 등록되었습니다.');
+      toast.success('업무가 성공적으로 등록되었습니다.');
       router.push('/smart-toolkit/dept-job/selectDeptJobList');
     } catch (error) {
       console.error(error);
-      alert('업무 등록에 실패했습니다.');
+      toast.error('업무 등록에 실패했습니다.');
     }
   };
 

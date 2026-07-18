@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Briefcase, Plus, Trash2, Home, ChevronRight, FileText, User, Calendar, CheckSquare } from "lucide-react";
+import { toast } from 'sonner';
 ;
 
 interface DeptJob {
@@ -58,7 +59,7 @@ const DeptJobDetailClient = () => {
             (await axios.delete(`/deptjob/${id}`)) as any;
             fetchList();
         } catch {
-            alert('삭제에 실패했습니다.');
+            toast.error('삭제에 실패했습니다.');
         }
     };
 

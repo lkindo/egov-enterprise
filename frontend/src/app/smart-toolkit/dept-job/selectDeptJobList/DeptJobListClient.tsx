@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Briefcase,  Plus,  Trash2,  FileText,  User,  Calendar,  CheckSquare } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { toast } from 'sonner';
 
 interface DeptJob {
   deptTaskId: string;
@@ -58,7 +59,7 @@ const DeptJobListClient = () => {
       (await axios.delete(`/deptjob/${id}`)) as any;
       fetchList();
     } catch {
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 

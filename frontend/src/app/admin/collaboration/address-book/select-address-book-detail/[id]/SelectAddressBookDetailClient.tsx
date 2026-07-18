@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,17 +24,17 @@ const SelectAddressBookDetailClient = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.adbkNm.trim()) {
-            alert('이름을 입력해 주세요.');
+            toast.error('이름을 입력해 주세요.');
             return;
         }
 
         setLoading(true);
         try {
             await addressbookUserService.createAddressBook(formData);
-            alert('등록되었습니다.');
+            toast.success('등록되었습니다.');
             router.push('/admin/collaboration/address-book/select-address-book-list');
         } catch (error: any) {
-            alert(error.response?.data?.message || '등록에 실패했습니다.');
+            toast.error(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {
             setLoading(false);
         }

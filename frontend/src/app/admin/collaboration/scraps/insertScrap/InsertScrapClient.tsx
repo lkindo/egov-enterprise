@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 ;
 import axios from '@/lib/api/client';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,25 +27,25 @@ const InsertScrapClient = () => {
 
     // Basic Validation
     if (!formData.scrapNm.trim()) {
-      alert('스크랩명을 입력해주세요.');
+      toast.error('스크랩명을 입력해주세요.');
       return;
     }
     if (!formData.scrapUrl.trim()) {
-      alert('URL을 입력해주세요.');
+      toast.error('URL을 입력해주세요.');
       return;
     }
     if (!formData.scrapUrl.startsWith('http')) {
-      alert('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)');
+      toast.error('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)');
       return;
     }
 
     setLoading(true);
     try {
       await axios.post('/scraps', formData);
-      alert('등록되었습니다.');
+      toast.success('등록되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
-      alert(error.response?.data?.message || '등록에 실패했습니다.');
+      toast.error(error.response?.data?.message || '등록에 실패했습니다.');
     } finally {
       setLoading(false);
     }

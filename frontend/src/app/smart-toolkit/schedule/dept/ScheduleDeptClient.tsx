@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { Pencil,  Trash2,  Plus } from "lucide-react";
 import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
+import { toast } from 'sonner';
 
 export default function ScheduleDeptClient() {
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
@@ -94,7 +95,7 @@ export default function ScheduleDeptClient() {
             await deleteDeptSchedule(schdlId);
             fetchList();
         } catch {
-            alert('삭제 중 오류가 발생했습니다.');
+            toast.error('삭제 중 오류가 발생했습니다.');
         }
     };
 
@@ -108,7 +109,7 @@ export default function ScheduleDeptClient() {
             setIsDialogOpen(false);
             fetchList();
         } catch {
-            alert('저장 중 오류가 발생했습니다.');
+            toast.error('저장 중 오류가 발생했습니다.');
         }
     };
 

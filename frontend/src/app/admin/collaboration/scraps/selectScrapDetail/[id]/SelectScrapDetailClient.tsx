@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 ;
 import axios from '@/lib/api/client';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,21 +46,21 @@ const SelectScrapDetailClient = () => {
     e.preventDefault();
 
     if (!formData.scrapNm.trim()) {
-      alert('스크랩명을 입력해주세요.');
+      toast.error('스크랩명을 입력해주세요.');
       return;
     }
     if (!formData.scrapUrl.trim()) {
-      alert('URL을 입력해주세요.');
+      toast.error('URL을 입력해주세요.');
       return;
     }
 
     setLoading(true);
     try {
       await axios.put(`/scraps/${id}`, formData);
-      alert('수정되었습니다.');
+      toast.success('수정되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
-      alert(error.response?.data?.message || '수정에 실패했습니다.');
+      toast.error(error.response?.data?.message || '수정에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -71,10 +72,10 @@ const SelectScrapDetailClient = () => {
     setLoading(true);
     try {
       await axios.delete(`/scraps/${id}`);
-      alert('삭제되었습니다.');
+      toast.success('삭제되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
-      alert(error.response?.data?.message || '삭제에 실패했습니다.');
+      toast.error(error.response?.data?.message || '삭제에 실패했습니다.');
     } finally {
       setLoading(false);
     }

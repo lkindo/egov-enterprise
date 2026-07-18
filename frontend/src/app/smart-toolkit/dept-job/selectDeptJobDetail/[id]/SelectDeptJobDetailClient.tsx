@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Briefcase, Send, ArrowLeft, Home, ChevronRight, Activity, AlertCircle, FileText, CheckCircle } from "lucide-react";
+import { toast } from 'sonner';
 
 /**
  * NOTE: Currently this file functions as 'insertDeptJob' based on its content,
@@ -28,7 +29,7 @@ const SelectDeptJobDetailClient = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.deptTaskNm.trim()) {
-            alert('업무 제목을 입력해 주세요.');
+            toast.error('업무 제목을 입력해 주세요.');
             return;
         }
 
@@ -36,11 +37,11 @@ const SelectDeptJobDetailClient = () => {
         try {
             const response = (await axios.post('/deptjob', formData)) as any;
             if (response.data.success) {
-                alert(response.data.message || '업무가 등록되었습니다.');
+                toast.success(response.data.message || '업무가 등록되었습니다.');
                 router.push('/smart-toolkit/dept-job/selectDeptJobList');
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || '등록에 실패하였습니다.');
+            toast.error(error.response?.data?.message || '등록에 실패하였습니다.');
         } finally {
             setLoading(false);
         }
