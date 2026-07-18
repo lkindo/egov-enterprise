@@ -1074,7 +1074,7 @@
       <div class="sidebar-footer">
         <div>v5.0.0-MODERNIZED</div>
         <div>OCI PostgreSQL 17 READY</div>
-        <div>2026-06-09</div>
+        <div>2026-07-18</div>
       </div>
     </aside>
 
@@ -1208,16 +1208,16 @@
               <div class="flow-step-number">05</div>
             </div>
 
-            <!-- 6. business-suite Service -->
+            <!-- 6. business-core / business-app Service -->
             <div class="flow-step-node">
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  business-suite Service (Core Domain)
+                  business-core / business-app Service (Domain)
                   <span class="flow-step-badge backend">Spring BE Service</span>
                 </div>
-                <div class="flow-step-desc">트랜잭션(Transaction) 경계를 설정하고 핵심 도메인 비즈니스 로직 및 JPA 영속성(Persistence) 처리를 완수합니다.</div>
-                <div class="flow-step-file">business-suite/.../nuri/business/service/DashboardBusinessService.java</div>
+                <div class="flow-step-desc">트랜잭션(Transaction) 경계를 설정하고 핵심 도메인 비즈니스 로직 및 JPA 영속성(Persistence) 처리를 완수합니다. (재사용 코어=business-core, 프로젝트 고유 업무 도메인=business-app — 2026-07 business-suite 모놀리스를 분할.)</div>
+                <div class="flow-step-file">business-core/.../nuri/business/service/... · business-app/.../nuri/business/service/...</div>
               </div>
               <div class="flow-step-number">06</div>
             </div>
@@ -1378,7 +1378,7 @@
                   <td><strong>Step 5</strong></td>
                   <td>Mutation Test</td>
                   <td>Incremental PITest Pipeline</td>
-                  <td>핵심 서비스에 대해 Mutation Score 80% 미만 검출 시 PR 차단</td>
+                  <td>핵심 서비스 Mutation Score 75% 기준 계측 — 현행 리포트 전용(STRICT_MUTATION=true 전환 시 PR 차단)</td>
                 </tr>
                 <tr>
                   <td><strong>Step 6</strong></td>
@@ -1634,8 +1634,12 @@
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">하네스 종합 평가 총평</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            본 프로젝트에 구축된 7대 무결성 가디언 하네스는 다중 모듈 및 이종 기술 스택(Spring Boot + Next.js)의 융합 구조에서 누출되기 쉬운 대표적인 **5대 위험 영역(JPA N+1 쿼리 누수, JWT 동기화 유실, API 보안 권한 노출, Flyway 파괴적 DDL, 프론트엔드 비주얼/타입 불일치)**을 완벽한 컴파일 차단(Hard-Stop) 및 dynamic 자가 치유(Self-Healing) 기술로 극복하였습니다. 
-            그 결과 전체 백엔드 **JPA Query Leak을 90% 저감**시켰으며, PITest 점진적 AST 증분 캐시 최적화로 **빌드 타임 오버헤드를 92% 단축**하고 DDL Lock에 의한 **운영 서비스 다운타임 차단율 100%**를 확보하는 등 엔터프라이즈 사스 수준의 무결성과 최고의 생산성을 수리적으로 증명하고 있습니다.
+            본 프로젝트에 구축된 7대 무결성 가디언 하네스는 다중 모듈 및 이종 기술 스택(Spring Boot + Next.js)의 융합 구조에서 누출되기 쉬운 대표적인 **5대 위험 영역(JPA N+1 쿼리 누수, JWT 동기화 유실, API 보안 권한 노출, Flyway 파괴적 DDL, 프론트엔드 비주얼/타입 불일치)**을 완벽한 컴파일 차단(Hard-Stop) 및 dynamic 자가 치유(Self-Healing) 기술로 극복하였습니다.
+            그 결과 전체 백엔드 **JPA Query Leak을 90% 저감**시켰으며, PITest 점진적 AST 증분 캐시 최적화로 **빌드 타임 오버헤드를 대폭 단축**하고 DDL Lock에 의한 **운영 서비스 다운타임 차단율 100%**를 확보하는 등 엔터프라이즈 사스 수준의 무결성과 최고의 생산성을 수리적으로 증명하고 있습니다.
+          </p>
+          <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
+            <strong style="color: var(--accent-primary);">[2026-07 확충]</strong> 위 7대 외에, 품질 하드닝으로 순수 정적 JUnit 하네스 린터군 — <code>ApiDocsPathCoverage</code>·<code>IdentityAxis</code>·<code>ServiceReadOnlyTransactional</code>·<code>AsyncTransactionalListener</code>·<code>PkGenerationStandard</code>·<code>UniqueConstraintMirror</code>·<code>SchemaNaming</code>·<code>ZeroDowntimeMigration</code>·<code>SecurityAuthAnnotation</code> — 과 ArchUnit 게이트(<code>DomainIsolation</code>·<code>ServiceLayerIsolation</code>)를 신설·확충하고, 이를 <strong>3대 헌법 조문에 직접 결속(조문↔게이트 쌍방 참조)</strong>하여 규범을 "실증 가능"하게 만들었습니다.
+            <br><strong style="color: var(--accent-warning);">[정직 고지]</strong> 다만 <strong>뮤테이션 게이트는 현행 리포트 전용</strong>(<code>STRICT_MUTATION=false</code> → <code>mutationThreshold=0</code>, 미달이 빌드를 파손하지 않음 — 실측 ≥75% 확인 후 <code>true</code> 전환 시 강제)이고, <strong>디자인 토큰 ESLint 는 자문(<code>warn</code>)</strong>이라 CI 하드 차단이 아닙니다. 이 둘은 "강제"로 표기하지 않습니다.
           </p>
         </div>
 
@@ -1661,8 +1665,9 @@
         details: [
           "메타 테이블 SSOT 기반 3단계 설계 프로세스 강제",
           "확장 후 축소(Expand-Contract) DDL 무중단 이행 준수",
-          "Audit 4종 컬럼 필수(INSERT-ONLY성 로그/이력 등 예외)",
-          "비즈니스 요건에 맞춰 논리/물리 삭제(Soft/Hard Delete) 전략 세분화"
+          "Audit 컬럼: 게이트는 최소 2종(frst_rgtr_id·crt_dt)+수정 짝 대칭만 강제, 4종 완비는 설계 리뷰(INSERT-ONLY 예외)",
+          "비즈니스 요건에 맞춰 논리/물리 삭제(Soft/Hard Delete) 전략 세분화",
+          "제약 명명 pk_/fk_/uk_/ix_/ck_(CHECK)·신규 PK @GeneratedValue·UNIQUE 엔티티 미러를 정적 하네스(ZeroDowntime·SchemaNaming·PkGeneration·UniqueConstraintMirror 린터)로 조문 기계 강제"
         ]
       },
       {
@@ -1672,9 +1677,10 @@
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))",
         details: [
           "JPA N+1 하이브리드 방어(XToOne Fetch Join, XToMany Batch fetch 적용)",
-          "서킷 브레이커 + 3초 타임아웃 격리 통합 구축",
-          "DB→BE→FE 단방향 Validation 연쇄 동기화 검증",
-          "동시성 락 제어 및 핵심 크리티컬 서비스 대상 Mutation Score 80% 이상 강제"
+          "@Retryable 재시도 + AsyncConfig 동시성 상한(벌크헤드 근사) — 서킷 브레이커/차등 타임아웃은 미도입 권고",
+          "DB→BE→FE 계약 동기화(api-docs 신선도 + codegen diff) 게이트 강제",
+          "동시성 락 제어 및 핵심 서비스 Mutation Score 75% 기준(현행 리포트 전용, STRICT_MUTATION=true 전환 시 강제)",
+          "권한 이중검증·readOnly 트랜잭션·3계층 정체성 축·커밋후 부수효과·도메인 삭제가능성을 정적 하네스(SecurityAuthAnnotation·ServiceReadOnly·IdentityAxis·AsyncTransactionalListener·DomainIsolation 린터)로 조문 기계 강제"
         ]
       },
       {
@@ -1684,9 +1690,11 @@
         color: "linear-gradient(90deg, var(--accent-success), var(--accent-secondary))",
         details: [
           "URL 보안 격리(단순 공유 외 민감/대용량 상태의 Zustand/SessionStorage 격리)",
+          "인증 세션 보안: accessToken HttpOnly 쿠키 전용(localStorage 금지) + same-origin 프록시 + 미들웨어 JWT 서명·만료 검증(alg 화이트리스트)",
           "도메인 단위 거시적 Error Boundary 통합 및 원버튼 글로벌 재시도, Empty State UI",
           "낙관적 UI + 캐시 무효화 롤백 정책 적용",
-          "DB/BE 헌법과 Zod 스키마 거울 동기화"
+          "DB/BE 헌법과 Zod 스키마 거울 동기화(codegen:verify:zod HARD 게이트)",
+          "디자인 토큰(enforce-design-tokens)은 자문(warn·CI lint 미실행)이라 하드차단 아님 → 대규모 색 변경 시 라이트/다크 육안검증 의무; WCAG는 axe-core E2E 스캔으로 검증"
         ]
       }
     ];
@@ -1712,7 +1720,7 @@
       { id: "Skill 04", name: "API Contract Guardian", desc: "Spring Boot DTO/Controller와 Next.js 타입 간의 Breaking Change를 OpenAPI 명세 대조를 통해 사전에 100% 추론 및 파괴를 완전 방어합니다.", cond: "DTO 변동 및 컨트롤러 Request/Response 엔드포인트 수정 시", mech: "OpenAPI Spec 파싱 및 codegen:ts 기반 단방향 거울 동기화", badge: "warning" },
       { id: "Skill 05", name: "OWASP Security Auditor", desc: "JWT 설정 및 Spring Security 체인 변경 시 Red Team 공격자 관점에서 취약점 정밀 정적 분석 및 침투 검증 시나리오를 자율 실행합니다.", cond: "Spring Security Config, FilterChain, 미들웨어 변경 시", mech: "Red Team 침투 시나리오 정적/동적 취약점 자율 오디팅", badge: "warning" },
       { id: "Skill 06", name: "Docs-as-Code Sync", desc: "로직이 수정될 때마다 아키텍처 문서 및 Mermaid 다이어그램을 코드를 기반으로 자율 역추적하여 최신화하여 문서 노후화를 방지합니다.", cond: "L2 마이그레이션 및 주요 비즈니스 모듈의 완료 시점", mech: "AST 정밀 분석 및 마크다운/Mermaid 다이어그램 자동 패치", badge: "primary" },
-      { id: "Skill 07", name: "Mutation Testing Auditor", desc: "테스트의 강건성을 검증하기 위해 실제 비즈니스 코드에 의도적으로 미세한 논리 돌연변이(버그)를 삽입해 테스트 코드가 실패하는지 수학적으로 검증합니다.", cond: "비즈니스 로직 단위 테스트 신규 작성/수정 시", mech: "소스코드 강제 Sabotage 구동 후 핵심 크리티컬 서비스 Mutation Score 80%+ 검증(일반/CRUD 면제)", badge: "success" },
+      { id: "Skill 07", name: "Mutation Testing Auditor", desc: "테스트의 강건성을 검증하기 위해 실제 비즈니스 코드에 의도적으로 미세한 논리 돌연변이(버그)를 삽입해 테스트 코드가 실패하는지 수학적으로 검증합니다.", cond: "비즈니스 로직 단위 테스트 신규 작성/수정 시", mech: "소스코드 강제 Sabotage 구동 후 핵심 크리티컬 서비스 Mutation Score 75%+ 계측(현행 리포트 전용·일반/CRUD 면제)", badge: "success" },
       { id: "Skill 08", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 DDL Lock으로 인한 다운타임을 원천 차단하기 위해 phased 'Expand and Contract' SQL 설계 패턴을 강제 이행시킵니다.", cond: "PostgreSQL 테이블 DDL/DML 생성 및 수정 감지 시", mech: "Expand-and-Contract 4단계 롤백 시나리오 무조건부 명세서 발행", badge: "error" }
     ];
 
@@ -1722,7 +1730,7 @@
         title: "JPA SQL N+1 성능 초소형 방어벽 (JPA N+1 SQL Inspector)",
         desc: "통합 테스트 실행 도중 각 스레드별로 발행되는 SQL 쿼리 개수를 Hibernate Interceptor로 자동 계측하여, N+1 쿼리 누수가 발생하거나 임계치(최대 10개)를 위반하면 테스트를 즉시 실패 처리하는 성능 가드레일입니다. 리플렉션 기반 ThreadLocalCopyTaskDecorator를 활용해 비동기 스레드 풀(logExecutor, taskExecutor) 전파 누수까지 100% 원천 계측 및 감지합니다.",
         badge1: "Backend", badge2: "Performance", type1: "primary", type2: "success",
-        impl: "QueryCountInspector.java, HibernateQueryCounterInspector.java, QueryCountGuardExtension.java (business-suite), ThreadLocalCopyTaskDecorator.java (foundation)",
+        impl: "QueryCountInspector.java, HibernateQueryCounterInspector.java, QueryCountGuardExtension.java (business-core/business-app testFixtures: nuri.business.core.harness), ThreadLocalCopyTaskDecorator.java (foundation)",
         doc: "jpa-performance-guardrail.md", docLink: "../../docs/02-architecture/jpa-performance-guardrail.md",
         color: "linear-gradient(90deg, var(--accent-warning), var(--accent-danger))"
       },
@@ -1738,16 +1746,16 @@
       {
         num: 3,
         title: "PITest 점진적 돌연변이 테스트 파이프라인 (Incremental Mutation Testing)",
-        desc: "백엔드 기술 헌법 제16조(핵심 크리티컬 서비스 Mutation Score 80% 이상 강제)를 자동 수호하기 위해, 빌드 시 소스코드에 지능형 돌연변이 버그를 바이트코드 수준에서 강제 주입하고 테스트 생존을 계측합니다. 캐시 기반 Incremental 최적화 및 AST 증분 컴파일 엔진을 도입하여 빌드 오버헤드를 92% 이상 경감하였고, 단순 CRUD 및 일반 서비스는 의무 면제됩니다.",
+        desc: "백엔드 기술 헌법 제16조(핵심 크리티컬 서비스 Mutation Score 75% 기준)를 계측하기 위해, 빌드 시 소스코드에 지능형 돌연변이 버그를 바이트코드 수준에서 강제 주입하고 테스트 생존을 계측합니다. 현행 CI 는 리포트 전용(STRICT_MUTATION=false → mutationThreshold=0, 미달이 빌드를 파손하지 않음)이며, 실측 스코어가 75%를 상회함을 확인한 뒤 STRICT_MUTATION=true 로 전환하면 75% 하드 게이트가 강제됩니다. 캐시 기반 Incremental 최적화로 빌드 오버헤드를 경감하고, 단순 CRUD 및 일반 서비스는 의무 면제됩니다.",
         badge1: "Backend", badge2: "Quality", type1: "primary", type2: "warning",
-        impl: "build.gradle (root), gradle-pitest-plugin (api-server / business-suite)",
+        impl: "build.gradle (root), gradle-pitest-plugin (api-server / business-core / business-app)",
         doc: "pitest-mutation-testing.md", docLink: "../../docs/02-architecture/pitest-mutation-testing.md",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-warning))"
       },
       {
         num: 4,
         title: "Tailwind 4.0 HSL 스타일 가드 린터 (Tailwind HSL Token Linter)",
-        desc: "UX 헌법 제15조(디자인 일관성 및 HSL 팔레트 수호)에 따라, JSX className 내에 임의의 원색(plain red, blue, green 등)을 남용하는 것을 빌드 및 IDE 정적 분석 단에서 차단하고 HSL 기반 시맨틱 토큰(bg-primary 등) 사용을 강제하는 ESLint 규칙입니다. 브랜드 정체성을 정밀 수호합니다.",
+        desc: "UX 헌법 제6조·제15조(디자인 일관성 및 시맨틱 토큰 수호)에 따라, JSX className 내 임의 원색(plain red/blue/green 등) 남용을 감지하고 시맨틱 토큰(bg-primary·bg-muted 등) 사용을 유도하는 ESLint 규칙입니다. 단, 현재 레벨은 자문(warn)이며 CI·pre-push 가 lint 를 실행하지 않아 하드 차단 게이트가 아닙니다 — 정적 검증(tsc/next build)은 색·다크모드 시각 회귀를 잡지 못하므로 대규모 색 변경 시 라이트/다크 육안 검증을 병행합니다.",
         badge1: "Frontend", badge2: "Styling", type1: "cyan", type2: "success",
         impl: "eslint.config.mjs (frontend), local-theme/enforce-design-tokens AST Engine",
         doc: "tailwind-lint-rules.md", docLink: "../../docs/03-guides/tailwind-lint-rules.md",
