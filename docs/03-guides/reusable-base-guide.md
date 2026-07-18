@@ -124,21 +124,32 @@ pnpm -C frontend dev
 
 ---
 
-## 7. 알려진 잔여 정리 항목 (Follow-up)
+## 7. FE 死코드 정리 이력 (완료)
 
-게이트에는 무해하나(컴파일/빌드 통과), 완전한 클린을 위해 남은 정리 대상 — **정직 고지**.
+재사용 base 의 프론트엔드 死서비스·死위젯 정리를 2단계로 **완료**했다(2026-07-18).
 
-1. **FE 삭제도메인 서비스 파일 ~25개 미삭제**
-   - `SurveyAdminService`, `BannerAdminService`, `PopupAdminService`, `CommunityAdminService`,
-     `StatsAdminService`, `OperationAdminService`, `ReportService`, `OnlinePollAdminService`,
-     `HpcmAdminService`, `IsmAdminService`, `TemplateAdminService` 등
-   - 대부분 참조 0(死코드)이지만, 일부는 **유지 도메인에 얽혀** 단순 삭제가 위험:
-     - `AddressbookUserService` → **메일 허브**(`CollaborationHubClient`/`MailSendHubClient`)의 수신자 검색
-     - `knowledgeService` → **board 상세**(`BoardDetailClient`/`Server`)
-2. **메일 허브의 "주소록에서 검색" 기능이 런타임 死링크** (addressbook 백엔드/라우트 제거로 404)
-   - 정리 시 해당 허브에서 주소록 통합 UI 를 제거하거나 수동 입력으로 대체해야 함
+- **Phase 1 — orphan 서비스 21개 삭제**: kept 파일이 참조하지 않는 삭제도메인 서비스
+  (survey·poll·community·template·help·hpcm·manual·ism·approval·memoreport·operation·event·
+  roughmap·report·deptSchedule·banner-admin·popup-admin)를 importer 실측 후 삭제. 집합 서비스
+  테스트(AdminServicesPart2/3·Comprehensive·UserDomain·Support)에서 삭제-서비스 블록만 제거하고
+  유지 서비스 커버리지는 보존.
+- **Phase 2 — kept UI 얽힘 4개 완전 제거**: `addressbook`·`banner`·`popup`·`stats` 가 유지 UI 에
+  박혀 있던 것을 걷어냄.
+  - **대시보드**(`UnifiedDashboardClient`): 배너 슬라이더·팝업·통계 차트 위젯 제거. 실시간 피드
+    (WebSocket)·활동 피드·공지/업무 리스트·요약 카드·시스템 지표는 유지 → 기능하는 대시보드 보존.
+    (`BannerSlider`/`PopupManager`/`DashboardCharts` 삭제)
+  - **comms 수신자 검색**: 주소록 자동완성 → **수동 입력**으로 전환 —
+    쪽지(`note`, UserPicker 제거)·`CollaborationHubClient`(CONTACTS 탭 제거)·`MailSendHubClient`
+    (ID/이메일 입력 후 추가). `user-picker.tsx`·`types/business/addressbook` 삭제.
+  - 삭제 서비스: `AddressbookUserService`·`BannerService`·`PopupService`·`StatsAdminService`·`StatsService`.
 
-이 정리는 유지 도메인(mail/board) 컴포넌트 수술을 수반하므로, base 골격 확정 후 별도 작업으로 분리했다.
+> **의도적으로 유지된 것**: `knowledgeService` 는 게시판 상세(`BoardDetailClient`/`Server`)가 쓰는 **유지
+> 도메인 서비스**라 삭제하지 않았다. `NoteService`·`MailService`·`ScrapService`·`CommentService` 등
+> 통신/게시판 서비스도 유지.
+> **후속(E2E)**: 메일 수신자 플로우가 검색→수동입력으로 바뀌었으므로, 관련 E2E
+> (`recipient-item`·`selected-recipient-badge` testid)는 별도 갱신 대상이다.
+
+검증(각 Phase): tsc 그린 · next build 성공(72 pages) · vitest 155 passed.
 
 ---
 
