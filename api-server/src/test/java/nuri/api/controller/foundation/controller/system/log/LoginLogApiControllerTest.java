@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -29,9 +28,6 @@ class LoginLogApiControllerTest {
     @Mock
     private LoginLogManageService loginLogManageService;
 
-    @Mock
-    private EgovPropertyService propertiesService;
-
     @InjectMocks
     private LoginLogApiController loginLogApiController;
 
@@ -46,8 +42,6 @@ class LoginLogApiControllerTest {
     @Test
     @DisplayName("로그인 로그 목록 조회 성공")
     void testGetLoginLogList() throws Exception {
-        when(propertiesService.getInt("pageUnit")).thenReturn(10);
-        when(propertiesService.getInt("pageSize")).thenReturn(10);
         when(loginLogManageService.selectLoginLogList(any())).thenReturn(Collections.emptyList());
         when(loginLogManageService.selectLoginLogListTotCnt(any())).thenReturn(0);
 

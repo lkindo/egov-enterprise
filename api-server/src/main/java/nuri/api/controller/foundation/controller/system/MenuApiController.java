@@ -67,7 +67,7 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 순서 일괄 변경", description = "여러 메뉴의 순서를 일괄적으로 업데이트합니다.")
     @PutMapping("/batch-order")
-    public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@RequestBody List<MenuDto> menuList) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@Valid @RequestBody List<MenuDto> menuList) throws Exception {
         for (MenuDto dto : menuList) {
             menuService.updateMenuManage(dto);
         }

@@ -4,7 +4,6 @@ import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.business.service.login.LoginPolicyManageService;
 import nuri.business.service.login.dto.LoginPolicyDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,9 +30,6 @@ class LoginPolicyApiControllerTest {
     @Mock
     private LoginPolicyManageService loginPolicyManageService;
 
-    @Mock
-    private EgovPropertyService propertiesService;
-
     @InjectMocks
     private LoginPolicyApiController loginPolicyApiController;
 
@@ -45,8 +41,6 @@ class LoginPolicyApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(loginPolicyApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        
-        when(propertiesService.getInt(anyString())).thenReturn(10);
     }
 
     @Test

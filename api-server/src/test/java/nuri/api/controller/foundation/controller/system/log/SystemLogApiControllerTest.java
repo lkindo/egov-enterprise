@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -29,9 +28,6 @@ class SystemLogApiControllerTest {
     @Mock
     private LogManageService logManageService;
 
-    @Mock
-    private EgovPropertyService propertiesService;
-
     @InjectMocks
     private SystemLogApiController systemLogApiController;
 
@@ -46,8 +42,6 @@ class SystemLogApiControllerTest {
     @Test
     @DisplayName("시스템 로그 목록 조회 성공")
     void testGetSysLogList() throws Exception {
-        when(propertiesService.getInt("pageUnit")).thenReturn(10);
-        when(propertiesService.getInt("pageSize")).thenReturn(10);
         when(logManageService.selectSysLogList(any())).thenReturn(Collections.emptyList());
         when(logManageService.selectSysLogListTotCnt(any())).thenReturn(0);
 

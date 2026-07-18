@@ -6,6 +6,7 @@ import nuri.business.domain.auth.AuthorGroupProjection;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.UserAuthorityManageService;
 import nuri.business.service.auth.dto.UserAuthorityDto;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class UserAuthorityApiController {
     @Operation(summary = "사용자 권한 할당 저장", description = "여러 사용자에 대해 권한을 일괄 할당하거나 업데이트합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> saveUserAuthorities(
-            @RequestBody List<UserAuthorityDto> userAuthorities) {
+            @Valid @RequestBody List<UserAuthorityDto> userAuthorities) {
 
         userAuthorityManageService.saveUserAuthorities(userAuthorities);
         return ResponseEntity.ok(ApiResponse.success(null));

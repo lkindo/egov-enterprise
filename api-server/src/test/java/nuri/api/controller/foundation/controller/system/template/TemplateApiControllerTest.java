@@ -48,7 +48,8 @@ class TemplateApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/system/templates")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"tmpltId\":\"T1\", \"tmplatNm\":\"Test Template\"}"))
+                        // useYn 은 @NotBlank/@Size(1) — @Valid 통과를 위해 유효값 포함(오타 tmplatNm→tmpltNm 정정).
+                        .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Test Template\", \"useYn\":\"Y\"}"))
                 .andExpect(status().isOk());
     }
 }

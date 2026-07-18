@@ -6,6 +6,7 @@ import nuri.business.domain.notification.Notification;
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.notification.dto.NotificationDto;
 import nuri.business.service.notification.dto.NotificationMapper;
+import nuri.foundation.core.util.TransactionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -54,16 +55,19 @@ public class NotificationService {
 
         notificationRepository.save(entity);
 
-        // Notify via WebSocket
+        // [커밋-후 발송] WebSocket 알림은 저장 트랜잭션 커밋 후에 보낸다 — 롤백(제약위반/상위 tx 롤백) 시
+        // DB 에 없는 유령 알림이 클라이언트로 전송되는 결함 방지(Sms/Mail/Board/Sanction 과 동일한 runAfterCommit 표준).
         NotificationDto responseDto = notificationMapper.toDto(entity);
-        try {
-            messagingTemplate.convertAndSend("/topic/public", responseDto);
-            if (userId != null) {
-                messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
+        TransactionUtils.runAfterCommit(() -> {
+            try {
+                messagingTemplate.convertAndSend("/topic/public", responseDto);
+                if (userId != null) {
+                    messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
+                }
+            } catch (Exception e) {
+                log.error("Failed to send WebSocket notification", e);
             }
-        } catch (Exception e) {
-            log.error("Failed to send WebSocket notification", e);
-        }
+        });
 
         return id;
     }

@@ -469,9 +469,12 @@ class OnlinePollServiceTest {
 
             onlinePollService.updatePoll(dto);
 
-            // entity 상태 검증 (내부 삭제로 인해 사이즈가 2가 아닐 수 있으므로 검증 완화 또는 정확한 값 대입)
-            assertThat(entity.getPollArticles()).isNotNull(); 
-            // 삭제 로직이 호출되었는지 verify (구현체에 따라 remove 될 수도 있고 delete() 될 수도 있음)
+            // updatePoll 은 clear-and-recreate: 기존 항목(I1/I2)을 전량 clear 후 dto 3항목을 신규 ID로 재생성한다
+            // (I1 '보존'이 아니라 재생성이므로 크기·순서·이름으로 검증). 빈 이름 항목도 스킵 없이 재생성됨.
+            assertThat(entity.getPollArticles()).hasSize(3);
+            assertThat(entity.getPollArticles())
+                    .extracting(OnlinePollArticle::getPollArtclNm)
+                    .containsExactly("Updated1", "New3", "");
         }
     }
 
@@ -522,8 +525,8 @@ class OnlinePollServiceTest {
             OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I1").pollArtclNm("  ").build();
             onlinePollService.updatePollItem(dto);
 
-            // update가 무시되거나 빈 문자열로 처리되는 분기 확인
-            // assertThat(...)
+            // update()는 빈값 가드가 없어 blank 이름을 그대로 반영한다(기존 'Old' → '  ', 무시 아님).
+            assertThat(entity.getPollArtclNm()).isEqualTo("  ");
         }
     }
 

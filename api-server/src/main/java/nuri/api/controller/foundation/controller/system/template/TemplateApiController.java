@@ -3,6 +3,7 @@ package nuri.api.controller.foundation.controller.system.template;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.TmplatInfoService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class TemplateApiController {
 
     @Operation(summary = "템플릿 등록", description = "새로운 게시판 템플릿 정보를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertTmplatInfo(@RequestBody TemplateDto tmplatInfo) {
+    public ResponseEntity<ApiResponse<Void>> insertTmplatInfo(@Valid @RequestBody TemplateDto tmplatInfo) {
         tmplatInfoService.insertTmplatInfo(tmplatInfo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
