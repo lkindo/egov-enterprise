@@ -17,7 +17,7 @@
 | **DB** | 완성도 / 연결부 / 단순성 | 82 / 78 / 72 | 83 / 79 / 72 | **89 / 88 / 82** | +7 / +10 / +10 |
 | **BE(백엔드)** | 완성도 / 연결부 / 단순성 | 76 / 70 / 55 | 81 / 73 / 56 | **84 / 77 / 70** | +8 / +7 / +15 |
 | **FE(프론트)** | 완성도 / 연결부 / 단순성 | 74 / 72 / 55 | 75 / 72 / 55 | **78 / 74 / 63** | +4 / +2 / +8 |
-| **연결부(seam)** | 계약체인 / 적합성 / 추적성 | 64 / 58 / 48 | 65 / 66 / 54 | **67 / 70 / 58** | +3 / +12 / +10 |
+| **연결부(seam)** | 계약체인 / 적합성 / 추적성 | 64 / 58 / 48 | 65 / 66 / 54 | **67 / 70 / 60** | +3 / +12 / +12 |
 
 > **07-18(현재) 열 = 하위 재측정 통합**: DB=§1.1(07-17 라이브 실측) · BE=§1.2/§1.3 + §1.4 미세조정 · **FE·SEAM=§1.4(이번 세션 재측정, 07-15 이후 최초)**. 세부 근거·캡은 각 하위 절 참조. 위임 워크플로우가 세션 한도로 실패해 **메인 에이전트 직접 실측**(FK·게이트·slate 잔여 카운트)으로 채점.
 
@@ -107,7 +107,7 @@
 - **캡(정직)**: 잔여 액센트(라이트 파스텔 틴트·히트맵 명암스케일·인라인 hex)·중립 196·RBAC 하드코딩(제품결정 하이브리드)·**FE auth**(localStorage 토큰·userRole 쿠키 위조·CSP unsafe-inline=아키텍처 보류)가 진입을 막음. 토큰화는 "완성"이 아니라 "색 축 정리".
 
 **SEAM(65/66/54 → 67/70/58)** — 실측: 테스트 하네스 게이트 이번 세션 **+3**(`AsyncTransactionalListenerArchTest`[팬텀 async 가드→실제 기계강제: @Async+@TransactionalEventListener 금지]·`ServiceReadOnlyTransactionalLinterTest`[@Service 클래스레벨 readOnly]·`ServiceLayerIsolationTest`[DomainIsolationTest 의 서비스레이어 사각지대 봉합]) + [cross-cutting-conventions.md](../03-guides/cross-cutting-conventions.md)(6관심사 관례 SSOT).
-- **적합성 +4·추적성 +4(최대 이동)**: 관례↔코드 일치가 **기계강제로 전환**(존재하지 않는 클래스를 인용하던 팬텀 가드 → 실제 게이트)·불변식 추적 게이트 확대(하네스 린터 6→9). `DashboardItemProvider` 포트·`UserDeletionEvent` seam 으로 계약체인 +2.
+- **적합성 +4·추적성 +6(최대 이동)**: 관례↔코드 일치가 **기계강제로 전환**(존재하지 않는 클래스를 인용하던 팬텀 가드 → 실제 게이트)·불변식 추적 게이트 확대(하네스 린터 6→9 + **프론트 vitest 색상 게이트** `hardcoded-color-guard`[브랜딩 토큰화 드리프트 차단, 베이스라인 247 동결·신규 하드코딩 팔레트색 차단] → 게이트 커버리지가 처음으로 **FE 축까지 확장**). `DashboardItemProvider` 포트·`UserDeletionEvent` seam 으로 계약체인 +2.
 - **캡(정직)**: UNIQUE↔`@Table` 미러 미완·backend-shape→api-docs 오프라인 하드게이트 부재(§2.D)가 계약체인 상한을 지배.
 
 **BE(83/74/68 → 84/77/70)** — 실측: `extends EgovAbstractServiceImpl | EgovIdGnrService | getNextStringId | new EgovTableIdGnr` 프로덕션 **0**(egov 채번·상속 결합 완전 소거 확증).
