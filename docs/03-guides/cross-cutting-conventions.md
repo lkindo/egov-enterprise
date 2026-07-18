@@ -14,7 +14,7 @@
 | # | 횡단관심사 | 집행 게이트(기계강제) | 관례 문서 | 잔여 갭 |
 |:-:|---|---|:-:|---|
 | 1 | 인가(Authorization) | `SecurityAuthAnnotationLinterTest`(쓰기축) | 본 §1 + BE헌법 제8조 | 읽기(GET)축·SpEL 역할문자열 |
-| 2 | 정체성(esntlId/loginId) | (얇은 회귀게이트 여지) | `identity-model-guide.md`(충실) | 시맨틱(컬럼축)은 문서 방어 |
+| 2 | 정체성(esntlId/loginId) | ✅ `IdentityAxisLinterTest`(getCurrentUserId=0 + SecurityContext 직접접근 동결) | `identity-model-guide.md`(충실) | 시맨틱(컬럼축)은 문서 방어 |
 | 3 | 트랜잭션 경계 | ✅ **`AsyncTransactionalListenerArchTest`** + **`ServiceReadOnlyTransactionalLinterTest`**(2026-07-18 신설) | 본 §3 | 동결 11서비스 readOnly 검토 |
 | 4 | 동시성(check-then-act) | `GlobalExceptionHandler`(409 backstop) + `UniqueConstraintMirrorLinterTest` | 본 §4 | 패턴 자체는 시맨틱 → 문서 |
 | 5 | PK 채번 | `PkGenerationStandardLinterTest`(신규 엔티티) | 본 §5 | 수동채번 통일은 시맨틱 → 문서 |
@@ -39,8 +39,8 @@
 |---|---|
 | **관례** | `getCurrentEsntlId()`=시스템 PK(=`getUsername`), `getCurrentLoginId()`=**감사/소유권 기본축**, `getCurrentUserId()`는 **@Deprecated**(호출 금지). 감사컬럼(`frstRgtrId` 등) 비교·저장에는 loginId축 사용. esntlId축 소유권 도메인은 명시적 예외(`InformalSanction.aplcntId`, `Board.userId`). |
 | **근거** | `docs/03-guides/identity-model-guide.md`(§1~§6), `user-reference-key-policy.md`. |
-| **집행 게이트(없음)** | 전용 게이트 없음. `getCurrentUserId` 프로덕션 호출부 0건은 실측 확인(정의부+테스트만 잔존, 2026-07-15). |
-| **미집행 갭** | `getCurrentEsntlId`를 감사컬럼 비교에 오용하거나 `authentication.getName()`을 소유자 필드에 저장하는 회귀를 기계로 못 잡음. "어느 컬럼이 loginId축인가"의 시맨틱은 린트 불가 → 문서가 1차 방어. **6개 관심사 중 문서 커버 최상·실질 봉합됨** → 우선순위 낮음(얇은 회귀게이트는 여력 시 추가). |
+| **집행 게이트(있음): `IdentityAxisLinterTest`** | `getCurrentUserId` 프로덕션 호출 0 강제 + `SecurityContextHolder` 직접접근 7종 allow-list 동결(2026-07-18 신설, §2.E). `getCurrentUserId` 프로덕션 호출부 0건은 실측 확인(정의부+테스트만 잔존). |
+| **미집행 갭** | `getCurrentEsntlId`를 감사컬럼 비교에 오용하거나 `authentication.getName()`을 소유자 필드에 저장하는 회귀를 기계로 못 잡음. "어느 컬럼이 loginId축인가"의 시맨틱은 린트 불가 → 문서가 1차 방어. **6개 관심사 중 문서 커버 최상·실질 봉합됨** → 우선순위 낮음 — 회귀게이트 신설 완료(2026-07-18). |
 
 ---
 
@@ -105,7 +105,7 @@
 ## 부록 — 신규 코드 체크리스트 (관례 준수 셀프체크)
 
 - [ ] **인가**: 쓰기 엔드포인트에 `@PreAuthorize`/`@Secured`/DB인가 부여했는가? (없으면 `SecurityAuthAnnotationLinterTest` fail)
-- [ ] **정체성**: 감사/소유권에 `getCurrentLoginId()`를 썼는가? `getCurrentUserId()`(deprecated)·`authentication.getName()` 직접저장을 피했는가?
+- [ ] **정체성**: 감사/소유권에 `getCurrentLoginId()`를 썼는가? `getCurrentUserId()`(deprecated)·`authentication.getName()` 직접저장을 피했는가? (`getCurrentUserId` 호출·SecurityContext 직접접근 회귀 시 `IdentityAxisLinterTest` fail)
 - [ ] **tx 경계**: @Service에 클래스레벨 `@Transactional(readOnly=true)`를 붙였는가? (없으면 `ServiceReadOnlyTransactionalLinterTest` fail)
 - [ ] **tx 경계**: 커밋-후 부수효과를 `TransactionUtils.runAfterCommit`로 감쌌는가? `@Async`+`@TransactionalEventListener` 조합을 피했는가? (조합 시 `AsyncTransactionalListenerArchTest` fail)
 - [ ] **동시성**: 유니크 충돌을 `existsById`+throw 대신 DB 제약+catch로 유도했는가?

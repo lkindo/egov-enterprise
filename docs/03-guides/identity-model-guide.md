@@ -9,8 +9,8 @@
 
 | 식별자 | 필드명 | 출처 | 의미 |
 |--------|--------|------|------|
-| **esntlId** | `CustomUserDetails.esntlId` | User 엔티티 PK (`tb_user.esntl_id`) | 시스템 내부 고유 식별자. UUID 기반의 불투명 값. |
-| **loginId** | `CustomUserDetails.userId` | User 엔티티 (`tb_user.user_id`) | 사용자가 로그인 시 입력하는 ID. 사람이 읽을 수 있는 값. |
+| **esntlId** | `CustomUserDetails.esntlId` | User 엔티티 PK (`tb_user_info.esntl_id`) | 시스템 내부 고유 식별자. UUID 기반의 불투명 값. |
+| **loginId** | `CustomUserDetails.userId` | User 엔티티 (`tb_user_info.user_id`) | 사용자가 로그인 시 입력하는 ID. 사람이 읽을 수 있는 값. |
 
 ### Spring Security 계약상 특이사항
 

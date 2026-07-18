@@ -17,8 +17,8 @@ eGovFrame·Hibernate 가 **이름을 하드코딩으로 소유**하는 인프라
 
 | 물리명 | 소유 프레임워크 | 용도 | 리네임 불가 사유 |
 |---|---|---|---|
-| `ecopseq` | eGovFrame ID Generation Service | PK 채번 시퀀스 테이블 | `EgovIdGnrService` 가 테이블/컬럼명을 SQL 에 하드코딩 |
-| `ids` | eGovFrame ID Generation Service | 채번 상태 테이블 | 동일(채번 엔진 결속) |
+| `ecopseq` | eGovFrame ID Generation Service | PK 채번 시퀀스 테이블 | 프레임워크 레거시 잔존 테이블(V2_0 베이스라인 유지). `EgovIdGnrService`/`EgovIdGnrConfig` 는 2026-07 채번통일로 제거(프로덕션 결합 0, `IdGenerationUtil`=UUID 채번이라 ecopseq/ids 미사용) → 실사용 0 이면 §4 정리 대상 부채 후보 |
+| `ids` | eGovFrame ID Generation Service | 채번 상태 테이블 | 동일(레거시 잔존, 실사용 0 시 §4 정리 후보) |
 | `revinfo` | Hibernate Envers | 감사 리비전 메타 | Envers 리비전 엔티티 매핑에 고정 |
 | `revinfo_seq` | Hibernate Envers | 리비전 채번 시퀀스 | Envers revision generator 자동 생성물 (2026-07-16 감사에서 대장 갭으로 확인, 추기) |
 | `flyway_schema_history` (+PK `flyway_schema_history_pk`) | Flyway | 마이그레이션 이력 장부 | Flyway 가 명칭을 소유 (2026-07-16 감사에서 대장 갭으로 확인, 추기) |

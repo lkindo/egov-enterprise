@@ -44,8 +44,7 @@ graph LR
 
 ### 4. Middleware Security & RBAC
 `src/middleware.ts`를 통해 라우팅 레벨에서 보안 및 접근 제어를 수행합니다.
-- **Session Check**: 쿠키의 `accessToken` 존재 여부를 확인하여 비인증 사용자 제어.
-- **RBAC**: `/admin` 등 민감한 경로에 대해 `userRole` 기반의 접근 제어 수행.
+- **Session Check & RBAC**: 미들웨어가 HttpOnly `accessToken` JWT를 Web Crypto(`crypto.subtle.verify`)로 서명·만료(exp) 검증하고(단순 존재 확인 아님, `alg` 화이트리스트로 none·비대칭 혼동 공격 차단) 검증된 `payload.role`로 `/admin` 등 민감 경로를 게이팅 — 위조된 `userRole` 쿠키는 불신.
 
 ## 🎨 Design System & UI Consistency
 - **Styling**: **Tailwind CSS 4**와 **디자인 토큰**을 기반으로 한 유틸리티 퍼스트 디자인.
@@ -64,4 +63,4 @@ src/
 ```
 
 ---
-*Last Updated: 2026-05-19 (Mermaid Data Flow & Constitution Reference Added)*
+*Last Updated: 2026-07-18 (Middleware Security & RBAC — Web Crypto JWT 서명·만료 검증 및 payload.role 게이팅 현행화)*

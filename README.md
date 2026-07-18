@@ -189,7 +189,7 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
 최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다.
 
-> ⚠ **로그인 가능한 관리자 계정은 아직 시드되지 않습니다.** V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조만 시드하며 `tb_user_info` 사용자 행은 넣지 않습니다(계정 시드 마이그레이션은 별도 승인·검증 필요 항목으로 보류). 최초 로그인 계정은 회원가입 API 또는 수동 INSERT 로 생성하십시오.
+> ⚠ **빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework` 가 `webmaster`/`ROLE_ADMIN` 활성 계정(esntl_id `USRCNFRM_00000000001`, user_stts_cd `P`)을 dev 기본 비밀번호 `1`(bcrypt)로 자동 시드**합니다. 운영 전환 시에는 반드시 이 계정의 비밀번호 로테이션·최초 강제변경을 수행해야 합니다(`docs/04-operations/pending-decisions.md` §2-A 연계). V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
 
 아래 원클릭 부트스트랩 명령을 실행하면 이 모든 설정 파일 복사 및 환경 구축이 자동 수행됩니다.
 ```bash
@@ -243,6 +243,11 @@ make bootstrap
 | [성능 최적화 가이드](./docs/04-operations/performance-optimization-guide.md) | N+1·캐싱·FE 최적화 |
 | [데이터베이스 최적화 가이드](./docs/04-operations/database-optimization-guide.md) | 인덱스·쿼리 튜닝 |
 | [부하 테스트 가이드](./docs/04-operations/load-test-guide.md) | k6 부하 테스트 |
+| [k6 부하 테스트 퀵스타트](./docs/04-operations/k6-load-test-quickstart.md) | k6 설치·시나리오 실행 빠른 시작 |
+| [암호화 키 로테이션 런북](./docs/04-operations/crypto-key-rotation.md) | 운영 암호화 키 교체 절차 |
+| [로그 보존/파기 정책](./docs/04-operations/log-retention-policy.md) | 로그 보존 기간·개인정보 파기 정책 |
+| [결정 대기 백로그](./docs/04-operations/pending-decisions.md) | 제품·운영 결정 대기 항목 트래커 |
+| [안전 삭제 분석](./docs/04-operations/project-safe-deletion-analysis.md) | 코드/자산 안전 삭제 영향 분석 |
 
 ---
 
@@ -272,9 +277,13 @@ make bootstrap
 
 1. **빌드 검증**
    ```bash
+   # 정규 통합 게이트 (권장) — 로컬↔CI 정합 단일 진입점
+   #   BE compile+test / FE tsc·next build·vitest 를 한 번에 실행
+   make verify        # == node scripts/verify.mjs all == npm run verify
+
+   # (참고) 개별 명령
    # 백엔드
    ./gradlew clean build
-   
    # 프론트엔드
    cd frontend && pnpm type-check && pnpm build
    ```

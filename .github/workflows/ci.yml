@@ -128,40 +128,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Download OpenAPI Spec
-        uses: actions/download-artifact@v4
-        with:
-          name: openapi-spec
-          path: frontend
+      # [계보 정합] codegen 은 리포지토리 루트 api-docs.json(백엔드 job 이 git diff 로 신선함 검증)을 읽는다.
+      # frontend/ 로 스펙을 내려받던 옛 download-artifact 스텝은 소비처가 없고 frontend/api-docs.json(계보역전)을
+      # 유발하므로 제거했다.
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       # [계약 드리프트 게이트] 커밋된 api-docs.json(백엔드 job 이 신선함을 이미 검증) 으로부터
       # 타입/Zod 를 재생성해 커밋본과 diff. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
       - name: Verify generated API types are in sync with spec (contract drift gate)
         run: |
-          npm run codegen:verify
-          npm run codegen:verify:zod
+          pnpm run codegen:verify
+          pnpm run codegen:verify:zod
         working-directory: frontend
 
       - name: Security Audit
-        run: npm audit --audit-level=high
+        run: pnpm audit --audit-level high
         working-directory: frontend
         continue-on-error: true
 
       - name: Build and Test
         run: |
-          npm run build
-          npm run test
+          pnpm run build
+          pnpm run test
         working-directory: frontend
 
       - name: Upload Next.js build cache
@@ -201,15 +204,20 @@ jobs:
           curl -f http://localhost:8080/actuator/prometheus || exit 1
           echo "Backend is ready!"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Cache Playwright Browsers
@@ -217,7 +225,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
 
@@ -241,7 +249,7 @@ jobs:
       - name: Run E2E Tests (Sharded)
         run: |
           # Start frontend in background
-          npm run dev -- -p 3001 &
+          pnpm run dev -- -p 3001 &
           npx wait-on http://127.0.0.1:3001/login --timeout 60000
           # Run tests with sharding for parallel execution
           npx playwright test --shard=${{ matrix.shard }}
@@ -267,13 +275,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Download all reports

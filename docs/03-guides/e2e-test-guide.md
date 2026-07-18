@@ -40,7 +40,7 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 | 항목 | 로컬 | CI 환경 |
 |------|------|---------|
 | **Retries** | 0 | 0 (재시도 비활성화 — 포트 락/리소스 고갈 방지) |
-| **Workers** | 1 (OOM 방지 및 안정성) | 2 (`test:e2e`의 `--workers=2` 플래그 — `playwright.config.ts`는 `workers: 1`) |
+| **Workers** | 1 (OOM 방지 및 안정성) | 1 (`playwright.config.ts`의 `workers: 1` 고정 — 병렬성은 `ci.yml`의 3-shard 매트릭스로 확보) |
 | **Timeout** | 300,000ms (5분) | 300,000ms (5분) |
 | **Expect Timeout** | 60,000ms | 60,000ms |
 
@@ -85,7 +85,7 @@ test('특정 에러 발생 시나리오 테스트', async ({ page, consoleGuard 
 
 ## 📊 계층형 테스트 구조 (Tiered Architecture)
 
-본 프로젝트의 22-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~22 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.
+본 프로젝트의 23-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~23 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.
 
 > [!TIP]
 > 비동기 백그라운드 이벤트, 트랜잭션 아웃박스(Outbox), 고부하 동시성 제어, 정밀 보안 필터 권한, DB 무중단 마이그레이션 등 **E2E 블랙박스 테스트 범위를 벗어나는 영역에 대한 대체 정밀 검증 방안**은 **[E2E 범위 외 정밀 검증 가이드 (Non-E2E)](./non-e2e-verification-guide.md)**를 반드시 병행 참조하여 견고한 통합 테스트를 작성하십시오.
@@ -95,7 +95,7 @@ test('특정 에러 발생 시나리오 테스트', async ({ page, consoleGuard 
 ## 💻 주요 명령어
 
 ```bash
-# 1. 기본 실행 (전체 22 Tier 순차 실행)
+# 1. 기본 실행 (전체 23 Tier 순차 실행)
 npm run test:e2e
 
 # 2. 전체 실행 (클린업 포함: 실행 전/후 가비지 데이터 제거)
@@ -128,4 +128,4 @@ npm run test:cleanup
 - **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
 
 ---
-*Last Updated: 2026-05-18 (Updated via Antigravity — Synchronized with 22-Tier Architecture & Timeout Config)*
+*Last Updated: 2026-05-18 (Updated via Antigravity — Synchronized with 23-Tier Architecture & Timeout Config)*

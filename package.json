@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew.bat :api-server:bootRun -Dfile.encoding=UTF-8\" \"pnpm -C frontend dev\"",
-    "backend": "gradlew :api-server:bootRun",
+    "backend": "gradlew.bat :api-server:bootRun",
     "frontend": "pnpm -C frontend dev",
     "all": "npm run dev",
-    "test": "npx cross-env TZ=Asia/Seoul gradlew test -Dfile.encoding=UTF-8",
-    "test:ci": "npx cross-env TZ=Asia/Seoul gradlew test --continue -Dfile.encoding=UTF-8",
-    "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew test jacocoRootReport --continue -Dfile.encoding=UTF-8",
+    "//gradle": "Windows-primary: gradlew.bat 로 통일(dev 와 일관). 크로스플랫폼 통합 게이트는 'npm run verify'(node scripts/verify.mjs — OS 감지) 를 진입점으로 사용하라.",
+    "test": "npx cross-env TZ=Asia/Seoul gradlew.bat test -Dfile.encoding=UTF-8",
+    "test:ci": "npx cross-env TZ=Asia/Seoul gradlew.bat test --continue -Dfile.encoding=UTF-8",
+    "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew.bat test jacocoRootReport --continue -Dfile.encoding=UTF-8",
     "verify": "node scripts/verify.mjs all",
     "verify:be": "node scripts/verify.mjs be",
     "verify:fe": "node scripts/verify.mjs fe"

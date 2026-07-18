@@ -97,7 +97,7 @@ codemaps:
 | `meta_standard_words/terms/domains` (DB 헌법 2조) | 타깃 컬럼/타입/도메인 표준 검증 |
 | `db_columns.json` | 타깃 실재 컬럼 인벤토리(빠른 대조) — **§gap-codegen 의 고아 아티팩트에 실 소비처 부여** |
 | `V2_0__baseline.sql` | 타깃 스키마 진실원천(테이블·제약) |
-| `IdGenerationUtil` / EgovIdGnrService | 표준 PK 생성 |
+| `IdGenerationUtil`(UUID 절단) + `@GeneratedValue(SEQUENCE)`/`nextval` | 표준 PK 생성 |
 | `db-bridge.js` | 개발 중 소스/타깃 수동 점검 |
 | Flyway | 타깃 스키마는 이관 전 `flyway migrate` 로 준비(빈 DB 부팅 실증됨) |
 

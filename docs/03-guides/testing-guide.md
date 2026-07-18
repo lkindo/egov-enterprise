@@ -20,15 +20,14 @@
 ## 테스트 구조
 
 ```
-backend/
+business-core, business-app/
+├── src/testFixtures/java/nuri/business/support/
+│   └── IntegrationTest.java         # 통합 테스트 베이스 애노테이션(@IntegrationTest)
 ├── src/test/java/
-│   ├── **/*Test.java          # 단위 테스트
-│   ├── **/*IntegrationTest.java # 통합 테스트
-│   └── support/
-│       ├── IntegrationTest.java    # 통합 테스트 베이스
-│       └── TestcontainersConfig.java # Testcontainers 설정
+│   ├── **/*Test.java                # 단위 테스트
+│   └── **/*IntegrationTest.java      # 통합 테스트
 └── src/test/resources/
-    └── application-test.yml   # 테스트 설정
+    └── application-test.yml          # 테스트 설정
 
 frontend/
 ├── e2e/
@@ -86,15 +85,28 @@ test('renders button with text', () => {
 
 ### @IntegrationTest 애노테이션
 
+> 실제 정의: [`business-core|business-app/src/testFixtures/java/nuri/business/support/IntegrationTest.java`](../../business-core/src/testFixtures/java/nuri/business/support/IntegrationTest.java)
+
 ```java
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfig.class)
-@ActiveProfiles("test")
+@WebAppConfiguration("")
+@SpringBootTest(
+    classes = TestApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+    properties = {
+        "spring.web.resources.static-locations=classpath:/static/",
+        "spring.main.allow-bean-definition-overriding=true"
+    })
+@AutoConfigureMockMvc
+@Import({ TestSecurityConfig.class, TestMessagingConfig.class, QuerydslConfig.class, TestCacheConfig.class })
+@ActiveProfiles({ "test", "mock-security" })
+@Transactional
 public @interface IntegrationTest {
 }
 ```
+
+> `webEnvironment = MOCK` + `@AutoConfigureMockMvc` 조합으로 실제 서블릿 포트를 열지 않고 `MockMvc`로 검증하며, `@Transactional`로 각 테스트가 자동 롤백됩니다. `mock-security` 프로필과 `TestSecurityConfig`로 인증 컨텍스트를 주입합니다.
 
 ### 사용 예시
 
@@ -124,9 +136,9 @@ class MenuServiceIntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (22-Tier Architecture)
+### 계층형 아키텍처 (23-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **22개 계층(Tier)**으로 테스트를 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **23개 계층(Tier)**으로 테스트를 관리합니다.
 
 | 그룹 | Tier | 파일 | 검증 범위 |
 |------|------|------|-----------|
@@ -152,6 +164,7 @@ class MenuServiceIntegrationTest {
 | | 20 | `20-common-security-validation.spec.ts` | 공통 보안 취약점 및 보안 필터 검증 |
 | | 21 | `21-advanced-resilience.spec.ts` | API 및 DB 장애 극복 회복탄력성 검증 |
 | | 22 | `22-deep-security-guard.spec.ts` | 심층 보안 통제 및 가디언 동작 검증 |
+| | 23 | `23-security-auth-supplement.spec.ts` | 인증/세션/RBAC 보완(E2E 감사 Phase4) |
 
 ### 실행 명령어
 
@@ -179,51 +192,23 @@ npm run test:cleanup
 
 ## Testcontainers
 
-### PostgreSQL 컨테이너 설정
+### PostgreSQL 프로필 (`application-tc.yml`)
 
-```java
-@TestConfiguration
-@Testcontainers
-@Profile("test")
-public class TestcontainersConfig {
+실 PostgreSQL 과 동일한 엔진에서 통합 테스트를 실행해야 할 때는 Testcontainers 를 `tc` 프로필로 활성화합니다. 별도의 설정 빈 클래스(`TestcontainersConfig`)나 `@Container` 정적 필드 없이, `jdbc:tc` URL 스킴만으로 컨테이너가 자동 기동·종료됩니다.
 
-    @Bean
-    public PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>("postgres:17")
-                .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test");
-    }
-}
+```yaml
+# foundation/src/test/resources/application-tc.yml
+spring:
+  datasource:
+    # Testcontainers JDBC URL: jdbc:tc:<image>:<version>:///<db>
+    url: jdbc:tc:postgresql:16.4:///egovdb?TC_INITSCRIPT=file:../config/db/init-test.sql
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: egov
+    password: egov123
 ```
 
-### 테스트에서 사용
-
-```java
-@Testcontainers
-@SpringBootTest
-@ActiveProfiles("test")
-class PostgresContainerTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @Test
-    void canExecuteQuery() throws Exception {
-        try (Connection connection = postgres.createConnection("");
-             Statement statement = connection.createStatement()) {
-
-            ResultSet resultSet = statement.executeQuery("SELECT 1");
-            resultSet.next();
-            
-            assertThat(resultSet.getInt(1)).isEqualTo(1);
-        }
-    }
-}
-```
+> [!NOTE]
+> Testcontainers 경로는 **선택적(optional)**이며 Docker 가 필요합니다. 로컬 및 CI 의 **기본 테스트 경로**는 아래의 H2 + Flyway 정합성 검증입니다.
 
 ### Docker 없는 환경 (H2 + Flyway 로컬 정합성 검증)
 
@@ -402,12 +387,20 @@ class MyTest {
 ### 5. E2E 테스트 데이터 정리
 
 ```typescript
-// e2e/scripts/cleanup-db.ts
-export default async function cleanup() {
-    // ⚠️ [경고] 테스트 데이터 정리 목적의 물리적 DELETE. 
-    // DB 헌법 제8조 2항의 '테스트 환경 예외'에 의해서만 허용되며, 실무 비즈니스 로직에서는 절대 금지(논리삭제 원칙).
-    await db.deleteFrom('tb_user_log').execute();
-    await db.deleteFrom('tb_user_master').execute();
+// e2e/scripts/cleanup-db.ts (Playwright globalTeardown)
+export default async function globalTeardown() {
+    // ⚠️ [경고] 테스트 데이터 정리 목적의 삭제. DB 헌법 제8조 2항의 '테스트 환경 예외'에
+    // 의해서만 허용되며, 실무 비즈니스 로직에서는 절대 금지(논리삭제 원칙).
+    // 물리 raw SQL(DELETE) 이 아니라, 관리자 토큰으로 admin REST API 를 호출해
+    // 접두사(user_, e2e_, 'E2E ...')로 식별되는 가비지 리소스만 정리한다.
+    const { data } = await axios.post(`${API_BASE}/auth/login`, { userId: ADMIN_ID, password: ADMIN_PW });
+    const headers = { Authorization: `Bearer ${data.data.accessToken}` };
+
+    // 예: 테스트 접두사로 조회한 뒤 개별 리소스를 API 로 삭제 (users/boards/polls/menus/roles ...)
+    const users = (await axios.get(`${API_BASE}/admin/system/users`, { headers, params: { searchKeyword: 'user_', size: 100 } })).data.data.list;
+    for (const u of users) {
+        await axios.delete(`${API_BASE}/admin/system/users/${u.userId}`, { headers });
+    }
 }
 ```
 

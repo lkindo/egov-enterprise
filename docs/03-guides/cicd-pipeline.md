@@ -23,21 +23,34 @@
 ```
 push/PR
     │
-    ├─ backend-build (Ubuntu)
-    │   ├─ Gradle 빌드 및 테스트
-    │   ├─ OWASP Dependency-Check
-    │   └─ JaCoCo 커버리지
-    │
-    ├─ frontend-build (Ubuntu)
-    │   ├─ npm install
-    │   ├─ Next.js 빌드
-    │   └─ 단위 테스트
-    │
-    └─ e2e-tests (Ubuntu, 3 shard 병렬)
-        ├─ Docker Compose (DB + API)
-        ├─ Playwright 테스트
-        └─ 리포트 병합
+    └─ backend-build (Ubuntu)
+        ├─ Gradle 빌드 및 테스트 (build jacocoRootReport check)
+        ├─ Strict Schema Integrity Validation (엔티티/마이그레이션 변경 시, --no-build-cache)
+        ├─ api-docs.json 신선도 게이트 (git diff --exit-code → 계약 드리프트 시 FAIL)
+        ├─ OWASP Dependency-Check
+        └─ JaCoCo 커버리지
+        │
+        ├─ frontend-build (needs: backend-build)
+        │   ├─ npm ci
+        │   ├─ codegen:verify / codegen:verify:zod (계약 드리프트 게이트 → 불일치 시 FAIL)
+        │   ├─ Next.js 빌드
+        │   └─ 단위 테스트
+        │
+        ├─ mutation-test (needs: backend-build)
+        │   └─ 증분 PIT (business-core / business-app, report-only: STRICT_MUTATION=false)
+        │
+        └─ e2e-tests (needs: backend-build + frontend-build, 3 shard 병렬)
+            ├─ Docker Compose (DB + API)
+            ├─ Playwright 테스트
+            └─ e2e-merge-reports (needs: e2e-tests) — Shard 리포트 병합
 ```
+
+> **CI 전용 게이트 (로컬 pre-commit 과 구분)**: CI 는 로컬 훅에 없는 **드리프트/무결성 게이트**를 추가로 강제한다.
+> - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
+> - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경이 감지되면 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행.
+> - **증분 뮤테이션 (report-only)**: `mutation-test` 잡은 현재 `STRICT_MUTATION=false`(mutationThreshold=0) 로 **리포트만 산출하며 CI 를 실패시키지 않는다**. 대상 클래스가 85% 를 달성하면 `STRICT_MUTATION=true` 로 전환해 게이트화한다. (백엔드 헌법 제16조)
+>
+> 반면 로컬 `.githooks/` 의 pre-commit codegen 드리프트 점검은 **경고(⚠, 비차단)** 로, 위 CI 게이트가 최종 방어선이다. (하단 [로컬 사전 게이트](#로컬-사전-게이트-git-hooks) 참조)
 
 ### 실행 트리거
 
@@ -72,7 +85,7 @@ push/PR
 | `openapi-spec` | `api-docs.json` | 90 일 |
 | `owasp-security-report` | `**/build/reports/dependency-check-report.*` | 30 일 |
 | `jacoco-report` | `build/reports/jacoco/aggregated` | 30 일 |
-| `quality-reports` | `**/build/reports/checkstyle` | 30 일 |
+| `quality-reports` | `**/build/reports/dependency-check` | 30 일 |
 
 ---
 
@@ -142,7 +155,7 @@ strategy:
 
 ### 리포트 병합
 
-- **22-Tier 아키텍처**: 01-core-base부터 22-deep-security-guard까지 총 22개 계층으로 테스트가 정의되어 있으며(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E), 각 티어는 독립적으로 또는 병합되어 실행됩니다.
+- **23-Tier 아키텍처**: 01-core-base부터 23-security-auth-supplement까지 총 23개 계층으로 테스트가 정의되어 있으며(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E), 각 티어는 독립적으로 또는 병합되어 실행됩니다.
 - **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
 
 #### 병합 리포트 생성 (`ci.yml`)

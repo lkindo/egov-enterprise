@@ -12,11 +12,11 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
-| `pre-push` | 푸시 | `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` | ❌ 차단 |
+| `pre-push` | 푸시 | `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + (프론트 존재 시) codegen 드리프트 게이트(`codegen:verify` + `codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) | ❌ 차단 |
 
 ## 우회
 - 일시 우회: `git commit --no-verify` / `git push --no-verify`
 - 세션 우회: `SKIP_HOOKS=1 git push`
 - 완전 해제: `git config --unset core.hooksPath`
 
-> pre-commit이 드리프트를 **경고만** 하는 이유: `api-docs.json` 자체가 stale이면 재생성이 오탐을 낳는다. 차단은 결정론적인 pre-push 컴파일 게이트에만 둔다.
+> pre-commit이 드리프트를 **경고만** 하는 이유: `api-docs.json` 자체가 stale이면 재생성이 오탐을 낳는다. 차단은 결정론적인 pre-push 게이트(컴파일 + 계약 codegen 드리프트)에만 둔다.

@@ -11,9 +11,10 @@
 
 ### 1-A. 필수/샘플 분리의 "배포 형태"
 - **결정 대상**: 이 저장소를 "복제→불필요 삭제→신규 구축" 베이스로 쓸 때 무엇을 base 로 확정할 것인가.
-- **옵션**: (a) **모놀리식 유지 + fork-and-delete** — 초기 비용↓, 파생마다 수작업 삭제 / (b) **admin 을 별도 gradle 모듈로 추출** — 경계 강제·배포 명확, 리팩터 비용↑ / (c) **템플릿 브랜치에서 샘플 20도메인 실삭제** — 가장 깨끗한 base, 되돌림 불가·데모 상실.
+- **옵션**: (a) **모놀리식 유지 + fork-and-delete** — 초기 비용↓, 파생마다 수작업 삭제 / (b) **admin 을 별도 gradle 모듈로 추출** — 경계 강제·배포 명확, 리팩터 비용↑ / (c) **템플릿 브랜치에서 샘플 ~13 business-app 도메인 실삭제** — 가장 깨끗한 base, 되돌림 불가·데모 상실.
+- **현황**: 옵션 (c) 의 핵심은 이미 반영됨 — `template/reusable-base` 브랜치가 로컬·origin 양쪽에 존재하며, business-app 서비스 도메인 main 22 → template 9(샘플 ~13 도메인 제거)로 정리됨.
 - **권장**: 재사용을 강조하면 **(c) 템플릿 브랜치**(main 은 데모 보존). 구조는 이미 삭제 가능(business-core→app import 0).
-- **영향**: 재사용 준비도(현 ≈70) 전 축. **결정 없이는 에이전트가 "삭제/추출" 실행 불가.**
+- **영향**: 재사용 준비도(현 ≈70) 전 축. 브랜치는 이미 존재하므로 **남은 결정은 "삭제/추출 실행" 이 아니라 `template/reusable-base` 를 공식 base 로 채택·유지(main 데모 보존 병행)할지**이다.
 
 ### 1-B. business-core 내 "샘플-in-core" 처리
 - **결정 대상**: `service.system.content.{banner,popup,community}` + `service.system.service.{survey(34파일),consult}` ≈50파일이 코어 모듈에 상주. admin 필수인가 데모인가?

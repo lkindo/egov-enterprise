@@ -17,12 +17,13 @@ sequenceDiagram
     participant BE as Spring Security<br>(api-server)
 
     User->>Mid: Access /admin/community
-    Note over Mid: 1. 쿠키 검사 (accessToken)<br>2. 역할 검사 (userRole == ROLE_ADMIN)
+    Note over Mid: 1. accessToken JWT 서명·만료 검증<br>(Web Crypto HMAC, alg 화이트리스트)<br>2. 검증된 payload.role 로 역할 검사<br>(위조 userRole 쿠키 불신)
     Mid-->>User: Pass Edge Router (Allow)
     
     User->>Client: Mount & Fetch data
-    Note over Client: Axios/Fetch API Header 주입<br>Authorization: Bearer [JWT Token]
-    Client->>BE: GET /api/v1/admin/community/boards
+    Client->>Mid: GET /api/v1/admin/community/boards<br>(accessToken 쿠키 동봉)
+    Note over Mid: /api/v1·/actuator 프록시:<br>accessToken 쿠키 → Authorization: Bearer 주입
+    Mid->>BE: GET /api/v1/admin/community/boards<br>Authorization: Bearer [JWT]
     
     Note over BE: 1. JwtAuthenticationFilter 통과<br>2. SecurityContext Holder 적재<br>3. SecurityUtil 이중 권한 재검증
     BE-->>User: 200 OK (Protected Data)
@@ -50,27 +51,80 @@ sequenceDiagram
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+// prod 에서 JWT_SECRET 미설정이면 모듈 로드 시 즉시 throw(fail-fast) — 공개 dev 기본값으로 조용히 검증하는 최악 상태 방지
+const DEV_JWT_SECRET = '...(dev 전용 base64 시크릿)...';
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('[Middleware] prod 환경에 JWT_SECRET 미설정 (fail-fast)');
+}
+const JWT_SECRET = process.env.JWT_SECRET || DEV_JWT_SECRET;
+// header.alg 를 신뢰하지 않고 화이트리스트로만 매핑 (alg=none·비대칭 혼동 공격 차단)
+const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
+
+// base64url·utf8 → ArrayBuffer 변환 헬퍼 3종은 지면상 생략 (Edge 네이티브 Web Crypto만 사용, 외부 의존 없음)
+
+/**
+ * accessToken 의 HMAC 서명과 만료(exp)를 모두 검증하고 payload.role 을 반환한다.
+ * 서명 위조·만료·구조 이상·알 수 없는 alg 는 전부 null(=미인증)로 처리한다.
+ */
+async function verifyAndExtractRole(token: string): Promise<string | null> {
+    try {
+        const [headerB64, payloadB64, sigB64] = token.split('.');
+        if (!sigB64) return null;
+
+        const header = JSON.parse(base64UrlDecodeToString(headerB64));
+        const hash = HMAC_HASH[header.alg];
+        if (!hash) return null; // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+
+        const key = await crypto.subtle.importKey(
+            'raw', utf8ToArrayBuffer(JWT_SECRET), { name: 'HMAC', hash: { name: hash } }, false, ['verify']
+        );
+        const valid = await crypto.subtle.verify(
+            'HMAC', key, base64UrlToArrayBuffer(sigB64), utf8ToArrayBuffer(`${headerB64}.${payloadB64}`)
+        );
+        if (!valid) return null; // 서명 위조
+
+        const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
+        if (payload.exp && Date.now() >= payload.exp * 1000) return null; // 만료
+        return payload.role || null;
+    } catch {
+        return null;
+    }
+}
+
+export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // 0. 공개 경로 조기 우회 (로그인/정적/API)
+    // 1. 백엔드 API 프록시: accessToken 쿠키 → Authorization: Bearer 헤더 주입 (백엔드가 서명을 authoritative 재검증)
+    if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator')) {
+        const accessToken = request.cookies.get('accessToken')?.value;
+        if (accessToken) {
+            const requestHeaders = new Headers(request.headers);
+            requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+            return NextResponse.next({ request: { headers: requestHeaders } });
+        }
+        return NextResponse.next();
+    }
+
+    // 2. 공개 경로 조기 우회 (로그인/Next API Route/정적)
     if (pathname.startsWith('/login') || pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
         return NextResponse.next();
     }
 
-    const hasToken = request.cookies.has('accessToken');
-    const userRole = request.cookies.get('userRole')?.value;
+    // 3. accessToken JWT 서명·만료를 실제로 검증 → 위조 role=ADMIN 토큰의 관리자 UI 셸 열람 차단
+    const accessToken = request.cookies.get('accessToken')?.value;
+    const userRole = accessToken ? await verifyAndExtractRole(accessToken) : null;
 
-    // 1. 미인증 접근 차단 — 모든 보호 경로에서 /login으로 리다이렉트 (redirect 쿼리 보존)
-    if (!hasToken) {
+    // 유효(서명·만료 통과) 토큰이 없으면 /login 으로 (redirect 쿼리 보존)
+    // ⚠ 쿠키를 삭제하지 않는다 — 프리페치/RSC 1회 검증 실패가 유효 세션을 영구 로그아웃시키는 함정 방지
+    if (!userRole) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
     }
 
-    // 2. 관리자 민감 경로(/admin/system|user|security|stats|workflow) 비관리자 차단
+    // 4. 관리자 민감 경로(/admin/system|user|security|stats|workflow) 비관리자 차단 — 검증된 payload.role 로만 판정
     if (pathname.startsWith('/admin')) {
-        const normalizedRole = userRole?.toUpperCase() || '';
+        const normalizedRole = userRole.toUpperCase();
         const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
         const isSensitivePath =
             pathname.startsWith('/admin/system') ||
@@ -90,9 +144,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-// 전역 매처: API/정적 자원을 제외한 앱 전체를 가드
+// 전역 매처: 정적 자원을 제외한 앱 전체를 가드 (API 경로도 프록시 주입을 위해 포함)
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
 ```
 
@@ -161,7 +215,7 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 
 ### 4.1 패스워드 및 민감 정보 단방향 해싱
 - 사용자의 비밀번호는 DB에 평문(Plain Text)으로 절대 저장될 수 없다.
-- Spring Security의 `BCryptPasswordEncoder`를 의무 적용하여, 가입 및 비밀번호 변경 시 반드시 단방향 해싱(Hashing)된 값으로 `tb_user` 테이블에 적재한다.
+- Spring Security의 `BCryptPasswordEncoder`를 의무 적용하여, 가입 및 비밀번호 변경 시 반드시 단방향 해싱(Hashing)된 값으로 `tb_user_info` 테이블에 적재한다.
 
 ### 4.2 개인 식별 정보(PII) 로그 마스킹
 - 주민등록번호, 연락처, 이메일 등의 PII 데이터는 `api-server`의 전역 로깅 인터셉터나 예외 핸들러에서 로깅(Logger.error)될 때 반드시 정규식을 통해 마스킹(Masking, 예: `010-****-1234`) 처리되어야 한다.
