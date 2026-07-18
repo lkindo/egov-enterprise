@@ -44,7 +44,7 @@ export const CustomUserDetailsSchema = z.object({
   roleName: z.string().optional(),
   lockAt: z.string().optional(),
   authorCode: z.string().optional(),
-  authorityCodes: z.array(z.string().optional()).optional(),
+  authorityCodes: z.array(z.string()).optional(),
 });
 export type CustomUserDetails = z.infer<typeof CustomUserDetailsSchema>;
 
@@ -948,7 +948,7 @@ export const DeptAuthorBatchRequestSchema = z.object({
   deptId: z.string().min(0).max(20).optional(),
   authrtId: z.string().min(0).max(20),
   allMembers: z.boolean().optional(),
-  userIds: z.array(z.string().optional()).optional(),
+  userIds: z.array(z.string()).optional(),
 });
 export type DeptAuthorBatchRequest = z.infer<typeof DeptAuthorBatchRequestSchema>;
 
@@ -1113,7 +1113,7 @@ export type AdminPasswordChangeRequest = z.infer<typeof AdminPasswordChangeReque
 // BulkStatusRequest Schema
 // ==========================================================================
 export const BulkStatusRequestSchema = z.object({
-  userIds: z.array(z.string().optional()),
+  userIds: z.array(z.string()),
   status: z.string(),
 });
 export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
@@ -1122,8 +1122,8 @@ export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
 // BulkRoleRequest Schema
 // ==========================================================================
 export const BulkRoleRequestSchema = z.object({
-  userIds: z.array(z.string().optional()),
-  role: z.string(),
+  userIds: z.array(z.string()),
+  role: z.enum(["USER","ADMIN"]),
 });
 export type BulkRoleRequest = z.infer<typeof BulkRoleRequestSchema>;
 
@@ -1131,7 +1131,7 @@ export type BulkRoleRequest = z.infer<typeof BulkRoleRequestSchema>;
 // BulkDeptMoveRequest Schema
 // ==========================================================================
 export const BulkDeptMoveRequestSchema = z.object({
-  userIds: z.array(z.string().optional()),
+  userIds: z.array(z.string()),
   ognzId: z.string(),
 });
 export type BulkDeptMoveRequest = z.infer<typeof BulkDeptMoveRequestSchema>;
@@ -1381,7 +1381,7 @@ export type ApiResponseListPopupDto = z.infer<typeof ApiResponseListPopupDtoSche
 export const PageableSchema = z.object({
   page: z.number().min(0).optional(),
   size: z.number().min(1).optional(),
-  sort: z.array(z.string().optional()).optional(),
+  sort: z.array(z.string()).optional(),
 });
 export type Pageable = z.infer<typeof PageableSchema>;
 

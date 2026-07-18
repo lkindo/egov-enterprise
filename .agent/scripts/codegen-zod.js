@@ -41,6 +41,11 @@ function convertPropertyToZod(propName, prop, requiredList = [], currentSchemaNa
   } else {
     switch (prop.type) {
       case 'string':
+        if (Array.isArray(prop.enum) && prop.enum.length > 0) {
+          // enum 은 z.enum 으로 정확 방출(TS 리터럴 유니온과 정합). min/max/pattern 미적용.
+          zodChain = `z.enum(${JSON.stringify(prop.enum)})`;
+          break;
+        }
         zodChain = 'z.string()';
         if (prop.minLength !== undefined) {
           zodChain += `.min(${prop.minLength})`;
@@ -77,7 +82,9 @@ function convertPropertyToZod(propName, prop, requiredList = [], currentSchemaNa
               zodChain = `z.array(z.lazy(() => ${refSchema}Schema))`;
             }
           } else {
-            const itemType = convertPropertyToZod('', prop.items, [], currentSchemaName);
+            // 배열 아이템은 항상 present — propName='' 로 인해 붙는 .optional() 을 제거해 TS(string[])와 정합.
+            // (배열 필드 자체의 optional 은 아래 isRequired 분기가 별도 처리)
+            const itemType = convertPropertyToZod('', prop.items, [], currentSchemaName).replace(/\.optional\(\)$/, '');
             zodChain = `z.array(${itemType})`;
           }
         } else {
