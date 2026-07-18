@@ -4,6 +4,7 @@
 > **갱신: 2026-07-17 — DB 축 재측정 추가(§1.1). V2_12~V2_23 DB 표준화 스윕 반영, 라이브 OCI DB 실측. 완성도/연결부/단순성 83·79·72 → 89·88·82.**
 > **갱신: 2026-07-17(2) — BE 축 재측정 추가(§1.2). 단순성 로드맵 #1~#5(인터페이스 제거·getCurrentUserId 통합·config 정리·에러코드·tx) 반영, 코드 실물 검증. 완성도/연결부/단순성 81·73·56 → 83·74·62.**
 > **갱신: 2026-07-18 — BE 단순성 재측정 추가(§1.3). §2.A 대량 작업(egov IdGnr 전면제거·EgovAbstractServiceImpl 상속이탈·死코드/config 삭제·결재PK 버그정정·PK표준 린터) 반영. 단순성 62 → 68(완성도/연결부 83/74 유지).**
+> **갱신: 2026-07-18(3) — 점수상승 세션: FE 액센트 토큰화(FE 78/74/63)·프론트 색상/FE-auth 회귀 게이트 신설(SEAM 추적성 60→61)·§2.F FE인증 대부분 해소 확인(HttpOnly+프록시+서명검증, FE 79/76). 최종: DB 89/88/82·BE 84/77/70·FE 79/76/63·SEAM 67/70/61.**
 > **갱신: 2026-07-18(2) — FE·SEAM 재측정 추가(§1.4, 07-15 이후 최초). §2.C 게이트화·§2.B 결합역전/브랜딩 토큰화 반영. FE 75/72/55→**77/74/61**·SEAM 65/66/54→**67/70/58**·BE 83/74/68→**84/77/70**(연결부 egov소거+결합역전)·DB **89/88/82 유지**. 상단 표를 07-18 현재값으로 통합. ⚠위임 워크플로우 세션한도 실패로 메인 직접 실측 채점.**
 > 방법론: DB/BE/FE/연결부 4차원 독립 assessor가 커밋 메시지가 아닌 **코드 실물을 Read/Grep 로 검증**해 채점 → 메인 재검증. 이 저장소의 감사수치 과장 이력을 감안해 **과장 배제** 원칙 적용.
 > 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md) · [log-retention-policy.md](../04-operations/log-retention-policy.md)
@@ -16,8 +17,8 @@
 |---|---|:---:|:---:|:---:|:---:|
 | **DB** | 완성도 / 연결부 / 단순성 | 82 / 78 / 72 | 83 / 79 / 72 | **89 / 88 / 82** | +7 / +10 / +10 |
 | **BE(백엔드)** | 완성도 / 연결부 / 단순성 | 76 / 70 / 55 | 81 / 73 / 56 | **84 / 77 / 70** | +8 / +7 / +15 |
-| **FE(프론트)** | 완성도 / 연결부 / 단순성 | 74 / 72 / 55 | 75 / 72 / 55 | **78 / 74 / 63** | +4 / +2 / +8 |
-| **연결부(seam)** | 계약체인 / 적합성 / 추적성 | 64 / 58 / 48 | 65 / 66 / 54 | **67 / 70 / 60** | +3 / +12 / +12 |
+| **FE(프론트)** | 완성도 / 연결부 / 단순성 | 74 / 72 / 55 | 75 / 72 / 55 | **79 / 76 / 63** | +5 / +4 / +8 |
+| **연결부(seam)** | 계약체인 / 적합성 / 추적성 | 64 / 58 / 48 | 65 / 66 / 54 | **67 / 70 / 61** | +3 / +12 / +13 |
 
 > **07-18(현재) 열 = 하위 재측정 통합**: DB=§1.1(07-17 라이브 실측) · BE=§1.2/§1.3 + §1.4 미세조정 · **FE·SEAM=§1.4(이번 세션 재측정, 07-15 이후 최초)**. 세부 근거·캡은 각 하위 절 참조. 위임 워크플로우가 세션 한도로 실패해 **메인 에이전트 직접 실측**(FK·게이트·slate 잔여 카운트)으로 채점.
 
@@ -155,8 +156,9 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 - **누르는 점수**: SEAM 적합성/추적성. 봉합은 했으나 "왜 두 ID 가 있고 어디에 뭘 쓰는가"의 규약이 문서·전 도메인 수준에서 아직 일관되지 않다.
 
 ### F. FE 인증 아키텍처의 구조적 취약
-- **증거**: 토큰 `localStorage` 저장 · 인증 쿠키 **non-HttpOnly**(document.cookie 기록) · 미들웨어 admin 게이트가 **위조 가능한 `userRole` 쿠키**만 신뢰(devtools 로 `userRole=ADMIN` 우회) · CSP `unsafe-inline`/`unsafe-eval`.
-- **누르는 점수**: FE 완성도(75)·연결부(72). 실질 방어가 백엔드 한 겹뿐이라 FE seam 자체는 개선 불가. 근본 해결은 백엔드 Set-Cookie(HttpOnly)+동일출처 프록시 전환으로 **아키텍처 변경+e2e** 필요.
+- **증거(2026-07 이전 스냅샷)**: 토큰 `localStorage` 저장 · 인증 쿠키 **non-HttpOnly**(document.cookie 기록) · 미들웨어 admin 게이트가 **위조 가능한 `userRole` 쿠키**만 신뢰(devtools 로 `userRole=ADMIN` 우회) · CSP `unsafe-inline`/`unsafe-eval`.
+- **✅ 대부분 해소 확인(2026-07-18 실측 감사)**: 위 증거는 **대부분 STALE**. 코드 실물 대조: ① 토큰 localStorage 저장 → **0**(localStorage 는 autosave·tour·popup·theme 등 비-토큰뿐, `client.ts`·`AuthContext` 는 HttpOnly 쿠키 기반). ② accessToken → `api/auth/login/route.ts` 가 **HttpOnly·Secure(prod)·SameSite=Strict** 쿠키로 설정(응답 바디엔 role 만) + 동일출처 프록시(Next route handler + 미들웨어 Authorization 주입). ③ userRole 위조 → 미들웨어가 **Web Crypto `crypto.subtle.verify` 로 서명 JWT 검증**해 role 추출(위조 userRole 쿠키 불신). ④ CSP unsafe-eval → **prod 제거**(`next.config.ts` cspProd=`script-src 'self' 'unsafe-inline'`, object-src/frame-ancestors 'none'). **회귀 방지 게이트 신설**: `fe-auth-hardening.test.ts`(vitest) — 위 4대 불변식(HttpOnly·no-localStorage-token·서명검증·no-prod-unsafe-eval) 정적 못박음. **잔여(제품결정 보류)**: CSP `unsafe-inline` 제거(Next RSC nonce/PPR 인프라 필요)·admin 민감경로 커버리지 확대.
+- **누르는 점수(정정)**: FE auth 는 **HttpOnly+프록시+서명검증으로 현대화 완료** → §2.F 는 더 이상 FE 연결부의 주요 캡이 아니다(FE 연결부 상한은 이제 브랜딩·i18n·RBAC 하드코딩이 지배). 잔여 nonce-CSP·admin커버리지는 아키텍처/제품 결정이라 국소 개선 대상 아님.
 
 ### G. false-completion 문화 — "scaffold 는 있으나 채택은 0"
 로드맵에 [x] 로 표시됐지만 디스크는 다른 항목 다수.
@@ -178,7 +180,7 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 | C. 횡단관심사 비체계적 | BE 단순성 · SEAM 적합성 | 관례/애스펙트 부재 | ID 생성 유틸·tx 경계 유틸·인가 관례 표준화 |
 | D. SSOT 전파 미정합 | 계약체인 · 추적성 | 자동 정합 파이프라인 부재 | DB→Entity→DTO→Zod 생성·게이트 강화 |
 | E. 정체성 모델 혼란 | 적합성 · 추적성 | 규약 미통일 | loginId/esntlId 사용 규약 문서·전 도메인 정합 |
-| F. FE 인증 아키텍처 | FE 완성도 · 연결부 | 아키텍처+e2e | HttpOnly 쿠키+프록시 주입, 미들웨어 JWT 검증 |
+| F. FE 인증 아키텍처 | ~~FE 완성도·연결부~~ **✅ 대부분 해소** | HttpOnly+프록시+서명검증 완료 | 잔여: nonce-CSP·admin커버리지(제품결정) |
 | G. false-completion | 단순성 · 추적성 · 완성도 | 채택률 0 | scaffold 전면 채택(RBAC/토큰/i18n/generic CRUD) |
 | H. 검증 파편화 | 전 추적성/신뢰 | 통합 게이트 부재 | CI 복구, 통합 full-suite 게이트, e2e 상시화 |
 
