@@ -1012,9 +1012,16 @@
 
       <!-- Segmented Navigation Menu -->
       <nav class="nav-menu">
+        <div class="nav-category">🚀 Getting Started</div>
+
+        <input type="radio" name="tabs" id="tab-onboarding" class="tab-radio" checked>
+        <label for="tab-onboarding" class="nav-label">
+          <span class="nav-number">GO</span> 신규 팀원 온보딩
+        </label>
+
         <div class="nav-category">System Overview</div>
-        
-        <input type="radio" name="tabs" id="tab-welcome" class="tab-radio" checked>
+
+        <input type="radio" name="tabs" id="tab-welcome" class="tab-radio">
         <label for="tab-welcome" class="nav-label">
           <span class="nav-number">00</span> Welcome & Dashboard
         </label>
@@ -1271,6 +1278,122 @@
           <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.7;">
             안티그래비티 하네스는 **빌드 타임(Static Linter/Hard-Stop)**, **테스트 타임(JPA Inspector/PITest/Security Linter/DDL Safety Auditor)**, **런타임(Playwright Self-Healing/Diagnostics Hub)** 3중 통제 장벽을 구성하여 개발자가 실수로 유입한 버그나 무결성 위반 코드가 프로덕션으로 배포되는 길목을 원천적으로 차단합니다.
           </p>
+        </div>
+      </section>
+
+      <!-- [GO] 신규 팀원 온보딩 -->
+      <section id="content-onboarding" class="tab-content">
+        <h2 class="section-title">신규 팀원 온보딩 가이드</h2>
+        <p class="section-subtitle">eGov Enterprise 에 처음 합류한 개발자를 위한 첫날(Day-1) 실전 가이드 — 로컬 기동 · 브랜치 지도 · 작업 검증 · 핵심 개념 · 자주 겪는 함정 · 문서 지도.</p>
+
+        <div class="glass-card">
+          <div class="card-neon-glow"></div>
+          <h3 class="glow-header">① 5분 로컬 시작 (Quick Start)</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+            <strong>필수 요구사항</strong>: Java 21 (LTS) · Node.js 20+ · <code>pnpm</code>(<code>npm i -g pnpm</code>) · Docker 또는 PostgreSQL 14+. 패키지 매니저 표준은 <strong style="color: var(--accent-secondary);">pnpm</strong> 입니다(npm 아님).
+          </p>
+          <pre class="code-block"># 1) 최초 1회: 환경 복사 → 로컬 DB 기동 → 의존성(pnpm) 설치
+make bootstrap                # Windows: powershell -File .\scripts\bootstrap.ps1
+
+# 2) 백엔드 + 프론트엔드 동시 기동
+npm run dev                   # Windows: .\start-dev.ps1
+#   API :  http://localhost:8080/api/v1
+#   Web :  http://localhost:3001
+
+# 3) 최초 로그인 (빈 DB 부팅 시 R__seed_framework 가 자동 시드)
+#   ID: webmaster   PW: 1     [!] 운영 전환 시 반드시 비밀번호 로테이션/최초 강제변경</pre>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">② 브랜치 지도 — 나는 어디서 작업하나</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th style="width: 230px;">브랜치</th><th>정체</th><th>용도</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>main</code> <span class="badge badge-primary">기본</span></td>
+                  <td>데모 전량 보존 — 전 도메인(게시판·설문·커뮤니티·일정 등)</td>
+                  <td>일상 개발 라인. 기능/버그 작업 브랜치는 여기서 분기한다.</td>
+                </tr>
+                <tr>
+                  <td><code>template/reusable-base</code> <span class="badge badge-success">클린 base</span></td>
+                  <td>샘플 20+ 도메인을 코드·라우트·테이블까지 제거한 골격 — <strong>커널 + 게시판 + 통신 4종</strong>만</td>
+                  <td>신규 SI/재개발의 시작점. 클론 → 신규(빈) DB → 부팅. 상세: <code>docs/03-guides/reusable-base-guide.md</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.75rem;">
+            [!] <strong>공유 워킹트리</strong>(Antigravity/Gemini 와 동시 작업): 커밋은 <code>git commit --only -- &lt;경로&gt;</code> 로 <strong>내 변경분만</strong> 담아 타 오퍼레이터의 WIP 혼입을 차단한다.
+          </p>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">③ 내 작업 검증 (Definition of Done)</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+            PR 전, <strong>로컬↔CI 정합의 단일 진입점</strong>인 통합 게이트를 실행하세요.
+          </p>
+          <pre class="code-block">make verify          # == node scripts/verify.mjs all == npm run verify
+#   BE : gradlew compileJava compileTestJava test
+#   FE : pnpm -C frontend exec tsc --noEmit  +  next build  +  vitest</pre>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th style="width: 190px;">게이트</th><th style="width: 120px;">강도</th><th>내용</th></tr></thead>
+              <tbody>
+                <tr><td>pre-push 훅</td><td><span class="badge badge-error">HARD 차단</span></td><td><code>compileJava/compileTestJava</code> + <code>tsc --noEmit</code> + codegen 계약 드리프트(api-docs ↔ 생성타입/zod)</td></tr>
+                <tr><td>3대 헌법 준수</td><td><span class="badge badge-warning">필수</span></td><td>코드 변경 전 해당 헌법 조회 — 신설 정적 린터군이 조문을 기계 강제(위반 시 빌드 실패)</td></tr>
+                <tr><td>CI (GitHub Actions)</td><td><span class="badge badge-primary">PR</span></td><td>backend-build · frontend-build · e2e(3-shard) · mutation-test(리포트 전용). 스키마 무결성·계약 드리프트는 CI FAIL</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">④ 첫날 알아둘 핵심 개념</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th style="width: 180px;">개념</th><th>알아둘 것</th></tr></thead>
+              <tbody>
+                <tr><td><strong>정체성 축</strong> <span class="badge badge-error">버그 단골</span></td><td><code>esntlId</code>=User PK(시스템 식별) vs <code>loginId</code>=감사컬럼(<code>frst_rgtr_id</code>)·소유권 비교의 표준 축. 소유권 검증은 도메인이 <em>실제 저장하는 축</em>과 일치시킬 것. <code>getCurrentUserId()</code>는 @Deprecated(esntlId 반환) → <code>getCurrentLoginId()</code>/<code>getCurrentEsntlId()</code> 사용. (BE 헌법 제8조 2항 · <code>identity-model-guide.md</code>)</td></tr>
+                <tr><td>DB 명명</td><td>모든 명칭은 소문자 snake_case + 표준 용어사전(<code>meta_standard_*</code>) 기반. 테이블 <code>tb_</code>·시퀀스 <code>sq_</code>·CHECK <code>ck_</code> 접두. 임의 설계 금지 → <code>db-bridge</code> 로 실측 후 진행. (DB 헌법)</td></tr>
+                <tr><td>레이어 경계</td><td>JPA Entity 는 api-server 외부로 노출 금지 → 전용 DTO 로만 교환. 의존 방향 단방향: <code>api-server → business-app → business-core → foundation</code>. (BE 헌법 제1·3조)</td></tr>
+                <tr><td>3대 헌법</td><td>백엔드 API(18조) · 프론트 UX(17조) · DB 표준(10조). <code>.agent/knowledge/*/artifacts/constitution.md</code>. <strong>불가침</strong>(사용자 승인 없이 수정 금지).</td></tr>
+                <tr><td>모듈 구조</td><td><code>foundation</code>(커널) · <code>business-core</code>(재사용 admin 코어) · <code>business-app</code>(프로젝트 고유 도메인) · <code>api-server</code>(진입점) · <code>migration-tool</code>(이관 CLI) + <code>frontend</code>(Next.js 16).</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">⑤ 자주 겪는 함정 (Day-1 Troubleshooting)</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th style="width: 200px;">증상</th><th>원인 · 해결</th></tr></thead>
+              <tbody>
+                <tr><td>401 Unauthorized</td><td><code>AuthContext</code>의 accessToken 과 브라우저 쿠키 동기화 먼저 확인. accessToken 은 HttpOnly 쿠키 전용이며 미들웨어가 <code>Authorization: Bearer</code> 헤더로 주입한다.</td></tr>
+                <tr><td>타입 에러 (FE)</td><td>백엔드 DTO 변경 후 <code>pnpm -C frontend codegen:file</code>(오프라인·api-docs.json 기반) + <code>codegen:zod</code> 재생성. [!] api-docs.json 이 stale 이면 재생성 전 원인(백엔드 재빌드 여부)부터 확인.</td></tr>
+                <tr><td>컴포넌트 렌더 안 됨</td><td>Next App Router 기본은 Server Component. 이벤트/훅 사용 시에만 최하단 잎(Leaf) 노드에 <code>'use client'</code>. (FE 헌법 제3·11조)</td></tr>
+                <tr><td>gradlew 인식 불가</td><td>Windows 는 <code>.\gradlew.bat</code>. 크로스플랫폼 통합 게이트는 <code>node scripts/verify.mjs</code>(OS 감지)를 진입점으로 사용한다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">⑥ 더 읽을 문서 (Doc Map)</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th style="width: 300px;">문서</th><th>언제 읽나</th></tr></thead>
+              <tbody>
+                <tr><td><code>GEMINI.md</code> / <code>CLAUDE.md</code></td><td>프로젝트 운영 규칙 SSOT(등급판정 · 헌법 준수 · verify 게이트). 합류 직후 필독.</td></tr>
+                <tr><td><code>.agent/knowledge/*/artifacts/constitution.md</code></td><td>코드 변경 전 해당 3대 헌법 조회(불가침 규범).</td></tr>
+                <tr><td><code>docs/03-guides/reusable-base-guide.md</code></td><td>재사용 base(<code>template/reusable-base</code> 브랜치)로 신규 프로젝트 시작 시.</td></tr>
+                <tr><td><code>docs/03-guides/testing-guide.md</code></td><td>단위/통합/E2E(23-Tier) 테스트 전략.</td></tr>
+                <tr><td><code>docs/03-guides/identity-model-guide.md</code></td><td>정체성 축(esntlId/loginId) 3계층 규약 상세.</td></tr>
+                <tr><td><code>docs/04-operations/pending-decisions.md</code></td><td>제품·운영 결정 대기 항목 트래커.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -1990,7 +2113,7 @@
         steps: [
           "사용자 요청: 401 Unauthorized 인증 실패 트러블슈팅 분석 시작.",
           "[Grading] 단일 시큐리티 설정 및 AuthContext 조회를 감안해 L1 (Standard) 등급 판정.",
-          "[3대 기술 헌법 검증] 백엔드 헌법 제12조(Spring Security stateless 정책) 및 프론트엔드 UX 헌법 제6조(쿠키 바인딩) 사전 분석.",
+          "[3대 기술 헌법 검증] 백엔드 헌법 제8조(권한 이중검증)·제11조(인증정보 보호) 및 프론트엔드 UX 헌법 제4조(인증 세션 보안 모델: HttpOnly 쿠키·미들웨어 JWT 서명검증) 사전 분석.",
           "[Deep Context Map] JVM SecurityFilterChain 컴포넌트 구조도와 Frontend 쿠키 관리 위상 매핑.",
           "[Sandbox Exec] AuthContext의 accessToken 만료 정책 및 브라우저 쿠키 TTL 정보 불일치 원인 정밀 감지.",
           "[OWASP Audit] 무효화된 JWT 주입 및 CSRF 취약점 검토 ➔ 정상 방어벽 작동 확인.",
@@ -2016,7 +2139,7 @@
         steps: [
           "사용자 요청: DeptApiController에 인가 어노테이션 누락 시 Hard-Stop 검증 테스트.",
           "[Grading] 전사 인가/보안 규칙 검증이므로 L2 (Critical) 등급 판정.",
-          "[3대 기술 헌법 검증] 백엔드 API 헌법 제17조(Stateless 권한 통제 의무화) 장착.",
+          "[3대 기술 헌법 검증] 백엔드 API 헌법 제8조(권한의 이중 검증 의무화 — 컨트롤러 @PreAuthorize + 서비스 소유권 재검증) 장착.",
           "[Deep Context Map] api-server 내 모든 REST 컨트롤러의 엔드포인트 메서드 AST 트리 추출.",
           "[Sandbox Exec] SecurityAuthAnnotationLinterTest가 구동되어 DeptApiController#getDeptInfo 메서드에 인가 락 유실 감지.",
           "[Hard-Stop] JUnit 테스트 빌드 타임에서 즉시 빌드 실패(Hard-Stop) 선언 및 컴파일 진행 완전 차단.",
