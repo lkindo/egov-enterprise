@@ -32,6 +32,10 @@
 3. **Session/Context 격리 (보안/대용량 방어)**: HTTP 414 (URI Too Long) 에러를 유발할 수 있는 방대한 다중 배열 필터나, 개인정보 등 민감 데이터는 절대로 URL에 노출하지 않고 `Zustand`나 `SessionStorage`에 격리 보관한다. 매우 복잡한 복합 검색은 백엔드의 `POST` 기반 검색 API로 전환하는 것을 원칙으로 한다.
 4. **Global UI State**: 테마, 사이드바 토글 상태 등 클라이언트 전역 UI 상태는 React Context를 사용한다.
 5. **SSR 초기 데이터 하이드레이션 패턴**: Server Component에서 fetch한 초기 데이터는 `dehydrate(queryClient)` → `<HydrationBoundary>`를 통해 클라이언트의 TanStack Query 캐시로 인계하는 것을 표준 패턴으로 한다. Server Component 내에서 `useQuery` 등 클라이언트 훅을 직접 호출하는 것은 엄격히 금지한다.
+6. **인증 세션 보안 모델 (Authentication Session Security)**: 인증 토큰의 저장·전송·검증은 다음 규범을 예외 없이 준수하여 URL·클라이언트 저장소로의 자격증명 누출을 차단한다.
+   - **① 토큰 저장소 격리**: `accessToken`은 `HttpOnly` + `Secure` + `SameSite` 속성을 부여한 쿠키에만 저장하며, `localStorage`·`sessionStorage` 등 JavaScript로 접근 가능한 저장소에 토큰을 보관하는 것을 엄격히 금지한다(XSS를 통한 토큰 탈취 차단).
+   - **② Same-Origin 프록시 경유**: 브라우저에서 백엔드로의 모든 API 호출은 동일 출처(same-origin) 프록시(클라이언트 `baseURL='/api/v1'` + `next.config.ts`의 `rewrites`)를 경유하며, 토큰은 미들웨어(`frontend/src/middleware.ts`)가 `Authorization: Bearer` 헤더로 주입한다. 브라우저 코드가 토큰 문자열을 직접 읽어 헤더에 싣지 않는다.
+   - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/middleware.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다.
 
 ---
 
@@ -42,7 +46,7 @@
 2. 다양한 디바이스 환경을 지원하기 위해 **Mobile-First** 전략을 취하며, 프로젝트 표준 브레이크포인트(`sm`, `md`, `lg`, `xl`)를 엄격히 준수한다.
 
 ### 제6조 (디자인 토큰 준수)
-1. 하드코딩된 수치 대신 사전에 정의된 **디자인 토큰** CSS 변수를 반드시 사용한다.
+1. 하드코딩된 수치 대신 사전에 정의된 **디자인 토큰** CSS 변수를 반드시 사용한다. 색상 토큰의 SSOT는 `frontend/src/app/globals.css`(`@theme` + `:root`/`.dark` HSL 변수)이며, 그 실무 지침·팔레트 리터럴→토큰 매핑 규약은 `docs/03-guides/design-tokens.md`를 따른다(팔레트 리터럴 `slate-500` 대신 시맨틱 토큰 `bg-muted` 등을 참조). 이 준수는 `frontend/eslint.config.mjs`의 `local-theme/enforce-design-tokens` 규칙으로 탐지되나 그 레벨은 **자문(`warn`)** 이며 CI·`pre-push` 게이트가 lint를 실행하지 않으므로 하드 차단 게이트가 아니다. 정적 검증(`tsc --noEmit`/`next build`)은 색·다크모드 시각 회귀를 잡지 못하므로, 대규모 색 변경 시에는 **라이트/다크 양 모드 육안 검증**을 병행하는 것을 의무로 한다.
 2. 모든 모션 컴포넌트는 기본적으로 감쇠비가 높은 감속형 모션(Damped Motion) 프로필을 공통 상속해야 하며, 사용자의 스크롤을 저해하는 스크롤 하이재킹(Scroll Hijacking)과 같은 인위적인 시각 효과는 적용하지 않는다.
 3. **[모션 접근성 존중 의무]** 사용자의 운영체제가 모션 감소를 요청한 경우(`prefers-reduced-motion: reduce`), 모든 전환 애니메이션의 duration을 0ms로 축소하거나 즉시 전환(instant transition) 처리하여 전정 장애(Vestibular Disorder) 사용자의 접근성을 보장한다. 이는 제9조(WCAG 2.1 AA)의 하위 이행 조항으로서 예외 없이 적용된다.
 
@@ -62,11 +66,16 @@
 5. 데이터 로딩 대기 화면은 레이아웃 시프트를 막기 위해 실제 렌더링될 컴포넌트의 기하학적 형태(원형, 줄글 형태 등)와 1:1로 매칭되는 스켈레톤 스크린(Skeleton Screen)을 구성하여 부드러운 펄스(Pulse) 또는 정제된 시머(Shimmer) 모션으로 렌더링한다. 단, 버튼 내부 제출이나 인라인 상태 체크 등 스켈레톤 표현이 불가능한 국소 인터랙션 영역에 한하여 차분한 2D 플랫 스피너(Flat Spinner) 사용을 허용한다.
 
 ### 제9조 (웹 접근성 및 시맨틱 HTML)
-1. 모든 UI는 시맨틱 HTML 태그를 사용하여 구조화하며, **WCAG 2.1 AA** 등급 이상의 접근성 표준을 준수한다.
+1. 모든 UI는 시맨틱 HTML 태그를 사용하여 구조화하며, **WCAG 2.1 AA** 등급 이상의 접근성 표준을 준수한다. 이 준수는 `@axe-core/playwright` 기반 E2E 접근성 스캔(`AxeBuilder(...).analyze()` 실행 후 위반 목록을 `expect(violations).toEqual([])`로 단언, `frontend/e2e/*.spec.ts`)으로 기계 증거화하며, 제14조 Playwright 게이트 및 CI `e2e-tests`(3-shard) 실행과 연계한다. 현재 스캔은 핵심 화면 표본을 대상으로 하므로, 전수 커버리지 확대를 후속 과제로 둔다.
 2. 키보드만으로 모든 기능을 조작할 수 있어야 하며, 스크린 리더 사용자를 위한 `aria-label` 등 적절한 속성을 부여한다.
 
 ### 제10조 (보안 헤더 및 외부 리소스)
 1. `next.config.ts`의 CSP 설정과 외부 리소스(Google Fonts 등) 연동 시 충돌 여부를 상시 확인한다.
+2. **[최소 보안 헤더 베이스라인]** `next.config.ts`의 `headers()`는 아래 하드닝 헤더를 prod/dev 분리로 전역 경로(`/:path*`)에 부여하며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다.
+   - **Content-Security-Policy**: prod는 `script-src`에서 `'unsafe-eval'`을 제거하고 `connect-src`를 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다.)
+   - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
+   - **X-Frame-Options**: `DENY` · **X-Content-Type-Options**: `nosniff` · **Referrer-Policy**: `strict-origin-when-cross-origin` · **X-XSS-Protection**: `0`(deprecated·XS-Leaks 벡터라 비활성 — 방어는 CSP로 대체).
+3. **[unsafe-inline 잔존의 정직한 기록]** 현재 prod CSP의 `script-src`에는 Next.js RSC(React Server Components) 부트스트랩 요구로 인해 `'unsafe-inline'`이 잔존한다. 이는 알려진 잔여 위험이며, `nonce` + `strict-dynamic` 기반으로의 승격은 PPR(부분 사전 렌더링) 채택 여부와 결부된 제품 결정 과제로 남긴다. 본 조는 이 잔존 사유와 승격 경로를 은폐하지 않고 명시적으로 기록·추적할 것을 의무화한다.
 
 ---
 
@@ -88,7 +97,7 @@
 
 ### 제13조 (낙관적 UI 및 Validation 거울 동기화)
 1. TanStack Query를 통한 데이터 변경(Mutation) 시 사용자 체감 속도 향상을 위해 **낙관적 UI(Optimistic Update)**를 구현하되, 통신 실패 시 즉각 롤백하고 서버 상태 캐시를 무효화(Query Invalidation)하는 방어 코드를 필수 작성한다.
-2. Zod 스키마 및 폼 유효성 검사 규칙은 백엔드 DTO 검증 범위와 호환되어야 하며 DB 물리 스키마 상한 제약조건을 초과할 수 없다. 물리 한계를 넘지 않는 범위 내에서는 화면 비즈니스 요건에 맞춰 독립적인 논리 검증 규칙(예: regex, refine)을 정의하는 자율성을 보장한다.
+2. Zod 스키마 및 폼 유효성 검사 규칙은 백엔드 DTO 검증 범위와 호환되어야 하며 DB 물리 스키마 상한 제약조건을 초과할 수 없다. 이 DB→DTO→Zod 단방향 거울 동기화는 `codegen:verify:zod` 게이트(`.github/workflows/ci.yml` + `.githooks/pre-push`, HARD)로 기계 강제된다 — 커밋된 백엔드 스펙(`api-docs.json`)으로부터 `generated-zod.ts`를 결정적(deterministic)으로 재생성한 뒤 `git diff --exit-code`로 드리프트 발생 시 빌드/푸시를 차단한다. 따라서 화면 검증 스키마는 인라인 `z.object(...)` 정의를 금지하고(`frontend/eslint.config.mjs`의 `no-restricted-syntax` — `error` 레벨), 백엔드 SSOT 스키마(`@/types/generated-zod`)를 `import`한 뒤 `.extend()`로만 확장한다. 물리 한계를 넘지 않는 범위 내에서는 화면 비즈니스 요건에 맞춰 독립적인 논리 검증 규칙(예: regex, refine)을 `.extend()` 위에 정의하는 자율성을 보장한다.
 
 ---
 
@@ -103,7 +112,7 @@
 
 ### 제15조 (하이브리드 다크/라이트 모드 대비 무결성)
 1. 모든 UI 요소(버튼, 레이블, 보더 등)는 주야 모드 전환 시 최소 대비율(WCAG 2.1 Contrast Ratio 4.5:1 이상)을 예외 없이 충족해야 한다.
-2. 테마 전환 시 색상 묻힘(Color Bleeding)을 예방하기 위해, 모든 색상 표현은 하드코딩된 단색 값을 지양하고 시맨틱 컬러 토큰(Semantic Color Tokens)을 사용해야 한다.
+2. 테마 전환 시 색상 묻힘(Color Bleeding)을 예방하기 위해, 모든 색상 표현은 하드코딩된 단색 값을 지양하고 시맨틱 컬러 토큰(Semantic Color Tokens)을 사용해야 한다. 다만 토큰화가 오히려 시각을 파손하는 특정 패턴 — `bg-clip-text` 텍스트 그라디언트, 의도적 다크 서피스(`surface-inverse`) 위에 중첩되는 다크 패널, 항상-흰 pill/mark 위 고정 다크 텍스트 등 — 은 `docs/03-guides/design-tokens.md`에 미치환 근거를 기록하는 것을 조건으로 예외적 잔존을 허용한다.
 3. 다크모드(`dark:`) 진입 시, 텍스트와 배경의 채도 충돌을 차단하기 위한 명도 보정(Lightness Compensation) 처리를 의무적으로 적용한다.
 
 ### 제16조 (정보 밀도 제어 및 레이아웃 숨통 원칙)

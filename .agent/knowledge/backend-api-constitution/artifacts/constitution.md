@@ -14,6 +14,7 @@
 3. **`business-app`**: 개별 프로젝트 고유 도메인(board·informalsanction·schedule·notification·memoreport·operation 등)의 비즈니스 로직·엔티티·리포지토리를 포함하며, `business-core`를 기반으로 확장한다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
 4. **`api-server`**: 외부 요청의 진입점으로서 컨트롤러(Controller)와 API 관련 DTO를 관리한다. 비즈니스 로직을 직접 구현하지 않고 `business-core`/`business-app`의 서비스를 호출하는 역할에 집중한다.
 5. **`migration-tool`**: 레거시 시스템을 표준 스키마로 이관하는 독립 실행형 ETL CLI 도구이다. 파생 프로젝트의 데이터 이관 시에만 선택적으로 포함하며, `foundation`에 의존하지 않는다.
+6. **프레임워크 재사용성 불변식(도메인 삭제가능성)**: `business-core`(재사용 admin 코어)는 신규 SI/재개발에서도 삭제되지 않는 **필수 커널**만을 담고, `business-app`의 개별 업무 도메인은 파생 프로젝트에 따라 **통째로 삭제·교체 가능**해야 한다(도메인 삭제가능성). 이를 물리적으로 보장하기 위해 ⓐ `business-app` 내 형제(sibling) 업무 도메인 간의 직접 상호참조와 ⓑ 재사용 코어 서비스의 샘플 도메인 의존을 금지한다. 이 불변식은 두 아키텍처 게이트로 기계 강제된다 — `DomainIsolationTest`(`business-app`: `nuri.business.domain` 형제 슬라이스 상호의존 금지, 코어·게시판 클러스터만 동결 예외)와 `ServiceLayerIsolationTest`(`business-core`: 재사용 코어 서비스의 샘플-in-core 의존 금지). 필수↔샘플 오케스트레이션은 `DashboardItemProvider`·`UserDeletionEvent` 등 `foundation` 포트(DIP)로 역전한다.
 
 ### 제2조 (의존성 방향의 원칙)
 1. 의존성은 반드시 **하향식(`api-server` -> `business-app` -> `business-core` -> `foundation`)**으로만 흐르도록 설계한다. (`migration-tool`은 이 계층에 속하지 않는 독립 실행형 도구이다.)
@@ -24,7 +25,7 @@
 ## 제2장 도메인 무결성 (Domain Integrity)
 
 ### 제3조 (엔티티 노출 금지)
-1. JPA Entity 클래스는 절대 `api-server` 레이어의 외부로 노출되지 않음을 원칙으로 한다.
+1. JPA Entity 클래스는 절대 `api-server` 레이어의 외부로 노출되지 않음을 원칙으로 한다. 본 원칙은 `ArchitectureTest.controller_should_not_depend_on_entity`(api-server ArchUnit 게이트)로 기계 강제된다 — `nuri.api..` 패키지가 `@Entity` 애노테이션 클래스에 의존하면 빌드를 실패시키며, 해당 규칙의 `because` 절이 본 조항(제3조 1항)을 명시적으로 인용하여 조문↔게이트를 쌍방으로 결속한다.
 2. 외부와의 데이터 교환은 반드시 전용 DTO(`Request`, `Response`)를 통해서만 수행한다.
 
 ### 제4조 (변환 책임의 소재 및 Facade 격리)
@@ -53,18 +54,20 @@
 ## 제4장 보안 및 회복탄력성 (Security & Resilience)
 
 ### 제8조 (권한의 이중 검증)
-1. 컨트롤러의 권한 체크(`@PreAuthorize`)와 별개로, 중요한 비즈니스 로직이 포함된 서비스 레이어에서는 리소스 소유권 및 관리 권한을 명시적으로 재검증해야 한다.
+1. 컨트롤러의 권한 체크(`@PreAuthorize`)와 별개로, 중요한 비즈니스 로직이 포함된 서비스 레이어에서는 리소스 소유권 및 관리 권한을 명시적으로 재검증해야 한다. 서비스 레이어 재검증의 표준 수단은 `SecurityUtil.assertOwnerOrAdmin(ownerLoginId)`(loginId 축 소유권/IDOR 방어 가드, 관리자(ADMIN/SYSTEM)는 우회)와 `SecurityUtil.assertAdmin()`(소유 모델이 없는 공유 관리 자원의 쓰기 경로 2차 인가)이다. 이와 짝을 이루는 컨트롤러 1차 인가의 누락은 `SecurityAuthAnnotationLinterTest`(api-server 하네스)로 기계 강제된다 — 비-admin 경로의 쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 `@PreAuthorize`/`@Secured` 가 없으면 빌드를 실패시키되, 인가를 서비스 계층 소유권 가드에 위임하는 컨트롤러는 `WRITE_AUTHZ_GUARDED_ELSEWHERE` allow-list 로 근거와 함께 예외 관리한다.
+2. **인증 주체의 정체성 축 구분**: 인증 주체의 식별자는 두 축으로 구분한다 — `esntlId`(User 엔티티 PK, 시스템 내부 식별자)와 `loginId`(감사 컬럼 `frst_rgtr_id`/`last_mdfr_id` 및 소유권 비교의 표준 축). 소유권 비교 시에는 반드시 대상 도메인의 감사/소유 컬럼이 **실제로 저장하는 축**과 일치시킨다. 대부분의 도메인은 감사 컬럼(loginId)을 소유자 축으로 쓰므로 `SecurityUtil.getCurrentLoginId()`/`assertOwnerOrAdmin()` 을 사용하고, 소유자를 `esntlId` 로 저장하는 도메인(예: `InformalSanction.aplcntId`, `Board.userId`)은 `SecurityUtil.getCurrentEsntlId()` 로 비교하여 축을 일치시킨다. 이름과 달리 `esntlId` 를 반환하여 축을 뒤섞던 `getCurrentUserId()` 는 `@Deprecated` 처리되었으며, 이 회귀(프로덕션 `getCurrentUserId()` 호출 및 도메인 코드의 `SecurityContextHolder` 직접 접근)는 `IdentityAxisLinterTest`(api-server 하네스, 프로덕션 호출 0 + 직접접근 allow-list 동결)로 기계 차단된다. 상세 규약은 `docs/03-guides/identity-model-guide.md` 를 따른다.
 
 ### 제9조 (안전한 트랜잭션 관리)
-1. 읽기 전용 작업에는 반드시 `@Transactional(readOnly = true)`를 명시하여 성능을 최적화하고 의도치 않은 데이터 변경을 차단한다.
+1. 읽기 전용 작업에는 반드시 `@Transactional(readOnly = true)`를 명시하여 성능을 최적화하고 의도치 않은 데이터 변경을 차단한다. 이 원칙은 `ServiceReadOnlyTransactionalLinterTest`(api-server 하네스)로 기계 강제된다 — `@Service` 클래스는 클래스레벨 `@Transactional(readOnly = true)` 를 기본으로 선언하고 쓰기(변경) 메서드만 메서드레벨 `@Transactional` 로 오버라이드하며, 파일 IO·쓰기 전용 등 정당한 예외는 동결(GRANDFATHERED) 베이스라인으로 관리하여 신규 `@Service` 의 누락만 빌드를 실패시킨다.
 2. 트랜잭션의 범위는 최소한으로 유지하여 DB 커넥션 점유 시간을 단축한다.
 
 ### 제10조 (외부 연동 및 비동기 작업의 안전성)
-1. 외부 연동 등 비동기 작업 시 반드시 재시도(`@Retryable`) 및 서킷 브레이커 패턴을 적용하여 시스템의 회복탄력성을 확보한다.
-2. 외부 서버 API나 타 기관 연동 구간은 호출 유형에 따라 타임아웃을 차등 적용하되, 한쪽의 병목이 전체 스레드 고갈로 전파되지 않도록 벌크헤드(Bulkhead) 및 서킷 브레이커 패턴을 의무 적용한다.
+1. 외부 연동 등 비동기 작업 시 재시도(`@Retryable`, Spring Retry)를 적용하여 일시적 장애에 대한 회복탄력성을 확보한다. (현행: `MailAsyncProcessor` 가 `@Retryable`(maxAttempts=3)+`@Recover` 로 SMTP 외부 IO 실패를 재시도한다.) 서킷 브레이커 패턴은 전용 라이브러리(예: Resilience4j) 미도입 상태로, 현 시점에서는 의무가 아니라 **향후 도입 대상(권고)** 이다.
+2. 외부 서버 API나 타 기관 연동 구간은 한쪽의 병목이 전체 스레드 고갈로 전파되지 않도록 작업 공간을 격리한다. 현행 격리 수단은 `AsyncConfig` 의 `SimpleAsyncTaskExecutor` 동시성 상한(`setConcurrencyLimit`)으로, 무제한 스레드 생성을 차단하는 **벌크헤드 근사**를 제공한다. 아래의 호출 유형별 **차등 타임아웃**과 정식 **서킷 브레이커·벌크헤드**(예: Resilience4j)는 현재 미도입으로, 의무가 아니라 도입 시 준수를 지향하는 **권고 기준**이다.
    - **실시간 OLTP 동기 연동**: 최대 3초 이내 타임아웃 및 빠른 실패(Fail-Fast) 지향.
    - **외부 결제/인증 트랜잭션 (PG 등)**: 최대 10초 이내 타임아웃 적용.
    - **비동기/배치/대용량 파일 연동**: 전용 스레드 풀 및 MQ 등으로 작업 공간을 격리하고, 비즈니스 요건에 맞춰 타임아웃 상향 조정.
+3. **커밋-후 부수효과의 안전성**: 외부 발송·별도 트랜잭션(REQUIRES_NEW) 등 부수효과는 반드시 발행 트랜잭션의 **커밋 이후**에만 기동한다. 부모 커밋 전에 별도 스레드/트랜잭션으로 후속 작업을 기동하면 그 작업이 부모의 미커밋 행을 `READ_COMMITTED` 로 보지 못해 유실·no-op 되는 결함(SMS 미발송, 메일 상태 고착 등)이 발생하므로, 커밋-후 부수효과는 `TransactionUtils.runAfterCommit(...)`(`foundation`)을 표준 수단으로 감싼다. 특히 커밋-전-async 파손을 유발하는 `@Async` + `@TransactionalEventListener` 동시 선언은 `AsyncTransactionalListenerArchTest`(api-server 하네스)로 기계 차단된다.
 
 
 ### 제11조 (인증 정보 보호 및 OWASP 준수)
@@ -105,7 +108,7 @@
 2. 트랜잭션 충돌 비용이 극도로 높은 크리티컬 섹션 로직에 대해서는 **비관적 락(Pessimistic Lock)** 또는 Redis 기반 분산 락 정책을 명시적으로 설계하여 반영해야 한다.
 
 ### 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명)
-1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마(meta_standard_domains)의 상한 제약조건을 초과할 수 없으며, 상한선 초과 여부는 빌드 단계에서 하네스(API Contract Guardian)를 통해 자동 검증한다. 단, 비즈니스 사양에 의해 DB 한계보다 더 좁은 길이로 제한하거나 정규식 등의 논리 검증이 필요할 경우 각 레이어에서 독립적으로 선언하여 도메인 간의 결합도를 완화한다.
+1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마(meta_standard_domains)의 상한 제약조건을 초과할 수 없다. DB→DTO→Zod 로 이어지는 **계약의 동기화**(스펙 신선도 및 산출물 재생성 일치)는 빌드 단계에서 기계 강제된다 — CI(`.github/workflows/ci.yml`)가 커밋된 `api-docs.json` 의 신선도를 `git diff --exit-code api-docs.json` 으로 검증하고, 프론트엔드 `codegen:verify`(`generated-api.d.ts` 재생성 diff)·`codegen:verify:zod`(`generated-zod.ts` 재생성 diff)로 스펙↔산출물의 일치를 확인한다. 다만 **물리 상한(max/NotNull) 초과 여부를 `meta_standard_domains` 와 직접 대조하는 전용 하네스는 현재 존재하지 않으므로**(인접 하네스 `UniqueConstraintMirrorLinterTest` 는 UNIQUE 제약 미러링만, `SchemaNamingLinterTest` 는 명명 규칙만 검증한다), 상한선 초과 방지는 설계·리뷰 단계의 규범 준수로 보증하며 이의 하네스화는 향후 과제로 둔다. 단, 비즈니스 사양에 의해 DB 한계보다 더 좁은 길이로 제한하거나 정규식 등의 논리 검증이 필요할 경우 각 레이어에서 독립적으로 선언하여 도메인 간의 결합도를 완화한다.
 2. 테스트 코드 무결성을 검증하기 위한 돌연변이 테스트(Mutation Testing)는 전체 모듈이 아닌 핵심 크리티컬 비즈니스 서비스(결제, 보안, 데이터 정합성 등) 및 Git Diff로 탐지된 변경분(Delta)에 한하여 증분식 검증(Incremental Mutation Strategy)을 수행하며, 핵심 서비스 기준 **Mutation Score 75% 이상**을 품질 기준으로 삼는다. 이 기준은 `build.gradle` 의 `mutationThreshold=75`(환경변수 `STRICT_MUTATION=true` 시)로 기계 강제할 수 있으나, **현행 CI 는 리포트 전용(`STRICT_MUTATION=false` → `mutationThreshold=0`)으로 운영되어 스코어 미달이 빌드를 파손하지 않는다.** 각 대상 클래스의 실측 스코어가 75%를 상회함을 확인한 뒤 `STRICT_MUTATION=true` 로 전환하여 하드 게이트화하며, 미달 상태에서의 전환은 빌드 파손을 유발하므로 금지한다. 일반 보조 비즈니스 서비스 및 단순 CRUD 로직은 돌연변이 테스트 강제 의무에서 영구히 면제한다.
 
 
