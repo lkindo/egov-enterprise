@@ -243,7 +243,27 @@ export default function UserOrgHubClient({
   const [activeDeptId, setActiveDeptId] = useState<string | null>(null);
   /** 드래그 중 가로 이동 거리. 이 값으로 계층(깊이)이 결정된다 — 없으면 순서만 바뀌고 계층은 그대로다. */
   const [deptOffsetLeft, setDeptOffsetLeft] = useState(0);
+  /** 현재 드롭 대상. 메뉴 관리(MenuAdminClient)와 동일하게 실시간 투영을 계산하기 위해 추적한다. */
+  const [overDeptId, setOverDeptId] = useState<string | null>(null);
   const [hasDeptChanges, setHasDeptChanges] = useState(false);
+
+  /**
+   * 드래그 중 투영(projection) — 지금 놓으면 어떤 깊이/부모가 되는지 실시간 계산한다.
+   * 종전에는 onDragEnd 에서만 계산해, 끄는 동안 결과를 알 수 없었고 최상단 이동이나
+   * 부모 전환이 의도대로 됐는지 놓아봐야만 알 수 있었다. (메뉴 관리와 동일한 패턴)
+   */
+  const deptProjected = useMemo(() => {
+    if (!activeDeptId || !overDeptId) return null;
+    return getDeptProjection(flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft, INDENTATION_WIDTH);
+  }, [flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft]);
+
+  /** 드래그 중인 노드에 투영 깊이를 입혀 들여쓰기가 즉시 보이게 한다. */
+  const previewDepts = useMemo(
+    () => flattenedDepts.map((n) =>
+      n.ognzId === activeDeptId && deptProjected ? { ...n, depth: deptProjected.depth } : n
+    ),
+    [flattenedDepts, activeDeptId, deptProjected]
+  );
 
   const departments = useMemo(() => {
     const list = deptsData?.list;
@@ -559,7 +579,13 @@ export default function UserOrgHubClient({
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                                onDragStart={(e) => { setActiveDeptId(e.active.id as string); setDeptOffsetLeft(0); }}
+                                onDragStart={(e) => {
+                                    setActiveDeptId(e.active.id as string);
+                                    // 시작 시 드롭 대상을 자기 자신으로 두어야 첫 프레임부터 투영이 계산된다.
+                                    setOverDeptId(e.active.id as string);
+                                    setDeptOffsetLeft(0);
+                                }}
+                                onDragOver={({ over }) => setOverDeptId((over?.id as string) ?? null)}
                                 // ⚠ 계층(깊이) 변경은 '가로' 드래그 거리로 결정된다. 종전에는 이 핸들러가 없어
                                 //    getDeptProjection 에 dragOffset=0 이 고정으로 들어갔고, 그 결과
                                 //    projectedDepth = dragItem.depth + Math.round(0 / indentationWidth) = 기존 깊이
@@ -568,28 +594,27 @@ export default function UserOrgHubClient({
                                 onDragMove={({ delta }) => setDeptOffsetLeft(delta.x)}
                                 onDragEnd={(event) => {
                                     const { active, over } = event;
-                                    if (over && active.id !== over.id) {
+                                    // 제자리에 놓아도(active===over) 가로로 밀어 깊이만 바꾸는 경우가 있으므로
+                                    // 위치 변경 여부가 아니라 투영 결과를 기준으로 반영한다.
+                                    if (over && deptProjected) {
                                         setFlattenedDepts((items) => {
                                             const oldIndex = items.findIndex(n => n.ognzId === active.id);
                                             const newIndex = items.findIndex(n => n.ognzId === over.id);
-                                            const newItems = arrayMove(items, oldIndex, newIndex);
-
-                                            const proj = getDeptProjection(items, active.id as string, over.id as string, deptOffsetLeft, INDENTATION_WIDTH);
-                                            if (proj) {
-                                                const idx = newItems.findIndex(n => n.ognzId === active.id);
-                                                newItems[idx] = { ...newItems[idx], parentId: proj.parentId, depth: proj.depth };
-                                            }
+                                            const newItems = oldIndex === newIndex ? items.slice() : arrayMove(items, oldIndex, newIndex);
+                                            const idx = newItems.findIndex(n => n.ognzId === active.id);
+                                            newItems[idx] = { ...newItems[idx], parentId: deptProjected.parentId, depth: deptProjected.depth };
                                             return newItems;
                                         });
                                         setHasDeptChanges(true);
                                     }
                                     setActiveDeptId(null);
+                                    setOverDeptId(null);
                                     setDeptOffsetLeft(0);
                                 }}
                             >
-                                <SortableContext items={flattenedDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
+                                <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-1">
-                                        {flattenedDepts.map((node) => (
+                                        {previewDepts.map((node) => (
                                             <SortableDeptNode
                                                 key={node.ognzId}
                                                 node={node}
