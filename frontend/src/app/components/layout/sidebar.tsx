@@ -32,10 +32,14 @@ export function Sidebar({
   const queryClient = useQueryClient();
 
   // Head Menus (Top Domains) Query
+  // ⚠ initialData 에 빈 배열을 넘기면 React Query 는 "데이터 이미 있음"으로 판정하고 staleTime 동안
+  //   queryFn 을 아예 호출하지 않는다. 서버 prefetch(getInitialMenus)가 토큰 부재·백엔드 장애로 [] 를
+  //   반환하면 메뉴가 영구히 빈 채로 남는다(실측: 그 상태에서 브라우저의 menus API 호출 0건).
+  //   비어 있을 때는 initialData 를 주지 않아 클라이언트가 직접 조회(복구)하도록 한다.
   const { data: topMenus = initialMenus } = useQuery({
     queryKey: ['menus', 'head'],
     queryFn: () => menuService.getHeadMenus(),
-    initialData: resolvedMenus,
+    initialData: resolvedMenus.length > 0 ? resolvedMenus : undefined,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 

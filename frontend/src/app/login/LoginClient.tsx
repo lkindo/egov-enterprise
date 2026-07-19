@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { useMessage } from '@/hooks/useMessage';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 
 function LoginContent() {
     const { t } = useMessage();
@@ -24,18 +23,27 @@ function LoginContent() {
     const { login, user, loading } = useAuth();
     const router = useRouter();
 
-    // 이미 로그인된 상태라면 워크스페이스로 자동 이동
-    React.useEffect(() => {
-        if (!loading && user) {
-            router.replace('/admin/work-hub');
-        }
-    }, [user, loading, router]);
-
     const searchParams = useSearchParams();
     // 오픈 리다이렉트 방지: 동일 출처 상대경로("/..."로 시작, 단 "//"·"/\\" 프로토콜상대/백슬래시 우회 차단)만 허용.
     // 절대 URL(https://evil.com)·프로토콜상대 URL(//evil.com)은 기본 경로로 폴백한다.
     const rawRedirect = searchParams.get('redirect') || '/admin/work-hub';
     const redirectUrl = /^\/(?![/\\])/.test(rawRedirect) ? rawRedirect : '/admin/work-hub';
+
+    // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
+    // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
+    const justLoggedIn = React.useRef(false);
+
+    // [소프트 전환] 이미 인증된 상태로 로그인 페이지에 온 경우의 자동 이동.
+    // 이때는 루트 레이아웃이 이미 토큰을 가진 채 렌더되어 메뉴도 적재된 상태이므로 소프트 전환으로 충분하다.
+    // ⚠ 리다이렉트 발사 지점은 이 곳과 handleSubmit 성공부 단 두 곳이며, justLoggedIn 으로 상호 배타적이다.
+    //   과거에는 두 지점이 동시에(useEffect 즉시 + handleSubmit 1300ms 뒤 replace+refresh) 발사되어,
+    //   첫 전환이 안착하기 전에 refresh() 가 그 페이로드를 무효화해 "로그인 인증 중" 오버레이에 영구
+    //   고착됐다(전환 3초 지연 시 40초+ 고착 / 200ms 지연 시 정상 — 대조 재현으로 확정).
+    React.useEffect(() => {
+        if (!loading && user && !justLoggedIn.current) {
+            router.replace(redirectUrl);
+        }
+    }, [user, loading, router, redirectUrl]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,20 +55,26 @@ function LoginContent() {
         setError('');
         setIsSubmitting(true);
         setAuthStep(1);
+        // login() 이 user 를 세팅하는 순간 위 useEffect 가 소프트 전환을 발사하는 것을 막는다(경합 차단).
+        justLoggedIn.current = true;
 
         try {
             await login({ id, password });
 
-            // 프리미엄 체감을 위한 단계별 시각적 피드백
+            // 인증 성공 → "인증 완료 / 업무 환경 동기화" 단계 표시.
+            // (기존에는 setAuthStep(2) 호출이 저장소 어디에도 없어 이 분기가 도달 불가능한 死코드였다.)
+            setAuthStep(2);
 
-            await new Promise(resolve => setTimeout(resolve, 800));
-            toast.success("인증 성공: 보안 세션이 성공적으로 수립되었습니다.");
-
-            setTimeout(() => {
-                router.replace(redirectUrl);
-                router.refresh();
-            }, 500);
+            // [하드 전환] 세션 경계에서는 반드시 전체 문서를 다시 받는다. router.replace 로는 안 된다.
+            // 루트 레이아웃(app/layout.tsx)이 서버에서 cookies() 로 accessToken 을 읽어 GNB·사이드바 메뉴를
+            // prefetch 하는데, 클라이언트 소프트 전환은 레이아웃을 재실행하지 않는다. 그 결과 로그인 직전
+            // (비인증) 시점에 만들어진 "빈 메뉴"가 그대로 남아 상단/사이드 메뉴가 통째로 사라진다.
+            // (실측: 소프트 전환 직후 header+aside 링크 3개 → F5 후 22개.)
+            // 과거 이 갱신은 router.refresh() 가 대신했으나, 두 번째 replace 와 동시 발사되어 진행 중이던
+            // 전환을 무효화시키는 무한 "인증중" 고착의 원인이었다. 하드 전환은 그 부작용 없이 목적을 이룬다.
+            window.location.replace(redirectUrl);
         } catch (err: any) {
+            justLoggedIn.current = false;
             console.error(err);
             setError(err.message || t('login.errorFailed'));
             setIsSubmitting(false);

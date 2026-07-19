@@ -30,6 +30,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 ;
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
 
@@ -60,7 +62,16 @@ export function Header({
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const menus = resolvedMenus;
+
+  // 서버 prefetch 가 비어 있으면(토큰 부재·백엔드 장애) 클라이언트가 직접 조회해 GNB 를 복구한다.
+  // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
+  // Sidebar 와 동일한 queryKey 를 사용하므로 캐시를 공유하며 중복 요청은 발생하지 않는다.
+  const { data: menus = [] } = useQuery({
+    queryKey: ['menus', 'head'],
+    queryFn: () => menuService.getHeadMenus(),
+    initialData: resolvedMenus.length > 0 ? resolvedMenus : undefined,
+    staleTime: 5 * 60 * 1000,
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
