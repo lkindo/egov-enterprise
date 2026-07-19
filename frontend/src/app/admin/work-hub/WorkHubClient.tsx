@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Briefcase, 
-  Search, 
-  ClipboardList, 
-  FileText, 
-  Activity, 
-  Plus, 
-  Layers, 
-  RefreshCcw, 
+import { Briefcase,
+  Search,
+  ClipboardList,
+  FileText,
+  Activity,
+  Plus,
+  Layers,
+  RefreshCcw,
+  CalendarDays,
   MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,21 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 ;
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { reportService } from '@/services/business/user/ReportService';
+import { Calendar } from '@/components/ui/calendar';
+import { getDeptScheduleMonthList } from '@/services/business/schedule/deptScheduleService';
+import type { DeptSchedule } from '@/types/business/schedule';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+
+/** 일정 날짜 컬럼(schdlBgngYmd/schdlEndYmd)은 varchar(8) 'yyyyMMdd' 다. 시각 정보는 스키마에 없다. */
+function parseYmd(ymd?: string | null): Date | null {
+  if (!ymd || ymd.length < 8) return null;
+  const y = Number(ymd.slice(0, 4));
+  const m = Number(ymd.slice(4, 6));
+  const d = Number(ymd.slice(6, 8));
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
 
 export default function WorkHubClient({ jobs: initialJobs = [], reports: initialReports = [], defaultTab = 'job' }: any) {
   const router = useRouter();
@@ -38,7 +54,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
   const [currentDate, setCurrentDate] = useState(new Date());
+  // 캘린더에서 선택한 날짜(미선택 시 그 달 전체 일정을 목록에 보여준다).
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
@@ -60,6 +79,57 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
+
+  // ⚠ yearMonth 는 반드시 하이픈 없는 'yyyyMM'(6자)여야 한다.
+  //   ScheduleRepository.findMonthlySchedules 가 CONCAT(:yearMonth,'01') / CONCAT(:yearMonth,'31') 로
+  //   varchar(8) 'yyyyMMdd' 컬럼과 문자열 비교하므로, 'yyyy-MM' 을 보내면 예외 없이 조용히 0건이 된다.
+  //   (deptScheduleService 의 JSDoc 이 'YYYY-MM' 이라 적혀 있으나 오기다.)
+  const yearMonth = format(currentDate, 'yyyyMM');
+  const { data: scheduleData, isLoading: isScheduleLoading } = useQuery({
+    queryKey: ['work-schedules', yearMonth],
+    queryFn: () => getDeptScheduleMonthList({ yearMonth }),
+    enabled: activeTab === 'calendar',
+  });
+  // /monthly 는 PageResponse 가 아니라 배열을 그대로 반환한다.
+  const schedules: DeptSchedule[] = scheduleData || [];
+
+  /** 일정이 하나라도 있는 날짜들 — 캘린더 셀에 마커를 찍는 데 쓴다. */
+  const scheduleDates = useMemo(
+    () => schedules.map((s) => parseYmd(s.schdlBgngYmd)).filter((d): d is Date => d !== null),
+    [schedules]
+  );
+
+  /** 선택한 날짜의 일정(미선택이면 그 달 전체). 일정은 일 단위라 시작일 기준으로 매칭한다. */
+  const visibleSchedules = useMemo(() => {
+    if (!selectedDate) return schedules;
+    const key = format(selectedDate, 'yyyyMMdd');
+    return schedules.filter((s) => {
+      const begin = s.schdlBgngYmd?.slice(0, 8);
+      const end = (s.schdlEndYmd || s.schdlBgngYmd)?.slice(0, 8);
+      return !!begin && !!end && begin <= key && key <= end;
+    });
+  }, [schedules, selectedDate]);
+
+  const scheduleColumns: Column<DeptSchedule>[] = [
+    {
+      header: '일자',
+      accessor: (item) => (
+        <span className="font-mono text-xs font-bold text-muted-foreground">
+          {item.schdlBgngYmd ? format(parseYmd(item.schdlBgngYmd) as Date, 'MM.dd (E)', { locale: ko }) : '-'}
+        </span>
+      ),
+      className: 'w-32',
+    },
+    {
+      header: '일정명',
+      accessor: (item) => <span className="font-bold tracking-tight">{item.schdlNm || '(제목 없음)'}</span>,
+    },
+    {
+      header: '장소',
+      accessor: (item) => <span className="text-sm text-muted-foreground">{item.schdlPlcNm || '-'}</span>,
+      className: 'w-48',
+    },
+  ];
 
   const jobColumns: Column<any>[] = [
     {
@@ -158,6 +228,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                >
                  자산
                </Button>
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'calendar' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                 onClick={() => setTab('calendar')}
+               >
+                 일정
+               </Button>
              </div>
             <Button className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
               <Plus size={18} /> 새 업무 생성
@@ -169,38 +247,93 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       <HubMetricGrid>
         <HubMetricCard title="업무 노드" value={jobs.length} icon={Layers} color="primary" />
         <HubMetricCard title="보고 데이터" value={reports.length} icon={FileText} color="amber" />
-        <HubMetricCard title="시스템 상태" value="정상" icon={Activity} color="emerald" status="안전함" />
+        <HubMetricCard title="이번 달 일정" value={schedules.length} icon={CalendarDays} color="indigo" />
         <HubMetricCard title="동기화 빈도" value="매일" icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title={activeTab === 'job' ? "업무 워크플로우 매트릭스" : "비즈니스 자산 아카이브"}
-        description={activeTab === 'job' ? "부서별 업무 흐름 및 처리 상태에 대한 실시간 스트림입니다." : "조직 내에서 생성된 모든 보고 및 데이터 자산의 명세입니다."}
-        icon={activeTab === 'job' ? ClipboardList : FileText}
+        title={activeTab === 'calendar' ? "일정 캘린더" : activeTab === 'job' ? "업무 워크플로우 매트릭스" : "비즈니스 자산 아카이브"}
+        description={activeTab === 'calendar' ? "월간 일정 현황입니다. 날짜를 선택하면 해당 일자의 일정만 추려 보여줍니다." : activeTab === 'job' ? "부서별 업무 흐름 및 처리 상태에 대한 실시간 스트림입니다." : "조직 내에서 생성된 모든 보고 및 데이터 자산의 명세입니다."}
+        icon={activeTab === 'calendar' ? CalendarDays : activeTab === 'job' ? ClipboardList : FileText}
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
         <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <div className="relative group max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-              <Input
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                placeholder="검색어를 입력하십시오..."
-              />
+          {/* 검색은 서버 필터가 있는 업무/보고 탭에만 노출한다. 일정은 월 단위 조회라 검색 대상이 아니다. */}
+          {activeTab !== 'calendar' && (
+            <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
+              <div className="relative group max-w-xl w-full">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                <Input
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                  placeholder="검색어를 입력하십시오..."
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={activeTab === 'job' ? jobColumns : reportColumns}
-              data={activeTab === 'job' ? jobs : reports}
-              loading={activeTab === 'job' ? isJobLoading : isReportLoading}
-              emptyMessage="식별된 데이터 유닛이 없습니다."
-              isPremium={true}
-              className="border-none bg-transparent shadow-none"
-            />
+            {activeTab === 'calendar' ? (
+              <div className="grid gap-10 lg:grid-cols-[auto_1fr] items-start">
+                <div className="rounded-[var(--radius-hub-item)] border border-border/50 bg-card/60 p-6 shadow-inner">
+                  <Calendar
+                    mode="single"
+                    locale={ko}
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    month={currentDate}
+                    onMonthChange={(month) => { setCurrentDate(month); setSelectedDate(undefined); }}
+                    fixedWeeks
+                    // 일정이 있는 날에 강조 표시. modifiersClassNames 는 클래스 1개만 붙일 수 있어
+                    // '건수' 같은 가변 정보는 표현할 수 없다(react-day-picker v9 제약).
+                    modifiers={{ hasSchedule: scheduleDates }}
+                    modifiersClassNames={{ hasSchedule: 'font-black text-primary underline decoration-2 underline-offset-4' }}
+                    // 래퍼 기본 셀 크기는 Popover 선택기용(h-9 w-9)이라 월간 뷰에 맞게 키운다.
+                    // calendar.tsx 가 호출자 classNames 를 뒤에 스프레드하므로 이 값이 이긴다.
+                    classNames={{
+                      months: 'relative flex flex-col',
+                      month_grid: 'w-full border-collapse',
+                      day: 'h-12 w-12 text-center p-0',
+                      day_button: 'e2e-day-button h-12 w-12 rounded-lg font-bold hover:bg-muted transition-colors',
+                      weekday: 'w-12 text-[11px] font-black uppercase text-muted-foreground',
+                    }}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h4 className="text-sm font-black tracking-tight text-foreground">
+                      {selectedDate
+                        ? `${format(selectedDate, 'yyyy년 M월 d일 (E)', { locale: ko })} 일정`
+                        : `${format(currentDate, 'yyyy년 M월', { locale: ko })} 전체 일정`}
+                    </h4>
+                    {selectedDate && (
+                      <Button variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase" onClick={() => setSelectedDate(undefined)}>
+                        전체 보기
+                      </Button>
+                    )}
+                  </div>
+                  <StandardDataTable
+                    columns={scheduleColumns}
+                    data={visibleSchedules}
+                    loading={isScheduleLoading}
+                    keyField="schdlId"
+                    emptyMessage="등록된 일정이 없습니다."
+                    isPremium={true}
+                    className="border-none bg-transparent shadow-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <StandardDataTable
+                columns={activeTab === 'job' ? jobColumns : reportColumns}
+                data={activeTab === 'job' ? jobs : reports}
+                loading={activeTab === 'job' ? isJobLoading : isReportLoading}
+                emptyMessage="식별된 데이터 유닛이 없습니다."
+                isPremium={true}
+                className="border-none bg-transparent shadow-none"
+              />
+            )}
           </div>
         </div>
       </HubSectionCard>
