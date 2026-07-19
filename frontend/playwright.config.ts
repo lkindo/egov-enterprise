@@ -170,6 +170,13 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            // 조직(부서 생성·계층·삭제가드) ↔ 일정(등록·조회축·수정·삭제) 통합 사슬 회귀 방어
+            name: 'tier-24-org-schedule',
+            testMatch: /24-org-schedule-journey\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },
