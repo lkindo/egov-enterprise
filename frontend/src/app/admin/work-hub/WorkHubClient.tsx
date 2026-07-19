@@ -313,7 +313,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                  className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('report')}
                >
-                 자산
+                 업무 보고
                </Button>
                <Button
                  variant="ghost"
@@ -344,8 +344,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       </HubMetricGrid>
 
       <HubSectionCard
-        title={activeTab === 'calendar' ? "일정 캘린더" : activeTab === 'job' ? "업무 워크플로우 매트릭스" : "비즈니스 자산 아카이브"}
-        description={activeTab === 'calendar' ? "월간 일정 현황입니다. 날짜를 선택하면 해당 일자의 일정만 추려 보여줍니다." : activeTab === 'job' ? "부서별 업무 흐름 및 처리 상태에 대한 실시간 스트림입니다." : "조직 내에서 생성된 모든 보고 및 데이터 자산의 명세입니다."}
+        title={activeTab === 'calendar' ? "일정 캘린더" : activeTab === 'job' ? "업무 워크플로우 매트릭스" : "업무 보고 아카이브"}
+        description={activeTab === 'calendar' ? "월간 일정 현황입니다. 날짜를 선택하면 해당 일자의 일정만 추려 보여줍니다." : activeTab === 'job' ? "부서별 업무 흐름 및 처리 상태에 대한 실시간 스트림입니다." : "조직 내에서 생성된 업무 보고의 명세입니다."}
         icon={activeTab === 'calendar' ? CalendarDays : activeTab === 'job' ? ClipboardList : FileText}
         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >

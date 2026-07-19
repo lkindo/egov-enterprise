@@ -70,6 +70,7 @@ export class ProductivitySuitePage {
     async verifyWorkflowHubTabs() {
         console.log(`>>> Verifying Workflow Hub Tabs`);
         await expect(this.page.getByRole('button', { name: '워크플로우' })).toBeVisible();
-        await expect(this.page.getByRole('button', { name: '자산' })).toBeVisible();
+        // [메뉴 어휘 통일 V2_27] 탭 라벨을 메뉴명과 맞춰 '자산' → '업무 보고' 로 변경했다.
+        await expect(this.page.getByRole('button', { name: '업무 보고' })).toBeVisible();
     }
 }
