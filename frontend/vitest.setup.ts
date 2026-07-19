@@ -172,7 +172,21 @@ vi.mock('lucide-react', () => {
         exports[name] = mockIcon(name);
     });
 
-    return exports;
+    // [열거 대신 Proxy] 위 배열은 allow-list 라, 화면에 새 아이콘을 하나 쓸 때마다 무관한 테스트가
+    // "No 'X' export is defined on the lucide-react mock" 으로 깨졌다(실제로 CalendarDays 로 깨져 있었다).
+    // 아이콘은 이름만 다른 동형 컴포넌트이므로 요청되는 이름마다 즉석 생성한다.
+    // 주의: 심볼 키와 'then' 은 반드시 undefined 를 돌려줘야 한다 — 모듈을 await 할 때
+    // then 이 함수로 보이면 thenable 로 오인돼 모듈 로딩이 멈춘다.
+    return new Proxy(exports, {
+        get(target, prop) {
+            if (typeof prop === 'symbol' || prop === 'then' || prop in target) {
+                return target[prop as string];
+            }
+            target[prop as string] = mockIcon(String(prop));
+            return target[prop as string];
+        },
+        has: () => true,
+    });
 });
 
 window.scrollTo = vi.fn();
