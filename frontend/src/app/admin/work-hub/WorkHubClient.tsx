@@ -82,11 +82,23 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     }
   }, [searchParams]);
 
+  // 탭 ↔ 라우트 대응. 세 탭은 각자 고유 경로를 가지며, 그 경로가 그대로 사이드바 메뉴 항목이다.
+  //
+  // [왜 경로인가] 종전에는 setTab 이 '/admin/work-hub?tab=...' 을 **하드코딩**해 두 가지 문제가 있었다.
+  //  ① 스마트 툴킷 허브 쪽 경로(/smart-toolkit/*)로 들어와 탭을 누르면 URL 이 /admin/work-hub 로
+  //     튕겨나가 돌아올 UI 경로가 없었다(편도 진입점).
+  //  ② 세 메뉴가 같은 경로에 쿼리만 달라, 사이드바의 활성 표시가 쿼리 일치에 의존하는 취약한
+  //     구조였다. "다른 메뉴를 눌렀는데 엉뚱한 메뉴가 활성" 증상의 근본 원인이 이것이었다.
+  // 탭마다 실제 경로를 부여하면 두 문제가 함께 사라지고, 북마크·딥링크도 자연스러워진다.
+  const TAB_ROUTES: Record<'job' | 'report' | 'calendar', string> = {
+    job: '/smart-toolkit/dept-job',
+    report: '/smart-toolkit/work-report',
+    calendar: '/smart-toolkit/schedule',
+  };
+
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
-    const params = new URLSearchParams(searchParams);
-    params.set('tab', tab);
-    router.push(`/admin/work-hub?${params.toString()}`, { scroll: false });
+    router.push(TAB_ROUTES[tab], { scroll: false });
   };
 
   const { data: jobData, isLoading: isJobLoading } = useQuery({
