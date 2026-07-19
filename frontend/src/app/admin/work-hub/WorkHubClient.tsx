@@ -68,6 +68,17 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
   const confirm = useConfirm();
 
+  // URL 의 tab 쿼리와 탭 상태를 동기화한다.
+  // activeTab 은 useState(initialTab) 이라 '최초 마운트' 때만 쿼리를 읽는다. 그래서 이미 이 화면에
+  // 있는 상태에서 사이드바의 '일정 관리'(?tab=calendar) 같은 링크를 누르면, 클라이언트 내비게이션이
+  // 컴포넌트를 언마운트하지 않으므로 URL 만 바뀌고 화면은 이전 탭에 머물렀다.
+  React.useEffect(() => {
+    const q = searchParams.get('tab');
+    if (q === 'job' || q === 'report' || q === 'calendar') {
+      setTabState((prev) => (prev === q ? prev : q));
+    }
+  }, [searchParams]);
+
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
     const params = new URLSearchParams(searchParams);
