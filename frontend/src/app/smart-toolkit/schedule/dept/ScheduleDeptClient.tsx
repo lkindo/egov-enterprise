@@ -47,8 +47,10 @@ const formatYmd = (ymd?: string) =>
 
 export default function ScheduleDeptClient() {
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
+    // 서버는 pageIndex/pageUnit 을 받는다. 종전의 pageNo 는 ApiService 매핑 대상이 아니라
+    // 그대로 전달돼 서버에서 무시됐고, 그래서 '조회' 버튼이 사실상 무동작이었다.
     const [params, setParams] = useState<ScheduleSearchParams>({
-        pageNo: 1,
+        pageIndex: 1,
         schdlNm: '',
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -85,7 +87,7 @@ export default function ScheduleDeptClient() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        setParams(prev => ({ ...prev, pageNo: 1 }));
+        setParams(prev => ({ ...prev, pageIndex: 1 }));
     };
 
     const handleCreate = () => {

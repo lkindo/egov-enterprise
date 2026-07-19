@@ -25,26 +25,29 @@ public class ScheduleApiController {
 
     private final ScheduleService egovScheduleService;
 
-    @Operation(summary = "일정 목록 조회", description = "사용자의 일정 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "일정 목록 조회", description = "사용자가 담당자인 일정 목록을 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @RequestParam(defaultValue = "10") int pageUnit,
+            @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList(userId, pageable);
+        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList(userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 
-    @Operation(summary = "부서 일정 목록 조회", description = "부서의 일정 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "부서 일정 목록 조회",
+            description = "로그인 사용자와 같은 부서의 일정 목록을 페이징하여 조회합니다. schdlNm 으로 부분일치 검색할 수 있습니다.")
     @GetMapping("/dept")
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getDeptScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @RequestParam(defaultValue = "10") int pageUnit,
+            @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        // schdlSeCd = "1" is Dept in eGov
-        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("1", userId, pageable);
+        // schdlSeCd = "1" is Dept in eGov. 필터축은 담당자가 아니라 부서(schdlDeptId)다.
+        Page<ScheduleDto> pageResult = egovScheduleService.getDeptScheduleList("1", userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 

@@ -3,6 +3,8 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
@@ -26,19 +28,45 @@ public class ScheduleService extends BaseAbstractService {
 
     private final ScheduleRepository scheduleRepository;
     private final ScheduleMapper scheduleMapper;
+    private final UserRepository userRepository;
+
+    /**
+     * 소속 조직 미배정(ognz_id = null) 사용자의 폴백 조직. tb_ognz_info 의 '기본조직' 이다.
+     * 현재 사용자 전원이 미배정 상태라 폴백이 사실상의 기본 부서로 동작하며,
+     * 추후 사용자에게 실제 부서를 배정하면 자연히 부서별로 분리된다.
+     */
+    private static final String DEFAULT_ORG_ID = "ORGNZT_0000000000000";
+
+    /** 로그인 사용자의 소속 조직 ID. 미배정이면 기본조직으로 폴백한다. */
+    private String resolveDeptId(String loginId) {
+        if (loginId == null || loginId.isBlank()) {
+            return DEFAULT_ORG_ID;
+        }
+        return userRepository.findByUserId(loginId)
+                .map(User::getOgnzId)
+                .filter(ognzId -> ognzId != null && !ognzId.isBlank())
+                .orElse(DEFAULT_ORG_ID);
+    }
 
     public Page<ScheduleDto> getScheduleList(String userId, @NonNull Pageable pageable) {
-        return scheduleRepository.searchSchedules(null, userId, Objects.requireNonNull(pageable))
+        return getScheduleList(userId, null, pageable);
+    }
+
+    /** 개인 축 목록 — 내가 담당자인 일정. */
+    public Page<ScheduleDto> getScheduleList(String userId, String searchWrd, @NonNull Pageable pageable) {
+        return scheduleRepository.searchSchedules(null, userId, searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
-    public Page<ScheduleDto> getScheduleList(String schdlSeCd, String ownerId, @NonNull Pageable pageable) {
-        return scheduleRepository.searchSchedules(schdlSeCd, ownerId, Objects.requireNonNull(pageable))
+    /** 부서 축 목록 — 로그인 사용자와 같은 부서의 일정. (종전에는 담당자 축이라 '내가 만든 것'만 보였다.) */
+    public Page<ScheduleDto> getDeptScheduleList(String schdlSeCd, String loginId, String searchWrd, @NonNull Pageable pageable) {
+        return scheduleRepository.searchDeptSchedules(schdlSeCd, resolveDeptId(loginId), searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
+    /** 캘린더용 월별 조회 — 내 일정과 우리 부서 일정을 합쳐서 돌려준다. */
     public List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth) {
-        return scheduleRepository.findMonthlySchedules(userId, yearMonth).stream()
+        return scheduleRepository.findMonthlySchedules(userId, resolveDeptId(userId), yearMonth).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -78,7 +106,9 @@ public class ScheduleService extends BaseAbstractService {
         Schedule entity = Schedule.builder()
                 .schdlId(schdlId)
                 .schdlSeCd(dto.getSchdlSeCd())
-                .schdlDeptId(dto.getSchdlDeptId())
+                // [부서 귀속] 소속 조직은 서버가 정한다. 클라이언트 값을 신뢰하면 남의 부서 일정으로
+                //   끼워 넣을 수 있고, 미전송 시 null 이 되어 부서 목록에서 사라진다.
+                .schdlDeptId(resolveDeptId(userId))
                 .schdlKndCd(dto.getSchdlKndCd())
                 .schdlNm(dto.getSchdlNm())
                 .schdlCn(dto.getSchdlCn())

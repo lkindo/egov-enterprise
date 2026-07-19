@@ -38,6 +38,10 @@ class ScheduleServiceTest {
     @Mock
     private ScheduleMapper scheduleMapper;
 
+    /** 담당자/부서 귀속을 서버가 정하면서 소속 조직 조회가 필요해졌다. 미스텁 시 Optional.empty() → 기본조직 폴백. */
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
     @InjectMocks
     private ScheduleService scheduleService;
 
@@ -52,7 +56,7 @@ class ScheduleServiceTest {
         // given
         Pageable pageable = PageRequest.of(0, 10);
         Schedule entity = Schedule.builder().schdlId("S1").schdlNm("Test Schedule").build();
-        given(scheduleRepository.searchSchedules(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
+        given(scheduleRepository.searchSchedules(any(), any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
         given(scheduleMapper.toDto(any())).willReturn(
                 ScheduleDto.builder().schdlId("S1").schdlNm("Test Schedule").build());
 
@@ -83,20 +87,34 @@ class ScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("일정 생성")
+    @DisplayName("일정 생성 — PK·담당자·부서는 서버가 정하고 클라이언트 값은 무시한다")
     void createSchedule() {
-        // given
-        String userId = "user1";
+        // given: 클라이언트가 PK 와 담당자, 부서를 위조해 보낸 상황
+        String loginId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
+                .schdlId("FORGED_PK")
+                .schdlPicId("attacker")
+                .schdlDeptId("OTHER_DEPT")
                 .schdlNm("New Schedule")
                 .schdlSeCd("1")
                 .build();
+        given(userRepository.findByUserId(loginId)).willReturn(Optional.empty()); // 조직 미배정 → 기본조직 폴백
 
         // when
-        scheduleService.createSchedule(userId, dto);
+        String newId = scheduleService.createSchedule(loginId, dto);
 
         // then
-        verify(scheduleRepository).save(any(Schedule.class));
+        org.mockito.ArgumentCaptor<Schedule> captor = org.mockito.ArgumentCaptor.forClass(Schedule.class);
+        verify(scheduleRepository).save(captor.capture());
+        Schedule saved = captor.getValue();
+
+        // PK 는 서버 채번 (클라이언트가 보낸 FORGED_PK 를 쓰지 않는다)
+        assertThat(saved.getSchdlId()).isNotEqualTo("FORGED_PK").startsWith("SCHDL_");
+        assertThat(newId).isEqualTo(saved.getSchdlId());
+        // 담당자는 인증 주체로 고정 (매스어사인먼트 차단)
+        assertThat(saved.getSchdlPicId()).isEqualTo(loginId);
+        // 부서도 서버가 결정 (미배정이므로 기본조직)
+        assertThat(saved.getSchdlDeptId()).isEqualTo("ORGNZT_0000000000000");
     }
 
     @Test
