@@ -112,13 +112,20 @@ public class DeptJobApiController {
             @RequestParam(required = false) String deptId,
             @RequestParam(required = false) String deptJobbxId,
             @RequestParam(required = false) String searchCondition,
-            @RequestParam(required = false) String searchKeyword,
+            // 파라미터명은 형제 엔드포인트(/boxes)와 동일하게 searchWrd 로 맞춘다.
+            // 프론트 ApiService 가 만들어 보내는 이름과 어긋나면 검색이 조용히 무력화된다.
+            @RequestParam(required = false) String searchWrd,
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
 
+        // DeptJobService 는 searchCondition 이 "0"(업무명)/"1"(내용)/"2"(담당자) 중 하나일 때만
+        // 검색 조건을 붙인다. null 이면 키워드를 받고도 아무 조건 없이 전체를 돌려준다 —
+        // 사용자에겐 "검색이 먹지 않는" 것으로 보이므로, 조건 미지정 시 업무명 검색을 기본으로 둔다.
+        String condition = (searchCondition == null || searchCondition.isBlank()) ? "0" : searchCondition;
+
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
         Page<DeptJobDto> pageResult = deptJobService.getDeptJobList(
-                deptId, deptJobbxId, searchCondition, searchKeyword, pageable);
+                deptId, deptJobbxId, condition, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 

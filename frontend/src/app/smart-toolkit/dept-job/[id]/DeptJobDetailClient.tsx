@@ -1,218 +1,189 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Trash2, Home, ChevronRight, FileText, User, Calendar, CheckSquare } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-;
+import { ArrowLeft, ChevronRight, Home, Pencil, Trash2, User, Flag, Inbox } from 'lucide-react';
 
-interface DeptJob {
-    deptTaskId: string;
-    deptTaskNm: string;
-    deptTaskCn: string;
-    picNm?: string;
-    crtDt: string;
-    prrtyRnk: string;
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
 
-const DeptJobDetailClient = () => {
-    const [list, setList] = useState<DeptJob[]>([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [pageNo, setPageNo] = useState(1);
-    const [loading, setLoading] = useState(false);
+/**
+ * 부서 업무 상세·수정 화면.
+ *
+ * [종전 상태] 이 파일은 경로가 `[id]` 인데도 params 를 아예 받지 않고, 존재하지 않는
+ * `/deptjob` 를 호출하는 **목록 화면의 복제본**이었다. 형제 경로인 `selectDeptJobDetail/[id]`
+ * 는 이름과 달리 등록 폼의 복제본이었다(파일 주석이 스스로 인정하고 있었다).
+ * 그래서 목록에서 행을 눌러도 상세가 아니라 빈 등록 폼이 떴고, 부서 업무의 상세·수정 화면은
+ * 사실상 존재하지 않았다. 이 파일을 진짜 상세·수정 화면으로 대체한다.
+ *
+ * 조회·변경은 TanStack Query 로 다루고, 폼은 등록 화면과 공용인 DeptJobForm
+ * (useAppForm + generated-zod 확장, FE 헌법 제7조·제13조 2항)을 쓴다.
+ */
+export default function DeptJobDetailClient({ deptTaskId }: { deptTaskId: string }) {
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const confirm = useConfirm();
+    const [isEditing, setEditing] = React.useState(false);
 
-    const fetchList = async () => {
-        setLoading(true);
-        try {
-            const params = { pageNo, pageUnit: 10 };
-            const response = (await axios.get('/deptjob', { params })) as any;
-            setList(response.data.list || []);
-            setTotalCount(response.data.total || 0);
-            setTotalPages(response.data.totalPage || 0);
-        } catch (error) {
-            console.error('Failed to fetch dept jobs', error);
-        } finally {
-            setLoading(false);
-        }
+    const { data: job, isLoading, isError } = useQuery({
+        queryKey: ['dept-job', deptTaskId],
+        queryFn: () => deptJobUserService.getDeptJob(deptTaskId),
+        enabled: Boolean(deptTaskId),
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (values: DeptJobFormValues) => deptJobUserService.updateDeptJob(deptTaskId, values),
+        onSuccess: () => {
+            toast.success('업무가 수정되었습니다.');
+            setEditing(false);
+            queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskId] });
+            // 업무 워크플로우 탭의 목록도 갱신 대상이다.
+            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+        },
+        onError: () => toast.error('수정에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.'),
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => deptJobUserService.deleteDeptJob(deptTaskId),
+        onSuccess: () => {
+            toast.success('업무가 삭제되었습니다.');
+            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+            router.push('/smart-toolkit/dept-job');
+        },
+        onError: () => toast.error('삭제에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.'),
+    });
+
+    const handleDelete = async () => {
+        const ok = await confirm({
+            title: '업무 삭제',
+            message: `'${job?.deptTaskNm || '제목 없음'}' 업무를 삭제하시겠습니까? 삭제한 업무는 되돌릴 수 없습니다.`,
+            variant: 'destructive',
+            confirmText: '삭제',
+        });
+        if (ok) deleteMutation.mutate();
     };
 
-    useEffect(() => {
-        fetchList();
-    }, [pageNo]);
+    if (isLoading) {
+        return (
+            <div className="p-10 space-y-6">
+                <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+                <div className="h-64 bg-muted rounded animate-pulse" />
+            </div>
+        );
+    }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('삭제하시겠습니까?')) return;
-        try {
-            (await axios.delete(`/deptjob/${id}`)) as any;
-            fetchList();
-        } catch {
-            toast.error('삭제에 실패했습니다.');
-        }
-    };
-
-    const getPriorityBadge = (priority: string) => {
-        switch (priority) {
-            case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-md border border-rose-200">높음</span>;
-            case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md border border-amber-200">중간</span>;
-            default: return <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-bold rounded-md border border-border">낮음</span>;
-        }
-    };
+    if (isError || !job) {
+        return (
+            <div className="p-10 text-center space-y-4">
+                <p className="text-sm font-bold text-muted-foreground">
+                    업무를 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.
+                </p>
+                <Button variant="outline" onClick={() => router.push('/smart-toolkit/dept-job')} className="font-bold">
+                    목록으로
+                </Button>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit">
-                <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
-                    <Home className="w-4 h-4" /> 홈
+        <div className="p-6 md:p-10 space-y-8 max-w-4xl mx-auto">
+            <nav className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                <Home size={14} />
+                <ChevronRight size={12} />
+                <Link href="/smart-toolkit/dept-job" className="hover:text-primary transition-colors">
+                    업무 워크플로우
                 </Link>
-                <ChevronRight className="w-4 h-4" />
-                <span>스마트 툴킷</span>
-                <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-bold">부서업무 관리</span>
-            </div>
+                <ChevronRight size={12} />
+                <span className="text-foreground">{isEditing ? '업무 수정' : '업무 상세'}</span>
+            </nav>
 
-            <Card className="border-none shadow-xl overflow-hidden rounded-lg">
-                <CardHeader className="flex flex-row items-center justify-between pb-8 pt-8 px-8 border-b bg-muted/20">
-                    <div className="space-y-1">
-                        <CardTitle className="text-3xl font-bold tracking-tighter flex items-center gap-3">
-                            <Briefcase className="w-8 h-8 text-primary" /> 부서 업무 목록
+            <Card className="border-border shadow-sm">
+                <CardHeader className="flex flex-row items-start justify-between gap-4 border-b border-border pb-6">
+                    <div className="space-y-2 min-w-0">
+                        <CardTitle className="text-xl font-black tracking-tight break-words">
+                            {job.deptTaskNm}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground font-medium tracking-tight opacity-70">부서 운영 및 협업을 위한 통합 태스크 리스트</p>
-                    </div>
-                    <CardAction>
-                        <Link href="/smart-toolkit/dept-job/insertDeptJob">
-                            <Button size="lg" className="gap-2 shadow-lg font-bold bg-primary hover:bg-primary/90 transition-all active:scale-95">
-                                <Plus className="w-5 h-5" /> 업무 등록
-                            </Button>
-                        </Link>
-                    </CardAction>
-                </CardHeader>
-                <CardContent className="pt-10 px-8">
-                    <div className="mb-8 flex items-center gap-4">
-                        <div className="bg-surface-inverse text-surface-inverse-foreground px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 ring-8 ring-border">
-                            <CheckSquare className="w-5 h-5 text-primary" />
-                            <span className="text-sm font-bold opacity-60 tracking-tight">진행중인 총 업무</span>
-                            <span className="text-xl font-bold">{totalCount}건</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="font-bold gap-1">
+                                <Flag size={12} />
+                                {PRIORITY_LABEL[job.prrtyRnk ?? ''] ?? '우선순위 미지정'}
+                            </Badge>
+                            <Badge variant="outline" className="font-bold gap-1">
+                                <User size={12} />
+                                {job.picNm ?? '담당자 미지정'}
+                            </Badge>
+                            <Badge variant="outline" className="font-bold gap-1">
+                                <Inbox size={12} />
+                                {job.deptTaskBoxNm ?? '업무함 미지정'}
+                            </Badge>
                         </div>
                     </div>
 
-                    <div className="rounded-lg border-2 border-border overflow-hidden shadow-sm bg-card ring-1 ring-border">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="w-[80px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">순위</TableHead>
-                                    <TableHead className="w-[120px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">우선순위</TableHead>
-                                    <TableHead className="font-bold text-foreground text-xs py-6 tracking-[0.2em] px-4">업무 개요</TableHead>
-                                    <TableHead className="w-[150px] font-bold text-muted-foreground text-xs py-6 text-center tracking-[0.2em]">담당자</TableHead>
-                                    <TableHead className="w-[150px] font-bold text-muted-foreground text-xs py-6 text-center tracking-[0.2em]">등록일</TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold text-muted-foreground text-xs py-6 tracking-[0.2em]">관리</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    Array.from({ length: 5 }).map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                            <TableCell className="py-6"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : list.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold tracking-tight opacity-30">
-                                            등록된 업무가 없습니다.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    list.map((item, idx) => (
-                                        <TableRow key={item.deptTaskId} className="hover:bg-muted/50 transition-all border-b last:border-0 group">
-                                            <TableCell className="text-center font-mono text-sm text-muted-foreground py-6">
-                                                {totalCount - ((pageNo - 1) * 10) - idx}
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                {getPriorityBadge(item.prrtyRnk)}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-6">
-                                                <Link href={`/smart-toolkit/dept-job/selectDeptJobDetail/${item.deptTaskId}`} className="flex items-center gap-3">
-                                                    <FileText className="w-5 h-5 text-primary opacity-20 group-hover:opacity-100 transition-opacity" />
-                                                    <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                                                        {item.deptTaskNm}
-                                                    </span>
-                                                </Link>
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-card border border-border rounded-lg text-foreground font-bold text-sm shadow-sm">
-                                                    <User className="w-3.5 h-3.5 opacity-40" /> {item.picNm || '-'}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                <div className="flex items-center justify-center gap-2 text-muted-foreground font-bold text-sm">
-                                                    <Calendar className="w-4 h-4 opacity-30" /> {item.crtDt?.substring(0, 10)}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(item.deptTaskId)}
-                                                    className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-lg"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    {!isEditing && (
+                        <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="font-bold gap-1">
+                                <Pencil size={14} />
+                                수정
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDelete}
+                                disabled={deleteMutation.isPending}
+                                className="font-bold gap-1 text-rose-600 hover:text-rose-700"
+                            >
+                                <Trash2 size={14} />
+                                삭제
+                            </Button>
+                        </div>
+                    )}
+                </CardHeader>
 
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-6 mt-16 pb-10">
-                            <Button
-                                variant="ghost"
-                                size="lg"
-                                onClick={() => setPageNo(p => Math.max(1, p - 1))}
-                                disabled={pageNo === 1}
-                                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-card transition-all tracking-tight text-xs"
-                            >
-                                이전
-                            </Button>
-                            <div className="bg-muted text-foreground border-2 border-white px-10 py-3 rounded-lg shadow-xl flex items-center gap-4 ring-8 ring-border">
-                                <span className="text-xl font-bold">{pageNo}</span>
-                                <div className="h-4 w-px bg-slate-200" />
-                                <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="lg"
-                                onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
-                                disabled={pageNo === totalPages}
-                                className="px-12 h-11 rounded-lg font-bold text-muted-foreground border-2 border-transparent hover:border-border hover:bg-card transition-all tracking-tight text-xs"
-                            >
-                                다음
-                            </Button>
+                <CardContent className="pt-6">
+                    {isEditing ? (
+                        <DeptJobForm
+                            mode="edit"
+                            initialData={job as Partial<DeptJobFormValues>}
+                            onSubmit={async (values) => {
+                                await updateMutation.mutateAsync(values);
+                            }}
+                            onCancel={() => setEditing(false)}
+                        />
+                    ) : (
+                        <div className="space-y-6">
+                            <section className="space-y-2">
+                                <h3 className="text-xs font-bold uppercase tracking-tight text-muted-foreground">업무 내용</h3>
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                                    {job.deptTaskCn?.trim() ? job.deptTaskCn : '작성된 내용이 없습니다.'}
+                                </p>
+                            </section>
+
+                            <section className="grid gap-4 sm:grid-cols-2 border-t border-border pt-6">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">등록자</p>
+                                    <p className="text-sm font-bold">{job.frstRgtrId ?? '-'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">식별자</p>
+                                    <p className="text-sm font-mono break-all">{job.deptTaskId}</p>
+                                </div>
+                            </section>
                         </div>
                     )}
                 </CardContent>
             </Card>
+
+            <Button variant="ghost" onClick={() => router.push('/smart-toolkit/dept-job')} className="font-bold gap-2">
+                <ArrowLeft size={16} />
+                목록으로
+            </Button>
         </div>
     );
-};
-
-export default DeptJobDetailClient;
+}

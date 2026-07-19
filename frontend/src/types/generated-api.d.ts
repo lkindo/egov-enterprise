@@ -12052,7 +12052,7 @@ export interface operations {
                 deptId?: string;
                 deptJobbxId?: string;
                 searchCondition?: string;
-                searchKeyword?: string;
+                searchWrd?: string;
                 pageIndex?: number;
                 pageUnit?: number;
             };

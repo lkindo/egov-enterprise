@@ -62,17 +62,32 @@ class DeptJobUserService extends UserService {
    * 부서 업무 목록 조회
    */
   async getDeptJobList(
-    params: { 
-      page?: number; 
-      size?: number; 
+    params: {
+      /** 1-based 페이지 번호 */
+      pageIndex?: number;
+      /** 페이지당 건수 */
+      pageUnit?: number;
       searchWrd?: string;
-      deptTaskBoxId?: string;
-    }, 
+      /** '0' 업무명 · '1' 업무내용 · '2' 담당자. 미지정 시 서버가 업무명으로 처리한다. */
+      searchCondition?: string;
+      deptJobbxId?: string;
+      deptId?: string;
+    },
     config?: AxiosRequestConfig
   ): Promise<PageResponse<DeptJobVO>> {
-    return this.get<PageResponse<DeptJobVO>>('', { 
-      ...config, 
-      params 
+    // ⚠ page/size 로 보내지 않는다. ApiService 의 자동 매핑은 size → recordCountPerPage 인데
+    //   이 엔드포인트(및 형제 /boxes)는 pageUnit 을 읽으므로, 자동 매핑에 기대면 페이지 크기가
+    //   조용히 무시되고 서버 기본값 10건에 고정된다. 서버가 실제로 읽는 이름으로 직접 보낸다.
+    return this.get<PageResponse<DeptJobVO>>('', {
+      ...config,
+      params: {
+        pageIndex: params.pageIndex ?? 1,
+        pageUnit: params.pageUnit ?? 10,
+        ...(params.searchWrd ? { searchWrd: params.searchWrd } : {}),
+        ...(params.searchCondition ? { searchCondition: params.searchCondition } : {}),
+        ...(params.deptJobbxId ? { deptJobbxId: params.deptJobbxId } : {}),
+        ...(params.deptId ? { deptId: params.deptId } : {}),
+      },
     });
   }
 
@@ -86,8 +101,9 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무 등록
    */
-  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post<void>('', data, config);
+  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<string> {
+    // 서버가 채번한 식별자를 돌려준다(등록 직후 상세로 이동하기 위해 필요).
+    return this.post<string>('', data, config);
   }
 
   /**

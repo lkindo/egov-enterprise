@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Briefcase,
   Search,
   ClipboardList,
@@ -29,6 +30,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
 import { ReportCreateForm, type ReportFormValues } from '@/components/business/report/ReportCreateForm';
+import { PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
 import { toast } from 'sonner';
 import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -101,9 +103,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     router.push(TAB_ROUTES[tab], { scroll: false });
   };
 
+  // ⚠ 종전에는 getDeptJobBoxes(업무'함')를 조회했다. 그런데 이 탭의 '업무 등록' 버튼은
+  //   부서 업무(DeptJob)를 만든다 — 서로 다른 엔티티라, 등록한 업무가 목록에 영원히 나타나지 않았다.
+  //   탭 설명("부서별 업무 흐름")과 등록 동작이 모두 부서 업무를 가리키므로 목록을 그쪽에 맞춘다.
+  //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 화면의 대상이 아니다.
   const { data: jobData, isLoading: isJobLoading } = useQuery({
     queryKey: ['work-jobs', searchKeyword],
-    queryFn: () => deptJobUserService.getDeptJobBoxes({ searchWrd: searchKeyword }),
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageUnit: 50 }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -252,29 +258,44 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       className: 'w-20 text-center'
     },
     {
-      header: '업무함 명칭',
+      header: '업무명',
       accessor: (item) => (
-        <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskBoxNm}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.deptTaskBoxId}</span>
-        </div>
+        <Link href={`/smart-toolkit/dept-job/${item.deptTaskId}`} className="flex flex-col gap-1 py-1">
+          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskNm}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+            {item.deptTaskBoxNm || '업무함 미지정'}
+          </span>
+        </Link>
       )
     },
     {
-      header: '부서',
-      accessor: (item) => <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">{item.deptId || '글로벌'}</span>,
+      header: '담당자',
+      accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.picNm || '미지정'}</span>,
       className: 'w-32'
     },
     {
+      header: '우선순위',
+      accessor: (item) => (
+        <span className="text-xs font-bold tracking-tight">{PRIORITY_LABEL[item.prrtyRnk ?? ''] ?? '-'}</span>
+      ),
+      className: 'w-28'
+    },
+    {
+      // 종전에는 onClick 이 없는 死버튼이었다. 상세 화면이 수정·삭제를 모두 제공하므로 그리로 보낸다.
       header: '관리',
-      accessor: () => (
+      accessor: (item) => (
         <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
-            <MoreVertical size={16} className="text-muted-foreground" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 font-bold text-[11px]"
+            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskId}`)}
+          >
+            상세
           </Button>
         </div>
       ),
-      className: 'w-20 text-right'
+      className: 'w-24 text-right'
     }
   ];
 

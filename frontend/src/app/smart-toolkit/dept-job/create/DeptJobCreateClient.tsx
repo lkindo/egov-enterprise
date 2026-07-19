@@ -1,129 +1,59 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
-import { DeptJobVO } from '@/types/business/deptJob';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Briefcase, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { DeptJobForm, DeptJobFormValues } from '@/components/business/deptJob/DeptJobForm';
 
+/**
+ * 부서 업무 등록 화면.
+ *
+ * 종전에는 useState + 수동 검증(빈 문자열 체크)으로 폼을 직접 굴렸고, 같은 폼이
+ * insertDeptJob/ · selectDeptJobDetail/[id]/ 에도 복제돼 있었다. 수정 화면과 필드가 동일하므로
+ * 공용 DeptJobForm(useAppForm + generated-zod 확장)으로 합친다 — FE 헌법 제7조·제13조 2항.
+ *
+ * 또한 종전에는 등록 후 selectDeptJobList(존재하지 않는 API 를 부르는 파손 목록)로 보냈다.
+ * 이제 서버가 채번한 식별자로 상세 화면에 착지시킨다.
+ */
 export default function DeptJobCreateClient() {
   const router = useRouter();
-  const [formData, setFormData] = useState<Partial<DeptJobVO>>({
-    deptTaskNm: '',
-    deptTaskCn: '',
-    prrtyRnk: '2', // Default: 보통
-    picNm: '',
-  });
+  const queryClient = useQueryClient();
 
-  const handleSave = async () => {
-    if (!formData.deptTaskNm || !formData.deptTaskCn) {
-      toast.error('업무명과 내용은 필수입니다.');
-      return;
-    }
-
+  const handleSubmit = async (values: DeptJobFormValues) => {
     try {
-      await deptJobUserService.createDeptJob(formData as DeptJobVO);
-      toast.success('업무가 성공적으로 등록되었습니다.');
-      router.push('/smart-toolkit/dept-job/selectDeptJobList');
+      const newId = await deptJobUserService.createDeptJob(values);
+      toast.success('업무가 등록되었습니다.');
+      await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+      // 응답에 식별자가 없으면(구버전 서버 등) 목록으로 되돌린다.
+      router.push(newId ? `/smart-toolkit/dept-job/${newId}` : '/smart-toolkit/dept-job');
     } catch (error) {
-      console.error(error);
-      toast.error('업무 등록에 실패했습니다.');
+      toast.error(error instanceof Error ? error.message : '업무 등록에 실패했습니다.');
     }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2">
-            <ArrowLeft className="w-4 h-4" /> 뒤로가기
-        </Button>
-      </div>
+    <div className="p-6 max-w-3xl mx-auto space-y-8">
+      <Button variant="ghost" onClick={() => router.push('/smart-toolkit/dept-job')} className="rounded-lg font-bold gap-2">
+        <ArrowLeft className="w-4 h-4" /> 목록으로
+      </Button>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card">
-        <CardHeader className="bg-surface-inverse pb-12 pt-12 px-10 text-surface-inverse-foreground relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
-                <Briefcase size={120} />
-            </div>
-            <div className="relative z-10 space-y-2">
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/10 w-fit rounded-lg border border-white/10 mb-4">
-                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-                    <span className="text-xs font-bold tracking-widest uppercase">부서 업무 시스템</span>
-                </div>
-                <CardTitle className="text-3xl font-bold tracking-tighter">부서 업무 등록</CardTitle>
-                <p className="text-muted-foreground font-medium">새로운 부서 업무를 정의하고 등록합니다.</p>
-            </div>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b border-border pb-6">
+          <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+            <Briefcase size={20} />
+            부서 업무 등록
+          </CardTitle>
         </CardHeader>
-        <CardContent className="p-10 space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <Label htmlFor="deptTaskNm" className="text-sm font-bold text-muted-foreground ml-1">업무명 (필수)</Label>
-              <Input
-                id="deptTaskNm"
-                value={formData.deptTaskNm}
-                onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskNm: e.target.value }))}
-                placeholder="과업의 핵심 명칭을 입력하세요"
-                className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-card transition-all font-bold px-6"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="prrtyRnk" className="text-sm font-bold text-muted-foreground ml-1">우선 순위</Label>
-              <Select
-                value={formData.prrtyRnk}
-                onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, prrtyRnk: value }))}
-              >
-                <SelectTrigger className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
-                  <SelectValue placeholder="순위 선택" />
-                </SelectTrigger>
-                <SelectContent className="rounded-lg border-none shadow-2xl">
-                  <SelectItem value="1" className="font-bold py-3">🔴 높음</SelectItem>
-                  <SelectItem value="2" className="font-bold py-3">🟡 보통</SelectItem>
-                  <SelectItem value="3" className="font-bold py-3">🟢 낮음</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="picNm" className="text-sm font-bold text-muted-foreground ml-1">담당자 (선택)</Label>
-            <Input
-              id="picNm"
-              value={formData.picNm}
-              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, picNm: e.target.value }))}
-              placeholder="담당자 성함을 입력하세요"
-              className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="deptTaskCn" className="text-sm font-bold text-muted-foreground ml-1">업무 상세 내용 (필수)</Label>
-            <Textarea
-              id="deptTaskCn"
-              value={formData.deptTaskCn}
-              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptTaskCn: e.target.value }))}
-              className="min-h-[250px] p-8 rounded-lg border-2 bg-muted/50 focus:bg-card text-lg font-medium leading-relaxed transition-all resize-none"
-              placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
-            />
-          </div>
-
-          <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
-              <Send className="w-5 h-5" /> 업무 등록 완료
-            </Button>
-          </div>
+        <CardContent className="pt-6">
+          <DeptJobForm
+            mode="create"
+            onSubmit={handleSubmit}
+            onCancel={() => router.push('/smart-toolkit/dept-job')}
+          />
         </CardContent>
       </Card>
     </div>
