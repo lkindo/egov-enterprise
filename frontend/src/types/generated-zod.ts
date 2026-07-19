@@ -267,6 +267,28 @@ export const FaqDtoSchema = z.object({
 export type FaqDto = z.infer<typeof FaqDtoSchema>;
 
 // ==========================================================================
+// DeptJobDto Schema
+// ==========================================================================
+export const DeptJobDtoSchema = z.object({
+  deptTaskId: z.string().optional(),
+  deptTaskBoxId: z.string().optional(),
+  deptTaskBoxNm: z.string().optional(),
+  deptId: z.string().min(0).max(20).optional(),
+  deptNm: z.string().optional(),
+  deptTaskNm: z.string().optional(),
+  deptTaskCn: z.string().optional(),
+  picId: z.string().optional(),
+  picNm: z.string().optional(),
+  prrtyRnk: z.string().optional(),
+  atchFileId: z.string().min(0).max(30).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.string().optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.string().optional(),
+});
+export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
+
+// ==========================================================================
 // DeptJobBoxDto Schema
 // ==========================================================================
 export const DeptJobBoxDtoSchema = z.object({
@@ -1805,6 +1827,44 @@ export const ApiResponseFaqDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseFaqDto = z.infer<typeof ApiResponseFaqDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseDeptJobDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseDeptJobDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseDeptJobDtoSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponsePageResponseDeptJobDto = z.infer<typeof ApiResponsePageResponseDeptJobDtoSchema>;
+
+// ==========================================================================
+// PageResponseDeptJobDto Schema
+// ==========================================================================
+export const PageResponseDeptJobDtoSchema = z.object({
+  list: z.array(z.lazy(() => DeptJobDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponseDeptJobDto = z.infer<typeof PageResponseDeptJobDtoSchema>;
+
+// ==========================================================================
+// ApiResponseDeptJobDto Schema
+// ==========================================================================
+export const ApiResponseDeptJobDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DeptJobDtoSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseDeptJobDto = z.infer<typeof ApiResponseDeptJobDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseDeptJobBoxDto Schema

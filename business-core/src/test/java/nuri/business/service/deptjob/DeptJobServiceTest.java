@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -155,19 +157,64 @@ class DeptJobServiceTest {
     }
 
     @Test
-    @DisplayName("부서업무 생성")
+    @DisplayName("부서업무 생성 - PK 는 서버가 채번하고 클라이언트 값은 무시한다")
     void createDeptJob() {
+        // [회귀] 종전 구현은 dto.getDeptTaskId() 를 PK 로 썼다. 등록 폼은 이 값을 보내지 않으므로
+        //   실제로는 null PK 로 persist 되어 저장이 불가능했다(dept_task_id 는 NOT NULL).
+        //   그런데 옛 테스트는 dto 에 PK 를 넣어주고 assertNotNull 만 확인해 통과했다 —
+        //   테스트가 잘못된 것을 단언하고 있었다. 이제 채번 주체를 직접 검증한다.
         DeptJobDto dto = new DeptJobDto();
-        dto.setDeptTaskId("JOB1");
+        dto.setDeptTaskId("CLIENT_SUPPLIED"); // 위조 시도: 무시되어야 한다
         dto.setDeptTaskBoxId("BOX1");
         dto.setDeptTaskNm("Test Job");
-        
-        when(deptJobRepository.save(any(DeptJob.class))).thenReturn(deptJob);
 
-        String result = deptJobService.createDeptJob(dto);
+        when(deptJobRepository.existsById(anyString())).thenReturn(false);
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        assertNotNull(result);
-        verify(deptJobRepository, times(1)).save(any(DeptJob.class));
+        String result = deptJobService.createDeptJob("USR_TESTER", dto);
+
+        ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
+        verify(deptJobRepository, times(1)).save(captor.capture());
+        DeptJob saved = captor.getValue();
+
+        assertNotNull(saved.getDeptTaskId());
+        assertNotEquals("CLIENT_SUPPLIED", saved.getDeptTaskId(), "클라이언트가 보낸 PK 를 그대로 쓰면 안 된다");
+        assertTrue(saved.getDeptTaskId().startsWith("TASK_"));
+        assertTrue(saved.getDeptTaskId().length() <= 20, "dept_task_id 컬럼 상한 20자");
+        assertEquals(saved.getDeptTaskId(), result, "반환값은 실제 저장된 PK 여야 한다");
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 담당자 미지정 시 등록자를 담당자로 둔다")
+    void createDeptJob_defaultsPicToCreator() {
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("담당자 미지정 업무");
+
+        when(deptJobRepository.existsById(anyString())).thenReturn(false);
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        deptJobService.createDeptJob("USR_TESTER", dto);
+
+        ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
+        verify(deptJobRepository).save(captor.capture());
+        assertEquals("USR_TESTER", captor.getValue().getPicId());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 담당자를 지정하면 그 값을 유지한다")
+    void createDeptJob_keepsExplicitPic() {
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("담당자 지정 업무");
+        dto.setPicId("USR_OTHER");
+
+        when(deptJobRepository.existsById(anyString())).thenReturn(false);
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        deptJobService.createDeptJob("USR_TESTER", dto);
+
+        ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
+        verify(deptJobRepository).save(captor.capture());
+        assertEquals("USR_OTHER", captor.getValue().getPicId());
     }
 
     @Test
@@ -178,7 +225,10 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("Updated Job");
 
-        deptJobService.updateDeptJob("JOB1", dto);
+        // 소유권 가드(정적)는 단위 테스트에서 no-op 처리(SecurityContext 부재) — WorkReportServiceTest 선례.
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            deptJobService.updateDeptJob("JOB1", dto);
+        }
 
         assertEquals("Updated Job", deptJob.getDeptTaskNm());
     }
@@ -186,10 +236,42 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 삭제")
     void deleteDeptJob() {
-        doNothing().when(deptJobRepository).deleteById("JOB1");
+        // 종전에는 deleteById 로 존재 확인도 소유권 검증도 없이 지웠다.
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
 
-        deptJobService.deleteDeptJob("JOB1");
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            deptJobService.deleteDeptJob("JOB1");
+        }
 
-        verify(deptJobRepository, times(1)).deleteById("JOB1");
+        verify(deptJobRepository, times(1)).delete(deptJob);
+    }
+
+    @Test
+    @DisplayName("부서업무 삭제 - 존재하지 않으면 404")
+    void deleteDeptJob_NotFound() {
+        when(deptJobRepository.findById("JOB99")).thenReturn(Optional.empty());
+
+        assertThrows(BusinessException.class, () -> deptJobService.deleteDeptJob("JOB99"));
+        verify(deptJobRepository, never()).delete(any(DeptJob.class));
+    }
+
+    @Test
+    @DisplayName("[회귀] 업무함 미지정(null) 업무도 조회할 수 있다")
+    void getDeptJob_withoutBox() {
+        // 종전에는 toDto 가 nullable 컬럼(dept_task_box_id, pic_id)에 required() 가드를 걸어,
+        // 업무함을 지정하지 않은 업무가 하나라도 있으면 조회가 통째로 400 으로 떨어졌다.
+        // 등록 폼에 업무함 선택 UI 가 없으므로 새 업무는 항상 이 상태다 —
+        // 즉 데이터가 생기는 순간 조회가 깨지는 구조였다.
+        DeptJob noBox = DeptJob.builder()
+                .deptTaskId("TASK_NOBOX")
+                .deptTaskNm("업무함 없는 업무")
+                .build();
+        when(deptJobRepository.findById("TASK_NOBOX")).thenReturn(Optional.of(noBox));
+
+        DeptJobDto dto = assertDoesNotThrow(() -> deptJobService.getDeptJob("TASK_NOBOX"));
+
+        assertEquals("TASK_NOBOX", dto.getDeptTaskId());
+        assertNull(dto.getDeptTaskBoxNm());
+        assertNull(dto.getPicNm());
     }
 }

@@ -329,6 +329,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dept-jobs/{deptTaskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 부서 업무 상세 조회
+         * @description 특정 부서 업무의 상세 정보를 조회합니다.
+         */
+        get: operations["getDeptJob"];
+        /**
+         * 부서 업무 수정
+         * @description 부서 업무를 수정합니다. 작성자 본인 또는 관리자만 가능합니다.
+         */
+        put: operations["updateDeptJob"];
+        post?: never;
+        /**
+         * 부서 업무 삭제
+         * @description 부서 업무를 삭제합니다. 작성자 본인 또는 관리자만 가능합니다.
+         */
+        delete: operations["deleteDeptJob"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dept-jobs/boxes/{deptJobbxId}": {
         parameters: {
             query?: never;
@@ -1557,6 +1585,30 @@ export interface paths {
         put?: never;
         /** FAQ 등록 */
         post: operations["createFaq"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dept-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 부서 업무 목록 조회
+         * @description 부서 업무 목록을 페이징하여 조회합니다.
+         */
+        get: operations["getDeptJobList"];
+        put?: never;
+        /**
+         * 부서 업무 등록
+         * @description 새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.
+         */
+        post: operations["createDeptJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4495,6 +4547,25 @@ export interface components {
              */
             mdfcnDt?: string;
         };
+        DeptJobDto: {
+            deptTaskId?: string;
+            deptTaskBoxId?: string;
+            deptTaskBoxNm?: string;
+            deptId?: string;
+            deptNm?: string;
+            deptTaskNm?: string;
+            deptTaskCn?: string;
+            picId?: string;
+            picNm?: string;
+            prrtyRnk?: string;
+            atchFileId?: string;
+            frstRgtrId?: string;
+            /** Format: date-time */
+            crtDt?: string;
+            lastMdfrId?: string;
+            /** Format: date-time */
+            mdfcnDt?: string;
+        };
         DeptJobBoxDto: {
             deptTaskBoxId?: string;
             deptTaskBoxNm?: string;
@@ -6320,6 +6391,37 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["FaqDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponsePageResponseDeptJobDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseDeptJobDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PageResponseDeptJobDto: {
+            list?: components["schemas"]["DeptJobDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        ApiResponseDeptJobDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["DeptJobDto"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -8659,6 +8761,76 @@ export interface operations {
             header?: never;
             path: {
                 faqId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getDeptJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deptTaskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeptJobDto"];
+                };
+            };
+        };
+    };
+    updateDeptJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deptTaskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptJobDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteDeptJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deptTaskId: string;
             };
             cookie?: never;
         };
@@ -11860,6 +12032,59 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FaqDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    getDeptJobList: {
+        parameters: {
+            query?: {
+                deptId?: string;
+                deptJobbxId?: string;
+                searchCondition?: string;
+                searchKeyword?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseDeptJobDto"];
+                };
+            };
+        };
+    };
+    createDeptJob: {
+        parameters: {
+            query: {
+                userDetails: components["schemas"]["CustomUserDetails"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptJobDto"];
             };
         };
         responses: {

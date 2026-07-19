@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.deptjob.DeptJobBoxService;
+import nuri.business.service.deptjob.DeptJobService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
+import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import nuri.foundation.security.annotation.AdminOrSystem;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class DeptJobApiController {
 
     private final DeptJobBoxService egovDeptJobBoxService;
+    private final DeptJobService deptJobService;
 
     @Operation(summary = "부서 업무함 목록 조회", description = "부서 업무함 목록을 페이징하여 조회합니다.")
     @GetMapping("/boxes")
@@ -86,6 +90,69 @@ public class DeptJobApiController {
             @LoginUser CustomUserDetails userDetails,
             @PathVariable String deptJobbxId) {
         egovDeptJobBoxService.deleteDeptJobBox(deptJobbxId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 부서 업무(DeptJob) — 업무'함'(box)과 별개 엔티티다.
+    //
+    // DeptJobService 에 CRUD 5본이 모두 구현돼 있었는데 컨트롤러에 노출된 적이 없었다.
+    // 그 결과 프론트의 DeptJobUserService.createDeptJob 이 부르는 POST /api/v1/dept-jobs 가
+    // 매핑 없는 경로였고, 업무 워크플로우 화면의 '업무 등록'이 어느 경로로도 동작하지 않았다.
+    //
+    // 인가: 업무 워크플로우 메뉴는 ROLE_USER 에게도 열려 있으므로 쓰기를 관리자로 제한하지 않는다.
+    //   대신 수정·삭제는 서비스 계층에서 작성자 본인 또는 관리자만 가능하도록 검증한다(IDOR 방어).
+    //   업무'함'(위 /boxes)이 @AdminOrSystem 인 것과 대비된다 — 함은 부서 단위 구조물이고
+    //   업무는 개인이 만드는 항목이라 인가 수준이 다르다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Operation(summary = "부서 업무 목록 조회", description = "부서 업무 목록을 페이징하여 조회합니다.")
+    @GetMapping
+    public ResponseEntity<ApiResponse<PageResponse<DeptJobDto>>> getDeptJobList(
+            @RequestParam(required = false) String deptId,
+            @RequestParam(required = false) String deptJobbxId,
+            @RequestParam(required = false) String searchCondition,
+            @RequestParam(required = false) String searchKeyword,
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageUnit) {
+
+        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        Page<DeptJobDto> pageResult = deptJobService.getDeptJobList(
+                deptId, deptJobbxId, searchCondition, searchKeyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
+    }
+
+    @Operation(summary = "부서 업무 상세 조회", description = "특정 부서 업무의 상세 정보를 조회합니다.")
+    @GetMapping("/{deptTaskId}")
+    public ResponseEntity<ApiResponse<DeptJobDto>> getDeptJob(@PathVariable String deptTaskId) {
+        return ResponseEntity.ok(ApiResponse.success(deptJobService.getDeptJob(deptTaskId)));
+    }
+
+    @Operation(summary = "부서 업무 등록", description = "새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping
+    public ResponseEntity<ApiResponse<String>> createDeptJob(
+            @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody DeptJobDto dto) {
+        String newId = deptJobService.createDeptJob(userDetails.getEsntlId(), dto);
+        return ResponseEntity.ok(ApiResponse.success(newId));
+    }
+
+    @Operation(summary = "부서 업무 수정", description = "부서 업무를 수정합니다. 작성자 본인 또는 관리자만 가능합니다.")
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{deptTaskId}")
+    public ResponseEntity<ApiResponse<Void>> updateDeptJob(
+            @PathVariable String deptTaskId,
+            @Valid @RequestBody DeptJobDto dto) {
+        deptJobService.updateDeptJob(deptTaskId, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "부서 업무 삭제", description = "부서 업무를 삭제합니다. 작성자 본인 또는 관리자만 가능합니다.")
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/{deptTaskId}")
+    public ResponseEntity<ApiResponse<Void>> deleteDeptJob(@PathVariable String deptTaskId) {
+        deptJobService.deleteDeptJob(deptTaskId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
