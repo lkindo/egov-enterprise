@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { X, 
+import { usePathname } from 'next/navigation';
+import { X,
   ChevronLeft, 
   Sparkles, 
   Command, 
@@ -20,6 +23,7 @@ export function SmartOnboardingHub() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -27,13 +31,18 @@ export function SmartOnboardingHub() {
       // E2E 테스트 환경에서는 자동으로 투어를 비활성화
       const isTestEnv = process.env.NEXT_PUBLIC_APP_ENV === 'test' || window.location.search.includes('e2e=true');
       const hasSeenTour = localStorage.getItem('egov_smart_tour_v1');
-      
-      if (!hasSeenTour && !isTestEnv) {
+
+      // ⚠ 인증 화면에서는 절대 띄우지 않는다. 이 투어는 z-[10000] 전면 오버레이라 로그인 폼을 덮어
+      //   아이디 입력과 제출 자체를 차단한다(localStorage 가 빈 신규 사용자·시크릿창에서 재현됨).
+      //   투어는 로그인에 성공해 실제 업무 화면에 진입한 뒤 최초 1회만 노출한다.
+      const isAuthRoute = (pathname || '').startsWith('/login');
+
+      if (!hasSeenTour && !isTestEnv && !isAuthRoute) {
         const timer = setTimeout(() => setIsOpen(true), 2000);
         return () => clearTimeout(timer);
       }
     }
-  }, []);
+  }, [pathname]);
 
   const handleComplete = () => {
     if (typeof window !== 'undefined') {
@@ -41,6 +50,17 @@ export function SmartOnboardingHub() {
     }
     setIsOpen(false);
   };
+
+  // 키보드 탈출구(ESC). role="alertdialog" 전면 오버레이가 어떤 이유로든 떴을 때 사용자가
+  // 마우스 없이도 빠져나갈 수 있어야 한다. 닫으면 '봤음'으로 기록되어 다시 뜨지 않는다.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleComplete();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
