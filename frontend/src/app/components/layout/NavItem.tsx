@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   CalendarDays,
@@ -60,6 +60,55 @@ function UserCheckIcon(props: any) {
   return <Users {...props} />;
 }
 
+/** 읽기 전용 쿼리 접근자 (next/navigation 의 ReadonlyURLSearchParams 와 URLSearchParams 를 모두 수용) */
+type QueryParams = { get(name: string): string | null; toString(): string };
+
+/** 메뉴의 raw URL 을 앞 슬래시가 보장된 형태로 정규화한다. 링크가 아닌 항목은 '#'. */
+function normalizeHref(rawUrl?: string | null): string {
+  if (!rawUrl || rawUrl === '#') return '#';
+  return rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+}
+
+/**
+ * 현재 위치가 이 메뉴 자신을 가리키는지 판정한다.
+ *
+ * ⚠ usePathname() 은 쿼리스트링을 제외한 경로만 돌려준다. 이 프로젝트의 메뉴는 상당수가 같은 경로에
+ *   쿼리만 다른 형태다 (개인 및 부서 일정=/admin/work-hub?tab=job, 업무 보고 및 보고함=/admin/work-hub).
+ *   과거처럼 pathname.startsWith(href) 로만 비교하면 "/admin/work-hub".startsWith("/admin/work-hub?tab=job")
+ *   가 false 라 쿼리를 가진 메뉴는 영영 활성화되지 못하고, 쿼리 없는 형제가 대신 활성화됐다.
+ *   그래서 경로와 쿼리를 함께 판정한다.
+ */
+function matchesLocation(rawUrl: string | null | undefined, pathname: string, searchParams: QueryParams): boolean {
+  const href = normalizeHref(rawUrl);
+  if (href === '#') return false;
+
+  const [hrefPath, hrefQuery] = href.split('?');
+
+  // prefix 오매칭 방지: '/admin/work-hub' 가 '/admin/work-hub-archive' 를 잡지 않도록
+  // 정확 일치이거나 '/' 로 끊기는 하위 경로일 때만 경로가 맞은 것으로 본다.
+  if (pathname !== hrefPath && !pathname.startsWith(`${hrefPath}/`)) return false;
+
+  if (hrefQuery) {
+    // 쿼리로 특정되는 메뉴: 명시된 파라미터가 모두 현재 URL 과 일치해야 한다.
+    const expected = new URLSearchParams(hrefQuery);
+    let allMatch = true;
+    expected.forEach((value, key) => {
+      if (searchParams.get(key) !== value) allMatch = false;
+    });
+    return allMatch;
+  }
+
+  // 쿼리가 없는 메뉴: 현재 URL 에도 구분 쿼리가 없을 때만 활성으로 본다.
+  // (형제가 ?tab=... 로 갈라지는 경우, 더 구체적인 형제에게 활성 상태를 양보한다.)
+  return searchParams.toString() === '';
+}
+
+/** 자신 또는 후손 중 하나라도 현재 위치와 일치하면 true. 부모 강조·자동 펼침 판정에 쓴다. */
+function subtreeMatchesLocation(item: MenuInfo, pathname: string, searchParams: QueryParams): boolean {
+  if (matchesLocation(item.modernRoute || item.chkURL, pathname, searchParams)) return true;
+  return (item.children || []).some((child) => subtreeMatchesLocation(child, pathname, searchParams));
+}
+
 interface NavItemProps {
   item: MenuInfo;
   depth?: number;
@@ -67,6 +116,7 @@ interface NavItemProps {
 
 export function NavItem({ item, depth = 0 }: NavItemProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
   const [isOpen, setIsOpen] = useState(false);
@@ -74,26 +124,13 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
   // URL normalization and mapping
-  const href = useMemo(() => {
-    const rawUrl = item.modernRoute || item.chkURL;
-    if (!rawUrl || rawUrl === '#') return '#';
-    
-    // Ensure leading slash for internal links
-    const formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
-    
-    return formatted;
-  }, [item.modernRoute, item.chkURL]);
+  const href = useMemo(() => normalizeHref(item.modernRoute || item.chkURL), [item.modernRoute, item.chkURL]);
 
-  const isActive = useMemo(() => {
-    if (href !== '#' && String(pathname).startsWith(String(href))) return true;
-    if (hasChildren && item.children) {
-      return item.children.some(child => {
-        const childHref = child.modernRoute || child.chkURL;
-        return childHref && String(pathname).startsWith(String(childHref).startsWith('/') ? String(childHref) : `/${String(childHref)}`);
-      });
-    }
-    return false;
-  }, [pathname, href, hasChildren, item.children]);
+  // 자신 또는 후손이 현재 위치(경로 + 쿼리)와 일치할 때 활성. 판정 규칙은 matchesLocation 주석 참조.
+  const isActive = useMemo(
+    () => subtreeMatchesLocation(item, String(pathname), searchParams),
+    [item, pathname, searchParams]
+  );
 
   useEffect(() => {
     setIsMounted(true);
