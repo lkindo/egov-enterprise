@@ -934,6 +934,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/departments/batch-hierarchy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 조직 계층 일괄 저장
+         * @description 조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.
+         */
+        put: operations["updateDeptHierarchy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/codes/detail/{codeId}/{code}": {
         parameters: {
             query?: never;
@@ -1234,7 +1254,7 @@ export interface paths {
         };
         /**
          * 일정 목록 조회
-         * @description 사용자의 일정 목록을 페이징하여 조회합니다.
+         * @description 사용자가 담당자인 일정 목록을 페이징하여 조회합니다.
          */
         get: operations["getScheduleList"];
         put?: never;
@@ -2208,7 +2228,7 @@ export interface paths {
         put?: never;
         /**
          * 부서 등록
-         * @description 새로운 시스템 부서를 등록합니다.
+         * @description 새로운 시스템 부서를 등록하고 생성된 부서 ID 를 반환합니다. ognzId 는 서버가 채번하므로 보내지 않습니다.
          */
         post: operations["insertDept"];
         delete?: never;
@@ -2892,7 +2912,7 @@ export interface paths {
         };
         /**
          * 부서 일정 목록 조회
-         * @description 부서의 일정 목록을 페이징하여 조회합니다.
+         * @description 로그인 사용자와 같은 부서의 일정 목록을 페이징하여 조회합니다. schdlNm 으로 부분일치 검색할 수 있습니다.
          */
         get: operations["getDeptScheduleList"];
         put?: never;
@@ -4874,12 +4894,19 @@ export interface components {
         };
         /** @description 부서 정보 DTO */
         DeptManageDto: {
-            /** @description 부서 ID */
-            ognzId: string;
+            /** @description 부서 ID (등록 시 서버 채번) */
+            ognzId?: string;
             /** @description 부서 명 */
             ognzNm: string;
             /** @description 부서 설명 */
             ognzExpln?: string;
+            /** @description 상위 부서 ID (NULL 이면 최상위) */
+            upOgnzId?: string;
+            /**
+             * Format: int32
+             * @description 동일 상위 내 정렬 순서
+             */
+            sortOrdr?: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -10396,6 +10423,30 @@ export interface operations {
             };
         };
     };
+    updateDeptHierarchy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptManageDto"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getDetailCode: {
         parameters: {
             query?: never;
@@ -11232,6 +11283,7 @@ export interface operations {
             query?: {
                 pageIndex?: number;
                 pageUnit?: number;
+                schdlNm?: string;
             };
             header?: never;
             path?: never;
@@ -13262,7 +13314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "*/*": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -14453,6 +14505,7 @@ export interface operations {
             query?: {
                 pageIndex?: number;
                 pageUnit?: number;
+                schdlNm?: string;
             };
             header?: never;
             path?: never;

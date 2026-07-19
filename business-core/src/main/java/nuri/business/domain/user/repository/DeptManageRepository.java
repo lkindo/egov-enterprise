@@ -13,4 +13,7 @@ public interface DeptManageRepository extends JpaRepository<DeptManage, String>,
     Page<DeptManage> findByOgnzExplnContainingIgnoreCase(String ognzExpln, Pageable pageable);
     long countByOgnzNmContainingIgnoreCase(String ognzNm);
     long countByOgnzExplnContainingIgnoreCase(String ognzExpln);
+
+    /** 하위 부서 수. 부서 삭제 가드에서 사용한다. [V2_26] */
+    long countByUpOgnzId(String upOgnzId);
 }

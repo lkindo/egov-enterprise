@@ -449,7 +449,10 @@ public class UserService extends BaseAbstractService {
                 if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
-                List<User> users = userRepository.findAllById(required(userIds));
+                // [정체성 축] 화면은 loginId(user_id) 목록을 넘긴다. findAllById 는 esntlId(PK) 기준이라
+                //   그대로 쓰면 매칭이 0건이 되어 아무것도 바뀌지 않고 에러도 나지 않는다(조용한 no-op).
+                //   실제로 이 때문에 전 사용자의 ognz_id 가 null 로 남아 있었다. loginId 축으로 조회한다.
+                List<User> users = userRepository.findByUserIdIn(required(userIds));
                 users.forEach(user -> user.updateOrgnztId(ognzId));
                 userRepository.saveAll(users);
         }

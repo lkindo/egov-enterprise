@@ -52,10 +52,18 @@ public class DeptApiController {
         return ResponseEntity.ok(ApiResponse.success(deptManageService.getDeptManage(deptId)));
     }
 
-    @Operation(summary = "부서 등록", description = "새로운 시스템 부서를 등록합니다.")
+    @Operation(summary = "부서 등록",
+            description = "새로운 시스템 부서를 등록하고 생성된 부서 ID 를 반환합니다. ognzId 는 서버가 채번하므로 보내지 않습니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertDept(@Valid @RequestBody DeptManageDto dto) {
-        deptManageService.insertDeptManage(dto);
+    public ResponseEntity<ApiResponse<String>> insertDept(@Valid @RequestBody DeptManageDto dto) {
+        return ResponseEntity.ok(ApiResponse.success(deptManageService.insertDeptManage(dto)));
+    }
+
+    @Operation(summary = "조직 계층 일괄 저장",
+            description = "조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.")
+    @PutMapping("/batch-hierarchy")
+    public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(@RequestBody java.util.List<DeptManageDto> items) {
+        deptManageService.updateDeptHierarchy(items);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

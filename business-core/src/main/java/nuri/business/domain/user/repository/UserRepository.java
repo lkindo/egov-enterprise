@@ -50,6 +50,15 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     List<User> findByOgnzId(String ognzId);
 
+    /** 해당 조직에 소속된 사용자 수. 부서 삭제 가드에서 사용한다. */
+    long countByOgnzId(String ognzId);
+
+    /**
+     * loginId(user_id) 복수 조회. 화면의 벌크 작업은 loginId 를 넘기는데 findAllById 는 esntlId(PK) 기준이라
+     * 그대로 쓰면 조용히 0건이 된다(정체성 축 함정). 벌크 경로는 이 메서드를 쓴다.
+     */
+    List<User> findByUserIdIn(java.util.Collection<String> userIds);
+
     List<User> findByRole(Role role);
 
     List<User> findByOgnzIdAndRole(String ognzId, Role role);

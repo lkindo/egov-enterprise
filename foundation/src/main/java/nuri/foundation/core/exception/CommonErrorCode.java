@@ -24,6 +24,8 @@ public enum CommonErrorCode implements ErrorCode {
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "C011", "Unsupported Media Type"),
     INVALID_STATE(HttpStatus.BAD_REQUEST, "C012", "Invalid State Transition"),
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "C013", "Concurrent Modification Conflict"),
+    /** 다른 자원이 참조 중이라 삭제/변경할 수 없을 때. (예: 소속 사용자나 하위 부서가 남아 있는 부서 삭제) */
+    RESOURCE_IN_USE(HttpStatus.CONFLICT, "C014", "Resource In Use"),
 
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized Access"),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "Invalid JWT Token"),

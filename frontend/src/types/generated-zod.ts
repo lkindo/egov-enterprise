@@ -542,9 +542,11 @@ export type GroupManageDto = z.infer<typeof GroupManageDtoSchema>;
 // DeptManageDto Schema
 // ==========================================================================
 export const DeptManageDtoSchema = z.object({
-  ognzId: z.string().min(0).max(20),
+  ognzId: z.string().min(0).max(20).optional(),
   ognzNm: z.string().min(0).max(100),
   ognzExpln: z.string().min(0).max(4000).optional(),
+  upOgnzId: z.string().min(0).max(20).optional(),
+  sortOrdr: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });

@@ -70,23 +70,42 @@ public class DeptApiControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data.ognzNm").value("테스트 부서"));
     }
 
+    /**
+     * ⚠ 회귀 방지: 종전 이 테스트는 요청 본문에 ognzId("ORGNZT_NEW")를 명시해 통과했고, 그 때문에
+     * "실제 등록 폼은 ognzId 를 보내지 않아 @NotBlank 로 항상 400" 이라는 결함을 잡지 못했다.
+     * 이제 ognzId 를 **보내지 않는** 실제 UI 계약으로 요청하고, 서버가 채번한 ID 가 응답되는지 단언한다.
+     */
     @Test
     public void insertDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
-                .ognzId("ORGNZT_NEW")
                 .ognzNm("신규 부서")
                 .ognzExpln("신규 부서 설명")
                 .build();
 
-        doNothing().when(deptManageService).insertDeptManage(any(DeptManageDto.class));
+        when(deptManageService.insertDeptManage(any(DeptManageDto.class))).thenReturn("ORGNZT_GENERATED");
 
         mockMvc.perform(post("/api/v1/admin/system/departments")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("ORGNZT_GENERATED"));
 
         verify(deptManageService, times(1)).insertDeptManage(any(DeptManageDto.class));
+    }
+
+    @Test
+    public void updateDeptHierarchy_ShouldSucceed() throws Exception {
+        String body = "[{\"ognzId\":\"ORGNZT_CHILD\",\"upOgnzId\":\"ORGNZT_PARENT\",\"sortOrdr\":1}]";
+        doNothing().when(deptManageService).updateDeptHierarchy(any());
+
+        mockMvc.perform(put("/api/v1/admin/system/departments/batch-hierarchy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(deptManageService, times(1)).updateDeptHierarchy(any());
     }
 
     @Test
