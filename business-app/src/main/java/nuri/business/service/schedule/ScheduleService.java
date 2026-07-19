@@ -6,6 +6,7 @@ import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -63,8 +64,19 @@ public class ScheduleService extends BaseAbstractService {
 
     @Transactional
     public String createSchedule(String userId, ScheduleDto dto) {
+        // [PK 채번] Schedule 은 @GeneratedValue 없는 할당식 PK(varchar 20)다. 클라이언트가 보낸 schdlId 를
+        //   그대로 쓰면 미전송 시 null PK 로 persist 되어 저장 자체가 실패한다(등록 UI 는 이 필드를 보내지 않는다).
+        //   저장소의 다른 create 경로와 동일하게 서버가 채번한다(ScrapService 선례). 'SCHDL_'(6) + 14 = 20자.
+        String schdlId = IdGenerationUtil.generateUniqueId("SCHDL_", 14, scheduleRepository::existsById);
+
+        // [소유자 고정] 조회 4종(searchSchedules/findMonthlySchedules/findSchedulesByDateRange)이 모두
+        //   s.schdlPicId = :loginId 로 필터한다. 담당자를 클라이언트 DTO 값으로 두면
+        //   ① 미전송 시 null 이 되어 등록해도 어떤 목록에도 나타나지 않고(저장축↔조회축 단절),
+        //   ② 타인의 loginId 를 실어 보내 남의 일정으로 위조할 수 있다(매스어사인먼트).
+        //   그래서 인증 주체(loginId)로 고정한다 — BE 헌법 제8조 2항(소유 컬럼이 실제 저장하는 축과 일치),
+        //   BoardService.createPost 의 저자 위조 차단과 동일한 패턴.
         Schedule entity = Schedule.builder()
-                .schdlId(dto.getSchdlId())
+                .schdlId(schdlId)
                 .schdlSeCd(dto.getSchdlSeCd())
                 .schdlDeptId(dto.getSchdlDeptId())
                 .schdlKndCd(dto.getSchdlKndCd())
@@ -74,7 +86,7 @@ public class ScheduleService extends BaseAbstractService {
                 .schdlEndYmd(dto.getSchdlEndYmd())
                 .schdlPlcNm(dto.getSchdlPlcNm())
                 .schdlImprtCd(dto.getSchdlImprtCd())
-                .schdlPicId(dto.getSchdlPicId())
+                .schdlPicId(userId)
                 .schdlIpAddr(dto.getSchdlIpAddr())
                 .reptSeCd(dto.getReptSeCd())
                 .atchFileId(dto.getAtchFileId())
@@ -99,7 +111,10 @@ public class ScheduleService extends BaseAbstractService {
                 dto.getSchdlEndYmd(),
                 dto.getSchdlPlcNm(),
                 dto.getSchdlImprtCd(),
-                dto.getSchdlPicId(),
+                // [소유자 불변] 담당자는 등록 시 인증 주체로 고정되며 수정으로 재지정하지 않는다.
+                //   DTO 값을 그대로 넘기면 ① null 전송 시 담당자가 지워져 목록(schdlPicId 필터)에서 사라지고
+                //   ② 타인 loginId 로 바꿔 남의 일정으로 넘길 수 있다. create 만 막으면 이 경로로 우회된다.
+                entity.getSchdlPicId(),
                 dto.getReptSeCd());
         
         entity.setLastMdfrId(userId);
