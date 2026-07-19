@@ -241,6 +241,8 @@ export default function UserOrgHubClient({
   // D&D States for Depts
   const [flattenedDepts, setFlattenedDepts] = useState<FlattenedDept[]>([]);
   const [activeDeptId, setActiveDeptId] = useState<string | null>(null);
+  /** 드래그 중 가로 이동 거리. 이 값으로 계층(깊이)이 결정된다 — 없으면 순서만 바뀌고 계층은 그대로다. */
+  const [deptOffsetLeft, setDeptOffsetLeft] = useState(0);
   const [hasDeptChanges, setHasDeptChanges] = useState(false);
 
   const departments = useMemo(() => {
@@ -557,7 +559,13 @@ export default function UserOrgHubClient({
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                                onDragStart={(e) => setActiveDeptId(e.active.id as string)}
+                                onDragStart={(e) => { setActiveDeptId(e.active.id as string); setDeptOffsetLeft(0); }}
+                                // ⚠ 계층(깊이) 변경은 '가로' 드래그 거리로 결정된다. 종전에는 이 핸들러가 없어
+                                //    getDeptProjection 에 dragOffset=0 이 고정으로 들어갔고, 그 결과
+                                //    projectedDepth = dragItem.depth + Math.round(0 / indentationWidth) = 기존 깊이
+                                //    가 되어 아무리 끌어도 계층이 바뀌지 않고 순서만 바뀌었다.
+                                //    (메뉴 관리 화면 MenuAdminClient 는 이 패턴을 이미 갖추고 있다.)
+                                onDragMove={({ delta }) => setDeptOffsetLeft(delta.x)}
                                 onDragEnd={(event) => {
                                     const { active, over } = event;
                                     if (over && active.id !== over.id) {
@@ -565,8 +573,8 @@ export default function UserOrgHubClient({
                                             const oldIndex = items.findIndex(n => n.ognzId === active.id);
                                             const newIndex = items.findIndex(n => n.ognzId === over.id);
                                             const newItems = arrayMove(items, oldIndex, newIndex);
-                                            
-                                            const proj = getDeptProjection(items, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
+
+                                            const proj = getDeptProjection(items, active.id as string, over.id as string, deptOffsetLeft, INDENTATION_WIDTH);
                                             if (proj) {
                                                 const idx = newItems.findIndex(n => n.ognzId === active.id);
                                                 newItems[idx] = { ...newItems[idx], parentId: proj.parentId, depth: proj.depth };
@@ -576,6 +584,7 @@ export default function UserOrgHubClient({
                                         setHasDeptChanges(true);
                                     }
                                     setActiveDeptId(null);
+                                    setDeptOffsetLeft(0);
                                 }}
                             >
                                 <SortableContext items={flattenedDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
