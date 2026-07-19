@@ -41,9 +41,15 @@ class WorkReportServiceTest {
                 .userId("user01")
                 .build();
 
-        workReportService.createWorkReport(dto);
+        workReportService.createWorkReport("user1", dto);
 
-        verify(workReportRepository, times(1)).save(any(WorkReport.class));
+        // 회귀 방어: PK 는 서버가 채번하고 작성자는 인증 주체로 고정되어야 한다.
+        // 종전에는 dto 의 rptId/userId 를 그대로 복사해, 폼이 rptId 를 보내지 않으면 null PK 로 500 이 났다.
+        org.mockito.ArgumentCaptor<WorkReport> captor = org.mockito.ArgumentCaptor.forClass(WorkReport.class);
+        verify(workReportRepository, times(1)).save(captor.capture());
+        WorkReport saved = captor.getValue();
+        org.assertj.core.api.Assertions.assertThat(saved.getRptId()).isNotEqualTo("REPO_001").startsWith("RPT_");
+        org.assertj.core.api.Assertions.assertThat(saved.getUserId()).isEqualTo("user1");
     }
 
     @Test

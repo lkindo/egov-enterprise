@@ -80,7 +80,7 @@ class WorkReportApiControllerTest {
     void registerWorkReport() throws Exception {
         WorkReportDto dto = new WorkReportDto();
         dto.setRptTtl("Subject");
-        doNothing().when(workReportService).createWorkReport(any(WorkReportDto.class));
+        doNothing().when(workReportService).createWorkReport(any(String.class), any(WorkReportDto.class));
 
         mockMvc.perform(post("/api/v1/work-reports")
                         .contentType(MediaType.APPLICATION_JSON)

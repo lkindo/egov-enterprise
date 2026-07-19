@@ -5,6 +5,7 @@ import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,13 +24,21 @@ public class WorkReportService extends BaseAbstractService {
     private final WorkReportRepository workReportRepository;
 
     @Transactional
-    public void createWorkReport(WorkReportDto dto) {
+    public void createWorkReport(String userId, WorkReportDto dto) {
+        // [PK 채번] WorkReport 는 @GeneratedValue 없는 할당식 PK(varchar 20)다. 종전에는 dto.getRptId()
+        //   를 그대로 써서, 등록 폼이 이 값을 보내지 않으면 null PK 로 persist 되어 500 이 났다.
+        //   저장소의 다른 create 경로와 동일하게 서버가 채번한다. 'RPT_'(4) + 16 = 20자(컬럼 상한).
+        String rptId = IdGenerationUtil.generateUniqueId("RPT_", 16, workReportRepository::existsById);
+
         WorkReport entity = WorkReport.builder()
-                .rptId(dto.getRptId())
+                .rptId(rptId)
                 .rptTtl(dto.getRptTtl())
                 .rptCn(dto.getRptCn())
                 .rptSeCd(dto.getRptSeCd())
-                .userId(dto.getUserId())
+                .rptYmd(dto.getRptYmd())
+                // [작성자 고정] 종전에는 dto.getUserId() 를 그대로 복사해 ① 미전송 시 null 이 되고
+                //   ② 타인 명의로 위조할 수 있었다. 인증 주체로 고정한다(Schedule·Board 와 동일 패턴).
+                .userId(userId)
                 .atchFileId(dto.getAtchFileId())
                 .build();
         workReportRepository.save(entity);

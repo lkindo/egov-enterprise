@@ -28,6 +28,7 @@ import { reportService } from '@/services/business/user/ReportService';
 import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
+import { ReportCreateForm, type ReportFormValues } from '@/components/business/report/ReportCreateForm';
 import { toast } from 'sonner';
 import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -66,6 +67,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   // 등록이 열린 뒤에도 수정·삭제 수단이 없어 한번 만든 일정을 고치거나 지울 수 없었다.
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
+  // 업무 보고 등록 다이얼로그. 종전에는 이 탭의 '새 업무 생성' 버튼에 onClick 이 없었다.
+  const [isReportModalOpen, setReportModalOpen] = useState(false);
   const confirm = useConfirm();
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
@@ -129,6 +132,18 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       return !!begin && !!end && begin <= key && key <= end;
     });
   }, [schedules, selectedDate]);
+
+  /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
+  const handleCreateReport = async (values: ReportFormValues) => {
+    try {
+      await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
+      toast.success('업무 보고가 등록되었습니다.');
+      setReportModalOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '업무 보고 등록 중 오류가 발생했습니다.');
+    }
+  };
 
   /**
    * 일정 등록. 캘린더에서 날짜를 선택했으면 그 날짜가 기본값이 된다.
@@ -326,11 +341,19 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
              </div>
             {/* 일정 탭에서는 일정 등록 다이얼로그를 연다. 다른 탭의 '새 업무 생성'은 아직 미구현이라
                 동작을 바꾸지 않는다(이번 범위 밖). */}
+            {/* 탭마다 '생성'의 대상이 다르다. 종전에는 캘린더 외 탭에서 onClick 이 없어 死버튼이었다.
+                업무 워크플로우는 전용 등록 화면이 이미 있어 그리로 보내고, 보고는 다이얼로그로 받는다. */}
             <Button
-              onClick={activeTab === 'calendar' ? () => setScheduleModalOpen(true) : undefined}
+              onClick={
+                activeTab === 'calendar'
+                  ? () => setScheduleModalOpen(true)
+                  : activeTab === 'report'
+                    ? () => setReportModalOpen(true)
+                    : () => router.push('/smart-toolkit/dept-job/create')
+              }
               className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
             >
-              <Plus size={18} /> {activeTab === 'calendar' ? '일정 등록' : '새 업무 생성'}
+              <Plus size={18} /> {activeTab === 'calendar' ? '일정 등록' : activeTab === 'report' ? '보고 등록' : '업무 등록'}
             </Button>
           </div>
         }
@@ -445,6 +468,20 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
           onSubmit={handleSubmitSchedule}
           onCancel={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+        />
+      </StandardModal>
+
+      {/* 업무 보고 등록 다이얼로그 */}
+      <StandardModal
+        isOpen={isReportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        title="업무 보고 등록"
+        maxWidth="lg"
+      >
+        <ReportCreateForm
+          defaultYmd={format(new Date(), 'yyyyMMdd')}
+          onSubmit={handleCreateReport}
+          onCancel={() => setReportModalOpen(false)}
         />
       </StandardModal>
     </div>
