@@ -17,6 +17,7 @@ import java.util.function.Supplier;
  * <p>프로퍼티 {@code rbac.shadow.enabled=true}로 활성화/비활성화한다.
  */
 @Slf4j
+@SuppressWarnings("deprecation")
 public class ShadowAuthorizationLogger implements AuthorizationManager<RequestAuthorizationContext> {
 
     private final AuthorizationManager<RequestAuthorizationContext> enforceManager;

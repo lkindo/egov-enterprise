@@ -300,7 +300,7 @@ public class UserService extends BaseAbstractService {
                 if (users.isEmpty()) {
                         return;
                 }
-                List<String> esntlIds = users.stream().map(User::getEsntlId).collect(Collectors.toList());
+                List<String> esntlIds = users.stream().map(u -> u.getEsntlId()).collect(Collectors.toList());
                 if (esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)) {
                         // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -313,7 +313,7 @@ public class UserService extends BaseAbstractService {
                 }
                 // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId) 정리 (커뮤니티 멤버십은 이벤트 리스너로 이관)
                 loginPolicyRepository.deleteAllByIdInBatch(
-                                users.stream().map(User::getUserId).collect(Collectors.toList()));
+                                users.stream().map(u -> u.getUserId()).collect(Collectors.toList()));
                 userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
                 // [§2.B] 커뮤니티 멤버십(샘플 도메인) 정리는 UserDeletionEvent 리스너(business-app
                 //  UserDeletionCleanupListener)로 역전 — 콘텐츠/알림 정리와 동일 경로. 필수 코어→샘플 직접 결합 제거.
@@ -392,7 +392,7 @@ public class UserService extends BaseAbstractService {
                 // (존재하지 않는 ID 는 멱등 삭제 의미론으로 건너뛰고 경고만 남긴다)
                 List<User> users = userIds.stream()
                                 .map(id -> userRepository.findByUserId(id).or(() -> userRepository.findById(id)))
-                                .flatMap(java.util.Optional::stream)
+                                .flatMap(opt -> opt.stream())
                                 .collect(Collectors.toList());
                 if (users.size() < userIds.size()) {
                         log.warn("deleteUserList: 요청 {}건 중 {}건만 실존 — 나머지는 건너뜀", userIds.size(), users.size());

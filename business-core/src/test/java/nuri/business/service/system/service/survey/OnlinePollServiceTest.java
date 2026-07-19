@@ -473,7 +473,7 @@ class OnlinePollServiceTest {
             // (I1 '보존'이 아니라 재생성이므로 크기·순서·이름으로 검증). 빈 이름 항목도 스킵 없이 재생성됨.
             assertThat(entity.getPollArticles()).hasSize(3);
             assertThat(entity.getPollArticles())
-                    .extracting(OnlinePollArticle::getPollArtclNm)
+                    .extracting(art -> art.getPollArtclNm())
                     .containsExactly("Updated1", "New3", "");
         }
     }

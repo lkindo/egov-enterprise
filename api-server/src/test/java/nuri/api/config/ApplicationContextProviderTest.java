@@ -70,7 +70,6 @@ class ApplicationContextProviderTest {
   }
  
   @Test
-  @SuppressWarnings("unchecked")
   void testSecurityUtilHasRoleWithRoleHierarchy() {
     // given
     RoleHierarchy mockRoleHierarchy = mock(RoleHierarchy.class);

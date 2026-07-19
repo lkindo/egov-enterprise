@@ -111,6 +111,7 @@ class ApiDocsPathCoverageLinterTest {
         JsonNode paths = root.get("paths");
         if (paths == null || !paths.isObject()) {
             fail("게이트 무결성 파손: api-docs.json 에 paths 객체가 없습니다 (" + apiDocs + ").");
+            return Set.of();
         }
         Set<String> result = new TreeSet<>();
         for (Iterator<String> it = paths.fieldNames(); it.hasNext(); ) {

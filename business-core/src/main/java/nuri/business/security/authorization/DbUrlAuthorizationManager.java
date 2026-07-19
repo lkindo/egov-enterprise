@@ -99,7 +99,7 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
         // 사용자 권한과 요구 롤 비교
         Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
         boolean granted = authorities.stream()
-                .map(GrantedAuthority::getAuthority)
+                .map(a -> a.getAuthority())
                 .anyMatch(requiredRoles::contains);
 
         if (!granted) {
