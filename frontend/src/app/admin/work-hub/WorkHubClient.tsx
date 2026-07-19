@@ -29,7 +29,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
 import { toast } from 'sonner';
-import { getDeptScheduleMonthList, createDeptSchedule } from '@/services/business/schedule/deptScheduleService';
+import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -61,8 +62,11 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [currentDate, setCurrentDate] = useState(new Date());
   // 캘린더에서 선택한 날짜(미선택 시 그 달 전체 일정을 목록에 보여준다).
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  // 일정 등록 다이얼로그. 종전에는 '새 업무 생성' 버튼에 onClick 이 없어 등록 경로가 아예 없었다.
+  // 일정 등록/수정 다이얼로그. 종전에는 '새 업무 생성' 버튼에 onClick 이 없어 등록 경로가 아예 없었고,
+  // 등록이 열린 뒤에도 수정·삭제 수단이 없어 한번 만든 일정을 고치거나 지울 수 없었다.
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
+  const confirm = useConfirm();
 
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
@@ -119,15 +123,40 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
    * 일정 등록. 캘린더에서 날짜를 선택했으면 그 날짜가 기본값이 된다.
    * 담당자(schdlPicId)·부서(schdlDeptId)·PK 는 서버가 인증 주체 기준으로 채우므로 보내지 않는다.
    */
-  const handleCreateSchedule = async (values: ScheduleFormValues) => {
+  const handleSubmitSchedule = async (values: ScheduleFormValues) => {
     try {
-      await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
-      toast.success('일정이 등록되었습니다.');
+      if (editingSchedule?.schdlId) {
+        await updateDeptSchedule(editingSchedule.schdlId, values as Parameters<typeof updateDeptSchedule>[1]);
+        toast.success('일정이 수정되었습니다.');
+      } else {
+        await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
+        toast.success('일정이 등록되었습니다.');
+      }
       setScheduleModalOpen(false);
+      setEditingSchedule(null);
       // 현재 보고 있는 달의 일정을 다시 불러온다.
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '일정 등록 중 오류가 발생했습니다.');
+      toast.error(error instanceof Error ? error.message : '일정 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  /** 일정 삭제. 서버는 소유자/관리자만 허용하므로 권한 오류 메시지를 그대로 노출한다. */
+  const handleDeleteSchedule = async (item: DeptSchedule) => {
+    if (!item.schdlId) return;
+    const ok = await confirm({
+      title: '일정 삭제',
+      message: `'${item.schdlNm || '제목 없음'}' 일정을 삭제하시겠습니까?`,
+      variant: 'destructive',
+      confirmText: '삭제',
+    });
+    if (!ok) return;
+    try {
+      await deleteDeptSchedule(item.schdlId);
+      toast.success('일정이 삭제되었습니다.');
+      await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '일정 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -149,6 +178,32 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       header: '장소',
       accessor: (item) => <span className="text-sm text-muted-foreground">{item.schdlPlcNm || '-'}</span>,
       className: 'w-48',
+    },
+    {
+      header: '관리',
+      accessor: (item) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="schedule-edit"
+            className="h-8 px-3 text-[10px] font-black uppercase"
+            onClick={() => { setEditingSchedule(item); setScheduleModalOpen(true); }}
+          >
+            수정
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="schedule-delete"
+            className="h-8 px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
+            onClick={() => handleDeleteSchedule(item)}
+          >
+            삭제
+          </Button>
+        </div>
+      ),
+      className: 'w-40 text-right',
     },
   ];
 
@@ -367,14 +422,18 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       {/* 일정 등록 다이얼로그 — 캘린더에서 선택한 날짜가 기본값이 된다. */}
       <StandardModal
         isOpen={isScheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-        title="일정 등록"
+        onClose={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+        title={editingSchedule ? '일정 수정' : '일정 등록'}
         maxWidth="lg"
       >
         <ScheduleCreateForm
+          // key 로 모드 전환 시 폼을 새로 마운트해 기본값이 확실히 반영되게 한다.
+          key={editingSchedule?.schdlId ?? 'new'}
+          mode={editingSchedule ? 'edit' : 'create'}
+          initialData={editingSchedule ?? undefined}
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
-          onSubmit={handleCreateSchedule}
-          onCancel={() => setScheduleModalOpen(false)}
+          onSubmit={handleSubmitSchedule}
+          onCancel={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
         />
       </StandardModal>
     </div>

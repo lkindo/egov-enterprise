@@ -40,22 +40,26 @@ const ymdToInput = (ymd?: string) =>
 const inputToYmd = (value: string) => value.replace(/-/g, '');
 
 interface ScheduleCreateFormProps {
-  /** 캘린더에서 선택한 날짜(yyyyMMdd). 없으면 오늘. */
+  /** 캘린더에서 선택한 날짜(yyyyMMdd). 없으면 오늘. 등록 모드에서만 쓰인다. */
   defaultYmd: string;
+  /** 수정 모드일 때 기존 값. */
+  initialData?: Partial<ScheduleFormValues>;
+  mode?: 'create' | 'edit';
   onSubmit: (data: ScheduleFormValues) => Promise<void>;
   onCancel: () => void;
 }
 
-export function ScheduleCreateForm({ defaultYmd, onSubmit, onCancel }: ScheduleCreateFormProps) {
+export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel }: ScheduleCreateFormProps) {
+  const isEdit = mode === 'edit';
   const form = useAppForm(scheduleFormSchema, {
     defaultValues: {
-      schdlNm: '',
-      schdlCn: '',
-      schdlBgngYmd: defaultYmd,
-      schdlEndYmd: defaultYmd,
-      schdlPlcNm: '',
+      schdlNm: initialData?.schdlNm ?? '',
+      schdlCn: initialData?.schdlCn ?? '',
+      schdlBgngYmd: initialData?.schdlBgngYmd ?? defaultYmd,
+      schdlEndYmd: initialData?.schdlEndYmd ?? defaultYmd,
+      schdlPlcNm: initialData?.schdlPlcNm ?? '',
       // 기본은 개인 일정('2'). 체크 시 부서 공유('1')로 등록되어 같은 부서원에게도 보인다.
-      schdlSeCd: '2',
+      schdlSeCd: initialData?.schdlSeCd ?? '2',
     },
   });
 
@@ -180,7 +184,7 @@ export function ScheduleCreateForm({ defaultYmd, onSubmit, onCancel }: ScheduleC
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
-            {isSubmitting ? '등록 중…' : '일정 등록'}
+            {isSubmitting ? '저장 중…' : isEdit ? '일정 수정' : '일정 등록'}
           </Button>
         </div>
       </form>
