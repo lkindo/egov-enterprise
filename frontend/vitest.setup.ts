@@ -120,19 +120,23 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Mock window APIs
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+// ⚠ typeof 가드 필수 — setupFiles 는 node 환경 테스트(@vitest-environment node, 예: middleware 테스트)
+//   에서도 실행되므로, 가드 없이 window 를 만지면 그 테스트 파일이 수집 단계에서 통째로 죽는다.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
 
 // Mock lucide-react with an exhaustive list of components to satisfy Vitest's named import checks
 vi.mock('lucide-react', () => {
@@ -189,7 +193,11 @@ vi.mock('lucide-react', () => {
     });
 });
 
-window.scrollTo = vi.fn();
+// setupFiles 는 node 환경 테스트(@vitest-environment node)에서도 실행된다.
+// 가드 없이 window 를 만지면 그런 테스트가 "ReferenceError: window is not defined" 로 수집 단계에서 통째로 죽는다.
+if (typeof window !== 'undefined') {
+  window.scrollTo = vi.fn();
+}
 
 // Mock DOM elements for Radix UI
 if (typeof window !== 'undefined') {

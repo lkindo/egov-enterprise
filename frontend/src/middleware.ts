@@ -17,6 +17,41 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || DEV_JWT_SECRET;
 const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
 
+// ────────────────────────────────────────────────────────────────────────────
+// [진단] 시크릿 지문 — 값이 아니라 SHA-256 앞 8자만 남긴다.
+//
+// 백엔드와 시크릿이 어긋나면 서명 검증이 전량 실패하는데, 그 실패는 지금까지 완전히 무음이었다:
+// 로그인 API 는 200 을 주고(미들웨어를 우회하는 경로다), 그 다음 페이지 진입에서 307 로 /login 에
+// 되돌아가므로 사용자에겐 "인증 완료 후 다시 로그인창" 으로만 보인다. 원인을 알려주는 신호가
+// 코드 어디에도 없어 2026-07-19 에 실제로 오래 헤맸다.
+//
+// JwtTokenProvider 도 기동 시 같은 규칙의 지문을 찍는다. 두 지문이 다르면 그것이 곧 원인이다.
+// ────────────────────────────────────────────────────────────────────────────
+const IS_DEV = process.env.NODE_ENV !== 'production';
+let secretFingerprint = '(계산 전)';
+let fingerprintLogged = false;
+
+async function sha256Prefix(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', utf8ToArrayBuffer(input));
+  return Array.from(new Uint8Array(digest))
+    .slice(0, 4)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/** dev 에서 서명 검증이 실패했을 때 단 한 번만, 원인 후보와 지문을 함께 알린다. */
+async function warnSignatureMismatchOnce(): Promise<void> {
+  if (!IS_DEV || fingerprintLogged) return;
+  fingerprintLogged = true;
+  secretFingerprint = await sha256Prefix(JWT_SECRET);
+  const source = process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)';
+  console.warn(
+    `[Middleware] JWT 서명 검증 실패. 미들웨어가 쓰는 시크릿 출처=${source}, 지문=${secretFingerprint}.\n` +
+      `  백엔드 기동 로그의 "JWT secret fingerprint" 와 이 값이 다르면 좌우 시크릿 비대칭이 원인입니다.\n` +
+      `  (한쪽만 루트 .env 를 받은 경우 발생. 'npm run dev' 로 함께 띄우면 대칭이 보장됩니다.)`
+  );
+}
+
 function base64UrlDecodeToString(input: string): string {
   const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
   return decodeURIComponent(
@@ -67,10 +102,14 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
       base64UrlToArrayBuffer(sigB64),
       utf8ToArrayBuffer(`${headerB64}.${payloadB64}`)
     );
-    if (!valid) return null; // 서명 위조
+    if (!valid) {
+      // 서명 불일치. 위조일 수도, 좌우 시크릿 비대칭일 수도 있다 — dev 에서만 후자를 짚어준다.
+      await warnSignatureMismatchOnce();
+      return null;
+    }
 
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
-    if (payload.exp && Date.now() >= payload.exp * 1000) return null; // 만료
+    if (payload.exp && Date.now() >= payload.exp * 1000) return null; // 만료(정상 흐름이므로 경고하지 않는다)
     return payload.role || null;
   } catch {
     return null;

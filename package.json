@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew.bat :api-server:bootRun -Dfile.encoding=UTF-8\" \"pnpm -C frontend dev\"",
+    "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
+    "//dev": "루트 .env 를 로드한 뒤 백엔드·프론트를 같은 환경에서 낳는다. 한쪽만 JWT_SECRET 을 받으면 서명검증이 전량 실패해 '로그인 후 로그인창' 무한루프가 되므로(2026-07-19 발생) 대칭 주입을 스크립트로 강제한다. 상세는 scripts/dev.mjs 주석.",
     "backend": "gradlew.bat :api-server:bootRun",
     "frontend": "pnpm -C frontend dev",
+    "//separate-launch": "backend/frontend 를 따로 띄우면 JWT_SECRET 대칭이 보장되지 않는다. 양쪽 기동 로그의 시크릿 지문(sha256 앞 8자)이 같은지 확인하라.",
     "all": "npm run dev",
     "//gradle": "Windows-primary: gradlew.bat 로 통일(dev 와 일관). 크로스플랫폼 통합 게이트는 'npm run verify'(node scripts/verify.mjs — OS 감지) 를 진입점으로 사용하라.",
     "test": "npx cross-env TZ=Asia/Seoul gradlew.bat test -Dfile.encoding=UTF-8",

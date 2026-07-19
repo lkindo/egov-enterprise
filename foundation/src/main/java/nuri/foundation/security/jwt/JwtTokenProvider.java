@@ -41,6 +41,29 @@ public class JwtTokenProvider {
             throw new IllegalStateException("JWT Secret is not configured.");
         }
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());
+    }
+
+    /**
+     * 시크릿의 SHA-256 앞 8자. 값 자체는 절대 로그에 남기지 않는다.
+     *
+     * [존재 이유] 프론트 미들웨어(frontend/src/middleware.ts)가 같은 규칙으로 지문을 찍는다.
+     * 두 지문이 다르면 좌우 시크릿 비대칭이고, 그 상태에서는 서명 검증이 전량 실패해
+     * "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 된다(2026-07-19 발생).
+     * 그때 원인을 알려주는 신호가 어디에도 없어 오래 헤맸기에, 양쪽에 대조 가능한 지문을 남긴다.
+     */
+    private String secretFingerprint() {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 4; i++) {
+                sb.append(String.format("%02x", digest[i]));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            return "(지문 계산 실패)";
+        }
     }
 
     public String createAccessToken(String userId, String role) {
