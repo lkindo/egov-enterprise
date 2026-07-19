@@ -1,13 +1,13 @@
-import { DeptDto } from '@/services/foundation/user/DeptAdminService';
+import { Department } from '@/services/foundation/system/DeptAdminService';
 
-export interface FlattenedDept extends DeptDto {
+export interface FlattenedDept extends Department {
   parentId: string | null;
   depth: number;
   index: number;
 }
 
 export const flattenDeptTree = (
-  items: (DeptDto & { children?: DeptDto[] })[],
+  items: (Department & { children?: Department[] })[],
   parentId: string | null = null,
   depth = 0
 ): FlattenedDept[] => {
@@ -20,7 +20,7 @@ export const flattenDeptTree = (
   }, []);
 };
 
-export const listToDeptTree = (flatDepts: DeptDto[]): any[] => {
+export const listToDeptTree = (flatDepts: Department[]): any[] => {
   const map: Record<string, any> = {};
   const roots: any[] = [];
 
@@ -31,16 +31,15 @@ export const listToDeptTree = (flatDepts: DeptDto[]): any[] => {
     }
   });
 
-  // 2. 부모-자식 관계 구성 (상황에 따라 시뮬레이션 필요)
-  // 실제 DB에 upperOgnzId가 없을 경우를 대비해, 
-  // 여기서는 ognzId 패턴이나 특정 규칙으로 시뮬레이션할 수도 있음.
-  // 우선은 DeptDto에 upperOgnzId가 있다고 가정하거나 확장해서 처리.
+  // 2. 부모-자식 관계 구성.
+  //    종전에는 물리 컬럼이 없어 존재하지 않는 upperOgnzId 를 @ts-ignore 로 읽었고(주석에 '시뮬레이션'이라
+  //    적혀 있었다) 결과적으로 트리는 항상 전부 루트로 렌더됐다.
+  //    V2_26 으로 up_ognz_id 가 생겨 실제 상위 부서를 그대로 쓴다.
   flatDepts.forEach((d) => {
     if (!d || !d.ognzId) return;
     const item = map[d.ognzId];
-    
-    // @ts-ignore - 시뮬레이션을 위해 upperOgnzId 필드 사용
-    const parentId = (d as any).upperOgnzId || null;
+
+    const parentId = d.upOgnzId || null;
 
     if (!parentId || !map[parentId]) {
       roots.push(item);

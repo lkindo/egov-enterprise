@@ -47,6 +47,8 @@ interface PaginationResponse<T> {
 }
 
 export interface SearchParams {
+  /** 서버가 @RequestParam("keyword") 로 받는 검색어 (부서 목록 등). searchKeyword 와 별개 축이다. */
+  keyword?: string;
   pageNo?: number;
   pageIndex?: number;
   page?: number;

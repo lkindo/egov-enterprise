@@ -11,7 +11,8 @@ export default async function DeptManagePage() {
 
   // [P1: Waterfall Elimination] Initiate promises without awaiting
   const usersPromise = userAdminService.getUserList({ pageNo: 1, searchKeyword: '' }, axiosConfig).catch(() => ({ list: [], total: 0, totalPage: 0 }));
-  const deptsPromise = deptAdminService.getDeptList({ pageNo: 1, searchKeyword: '' }, axiosConfig).catch(() => ({ list: [], total: 0, totalPage: 0 }));
+  // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. (pageNo/searchKeyword 는 무시됐다)
+  const deptsPromise = deptAdminService.getDeptList({ keyword: '', page: 0, size: 10 }, axiosConfig).catch(() => ({ list: [], total: 0, totalPage: 0 }));
 
   return (
     <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse">Synchronizing Identity Fabric...</div>}>

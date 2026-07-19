@@ -231,7 +231,9 @@ export default function UserOrgHubClient({
 
   const { data: deptsData, isLoading: isDeptsLoading, error: _deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
-    queryFn: () => deptAdminService.getDeptList({ pageNo: deptPage, searchKeyword }),
+    // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. 종전의 {pageNo, searchKeyword}는
+    // ApiService 매핑 대상이 아니라 그대로 전달돼 무시됐고, 검색어가 서버에 닿지 않았다.
+    queryFn: () => deptAdminService.getDeptList({ keyword: searchKeyword, page: deptPage - 1, size: 10 }),
     enabled: activeTab === 'DEPTS',
     initialData: (deptPage === 1 && !searchKeyword) ? initialDepts : undefined
   });
@@ -309,6 +311,34 @@ export default function UserOrgHubClient({
         refetchUsers();
       } catch (_error) {
         toast('말소 프로세스 중 오류가 발생했습니다.', 'error');
+      }
+    }
+  };
+
+  /**
+   * 부서 삭제. 종전에는 상세 패널의 삭제 버튼이 탭 분기 없이 handleDeleteUser 를 호출해,
+   * DEPTS 탭에서는 부서 ID(ognzId)로 사용자 삭제 API 를 때리고 있었다.
+   * 서버는 소속 사용자·하위 부서가 남아 있으면 409(RESOURCE_IN_USE)로 막으므로 그 메시지를 그대로 보여준다.
+   */
+  const handleDeleteDept = async () => {
+    if (!selectedItemId) return;
+
+    const ok = await confirm({
+      title: '부서 삭제',
+      message: '이 부서를 삭제하시겠습니까? 소속 사용자나 하위 부서가 남아 있으면 삭제할 수 없습니다.',
+      variant: 'destructive',
+      confirmText: '부서 삭제'
+    });
+
+    if (ok) {
+      try {
+        await deptAdminService.deleteDept(selectedItemId as string);
+        toast('부서가 삭제되었습니다.', 'success');
+        setSelectedItemId(null);
+        refetchDepts();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '부서 삭제 중 오류가 발생했습니다.';
+        toast(message, 'error');
       }
     }
   };
@@ -737,15 +767,27 @@ export default function UserOrgHubClient({
                   </div>
 
                   <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
-                    <button 
+                    {/* 탭에 따라 삭제 대상이 다르다. 종전에는 분기가 없어 부서 탭에서도 사용자 삭제 API 를 호출했다. */}
+                    <button
                       type="button"
-                      onClick={handleDeleteUser}
+                      onClick={activeTab === 'DEPTS' ? handleDeleteDept : handleDeleteUser}
                       className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase outline-none cursor-pointer flex items-center justify-center"
                     >
-                      접근 차단
+                      {activeTab === 'DEPTS' ? '부서 삭제' : '접근 차단'}
                     </button>
-                    <Button className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase">
-                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> 변경사항 저장
+                    {/* 수정은 편집 다이얼로그에서 저장한다. 종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다. */}
+                    <Button
+                      onClick={() => {
+                        setFormMode('edit');
+                        if (activeTab === 'DEPTS') {
+                          setIsDeptModalOpen(true);
+                        } else {
+                          setIsUserModalOpen(true);
+                        }
+                      }}
+                      className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase"
+                    >
+                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> 정보 수정
                     </Button>
                   </div>
                 </div>

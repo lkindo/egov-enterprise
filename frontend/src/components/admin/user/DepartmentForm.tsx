@@ -20,9 +20,17 @@ import { cn } from '@/lib/utils';
 
 import { DeptManageDtoSchema } from '@/types/generated-zod';
 
-export const deptSchema = DeptManageDtoSchema.partial().extend({
-  ognzNm: z.string().min(1),
-  ognzExpln: z.string().optional().or(z.literal('')),
+/**
+ * 부서 등록/수정 폼 스키마 (FE 헌법 제13조 2항: generated-zod 를 import 후 .extend 로만 확장).
+ *
+ * 종전에는 `.partial()` 로 모든 필드의 필수성을 지웠는데, 그 결과 ognzId 가 없어도 클라이언트 검증을
+ * 통과시킨 뒤 서버 @NotBlank 에서 400 을 맞았다(부서를 하나도 만들 수 없던 원인의 한 축).
+ * 이제 ognzId 는 서버가 채번하므로 SSOT 스키마에서도 optional 이며, `.partial()` 없이
+ * 필요한 제약만 좁힌다 — 부서명은 실제로 필수여야 한다.
+ */
+export const deptSchema = DeptManageDtoSchema.extend({
+  ognzNm: z.string().min(1, '부서명을 입력하세요.').max(100),
+  ognzExpln: z.string().max(4000).optional().or(z.literal('')),
 });
 
 export type DeptFormValues = z.infer<typeof deptSchema>;
