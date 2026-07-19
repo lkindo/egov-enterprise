@@ -26,7 +26,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { reportService } from '@/services/business/user/ReportService';
 import { Calendar } from '@/components/ui/calendar';
-import { getDeptScheduleMonthList } from '@/services/business/schedule/deptScheduleService';
+import { StandardModal } from '@/app/components/ui/standard-modal';
+import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
+import { toast } from 'sonner';
+import { getDeptScheduleMonthList, createDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -58,6 +61,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [currentDate, setCurrentDate] = useState(new Date());
   // 캘린더에서 선택한 날짜(미선택 시 그 달 전체 일정을 목록에 보여준다).
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  // 일정 등록 다이얼로그. 종전에는 '새 업무 생성' 버튼에 onClick 이 없어 등록 경로가 아예 없었다.
+  const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
@@ -109,6 +114,22 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       return !!begin && !!end && begin <= key && key <= end;
     });
   }, [schedules, selectedDate]);
+
+  /**
+   * 일정 등록. 캘린더에서 날짜를 선택했으면 그 날짜가 기본값이 된다.
+   * 담당자(schdlPicId)·부서(schdlDeptId)·PK 는 서버가 인증 주체 기준으로 채우므로 보내지 않는다.
+   */
+  const handleCreateSchedule = async (values: ScheduleFormValues) => {
+    try {
+      await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
+      toast.success('일정이 등록되었습니다.');
+      setScheduleModalOpen(false);
+      // 현재 보고 있는 달의 일정을 다시 불러온다.
+      await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '일정 등록 중 오류가 발생했습니다.');
+    }
+  };
 
   const scheduleColumns: Column<DeptSchedule>[] = [
     {
@@ -237,8 +258,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                  일정
                </Button>
              </div>
-            <Button className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
-              <Plus size={18} /> 새 업무 생성
+            {/* 일정 탭에서는 일정 등록 다이얼로그를 연다. 다른 탭의 '새 업무 생성'은 아직 미구현이라
+                동작을 바꾸지 않는다(이번 범위 밖). */}
+            <Button
+              onClick={activeTab === 'calendar' ? () => setScheduleModalOpen(true) : undefined}
+              className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
+            >
+              <Plus size={18} /> {activeTab === 'calendar' ? '일정 등록' : '새 업무 생성'}
             </Button>
           </div>
         }
@@ -337,6 +363,20 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           </div>
         </div>
       </HubSectionCard>
+
+      {/* 일정 등록 다이얼로그 — 캘린더에서 선택한 날짜가 기본값이 된다. */}
+      <StandardModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        title="일정 등록"
+        maxWidth="lg"
+      >
+        <ScheduleCreateForm
+          defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
+          onSubmit={handleCreateSchedule}
+          onCancel={() => setScheduleModalOpen(false)}
+        />
+      </StandardModal>
     </div>
   );
 }
