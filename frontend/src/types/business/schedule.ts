@@ -3,8 +3,10 @@ interface Schedule {
   schdlSeCd: string; // 1 (부서) 2 (개인)
   schdlDeptId?: string;
   schdlKndCd?: string;
-  schdlBgngYmd: string; // yyyyMMddHHmm
-  schdlEndYmd: string;
+  // ⚠ 물리 컬럼은 varchar(8), DTO 는 @Size(max = 8) — 'yyyyMMdd' 다. 시각 정보는 스키마에 없다.
+  //   (종전 주석 'yyyyMMddHHmm' 은 오기였고, 실제로 16자를 보내던 등록 화면은 400 을 받고 있었다.)
+  schdlBgngYmd: string; // yyyyMMdd
+  schdlEndYmd: string;  // yyyyMMdd
   schdlNm: string;
   schdlCn: string;
   schdlPlcNm?: string;
