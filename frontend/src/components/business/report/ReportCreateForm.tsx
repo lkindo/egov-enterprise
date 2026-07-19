@@ -29,16 +29,23 @@ const inputToYmd = (value: string) => value.replace(/-/g, '');
 
 interface ReportCreateFormProps {
     defaultYmd: string;
+    /** 수정 모드일 때 기존 값. */
+    initialData?: Partial<ReportFormValues>;
+    mode?: 'create' | 'edit';
     onSubmit: (data: ReportFormValues) => Promise<void>;
     onCancel: () => void;
 }
 
-export function ReportCreateForm({ defaultYmd, onSubmit, onCancel }: ReportCreateFormProps) {
+export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel }: ReportCreateFormProps) {
+    const isEdit = mode === 'edit';
     const form = useAppForm(reportFormSchema, {
         defaultValues: {
-            rptTtl: '',
-            rptCn: '',
-            rptYmd: defaultYmd,
+            rptTtl: initialData?.rptTtl ?? '',
+            rptCn: initialData?.rptCn ?? '',
+            rptYmd: initialData?.rptYmd ?? defaultYmd,
+            // 수정 시 폼에 없는 필드를 빠뜨리면 서버 update 가 null 로 덮어쓴다.
+            rptSeCd: initialData?.rptSeCd,
+            atchFileId: initialData?.atchFileId,
         },
     });
 
@@ -105,7 +112,7 @@ export function ReportCreateForm({ defaultYmd, onSubmit, onCancel }: ReportCreat
                         취소
                     </Button>
                     <Button type="submit" disabled={isSubmitting} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
-                        {isSubmitting ? '등록 중…' : '보고 등록'}
+                        {isSubmitting ? '저장 중…' : isEdit ? '수정 저장' : '보고 등록'}
                     </Button>
                 </div>
             </form>

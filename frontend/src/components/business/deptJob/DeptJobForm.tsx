@@ -22,6 +22,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { DeptJobDtoSchema } from '@/types/generated-zod';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
 /**
@@ -60,8 +62,20 @@ interface DeptJobFormProps {
     onCancel: () => void;
 }
 
+/** 업무함 미지정을 나타내는 Select 값. Radix Select 는 빈 문자열 value 를 허용하지 않는다. */
+const NO_BOX = '__none__';
+
 export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }: DeptJobFormProps) {
     const isEdit = mode === 'edit';
+
+    // 업무함 목록. 조회는 관리자 전용이 아니므로 일반 사용자도 선택할 수 있다
+    // (등록·수정 등 쓰기만 @AdminOrSystem 이다).
+    const { data: boxData } = useQuery({
+        queryKey: ['dept-job-boxes'],
+        queryFn: () => deptJobUserService.getDeptJobBoxes({}),
+        staleTime: 5 * 60 * 1000,
+    });
+    const boxes = boxData?.list ?? [];
 
     const form = useAppForm(deptJobFormSchema, {
         defaultValues: {
@@ -69,9 +83,12 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
             deptTaskCn: initialData?.deptTaskCn ?? '',
             // 미지정 시 '보통'. 등록 화면의 종전 기본값과 동일하다.
             prrtyRnk: initialData?.prrtyRnk ?? '2',
-            // 업무함은 서버에서 nullable 이며 아직 선택 UI 가 없다. 수정 시 기존 값을 잃지 않도록
-            // 폼에 실어 왕복시킨다(보내지 않으면 update 가 null 로 덮어써 소속이 사라진다).
+            // 업무함은 서버에서 nullable 이다. 수정 시 기존 값을 잃지 않도록 폼에 실어 왕복시킨다
+            // (보내지 않으면 update 가 null 로 덮어써 소속이 소리 없이 사라진다).
             deptTaskBoxId: initialData?.deptTaskBoxId,
+            // 담당자 선택 UI 는 아직 없다. 사용자 목록 API 가 /admin/system/users 뿐이라
+            // 일반 사용자에게 조직 인명부를 여는 보안 결정이 선행되어야 한다.
+            // 그때까지 등록 시에는 서버가 등록자를 담당자로 채우고, 수정 시에는 기존 값을 왕복시킨다.
             picId: initialData?.picId,
             atchFileId: initialData?.atchFileId,
         },
@@ -119,6 +136,35 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
                                     {PRIORITY_OPTIONS.map((opt) => (
                                         <SelectItem key={opt.value} value={opt.value} className="font-bold py-3">
                                             {opt.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="deptTaskBoxId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">업무함</FormLabel>
+                            <Select
+                                value={field.value || NO_BOX}
+                                onValueChange={(v) => field.onChange(v === NO_BOX ? undefined : v)}
+                            >
+                                <FormControl>
+                                    <SelectTrigger className="h-11 rounded-lg font-bold">
+                                        <SelectValue placeholder="업무함 선택" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-lg">
+                                    <SelectItem value={NO_BOX} className="font-bold py-3">지정 안 함</SelectItem>
+                                    {boxes.map((box: { deptTaskBoxId?: string; deptTaskBoxNm?: string }) => (
+                                        <SelectItem key={box.deptTaskBoxId} value={box.deptTaskBoxId ?? ''} className="font-bold py-3">
+                                            {box.deptTaskBoxNm ?? box.deptTaskBoxId}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

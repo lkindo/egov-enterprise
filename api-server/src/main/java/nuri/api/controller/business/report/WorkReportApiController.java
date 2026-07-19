@@ -28,8 +28,14 @@ public class WorkReportApiController {
     public ResponseEntity<ApiResponse<PageResponse<WorkReportDto>>> getWorkReportList(
             @ModelAttribute BaseSearchDto searchDto) {
         Pageable pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+
+        // ⚠ 종전에는 searchKeyword 를 첫 인자(searchId)에도 함께 넘겼다. searchId 는
+        //   WorkReportRepositoryImpl 에서 userId.eq(...) 즉 **작성자 완전일치**로 쓰이므로,
+        //   제목으로 검색하면 "작성자 == 검색어" 조건이 함께 걸려 항상 0건이 나왔다.
+        //   제목 검색(rptTtl.contains)만 하도록 작성자 필터는 비워 둔다.
+        //   (작성자로 좁히는 기능이 필요해지면 별도 파라미터로 받아야 한다.)
         Page<WorkReportDto> page = workReportService.getWorkReportList(
-                searchDto.getSearchKeyword(), null, searchDto.getSearchKeyword(), pageable);
+                null, null, searchDto.getSearchKeyword(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

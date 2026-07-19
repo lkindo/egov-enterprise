@@ -61,6 +61,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
+  const [jobPage, setJobPage] = useState(1);
+  const [reportPage, setReportPage] = useState(1);
+  const PAGE_UNIT = 10;
   // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
   const [currentDate, setCurrentDate] = useState(new Date());
   // 캘린더에서 선택한 날짜(미선택 시 그 달 전체 일정을 목록에 보여준다).
@@ -71,6 +75,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
   // 업무 보고 등록 다이얼로그. 종전에는 이 탭의 '새 업무 생성' 버튼에 onClick 이 없었다.
   const [isReportModalOpen, setReportModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<any | null>(null);
   const confirm = useConfirm();
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
@@ -108,18 +113,20 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   //   탭 설명("부서별 업무 흐름")과 등록 동작이 모두 부서 업무를 가리키므로 목록을 그쪽에 맞춘다.
   //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 화면의 대상이 아니다.
   const { data: jobData, isLoading: isJobLoading } = useQuery({
-    queryKey: ['work-jobs', searchKeyword],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageUnit: 50 }),
+    queryKey: ['work-jobs', searchKeyword, jobPage],
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
+  const jobTotalPages = jobData?.totalPage ?? 1;
 
   const { data: reportData, isLoading: isReportLoading } = useQuery({
-    queryKey: ['work-reports', searchKeyword],
-    queryFn: () => reportService.getReports({ page: 0, size: 50, searchWrd: searchKeyword }),
+    queryKey: ['work-reports', searchKeyword, reportPage],
+    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: searchKeyword }),
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
+  const reportTotalPages = reportData?.totalPage ?? 1;
 
   // ⚠ yearMonth 는 반드시 하이픈 없는 'yyyyMM'(6자)여야 한다.
   //   ScheduleRepository.findMonthlySchedules 가 CONCAT(:yearMonth,'01') / CONCAT(:yearMonth,'31') 로
@@ -152,14 +159,38 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   }, [schedules, selectedDate]);
 
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
-  const handleCreateReport = async (values: ReportFormValues) => {
+  const handleSubmitReport = async (values: ReportFormValues) => {
     try {
-      await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
-      toast.success('업무 보고가 등록되었습니다.');
+      if (editingReport?.rptId) {
+        await reportService.updateReport(editingReport.rptId, values);
+        toast.success('업무 보고가 수정되었습니다.');
+      } else {
+        await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
+        toast.success('업무 보고가 등록되었습니다.');
+      }
       setReportModalOpen(false);
+      setEditingReport(null);
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '업무 보고 등록 중 오류가 발생했습니다.');
+      toast.error(error instanceof Error ? error.message : '업무 보고 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  /** 보고 삭제. 서버가 작성자 본인 또는 관리자만 허용하므로 실패는 그대로 알린다. */
+  const handleDeleteReport = async (item: any) => {
+    const ok = await confirm({
+      title: '업무 보고 삭제',
+      message: `'${item.rptTtl || '제목 없음'}' 보고를 삭제하시겠습니까?`,
+      variant: 'destructive',
+      confirmText: '삭제',
+    });
+    if (!ok) return;
+    try {
+      await reportService.deleteReport(item.rptId);
+      toast.success('업무 보고가 삭제되었습니다.');
+      await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
+    } catch (error) {
+      toast.error('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.');
     }
   };
 
@@ -320,15 +351,29 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       className: 'w-32'
     },
     {
+      // 종전에는 onClick 이 없는 死버튼이었다. 백엔드는 수정·삭제를 모두 제공하는데 진입점이 없었다.
       header: '관리',
-      accessor: () => (
-        <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
-            <MoreVertical size={16} className="text-muted-foreground" />
+      accessor: (item) => (
+        <div className="flex justify-end gap-1 pr-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 font-bold text-[11px]"
+            onClick={() => { setEditingReport(item); setReportModalOpen(true); }}
+          >
+            수정
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 font-bold text-[11px] text-rose-600 hover:text-rose-700"
+            onClick={() => handleDeleteReport(item)}
+          >
+            삭제
           </Button>
         </div>
       ),
-      className: 'w-20 text-right'
+      className: 'w-32 text-right'
     }
   ];
 
@@ -393,8 +438,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="업무 노드" value={jobs.length} icon={Layers} color="primary" />
-        <HubMetricCard title="보고 데이터" value={reports.length} icon={FileText} color="amber" />
+        <HubMetricCard title="업무 노드" value={jobData?.total ?? jobs.length} icon={Layers} color="primary" />
+        <HubMetricCard title="보고 데이터" value={reportData?.total ?? reports.length} icon={FileText} color="amber" />
         <HubMetricCard title="이번 달 일정" value={schedules.length} icon={CalendarDays} color="indigo" />
         <HubMetricCard title="동기화 빈도" value="매일" icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
@@ -413,7 +458,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
                 <Input
                   value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onChange={(e) => { setSearchKeyword(e.target.value); setJobPage(1); setReportPage(1); }}
                   className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                   placeholder="검색어를 입력하십시오..."
                 />
@@ -480,6 +525,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 emptyMessage="식별된 데이터 유닛이 없습니다."
                 isPremium={true}
                 className="border-none bg-transparent shadow-none"
+                // StandardDataTable 은 처음부터 pagination 을 지원했는데 전달하지 않고 있었다.
+                // 그래서 첫 페이지 밖의 데이터에 도달할 방법이 아예 없었다.
+                pagination={{
+                  currentPage: activeTab === 'job' ? jobPage : reportPage,
+                  totalPages: Math.max(1, activeTab === 'job' ? jobTotalPages : reportTotalPages),
+                  onPageChange: (p: number) => (activeTab === 'job' ? setJobPage(p) : setReportPage(p)),
+                }}
               />
             )}
           </div>
@@ -507,14 +559,18 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       {/* 업무 보고 등록 다이얼로그 */}
       <StandardModal
         isOpen={isReportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        title="업무 보고 등록"
+        onClose={() => { setReportModalOpen(false); setEditingReport(null); }}
+        title={editingReport ? '업무 보고 수정' : '업무 보고 등록'}
         maxWidth="lg"
       >
         <ReportCreateForm
+          // key 로 모드 전환 시 폼을 새로 마운트해 기본값이 확실히 반영되게 한다(일정 폼과 동일).
+          key={editingReport?.rptId ?? 'new'}
+          mode={editingReport ? 'edit' : 'create'}
+          initialData={editingReport ?? undefined}
           defaultYmd={format(new Date(), 'yyyyMMdd')}
-          onSubmit={handleCreateReport}
-          onCancel={() => setReportModalOpen(false)}
+          onSubmit={handleSubmitReport}
+          onCancel={() => { setReportModalOpen(false); setEditingReport(null); }}
         />
       </StandardModal>
     </div>
