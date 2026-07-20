@@ -39,6 +39,9 @@ export const deptJobFormSchema = DeptJobDtoSchema.extend({
     deptTaskNm: z.string().min(1, '업무명을 입력하세요.').max(100, '업무명은 100자를 넘을 수 없습니다.'),
     // dept_task_cn 은 varchar(4000). 필수는 아니지만 상한은 스키마로 막는다.
     deptTaskCn: z.string().max(4000, '업무 내용은 4000자를 넘을 수 없습니다.').optional(),
+    deptTaskBoxId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    atchFileId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    picId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
 export type DeptJobFormValues = z.infer<typeof deptJobFormSchema>;

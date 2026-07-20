@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 export const reportFormSchema = WorkReportDtoSchema.extend({
     rptTtl: z.string().min(1, '보고 제목을 입력하세요.').max(200),
     rptYmd: z.string().length(8, '보고 일자를 선택하세요.'),
+    atchFileId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
 export type ReportFormValues = z.infer<typeof reportFormSchema>;

@@ -194,6 +194,10 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             await expect(nodeA).toBeVisible({ timeout: 20000 });
             await expect(nodeB).toBeVisible({ timeout: 20000 });
 
+            // ── 뷰포트 밖 영역 잘림을 방지하기 위해 노드를 스크롤 영역 내부로 가져옵니다.
+            await nodeA.scrollIntoViewIfNeeded();
+            await nodeB.scrollIntoViewIfNeeded();
+
             // 화면상 아래쪽 노드가 '두 번째'다 — API 정렬 순서를 가정하지 않고 좌표로 판정한다.
             const boxA = await nodeA.boundingBox();
             const boxB = await nodeB.boundingBox();
@@ -208,16 +212,15 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             const saveBtn = page.locator('button:has-text("조직 계층 저장")');
             await expect(saveBtn).not.toBeVisible();
 
-            // ── 제자리 가로 드래그: 세로 이동 없이 오른쪽으로만 민다.
+            // ── 제자리 가로 드래그: dnd-kit 센서가 반응하도록 가로/세로 이동을 병합
             const startX = secondBox.x + secondBox.width / 2;
             const startY = secondBox.y + secondBox.height / 2;
             await page.mouse.move(startX, startY);
             await page.mouse.down();
-            // 8px 임계 아래 → 아직 센서가 깨지 않는다. 임계를 '단계적으로' 넘겨야 dnd-kit 이
-            // pointermove 를 연속 입력으로 인식한다(단발 이동은 무시되는 경우가 있다).
-            await page.mouse.move(startX + 4, startY, { steps: 3 });
-            await page.mouse.move(startX + 16, startY, { steps: 5 });   // 임계 통과 → 드래그 활성
-            await page.mouse.move(startX + 30, startY, { steps: 8 });   // round(30/24) = 1 → depth +1
+            // 임계를 단계적으로 넘기며 세로 흔들림을 주어 PointerSensor를 완벽하게 활성화시킵니다.
+            await page.mouse.move(startX + 5, startY + 2, { steps: 3 });
+            await page.mouse.move(startX + 15, startY + 4, { steps: 5 });
+            await page.mouse.move(startX + 50, startY + 5, { steps: 8 }); // 50px 이동 (depth +2 시도, 클램프로 +1 적용)
             await page.mouse.up();
 
             // 계층이 바뀌었으므로 저장 버튼이 '나타나야' 한다. (hasDeptChanges=true)
